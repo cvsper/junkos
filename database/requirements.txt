@@ -1,0 +1,14 @@
+# JunkOS Database Migration Tool Requirements
+# ============================================
+
+# PostgreSQL adapter for Python
+psycopg2-binary==2.9.9
+
+# Alternative: psycopg2 (requires PostgreSQL dev libraries)
+# psycopg2==2.9.9
+
+# Optional: For .env file support
+python-dotenv==1.0.0
+
+# Optional: For colored terminal output
+colorama==0.4.6

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice from JunkOS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Open Sans', Arial, sans-serif; background-color: #f3f4f6;">
+    <table role="presentation" style="width: 100%; border-collapse: collapse;">
+        <tr>
+            <td align="center" style="padding: 40px 20px;">
+                <table role="presentation" style="width: 100%; max-width: 600px; border-collapse: collapse; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    <!-- Header -->
+                    <tr>
+                        <td style="padding: 40px 30px; border-bottom: 3px solid #4F46E5;">
+                            <table role="presentation" style="width: 100%;">
+                                <tr>
+                                    <td style="width: 50%;">
+                                        <h1 style="margin: 0; font-family: 'Poppins', sans-serif; font-size: 32px; font-weight: 700; color: #4F46E5;">INVOICE</h1>
+                                        <p style="margin: 5px 0 0; font-size: 14px; color: #6B7280;">#{{invoice_number}}</p>
+                                    </td>
+                                    <td style="width: 50%; text-align: right;">
+                                        <h2 style="margin: 0; font-family: 'Poppins', sans-serif; font-size: 24px; font-weight: 700; color: #1F2937;">JunkOS</h2>
+                                        <p style="margin: 5px 0 0; font-size: 13px; color: #6B7280; line-height: 1.5;">
+                                            {{company_address}}<br>
+                                            {{company_phone}}<br>
+                                            {{company_email}}
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    
+                    <!-- Invoice Info -->
+                    <tr>
+                        <td style="padding: 30px;">
+                            <table role="presentation" style="width: 100%; margin-bottom: 30px;">
+                                <tr>
+                                    <td style="width: 50%; vertical-align: top;">
+                                        <h3 style="margin: 0 0 10px; font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 600; color: #6B7280; text-transform: uppercase;">Bill To</h3>
+                                        <p style="margin: 0; font-size: 16px; font-weight: 600; color: #1F2937;">{{customer_name}}</p>
+                                        <p style="margin: 5px 0 0; font-size: 14px; color: #6B7280; line-height: 1.5;">
+                                            {{customer_email}}<br>
+                                            {{customer_phone}}<br>
+                                            {{service_address}}
+                                        </p>
+                                    </td>
+                                    <td style="width: 50%; vertical-align: top; text-align: right;">
+                                        <h3 style="margin: 0 0 10px; font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 600; color: #6B7280; text-transform: uppercase;">Invoice Details</h3>
+                                        <table role="presentation" style="width: 100%;">
+                                            <tr>
+                                                <td style="padding: 5px 0; font-size: 14px; color: #6B7280; text-align: right;">Invoice Date:</td>
+                                                <td style="padding: 5px 0; font-size: 14px; color: #1F2937; font-weight: 600; text-align: right;">{{invoice_date}}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 5px 0; font-size: 14px; color: #6B7280; text-align: right;">Service Date:</td>
+                                                <td style="padding: 5px 0; font-size: 14px; color: #1F2937; font-weight: 600; text-align: right;">{{service_date}}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 5px 0; font-size: 14px; color: #6B7280; text-align: right;">Due Date:</td>
+                                                <td style="padding: 5px 0; font-size: 14px; color: #1F2937; font-weight: 600; text-align: right;">{{due_date}}</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                            <!-- Line Items -->
+                            <table role="presentation" style="width: 100%; border-collapse: collapse; margin: 30px 0;">
+                                <thead>
+                                    <tr style="background-color: #F3F4F6;">
+                                        <th style="padding: 12px; text-align: left; font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 600; color: #374151; text-transform: uppercase; border-bottom: 2px solid #E5E7EB;">Description</th>
+                                        <th style="padding: 12px; text-align: center; font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 600; color: #374151; text-transform: uppercase; border-bottom: 2px solid #E5E7EB;">Qty</th>
+                                        <th style="padding: 12px; text-align: right; font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 600; color: #374151; text-transform: uppercase; border-bottom: 2px solid #E5E7EB;">Rate</th>
+                                        <th style="padding: 12px; text-align: right; font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 600; color: #374151; text-transform: uppercase; border-bottom: 2px solid #E5E7EB;">Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {{#each line_items}}
+                                    <tr>
+                                        <td style="padding: 15px 12px; font-size: 14px; color: #374151; border-bottom: 1px solid #E5E7EB;">{{this.description}}</td>
+                                        <td style="padding: 15px 12px; text-align: center; font-size: 14px; color: #374151; border-bottom: 1px solid #E5E7EB;">{{this.quantity}}</td>
+                                        <td style="padding: 15px 12px; text-align: right; font-size: 14px; color: #374151; border-bottom: 1px solid #E5E7EB;">${{this.rate}}</td>
+                                        <td style="padding: 15px 12px; text-align: right; font-size: 14px; color: #1F2937; font-weight: 600; border-bottom: 1px solid #E5E7EB;">${{this.amount}}</td>
+                                    </tr>
+                                    {{/each}}
+                                </tbody>
+                            </table>
+                            
+                            <!-- Totals -->
+                            <table role="presentation" style="width: 100%; max-width: 300px; margin-left: auto;">
+                                <tr>
+                                    <td style="padding: 8px 12px; font-size: 15px; color: #6B7280; text-align: right;">Subtotal:</td>
+                                    <td style="padding: 8px 12px; font-size: 15px; color: #1F2937; font-weight: 600; text-align: right;">${{subtotal}}</td>
+                                </tr>
+                                {{#if discount}}
+                                <tr>
+                                    <td style="padding: 8px 12px; font-size: 15px; color: #10B981; text-align: right;">Discount:</td>
+                                    <td style="padding: 8px 12px; font-size: 15px; color: #10B981; font-weight: 600; text-align: right;">-${{discount}}</td>
+                                </tr>
+                                {{/if}}
+                                <tr>
+                                    <td style="padding: 8px 12px; font-size: 15px; color: #6B7280; text-align: right;">Tax ({{tax_rate}}%):</td>
+                                    <td style="padding: 8px 12px; font-size: 15px; color: #1F2937; font-weight: 600; text-align: right;">${{tax_amount}}</td>
+                                </tr>
+                                <tr style="background: linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 100%);">
+                                    <td style="padding: 15px 12px; font-family: 'Poppins', sans-serif; font-size: 18px; font-weight: 700; color: #4F46E5; text-align: right; border-top: 2px solid #4F46E5;">TOTAL:</td>
+                                    <td style="padding: 15px 12px; font-family: 'Poppins', sans-serif; font-size: 22px; font-weight: 700; color: #4F46E5; text-align: right; border-top: 2px solid #4F46E5;">${{total}}</td>
+                                </tr>
+                            </table>
+                            
+                            <!-- Payment Status -->
+                            <div style="background-color: {{#if paid}}#ECFDF5{{else}}#FEF3C7{{/if}}; border-left: 4px solid {{#if paid}}#10B981{{else}}#F59E0B{{/if}}; padding: 20px; margin: 30px 0; border-radius: 4px;">
+                                <h3 style="margin: 0 0 10px; font-family: 'Poppins', sans-serif; font-size: 16px; font-weight: 600; color: {{#if paid}}#065F46{{else}}#92400E{{/if}};">
+                                    {{#if paid}}✓ Payment Received{{else}}⚠️ Payment Due{{/if}}
+                                </h3>
+                                <p style="margin: 0; font-size: 14px; line-height: 1.6; color: {{#if paid}}#047857{{else}}#78350F{{/if}};">
+                                    {{#if paid}}
+                                    Thank you! Your payment was received on {{payment_date}}.
+                                    {{else}}
+                                    Please submit payment by {{due_date}} to avoid late fees.
+                                    {{/if}}
+                                </p>
+                            </div>
+                            
+                            {{#unless paid}}
+                            <!-- Pay Now Button -->
+                            <table role="presentation" style="width: 100%; margin: 30px 0;">
+                                <tr>
+                                    <td align="center">
+                                        <a href="{{payment_url}}" style="display: inline-block; background: linear-gradient(135deg, #10B981 0%, #059669 100%); color: #ffffff; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 18px; text-decoration: none; padding: 16px 48px; border-radius: 6px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">Pay Now - ${{total}}</a>
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                            <p style="margin: 20px 0 0; font-size: 13px; color: #6B7280; text-align: center;">Secure payment powered by Stripe • All major cards accepted</p>
+                            {{/unless}}
+                            
+                            <!-- Notes -->
+                            {{#if notes}}
+                            <div style="background-color: #F9FAFB; padding: 20px; margin: 30px 0; border-radius: 6px;">
+                                <h3 style="margin: 0 0 10px; font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 600; color: #374151;">Notes</h3>
+                                <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #6B7280;">{{notes}}</p>
+                            </div>
+                            {{/if}}
+                            
+                            <!-- Payment Terms -->
+                            <div style="margin: 30px 0; padding: 20px; border-top: 1px solid #E5E7EB;">
+                                <h3 style="margin: 0 0 10px; font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 600; color: #6B7280; text-transform: uppercase;">Payment Terms</h3>
+                                <p style="margin: 0; font-size: 13px; line-height: 1.6; color: #9CA3AF;">Payment is due within 7 days of invoice date. Late payments may incur a 5% monthly fee. We accept all major credit cards, debit cards, and ACH transfers.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background-color: #F9FAFB; padding: 30px; text-align: center; border-radius: 0 0 8px 8px; border-top: 1px solid #E5E7EB;">
+                            <p style="margin: 0 0 10px; font-size: 14px; color: #6B7280;">Questions about this invoice? Contact us at <a href="mailto:billing@junkos.com" style="color: #4F46E5; text-decoration: none;">billing@junkos.com</a></p>
+                            <p style="margin: 0; font-size: 12px; color: #9CA3AF;">© 2024 JunkOS. All rights reserved.</p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

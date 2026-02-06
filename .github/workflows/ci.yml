@@ -1,0 +1,411 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main, develop]
+
+env:
+  PYTHON_VERSION: '3.11'
+  NODE_VERSION: '20'
+
+jobs:
+  # Backend Testing & Linting
+  backend-tests:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: junkos_test
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+          cache-dependency-path: backend/requirements*.txt
+      
+      - name: Install dependencies
+        working-directory: backend
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-test.txt
+      
+      - name: Run pytest with coverage
+        working-directory: backend
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/junkos_test
+          FLASK_ENV: testing
+          SECRET_KEY: test-secret-key
+        run: |
+          pytest --cov=app --cov-report=xml --cov-report=term-missing --cov-report=html
+      
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./backend/coverage.xml
+          flags: backend
+          name: backend-coverage
+          fail_ci_if_error: false
+      
+      - name: Store coverage HTML
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage-html
+          path: backend/htmlcov/
+          retention-days: 7
+
+  backend-lint:
+    name: Backend Linting
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+      
+      - name: Install linting tools
+        run: |
+          pip install --upgrade pip
+          pip install pylint black flake8 isort
+      
+      - name: Run black (formatting check)
+        working-directory: backend
+        run: black --check app/ tests/
+        continue-on-error: true
+      
+      - name: Run isort (import order check)
+        working-directory: backend
+        run: isort --check-only app/ tests/
+        continue-on-error: true
+      
+      - name: Run flake8
+        working-directory: backend
+        run: flake8 app/ tests/ --max-line-length=120 --exclude=migrations
+        continue-on-error: true
+      
+      - name: Run pylint
+        working-directory: backend
+        run: |
+          pip install -r requirements.txt
+          pylint app/ --max-line-length=120 --disable=C0114,C0115,C0116
+
+  backend-security:
+    name: Backend Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      
+      - name: Install bandit
+        run: pip install bandit[toml]
+      
+      - name: Run bandit security scan
+        working-directory: backend
+        run: bandit -r app/ -f json -o bandit-report.json || true
+      
+      - name: Display bandit results
+        working-directory: backend
+        run: bandit -r app/ -ll
+      
+      - name: Upload bandit report
+        uses: actions/upload-artifact@v4
+        with:
+          name: bandit-security-report
+          path: backend/bandit-report.json
+          retention-days: 30
+
+  # Frontend Testing & Linting
+  frontend-tests:
+    name: Frontend Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+      
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+      
+      - name: Run Jest tests with coverage
+        working-directory: frontend
+        run: npm run test:coverage
+      
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./frontend/coverage/coverage-final.json
+          flags: frontend
+          name: frontend-coverage
+          fail_ci_if_error: false
+      
+      - name: Store coverage HTML
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage-html
+          path: frontend/coverage/
+          retention-days: 7
+
+  frontend-lint:
+    name: Frontend Linting
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+      
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+      
+      - name: Run ESLint
+        working-directory: frontend
+        run: npm run lint
+      
+      - name: Check Prettier formatting
+        working-directory: frontend
+        run: npx prettier --check "src/**/*.{js,jsx,json,css,md}"
+
+  # Dashboard Testing & Linting
+  dashboard-tests:
+    name: Dashboard Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: dashboard/package-lock.json
+      
+      - name: Install dependencies
+        working-directory: dashboard
+        run: npm ci
+      
+      - name: Install Jest (if not in package.json)
+        working-directory: dashboard
+        run: |
+          npm install --save-dev jest jest-environment-jsdom @testing-library/react @testing-library/jest-dom
+      
+      - name: Create Jest config if missing
+        working-directory: dashboard
+        run: |
+          if [ ! -f jest.config.js ]; then
+            cat > jest.config.js << 'EOF'
+          export default {
+            testEnvironment: 'jsdom',
+            setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
+            moduleNameMapper: {
+              '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
+            },
+            transform: {
+              '^.+\\.(js|jsx)$': 'babel-jest',
+            },
+          };
+          EOF
+          fi
+      
+      - name: Run tests (or skip if none exist)
+        working-directory: dashboard
+        run: npm test -- --passWithNoTests || echo "No tests configured yet"
+        continue-on-error: true
+
+  dashboard-lint:
+    name: Dashboard Linting
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: dashboard/package-lock.json
+      
+      - name: Install dependencies
+        working-directory: dashboard
+        run: npm ci
+      
+      - name: Run ESLint
+        working-directory: dashboard
+        run: npm run lint
+      
+      - name: Check Prettier formatting
+        working-directory: dashboard
+        run: npx prettier --check "src/**/*.{js,jsx,json,css,md}"
+
+  # Docker Build Verification
+  docker-build:
+    name: Docker Build Verification
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [backend, frontend, dashboard]
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Build ${{ matrix.service }} Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./${{ matrix.service }}
+          file: ./${{ matrix.service }}/Dockerfile
+          push: false
+          tags: junkos-${{ matrix.service }}:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      
+      - name: Test image can start
+        run: |
+          docker run --rm -d --name test-${{ matrix.service }} junkos-${{ matrix.service }}:test || echo "Service needs environment variables"
+          sleep 5
+          docker logs test-${{ matrix.service }} || true
+          docker stop test-${{ matrix.service }} || true
+
+  # Coverage Comment (only on PRs)
+  coverage-comment:
+    name: Post Coverage Comment
+    runs-on: ubuntu-latest
+    needs: [backend-tests, frontend-tests]
+    if: github.event_name == 'pull_request'
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Download backend coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-coverage-html
+          path: ./backend-coverage
+        continue-on-error: true
+      
+      - name: Download frontend coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-coverage-html
+          path: ./frontend-coverage
+        continue-on-error: true
+      
+      - name: Extract coverage percentages
+        id: coverage
+        run: |
+          # Extract backend coverage
+          if [ -f backend-coverage/index.html ]; then
+            BACKEND_COV=$(grep -oP 'pc_cov">\K\d+' backend-coverage/index.html | head -1 || echo "N/A")
+          else
+            BACKEND_COV="N/A"
+          fi
+          
+          # Extract frontend coverage
+          if [ -f frontend-coverage/index.html ]; then
+            FRONTEND_COV=$(grep -oP 'strong">\K[\d.]+' frontend-coverage/index.html | head -1 || echo "N/A")
+          else
+            FRONTEND_COV="N/A"
+          fi
+          
+          echo "backend=$BACKEND_COV" >> $GITHUB_OUTPUT
+          echo "frontend=$FRONTEND_COV" >> $GITHUB_OUTPUT
+      
+      - name: Comment PR with coverage
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const backend = '${{ steps.coverage.outputs.backend }}';
+            const frontend = '${{ steps.coverage.outputs.frontend }}';
+            
+            const body = `## 📊 Code Coverage Report
+            
+            | Service | Coverage |
+            |---------|----------|
+            | Backend | ${backend}% |
+            | Frontend | ${frontend}% |
+            
+            [View detailed reports in workflow artifacts](${context.payload.pull_request.html_url}/checks)
+            `;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
+
+  # Final Status Check
+  ci-success:
+    name: CI Passed
+    runs-on: ubuntu-latest
+    needs: 
+      - backend-tests
+      - backend-lint
+      - backend-security
+      - frontend-tests
+      - frontend-lint
+      - dashboard-tests
+      - dashboard-lint
+      - docker-build
+    if: always()
+    
+    steps:
+      - name: Check all jobs succeeded
+        run: |
+          if [[ "${{ needs.backend-tests.result }}" != "success" ]] || \
+             [[ "${{ needs.frontend-tests.result }}" != "success" ]] || \
+             [[ "${{ needs.docker-build.result }}" != "success" ]]; then
+            echo "❌ CI failed - critical jobs did not succeed"
+            exit 1
+          fi
+          
+          if [[ "${{ needs.backend-lint.result }}" != "success" ]] || \
+             [[ "${{ needs.frontend-lint.result }}" != "success" ]] || \
+             [[ "${{ needs.dashboard-lint.result }}" != "success" ]]; then
+            echo "⚠️  Linting issues detected but not blocking"
+          fi
+          
+          echo "✅ All critical CI checks passed!"

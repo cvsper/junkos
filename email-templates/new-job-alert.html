@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Job Alert</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Open Sans', Arial, sans-serif; background-color: #f3f4f6;">
+    <table role="presentation" style="width: 100%; border-collapse: collapse;">
+        <tr>
+            <td align="center" style="padding: 40px 20px;">
+                <table role="presentation" style="width: 100%; max-width: 600px; border-collapse: collapse; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    <!-- Header -->
+                    <tr>
+                        <td style="background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); padding: 40px 30px; text-align: center; border-radius: 8px 8px 0 0;">
+                            <div style="font-size: 64px; margin-bottom: 10px;">🔔</div>
+                            <h1 style="margin: 0; font-family: 'Poppins', sans-serif; font-size: 28px; font-weight: 700; color: #ffffff;">New Booking Alert!</h1>
+                            <p style="margin: 10px 0 0; font-size: 16px; color: rgba(255, 255, 255, 0.9);">Action Required</p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding: 40px 30px;">
+                            <p style="margin: 0 0 20px; font-size: 16px; line-height: 1.6; color: #374151;">Hi <strong>{{operator_name}}</strong>,</p>
+                            
+                            <p style="margin: 0 0 30px; font-size: 16px; line-height: 1.6; color: #374151;">You have a new booking that needs driver assignment. Please review and assign a driver as soon as possible.</p>
+                            
+                            <!-- Booking Priority Badge -->
+                            {{#if is_urgent}}
+                            <div style="background-color: #FEE2E2; border: 2px solid #EF4444; border-radius: 8px; padding: 15px; margin: 25px 0; text-align: center;">
+                                <p style="margin: 0; font-family: 'Poppins', sans-serif; font-size: 18px; font-weight: 700; color: #991B1B;">🚨 URGENT - Same Day Service</p>
+                            </div>
+                            {{/if}}
+                            
+                            <!-- Job Details Card -->
+                            <div style="background: linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 100%); border-radius: 12px; padding: 25px; margin: 25px 0;">
+                                <h2 style="margin: 0 0 20px; font-family: 'Poppins', sans-serif; font-size: 20px; font-weight: 600; color: #4F46E5;">Booking #{{booking_id}}</h2>
+                                
+                                <table role="presentation" style="width: 100%;">
+                                    <tr>
+                                        <td style="padding: 8px 0; font-size: 15px; color: #6B7280; width: 35%;">👤 Customer:</td>
+                                        <td style="padding: 8px 0; font-size: 15px; color: #1F2937; font-weight: 600;">{{customer_name}}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 8px 0; font-size: 15px; color: #6B7280;">📞 Phone:</td>
+                                        <td style="padding: 8px 0; font-size: 15px; color: #1F2937; font-weight: 600;"><a href="tel:{{customer_phone}}" style="color: #4F46E5; text-decoration: none;">{{customer_phone}}</a></td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 8px 0; font-size: 15px; color: #6B7280;">📅 Date:</td>
+                                        <td style="padding: 8px 0; font-size: 15px; color: #1F2937; font-weight: 600;">{{booking_date}}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 8px 0; font-size: 15px; color: #6B7280;">⏰ Time:</td>
+                                        <td style="padding: 8px 0; font-size: 15px; color: #1F2937; font-weight: 600;">{{booking_time}}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 8px 0; font-size: 15px; color: #6B7280;">📍 Location:</td>
+                                        <td style="padding: 8px 0; font-size: 15px; color: #1F2937; font-weight: 600;">{{service_address}}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 8px 0; font-size: 15px; color: #6B7280;">📦 Service:</td>
+                                        <td style="padding: 8px 0; font-size: 15px; color: #1F2937; font-weight: 600;">{{service_type}}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 8px 0; font-size: 15px; color: #6B7280;">💰 Estimate:</td>
+                                        <td style="padding: 8px 0; font-size: 15px; color: #10B981; font-weight: 700; font-size: 18px;">${{estimated_price}}</td>
+                                    </tr>
+                                </table>
+                            </div>
+                            
+                            <!-- Items to Remove -->
+                            <div style="margin: 25px 0;">
+                                <h3 style="margin: 0 0 15px; font-family: 'Poppins', sans-serif; font-size: 18px; font-weight: 600; color: #1F2937;">Items to Remove:</h3>
+                                <ul style="margin: 0; padding-left: 20px; color: #374151; font-size: 15px; line-height: 1.8;">
+                                    {{#each items}}
+                                    <li>{{this}}</li>
+                                    {{/each}}
+                                </ul>
+                            </div>
+                            
+                            {{#if customer_notes}}
+                            <!-- Customer Notes -->
+                            <div style="background-color: #FFFBEB; border-left: 4px solid #F59E0B; padding: 20px; margin: 25px 0; border-radius: 4px;">
+                                <h3 style="margin: 0 0 10px; font-family: 'Poppins', sans-serif; font-size: 16px; font-weight: 600; color: #92400E;">📝 Customer Notes</h3>
+                                <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #78350F;">{{customer_notes}}</p>
+                            </div>
+                            {{/if}}
+                            
+                            <!-- Map Preview -->
+                            <div style="margin: 30px 0;">
+                                <h3 style="margin: 0 0 15px; font-family: 'Poppins', sans-serif; font-size: 18px; font-weight: 600; color: #1F2937;">Location Map:</h3>
+                                <a href="{{map_url}}" style="display: block; text-decoration: none;">
+                                    <img src="{{map_image_url}}" alt="Service Location" style="width: 100%; max-width: 540px; border-radius: 8px; border: 2px solid #E5E7EB;">
+                                </a>
+                                <p style="margin: 10px 0 0; font-size: 13px; text-align: center;">
+                                    <a href="{{directions_url}}" style="color: #4F46E5; text-decoration: none; font-weight: 600;">Open in Google Maps →</a>
+                                </p>
+                            </div>
+                            
+                            <!-- Action Buttons -->
+                            <table role="presentation" style="width: 100%; margin: 30px 0;">
+                                <tr>
+                                    <td align="center">
+                                        <a href="{{assign_driver_url}}" style="display: inline-block; background: linear-gradient(135deg, #10B981 0%, #059669 100%); color: #ffffff; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 16px; text-decoration: none; padding: 14px 32px; border-radius: 6px; margin: 5px;">Assign Driver</a>
+                                        <a href="{{view_booking_url}}" style="display: inline-block; background-color: #F3F4F6; color: #4F46E5; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 16px; text-decoration: none; padding: 14px 32px; border-radius: 6px; margin: 5px; border: 2px solid #4F46E5;">View Details</a>
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                            <!-- Quick Stats -->
+                            <div style="background-color: #F9FAFB; border-radius: 8px; padding: 20px; margin: 30px 0;">
+                                <h3 style="margin: 0 0 15px; font-family: 'Poppins', sans-serif; font-size: 16px; font-weight: 600; color: #1F2937; text-align: center;">Today's Summary</h3>
+                                <table role="presentation" style="width: 100%;">
+                                    <tr>
+                                        <td style="text-align: center; padding: 10px;">
+                                            <p style="margin: 0; font-size: 13px; color: #6B7280;">Unassigned</p>
+                                            <p style="margin: 5px 0 0; font-family: 'Poppins', sans-serif; font-size: 24px; font-weight: 700; color: #F59E0B;">{{unassigned_count}}</p>
+                                        </td>
+                                        <td style="text-align: center; padding: 10px; border-left: 1px solid #E5E7EB;">
+                                            <p style="margin: 0; font-size: 13px; color: #6B7280;">In Progress</p>
+                                            <p style="margin: 5px 0 0; font-family: 'Poppins', sans-serif; font-size: 24px; font-weight: 700; color: #4F46E5;">{{in_progress_count}}</p>
+                                        </td>
+                                        <td style="text-align: center; padding: 10px; border-left: 1px solid #E5E7EB;">
+                                            <p style="margin: 0; font-size: 13px; color: #6B7280;">Completed</p>
+                                            <p style="margin: 5px 0 0; font-family: 'Poppins', sans-serif; font-size: 24px; font-weight: 700; color: #10B981;">{{completed_count}}</p>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background-color: #F9FAFB; padding: 30px; text-align: center; border-radius: 0 0 8px 8px; border-top: 1px solid #E5E7EB;">
+                            <p style="margin: 0 0 10px; font-size: 14px; color: #6B7280;">This is an automated notification from JunkOS</p>
+                            <p style="margin: 0; font-size: 12px; color: #9CA3AF;">
+                                <a href="{{dashboard_url}}" style="color: #4F46E5; text-decoration: none;">Go to Dashboard</a> | 
+                                <a href="{{notification_settings_url}}" style="color: #6B7280; text-decoration: none;">Notification Settings</a>
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

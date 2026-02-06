@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Summary Report</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Open Sans', Arial, sans-serif; background-color: #f3f4f6;">
+    <table role="presentation" style="width: 100%; border-collapse: collapse;">
+        <tr>
+            <td align="center" style="padding: 40px 20px;">
+                <table role="presentation" style="width: 100%; max-width: 600px; border-collapse: collapse; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    <!-- Header -->
+                    <tr>
+                        <td style="background: linear-gradient(135deg, #4F46E5 0%, #6366F1 100%); padding: 40px 30px; text-align: center; border-radius: 8px 8px 0 0;">
+                            <div style="font-size: 64px; margin-bottom: 10px;">📊</div>
+                            <h1 style="margin: 0; font-family: 'Poppins', sans-serif; font-size: 28px; font-weight: 700; color: #ffffff;">Daily Summary</h1>
+                            <p style="margin: 10px 0 0; font-size: 16px; color: rgba(255, 255, 255, 0.9);">{{report_date}}</p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding: 40px 30px;">
+                            <p style="margin: 0 0 20px; font-size: 16px; line-height: 1.6; color: #374151;">Hi <strong>{{operator_name}}</strong>,</p>
+                            
+                            <p style="margin: 0 0 30px; font-size: 16px; line-height: 1.6; color: #374151;">Here's your daily performance summary. Great work today! 🎉</p>
+                            
+                            <!-- Key Metrics -->
+                            <div style="background: linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%); border-radius: 12px; padding: 30px; margin: 25px 0;">
+                                <h2 style="margin: 0 0 25px; font-family: 'Poppins', sans-serif; font-size: 20px; font-weight: 600; color: #065F46; text-align: center;">Today's Performance</h2>
+                                
+                                <table role="presentation" style="width: 100%; margin-bottom: 20px;">
+                                    <tr>
+                                        <td style="text-align: center; padding: 15px; background-color: rgba(255, 255, 255, 0.7); border-radius: 8px; width: 50%;">
+                                            <p style="margin: 0; font-size: 14px; color: #065F46; font-weight: 600;">Total Revenue</p>
+                                            <p style="margin: 10px 0 0; font-family: 'Poppins', sans-serif; font-size: 36px; font-weight: 700; color: #10B981;">${{total_revenue}}</p>
+                                            <p style="margin: 5px 0 0; font-size: 12px; color: #047857;">
+                                                {{#if revenue_change_positive}}↗{{else}}↘{{/if}} {{revenue_change_percent}}% vs yesterday
+                                            </p>
+                                        </td>
+                                        <td style="width: 20px;"></td>
+                                        <td style="text-align: center; padding: 15px; background-color: rgba(255, 255, 255, 0.7); border-radius: 8px; width: 50%;">
+                                            <p style="margin: 0; font-size: 14px; color: #065F46; font-weight: 600;">Jobs Completed</p>
+                                            <p style="margin: 10px 0 0; font-family: 'Poppins', sans-serif; font-size: 36px; font-weight: 700; color: #10B981;">{{jobs_completed}}</p>
+                                            <p style="margin: 5px 0 0; font-size: 12px; color: #047857;">
+                                                {{#if jobs_change_positive}}↗{{else}}↘{{/if}} {{jobs_change_percent}}% vs yesterday
+                                            </p>
+                                        </td>
+                                    </tr>
+                                </table>
+                                
+                                <!-- Additional Metrics Grid -->
+                                <div style="background-color: rgba(255, 255, 255, 0.7); border-radius: 8px; padding: 20px; margin-top: 20px;">
+                                    <table role="presentation" style="width: 100%;">
+                                        <tr>
+                                            <td style="padding: 10px; text-align: center; border-right: 1px solid #D1FAE5;">
+                                                <p style="margin: 0; font-size: 24px; font-weight: 700; color: #10B981;">{{new_bookings}}</p>
+                                                <p style="margin: 5px 0 0; font-size: 12px; color: #065F46;">New Bookings</p>
+                                            </td>
+                                            <td style="padding: 10px; text-align: center; border-right: 1px solid #D1FAE5;">
+                                                <p style="margin: 0; font-size: 24px; font-weight: 700; color: #10B981;">{{avg_ticket}}</p>
+                                                <p style="margin: 5px 0 0; font-size: 12px; color: #065F46;">Avg Ticket</p>
+                                            </td>
+                                            <td style="padding: 10px; text-align: center;">
+                                                <p style="margin: 0; font-size: 24px; font-weight: 700; color: #10B981;">{{customer_rating}}</p>
+                                                <p style="margin: 5px 0 0; font-size: 12px; color: #065F46;">Avg Rating</p>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                            
+                            <!-- Jobs Breakdown -->
+                            <div style="margin: 30px 0;">
+                                <h3 style="margin: 0 0 15px; font-family: 'Poppins', sans-serif; font-size: 18px; font-weight: 600; color: #1F2937;">Jobs Breakdown</h3>
+                                <table role="presentation" style="width: 100%; background-color: #F9FAFB; border-radius: 8px; padding: 15px;">
+                                    <tr>
+                                        <td style="padding: 10px; font-size: 14px; color: #6B7280;">✅ Completed</td>
+                                        <td style="padding: 10px; font-size: 14px; color: #1F2937; font-weight: 600; text-align: right;">{{jobs_completed}}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 10px; font-size: 14px; color: #6B7280;">🚚 In Progress</td>
+                                        <td style="padding: 10px; font-size: 14px; color: #1F2937; font-weight: 600; text-align: right;">{{jobs_in_progress}}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 10px; font-size: 14px; color: #6B7280;">📅 Scheduled</td>
+                                        <td style="padding: 10px; font-size: 14px; color: #1F2937; font-weight: 600; text-align: right;">{{jobs_scheduled}}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 10px; font-size: 14px; color: #6B7280;">❌ Cancelled</td>
+                                        <td style="padding: 10px; font-size: 14px; color: #1F2937; font-weight: 600; text-align: right;">{{jobs_cancelled}}</td>
+                                    </tr>
+                                </table>
+                            </div>
+                            
+                            <!-- Top Drivers -->
+                            <div style="margin: 30px 0;">
+                                <h3 style="margin: 0 0 15px; font-family: 'Poppins', sans-serif; font-size: 18px; font-weight: 600; color: #1F2937;">🏆 Top Drivers Today</h3>
+                                {{#each top_drivers}}
+                                <div style="background-color: #EEF2FF; border-radius: 8px; padding: 15px; margin: 10px 0; display: flex; align-items: center;">
+                                    <table role="presentation" style="width: 100%;">
+                                        <tr>
+                                            <td style="width: 50px; font-size: 24px;">{{this.rank_emoji}}</td>
+                                            <td>
+                                                <p style="margin: 0; font-size: 15px; font-weight: 600; color: #1F2937;">{{this.name}}</p>
+                                                <p style="margin: 5px 0 0; font-size: 13px; color: #6B7280;">{{this.jobs_count}} jobs • ${{this.revenue}} revenue • ⭐ {{this.rating}}</p>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </div>
+                                {{/each}}
+                            </div>
+                            
+                            <!-- Revenue Chart (Text-based) -->
+                            <div style="background-color: #F9FAFB; border-radius: 8px; padding: 20px; margin: 30px 0;">
+                                <h3 style="margin: 0 0 15px; font-family: 'Poppins', sans-serif; font-size: 16px; font-weight: 600; color: #1F2937;">7-Day Revenue Trend</h3>
+                                {{#each revenue_chart}}
+                                <div style="margin: 8px 0;">
+                                    <p style="margin: 0 0 5px; font-size: 12px; color: #6B7280;">{{this.day}}</p>
+                                    <div style="background-color: #E5E7EB; border-radius: 4px; height: 24px; position: relative;">
+                                        <div style="background: linear-gradient(135deg, #4F46E5 0%, #6366F1 100%); border-radius: 4px; height: 24px; width: {{this.percentage}}%; display: flex; align-items: center; padding-left: 10px;">
+                                            <span style="font-size: 12px; font-weight: 600; color: #ffffff;">${{this.amount}}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                {{/each}}
+                            </div>
+                            
+                            <!-- Alerts & Reminders -->
+                            {{#if has_alerts}}
+                            <div style="background-color: #FEF3C7; border-left: 4px solid #F59E0B; padding: 20px; margin: 30px 0; border-radius: 4px;">
+                                <h3 style="margin: 0 0 15px; font-family: 'Poppins', sans-serif; font-size: 16px; font-weight: 600; color: #92400E;">⚠️ Action Items</h3>
+                                <ul style="margin: 0; padding-left: 20px; color: #78350F; font-size: 14px; line-height: 1.8;">
+                                    {{#each alerts}}
+                                    <li>{{this}}</li>
+                                    {{/each}}
+                                </ul>
+                            </div>
+                            {{/if}}
+                            
+                            <!-- Tomorrow's Schedule Preview -->
+                            <div style="background-color: #EEF2FF; border-radius: 8px; padding: 20px; margin: 30px 0;">
+                                <h3 style="margin: 0 0 15px; font-family: 'Poppins', sans-serif; font-size: 16px; font-weight: 600; color: #4F46E5;">📅 Tomorrow's Schedule</h3>
+                                <p style="margin: 0 0 10px; font-size: 14px; color: #4C1D95;"><strong>{{tomorrow_jobs_count}}</strong> jobs scheduled</p>
+                                <p style="margin: 0; font-size: 14px; color: #4C1D95;">Projected Revenue: <strong>${{tomorrow_projected_revenue}}</strong></p>
+                            </div>
+                            
+                            <!-- CTA Button -->
+                            <table role="presentation" style="width: 100%; margin: 30px 0;">
+                                <tr>
+                                    <td align="center">
+                                        <a href="{{dashboard_url}}" style="display: inline-block; background: linear-gradient(135deg, #4F46E5 0%, #6366F1 100%); color: #ffffff; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 16px; text-decoration: none; padding: 14px 32px; border-radius: 6px;">View Full Dashboard</a>
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                            <p style="margin: 30px 0 0; font-size: 14px; line-height: 1.6; color: #6B7280; text-align: center;">Keep up the great work! 💪</p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background-color: #F9FAFB; padding: 30px; text-align: center; border-radius: 0 0 8px 8px; border-top: 1px solid #E5E7EB;">
+                            <p style="margin: 0 0 10px; font-size: 14px; color: #6B7280;">Daily Summary Report from JunkOS</p>
+                            <p style="margin: 0; font-size: 12px; color: #9CA3AF;">
+                                <a href="{{notification_settings_url}}" style="color: #6B7280; text-decoration: none;">Notification Settings</a>
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

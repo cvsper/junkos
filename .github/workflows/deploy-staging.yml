@@ -1,0 +1,366 @@
+name: Deploy to Staging
+
+on:
+  push:
+    branches: [develop]
+  workflow_dispatch:
+    inputs:
+      skip_tests:
+        description: 'Skip smoke tests'
+        required: false
+        default: 'false'
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ${{ github.repository }}
+  DEPLOY_ENVIRONMENT: staging
+
+jobs:
+  build-and-push:
+    name: Build & Push Docker Images
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    
+    strategy:
+      matrix:
+        service: [backend, frontend, dashboard]
+    
+    outputs:
+      backend-tag: ${{ steps.meta.outputs.backend-tag }}
+      frontend-tag: ${{ steps.meta.outputs.frontend-tag }}
+      dashboard-tag: ${{ steps.meta.outputs.dashboard-tag }}
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-${{ matrix.service }}
+          tags: |
+            type=ref,event=branch
+            type=sha,prefix=staging-,format=short
+            type=raw,value=staging-latest
+      
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: ./${{ matrix.service }}
+          file: ./${{ matrix.service }}/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            BUILD_DATE=${{ github.event.head_commit.timestamp }}
+            VCS_REF=${{ github.sha }}
+            VERSION=staging-${{ github.sha }}
+      
+      - name: Output image tags
+        run: |
+          echo "${{ matrix.service }}-tag=${{ steps.meta.outputs.version }}" >> $GITHUB_OUTPUT
+
+  deploy-railway:
+    name: Deploy to Railway (Staging)
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    if: ${{ secrets.RAILWAY_TOKEN != '' }}
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+      
+      - name: Deploy Backend
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          railway up --service backend --environment staging
+      
+      - name: Deploy Frontend
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          railway up --service frontend --environment staging
+      
+      - name: Deploy Dashboard
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          railway up --service dashboard --environment staging
+      
+      - name: Wait for deployment
+        run: sleep 30
+
+  deploy-aws:
+    name: Deploy to AWS ECS (Staging)
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    if: ${{ secrets.AWS_ACCESS_KEY_ID != '' }}
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
+      
+      - name: Update ECS task definitions
+        run: |
+          # Backend service
+          aws ecs update-service \
+            --cluster junkos-staging \
+            --service backend \
+            --force-new-deployment \
+            --region ${{ secrets.AWS_REGION || 'us-east-1' }}
+          
+          # Frontend service
+          aws ecs update-service \
+            --cluster junkos-staging \
+            --service frontend \
+            --force-new-deployment \
+            --region ${{ secrets.AWS_REGION || 'us-east-1' }}
+          
+          # Dashboard service
+          aws ecs update-service \
+            --cluster junkos-staging \
+            --service dashboard \
+            --force-new-deployment \
+            --region ${{ secrets.AWS_REGION || 'us-east-1' }}
+      
+      - name: Wait for services to stabilize
+        run: |
+          aws ecs wait services-stable \
+            --cluster junkos-staging \
+            --services backend frontend dashboard \
+            --region ${{ secrets.AWS_REGION || 'us-east-1' }}
+
+  smoke-tests:
+    name: Run Smoke Tests
+    runs-on: ubuntu-latest
+    needs: [deploy-railway, deploy-aws]
+    if: |
+      always() && 
+      (needs.deploy-railway.result == 'success' || needs.deploy-aws.result == 'success') &&
+      github.event.inputs.skip_tests != 'true'
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Install dependencies
+        run: |
+          cd e2e
+          npm ci || npm install playwright @playwright/test
+      
+      - name: Run smoke tests
+        env:
+          BASE_URL: ${{ secrets.STAGING_URL || 'https://staging.junkos.app' }}
+        run: |
+          cd e2e
+          npx playwright test smoke --project=chromium
+        timeout-minutes: 10
+      
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-test-results
+          path: e2e/test-results/
+          retention-days: 7
+      
+      - name: Check health endpoints
+        env:
+          STAGING_URL: ${{ secrets.STAGING_URL || 'https://staging.junkos.app' }}
+        run: |
+          echo "🔍 Checking health endpoints..."
+          
+          # Backend health
+          BACKEND_STATUS=$(curl -s -o /dev/null -w "%{http_code}" $STAGING_URL/api/health || echo "000")
+          echo "Backend: $BACKEND_STATUS"
+          
+          # Frontend
+          FRONTEND_STATUS=$(curl -s -o /dev/null -w "%{http_code}" $STAGING_URL || echo "000")
+          echo "Frontend: $FRONTEND_STATUS"
+          
+          # Dashboard
+          DASHBOARD_STATUS=$(curl -s -o /dev/null -w "%{http_code}" $STAGING_URL/dashboard || echo "000")
+          echo "Dashboard: $DASHBOARD_STATUS"
+          
+          # Fail if any critical service is down
+          if [[ "$BACKEND_STATUS" != "200" ]]; then
+            echo "❌ Backend health check failed"
+            exit 1
+          fi
+          
+          if [[ "$FRONTEND_STATUS" != "200" ]]; then
+            echo "❌ Frontend is unreachable"
+            exit 1
+          fi
+          
+          echo "✅ All services are healthy"
+
+  notify:
+    name: Send Notifications
+    runs-on: ubuntu-latest
+    needs: [deploy-railway, deploy-aws, smoke-tests]
+    if: always()
+    
+    steps:
+      - name: Determine deployment status
+        id: status
+        run: |
+          DEPLOY_SUCCESS=false
+          if [[ "${{ needs.deploy-railway.result }}" == "success" ]] || \
+             [[ "${{ needs.deploy-aws.result }}" == "success" ]]; then
+            DEPLOY_SUCCESS=true
+          fi
+          
+          SMOKE_SUCCESS=false
+          if [[ "${{ needs.smoke-tests.result }}" == "success" ]]; then
+            SMOKE_SUCCESS=true
+          fi
+          
+          echo "deploy_success=$DEPLOY_SUCCESS" >> $GITHUB_OUTPUT
+          echo "smoke_success=$SMOKE_SUCCESS" >> $GITHUB_OUTPUT
+          
+          # Overall status
+          if [[ "$DEPLOY_SUCCESS" == "true" ]] && [[ "$SMOKE_SUCCESS" == "true" ]]; then
+            echo "status=success" >> $GITHUB_OUTPUT
+            echo "emoji=✅" >> $GITHUB_OUTPUT
+            echo "color=3066993" >> $GITHUB_OUTPUT  # Green
+          elif [[ "$DEPLOY_SUCCESS" == "true" ]]; then
+            echo "status=partial" >> $GITHUB_OUTPUT
+            echo "emoji=⚠️" >> $GITHUB_OUTPUT
+            echo "color=15105570" >> $GITHUB_OUTPUT  # Orange
+          else
+            echo "status=failure" >> $GITHUB_OUTPUT
+            echo "emoji=❌" >> $GITHUB_OUTPUT
+            echo "color=15158332" >> $GITHUB_OUTPUT  # Red
+          fi
+      
+      - name: Send Discord notification
+        if: ${{ secrets.DISCORD_WEBHOOK != '' }}
+        uses: tsickert/discord-webhook@v5.3.0
+        with:
+          webhook-url: ${{ secrets.DISCORD_WEBHOOK }}
+          embed-title: "${{ steps.status.outputs.emoji }} Staging Deployment"
+          embed-description: |
+            **Status:** ${{ steps.status.outputs.status }}
+            **Branch:** `${{ github.ref_name }}`
+            **Commit:** [${{ github.sha }}](${{ github.event.head_commit.url }})
+            **Author:** ${{ github.actor }}
+            
+            **Deployment:** ${{ needs.deploy-railway.result == 'success' && '✅ Railway' || needs.deploy-aws.result == 'success' && '✅ AWS' || '❌ Failed' }}
+            **Smoke Tests:** ${{ needs.smoke-tests.result == 'success' && '✅ Passed' || needs.smoke-tests.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }}
+          embed-color: ${{ steps.status.outputs.color }}
+          embed-url: ${{ github.event.head_commit.url }}
+          embed-timestamp: ${{ github.event.head_commit.timestamp }}
+      
+      - name: Send Slack notification
+        if: ${{ secrets.SLACK_WEBHOOK != '' }}
+        uses: slackapi/slack-github-action@v1.25.0
+        with:
+          payload: |
+            {
+              "text": "${{ steps.status.outputs.emoji }} Staging Deployment ${{ steps.status.outputs.status }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*${{ steps.status.outputs.emoji }} Staging Deployment*\n*Status:* ${{ steps.status.outputs.status }}\n*Branch:* `${{ github.ref_name }}`\n*Author:* ${{ github.actor }}"
+                  }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Deployment:*\n${{ needs.deploy-railway.result == 'success' && '✅ Railway' || needs.deploy-aws.result == 'success' && '✅ AWS' || '❌ Failed' }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Smoke Tests:*\n${{ needs.smoke-tests.result == 'success' && '✅ Passed' || '❌ Failed' }}"
+                    }
+                  ]
+                },
+                {
+                  "type": "actions",
+                  "elements": [
+                    {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "View Workflow"
+                      },
+                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    },
+                    {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "View Staging"
+                      },
+                      "url": "${{ secrets.STAGING_URL || 'https://staging.junkos.app' }}"
+                    }
+                  ]
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+
+  deployment-summary:
+    name: Deployment Summary
+    runs-on: ubuntu-latest
+    needs: [build-and-push, deploy-railway, deploy-aws, smoke-tests, notify]
+    if: always()
+    
+    steps:
+      - name: Generate summary
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY << 'EOF'
+          # 🚀 Staging Deployment Summary
+          
+          ## Build Status
+          - **Images Built:** ${{ needs.build-and-push.result == 'success' && '✅' || '❌' }}
+          
+          ## Deployment Status
+          - **Railway:** ${{ needs.deploy-railway.result == 'success' && '✅ Deployed' || needs.deploy-railway.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }}
+          - **AWS ECS:** ${{ needs.deploy-aws.result == 'success' && '✅ Deployed' || needs.deploy-aws.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }}
+          
+          ## Testing Status
+          - **Smoke Tests:** ${{ needs.smoke-tests.result == 'success' && '✅ Passed' || needs.smoke-tests.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }}
+          
+          ## Environment
+          - **URL:** ${{ secrets.STAGING_URL || 'https://staging.junkos.app' }}
+          - **Commit:** `${{ github.sha }}`
+          - **Branch:** `${{ github.ref_name }}`
+          
+          ---
+          *Deployed by @${{ github.actor }} at ${{ github.event.head_commit.timestamp }}*
+          EOF

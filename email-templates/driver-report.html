@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weekly Driver Performance Report</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Open Sans', Arial, sans-serif; background-color: #f3f4f6;">
+    <table role="presentation" style="width: 100%; border-collapse: collapse;">
+        <tr>
+            <td align="center" style="padding: 40px 20px;">
+                <table role="presentation" style="width: 100%; max-width: 600px; border-collapse: collapse; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    <!-- Header -->
+                    <tr>
+                        <td style="background: linear-gradient(135deg, #10B981 0%, #059669 100%); padding: 40px 30px; text-align: center; border-radius: 8px 8px 0 0;">
+                            <div style="font-size: 64px; margin-bottom: 10px;">📈</div>
+                            <h1 style="margin: 0; font-family: 'Poppins', sans-serif; font-size: 28px; font-weight: 700; color: #ffffff;">Weekly Driver Report</h1>
+                            <p style="margin: 10px 0 0; font-size: 16px; color: rgba(255, 255, 255, 0.9);">{{week_range}}</p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding: 40px 30px;">
+                            <p style="margin: 0 0 20px; font-size: 16px; line-height: 1.6; color: #374151;">Hi <strong>{{operator_name}}</strong>,</p>
+                            
+                            <p style="margin: 0 0 30px; font-size: 16px; line-height: 1.6; color: #374151;">Here's your weekly driver performance summary. Use these insights to optimize your team!</p>
+                            
+                            <!-- Team Overview -->
+                            <div style="background: linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 100%); border-radius: 12px; padding: 30px; margin: 25px 0;">
+                                <h2 style="margin: 0 0 25px; font-family: 'Poppins', sans-serif; font-size: 20px; font-weight: 600; color: #4F46E5; text-align: center;">Team Overview</h2>
+                                
+                                <table role="presentation" style="width: 100%;">
+                                    <tr>
+                                        <td style="text-align: center; padding: 15px; background-color: rgba(255, 255, 255, 0.7); border-radius: 8px; width: 33%;">
+                                            <p style="margin: 0; font-size: 14px; color: #4C1D95; font-weight: 600;">Total Jobs</p>
+                                            <p style="margin: 10px 0 0; font-family: 'Poppins', sans-serif; font-size: 32px; font-weight: 700; color: #4F46E5;">{{total_jobs}}</p>
+                                        </td>
+                                        <td style="width: 10px;"></td>
+                                        <td style="text-align: center; padding: 15px; background-color: rgba(255, 255, 255, 0.7); border-radius: 8px; width: 33%;">
+                                            <p style="margin: 0; font-size: 14px; color: #4C1D95; font-weight: 600;">Total Revenue</p>
+                                            <p style="margin: 10px 0 0; font-family: 'Poppins', sans-serif; font-size: 32px; font-weight: 700; color: #4F46E5;">${{total_revenue}}</p>
+                                        </td>
+                                        <td style="width: 10px;"></td>
+                                        <td style="text-align: center; padding: 15px; background-color: rgba(255, 255, 255, 0.7); border-radius: 8px; width: 33%;">
+                                            <p style="margin: 0; font-size: 14px; color: #4C1D95; font-weight: 600;">Avg Rating</p>
+                                            <p style="margin: 10px 0 0; font-family: 'Poppins', sans-serif; font-size: 32px; font-weight: 700; color: #4F46E5;">{{avg_rating}}</p>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                            
+                            <!-- Driver Leaderboard -->
+                            <div style="margin: 30px 0;">
+                                <h3 style="margin: 0 0 20px; font-family: 'Poppins', sans-serif; font-size: 18px; font-weight: 600; color: #1F2937; text-align: center;">🏆 Driver Leaderboard</h3>
+                                
+                                {{#each drivers}}
+                                <div style="background-color: {{#if this.top_performer}}#ECFDF5{{else}}#F9FAFB{{/if}}; border-left: 4px solid {{#if this.top_performer}}#10B981{{else}}#E5E7EB{{/if}}; border-radius: 8px; padding: 20px; margin: 15px 0;">
+                                    <table role="presentation" style="width: 100%;">
+                                        <tr>
+                                            <td style="width: 60px; vertical-align: top;">
+                                                <div style="width: 50px; height: 50px; background: linear-gradient(135deg, #4F46E5 0%, #6366F1 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; font-weight: 700;">{{this.rank}}</div>
+                                            </td>
+                                            <td style="vertical-align: top;">
+                                                <p style="margin: 0; font-family: 'Poppins', sans-serif; font-size: 18px; font-weight: 600; color: #1F2937;">
+                                                    {{this.name}}
+                                                    {{#if this.top_performer}}<span style="background-color: #FCD34D; color: #92400E; font-size: 11px; padding: 3px 8px; border-radius: 12px; margin-left: 10px; font-weight: 600;">TOP PERFORMER</span>{{/if}}
+                                                </p>
+                                                
+                                                <!-- Stats Grid -->
+                                                <table role="presentation" style="width: 100%; margin-top: 15px;">
+                                                    <tr>
+                                                        <td style="padding: 5px 0; font-size: 13px; color: #6B7280; width: 25%;">
+                                                            <strong style="color: #1F2937; font-size: 16px;">{{this.jobs_completed}}</strong><br>
+                                                            Jobs
+                                                        </td>
+                                                        <td style="padding: 5px 0; font-size: 13px; color: #6B7280; width: 25%;">
+                                                            <strong style="color: #10B981; font-size: 16px;">${{this.revenue}}</strong><br>
+                                                            Revenue
+                                                        </td>
+                                                        <td style="padding: 5px 0; font-size: 13px; color: #6B7280; width: 25%;">
+                                                            <strong style="color: #F59E0B; font-size: 16px;">⭐ {{this.rating}}</strong><br>
+                                                            Rating
+                                                        </td>
+                                                        <td style="padding: 5px 0; font-size: 13px; color: #6B7280; width: 25%;">
+                                                            <strong style="color: #4F46E5; font-size: 16px;">{{this.completion_rate}}%</strong><br>
+                                                            Complete
+                                                        </td>
+                                                    </tr>
+                                                </table>
+                                                
+                                                <!-- Performance Indicators -->
+                                                <div style="margin-top: 15px;">
+                                                    {{#each this.highlights}}
+                                                    <span style="display: inline-block; background-color: #EEF2FF; color: #4F46E5; font-size: 11px; padding: 4px 10px; border-radius: 12px; margin: 3px;">{{this}}</span>
+                                                    {{/each}}
+                                                </div>
+                                                
+                                                {{#if this.concerns}}
+                                                <div style="margin-top: 10px;">
+                                                    {{#each this.concerns}}
+                                                    <span style="display: inline-block; background-color: #FEE2E2; color: #991B1B; font-size: 11px; padding: 4px 10px; border-radius: 12px; margin: 3px;">⚠️ {{this}}</span>
+                                                    {{/each}}
+                                                </div>
+                                                {{/if}}
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </div>
+                                {{/each}}
+                            </div>
+                            
+                            <!-- Performance Insights -->
+                            <div style="background-color: #FFFBEB; border-left: 4px solid #F59E0B; padding: 20px; margin: 30px 0; border-radius: 4px;">
+                                <h3 style="margin: 0 0 15px; font-family: 'Poppins', sans-serif; font-size: 16px; font-weight: 600; color: #92400E;">💡 Performance Insights</h3>
+                                <ul style="margin: 0; padding-left: 20px; color: #78350F; font-size: 14px; line-height: 1.8;">
+                                    {{#each insights}}
+                                    <li>{{this}}</li>
+                                    {{/each}}
+                                </ul>
+                            </div>
+                            
+                            <!-- Key Metrics Comparison -->
+                            <div style="margin: 30px 0;">
+                                <h3 style="margin: 0 0 15px; font-family: 'Poppins', sans-serif; font-size: 18px; font-weight: 600; color: #1F2937;">Key Metrics</h3>
+                                <table role="presentation" style="width: 100%; background-color: #F9FAFB; border-radius: 8px; padding: 15px;">
+                                    <tr>
+                                        <td style="padding: 10px; font-size: 14px; color: #6B7280;">Average Jobs per Driver</td>
+                                        <td style="padding: 10px; font-size: 14px; color: #1F2937; font-weight: 600; text-align: right;">{{avg_jobs_per_driver}}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 10px; font-size: 14px; color: #6B7280;">Average Revenue per Job</td>
+                                        <td style="padding: 10px; font-size: 14px; color: #1F2937; font-weight: 600; text-align: right;">${{avg_revenue_per_job}}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 10px; font-size: 14px; color: #6B7280;">On-Time Completion Rate</td>
+                                        <td style="padding: 10px; font-size: 14px; color: #1F2937; font-weight: 600; text-align: right;">{{on_time_rate}}%</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 10px; font-size: 14px; color: #6B7280;">Customer Satisfaction</td>
+                                        <td style="padding: 10px; font-size: 14px; color: #1F2937; font-weight: 600; text-align: right;">{{customer_satisfaction}}%</td>
+                                    </tr>
+                                </table>
+                            </div>
+                            
+                            <!-- Action Items -->
+                            {{#if action_items}}
+                            <div style="background-color: #FEE2E2; border-left: 4px solid #EF4444; padding: 20px; margin: 30px 0; border-radius: 4px;">
+                                <h3 style="margin: 0 0 15px; font-family: 'Poppins', sans-serif; font-size: 16px; font-weight: 600; color: #991B1B;">⚠️ Action Required</h3>
+                                <ul style="margin: 0; padding-left: 20px; color: #7F1D1D; font-size: 14px; line-height: 1.8;">
+                                    {{#each action_items}}
+                                    <li>{{this}}</li>
+                                    {{/each}}
+                                </ul>
+                            </div>
+                            {{/if}}
+                            
+                            <!-- CTA Button -->
+                            <table role="presentation" style="width: 100%; margin: 30px 0;">
+                                <tr>
+                                    <td align="center">
+                                        <a href="{{detailed_report_url}}" style="display: inline-block; background: linear-gradient(135deg, #4F46E5 0%, #6366F1 100%); color: #ffffff; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 16px; text-decoration: none; padding: 14px 32px; border-radius: 6px; margin: 5px;">View Detailed Report</a>
+                                        <a href="{{manage_team_url}}" style="display: inline-block; background-color: #F3F4F6; color: #4F46E5; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 16px; text-decoration: none; padding: 14px 32px; border-radius: 6px; margin: 5px; border: 2px solid #4F46E5;">Manage Team</a>
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                            <p style="margin: 30px 0 0; font-size: 14px; line-height: 1.6; color: #6B7280; text-align: center;">Keep optimizing your team for success! 🚀</p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background-color: #F9FAFB; padding: 30px; text-align: center; border-radius: 0 0 8px 8px; border-top: 1px solid #E5E7EB;">
+                            <p style="margin: 0 0 10px; font-size: 14px; color: #6B7280;">Weekly Report from JunkOS</p>
+                            <p style="margin: 0; font-size: 12px; color: #9CA3AF;">
+                                <a href="{{notification_settings_url}}" style="color: #6B7280; text-decoration: none;">Notification Settings</a>
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

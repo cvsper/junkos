@@ -1,0 +1,37 @@
+{
+  "expo": {
+    "name": "JunkOS Booking",
+    "slug": "junkos-booking",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.junkos.booking",
+      "infoPlist": {
+        "NSCameraUsageDescription": "JunkOS needs camera access to take photos of items for junk removal.",
+        "NSPhotoLibraryUsageDescription": "JunkOS needs photo library access to select existing photos."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.junkos.booking"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "scheme": "junkos",
+    "plugins": [
+      "expo-router"
+    ]
+  }
+}

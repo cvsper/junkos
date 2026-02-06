@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Feature Alert</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Open Sans', Arial, sans-serif; background-color: #f3f4f6;">
+    <table role="presentation" style="width: 100%; border-collapse: collapse;">
+        <tr>
+            <td align="center" style="padding: 40px 20px;">
+                <table role="presentation" style="width: 100%; max-width: 600px; border-collapse: collapse; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    <!-- Header -->
+                    <tr>
+                        <td style="background: linear-gradient(135deg, #10B981 0%, #059669 100%); padding: 40px 30px; text-align: center; border-radius: 8px 8px 0 0;">
+                            <div style="font-size: 72px; margin-bottom: 15px;">🎉</div>
+                            <div style="display: inline-block; background-color: rgba(255, 255, 255, 0.3); color: #ffffff; font-size: 12px; font-weight: 700; padding: 6px 12px; border-radius: 20px; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px;">New Feature</div>
+                            <h1 style="margin: 0; font-family: 'Poppins', sans-serif; font-size: 32px; font-weight: 700; color: #ffffff;">{{feature_name}} is Here!</h1>
+                            <p style="margin: 15px 0 0; font-size: 18px; color: rgba(255, 255, 255, 0.95); line-height: 1.5;">{{feature_tagline}}</p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding: 40px 30px;">
+                            <p style="margin: 0 0 20px; font-size: 16px; line-height: 1.6; color: #374151;">Hi <strong>{{operator_name}}</strong>,</p>
+                            
+                            <p style="margin: 0 0 30px; font-size: 16px; line-height: 1.6; color: #374151;">We're excited to announce a brand new feature that's going to make your life even easier! Based on feedback from operators like you, we built {{feature_name}}.</p>
+                            
+                            <!-- Feature Hero Image -->
+                            {{#if feature_image_url}}
+                            <div style="margin: 30px 0; text-align: center;">
+                                <img src="{{feature_image_url}}" alt="{{feature_name}}" style="width: 100%; max-width: 540px; border-radius: 12px; border: 2px solid #E5E7EB; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                            </div>
+                            {{/if}}
+                            
+                            <!-- What It Does -->
+                            <div style="background: linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 100%); border-radius: 12px; padding: 30px; margin: 30px 0;">
+                                <h2 style="margin: 0 0 20px; font-family: 'Poppins', sans-serif; font-size: 22px; font-weight: 600; color: #4F46E5; text-align: center;">What Does It Do?</h2>
+                                
+                                <p style="margin: 0 0 20px; font-size: 16px; line-height: 1.7; color: #4C1D95;">{{feature_description}}</p>
+                                
+                                <div style="background-color: rgba(255, 255, 255, 0.7); border-radius: 8px; padding: 20px; margin-top: 20px;">
+                                    <h3 style="margin: 0 0 15px; font-family: 'Poppins', sans-serif; font-size: 16px; font-weight: 600; color: #4F46E5;">✨ Key Benefits:</h3>
+                                    <ul style="margin: 0; padding-left: 20px; color: #4C1D95; font-size: 15px; line-height: 2;">
+                                        {{#each benefits}}
+                                        <li>{{this}}</li>
+                                        {{/each}}
+                                    </ul>
+                                </div>
+                            </div>
+                            
+                            <!-- How It Works -->
+                            <div style="margin: 30px 0;">
+                                <h2 style="margin: 0 0 25px; font-family: 'Poppins', sans-serif; font-size: 20px; font-weight: 600; color: #1F2937; text-align: center;">How It Works</h2>
+                                
+                                {{#each steps}}
+                                <div style="display: flex; align-items: flex-start; margin: 20px 0;">
+                                    <div style="background: linear-gradient(135deg, #10B981 0%, #059669 100%); color: #ffffff; font-family: 'Poppins', sans-serif; font-size: 20px; font-weight: 700; min-width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 15px;">{{this.number}}</div>
+                                    <div style="flex: 1;">
+                                        <h3 style="margin: 0 0 8px; font-family: 'Poppins', sans-serif; font-size: 16px; font-weight: 600; color: #1F2937;">{{this.title}}</h3>
+                                        <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #6B7280;">{{this.description}}</p>
+                                    </div>
+                                </div>
+                                {{/each}}
+                            </div>
+                            
+                            <!-- Early Feedback -->
+                            {{#if early_feedback}}
+                            <div style="background-color: #FFFBEB; border-left: 4px solid #F59E0B; padding: 25px; margin: 30px 0; border-radius: 4px;">
+                                <h3 style="margin: 0 0 15px; font-family: 'Poppins', sans-serif; font-size: 18px; font-weight: 600; color: #92400E;">💬 Early Feedback</h3>
+                                {{#each early_feedback}}
+                                <div style="margin: 15px 0;">
+                                    <p style="margin: 0 0 8px; font-size: 14px; line-height: 1.6; color: #78350F; font-style: italic;">"{{this.quote}}"</p>
+                                    <p style="margin: 0; font-size: 13px; color: #92400E;">— <strong>{{this.author}}</strong>, {{this.company}}</p>
+                                </div>
+                                {{/each}}
+                            </div>
+                            {{/if}}
+                            
+                            <!-- CTA Button -->
+                            <table role="presentation" style="width: 100%; margin: 35px 0;">
+                                <tr>
+                                    <td align="center">
+                                        <a href="{{try_feature_url}}" style="display: inline-block; background: linear-gradient(135deg, #10B981 0%, #059669 100%); color: #ffffff; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 18px; text-decoration: none; padding: 16px 48px; border-radius: 6px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">Try {{feature_name}} Now</a>
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                            <!-- Learn More -->
+                            <div style="background-color: #F9FAFB; border-radius: 8px; padding: 25px; margin: 30px 0; text-align: center;">
+                                <h3 style="margin: 0 0 15px; font-family: 'Poppins', sans-serif; font-size: 18px; font-weight: 600; color: #1F2937;">Want to Learn More?</h3>
+                                <p style="margin: 0 0 20px; font-size: 15px; line-height: 1.6; color: #6B7280;">Check out our detailed guide and video tutorial.</p>
+                                <p style="margin: 0; font-size: 15px;">
+                                    📖 <a href="{{guide_url}}" style="color: #4F46E5; text-decoration: none; font-weight: 600;">Read the Guide</a> &nbsp;|&nbsp; 
+                                    🎥 <a href="{{video_url}}" style="color: #4F46E5; text-decoration: none; font-weight: 600;">Watch Video</a> &nbsp;|&nbsp; 
+                                    💬 <a href="{{support_url}}" style="color: #4F46E5; text-decoration: none; font-weight: 600;">Contact Support</a>
+                                </p>
+                            </div>
+                            
+                            <!-- What's Next -->
+                            <div style="background: linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%); border-radius: 8px; padding: 25px; margin: 30px 0;">
+                                <h3 style="margin: 0 0 10px; font-family: 'Poppins', sans-serif; font-size: 16px; font-weight: 600; color: #065F46;">🚀 What's Coming Next?</h3>
+                                <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #047857;">We're always building! {{whats_next_preview}} Stay tuned for more updates.</p>
+                            </div>
+                            
+                            <!-- Feedback Request -->
+                            <div style="border: 2px dashed #E5E7EB; border-radius: 8px; padding: 25px; margin: 30px 0; text-align: center;">
+                                <p style="margin: 0 0 15px; font-size: 16px; font-weight: 600; color: #1F2937;">We'd Love Your Feedback!</p>
+                                <p style="margin: 0 0 20px; font-size: 14px; line-height: 1.6; color: #6B7280;">Tried {{feature_name}}? Let us know what you think! Your feedback helps us build better features.</p>
+                                <a href="{{feedback_url}}" style="display: inline-block; background-color: #4F46E5; color: #ffffff; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 15px; text-decoration: none; padding: 12px 28px; border-radius: 6px;">Share Feedback</a>
+                            </div>
+                            
+                            <p style="margin: 30px 0 0; font-size: 16px; line-height: 1.6; color: #374151;">Thanks for being part of the JunkOS community!</p>
+                            
+                            <p style="margin: 20px 0 0; font-size: 16px; color: #374151;">The JunkOS Team</p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background-color: #F9FAFB; padding: 30px; text-align: center; border-radius: 0 0 8px 8px; border-top: 1px solid #E5E7EB;">
+                            <p style="margin: 0 0 10px; font-size: 14px; color: #6B7280;">© 2024 JunkOS. All rights reserved.</p>
+                            <p style="margin: 0; font-size: 12px; color: #9CA3AF;">
+                                <a href="{{unsubscribe_url}}" style="color: #6B7280; text-decoration: none;">Unsubscribe</a> | 
+                                <a href="{{privacy_url}}" style="color: #6B7280; text-decoration: none;">Privacy Policy</a>
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

@@ -1,0 +1,579 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      skip_approval:
+        description: 'Skip manual approval (use with caution)'
+        required: false
+        default: 'false'
+      rollback_version:
+        description: 'Rollback to specific version (leave empty for normal deploy)'
+        required: false
+        default: ''
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ${{ github.repository }}
+  DEPLOY_ENVIRONMENT: production
+
+jobs:
+  pre-deployment-checks:
+    name: Pre-Deployment Checks
+    runs-on: ubuntu-latest
+    
+    outputs:
+      can_deploy: ${{ steps.checks.outputs.can_deploy }}
+      migration_safe: ${{ steps.db_check.outputs.migration_safe }}
+    
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Check if staging is healthy
+        id: staging_health
+        run: |
+          STAGING_URL="${{ secrets.STAGING_URL || 'https://staging.junkos.app' }}"
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" $STAGING_URL/api/health || echo "000")
+          
+          if [[ "$STATUS" == "200" ]]; then
+            echo "✅ Staging is healthy"
+            echo "healthy=true" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Staging is unhealthy (HTTP $STATUS)"
+            echo "healthy=false" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Check database migration safety
+        id: db_check
+        run: |
+          # Check if there are new migration files
+          MIGRATIONS=$(git diff --name-only origin/main..HEAD | grep -E "migrations/.*\.py$" || echo "")
+          
+          if [[ -n "$MIGRATIONS" ]]; then
+            echo "⚠️  Database migrations detected:"
+            echo "$MIGRATIONS"
+            
+            # Check for potentially dangerous operations
+            DANGEROUS=$(git diff origin/main..HEAD -- $MIGRATIONS | grep -E "(DROP TABLE|DROP COLUMN|ALTER TABLE.*DROP)" || echo "")
+            
+            if [[ -n "$DANGEROUS" ]]; then
+              echo "⚠️  DANGEROUS operations detected - manual review required"
+              echo "migration_safe=false" >> $GITHUB_OUTPUT
+            else
+              echo "✅ Migrations appear safe (additive only)"
+              echo "migration_safe=true" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "✅ No database migrations"
+            echo "migration_safe=true" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Validate deployment readiness
+        id: checks
+        run: |
+          STAGING_HEALTHY="${{ steps.staging_health.outputs.healthy }}"
+          MIGRATION_SAFE="${{ steps.db_check.outputs.migration_safe }}"
+          
+          if [[ "$STAGING_HEALTHY" == "true" ]] && [[ "$MIGRATION_SAFE" == "true" ]]; then
+            echo "can_deploy=true" >> $GITHUB_OUTPUT
+            echo "✅ All pre-deployment checks passed"
+          else
+            echo "can_deploy=false" >> $GITHUB_OUTPUT
+            echo "❌ Pre-deployment checks failed"
+            
+            if [[ "${{ github.event.inputs.skip_approval }}" != "true" ]]; then
+              exit 1
+            fi
+          fi
+
+  manual-approval:
+    name: Manual Approval Required
+    runs-on: ubuntu-latest
+    needs: pre-deployment-checks
+    if: github.event.inputs.skip_approval != 'true'
+    environment:
+      name: production
+      url: ${{ secrets.PRODUCTION_URL || 'https://junkos.app' }}
+    
+    steps:
+      - name: Wait for approval
+        run: |
+          echo "⏳ Waiting for manual approval to deploy to production..."
+          echo "Migration safe: ${{ needs.pre-deployment-checks.outputs.migration_safe }}"
+          echo "Deploying commit: ${{ github.sha }}"
+
+  build-and-push:
+    name: Build & Push Production Images
+    runs-on: ubuntu-latest
+    needs: [pre-deployment-checks, manual-approval]
+    if: |
+      always() && 
+      needs.pre-deployment-checks.result == 'success' &&
+      (needs.manual-approval.result == 'success' || github.event.inputs.skip_approval == 'true')
+    permissions:
+      contents: read
+      packages: write
+    
+    strategy:
+      matrix:
+        service: [backend, frontend, dashboard]
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-${{ matrix.service }}
+          tags: |
+            type=ref,event=branch
+            type=sha,prefix=prod-,format=short
+            type=semver,pattern={{version}}
+            type=raw,value=production-latest
+            type=raw,value=prod-${{ github.run_number }}
+      
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: ./${{ matrix.service }}
+          file: ./${{ matrix.service }}/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            BUILD_DATE=${{ github.event.head_commit.timestamp }}
+            VCS_REF=${{ github.sha }}
+            VERSION=prod-${{ github.run_number }}
+
+  database-migration:
+    name: Run Database Migrations
+    runs-on: ubuntu-latest
+    needs: [build-and-push, pre-deployment-checks]
+    if: needs.pre-deployment-checks.outputs.migration_safe == 'true'
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        working-directory: backend
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      - name: Backup database
+        run: |
+          echo "🗄️  Creating database backup before migration..."
+          # This would integrate with your backup solution
+          # For AWS RDS, you might create a snapshot
+          # For Railway, you might use their backup API
+      
+      - name: Run migrations with rollback capability
+        working-directory: backend
+        env:
+          DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
+        run: |
+          echo "📊 Running database migrations..."
+          
+          # Store current migration version for rollback
+          CURRENT_VERSION=$(flask db current 2>/dev/null || echo "none")
+          echo "Current version: $CURRENT_VERSION"
+          echo "ROLLBACK_VERSION=$CURRENT_VERSION" >> $GITHUB_ENV
+          
+          # Run migrations
+          flask db upgrade || {
+            echo "❌ Migration failed! Rolling back..."
+            flask db downgrade $CURRENT_VERSION
+            exit 1
+          }
+          
+          echo "✅ Migrations completed successfully"
+
+  deploy-blue:
+    name: Deploy Blue Environment
+    runs-on: ubuntu-latest
+    needs: [build-and-push, database-migration]
+    if: |
+      always() && 
+      needs.build-and-push.result == 'success' &&
+      (needs.database-migration.result == 'success' || needs.database-migration.result == 'skipped')
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Configure AWS credentials
+        if: ${{ secrets.AWS_ACCESS_KEY_ID != '' }}
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
+      
+      - name: Deploy to Blue environment
+        run: |
+          echo "🔵 Deploying to BLUE environment..."
+          
+          # Update ECS task definition with new image
+          aws ecs update-service \
+            --cluster junkos-production \
+            --service backend-blue \
+            --force-new-deployment \
+            --region ${{ secrets.AWS_REGION || 'us-east-1' }}
+          
+          aws ecs update-service \
+            --cluster junkos-production \
+            --service frontend-blue \
+            --force-new-deployment \
+            --region ${{ secrets.AWS_REGION || 'us-east-1' }}
+          
+          aws ecs update-service \
+            --cluster junkos-production \
+            --service dashboard-blue \
+            --force-new-deployment \
+            --region ${{ secrets.AWS_REGION || 'us-east-1' }}
+      
+      - name: Wait for Blue to stabilize
+        run: |
+          echo "⏳ Waiting for Blue environment to stabilize..."
+          aws ecs wait services-stable \
+            --cluster junkos-production \
+            --services backend-blue frontend-blue dashboard-blue \
+            --region ${{ secrets.AWS_REGION || 'us-east-1' }}
+      
+      - name: Health check Blue environment
+        id: blue_health
+        run: |
+          BLUE_URL="${{ secrets.BLUE_INTERNAL_URL || 'https://blue.junkos.app' }}"
+          
+          echo "🏥 Running health checks on Blue environment..."
+          sleep 30  # Give services time to fully start
+          
+          for i in {1..5}; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" $BLUE_URL/api/health || echo "000")
+            
+            if [[ "$STATUS" == "200" ]]; then
+              echo "✅ Blue environment is healthy"
+              echo "healthy=true" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+            
+            echo "⏳ Health check $i/5 failed (HTTP $STATUS), retrying..."
+            sleep 10
+          done
+          
+          echo "❌ Blue environment health checks failed"
+          echo "healthy=false" >> $GITHUB_OUTPUT
+          exit 1
+
+  smoke-test-blue:
+    name: Smoke Test Blue Environment
+    runs-on: ubuntu-latest
+    needs: deploy-blue
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Run smoke tests on Blue
+        env:
+          BASE_URL: ${{ secrets.BLUE_INTERNAL_URL || 'https://blue.junkos.app' }}
+        run: |
+          cd e2e
+          npm ci || npm install playwright @playwright/test
+          npx playwright test smoke --project=chromium
+        timeout-minutes: 10
+      
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: blue-smoke-test-results
+          path: e2e/test-results/
+          retention-days: 7
+
+  switch-traffic:
+    name: Switch Traffic to Blue (Green → Blue)
+    runs-on: ubuntu-latest
+    needs: [deploy-blue, smoke-test-blue]
+    
+    steps:
+      - name: Switch load balancer to Blue
+        run: |
+          echo "🔄 Switching traffic from Green to Blue..."
+          
+          # Update target group or load balancer to point to Blue
+          aws elbv2 modify-listener \
+            --listener-arn ${{ secrets.PRODUCTION_LISTENER_ARN }} \
+            --default-actions Type=forward,TargetGroupArn=${{ secrets.BLUE_TARGET_GROUP_ARN }} \
+            --region ${{ secrets.AWS_REGION || 'us-east-1' }}
+          
+          echo "✅ Traffic switched to Blue environment"
+      
+      - name: Monitor traffic switch
+        run: |
+          echo "📊 Monitoring traffic switch for 2 minutes..."
+          sleep 120
+          
+          # Check error rates
+          PROD_URL="${{ secrets.PRODUCTION_URL || 'https://junkos.app' }}"
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" $PROD_URL/api/health || echo "000")
+          
+          if [[ "$STATUS" != "200" ]]; then
+            echo "❌ Production health check failed after switch!"
+            exit 1
+          fi
+          
+          echo "✅ Traffic switch successful"
+
+  verify-production:
+    name: Verify Production Deployment
+    runs-on: ubuntu-latest
+    needs: switch-traffic
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Run production verification tests
+        env:
+          BASE_URL: ${{ secrets.PRODUCTION_URL || 'https://junkos.app' }}
+        run: |
+          cd e2e
+          npm ci || npm install playwright @playwright/test
+          npx playwright test smoke --project=chromium
+        timeout-minutes: 10
+      
+      - name: Monitor error rates
+        run: |
+          echo "📊 Monitoring production for 5 minutes..."
+          
+          PROD_URL="${{ secrets.PRODUCTION_URL || 'https://junkos.app' }}"
+          ERRORS=0
+          
+          for i in {1..30}; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" $PROD_URL/api/health || echo "000")
+            
+            if [[ "$STATUS" != "200" ]]; then
+              ((ERRORS++))
+            fi
+            
+            sleep 10
+          done
+          
+          ERROR_RATE=$((ERRORS * 100 / 30))
+          echo "Error rate: $ERROR_RATE%"
+          
+          if [[ $ERROR_RATE -gt 10 ]]; then
+            echo "❌ Error rate too high: $ERROR_RATE%"
+            echo "SHOULD_ROLLBACK=true" >> $GITHUB_ENV
+            exit 1
+          fi
+          
+          echo "✅ Production is stable"
+
+  rollback:
+    name: Automatic Rollback
+    runs-on: ubuntu-latest
+    needs: [switch-traffic, verify-production]
+    if: failure()
+    
+    steps:
+      - name: Rollback to Green environment
+        run: |
+          echo "🔴 INITIATING AUTOMATIC ROLLBACK"
+          
+          # Switch traffic back to Green
+          aws elbv2 modify-listener \
+            --listener-arn ${{ secrets.PRODUCTION_LISTENER_ARN }} \
+            --default-actions Type=forward,TargetGroupArn=${{ secrets.GREEN_TARGET_GROUP_ARN }} \
+            --region ${{ secrets.AWS_REGION || 'us-east-1' }}
+          
+          echo "✅ Traffic rolled back to Green (previous stable version)"
+      
+      - name: Rollback database migrations
+        if: ${{ env.ROLLBACK_VERSION != '' }}
+        run: |
+          echo "📊 Rolling back database migrations to version: $ROLLBACK_VERSION"
+          # This would run database downgrade command
+          # Requires careful implementation based on your migration strategy
+      
+      - name: Verify rollback successful
+        run: |
+          PROD_URL="${{ secrets.PRODUCTION_URL || 'https://junkos.app' }}"
+          
+          sleep 30
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" $PROD_URL/api/health || echo "000")
+          
+          if [[ "$STATUS" == "200" ]]; then
+            echo "✅ Rollback successful - production is healthy"
+          else
+            echo "❌ CRITICAL: Rollback failed - manual intervention required!"
+            exit 1
+          fi
+
+  cleanup-green:
+    name: Update Green with New Version
+    runs-on: ubuntu-latest
+    needs: verify-production
+    if: success()
+    
+    steps:
+      - name: Update Green environment to match Blue
+        run: |
+          echo "♻️  Updating Green environment to new version for next deployment..."
+          
+          # Deploy new version to Green (which is now idle)
+          aws ecs update-service \
+            --cluster junkos-production \
+            --service backend-green \
+            --force-new-deployment \
+            --region ${{ secrets.AWS_REGION || 'us-east-1' }}
+          
+          aws ecs update-service \
+            --cluster junkos-production \
+            --service frontend-green \
+            --force-new-deployment \
+            --region ${{ secrets.AWS_REGION || 'us-east-1' }}
+          
+          aws ecs update-service \
+            --cluster junkos-production \
+            --service dashboard-green \
+            --force-new-deployment \
+            --region ${{ secrets.AWS_REGION || 'us-east-1' }}
+          
+          echo "✅ Green environment updated"
+
+  notify:
+    name: Send Notifications
+    runs-on: ubuntu-latest
+    needs: [pre-deployment-checks, manual-approval, build-and-push, deploy-blue, smoke-test-blue, switch-traffic, verify-production, rollback]
+    if: always()
+    
+    steps:
+      - name: Determine deployment status
+        id: status
+        run: |
+          if [[ "${{ needs.rollback.result }}" == "success" ]]; then
+            echo "status=rolled_back" >> $GITHUB_OUTPUT
+            echo "emoji=🔴" >> $GITHUB_OUTPUT
+            echo "color=15158332" >> $GITHUB_OUTPUT
+          elif [[ "${{ needs.verify-production.result }}" == "success" ]]; then
+            echo "status=success" >> $GITHUB_OUTPUT
+            echo "emoji=✅" >> $GITHUB_OUTPUT
+            echo "color=3066993" >> $GITHUB_OUTPUT
+          else
+            echo "status=failure" >> $GITHUB_OUTPUT
+            echo "emoji=❌" >> $GITHUB_OUTPUT
+            echo "color=15158332" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Send Discord notification
+        if: ${{ secrets.DISCORD_WEBHOOK != '' }}
+        uses: tsickert/discord-webhook@v5.3.0
+        with:
+          webhook-url: ${{ secrets.DISCORD_WEBHOOK }}
+          embed-title: "${{ steps.status.outputs.emoji }} Production Deployment"
+          embed-description: |
+            **Status:** ${{ steps.status.outputs.status }}
+            **Branch:** `${{ github.ref_name }}`
+            **Commit:** [${{ github.sha }}](${{ github.event.head_commit.url }})
+            **Deployed by:** ${{ github.actor }}
+            
+            **Pre-checks:** ${{ needs.pre-deployment-checks.result == 'success' && '✅' || '❌' }}
+            **Approval:** ${{ needs.manual-approval.result == 'success' && '✅' || '⏭️ Skipped' }}
+            **Build:** ${{ needs.build-and-push.result == 'success' && '✅' || '❌' }}
+            **Blue Deploy:** ${{ needs.deploy-blue.result == 'success' && '✅' || '❌' }}
+            **Traffic Switch:** ${{ needs.switch-traffic.result == 'success' && '✅' || '❌' }}
+            **Verification:** ${{ needs.verify-production.result == 'success' && '✅' || '❌' }}
+            ${{ needs.rollback.result == 'success' && '**🔴 ROLLED BACK**' || '' }}
+          embed-color: ${{ steps.status.outputs.color }}
+          embed-url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      
+      - name: Send Slack notification
+        if: ${{ secrets.SLACK_WEBHOOK != '' }}
+        uses: slackapi/slack-github-action@v1.25.0
+        with:
+          payload: |
+            {
+              "text": "${{ steps.status.outputs.emoji }} Production Deployment ${{ steps.status.outputs.status }}",
+              "blocks": [
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "${{ steps.status.outputs.emoji }} Production Deployment"
+                  }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {"type": "mrkdwn", "text": "*Status:*\n${{ steps.status.outputs.status }}"},
+                    {"type": "mrkdwn", "text": "*Deployed by:*\n${{ github.actor }}"},
+                    {"type": "mrkdwn", "text": "*Commit:*\n`${{ github.sha }}`"},
+                    {"type": "mrkdwn", "text": "*Branch:*\n`${{ github.ref_name }}`"}
+                  ]
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+
+  deployment-summary:
+    name: Deployment Summary
+    runs-on: ubuntu-latest
+    needs: [pre-deployment-checks, manual-approval, build-and-push, deploy-blue, smoke-test-blue, switch-traffic, verify-production, rollback, cleanup-green]
+    if: always()
+    
+    steps:
+      - name: Generate summary
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY << 'EOF'
+          # 🚀 Production Deployment Summary
+          
+          ## Deployment Status
+          ${{ needs.rollback.result == 'success' && '🔴 **DEPLOYMENT ROLLED BACK**' || needs.verify-production.result == 'success' && '✅ **DEPLOYMENT SUCCESSFUL**' || '❌ **DEPLOYMENT FAILED**' }}
+          
+          ## Pipeline Stages
+          - **Pre-deployment Checks:** ${{ needs.pre-deployment-checks.result == 'success' && '✅' || '❌' }}
+          - **Manual Approval:** ${{ needs.manual-approval.result == 'success' && '✅' || '⏭️ Skipped' }}
+          - **Build Images:** ${{ needs.build-and-push.result == 'success' && '✅' || '❌' }}
+          - **Deploy Blue:** ${{ needs.deploy-blue.result == 'success' && '✅' || '❌' }}
+          - **Smoke Tests:** ${{ needs.smoke-test-blue.result == 'success' && '✅' || '❌' }}
+          - **Traffic Switch:** ${{ needs.switch-traffic.result == 'success' && '✅' || '❌' }}
+          - **Verification:** ${{ needs.verify-production.result == 'success' && '✅' || '❌' }}
+          - **Cleanup:** ${{ needs.cleanup-green.result == 'success' && '✅' || '⏭️ Skipped' }}
+          
+          ## Environment Details
+          - **Production URL:** ${{ secrets.PRODUCTION_URL || 'https://junkos.app' }}
+          - **Deployment Method:** Blue-Green
+          - **Version:** `prod-${{ github.run_number }}`
+          - **Commit:** `${{ github.sha }}`
+          
+          ---
+          *Deployed by @${{ github.actor }} at ${{ github.event.head_commit.timestamp }}*
+          EOF

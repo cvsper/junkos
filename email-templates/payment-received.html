@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Received</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Open Sans', Arial, sans-serif; background-color: #f3f4f6;">
+    <table role="presentation" style="width: 100%; border-collapse: collapse;">
+        <tr>
+            <td align="center" style="padding: 40px 20px;">
+                <table role="presentation" style="width: 100%; max-width: 600px; border-collapse: collapse; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    <!-- Header -->
+                    <tr>
+                        <td style="background: linear-gradient(135deg, #10B981 0%, #059669 100%); padding: 40px 30px; text-align: center; border-radius: 8px 8px 0 0;">
+                            <div style="font-size: 72px; margin-bottom: 10px;">✓</div>
+                            <h1 style="margin: 0; font-family: 'Poppins', sans-serif; font-size: 28px; font-weight: 700; color: #ffffff;">Payment Received!</h1>
+                            <p style="margin: 10px 0 0; font-size: 16px; color: rgba(255, 255, 255, 0.9);">Thank you for your payment</p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding: 40px 30px;">
+                            <p style="margin: 0 0 20px; font-size: 16px; line-height: 1.6; color: #374151;">Hi <strong>{{customer_name}}</strong>,</p>
+                            
+                            <p style="margin: 0 0 30px; font-size: 16px; line-height: 1.6; color: #374151;">We've successfully received your payment. Thank you for your business!</p>
+                            
+                            <!-- Payment Details Card -->
+                            <div style="background: linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%); border-radius: 12px; padding: 30px; margin: 25px 0; text-align: center;">
+                                <div style="margin-bottom: 20px;">
+                                    <p style="margin: 0 0 10px; font-size: 14px; color: #065F46; font-weight: 600; text-transform: uppercase;">Amount Paid</p>
+                                    <p style="margin: 0; font-family: 'Poppins', sans-serif; font-size: 48px; font-weight: 700; color: #10B981;">${{amount_paid}}</p>
+                                </div>
+                                
+                                <div style="background-color: rgba(255, 255, 255, 0.7); border-radius: 8px; padding: 20px; margin-top: 20px;">
+                                    <table role="presentation" style="width: 100%;">
+                                        <tr>
+                                            <td style="padding: 8px; font-size: 14px; color: #065F46; text-align: left;">Payment Date:</td>
+                                            <td style="padding: 8px; font-size: 14px; color: #047857; font-weight: 600; text-align: right;">{{payment_date}}</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding: 8px; font-size: 14px; color: #065F46; text-align: left;">Payment Method:</td>
+                                            <td style="padding: 8px; font-size: 14px; color: #047857; font-weight: 600; text-align: right;">{{payment_method}}</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding: 8px; font-size: 14px; color: #065F46; text-align: left;">Transaction ID:</td>
+                                            <td style="padding: 8px; font-size: 14px; color: #047857; font-weight: 600; text-align: right;">{{transaction_id}}</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding: 8px; font-size: 14px; color: #065F46; text-align: left;">Invoice #:</td>
+                                            <td style="padding: 8px; font-size: 14px; color: #047857; font-weight: 600; text-align: right;">{{invoice_number}}</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                            
+                            <!-- Receipt Info -->
+                            <div style="background-color: #EEF2FF; border-left: 4px solid #4F46E5; padding: 20px; margin: 30px 0; border-radius: 4px;">
+                                <h3 style="margin: 0 0 10px; font-family: 'Poppins', sans-serif; font-size: 16px; font-weight: 600; color: #4F46E5;">📧 Receipt Sent</h3>
+                                <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #4C1D95;">A detailed receipt has been sent to <strong>{{customer_email}}</strong>. You can also access it anytime from your account dashboard.</p>
+                            </div>
+                            
+                            <!-- Action Buttons -->
+                            <table role="presentation" style="width: 100%; margin: 30px 0;">
+                                <tr>
+                                    <td align="center">
+                                        <a href="{{receipt_url}}" style="display: inline-block; background: linear-gradient(135deg, #4F46E5 0%, #6366F1 100%); color: #ffffff; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 16px; text-decoration: none; padding: 14px 32px; border-radius: 6px; margin: 5px;">Download Receipt</a>
+                                        <a href="{{invoice_url}}" style="display: inline-block; background-color: #F3F4F6; color: #4F46E5; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 16px; text-decoration: none; padding: 14px 32px; border-radius: 6px; margin: 5px; border: 2px solid #4F46E5;">View Invoice</a>
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                            <!-- Account Balance (if applicable) -->
+                            {{#if account_balance}}
+                            <div style="background-color: #F9FAFB; border-radius: 8px; padding: 20px; margin: 25px 0; text-align: center;">
+                                <p style="margin: 0 0 5px; font-size: 13px; color: #6B7280;">Current Account Balance</p>
+                                <p style="margin: 0; font-family: 'Poppins', sans-serif; font-size: 24px; font-weight: 700; color: {{#if account_balance_positive}}#10B981{{else}}#EF4444{{/if}};">${{account_balance}}</p>
+                            </div>
+                            {{/if}}
+                            
+                            <!-- Thank You Message -->
+                            <div style="text-align: center; margin: 40px 0;">
+                                <p style="margin: 0 0 15px; font-size: 18px; font-weight: 600; color: #1F2937;">Thank You for Your Business! 🎉</p>
+                                <p style="margin: 0; font-size: 15px; line-height: 1.6; color: #6B7280;">Your continued support means the world to us. We look forward to serving you again!</p>
+                            </div>
+                            
+                            <!-- Book Again CTA -->
+                            <div style="background-color: #FFFBEB; border-radius: 8px; padding: 25px; margin: 25px 0; text-align: center;">
+                                <p style="margin: 0 0 15px; font-size: 16px; color: #78350F;">Need another junk removal?</p>
+                                <a href="{{book_again_url}}" style="display: inline-block; background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); color: #ffffff; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 15px; text-decoration: none; padding: 12px 28px; border-radius: 6px;">Book Now</a>
+                            </div>
+                            
+                            <p style="margin: 30px 0 0; font-size: 14px; line-height: 1.6; color: #6B7280; text-align: center;">Questions about this payment? Contact our billing team at <a href="mailto:billing@junkos.com" style="color: #4F46E5; text-decoration: none;">billing@junkos.com</a></p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background-color: #F9FAFB; padding: 30px; text-align: center; border-radius: 0 0 8px 8px; border-top: 1px solid #E5E7EB;">
+                            <p style="margin: 0 0 10px; font-size: 14px; color: #6B7280;">© 2024 JunkOS. All rights reserved.</p>
+                            <p style="margin: 0; font-size: 12px; color: #9CA3AF;">This is an automated payment confirmation. Please save this for your records.</p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

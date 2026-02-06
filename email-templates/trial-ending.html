@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Trial is Ending Soon</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Open Sans', Arial, sans-serif; background-color: #f3f4f6;">
+    <table role="presentation" style="width: 100%; border-collapse: collapse;">
+        <tr>
+            <td align="center" style="padding: 40px 20px;">
+                <table role="presentation" style="width: 100%; max-width: 600px; border-collapse: collapse; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    <!-- Header -->
+                    <tr>
+                        <td style="background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); padding: 40px 30px; text-align: center; border-radius: 8px 8px 0 0;">
+                            <div style="font-size: 64px; margin-bottom: 10px;">⏰</div>
+                            <h1 style="margin: 0; font-family: 'Poppins', sans-serif; font-size: 28px; font-weight: 700; color: #ffffff;">Your Trial Ends in 3 Days</h1>
+                            <p style="margin: 10px 0 0; font-size: 16px; color: rgba(255, 255, 255, 0.9);">Don't lose access to your data</p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding: 40px 30px;">
+                            <p style="margin: 0 0 20px; font-size: 16px; line-height: 1.6; color: #374151;">Hi <strong>{{operator_name}}</strong>,</p>
+                            
+                            <p style="margin: 0 0 30px; font-size: 16px; line-height: 1.6; color: #374151;">Your JunkOS trial is ending soon! We hope you've enjoyed exploring how JunkOS can transform your junk removal business.</p>
+                            
+                            <!-- Trial Info -->
+                            <div style="background: linear-gradient(135deg, #FEE2E2 0%, #FEF3C7 100%); border-radius: 12px; padding: 30px; margin: 25px 0; text-align: center;">
+                                <p style="margin: 0 0 10px; font-size: 14px; color: #92400E; font-weight: 600; text-transform: uppercase;">Trial Ends</p>
+                                <p style="margin: 0; font-family: 'Poppins', sans-serif; font-size: 48px; font-weight: 700; color: #DC2626;">{{days_left}} Days</p>
+                                <p style="margin: 15px 0 0; font-size: 15px; color: #78350F;">{{expiry_date}}</p>
+                            </div>
+                            
+                            <!-- Your Progress -->
+                            <div style="background-color: #EEF2FF; border-radius: 12px; padding: 25px; margin: 30px 0;">
+                                <h2 style="margin: 0 0 20px; font-family: 'Poppins', sans-serif; font-size: 20px; font-weight: 600; color: #4F46E5; text-align: center;">Your Progress So Far 🎉</h2>
+                                
+                                <table role="presentation" style="width: 100%;">
+                                    <tr>
+                                        <td style="text-align: center; padding: 15px;">
+                                            <p style="margin: 0; font-family: 'Poppins', sans-serif; font-size: 36px; font-weight: 700; color: #4F46E5;">{{jobs_completed}}</p>
+                                            <p style="margin: 5px 0 0; font-size: 13px; color: #4C1D95;">Jobs Completed</p>
+                                        </td>
+                                        <td style="text-align: center; padding: 15px; border-left: 1px solid #C7D2FE;">
+                                            <p style="margin: 0; font-family: 'Poppins', sans-serif; font-size: 36px; font-weight: 700; color: #10B981;">${{revenue_earned}}</p>
+                                            <p style="margin: 5px 0 0; font-size: 13px; color: #065F46;">Revenue Earned</p>
+                                        </td>
+                                        <td style="text-align: center; padding: 15px; border-left: 1px solid #C7D2FE;">
+                                            <p style="margin: 0; font-family: 'Poppins', sans-serif; font-size: 36px; font-weight: 700; color: #F59E0B;">{{time_saved}}h</p>
+                                            <p style="margin: 5px 0 0; font-size: 13px; color: #92400E;">Time Saved</p>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                            
+                            <!-- What You'll Lose -->
+                            <div style="background-color: #FEE2E2; border-left: 4px solid #EF4444; padding: 20px; margin: 30px 0; border-radius: 4px;">
+                                <h3 style="margin: 0 0 15px; font-family: 'Poppins', sans-serif; font-size: 16px; font-weight: 600; color: #991B1B;">⚠️ What You'll Lose Without Upgrading:</h3>
+                                <ul style="margin: 0; padding-left: 20px; color: #7F1D1D; font-size: 14px; line-height: 1.8;">
+                                    <li>Access to all your booking data and customer history</li>
+                                    <li>Automated scheduling and driver dispatch</li>
+                                    <li>Customer management and communication tools</li>
+                                    <li>Revenue tracking and business analytics</li>
+                                    <li>Online booking widget for your website</li>
+                                </ul>
+                            </div>
+                            
+                            <!-- Pricing Plans -->
+                            <div style="margin: 30px 0;">
+                                <h2 style="margin: 0 0 25px; font-family: 'Poppins', sans-serif; font-size: 22px; font-weight: 700; color: #1F2937; text-align: center;">Choose Your Plan</h2>
+                                
+                                <!-- Recommended Plan -->
+                                <div style="background: linear-gradient(135deg, #10B981 0%, #059669 100%); border-radius: 12px; padding: 30px; margin: 15px 0; position: relative;">
+                                    <div style="position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background-color: #FCD34D; color: #92400E; font-size: 12px; font-weight: 700; padding: 5px 15px; border-radius: 20px;">MOST POPULAR</div>
+                                    
+                                    <h3 style="margin: 0 0 10px; font-family: 'Poppins', sans-serif; font-size: 24px; font-weight: 700; color: #ffffff;">Professional</h3>
+                                    <p style="margin: 0 0 20px; font-size: 48px; font-weight: 700; color: #ffffff;">
+                                        ${{pro_price}}<span style="font-size: 18px; font-weight: 400;">/month</span>
+                                    </p>
+                                    <ul style="margin: 0 0 25px; padding-left: 20px; color: rgba(255, 255, 255, 0.95); font-size: 15px; line-height: 2;">
+                                        <li>Unlimited bookings</li>
+                                        <li>Up to 10 drivers</li>
+                                        <li>Real-time tracking</li>
+                                        <li>Customer portal</li>
+                                        <li>Priority support</li>
+                                    </ul>
+                                    <a href="{{subscribe_pro_url}}" style="display: block; background-color: #ffffff; color: #10B981; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 18px; text-decoration: none; padding: 16px; border-radius: 6px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">Start Professional Plan</a>
+                                </div>
+                                
+                                <!-- Basic Plan -->
+                                <div style="background-color: #F9FAFB; border: 2px solid #E5E7EB; border-radius: 12px; padding: 25px; margin: 15px 0;">
+                                    <h3 style="margin: 0 0 10px; font-family: 'Poppins', sans-serif; font-size: 20px; font-weight: 700; color: #1F2937;">Basic</h3>
+                                    <p style="margin: 0 0 20px; font-size: 36px; font-weight: 700; color: #4F46E5;">
+                                        ${{basic_price}}<span style="font-size: 16px; font-weight: 400; color: #6B7280;">/month</span>
+                                    </p>
+                                    <ul style="margin: 0 0 20px; padding-left: 20px; color: #6B7280; font-size: 14px; line-height: 2;">
+                                        <li>Up to 50 bookings/month</li>
+                                        <li>Up to 3 drivers</li>
+                                        <li>Basic scheduling</li>
+                                        <li>Email support</li>
+                                    </ul>
+                                    <a href="{{subscribe_basic_url}}" style="display: block; background-color: #4F46E5; color: #ffffff; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 16px; text-decoration: none; padding: 14px; border-radius: 6px; text-align: center;">Start Basic Plan</a>
+                                </div>
+                            </div>
+                            
+                            <!-- Money-Back Guarantee -->
+                            <div style="background-color: #ECFDF5; border-radius: 8px; padding: 20px; margin: 30px 0; text-align: center;">
+                                <p style="margin: 0 0 5px; font-size: 16px; font-weight: 600; color: #065F46;">✓ 30-Day Money-Back Guarantee</p>
+                                <p style="margin: 0; font-size: 14px; color: #047857;">Try risk-free. Cancel anytime if you're not satisfied.</p>
+                            </div>
+                            
+                            <!-- Questions Section -->
+                            <div style="margin: 30px 0; padding: 25px; background-color: #F9FAFB; border-radius: 8px;">
+                                <h3 style="margin: 0 0 15px; font-family: 'Poppins', sans-serif; font-size: 18px; font-weight: 600; color: #1F2937;">Have Questions?</h3>
+                                <p style="margin: 0 0 15px; font-size: 15px; line-height: 1.6; color: #374151;">Our team is here to help you make the right decision for your business.</p>
+                                <p style="margin: 0; font-size: 15px; color: #374151;">
+                                    📧 <a href="mailto:sales@junkos.com" style="color: #4F46E5; text-decoration: none; font-weight: 600;">sales@junkos.com</a><br>
+                                    📞 <a href="tel:{{support_phone}}" style="color: #4F46E5; text-decoration: none; font-weight: 600;">{{support_phone}}</a><br>
+                                    💬 <a href="{{chat_url}}" style="color: #4F46E5; text-decoration: none; font-weight: 600;">Live Chat</a>
+                                </p>
+                            </div>
+                            
+                            <p style="margin: 30px 0 0; font-size: 14px; line-height: 1.6; color: #6B7280; text-align: center;">Don't let your business data disappear. Upgrade today!</p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background-color: #F9FAFB; padding: 30px; text-align: center; border-radius: 0 0 8px 8px; border-top: 1px solid #E5E7EB;">
+                            <p style="margin: 0 0 10px; font-size: 14px; color: #6B7280;">© 2024 JunkOS. All rights reserved.</p>
+                            <p style="margin: 0; font-size: 12px; color: #9CA3AF;">
+                                <a href="{{faq_url}}" style="color: #6B7280; text-decoration: none;">FAQs</a> | 
+                                <a href="{{pricing_url}}" style="color: #6B7280; text-decoration: none;">View All Plans</a>
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

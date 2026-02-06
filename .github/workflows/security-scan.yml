@@ -1,0 +1,536 @@
+name: Security Audit
+
+on:
+  schedule:
+    # Run every Monday at 2 AM UTC
+    - cron: '0 2 * * 1'
+  workflow_dispatch:
+  push:
+    branches: [main, develop]
+    paths:
+      - '**/requirements*.txt'
+      - '**/package*.json'
+      - '**/Dockerfile'
+
+env:
+  PYTHON_VERSION: '3.11'
+  NODE_VERSION: '20'
+
+jobs:
+  python-dependency-scan:
+    name: Python Dependency Vulnerabilities
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      
+      - name: Install safety
+        run: pip install safety
+      
+      - name: Run safety check
+        working-directory: backend
+        run: |
+          echo "🔍 Scanning Python dependencies for vulnerabilities..."
+          safety check --json --output safety-report.json || true
+          safety check --short || true
+        continue-on-error: true
+      
+      - name: Upload safety report
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-safety-report
+          path: backend/safety-report.json
+          retention-days: 90
+      
+      - name: Check pip-audit
+        working-directory: backend
+        run: |
+          pip install pip-audit
+          pip-audit --desc --format json --output pip-audit-report.json || true
+          pip-audit --desc || true
+        continue-on-error: true
+      
+      - name: Upload pip-audit report
+        uses: actions/upload-artifact@v4
+        with:
+          name: pip-audit-report
+          path: backend/pip-audit-report.json
+          retention-days: 90
+
+  npm-dependency-scan:
+    name: NPM Dependency Vulnerabilities
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [frontend, dashboard]
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      
+      - name: Run npm audit
+        working-directory: ${{ matrix.service }}
+        run: |
+          echo "🔍 Scanning ${{ matrix.service }} NPM dependencies..."
+          npm audit --json > npm-audit-report.json || true
+          npm audit || true
+        continue-on-error: true
+      
+      - name: Upload npm audit report
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-audit-${{ matrix.service }}
+          path: ${{ matrix.service }}/npm-audit-report.json
+          retention-days: 90
+      
+      - name: Run npm outdated check
+        working-directory: ${{ matrix.service }}
+        run: |
+          echo "📦 Checking for outdated packages..."
+          npm outdated --json > npm-outdated-report.json || true
+          npm outdated || true
+        continue-on-error: true
+      
+      - name: Upload outdated packages report
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-outdated-${{ matrix.service }}
+          path: ${{ matrix.service }}/npm-outdated-report.json
+          retention-days: 90
+
+  sast-scan:
+    name: Static Application Security Testing
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      
+      - name: Install bandit
+        run: pip install bandit[toml]
+      
+      - name: Run bandit on backend
+        working-directory: backend
+        run: |
+          echo "🔍 Running SAST scan on Python backend..."
+          bandit -r app/ \
+            -f json -o bandit-full-report.json \
+            -ll \
+            --exclude tests/ || true
+          
+          # Generate human-readable report
+          bandit -r app/ \
+            -f txt -o bandit-readable-report.txt \
+            --exclude tests/ || true
+          
+          # Show high/critical issues
+          bandit -r app/ -lll --exclude tests/ || true
+        continue-on-error: true
+      
+      - name: Upload bandit reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: bandit-sast-reports
+          path: |
+            backend/bandit-full-report.json
+            backend/bandit-readable-report.txt
+          retention-days: 90
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      
+      - name: Install ESLint security plugins
+        run: |
+          npm install -g eslint-plugin-security eslint-plugin-no-unsanitized
+      
+      - name: Run ESLint security scan on Frontend
+        working-directory: frontend
+        run: |
+          echo "🔍 Running SAST scan on React frontend..."
+          npm ci
+          npx eslint . \
+            --ext .js,.jsx \
+            --plugin security \
+            --plugin no-unsanitized \
+            --format json \
+            --output-file eslint-security-report.json || true
+          
+          npx eslint . --ext .js,.jsx || true
+        continue-on-error: true
+      
+      - name: Upload frontend security report
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-eslint-security
+          path: frontend/eslint-security-report.json
+          retention-days: 90
+      
+      - name: Run ESLint security scan on Dashboard
+        working-directory: dashboard
+        run: |
+          echo "🔍 Running SAST scan on React dashboard..."
+          npm ci
+          npx eslint . \
+            --ext .js,.jsx \
+            --plugin security \
+            --plugin no-unsanitized \
+            --format json \
+            --output-file eslint-security-report.json || true
+          
+          npx eslint . --ext .js,.jsx || true
+        continue-on-error: true
+      
+      - name: Upload dashboard security report
+        uses: actions/upload-artifact@v4
+        with:
+          name: dashboard-eslint-security
+          path: dashboard/eslint-security-report.json
+          retention-days: 90
+
+  semgrep-scan:
+    name: Semgrep Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Run Semgrep
+        uses: returntocorp/semgrep-action@v1
+        with:
+          config: >-
+            p/security-audit
+            p/owasp-top-ten
+            p/python
+            p/javascript
+          generateSarif: true
+        continue-on-error: true
+      
+      - name: Upload Semgrep SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: semgrep.sarif
+        if: always()
+
+  docker-image-scan:
+    name: Docker Image Security Scan
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [backend, frontend, dashboard]
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Build image for scanning
+        uses: docker/build-push-action@v5
+        with:
+          context: ./${{ matrix.service }}
+          file: ./${{ matrix.service }}/Dockerfile
+          load: true
+          tags: junkos-${{ matrix.service }}:scan
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: junkos-${{ matrix.service }}:scan
+          format: 'sarif'
+          output: 'trivy-${{ matrix.service }}.sarif'
+          severity: 'CRITICAL,HIGH'
+        continue-on-error: true
+      
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-${{ matrix.service }}.sarif'
+        if: always()
+      
+      - name: Run Trivy (JSON format for artifacts)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: junkos-${{ matrix.service }}:scan
+          format: 'json'
+          output: 'trivy-${{ matrix.service }}.json'
+          severity: 'UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL'
+        continue-on-error: true
+      
+      - name: Upload Trivy JSON report
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-scan-${{ matrix.service }}
+          path: trivy-${{ matrix.service }}.json
+          retention-days: 90
+      
+      - name: Display critical vulnerabilities
+        run: |
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            aquasec/trivy image \
+            --severity CRITICAL,HIGH \
+            junkos-${{ matrix.service }}:scan || true
+
+  secret-scan:
+    name: Secret Detection
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_ENABLE_SUMMARY: true
+        continue-on-error: true
+      
+      - name: TruffleHog Secret Scan
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+        continue-on-error: true
+
+  license-scan:
+    name: License Compliance Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      
+      - name: Check Python licenses
+        working-directory: backend
+        run: |
+          pip install pip-licenses
+          pip install -r requirements.txt
+          
+          echo "📜 Python package licenses:"
+          pip-licenses --format=json --output-file=python-licenses.json || true
+          pip-licenses --format=markdown --output-file=python-licenses.md || true
+          pip-licenses || true
+        continue-on-error: true
+      
+      - name: Upload Python license report
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-licenses
+          path: |
+            backend/python-licenses.json
+            backend/python-licenses.md
+          retention-days: 90
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      
+      - name: Check NPM licenses (Frontend)
+        working-directory: frontend
+        run: |
+          npm ci
+          npx license-checker --json --out npm-licenses.json || true
+          npx license-checker --markdown --out npm-licenses.md || true
+          npx license-checker || true
+        continue-on-error: true
+      
+      - name: Upload Frontend license report
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-licenses
+          path: |
+            frontend/npm-licenses.json
+            frontend/npm-licenses.md
+          retention-days: 90
+      
+      - name: Check NPM licenses (Dashboard)
+        working-directory: dashboard
+        run: |
+          npm ci
+          npx license-checker --json --out npm-licenses.json || true
+          npx license-checker --markdown --out npm-licenses.md || true
+          npx license-checker || true
+        continue-on-error: true
+      
+      - name: Upload Dashboard license report
+        uses: actions/upload-artifact@v4
+        with:
+          name: dashboard-licenses
+          path: |
+            dashboard/npm-licenses.json
+            dashboard/npm-licenses.md
+          retention-days: 90
+
+  security-summary:
+    name: Generate Security Report
+    runs-on: ubuntu-latest
+    needs: 
+      - python-dependency-scan
+      - npm-dependency-scan
+      - sast-scan
+      - docker-image-scan
+      - secret-scan
+      - license-scan
+    if: always()
+    
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: security-reports
+        continue-on-error: true
+      
+      - name: Generate security summary
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY << 'EOF'
+          # 🔒 Security Audit Summary
+          
+          ## Scan Results
+          
+          | Scan Type | Status |
+          |-----------|--------|
+          | Python Dependencies | ${{ needs.python-dependency-scan.result == 'success' && '✅' || '❌' }} |
+          | NPM Dependencies | ${{ needs.npm-dependency-scan.result == 'success' && '✅' || '❌' }} |
+          | SAST (Bandit/ESLint) | ${{ needs.sast-scan.result == 'success' && '✅' || '❌' }} |
+          | Docker Images | ${{ needs.docker-image-scan.result == 'success' && '✅' || '❌' }} |
+          | Secret Detection | ${{ needs.secret-scan.result == 'success' && '✅' || '❌' }} |
+          | License Compliance | ${{ needs.license-scan.result == 'success' && '✅' || '❌' }} |
+          
+          ## 📊 Detailed Reports
+          
+          All detailed security reports are available in the workflow artifacts.
+          
+          ### Quick Actions
+          
+          - 🔍 Review [Security Advisories](../../security/advisories)
+          - 📦 Check [Dependabot Alerts](../../security/dependabot)
+          - 🛡️ View [Code Scanning Alerts](../../security/code-scanning)
+          
+          ## Recommendations
+          
+          1. Review all HIGH and CRITICAL vulnerabilities immediately
+          2. Update outdated dependencies regularly
+          3. Address any detected secrets or hardcoded credentials
+          4. Ensure all licenses are compatible with project requirements
+          
+          ---
+          *Security scan completed at ${{ github.event.head_commit.timestamp }}*
+          EOF
+      
+      - name: Create issue for critical findings (if any)
+        uses: actions/github-script@v7
+        if: github.event_name == 'schedule'
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            
+            // Check for critical findings in reports
+            let criticalFindings = [];
+            
+            // This is a simplified check - expand based on your needs
+            try {
+              const reports = fs.readdirSync('security-reports', { recursive: true });
+              // Parse JSON reports and look for CRITICAL/HIGH severity items
+              console.log('Found reports:', reports);
+            } catch (err) {
+              console.log('No reports to analyze:', err.message);
+            }
+            
+            // If critical findings exist, create an issue
+            if (criticalFindings.length > 0) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: '🔒 Weekly Security Scan: Critical Vulnerabilities Detected',
+                body: `## Critical Security Findings
+                
+                The weekly security scan has detected critical vulnerabilities that require immediate attention.
+                
+                [View Full Security Report](${context.payload.repository.html_url}/actions/runs/${context.runId})
+                
+                Please review and remediate these findings as soon as possible.`,
+                labels: ['security', 'priority:high']
+              });
+            }
+        continue-on-error: true
+
+  notify:
+    name: Send Security Notifications
+    runs-on: ubuntu-latest
+    needs: security-summary
+    if: always() && github.event_name == 'schedule'
+    
+    steps:
+      - name: Send Discord notification
+        if: ${{ secrets.DISCORD_WEBHOOK != '' }}
+        uses: tsickert/discord-webhook@v5.3.0
+        with:
+          webhook-url: ${{ secrets.DISCORD_WEBHOOK }}
+          embed-title: "🔒 Weekly Security Audit Completed"
+          embed-description: |
+            **Date:** ${{ github.event.head_commit.timestamp }}
+            
+            The weekly security audit has completed. Review the results for any critical findings.
+            
+            [View Security Report](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          embed-color: 3447003
+      
+      - name: Send Slack notification
+        if: ${{ secrets.SLACK_WEBHOOK != '' }}
+        uses: slackapi/slack-github-action@v1.25.0
+        with:
+          payload: |
+            {
+              "text": "🔒 Weekly Security Audit Completed",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*🔒 Weekly Security Audit*\n\nThe weekly security scan has completed. Please review the results."
+                  }
+                },
+                {
+                  "type": "actions",
+                  "elements": [
+                    {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "View Report"
+                      },
+                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    }
+                  ]
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
