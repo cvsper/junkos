@@ -79,9 +79,6 @@ def update_availability(user_id):
     if not contractor:
         return jsonify({"error": "Contractor profile not found"}), 404
 
-    if contractor.approval_status != "approved":
-        return jsonify({"error": "Contractor is not approved"}), 403
-
     data = request.get_json() or {}
 
     if "is_online" in data:

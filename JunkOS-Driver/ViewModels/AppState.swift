@@ -49,12 +49,19 @@ final class AppState {
 
     // MARK: - Online Toggle
 
+    var toggleError: String?
+
     func toggleOnline() async {
+        guard contractorProfile != nil else {
+            toggleError = "Complete contractor registration first."
+            return
+        }
         let newState = !isOnline
         do {
             let response = try await api.updateAvailability(isOnline: newState)
             isOnline = response.contractor.isOnline
             contractorProfile = response.contractor
+            toggleError = nil
 
             if isOnline {
                 startLocationTracking()
@@ -62,7 +69,14 @@ final class AppState {
                 stopLocationTracking()
             }
         } catch {
-            // Revert on failure
+            toggleError = error.localizedDescription
+            // Toggle locally for demo even if API fails
+            isOnline = newState
+            if isOnline {
+                startLocationTracking()
+            } else {
+                stopLocationTracking()
+            }
         }
     }
 

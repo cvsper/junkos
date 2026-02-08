@@ -33,6 +33,7 @@ struct JunkOSDriverApp: App {
                     DriverTabView(appState: appState)
                 }
             }
+            .preferredColorScheme(.light)
         }
     }
 }
