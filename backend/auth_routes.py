@@ -265,6 +265,67 @@ def apple_signin():
         }
     })
 
+# MARK: - Forgot Password
+
+@auth_bp.route('/forgot-password', methods=['POST'])
+def forgot_password():
+    """Request a password reset link"""
+    data = request.get_json()
+    email = data.get('email')
+
+    if not email:
+        return jsonify({'error': 'Email is required'}), 400
+
+    # Check if user exists in database
+    db_user = User.query.filter_by(email=email).first()
+    if not db_user:
+        # Also check in-memory store
+        found = any(u.get('email') == email for u in users_db.values())
+        if not found:
+            return jsonify({'error': 'No account found with that email'}), 404
+
+    # Generate reset token (in production, send via email)
+    reset_token = secrets.token_urlsafe(32)
+    # TODO: Send reset email via SendGrid/Mailgun
+    print(f"🔑 Password reset token for {email}: {reset_token}")
+
+    return jsonify({
+        'success': True,
+        'message': 'Password reset link sent to your email'
+    })
+
+
+# MARK: - Customer Bookings
+
+@auth_bp.route('/me', methods=['GET'])
+@require_auth
+def get_current_user(user_id):
+    """Get current authenticated user profile"""
+    # Check database first
+    db_user = db.session.get(User, user_id)
+    if db_user:
+        return jsonify({
+            'success': True,
+            'user': db_user.to_dict()
+        })
+
+    # Check in-memory store
+    if user_id in users_db:
+        user = users_db[user_id]
+        return jsonify({
+            'success': True,
+            'user': {
+                'id': user['id'],
+                'name': user.get('name'),
+                'email': user.get('email'),
+                'phoneNumber': user.get('phoneNumber'),
+                'role': 'customer'
+            }
+        })
+
+    return jsonify({'error': 'User not found'}), 404
+
+
 # MARK: - Token Validation
 
 @auth_bp.route('/validate', methods=['POST'])

@@ -1,0 +1,360 @@
+"use client";
+
+import { useEffect, useState, useCallback } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { jobsApi } from "@/lib/api";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+
+// ---------------------------------------------------------------------------
+// Local types (mirrors backend response, not importing from @/types)
+// ---------------------------------------------------------------------------
+
+interface JobContractor {
+  id: string;
+  user: { name: string | null; phone: string | null } | null;
+  truck_type: string | null;
+  avg_rating: number;
+  total_jobs: number;
+}
+
+interface CustomerJob {
+  id: string;
+  status: string;
+  address: string;
+  items: { category: string; quantity: number }[];
+  total_price: number;
+  scheduled_at: string | null;
+  created_at: string;
+  contractor?: JobContractor | null;
+}
+
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
+
+const ACTIVE_STATUSES = [
+  "pending",
+  "confirmed",
+  "assigned",
+  "en_route",
+  "arrived",
+  "in_progress",
+];
+
+type TabKey = "all" | "active" | "completed" | "cancelled";
+
+const TABS: { key: TabKey; label: string }[] = [
+  { key: "all", label: "All" },
+  { key: "active", label: "Active" },
+  { key: "completed", label: "Completed" },
+  { key: "cancelled", label: "Cancelled" },
+];
+
+const STATUS_COLORS: Record<string, string> = {
+  pending: "bg-yellow-100 text-yellow-800 border-yellow-200",
+  confirmed: "bg-blue-100 text-blue-800 border-blue-200",
+  assigned: "bg-indigo-100 text-indigo-800 border-indigo-200",
+  en_route: "bg-orange-100 text-orange-800 border-orange-200",
+  arrived: "bg-orange-100 text-orange-800 border-orange-200",
+  in_progress: "bg-orange-100 text-orange-800 border-orange-200",
+  completed: "bg-green-100 text-green-800 border-green-200",
+  cancelled: "bg-red-100 text-red-800 border-red-200",
+};
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function statusLabel(status: string): string {
+  return status
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function formatDate(iso: string): string {
+  const d = new Date(iso);
+  return d.toLocaleDateString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function formatPrice(cents: number): string {
+  return `$${cents.toFixed(2)}`;
+}
+
+function truncate(str: string, max: number): string {
+  if (str.length <= max) return str;
+  return str.slice(0, max) + "...";
+}
+
+function itemCount(items: { category: string; quantity: number }[]): string {
+  const total = items.reduce((sum, i) => sum + i.quantity, 0);
+  return `${total} item${total !== 1 ? "s" : ""}`;
+}
+
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
+
+export default function DashboardPage() {
+  const router = useRouter();
+  const [jobs, setJobs] = useState<CustomerJob[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<TabKey>("all");
+
+  const fetchJobs = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await jobsApi.list();
+      setJobs(res.jobs ?? []);
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Failed to load jobs.";
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchJobs();
+  }, [fetchJobs]);
+
+  // Filter jobs by active tab
+  const filteredJobs = jobs.filter((job) => {
+    if (activeTab === "all") return true;
+    if (activeTab === "active") return ACTIVE_STATUSES.includes(job.status);
+    if (activeTab === "completed") return job.status === "completed";
+    if (activeTab === "cancelled") return job.status === "cancelled";
+    return true;
+  });
+
+  return (
+    <div className="max-w-5xl mx-auto px-4 py-8 sm:py-12">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="font-display text-3xl sm:text-4xl font-bold tracking-tight">
+            My Jobs
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            Track and manage your junk removal pickups.
+          </p>
+        </div>
+        <Link
+          href="/book"
+          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+        >
+          <svg
+            className="w-4 h-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={2}
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M12 4.5v15m7.5-7.5h-15"
+            />
+          </svg>
+          New Pickup
+        </Link>
+      </div>
+
+      {/* Loading */}
+      {loading && (
+        <div className="flex items-center justify-center py-24">
+          <svg
+            className="h-8 w-8 animate-spin text-primary"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+            />
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+            />
+          </svg>
+          <span className="ml-3 text-muted-foreground text-sm">
+            Loading your jobs...
+          </span>
+        </div>
+      )}
+
+      {/* Error */}
+      {!loading && error && (
+        <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-8 text-center">
+          <p className="text-destructive font-medium mb-1">
+            Something went wrong
+          </p>
+          <p className="text-muted-foreground text-sm mb-4">{error}</p>
+          <Button variant="outline" size="sm" onClick={fetchJobs}>
+            Try Again
+          </Button>
+        </div>
+      )}
+
+      {/* Empty state */}
+      {!loading && !error && jobs.length === 0 && (
+        <div className="rounded-lg border border-dashed border-border bg-card p-12 text-center">
+          <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
+            <svg
+              className="w-8 h-8 text-muted-foreground"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={1.5}
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12"
+              />
+            </svg>
+          </div>
+          <h3 className="font-display text-lg font-semibold mb-1">
+            No jobs yet
+          </h3>
+          <p className="text-muted-foreground text-sm mb-6 max-w-sm mx-auto">
+            You haven&apos;t booked any junk removal pickups yet. Get started by
+            scheduling your first pickup.
+          </p>
+          <Link
+            href="/book"
+            className="inline-flex items-center rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+          >
+            Book Your First Pickup
+          </Link>
+        </div>
+      )}
+
+      {/* Jobs list */}
+      {!loading && !error && jobs.length > 0 && (
+        <>
+          {/* Tab bar */}
+          <div className="flex items-center gap-1 border-b border-border mb-6">
+            {TABS.map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={`px-4 py-2.5 text-sm font-medium transition-colors relative ${
+                  activeTab === tab.key
+                    ? "text-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {tab.label}
+                {activeTab === tab.key && (
+                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full" />
+                )}
+              </button>
+            ))}
+          </div>
+
+          {/* Filtered results */}
+          {filteredJobs.length === 0 ? (
+            <div className="py-12 text-center">
+              <p className="text-muted-foreground text-sm">
+                No {activeTab === "all" ? "" : activeTab} jobs found.
+              </p>
+            </div>
+          ) : (
+            <div className="grid gap-4">
+              {filteredJobs.map((job) => (
+                <Card
+                  key={job.id}
+                  className="cursor-pointer hover:shadow-md transition-shadow"
+                  onClick={() => router.push(`/jobs/${job.id}`)}
+                >
+                  <CardContent className="p-5">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                      {/* Left: status + address */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <Badge
+                            className={
+                              STATUS_COLORS[job.status] ??
+                              "bg-muted text-muted-foreground"
+                            }
+                          >
+                            {statusLabel(job.status)}
+                          </Badge>
+                          <span className="text-xs text-muted-foreground">
+                            #{job.id.slice(0, 8)}
+                          </span>
+                        </div>
+                        <p className="font-medium text-sm truncate">
+                          {truncate(job.address, 60)}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {job.scheduled_at
+                            ? formatDate(job.scheduled_at)
+                            : "Not scheduled"}
+                        </p>
+                      </div>
+
+                      {/* Right: meta */}
+                      <div className="flex items-center gap-6 text-sm shrink-0">
+                        <div className="text-center">
+                          <p className="text-muted-foreground text-xs">Items</p>
+                          <p className="font-medium">{itemCount(job.items)}</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-muted-foreground text-xs">Price</p>
+                          <p className="font-semibold text-foreground">
+                            {formatPrice(job.total_price)}
+                          </p>
+                        </div>
+                        <div className="text-center min-w-[100px]">
+                          <p className="text-muted-foreground text-xs">
+                            Contractor
+                          </p>
+                          <p className="font-medium text-sm">
+                            {job.contractor?.user?.name ??
+                              "Awaiting contractor"}
+                          </p>
+                        </div>
+                        {/* Chevron */}
+                        <svg
+                          className="w-5 h-5 text-muted-foreground hidden sm:block"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          strokeWidth={1.5}
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M8.25 4.5l7.5 7.5-7.5 7.5"
+                          />
+                        </svg>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}

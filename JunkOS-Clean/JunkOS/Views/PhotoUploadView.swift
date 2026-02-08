@@ -1,0 +1,190 @@
+//
+//  PhotoUploadView.swift
+//  JunkOS
+//
+//  Photo upload screen with gallery
+//  Enhanced with photo entrance animations and deletion haptics
+//  SF Symbols Reference: https://developer.apple.com/sf-symbols/
+//
+
+import SwiftUI
+import PhotosUI
+import UIKit
+
+struct PhotoUploadView: View {
+    @EnvironmentObject var bookingData: BookingData
+    @StateObject private var viewModel = PhotoUploadViewModel()
+    @State private var showCamera = false
+    
+    var body: some View {
+        ScrollView {
+            VStack(spacing: JunkSpacing.xxlarge) {
+                // Header
+                ScreenHeader(
+                    title: "Take Photos",
+                    subtitle: "Help us understand what needs to go",
+                    progress: 0.4
+                )
+                
+                // Photo grid or empty state
+                if bookingData.photos.isEmpty {
+                    emptyState
+                } else {
+                    photoGrid
+                }
+                
+                // Action buttons
+                actionButtons
+                
+                // Tip box
+                tipBox
+                
+                Spacer()
+            }
+            .padding(JunkSpacing.large)
+        }
+        .background(Color.junkBackground.ignoresSafeArea())
+        .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $showCamera) {
+            CameraPicker { photoData in
+                bookingData.photos.append(photoData)
+            }
+            .ignoresSafeArea()
+        }
+        .safeAreaInset(edge: .bottom) {
+            continueButton
+        }
+        .onAppear {
+            viewModel.startAnimations()
+        }
+    }
+    
+    // MARK: - Empty State
+    private var emptyState: some View {
+        PhotoUploadEmptyState {
+            // Empty tap action - actual photo selection happens via buttons below
+        }
+        .accessibilityHint("Add photos using the buttons below")
+    }
+    
+    // MARK: - Photo Grid
+    private var photoGrid: some View {
+        LazyVGrid(columns: [
+            GridItem(.flexible(), spacing: JunkSpacing.medium),
+            GridItem(.flexible(), spacing: JunkSpacing.medium),
+            GridItem(.flexible(), spacing: JunkSpacing.medium)
+        ], spacing: JunkSpacing.medium) {
+            ForEach(Array(bookingData.photos.enumerated()), id: \.offset) { index, photoData in
+                ZStack(alignment: .topTrailing) {
+                    if let uiImage = UIImage(data: photoData) {
+                        Image(uiImage: uiImage)
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .frame(width: 100, height: 100)
+                            .clipped()
+                            .cornerRadius(12)
+                    }
+                    
+                    // Remove button (with haptic)
+                    Button(action: {
+                        viewModel.removePhoto(at: index, from: &bookingData.photos)
+                    }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 24))
+                            .foregroundColor(.white)
+                            .background(Circle().fill(Color.red))
+                    }
+                    .offset(x: 8, y: -8)
+                }
+            }
+        }
+    }
+    
+    // MARK: - Action Buttons
+    private var actionButtons: some View {
+        HStack(spacing: JunkSpacing.normal) {
+            // SF Symbol: photo.on.rectangle for photo gallery
+            PhotosPicker(
+                selection: $viewModel.selectedItems,
+                maxSelectionCount: 10,
+                matching: .images
+            ) {
+                HStack {
+                    Image(systemName: "photo.on.rectangle")
+                    Text("Gallery")
+                }
+            }
+            .buttonStyle(JunkSecondaryButtonStyle())
+            .onChange(of: viewModel.selectedItems) { items in
+                loadPhotos(items)
+            }
+            
+            // SF Symbol: camera for camera
+            Button(action: {
+                showCamera = true
+            }) {
+                HStack {
+                    Image(systemName: "camera")
+                    Text("Camera")
+                }
+            }
+            .buttonStyle(JunkSecondaryButtonStyle())
+        }
+    }
+    
+    // MARK: - Tip Box
+    private var tipBox: some View {
+        HStack(alignment: .top, spacing: JunkSpacing.medium) {
+            // SF Symbol: lightbulb.fill for tips/ideas
+            // https://developer.apple.com/design/human-interface-guidelines/sf-symbols
+            Image(systemName: "lightbulb.fill")
+                .font(.system(size: 24))
+                .foregroundColor(.junkCTA)
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Tip")
+                    .font(JunkTypography.bodyFont.weight(.semibold))
+                    .foregroundColor(.junkText)
+                
+                Text("More photos = more accurate quotes")
+                    .font(JunkTypography.bodySmallFont)
+                    .foregroundColor(.junkTextMuted)
+            }
+            
+            Spacer()
+        }
+        .padding(JunkSpacing.normal)
+        .background(Color.junkPrimary.opacity(0.1))
+        .cornerRadius(12)
+    }
+    
+    // MARK: - Continue Button
+    private var continueButton: some View {
+        NavigationLink(
+            destination: DateTimePickerView().environmentObject(bookingData),
+            label: {
+                Text(viewModel.continueButtonText(photoCount: bookingData.photos.count))
+            }
+        )
+        .buttonStyle(JunkPrimaryButtonStyle())
+        .padding(JunkSpacing.large)
+        .background(Color.junkBackground)
+    }
+    
+    // MARK: - Load Photos
+    private func loadPhotos(_ items: [PhotosPickerItem]) {
+        viewModel.loadPhotos(from: items) { photoData in
+            bookingData.photos.append(contentsOf: photoData)
+        }
+    }
+}
+
+// MARK: - Preview
+struct PhotoUploadView_Previews: PreviewProvider {
+    static var previews: some View {
+        NavigationView {
+            PhotoUploadView()
+                .environmentObject(BookingData())
+        }
+    }
+}

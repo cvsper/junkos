@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>JunkOS Launch Screen Generator</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro', sans-serif;
+            padding: 40px;
+            background: #f5f5f7;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #1d1d1f;
+            margin-bottom: 30px;
+        }
+        .canvas-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 30px;
+        }
+        .canvas-item {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        canvas {
+            border-radius: 8px;
+            width: 100%;
+            height: auto;
+            display: block;
+            margin-bottom: 15px;
+        }
+        button {
+            background: #6366F1;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+        }
+        button:hover {
+            background: #4F46E5;
+        }
+        .size-label {
+            color: #86868b;
+            font-size: 14px;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚛 JunkOS Launch Screen Generator</h1>
+        <p style="color: #86868b;">Clean, branded splash screen for iOS</p>
+        
+        <div class="canvas-grid">
+            <div class="canvas-item">
+                <div class="size-label">iPhone 16 Pro (1290×2796)</div>
+                <canvas id="launch16pro"></canvas>
+                <button onclick="downloadCanvas('launch16pro', 'junkos-launch-16pro.png')">Download iPhone 16 Pro</button>
+            </div>
+            
+            <div class="canvas-item">
+                <div class="size-label">iPhone 15 Pro (1179×2556)</div>
+                <canvas id="launch15pro"></canvas>
+                <button onclick="downloadCanvas('launch15pro', 'junkos-launch-15pro.png')">Download iPhone 15 Pro</button>
+            </div>
+            
+            <div class="canvas-item">
+                <div class="size-label">iPhone SE (750×1334)</div>
+                <canvas id="launchse"></canvas>
+                <button onclick="downloadCanvas('launchse', 'junkos-launch-se.png')">Download iPhone SE</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const COLORS = {
+            primary: '#6366F1',
+            cta: '#10B981',
+            white: '#FFFFFF',
+            background: '#F5F3FF',
+            text: '#1E1B4B'
+        };
+
+        function drawLaunchScreen(canvas, width, height) {
+            const ctx = canvas.getContext('2d');
+            canvas.width = width;
+            canvas.height = height;
+            
+            // Smooth rendering
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            
+            // Background - subtle gradient
+            const gradient = ctx.createLinearGradient(0, 0, 0, height);
+            gradient.addColorStop(0, COLORS.background);
+            gradient.addColorStop(1, '#FFFFFF');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, width, height);
+            
+            // Center logo
+            const logoSize = Math.min(width, height) * 0.25;
+            const logoX = (width - logoSize) / 2;
+            const logoY = (height - logoSize) / 2 - logoSize * 0.3;
+            
+            // Logo background circle (gradient)
+            const logoGradient = ctx.createLinearGradient(logoX, logoY, logoX + logoSize, logoY + logoSize);
+            logoGradient.addColorStop(0, COLORS.primary);
+            logoGradient.addColorStop(1, '#818CF8');
+            
+            ctx.fillStyle = logoGradient;
+            ctx.beginPath();
+            ctx.arc(logoX + logoSize / 2, logoY + logoSize / 2, logoSize / 2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Draw simplified truck icon in center
+            const truckWidth = logoSize * 0.55;
+            const truckHeight = logoSize * 0.35;
+            const truckX = logoX + (logoSize - truckWidth) / 2;
+            const truckY = logoY + (logoSize - truckHeight) / 2;
+            
+            ctx.fillStyle = COLORS.white;
+            
+            // Truck body
+            const bodyWidth = truckWidth * 0.55;
+            const bodyHeight = truckHeight * 0.65;
+            ctx.beginPath();
+            ctx.roundRect(truckX, truckY, bodyWidth, bodyHeight, logoSize * 0.02);
+            ctx.fill();
+            
+            // Truck cab
+            const cabWidth = truckWidth * 0.35;
+            const cabHeight = bodyHeight * 0.85;
+            const cabX = truckX + bodyWidth;
+            const cabY = truckY + bodyHeight * 0.15;
+            ctx.beginPath();
+            ctx.roundRect(cabX, cabY, cabWidth, cabHeight, logoSize * 0.025);
+            ctx.fill();
+            
+            // Wheels
+            const wheelRadius = logoSize * 0.055;
+            const wheel1X = truckX + bodyWidth * 0.25;
+            const wheel2X = cabX + cabWidth * 0.5;
+            const wheelY = truckY + bodyHeight + wheelRadius * 0.3;
+            
+            ctx.fillStyle = COLORS.cta;
+            ctx.beginPath();
+            ctx.arc(wheel1X, wheelY, wheelRadius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(wheel2X, wheelY, wheelRadius, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Inner wheels
+            ctx.fillStyle = COLORS.white;
+            const innerRadius = wheelRadius * 0.5;
+            ctx.beginPath();
+            ctx.arc(wheel1X, wheelY, innerRadius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(wheel2X, wheelY, innerRadius, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // App name
+            const nameY = logoY + logoSize + logoSize * 0.35;
+            ctx.fillStyle = COLORS.text;
+            ctx.font = `bold ${logoSize * 0.22}px -apple-system, SF Pro Display`;
+            ctx.textAlign = 'center';
+            ctx.fillText('JunkOS', width / 2, nameY);
+            
+            // Tagline
+            const taglineY = nameY + logoSize * 0.15;
+            ctx.fillStyle = COLORS.primary;
+            ctx.font = `${logoSize * 0.1}px -apple-system, SF Pro Text`;
+            ctx.fillText('Book junk removal in 3 taps', width / 2, taglineY);
+            
+            // Subtle bottom badge
+            const badgeY = height - logoSize * 0.5;
+            ctx.fillStyle = '#E2E8F0';
+            ctx.font = `${logoSize * 0.065}px -apple-system, SF Pro Text`;
+            ctx.fillText('Tampa Bay\'s Premium Junk Removal', width / 2, badgeY);
+        }
+
+        function downloadCanvas(canvasId, filename) {
+            const canvas = document.getElementById(canvasId);
+            const url = canvas.toDataURL('image/png');
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = url;
+            link.click();
+        }
+
+        // Generate all launch screens on load
+        window.onload = () => {
+            drawLaunchScreen(document.getElementById('launch16pro'), 1290, 2796);
+            drawLaunchScreen(document.getElementById('launch15pro'), 1179, 2556);
+            drawLaunchScreen(document.getElementById('launchse'), 750, 1334);
+        };
+    </script>
+</body>
+</html>

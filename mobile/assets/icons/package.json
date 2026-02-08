@@ -1,0 +1,26 @@
+{
+  "name": "junkos-icon-generator",
+  "version": "1.0.0",
+  "description": "Icon asset generator for JunkOS iOS app",
+  "main": "generate-icons.js",
+  "scripts": {
+    "generate": "node generate-icons.js",
+    "install-deps": "npm install sharp",
+    "clean": "rm -rf ./exported",
+    "regenerate": "npm run clean && npm run generate"
+  },
+  "keywords": [
+    "ios",
+    "icons",
+    "app-icon",
+    "junkos"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "sharp": "^0.33.0"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

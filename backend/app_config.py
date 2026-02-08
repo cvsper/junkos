@@ -23,5 +23,9 @@ class Config:
     # Pricing
     BASE_PRICE = float(os.environ.get('BASE_PRICE', '50.0'))
     
+    # Stripe
+    STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY', '')
+    STRIPE_WEBHOOK_SECRET = os.environ.get('STRIPE_WEBHOOK_SECRET', '')
+
     # Server
     PORT = int(os.environ.get('PORT', '8080'))

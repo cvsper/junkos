@@ -116,4 +116,13 @@ final class AppState {
         }
         socket.disconnect()
     }
+
+    // MARK: - Job Alerts
+
+    /// Consume the latest socket job alert (returns it and clears the socket state).
+    func consumeJobAlert() -> DriverJob? {
+        guard let job = socket.newJobAlert else { return nil }
+        socket.newJobAlert = nil
+        return job
+    }
 }

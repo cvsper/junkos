@@ -1,0 +1,300 @@
+# Fastfile for JunkOS iOS App
+# Documentation: https://docs.fastlane.tools
+
+default_platform(:ios)
+
+platform :ios do
+  
+  ###############################################################################
+  # Configuration
+  ###############################################################################
+  
+  # App configuration
+  APP_IDENTIFIER = "com.junkos.JunkOS"
+  SCHEME = "JunkOS"
+  WORKSPACE = "JunkOS.xcodeproj"
+  
+  ###############################################################################
+  # Before All
+  ###############################################################################
+  
+  before_all do
+    # Ensure we're on a clean git state (optional, comment out during testing)
+    # ensure_git_status_clean
+  end
+  
+  ###############################################################################
+  # Lanes
+  ###############################################################################
+  
+  ###
+  # Main deployment lane - uploads to TestFlight
+  ###
+  desc "Deploy a new version to TestFlight"
+  lane :beta do
+    # Increment build number
+    increment_build_number_in_project
+    
+    # Get version and build number
+    version = get_version_number(target: SCHEME)
+    build = get_build_number
+    
+    puts "📦 Building JunkOS v#{version} (#{build})"
+    
+    # Build app
+    build_app(
+      scheme: SCHEME,
+      export_method: "app-store",
+      output_directory: "./build",
+      output_name: "JunkOS.ipa",
+      clean: true,
+      include_bitcode: false,
+      include_symbols: true
+    )
+    
+    # Upload to TestFlight
+    upload_to_testflight(
+      skip_submission: false,
+      skip_waiting_for_build_processing: true,
+      notify_external_testers: false,
+      changelog: "Bug fixes and improvements",
+      distribute_external: false
+    )
+    
+    puts "✅ Successfully uploaded build #{build} to TestFlight!"
+    puts "🔗 Check status: https://appstoreconnect.apple.com"
+    
+    # Optional: Commit version bump
+    # commit_version_bump(
+    #   message: "Bump version to #{version} (#{build})",
+    #   xcodeproj: WORKSPACE
+    # )
+    
+    # Optional: Add git tag
+    # add_git_tag(
+    #   tag: "v#{version}-#{build}",
+    #   message: "TestFlight build #{build}"
+    # )
+    
+    # Optional: Push to remote
+    # push_to_git_remote
+  end
+  
+  ###
+  # Build only (no upload) - useful for testing
+  ###
+  desc "Build app without uploading"
+  lane :build_only do
+    build_app(
+      scheme: SCHEME,
+      export_method: "app-store",
+      output_directory: "./build",
+      output_name: "JunkOS.ipa",
+      clean: true,
+      skip_package_ipa: false
+    )
+    
+    puts "✅ Build complete! IPA location: ./build/JunkOS.ipa"
+  end
+  
+  ###
+  # Quick build for testing (no signing)
+  ###
+  desc "Quick build for testing (no code signing)"
+  lane :quick_build do
+    xcodebuild(
+      scheme: SCHEME,
+      configuration: "Release",
+      clean: true,
+      build: true,
+      destination: "generic/platform=iOS",
+      xcargs: "CODE_SIGN_IDENTITY='' CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO"
+    )
+    
+    puts "✅ Quick build complete!"
+  end
+  
+  ###
+  # Run tests
+  ###
+  desc "Run all tests"
+  lane :test do
+    run_tests(
+      scheme: SCHEME,
+      devices: ["iPhone 15 Pro", "iPad Pro (12.9-inch) (6th generation)"],
+      clean: true
+    )
+  end
+  
+  ###
+  # Take screenshots for App Store
+  ###
+  desc "Generate screenshots"
+  lane :screenshots do
+    capture_screenshots(
+      scheme: SCHEME,
+      output_directory: "./screenshots",
+      clear_previous_screenshots: true,
+      devices: [
+        "iPhone 15 Pro Max",     # 6.7"
+        "iPhone 15 Pro",         # 6.1"
+        "iPhone SE (3rd generation)", # 4.7"
+        "iPad Pro (12.9-inch) (6th generation)"
+      ]
+    )
+    
+    puts "✅ Screenshots saved to ./screenshots"
+  end
+  
+  ###
+  # Increment build number
+  ###
+  desc "Increment build number"
+  lane :bump_build do
+    increment_build_number_in_project
+    build = get_build_number
+    puts "✅ Build number incremented to: #{build}"
+  end
+  
+  ###
+  # Increment version number (major)
+  ###
+  desc "Bump major version (1.0.0 -> 2.0.0)"
+  lane :bump_major do
+    increment_version_number(
+      bump_type: "major"
+    )
+    version = get_version_number(target: SCHEME)
+    puts "✅ Version bumped to: #{version}"
+  end
+  
+  ###
+  # Increment version number (minor)
+  ###
+  desc "Bump minor version (1.0.0 -> 1.1.0)"
+  lane :bump_minor do
+    increment_version_number(
+      bump_type: "minor"
+    )
+    version = get_version_number(target: SCHEME)
+    puts "✅ Version bumped to: #{version}"
+  end
+  
+  ###
+  # Increment version number (patch)
+  ###
+  desc "Bump patch version (1.0.0 -> 1.0.1)"
+  lane :bump_patch do
+    increment_version_number(
+      bump_type: "patch"
+    )
+    version = get_version_number(target: SCHEME)
+    puts "✅ Version bumped to: #{version}"
+  end
+  
+  ###
+  # Validate build before uploading
+  ###
+  desc "Validate build without uploading"
+  lane :validate do
+    build_app(
+      scheme: SCHEME,
+      export_method: "app-store",
+      output_directory: "./build",
+      skip_package_ipa: false
+    )
+    
+    # Validate the built app
+    xcrun(
+      command: "altool",
+      args: [
+        "--validate-app",
+        "--type", "ios",
+        "--file", "./build/JunkOS.ipa"
+      ],
+      require_return_success: true
+    )
+    
+    puts "✅ Build validated successfully!"
+  end
+  
+  ###
+  # Submit for App Store Review (after TestFlight testing)
+  ###
+  desc "Submit app for App Store review"
+  lane :release do
+    # Ensure we have the latest build
+    version = get_version_number(target: SCHEME)
+    build = get_build_number
+    
+    puts "🚀 Submitting JunkOS v#{version} (#{build}) for App Store review"
+    
+    # Upload metadata and submit
+    deliver(
+      app_identifier: APP_IDENTIFIER,
+      skip_metadata: false,
+      skip_screenshots: false,
+      submit_for_review: true,
+      automatic_release: false,
+      force: true,
+      submission_information: {
+        export_compliance_uses_encryption: false,
+        add_id_info_uses_idfa: false
+      }
+    )
+    
+    puts "✅ Submitted for review!"
+  end
+  
+  ###
+  # Setup project for first-time use
+  ###
+  desc "Initial setup"
+  lane :setup do
+    puts "🔧 Setting up JunkOS project..."
+    
+    # Check Xcode version
+    xcversion(version: "~> 15.0")
+    
+    # Install pods if using CocoaPods (JunkOS doesn't use them, but useful for future)
+    # cocoapods
+    
+    # Check certificates
+    cert
+    
+    # Check provisioning profiles
+    sigh
+    
+    puts "✅ Setup complete!"
+    puts "ℹ️  Next steps:"
+    puts "   1. Run: fastlane beta"
+    puts "   2. Wait for build processing (~15 min)"
+    puts "   3. Add testers in App Store Connect"
+  end
+  
+  ###############################################################################
+  # Error Handling
+  ###############################################################################
+  
+  error do |lane, exception|
+    puts "❌ Error in lane '#{lane}': #{exception.message}"
+    
+    # Optional: Send notification (Slack, Discord, email)
+    # slack(
+    #   message: "JunkOS build failed in #{lane}",
+    #   success: false
+    # )
+  end
+  
+  ###############################################################################
+  # After All
+  ###############################################################################
+  
+  after_all do |lane|
+    puts "🎉 Lane '#{lane}' completed successfully!"
+    
+    # Optional: Cleanup
+    # clean_build_artifacts
+  end
+  
+end

@@ -200,6 +200,57 @@ def trigger_payout(user_id, job_id):
     return jsonify({"success": True, "payment": payment.to_dict()}), 200
 
 
+@payments_bp.route("/create-intent-simple", methods=["POST"])
+def create_simple_payment_intent():
+    """
+    Create a Stripe PaymentIntent without auth (for customer portal).
+    Body JSON: bookingId (str), amount (float)
+    """
+    data = request.get_json() or {}
+    booking_id = data.get("bookingId") or data.get("booking_id")
+    amount = float(data.get("amount", 0))
+
+    if not booking_id or amount <= 0:
+        return jsonify({"error": "bookingId and amount are required"}), 400
+
+    stripe = _get_stripe()
+    stripe_key = os.environ.get("STRIPE_SECRET_KEY", "")
+
+    intent_id = None
+    client_secret = None
+
+    if stripe_key:
+        try:
+            intent = stripe.PaymentIntent.create(
+                amount=int(amount * 100),
+                currency="usd",
+                metadata={"booking_id": booking_id},
+            )
+            intent_id = intent.id
+            client_secret = intent.client_secret
+        except Exception as e:
+            return jsonify({"error": "Stripe error: {}".format(str(e))}), 502
+    else:
+        # Dev mode - return mock intent
+        intent_id = "pi_dev_{}".format(generate_uuid()[:8])
+        client_secret = "{}_secret_dev".format(intent_id)
+
+    # Link intent to the job's payment record
+    payment = Payment.query.filter_by(job_id=booking_id).first()
+    if payment:
+        payment.stripe_payment_intent_id = intent_id
+        payment.amount = amount
+        payment.payment_status = "pending"
+        payment.updated_at = utcnow()
+        db.session.commit()
+
+    return jsonify({
+        "success": True,
+        "clientSecret": client_secret,
+        "paymentIntentId": intent_id,
+    }), 201
+
+
 @payments_bp.route("/earnings", methods=["GET"])
 @require_auth
 def get_earnings(user_id):

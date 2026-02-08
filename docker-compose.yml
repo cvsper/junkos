@@ -62,11 +62,12 @@ services:
 
   frontend:
     build:
-      context: ./frontend
+      context: ./customer-portal
       dockerfile: Dockerfile
-    container_name: junkos-frontend
+    container_name: junkos-customer-portal
     environment:
-      REACT_APP_API_URL: ${REACT_APP_API_URL:-http://localhost/api}
+      VITE_API_URL: ${VITE_API_URL:-http://localhost/api}
+      VITE_STRIPE_PUBLIC_KEY: ${VITE_STRIPE_PUBLIC_KEY}
     depends_on:
       - backend
     restart: unless-stopped

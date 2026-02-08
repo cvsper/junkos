@@ -30,16 +30,30 @@ final class LocationManager: NSObject, CLLocationManagerDelegate {
     // MARK: - Authorization
 
     func requestPermission() {
-        clManager.requestAlwaysAuthorization()
+        switch clManager.authorizationStatus {
+        case .notDetermined:
+            clManager.requestWhenInUseAuthorization()
+        case .authorizedWhenInUse:
+            clManager.requestAlwaysAuthorization()
+        default:
+            break
+        }
     }
 
     // MARK: - Tracking
 
     func startTracking() {
         guard !isTracking else { return }
-        clManager.allowsBackgroundLocationUpdates = true
+
+        // Only enable background location if we have "always" authorization
+        // and the background modes entitlement is present
+        if clManager.authorizationStatus == .authorizedAlways {
+            if Bundle.main.backgroundModes.contains("location") {
+                clManager.allowsBackgroundLocationUpdates = true
+                clManager.showsBackgroundLocationIndicator = true
+            }
+        }
         clManager.pausesLocationUpdatesAutomatically = false
-        clManager.showsBackgroundLocationIndicator = true
         clManager.startUpdatingLocation()
         isTracking = true
     }
@@ -69,5 +83,13 @@ final class LocationManager: NSObject, CLLocationManagerDelegate {
 
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
         // Silently handle — not critical enough to surface to user.
+    }
+}
+
+// MARK: - Bundle Background Modes Helper
+
+private extension Bundle {
+    var backgroundModes: [String] {
+        (infoDictionary?["UIBackgroundModes"] as? [String]) ?? []
     }
 }

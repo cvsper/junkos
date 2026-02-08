@@ -132,6 +132,11 @@ export default function AdminDashboardPage() {
         </p>
       </div>
 
+      {/* Live Map — hero element */}
+      <div className="mb-6">
+        <AdminMapView />
+      </div>
+
       {/* Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {loading
@@ -161,54 +166,7 @@ export default function AdminDashboardPage() {
             })}
       </div>
 
-      {/* Live Map */}
-      <div className="mb-8">
-        <AdminMapView />
-      </div>
-
       <Separator className="mb-8" />
-
-      {/* Quick Stats Row */}
-      {data && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Total Users
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-xl font-display font-bold">
-                {data.total_users.toLocaleString()}
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Completed Jobs
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-xl font-display font-bold">
-                {data.completed_jobs.toLocaleString()}
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Approved Contractors
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-xl font-display font-bold">
-                {data.approved_contractors} / {data.total_contractors}
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-      )}
 
       {/* Recent Activity */}
       <Card>

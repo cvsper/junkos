@@ -29,9 +29,6 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "scheme": "junkos",
-    "plugins": [
-      "expo-router"
-    ]
+    "scheme": "junkos"
   }
 }

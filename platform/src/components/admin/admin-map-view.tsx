@@ -245,7 +245,7 @@ export default function AdminMapView() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="w-full h-[400px] rounded-lg bg-muted border border-border flex flex-col items-center justify-center gap-3 p-6">
+          <div className="w-full h-[calc(100vh-220px)] min-h-[400px] rounded-lg bg-muted border border-border flex flex-col items-center justify-center gap-3 p-6">
             <MapPin className="w-10 h-10 text-muted-foreground" />
             <p className="text-sm font-medium text-muted-foreground text-center">
               Map unavailable &mdash; configure NEXT_PUBLIC_MAPBOX_TOKEN
@@ -301,7 +301,7 @@ export default function AdminMapView() {
         </div>
       </CardHeader>
       <CardContent className="p-0">
-        <div className="relative w-full h-[400px] rounded-b-lg overflow-hidden">
+        <div className="relative w-full h-[calc(100vh-220px)] min-h-[400px] rounded-b-lg overflow-hidden">
           <div ref={containerRef} className="w-full h-full" />
 
           {/* Loading overlay */}

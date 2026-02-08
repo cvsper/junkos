@@ -14,64 +14,12 @@ struct DashboardView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color.driverBackground.ignoresSafeArea()
-
-                ScrollView {
-                    VStack(spacing: DriverSpacing.lg) {
-                        // Connection banner
-                        if appState.isOnline {
-                            ConnectionStatusBanner(isConnected: appState.socket.isConnected)
-                        }
-
-                        // Greeting
-                        HStack {
-                            VStack(alignment: .leading, spacing: DriverSpacing.xxs) {
-                                Text(greeting)
-                                    .font(DriverTypography.title2)
-                                    .foregroundStyle(Color.driverText)
-
-                                Text(appState.auth.currentUser?.displayName ?? "Driver")
-                                    .font(DriverTypography.title)
-                                    .foregroundStyle(Color.driverPrimary)
-                            }
-                            Spacer()
-                        }
-                        .padding(.horizontal, DriverSpacing.xl)
-
-                        // Online toggle
-                        OnlineToggleView(
-                            isOnline: appState.isOnline,
-                            onToggle: {
-                                Task { await appState.toggleOnline() }
-                            }
-                        )
-                        .padding(.horizontal, DriverSpacing.xl)
-
-                        // Quick stats
-                        QuickStatsCard(
-                            todayEarnings: dashVM.todayEarnings,
-                            todayJobs: dashVM.todayJobs,
-                            rating: dashVM.rating
-                        )
-                        .padding(.horizontal, DriverSpacing.xl)
-
-                        // Active job card
-                        if let activeJob = appState.activeJob {
-                            NavigationLink(value: AppRoute.activeJob(jobId: activeJob.id)) {
-                                ActiveJobCard(job: activeJob)
-                            }
-                            .buttonStyle(.plain)
-                            .padding(.horizontal, DriverSpacing.xl)
-                        }
-
-                        // Approval status
-                        if appState.contractorProfile?.approval == .pending {
-                            PendingApprovalCard()
-                                .padding(.horizontal, DriverSpacing.xl)
-                        }
-                    }
-                    .padding(.top, DriverSpacing.md)
-                    .padding(.bottom, DriverSpacing.xxxl)
+                if appState.isOnline {
+                    // Full-screen map experience when online
+                    LiveMapView(appState: appState)
+                } else {
+                    // Normal dashboard when offline
+                    offlineDashboard
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
@@ -88,6 +36,67 @@ struct DashboardView: View {
                 default:
                     EmptyView()
                 }
+            }
+        }
+    }
+
+    // MARK: - Offline Dashboard
+
+    private var offlineDashboard: some View {
+        ZStack {
+            Color.driverBackground.ignoresSafeArea()
+
+            ScrollView {
+                VStack(spacing: DriverSpacing.lg) {
+                    // Greeting
+                    HStack {
+                        VStack(alignment: .leading, spacing: DriverSpacing.xxs) {
+                            Text(greeting)
+                                .font(DriverTypography.title2)
+                                .foregroundStyle(Color.driverText)
+
+                            Text(appState.auth.currentUser?.displayName ?? "Driver")
+                                .font(DriverTypography.title)
+                                .foregroundStyle(Color.driverPrimary)
+                        }
+                        Spacer()
+                    }
+                    .padding(.horizontal, DriverSpacing.xl)
+
+                    // Online toggle
+                    OnlineToggleView(
+                        isOnline: appState.isOnline,
+                        onToggle: {
+                            Task { await appState.toggleOnline() }
+                        }
+                    )
+                    .padding(.horizontal, DriverSpacing.xl)
+
+                    // Quick stats
+                    QuickStatsCard(
+                        todayEarnings: dashVM.todayEarnings,
+                        todayJobs: dashVM.todayJobs,
+                        rating: dashVM.rating
+                    )
+                    .padding(.horizontal, DriverSpacing.xl)
+
+                    // Active job card
+                    if let activeJob = appState.activeJob {
+                        NavigationLink(value: AppRoute.activeJob(jobId: activeJob.id)) {
+                            ActiveJobCard(job: activeJob)
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.horizontal, DriverSpacing.xl)
+                    }
+
+                    // Approval status
+                    if appState.contractorProfile?.approval == .pending {
+                        PendingApprovalCard()
+                            .padding(.horizontal, DriverSpacing.xl)
+                    }
+                }
+                .padding(.top, DriverSpacing.md)
+                .padding(.bottom, DriverSpacing.xxxl)
             }
         }
     }

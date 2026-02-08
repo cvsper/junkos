@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>JunkOS Test</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+        #root {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        h1 {
+            font-size: 72px;
+            margin: 0;
+            animation: bounce 2s infinite;
+        }
+        p {
+            font-size: 32px;
+            margin-top: 20px;
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+    </style>
+</head>
+<body>
+    <div id="root">
+        <h1>🚀 JUNKOS WORKS!</h1>
+        <p>✅ If you see this, the server is running</p>
+        <p>📱 Now we just need React to load...</p>
+    </div>
+    <script>
+        console.log('✅ HTML loaded!');
+        console.log('✅ JavaScript is running!');
+        console.log('📍 You are at: ' + window.location.href);
+    </script>
+</body>
+</html>

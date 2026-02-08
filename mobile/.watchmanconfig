@@ -1,0 +1,11 @@
+{
+  "ignore_dirs": [
+    "../node_modules",
+    "../backend",
+    "../frontend", 
+    "../dashboard",
+    "../database",
+    "../docs",
+    "../.github"
+  ]
+}

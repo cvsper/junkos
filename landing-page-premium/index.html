@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Premium junk removal in Palm Beach & Broward County. Same-day service, eco-friendly disposal, upfront pricing.">
+
+    <title>JunkOS - South Florida's Premium Junk Removal Service</title>
+
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚛</text></svg>">
+
+    <!-- Preload critical fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=Space+Grotesk:wght@700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- SVG Icon Sprite -->
+    <svg xmlns="http://www.w3.org/2000/svg" class="svg-sprite">
+        <symbol id="icon-truck" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/>
+            <path d="M15 18H9"/>
+            <path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/>
+            <circle cx="17" cy="18" r="2"/>
+            <circle cx="7" cy="18" r="2"/>
+        </symbol>
+        <symbol id="icon-phone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
+        </symbol>
+        <symbol id="icon-message" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z"/>
+        </symbol>
+        <symbol id="icon-smartphone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect width="14" height="20" x="5" y="2" rx="2" ry="2"/>
+            <path d="M12 18h.01"/>
+        </symbol>
+        <symbol id="icon-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+        </symbol>
+        <symbol id="icon-sparkles" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/>
+            <path d="M5 3v4"/>
+            <path d="M19 17v4"/>
+            <path d="M3 5h4"/>
+            <path d="M17 19h4"/>
+        </symbol>
+        <symbol id="icon-recycle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M7 19H4.815a1.83 1.83 0 0 1-1.57-.881 1.785 1.785 0 0 1-.004-1.784L7.196 9.5"/>
+            <path d="M11 19h8.203a1.83 1.83 0 0 0 1.556-.89 1.784 1.784 0 0 0 0-1.775l-1.226-2.12"/>
+            <path d="m14 16-3 3 3 3"/>
+            <path d="M8.293 13.596 7.196 9.5 3.1 10.598"/>
+            <path d="m9.344 5.811 1.093-1.892A1.83 1.83 0 0 1 11.985 3a1.784 1.784 0 0 1 1.546.888l3.943 6.843"/>
+            <path d="m13.378 9.633 4.096 1.098 1.097-4.096"/>
+        </symbol>
+        <symbol id="icon-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            <polyline points="9 22 9 12 15 12 15 22"/>
+        </symbol>
+        <symbol id="icon-dollar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" x2="12" y1="2" y2="22"/>
+            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+        </symbol>
+        <symbol id="icon-camera" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
+            <circle cx="12" cy="13" r="3"/>
+        </symbol>
+        <symbol id="icon-check-circle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+            <path d="m9 11 3 3L22 4"/>
+        </symbol>
+        <symbol id="icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 6 9 17l-5-5"/>
+        </symbol>
+        <symbol id="icon-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>
+            <path d="m9 12 2 2 4-4"/>
+        </symbol>
+        <symbol id="icon-star" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+        </symbol>
+        <symbol id="icon-map-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
+            <circle cx="12" cy="10" r="3"/>
+        </symbol>
+        <symbol id="icon-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="4" x2="20" y1="12" y2="12"/>
+            <line x1="4" x2="20" y1="6" y2="6"/>
+            <line x1="4" x2="20" y1="18" y2="18"/>
+        </symbol>
+        <symbol id="icon-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 6 6 18"/>
+            <path d="m6 6 12 12"/>
+        </symbol>
+        <symbol id="icon-chevron-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m6 9 6 6 6-6"/>
+        </symbol>
+        <symbol id="icon-mail" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect width="20" height="16" x="2" y="4" rx="2"/>
+            <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+        </symbol>
+    </svg>
+
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-content">
+                <div class="logo">
+                    <svg class="icon icon-logo"><use href="#icon-truck"/></svg>
+                    <span class="logo-text">JunkOS</span>
+                    <span class="badge">Premium</span>
+                </div>
+
+                <!-- Hamburger Toggle -->
+                <button class="nav-toggle" aria-label="Toggle menu" aria-expanded="false">
+                    <svg class="icon nav-toggle-open"><use href="#icon-menu"/></svg>
+                    <svg class="icon nav-toggle-close"><use href="#icon-x"/></svg>
+                </button>
+
+                <div class="nav-links">
+                    <a href="#services" class="nav-link">Services</a>
+                    <a href="#how-it-works" class="nav-link">How It Works</a>
+                    <a href="#areas" class="nav-link">Service Areas</a>
+                    <a href="#faq" class="nav-link">FAQ</a>
+                    <a href="tel:+15618883427" class="btn btn-glow">
+                        <svg class="icon icon-btn"><use href="#icon-phone"/></svg>
+                        <span>(561) 888-3427</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <video class="hero-video" autoplay muted loop playsinline preload="auto" poster="hero-poster.jpg" aria-hidden="true">
+            <source src="hero-bg.mp4" type="video/mp4">
+        </video>
+        <img class="hero-mobile-img" src="hero-mobile.jpg" alt="" aria-hidden="true">
+        <div class="hero-overlay"></div>
+        <div class="container">
+            <div class="hero-content">
+                <!-- Floating Badge -->
+                <div class="hero-badge" data-animate>
+                    <span class="badge-dot"></span>
+                    <span>Same-Day Service Available</span>
+                </div>
+
+                <!-- Hero Title -->
+                <h1 class="hero-title" data-animate>
+                    <span class="title-line">South Florida's</span>
+                    <span class="title-line gradient-text">Fastest Junk</span>
+                    <span class="title-line">Removal Service</span>
+                </h1>
+
+                <!-- Subtitle -->
+                <p class="hero-subtitle" data-animate>
+                    Professional junk removal in <strong>Palm Beach</strong> & <strong>Broward County</strong>.
+                    Upfront pricing, same-day pickup, eco-friendly disposal. We handle everything.
+                </p>
+
+                <!-- CTA Buttons -->
+                <div class="hero-cta" data-animate>
+                    <a href="sms:+15618883427?&body=Hi! I need junk removed. Can you send me a quote?" class="btn btn-primary btn-xl">
+                        <svg class="icon icon-btn"><use href="#icon-message"/></svg>
+                        <span>Text for Instant Quote</span>
+                    </a>
+                    <a href="tel:+15618883427" class="btn btn-secondary btn-xl">
+                        <svg class="icon icon-btn"><use href="#icon-phone"/></svg>
+                        <span>Call (561) 888-3427</span>
+                    </a>
+                </div>
+
+                <!-- Trust Indicators -->
+                <div class="trust-bar" data-animate>
+                    <div class="trust-item">
+                        <div class="trust-icon">
+                            <svg class="icon"><use href="#icon-check"/></svg>
+                        </div>
+                        <div class="trust-text">
+                            <strong>500+</strong>
+                            <span>Happy Customers</span>
+                        </div>
+                    </div>
+                    <div class="trust-separator"></div>
+                    <div class="trust-item">
+                        <div class="trust-icon">
+                            <svg class="icon"><use href="#icon-recycle"/></svg>
+                        </div>
+                        <div class="trust-text">
+                            <strong>Eco-Friendly</strong>
+                            <span>Recycle & Donate</span>
+                        </div>
+                    </div>
+                    <div class="trust-separator"></div>
+                    <div class="trust-item">
+                        <div class="trust-icon">
+                            <svg class="icon"><use href="#icon-shield"/></svg>
+                        </div>
+                        <div class="trust-text">
+                            <strong>Licensed</strong>
+                            <span>Fully Insured</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scroll Indicator -->
+        <div class="scroll-indicator" data-animate>
+            <span>Scroll to explore</span>
+            <div class="scroll-line"></div>
+        </div>
+    </section>
+
+    <!-- Features Bento Grid -->
+    <section class="section features-section" id="services">
+        <div class="container">
+            <div class="section-header" data-animate>
+                <span class="section-label">Why Choose Us</span>
+                <h2 class="section-title">We Handle Everything. You Do Nothing.</h2>
+                <p class="section-subtitle">One call, and we show up ready to haul away whatever you need gone.</p>
+            </div>
+
+            <div class="bento-grid" data-animate>
+                <!-- Feature Card 1 - Hero (accent card) -->
+                <div class="bento-card bento-hero bento-accent">
+                    <div class="card-icon-wrap card-icon-wrap--light">
+                        <svg class="icon icon-card"><use href="#icon-smartphone"/></svg>
+                    </div>
+                    <h3>Book in Minutes</h3>
+                    <p>Text us photos, get instant pricing. No surprises, no hidden fees. Book your pickup in seconds.</p>
+                    <a href="sms:+15618883427?&body=Hi! I need junk removed. Can you send me a quote?" class="card-cta">Text Us Now &rarr;</a>
+                </div>
+
+                <!-- Feature Card 2 -->
+                <div class="bento-card">
+                    <div class="card-icon-wrap">
+                        <svg class="icon icon-card"><use href="#icon-truck"/></svg>
+                    </div>
+                    <h3>Same-Day Service</h3>
+                    <p>Need it gone today? Most pickups happen within 24 hours.</p>
+                </div>
+
+                <!-- Feature Card 3 -->
+                <div class="bento-card">
+                    <div class="card-icon-wrap">
+                        <svg class="icon icon-card"><use href="#icon-sparkles"/></svg>
+                    </div>
+                    <h3>We Do All the Work</h3>
+                    <p>You point, we load. No lifting, no hauling, no cleanup.</p>
+                </div>
+
+                <!-- Feature Card 4 - Wide (eco tint) -->
+                <div class="bento-card bento-wide bento-eco">
+                    <div class="bento-eco-inner">
+                        <div>
+                            <div class="card-icon-wrap card-icon-wrap--green">
+                                <svg class="icon icon-card"><use href="#icon-recycle"/></svg>
+                            </div>
+                            <h3>Eco-Friendly Disposal</h3>
+                            <p>We recycle and donate whenever possible. Your junk gets a second life instead of filling landfills.</p>
+                        </div>
+                        <div class="eco-stat">
+                            <span class="eco-stat-number">90%</span>
+                            <span class="eco-stat-label">Diverted from Landfills</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Feature Card 5 -->
+                <div class="bento-card">
+                    <div class="card-icon-wrap">
+                        <svg class="icon icon-card"><use href="#icon-home"/></svg>
+                    </div>
+                    <h3>No Need to Be Home</h3>
+                    <p>Leave a key. We'll handle it and text when done.</p>
+                </div>
+
+                <!-- Feature Card 6 -->
+                <div class="bento-card">
+                    <div class="card-icon-wrap">
+                        <svg class="icon icon-card"><use href="#icon-dollar"/></svg>
+                    </div>
+                    <h3>Upfront Pricing</h3>
+                    <p>Know exactly what you'll pay. No games.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works -->
+    <section class="section process-section" id="how-it-works">
+        <div class="container">
+            <div class="section-header" data-animate>
+                <span class="section-label">Simple Process</span>
+                <h2 class="section-title">Three Steps to a Clutter-Free Space</h2>
+            </div>
+
+            <div class="process-grid" data-animate>
+                <div class="process-card">
+                    <div class="process-number">01</div>
+                    <div class="process-icon">
+                        <svg class="icon icon-process"><use href="#icon-camera"/></svg>
+                    </div>
+                    <h3>Text Us Photos</h3>
+                    <p>Send pictures of what you need removed. We'll reply with an instant quote.</p>
+                    <div class="process-line"></div>
+                </div>
+
+                <div class="process-card">
+                    <div class="process-number">02</div>
+                    <div class="process-icon">
+                        <svg class="icon icon-process"><use href="#icon-clock"/></svg>
+                    </div>
+                    <h3>Choose Your Time</h3>
+                    <p>Pick a pickup window. Same-day and next-day slots available.</p>
+                    <div class="process-line"></div>
+                </div>
+
+                <div class="process-card">
+                    <div class="process-number">03</div>
+                    <div class="process-icon">
+                        <svg class="icon icon-process"><use href="#icon-check-circle"/></svg>
+                    </div>
+                    <h3>We Handle Everything</h3>
+                    <p>Our crew shows up, loads everything, cleans up, and hauls it away. Done.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Social Proof -->
+    <section class="section testimonials-section">
+        <div class="container">
+            <div class="section-header" data-animate>
+                <span class="section-label">Reviews</span>
+                <h2 class="section-title">What Our Customers Say</h2>
+            </div>
+
+            <div class="testimonials-grid" data-animate>
+                <div class="testimonial-card">
+                    <div class="stars">
+                        <svg class="icon icon-star"><use href="#icon-star"/></svg>
+                        <svg class="icon icon-star"><use href="#icon-star"/></svg>
+                        <svg class="icon icon-star"><use href="#icon-star"/></svg>
+                        <svg class="icon icon-star"><use href="#icon-star"/></svg>
+                        <svg class="icon icon-star"><use href="#icon-star"/></svg>
+                    </div>
+                    <p class="quote">"Fastest service I've ever experienced. Texted them at 9am, they showed up at 2pm same day and cleared everything in 20 minutes. Incredible."</p>
+                    <div class="author">
+                        <div class="author-avatar">M</div>
+                        <div class="author-info">
+                            <strong>Maria S.</strong>
+                            <span>Boca Raton</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="testimonial-card">
+                    <div class="stars">
+                        <svg class="icon icon-star"><use href="#icon-star"/></svg>
+                        <svg class="icon icon-star"><use href="#icon-star"/></svg>
+                        <svg class="icon icon-star"><use href="#icon-star"/></svg>
+                        <svg class="icon icon-star"><use href="#icon-star"/></svg>
+                        <svg class="icon icon-star"><use href="#icon-star"/></svg>
+                    </div>
+                    <p class="quote">"I was dreading cleaning out my late father's estate. JunkOS handled everything professionally and respectfully. They even donated items to local charities."</p>
+                    <div class="author">
+                        <div class="author-avatar">D</div>
+                        <div class="author-info">
+                            <strong>David T.</strong>
+                            <span>Delray Beach</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="testimonial-card">
+                    <div class="stars">
+                        <svg class="icon icon-star"><use href="#icon-star"/></svg>
+                        <svg class="icon icon-star"><use href="#icon-star"/></svg>
+                        <svg class="icon icon-star"><use href="#icon-star"/></svg>
+                        <svg class="icon icon-star"><use href="#icon-star"/></svg>
+                        <svg class="icon icon-star"><use href="#icon-star"/></svg>
+                    </div>
+                    <p class="quote">"Got quotes from 3 companies. JunkOS was the most transparent and actually came in under budget. Great crew, super professional."</p>
+                    <div class="author">
+                        <div class="author-avatar">J</div>
+                        <div class="author-info">
+                            <strong>Jennifer M.</strong>
+                            <span>Fort Lauderdale</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Service Areas -->
+    <section class="section areas-section" id="areas">
+        <div class="container">
+            <div class="section-header" data-animate>
+                <span class="section-label">Coverage</span>
+                <h2 class="section-title">Serving Palm Beach & Broward County</h2>
+            </div>
+
+            <div class="areas-grid" data-animate>
+                <div class="area-card">
+                    <h3>
+                        <svg class="icon icon-inline"><use href="#icon-map-pin"/></svg>
+                        Palm Beach County
+                    </h3>
+                    <div class="area-list">
+                        <span>Boca Raton</span>
+                        <span>Delray Beach</span>
+                        <span>West Palm Beach</span>
+                        <span>Wellington</span>
+                        <span>Boynton Beach</span>
+                        <span>Lake Worth</span>
+                        <span>Jupiter</span>
+                        <span>Palm Beach Gardens</span>
+                    </div>
+                </div>
+
+                <div class="area-card">
+                    <h3>
+                        <svg class="icon icon-inline"><use href="#icon-map-pin"/></svg>
+                        Broward County
+                    </h3>
+                    <div class="area-list">
+                        <span>Fort Lauderdale</span>
+                        <span>Pompano Beach</span>
+                        <span>Coral Springs</span>
+                        <span>Pembroke Pines</span>
+                        <span>Hollywood</span>
+                        <span>Davie</span>
+                        <span>Plantation</span>
+                        <span>Sunrise</span>
+                    </div>
+                </div>
+            </div>
+
+            <p class="areas-note" data-animate>Don't see your city? Call us—we probably service your area!</p>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section class="section faq-section" id="faq">
+        <div class="container">
+            <div class="section-header" data-animate>
+                <span class="section-label">FAQ</span>
+                <h2 class="section-title">Common Questions</h2>
+                <p class="section-subtitle">Everything you need to know about our junk removal service.</p>
+            </div>
+
+            <div class="faq-list" data-animate>
+                <div class="faq-item">
+                    <button class="faq-question" aria-expanded="false">
+                        <span>How much does junk removal cost?</span>
+                        <svg class="icon icon-faq-chevron"><use href="#icon-chevron-down"/></svg>
+                    </button>
+                    <div class="faq-answer">
+                        <p>We provide upfront quotes based on photos you text us. Pricing depends on the volume and type of items. There are no hidden fees — the price we quote is the price you pay.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question" aria-expanded="false">
+                        <span>What items do you accept?</span>
+                        <svg class="icon icon-faq-chevron"><use href="#icon-chevron-down"/></svg>
+                    </button>
+                    <div class="faq-answer">
+                        <p>We take almost everything — furniture, appliances, electronics, yard debris, construction waste, and more. We cannot accept hazardous materials like paint, chemicals, or asbestos.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question" aria-expanded="false">
+                        <span>Do I need to be home during pickup?</span>
+                        <svg class="icon icon-faq-chevron"><use href="#icon-chevron-down"/></svg>
+                    </button>
+                    <div class="faq-answer">
+                        <p>Nope! Just leave a key or arrange access and we'll handle everything. We'll text you a photo when the job is done so you have peace of mind.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question" aria-expanded="false">
+                        <span>How fast can you pick up my junk?</span>
+                        <svg class="icon icon-faq-chevron"><use href="#icon-chevron-down"/></svg>
+                    </button>
+                    <div class="faq-answer">
+                        <p>Most pickups happen same-day or next-day. Text us photos for an instant quote and we'll schedule your earliest available slot. We know you want it gone fast.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question" aria-expanded="false">
+                        <span>What happens to my stuff after pickup?</span>
+                        <svg class="icon icon-faq-chevron"><use href="#icon-chevron-down"/></svg>
+                    </button>
+                    <div class="faq-answer">
+                        <p>We recycle, donate, and repurpose whenever possible. About 90% of what we collect is diverted from landfills. Usable items go to local charities and donation centers.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question" aria-expanded="false">
+                        <span>Are you licensed and insured?</span>
+                        <svg class="icon icon-faq-chevron"><use href="#icon-chevron-down"/></svg>
+                    </button>
+                    <div class="faq-answer">
+                        <p>Yes! JunkOS is fully licensed and insured in the state of Florida. Your property is protected during every job. We take professionalism seriously.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Final CTA -->
+    <section class="section cta-section">
+        <div class="container">
+            <div class="cta-content" data-animate>
+                <div class="cta-badge">
+                    <span class="pulse-dot"></span>
+                    <span>Available Now</span>
+                </div>
+
+                <h2 class="cta-title">Ready to Reclaim Your Space?</h2>
+                <p class="cta-subtitle">Get your free estimate in the next 15 minutes. Same-day slots filling fast.</p>
+
+                <div class="cta-buttons">
+                    <a href="sms:+15618883427?&body=Hi! I need junk removed. Can you send me a quote?" class="btn btn-primary btn-xl">
+                        <svg class="icon icon-btn"><use href="#icon-message"/></svg>
+                        <span>Text for Free Estimate</span>
+                    </a>
+                    <a href="tel:+15618883427" class="btn btn-secondary btn-xl">
+                        <svg class="icon icon-btn"><use href="#icon-phone"/></svg>
+                        <span>Call Now</span>
+                    </a>
+                </div>
+
+                <p class="guarantee">No obligation. If our quote doesn't work, no hard feelings.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <div class="logo">
+                        <svg class="icon icon-logo"><use href="#icon-truck"/></svg>
+                        <span class="logo-text">JunkOS</span>
+                    </div>
+                    <p>South Florida's fastest junk removal service</p>
+                </div>
+
+                <div class="footer-links">
+                    <h4>Contact</h4>
+                    <a href="tel:+15618883427">(561) 888-3427</a>
+                    <a href="sms:+15618883427">Text Us</a>
+                    <a href="mailto:hello@junkos.com">hello@junkos.com</a>
+                </div>
+
+                <div class="footer-links">
+                    <h4>Hours</h4>
+                    <p>Mon-Sat: 7am-7pm</p>
+                    <p>Sun: 8am-5pm</p>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <p>&copy; 2026 JunkOS. Licensed & Insured.</p>
+                <p>Serving Palm Beach & Broward County, Florida</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

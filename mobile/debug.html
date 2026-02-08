@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <title>JunkOS Debug</title>
+    <style>
+      html, body { height: 100%; margin: 0; }
+      body { overflow: hidden; }
+      #root { display: flex; height: 100%; flex: 1; }
+      #debug {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: rgba(0,0,0,0.9);
+        color: #0f0;
+        padding: 10px;
+        font-family: monospace;
+        font-size: 12px;
+        max-height: 200px;
+        overflow-y: auto;
+        z-index: 9999;
+      }
+      #debug div { margin: 2px 0; }
+      .error { color: #f00; }
+      .success { color: #0f0; }
+      .info { color: #00f; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <div id="debug">
+        <div class="info">🔍 Debug Console</div>
+    </div>
+    
+    <script>
+        const debug = document.getElementById('debug');
+        function log(msg, type = 'info') {
+            console.log(msg);
+            const div = document.createElement('div');
+            div.className = type;
+            div.textContent = new Date().toLocaleTimeString() + ' | ' + msg;
+            debug.appendChild(div);
+            debug.scrollTop = debug.scrollHeight;
+        }
+        
+        // Capture errors
+        window.onerror = function(msg, url, line, col, error) {
+            log('❌ ERROR: ' + msg + ' at line ' + line, 'error');
+            return false;
+        };
+        
+        window.addEventListener('unhandledrejection', function(e) {
+            log('❌ PROMISE ERROR: ' + e.reason, 'error');
+        });
+        
+        // Log console methods
+        const originalLog = console.log;
+        const originalError = console.error;
+        console.log = function(...args) {
+            log('📝 ' + args.join(' '), 'success');
+            originalLog.apply(console, args);
+        };
+        console.error = function(...args) {
+            log('❌ ' + args.join(' '), 'error');
+            originalError.apply(console, args);
+        };
+        
+        log('✅ HTML loaded');
+        log('✅ Debug script running');
+        log('📍 Root element: ' + (document.getElementById('root') ? 'FOUND' : 'MISSING'));
+        
+        // Check if bundle loads
+        const script = document.createElement('script');
+        script.src = '/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable';
+        script.onload = () => log('✅ Bundle loaded successfully', 'success');
+        script.onerror = () => log('❌ Bundle failed to load', 'error');
+        document.body.appendChild(script);
+        
+        // Check React mounting
+        setTimeout(() => {
+            const root = document.getElementById('root');
+            if (root && root.children.length > 0) {
+                log('✅ React mounted! Found ' + root.children.length + ' children', 'success');
+            } else {
+                log('❌ React NOT mounted. Root is empty.', 'error');
+            }
+        }, 3000);
+    </script>
+</body>
+</html>

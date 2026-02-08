@@ -1,216 +1,247 @@
-# Privacy Policy
+# Privacy Policy for JunkOS
 
-**Last Updated: February 6, 2026**
-
-## Introduction
-
-Welcome to JunkOS. JunkOS Inc. ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our junk removal booking platform, including our website and iOS mobile application (collectively, the "Service").
-
-Please read this Privacy Policy carefully. By using the Service, you agree to the collection and use of information in accordance with this policy. If you do not agree with the terms of this Privacy Policy, please do not access or use the Service.
-
-## 1. Information We Collect
-
-### 1.1 Personal Information You Provide
-
-When you use JunkOS, we collect the following personal information that you voluntarily provide:
-
-- **Account Information**: Name, email address, phone number, and password
-- **Service Address**: Physical address where junk removal services will be performed
-- **Payment Information**: Credit card details, billing address, and payment history (processed securely through Stripe)
-- **Photos**: Images of items you wish to have removed (for estimation purposes)
-- **Communications**: Messages, feedback, and support requests you send to us
-
-### 1.2 Information Collected Automatically
-
-When you access our Service, we automatically collect certain information:
-
-- **Device Information**: Device type, operating system, browser type, unique device identifiers, IP address
-- **Usage Data**: Pages visited, features used, time spent on the Service, click data, and other analytics
-- **Location Data**: Approximate location based on IP address, and precise location if you grant permission (used to match you with service providers and display your service address)
-- **Cookies and Similar Technologies**: We use cookies, web beacons, and similar tracking technologies to enhance your experience
-
-### 1.3 Information from Third Parties
-
-We may receive information about you from third-party services:
-
-- **Google Maps**: Location data and address verification
-- **Stripe**: Payment processing and transaction information
-- **Social Media**: If you choose to link your social media accounts
-
-## 2. How We Use Your Information
-
-We use the information we collect for the following purposes:
-
-- **Service Delivery**: To process bookings, coordinate junk removal services, and connect you with service providers
-- **Estimates**: To analyze photos and provide accurate pricing estimates
-- **Payment Processing**: To process payments, prevent fraud, and manage billing
-- **Customer Support**: To respond to inquiries, resolve issues, and provide technical assistance
-- **Service Improvement**: To analyze usage patterns, improve features, and develop new services
-- **Communications**: To send booking confirmations, service updates, and promotional materials (with your consent)
-- **Legal Compliance**: To comply with legal obligations, enforce our terms, and protect our rights
-- **Security**: To detect, prevent, and address fraud, security issues, and technical problems
-
-## 3. Legal Basis for Processing (GDPR)
-
-If you are located in the European Economic Area (EEA), we process your personal data based on the following legal grounds:
-
-- **Contract Performance**: Processing necessary to perform our contract with you (service delivery)
-- **Legitimate Interests**: Our legitimate business interests, such as improving our Service and preventing fraud
-- **Consent**: Where you have given explicit consent (e.g., marketing communications)
-- **Legal Obligations**: Compliance with legal requirements
-
-## 4. How We Share Your Information
-
-We do not sell your personal information. We may share your information in the following circumstances:
-
-### 4.1 Service Providers
-
-We share information with trusted third-party service providers who assist us in operating our Service:
-
-- **Stripe**: Payment processing (subject to Stripe's Privacy Policy)
-- **Amazon Web Services (AWS)**: Cloud hosting and data storage
-- **Google Maps**: Location services and address verification
-- **Analytics Providers**: Service usage and performance analytics
-
-These providers are contractually obligated to use your information only for the purposes we specify and to maintain appropriate security measures.
-
-### 4.2 Junk Removal Providers
-
-We share necessary information (name, phone number, service address, photos of items) with junk removal providers to fulfill your service requests.
-
-### 4.3 Legal Requirements
-
-We may disclose your information if required by law, legal process, court order, or governmental request, or to:
-
-- Enforce our Terms of Service
-- Protect our rights, property, or safety
-- Investigate fraud or security issues
-- Protect against legal liability
-
-### 4.4 Business Transfers
-
-If JunkOS is involved in a merger, acquisition, or sale of assets, your information may be transferred as part of that transaction.
-
-## 5. Data Security
-
-We implement appropriate technical and organizational security measures to protect your personal information, including:
-
-- **Encryption**: Data transmitted over the internet is encrypted using SSL/TLS
-- **Secure Storage**: Data is stored on secure servers with restricted access
-- **Payment Security**: Payment information is processed through PCI-DSS compliant Stripe infrastructure
-- **Access Controls**: Limited employee access to personal data on a need-to-know basis
-- **Regular Audits**: Periodic security assessments and vulnerability testing
-
-However, no method of transmission over the internet or electronic storage is 100% secure. While we strive to protect your information, we cannot guarantee absolute security.
-
-## 6. Data Retention
-
-We retain your personal information for as long as necessary to fulfill the purposes outlined in this Privacy Policy, unless a longer retention period is required or permitted by law. Specifically:
-
-- **Account Information**: Retained while your account is active and for a reasonable period afterward
-- **Transaction Records**: Retained for accounting and legal compliance purposes (typically 7 years)
-- **Photos**: Retained for 90 days after service completion, unless you request earlier deletion
-- **Analytics Data**: Aggregated and anonymized data may be retained indefinitely
-
-You may request deletion of your data at any time (see Section 7).
-
-## 7. Your Privacy Rights
-
-### 7.1 All Users
-
-Regardless of location, you have the following rights:
-
-- **Access**: Request a copy of the personal information we hold about you
-- **Correction**: Request correction of inaccurate or incomplete information
-- **Deletion**: Request deletion of your personal information (subject to legal retention requirements)
-- **Export**: Request a copy of your data in a portable format
-- **Opt-Out**: Unsubscribe from marketing communications at any time
-
-### 7.2 GDPR Rights (EEA Residents)
-
-If you are located in the EEA, you also have the right to:
-
-- **Object**: Object to processing of your personal data based on legitimate interests
-- **Restrict**: Request restriction of processing under certain circumstances
-- **Data Portability**: Receive your data in a structured, machine-readable format
-- **Withdraw Consent**: Withdraw consent at any time (where processing is based on consent)
-- **Lodge a Complaint**: File a complaint with your local data protection authority
-
-### 7.3 CCPA Rights (California Residents)
-
-If you are a California resident, you have the right to:
-
-- **Know**: Request disclosure of categories and specific pieces of personal information collected
-- **Delete**: Request deletion of your personal information
-- **Opt-Out of Sale**: We do not sell personal information, but you have the right to opt-out if this changes
-- **Non-Discrimination**: Not receive discriminatory treatment for exercising your privacy rights
-
-### 7.4 Exercising Your Rights
-
-To exercise any of these rights, please contact us at **support@junkos.com** with the subject line "Privacy Rights Request." We will respond within 30 days (or as required by applicable law). We may need to verify your identity before processing your request.
-
-## 8. Cookies and Tracking Technologies
-
-We use cookies and similar tracking technologies to enhance your experience. Types of cookies we use:
-
-- **Essential Cookies**: Necessary for the Service to function (e.g., authentication, security)
-- **Analytics Cookies**: Help us understand how you use the Service (e.g., Google Analytics)
-- **Preference Cookies**: Remember your settings and preferences
-- **Marketing Cookies**: Track effectiveness of our advertising campaigns
-
-You can manage cookie preferences through your browser settings. Note that disabling certain cookies may limit functionality.
-
-## 9. Third-Party Links
-
-Our Service may contain links to third-party websites and services. We are not responsible for the privacy practices of these third parties. We encourage you to review their privacy policies before providing any information.
-
-## 10. Children's Privacy
-
-JunkOS is not intended for users under the age of 18. We do not knowingly collect personal information from children under 18. If you are a parent or guardian and believe your child has provided us with personal information, please contact us at **support@junkos.com**, and we will promptly delete such information.
-
-## 11. International Data Transfers
-
-Your information may be transferred to and processed in countries other than your country of residence, including the United States where our servers are located. These countries may have data protection laws that differ from those in your country.
-
-For EEA residents, we ensure appropriate safeguards are in place, such as:
-
-- Standard Contractual Clauses approved by the European Commission
-- Adequacy decisions by the European Commission
-- Privacy Shield frameworks (where applicable)
-
-## 12. California "Do Not Track" Disclosure
-
-Our Service does not currently respond to "Do Not Track" (DNT) signals from browsers. We continue to collect usage data as described in this Privacy Policy even if a DNT signal is sent.
-
-## 13. Changes to This Privacy Policy
-
-We may update this Privacy Policy from time to time to reflect changes in our practices or legal requirements. We will notify you of material changes by:
-
-- Posting the updated policy on our website with a new "Last Updated" date
-- Sending an email notification (if you have an account)
-- Displaying a prominent notice in the app or on our website
-
-Your continued use of the Service after changes become effective constitutes acceptance of the updated Privacy Policy.
-
-## 14. Contact Us
-
-If you have questions, concerns, or requests regarding this Privacy Policy or our data practices, please contact us:
-
-**JunkOS Inc.**  
-Email: **support@junkos.com**  
-Website: **www.junkos.com**
-
-For GDPR-related inquiries, you may also contact our Data Protection Officer at: **privacy@junkos.com**
+**Effective Date:** February 7, 2026  
+**Last Updated:** February 7, 2026
 
 ---
 
-## Summary of Key Points
+## Introduction
 
-- **What we collect**: Account info, photos, location, payment details, device data
-- **How we use it**: Service delivery, estimates, payments, improvements
-- **Who we share with**: Stripe, AWS, Google Maps, junk removal providers (no selling)
-- **Your rights**: Access, delete, export, opt-out
-- **Security**: Encryption, secure storage, PCI-DSS compliant payments
-- **Contact**: support@junkos.com
+Welcome to JunkOS! We're Gymbuddy (operated by Shamar Donaldson), and we provide on-demand junk removal services in the Tampa, Florida area. We take your privacy seriously and want you to understand exactly how we collect, use, and protect your information.
 
-Thank you for trusting JunkOS with your information. We are committed to protecting your privacy while delivering excellent service.
+This Privacy Policy explains what data we collect when you use the JunkOS mobile app, why we collect it, how we use it, and your rights regarding your personal information.
+
+**By using JunkOS, you agree to the practices described in this Privacy Policy.**
+
+---
+
+## 1. Information We Collect
+
+### 1.1 Information You Provide to Us
+
+When you create an account and use JunkOS, we collect:
+
+- **Contact Information:** Your name, phone number, and email address
+- **Address Information:** Service addresses where you need junk removed
+- **Photos:** Images of items you want removed (for accurate quotes)
+- **Service Preferences:** Details about your junk removal needs and scheduling preferences
+- **Payment Information:** When we integrate Stripe payments, we'll collect billing information (credit card details are processed securely by Stripe and never stored on our servers)
+
+### 1.2 Information We Collect Automatically
+
+- **Location Data:** We collect your device location to:
+  - Verify you're in our service area (Tampa, FL region)
+  - Determine your pickup location for accurate service
+  - We do **not** store your location permanently—it's only used during booking
+- **Booking History:** Records of your service requests, quotes, and completed jobs
+- **Device Information:** Basic device data like operating system version and app version (for technical support)
+
+### 1.3 Information We Don't Collect
+
+- We don't track your browsing behavior outside the app
+- We don't collect biometric data
+- We don't access your contacts, microphone, or other apps without permission
+
+---
+
+## 2. How We Use Your Information
+
+We use your data to provide and improve our junk removal service:
+
+### 2.1 Service Delivery
+
+- Schedule and complete junk removal pickups
+- Calculate accurate quotes based on photos and location
+- Send booking confirmations and service updates
+- Process payments (when Stripe integration is live)
+
+### 2.2 Communication
+
+- Send SMS or email notifications about your bookings (with your consent)
+- Respond to your customer support inquiries
+- Send important service updates (e.g., changes to our service area)
+
+### 2.3 Business Operations
+
+- Maintain booking records for business and compliance purposes
+- Improve our app and service quality
+- Prevent fraud and ensure account security
+
+### 2.4 Legal Compliance
+
+- Comply with applicable laws and regulations
+- Respond to legal requests (subpoenas, court orders, etc.)
+- Enforce our Terms of Service
+
+**We will never sell your personal information to third parties.**
+
+---
+
+## 3. How We Share Your Information
+
+We only share your data when necessary to provide our service:
+
+### 3.1 Service Providers
+
+- **Our Backend Server:** We operate our own API server to manage bookings and user data
+- **Stripe (Future):** Payment processing (Stripe never shares your full payment details with us)
+- **SMS/Email Services (Future):** Third-party providers for sending notifications (only with your consent)
+
+All third-party providers are contractually required to protect your data and use it only for the services they provide to us.
+
+### 3.2 Legal Requirements
+
+We may disclose your information if required by law, such as:
+- In response to a subpoena or court order
+- To protect our rights, property, or safety
+- To investigate fraud or security issues
+
+### 3.3 Business Transfers
+
+If Gymbuddy is acquired or merged with another company, your information may be transferred to the new owner (you'll be notified if this happens).
+
+---
+
+## 4. Data Retention
+
+We retain your information only as long as necessary:
+
+- **Booking Data:** Retained for **7 years** for tax, accounting, and legal compliance purposes
+- **Photos:** **Deleted within 30 days** after your service is completed (we don't need them anymore!)
+- **Location Data:** **Not stored permanently**—only used during booking requests
+- **Account Data:** Retained until you delete your account (see Section 7)
+
+---
+
+## 5. Data Security
+
+We take security seriously and implement industry-standard measures to protect your information:
+
+- **Encryption:** Data transmitted between the app and our servers is encrypted using TLS/SSL
+- **Access Controls:** Only authorized personnel can access your data, and only when necessary
+- **Secure Servers:** Our backend infrastructure follows best practices for data protection
+- **Payment Security:** When Stripe is integrated, all payment data is handled according to PCI DSS standards
+
+**However, no system is 100% secure.** While we strive to protect your data, we cannot guarantee absolute security. Please use strong passwords and keep your account credentials confidential.
+
+---
+
+## 6. Your Privacy Rights
+
+You have control over your personal information. Depending on your location, you may have additional rights under laws like CCPA (California), GDPR (EU/UK), or Florida state law.
+
+### 6.1 Access Your Data
+
+You can request a copy of the personal information we hold about you.
+
+### 6.2 Correct Your Data
+
+You can update your contact information, address, and preferences directly in the app. For other corrections, contact us at [support email].
+
+### 6.3 Delete Your Data
+
+You can delete your account at any time through the app settings. When you delete your account:
+- Your personal information will be permanently deleted within 30 days
+- Booking records will be retained for 7 years (as required by law) but anonymized where possible
+- You can request expedited deletion by contacting us
+
+### 6.4 Opt Out of Marketing
+
+You can opt out of promotional emails or SMS messages at any time:
+- Click "Unsubscribe" in any marketing email
+- Reply "STOP" to any marketing SMS
+- Adjust your notification preferences in the app
+
+**Note:** You cannot opt out of essential service communications (e.g., booking confirmations).
+
+### 6.5 California Residents (CCPA Rights)
+
+If you're a California resident, you have additional rights:
+- **Right to Know:** Request details about the data we've collected about you in the past 12 months
+- **Right to Delete:** Request deletion of your personal information (subject to legal exceptions)
+- **Right to Opt-Out of Sale:** We don't sell your data, so this doesn't apply—but you can rest easy!
+- **Non-Discrimination:** We won't discriminate against you for exercising your privacy rights
+
+To exercise these rights, email us at [privacy email] or use the in-app contact form.
+
+### 6.6 EU/EEA Residents (GDPR Rights)
+
+If you're in the European Union or EEA (though we primarily serve Florida), you have rights under GDPR:
+- Right to access, rectify, and erase your data
+- Right to restrict or object to processing
+- Right to data portability
+- Right to withdraw consent
+- Right to lodge a complaint with your local data protection authority
+
+---
+
+## 7. Children's Privacy
+
+JunkOS is not intended for children under 13. We do not knowingly collect information from children. If you believe a child has provided us with personal information, please contact us immediately, and we'll delete it.
+
+---
+
+## 8. Location Services & Permissions
+
+JunkOS requires location access to function properly:
+
+- **Why:** To verify service area and determine pickup location
+- **When:** Only when you're actively using the app (not in the background)
+- **Control:** You can disable location access in your device settings, but this will prevent you from booking services
+
+We also request camera access to take photos of items for removal. You can decline, but you'll need to provide photos another way.
+
+---
+
+## 9. Third-Party Links
+
+JunkOS may contain links to third-party websites (e.g., our website or social media). This Privacy Policy only applies to JunkOS—we're not responsible for the privacy practices of other sites. Please review their privacy policies before providing any information.
+
+---
+
+## 10. Changes to This Privacy Policy
+
+We may update this Privacy Policy from time to time to reflect changes in our practices, technology, or legal requirements. When we do:
+
+- We'll update the "Last Updated" date at the top
+- For significant changes, we'll notify you via email or in-app notification
+- Your continued use of JunkOS after changes means you accept the updated policy
+
+We encourage you to review this policy periodically.
+
+---
+
+## 11. International Users
+
+JunkOS is based in Florida, USA, and our servers are located in the United States. If you use JunkOS from outside the U.S., your information will be transferred to and processed in the U.S., which may have different data protection laws than your country.
+
+By using JunkOS, you consent to this transfer.
+
+---
+
+## 12. Do Not Track Signals
+
+Some browsers have "Do Not Track" (DNT) features. JunkOS does not currently respond to DNT signals because there's no industry standard for how to interpret them. We don't track you across websites anyway!
+
+---
+
+## 13. Contact Us
+
+If you have questions, concerns, or requests regarding your privacy or this Privacy Policy, please contact us:
+
+**Gymbuddy / Shamar Donaldson**  
+📧 Email: [insert support email]  
+📍 Address: [Tampa, FL address if applicable]  
+📱 Phone: [support phone number]
+
+**Response Time:** We aim to respond to all privacy inquiries within 10 business days.
+
+---
+
+## 14. Your Consent
+
+By using JunkOS, you acknowledge that you have read and understood this Privacy Policy and agree to its terms.
+
+---
+
+**Thank you for trusting JunkOS with your junk removal needs!** 🗑️✨

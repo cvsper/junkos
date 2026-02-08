@@ -1,0 +1,67 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background with rounded corners (iOS style) -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#7C7FF5;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#6366F1;stop-opacity:1" />
+    </linearGradient>
+    
+    <linearGradient id="arrowGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#34D399;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#10B981;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Shadow filter -->
+    <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="8"/>
+      <feOffset dx="0" dy="4" result="offsetblur"/>
+      <feComponentTransfer>
+        <feFuncA type="linear" slope="0.3"/>
+      </feComponentTransfer>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1024" height="1024" rx="180" fill="url(#bgGradient)"/>
+  
+  <!-- Trash bin body (simplified, modern design) -->
+  <g filter="url(#shadow)">
+    <!-- Main bin container -->
+    <path d="M 362 380 L 400 780 Q 400 800 420 800 L 604 800 Q 624 800 624 780 L 662 380 Z" 
+          fill="#FFFFFF" opacity="0.95"/>
+    
+    <!-- Bin lid -->
+    <rect x="340" y="340" width="344" height="50" rx="8" fill="#FFFFFF" opacity="0.95"/>
+    
+    <!-- Lid handle -->
+    <rect x="452" y="310" width="120" height="40" rx="20" fill="#FFFFFF" opacity="0.9"/>
+    
+    <!-- Bin details - vertical lines for texture -->
+    <line x1="450" y1="400" x2="445" y2="760" stroke="#6366F1" stroke-width="3" opacity="0.2"/>
+    <line x1="512" y1="400" x2="512" y2="770" stroke="#6366F1" stroke-width="3" opacity="0.2"/>
+    <line x1="574" y1="400" x2="579" y2="760" stroke="#6366F1" stroke-width="3" opacity="0.2"/>
+  </g>
+  
+  <!-- Upward arrow (removal/cleanup concept) -->
+  <g filter="url(#shadow)">
+    <!-- Arrow shaft -->
+    <rect x="482" y="280" width="60" height="280" rx="30" fill="url(#arrowGradient)"/>
+    
+    <!-- Arrow head -->
+    <path d="M 512 180 L 612 300 L 562 300 L 562 330 L 462 330 L 462 300 L 412 300 Z" 
+          fill="url(#arrowGradient)"/>
+    
+    <!-- Arrow shine effect -->
+    <ellipse cx="512" cy="250" rx="20" ry="60" fill="#FFFFFF" opacity="0.3"/>
+  </g>
+  
+  <!-- Optional: Sparkle effects for "clean" concept -->
+  <circle cx="720" cy="280" r="12" fill="#FFFFFF" opacity="0.8"/>
+  <circle cx="740" cy="320" r="8" fill="#FFFFFF" opacity="0.6"/>
+  <circle cx="300" cy="300" r="10" fill="#FFFFFF" opacity="0.7"/>
+  <circle cx="280" cy="350" r="6" fill="#FFFFFF" opacity="0.5"/>
+</svg>

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>JunkOS Booking</title>
+    <style>
+      html, body { 
+        height: 100%; 
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      }
+      body { overflow: hidden; }
+      #root { 
+        display: flex; 
+        height: 100%; 
+        flex: 1;
+        background: linear-gradient(135deg, #007AFF 0%, #5856D6 100%);
+        justify-content: center;
+        align-items: center;
+        color: white;
+      }
+      #loading {
+        text-align: center;
+      }
+      #loading h1 {
+        font-size: 48px;
+        margin: 0 0 20px 0;
+      }
+      #loading p {
+        font-size: 24px;
+        opacity: 0.8;
+      }
+    </style>
+</head>
+<body>
+    <div id="root">
+        <div id="loading">
+            <h1>🚀 JunkOS Loading...</h1>
+            <p>If this stays, check console (Cmd+Option+I)</p>
+        </div>
+    </div>
+    
+    <script>
+        console.log('✅ HTML loaded at:', new Date().toISOString());
+        console.log('✅ Root element exists:', !!document.getElementById('root'));
+        
+        // Load the Expo bundle
+        const bundleScript = document.createElement('script');
+        bundleScript.src = '/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable';
+        
+        bundleScript.onload = function() {
+            console.log('✅ Bundle loaded successfully');
+            setTimeout(() => {
+                const root = document.getElementById('root');
+                if (root.children.length > 1) {
+                    console.log('✅ React mounted!');
+                } else {
+                    console.error('❌ React did NOT mount. Root still has loading screen.');
+                }
+            }, 2000);
+        };
+        
+        bundleScript.onerror = function(e) {
+            console.error('❌ Bundle failed to load:', e);
+            document.getElementById('loading').innerHTML = '<h1>❌ Bundle Load Failed</h1><p>Check terminal for Metro errors</p>';
+        };
+        
+        document.body.appendChild(bundleScript);
+        console.log('📦 Bundle script tag added to page');
+    </script>
+</body>
+</html>

@@ -9,6 +9,8 @@
 /* Begin PBXBuildFile section */
 		07D3D958F6EC6B2561F6FEAA /* DistanceBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = F412C09E80A444B74B8D3414 /* DistanceBadge.swift */; };
 		07FA90FCA1373A44089255FA /* ActiveJobView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3CEB980FB0B2AE4E5E91426 /* ActiveJobView.swift */; };
+		14790A1C6E4BF7984B5FF3E4 /* DriverAnnotationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17D1EDD45EA760AA572801D2 /* DriverAnnotationView.swift */; };
+		1571465FB7BA821EBF25A926 /* LiveMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D29936281490BE9C931F899 /* LiveMapView.swift */; };
 		16B71C5163B965FBDF945A5C /* ImageUploadService.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE6A30F12DD65BEE0708A3A6 /* ImageUploadService.swift */; };
 		17369207B2CC0E1488DEB91E /* ProfileViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38475343119CF6E9F5585E9 /* ProfileViewModel.swift */; };
 		19A68D46F9F1493920BF9B4F /* AppRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 831F50402DD302638AD4EF32 /* AppRouter.swift */; };
@@ -17,15 +19,18 @@
 		1DC41CF49D4FA211AC146DAE /* AuthViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54148D05F5465CFF5EB1F3CC /* AuthViewModel.swift */; };
 		1EE82A346AE23683BAC05940 /* JobStatusStepperView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54200844DD474F229259E177 /* JobStatusStepperView.swift */; };
 		24034206CB760E5A99B8052F /* AuthModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AC9DCA75B3DE3D624F8A427 /* AuthModels.swift */; };
+		29C93DE1E779BE522D41D0C0 /* LiveMapViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F14A16027C1CA38C7BD4E4F7 /* LiveMapViewModel.swift */; };
 		29EE5336D11165A1FC0ABC1B /* EmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF3CF6C40F54DC805B224734 /* EmptyStateView.swift */; };
 		2A3FF2C1D2D3EEB79385B548 /* StarRating.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00CF7F44684B3635D99E9F02 /* StarRating.swift */; };
 		33B116E92E3F2A4C3480FE24 /* JunkOSDriverApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C14897C95FBADE41B4B75E28 /* JunkOSDriverApp.swift */; };
+		34C178E44B74FE2E6C1AC682 /* ActiveJobMapOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 344C45FBFECAA97F6CB507F5 /* ActiveJobMapOverlay.swift */; };
 		3542CF9944051485B6D25AFE /* RegistrationViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E4022AADB725ED1A37514F9 /* RegistrationViewModel.swift */; };
 		38783044E1350D9A73D45656 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3988FAD16A2B52B69264800C /* Config.swift */; };
 		39DEA556224982280DB9CC88 /* TruckTypeSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1DC4D6D20A3CCC9709A404C /* TruckTypeSelectionView.swift */; };
 		3D564E63BD08DA8886FDA8AF /* EarningsModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6B51D6BBCBBEA9C72F356FB /* EarningsModels.swift */; };
 		4005FB578099B0D60FA29E27 /* JobDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BEAD9400F04B3D94D21E5F2A /* JobDetailView.swift */; };
 		4496E310971F560F7A2B8713 /* ProfileSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7CB288966F25A1F3987FC69 /* ProfileSettingsView.swift */; };
+		473C9CDB3A4B180A6F89BECC /* JobAlertOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 490C03AEE834921413337ABA /* JobAlertOverlay.swift */; };
 		4960C1A39CDFAFCC28BF11F5 /* OnlineToggleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C356D07B138BA8E0CE40F5 /* OnlineToggleView.swift */; };
 		4E8639A2456E077412D7C2B2 /* JobFeedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54CB44E65469A3687838FB24 /* JobFeedView.swift */; };
 		4F219CCBF09D2A91F8C8A08F /* DriverDesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 803F2EDEBF20C6218ADFA2CB /* DriverDesignSystem.swift */; };
@@ -71,6 +76,7 @@
 /* Begin PBXFileReference section */
 		00CF7F44684B3635D99E9F02 /* StarRating.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StarRating.swift; sourceTree = "<group>"; };
 		0AA0B3DB0C558CAF78DD76C4 /* AfterPhotosView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AfterPhotosView.swift; sourceTree = "<group>"; };
+		17D1EDD45EA760AA572801D2 /* DriverAnnotationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriverAnnotationView.swift; sourceTree = "<group>"; };
 		19B60B02EDBC3F4047A2BD81 /* QuickStatsCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickStatsCard.swift; sourceTree = "<group>"; };
 		1B159DA9208AE40B64BFAC73 /* PriceBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PriceBadge.swift; sourceTree = "<group>"; };
 		1CA79264B8151B5CFA750F30 /* JunkOS-Driver.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = "JunkOS-Driver.app"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -78,12 +84,15 @@
 		1FCB1498666015B9BBBC1DF1 /* HapticManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticManager.swift; sourceTree = "<group>"; };
 		228E7D7E7644F745D1DAAFED /* SplashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplashView.swift; sourceTree = "<group>"; };
 		24F8F8ADE1A72C73B582B02B /* PayoutSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PayoutSettingsView.swift; sourceTree = "<group>"; };
+		344C45FBFECAA97F6CB507F5 /* ActiveJobMapOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveJobMapOverlay.swift; sourceTree = "<group>"; };
 		3650D5429433D4FB66AA8423 /* ContractorRegistrationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContractorRegistrationView.swift; sourceTree = "<group>"; };
 		3988FAD16A2B52B69264800C /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
 		39B6653495EF4591ACD6E5C9 /* DashboardViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardViewModel.swift; sourceTree = "<group>"; };
 		3AC9DCA75B3DE3D624F8A427 /* AuthModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthModels.swift; sourceTree = "<group>"; };
 		3E4022AADB725ED1A37514F9 /* RegistrationViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegistrationViewModel.swift; sourceTree = "<group>"; };
 		47C356D07B138BA8E0CE40F5 /* OnlineToggleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnlineToggleView.swift; sourceTree = "<group>"; };
+		490C03AEE834921413337ABA /* JobAlertOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobAlertOverlay.swift; sourceTree = "<group>"; };
+		4D29936281490BE9C931F899 /* LiveMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveMapView.swift; sourceTree = "<group>"; };
 		51AC27DA7E685BE7675B0FB1 /* JobModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobModels.swift; sourceTree = "<group>"; };
 		54148D05F5465CFF5EB1F3CC /* AuthViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthViewModel.swift; sourceTree = "<group>"; };
 		54200844DD474F229259E177 /* JobStatusStepperView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobStatusStepperView.swift; sourceTree = "<group>"; };
@@ -124,6 +133,7 @@
 		ED5DECECC5344F008D376847 /* EarningsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EarningsView.swift; sourceTree = "<group>"; };
 		EE6A30F12DD65BEE0708A3A6 /* ImageUploadService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageUploadService.swift; sourceTree = "<group>"; };
 		EF3CF6C40F54DC805B224734 /* EmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyStateView.swift; sourceTree = "<group>"; };
+		F14A16027C1CA38C7BD4E4F7 /* LiveMapViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveMapViewModel.swift; sourceTree = "<group>"; };
 		F2E6817B24EDDB263AFA85CF /* ContractorModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContractorModels.swift; sourceTree = "<group>"; };
 		F3CEB980FB0B2AE4E5E91426 /* ActiveJobView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveJobView.swift; sourceTree = "<group>"; };
 		F412C09E80A444B74B8D3414 /* DistanceBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistanceBadge.swift; sourceTree = "<group>"; };
@@ -176,6 +186,7 @@
 				FF238B4D85E70211F40A21F7 /* EarningsViewModel.swift */,
 				80AE8F889AD33D7F0E337978 /* JobDetailViewModel.swift */,
 				9F5425951FF88727F63532BA /* JobFeedViewModel.swift */,
+				F14A16027C1CA38C7BD4E4F7 /* LiveMapViewModel.swift */,
 				B38475343119CF6E9F5585E9 /* ProfileViewModel.swift */,
 				3E4022AADB725ED1A37514F9 /* RegistrationViewModel.swift */,
 			);
@@ -216,6 +227,17 @@
 				ABD336317A641FD03A7F918D /* StatusBadge.swift */,
 			);
 			path = Components;
+			sourceTree = "<group>";
+		};
+		5997DA88E928A2A8B445CB8F /* Map */ = {
+			isa = PBXGroup;
+			children = (
+				344C45FBFECAA97F6CB507F5 /* ActiveJobMapOverlay.swift */,
+				17D1EDD45EA760AA572801D2 /* DriverAnnotationView.swift */,
+				490C03AEE834921413337ABA /* JobAlertOverlay.swift */,
+				4D29936281490BE9C931F899 /* LiveMapView.swift */,
+			);
+			path = Map;
 			sourceTree = "<group>";
 		};
 		6A38FA0B2CA9712921C39C93 /* Config */ = {
@@ -266,16 +288,7 @@
 		A1350807EEEC7AE55C5B8F27 = {
 			isa = PBXGroup;
 			children = (
-				4DFFE93115C932ACD6706F02 /* Components */,
-				6A38FA0B2CA9712921C39C93 /* Config */,
-				761042F99BCA6B01B2D4DF4D /* Design */,
 				8D21F9779AE33AA444F56A39 /* JunkOS-Driver */,
-				9F9151FA6CF10BC3BAAA40B7 /* Managers */,
-				25139F93F81E700B63B6F1E2 /* Models */,
-				BB1F4C963C05906C2361DB9A /* Services */,
-				EC5CECDEE98C793847983943 /* Utilities */,
-				336EE321E5391E10A78DF6ED /* ViewModels */,
-				D96E06A3BE450C753EC755A4 /* Views */,
 				3B4C59482E265875675AEC66 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -338,6 +351,7 @@
 				F343194194DD1FD8F2409B25 /* Dashboard */,
 				4BF183CA4A1E72ADBBC093DA /* Earnings */,
 				C8BD727E7D1D584FDA0F19BC /* Jobs */,
+				5997DA88E928A2A8B445CB8F /* Map */,
 				D9180C78190C86FFAA2913CF /* Profile */,
 				F2186ED58943CF94D97DC6DF /* Registration */,
 				D91FF3DB5B0E5B3BFC664B26 /* Shared */,
@@ -453,6 +467,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				34C178E44B74FE2E6C1AC682 /* ActiveJobMapOverlay.swift in Sources */,
 				07FA90FCA1373A44089255FA /* ActiveJobView.swift in Sources */,
 				E846E81BACDA70840792507E /* ActiveJobViewModel.swift in Sources */,
 				82DEFA8055CC0754E1141F49 /* AfterPhotosView.swift in Sources */,
@@ -474,6 +489,7 @@
 				07D3D958F6EC6B2561F6FEAA /* DistanceBadge.swift in Sources */,
 				A79407865044DF4EEDFA2AB5 /* DocumentUploadView.swift in Sources */,
 				E8806EA1AE37848938F8D70C /* DriverAPIClient.swift in Sources */,
+				14790A1C6E4BF7984B5FF3E4 /* DriverAnnotationView.swift in Sources */,
 				B9EF3DD412FA186F53E44D22 /* DriverAuthView.swift in Sources */,
 				4F219CCBF09D2A91F8C8A08F /* DriverDesignSystem.swift in Sources */,
 				A1874D6EE60010B81564415A /* DriverLoginView.swift in Sources */,
@@ -485,6 +501,7 @@
 				29EE5336D11165A1FC0ABC1B /* EmptyStateView.swift in Sources */,
 				5C4180CB8AE424D51E75FF1F /* HapticManager.swift in Sources */,
 				16B71C5163B965FBDF945A5C /* ImageUploadService.swift in Sources */,
+				473C9CDB3A4B180A6F89BECC /* JobAlertOverlay.swift in Sources */,
 				856766387D9F89422AAA08C5 /* JobCardView.swift in Sources */,
 				CD1DCEE1D0AB13C15EFCD4DE /* JobCompletionView.swift in Sources */,
 				4005FB578099B0D60FA29E27 /* JobDetailView.swift in Sources */,
@@ -495,6 +512,8 @@
 				1EE82A346AE23683BAC05940 /* JobStatusStepperView.swift in Sources */,
 				33B116E92E3F2A4C3480FE24 /* JunkOSDriverApp.swift in Sources */,
 				B6088267C57D4BFE5934D029 /* KeychainHelper.swift in Sources */,
+				1571465FB7BA821EBF25A926 /* LiveMapView.swift in Sources */,
+				29C93DE1E779BE522D41D0C0 /* LiveMapViewModel.swift in Sources */,
 				CB3DDC4640A48606B0591666 /* LocationManager.swift in Sources */,
 				B03F09EC14CA94ED5F570AEB /* NavigateToJobView.swift in Sources */,
 				C185F7208CF4AD483FB0D267 /* NotificationManager.swift in Sources */,
@@ -610,7 +629,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 4;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -668,7 +687,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 4;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
