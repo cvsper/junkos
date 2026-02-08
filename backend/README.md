@@ -1,455 +1,312 @@
 # JunkOS Backend API
 
-Flask-based REST API for the JunkOS multi-tenant junk removal SaaS platform.
-
-## Features
-
-- 🏢 **Multi-tenant architecture** with tenant isolation
-- 🔐 **JWT authentication** with role-based access control
-- 📦 **SQLAlchemy ORM** with PostgreSQL
-- 🚀 **Flask factory pattern** for clean app structure
-- ✅ **CORS enabled** for frontend integration
-
-## Tech Stack
-
-- **Flask 3.0** - Web framework
-- **SQLAlchemy** - ORM
-- **PostgreSQL** - Database
-- **PyJWT** - JWT tokens
-- **bcrypt** - Password hashing
-- **Gunicorn** - Production server
+Flask-based REST API for JunkOS junk removal booking service.
 
 ## Quick Start
 
-### 1. Prerequisites
-
-- Python 3.9+
-- PostgreSQL 14+
-- pip
-
-### 2. Installation
-
+**Option 1: Use the run script (easiest)**
 ```bash
-# Clone and navigate to backend directory
-cd ~/Documents/programs/webapps/junkos/backend/
+./run.sh
+```
 
+**Option 2: Manual setup**
+```bash
 # Create virtual environment
 python3 -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+source venv/bin/activate
 
 # Install dependencies
 pip install -r requirements.txt
-```
 
-### 3. Configuration
-
-```bash
-# Copy example env file
+# Copy environment config
 cp .env.example .env
 
-# Edit .env with your settings
-# - Set DATABASE_URL to your PostgreSQL connection string
-# - Change SECRET_KEY and JWT_SECRET_KEY to random strings
-# - Adjust CORS_ORIGINS for your frontend URLs
+# Run the server
+python app.py
 ```
 
-### 4. Database Setup
+Server runs on `http://localhost:8080`
 
-```bash
-# Make sure PostgreSQL is running
+## Authentication
 
-# Create database
-createdb junkos_dev
+All API endpoints (except `/api/health`) require an API key in the request header:
 
-# Run schema (from parent directory)
-psql junkos_dev < ../junk_removal_schema.sql
-
-# Or using psql prompt:
-# psql
-# CREATE DATABASE junkos_dev;
-# \c junkos_dev
-# \i ../junk_removal_schema.sql
+```
+X-API-Key: junkos-api-key-12345
 ```
 
-### 5. Run Development Server
-
-```bash
-# Activate virtual environment if not already active
-source venv/bin/activate
-
-# Run the app
-python run.py
-
-# Or with Flask CLI
-export FLASK_APP=run.py
-flask run
-```
-
-The API will be available at `http://localhost:5000`
-
-### 6. Test the API
-
-```bash
-# Health check
-curl http://localhost:5000/health
-
-# Expected response:
-# {"status": "healthy", "service": "junkos-backend"}
-```
+Change this in `.env` for production!
 
 ## API Endpoints
 
-### Authentication
+### 1. Health Check
+```
+GET /api/health
+```
 
-#### Register User
-```http
-POST /api/auth/register
-Content-Type: application/json
-
+**Response:**
+```json
 {
-  "tenant_id": "uuid",
-  "email": "admin@example.com",
-  "password": "securepass123",
-  "first_name": "John",
-  "last_name": "Doe",
-  "role": "admin",
-  "phone": "555-1234"
+  "status": "healthy",
+  "service": "JunkOS API"
 }
 ```
 
-#### Login
-```http
-POST /api/auth/login
-Content-Type: application/json
+---
 
+### 2. Get Services
+```
+GET /api/services
+```
+
+**Headers:**
+```
+X-API-Key: your-api-key
+```
+
+**Response:**
+```json
 {
-  "email": "admin@example.com",
-  "password": "securepass123",
-  "tenant_id": "uuid"
+  "success": true,
+  "services": [
+    {
+      "id": 1,
+      "name": "Single Item Removal",
+      "description": "Remove one large item",
+      "base_price": 89.00,
+      "unit": "item"
+    }
+  ]
+}
+```
+
+---
+
+### 3. Get Quote
+```
+POST /api/quote
+```
+
+**Headers:**
+```
+X-API-Key: your-api-key
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "services": [1, 2],
+  "zip_code": "10001"
 }
 ```
 
 **Response:**
 ```json
 {
-  "message": "Login successful",
-  "token": "eyJ0eXAiOiJKV1QiLCJhbGc...",
-  "user": { ... }
+  "success": true,
+  "estimated_price": 239.00,
+  "services": [...],
+  "available_time_slots": [
+    "2026-02-08 09:00",
+    "2026-02-08 13:00"
+  ],
+  "currency": "USD"
 }
 ```
 
-### Bookings
+---
 
-All booking endpoints require authentication. Include JWT token in header:
+### 4. Create Booking
 ```
-Authorization: Bearer <token>
-```
-
-#### List Bookings
-```http
-GET /api/bookings?page=1&per_page=20&status=pending
-```
-
-#### Create Booking
-```http
 POST /api/bookings
-Content-Type: application/json
+```
 
+**Headers:**
+```
+X-API-Key: your-api-key
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
 {
-  "customer_id": "uuid",
-  "service_id": "uuid",
-  "scheduled_date": "2024-01-15",
-  "scheduled_time_start": "09:00",
-  "service_address_line1": "123 Main St",
-  "service_city": "Boston",
-  "service_state": "MA",
-  "service_postal_code": "02101",
-  "items_description": "Old furniture and appliances",
-  "special_instructions": "Call before arriving",
-  "estimated_volume": 3.5
+  "address": "123 Main St, New York, NY 10001",
+  "zip_code": "10001",
+  "services": [1, 2],
+  "photos": [
+    "https://example.com/photo1.jpg",
+    "https://example.com/photo2.jpg"
+  ],
+  "scheduled_datetime": "2026-02-08 09:00",
+  "customer": {
+    "name": "John Doe",
+    "email": "john@example.com",
+    "phone": "+1-555-123-4567"
+  },
+  "notes": "Large couch and mattress removal"
 }
 ```
 
-#### Get Booking
-```http
+**Response:**
+```json
+{
+  "success": true,
+  "booking_id": 1,
+  "estimated_price": 239.00,
+  "confirmation": "Booking #1 confirmed",
+  "scheduled_datetime": "2026-02-08 09:00",
+  "services": [...]
+}
+```
+
+---
+
+### 5. Get Booking Details
+```
 GET /api/bookings/:id
 ```
 
-### Jobs
-
-#### List Jobs
-```http
-GET /api/jobs?page=1&status=in_progress
+**Headers:**
+```
+X-API-Key: your-api-key
 ```
 
-**Note:** Drivers only see jobs assigned to them. Admins/dispatchers see all jobs.
-
-#### Update Job Status
-```http
-PATCH /api/jobs/:id
-Content-Type: application/json
-
+**Response:**
+```json
 {
-  "status": "in_progress",
-  "actual_start_time": "2024-01-15T09:00:00Z",
-  "actual_volume": 4.5
+  "success": true,
+  "booking": {
+    "id": 1,
+    "customer_id": 1,
+    "customer_name": "John Doe",
+    "customer_email": "john@example.com",
+    "customer_phone": "+1-555-123-4567",
+    "address": "123 Main St, New York, NY 10001",
+    "zip_code": "10001",
+    "services": [1, 2],
+    "photos": ["https://..."],
+    "scheduled_datetime": "2026-02-08 09:00",
+    "estimated_price": 239.00,
+    "status": "pending",
+    "notes": "Large couch and mattress removal",
+    "created_at": "2026-02-07 10:30:00"
+  }
 }
 ```
 
-#### Assign Job to Driver (Admin/Dispatcher only)
-```http
-POST /api/jobs/:id/assign
-Content-Type: application/json
+---
 
-{
-  "driver_ids": ["driver-uuid-1", "driver-uuid-2"],
-  "role_in_job": "driver"
-}
-```
+## Database Schema
 
-### Payments
+### customers
+- `id` (INTEGER, PRIMARY KEY)
+- `name` (TEXT)
+- `email` (TEXT)
+- `phone` (TEXT)
+- `created_at` (TIMESTAMP)
 
-#### List Invoices
-```http
-GET /api/payments/invoices?page=1&status=sent
-```
+### services
+- `id` (INTEGER, PRIMARY KEY)
+- `name` (TEXT)
+- `description` (TEXT)
+- `base_price` (REAL)
+- `unit` (TEXT)
+- `created_at` (TIMESTAMP)
 
-#### Get Invoice
-```http
-GET /api/payments/invoices/:id
-```
+### bookings
+- `id` (INTEGER, PRIMARY KEY)
+- `customer_id` (INTEGER, FOREIGN KEY)
+- `address` (TEXT)
+- `zip_code` (TEXT)
+- `services` (TEXT, JSON array)
+- `photos` (TEXT, JSON array)
+- `scheduled_datetime` (TEXT)
+- `estimated_price` (REAL)
+- `status` (TEXT, default: 'pending')
+- `notes` (TEXT)
+- `created_at` (TIMESTAMP)
 
-#### List Payments
-```http
-GET /api/payments?payment_status=completed
-```
+---
 
-#### Record Payment (Admin/Dispatcher only)
-```http
-POST /api/payments
-Content-Type: application/json
+## Testing with curl
 
-{
-  "invoice_id": "uuid",
-  "customer_id": "uuid",
-  "amount": 150.00,
-  "payment_method": "credit_card",
-  "payment_status": "completed",
-  "transaction_id": "txn_123456",
-  "processor": "stripe",
-  "notes": "Payment via Stripe"
-}
-```
-
-## User Roles
-
-- **admin**: Full access to all resources
-- **dispatcher**: Manage jobs, assign drivers, view reports
-- **driver**: View assigned jobs, update job status
-
-## Project Structure
-
-```
-backend/
-├── app/
-│   ├── __init__.py          # Flask factory and app initialization
-│   ├── models.py            # SQLAlchemy models
-│   ├── utils.py             # Helper functions and decorators
-│   └── routes/
-│       ├── __init__.py
-│       ├── auth.py          # Authentication endpoints
-│       ├── bookings.py      # Booking management
-│       ├── jobs.py          # Job management
-│       └── payments.py      # Payment and invoice endpoints
-├── config.py                # Configuration classes
-├── requirements.txt         # Python dependencies
-├── .env.example             # Example environment variables
-├── run.py                   # Application entry point
-└── README.md               # This file
-```
-
-## Security Features
-
-- **JWT tokens** with configurable expiration
-- **bcrypt password hashing** with salt
-- **Tenant isolation** enforced at database and API level
-- **Role-based access control** with decorators
-- **CORS configuration** for cross-origin requests
-
-## Production Deployment
-
-### Using Gunicorn
-
+### Get services:
 ```bash
-# Install gunicorn (already in requirements.txt)
-pip install gunicorn
-
-# Run with gunicorn
-gunicorn -w 4 -b 0.0.0.0:5000 run:app
-
-# With environment variables
-gunicorn -w 4 -b 0.0.0.0:5000 \
-  --env FLASK_ENV=production \
-  --access-logfile - \
-  --error-logfile - \
-  run:app
+curl -H "X-API-Key: junkos-api-key-12345" \
+  http://localhost:8080/api/services
 ```
 
-### Environment Variables for Production
-
+### Get quote:
 ```bash
-FLASK_ENV=production
-DEBUG=False
-SECRET_KEY=<strong-random-key>
-JWT_SECRET_KEY=<strong-random-key>
-DATABASE_URL=postgresql://user:pass@host:5432/dbname
-CORS_ORIGINS=https://your-frontend.com,https://admin.your-frontend.com
+curl -X POST \
+  -H "X-API-Key: junkos-api-key-12345" \
+  -H "Content-Type: application/json" \
+  -d '{"services": [1, 2], "zip_code": "10001"}' \
+  http://localhost:8080/api/quote
 ```
 
-### Systemd Service (Optional)
-
-Create `/etc/systemd/system/junkos-backend.service`:
-
-```ini
-[Unit]
-Description=JunkOS Backend API
-After=network.target postgresql.service
-
-[Service]
-User=www-data
-WorkingDirectory=/path/to/backend
-EnvironmentFile=/path/to/backend/.env
-ExecStart=/path/to/venv/bin/gunicorn -w 4 -b 0.0.0.0:5000 run:app
-Restart=always
-
-[Install]
-WantedBy=multi-user.target
-```
-
-Then:
+### Create booking:
 ```bash
-sudo systemctl daemon-reload
-sudo systemctl enable junkos-backend
-sudo systemctl start junkos-backend
-```
-
-## Development Tips
-
-### Create First Tenant (Manual)
-
-```sql
--- Connect to database
-psql junkos_dev
-
--- Create tenant
-INSERT INTO tenants (id, name, slug, contact_email, status)
-VALUES (
-  uuid_generate_v4(),
-  'Demo Company',
-  'demo',
-  'demo@example.com',
-  'active'
-);
-
--- Get tenant ID
-SELECT id, name, slug FROM tenants;
-```
-
-### Test Authentication Flow
-
-```bash
-# 1. Register user (use tenant_id from above)
-curl -X POST http://localhost:5000/api/auth/register \
+curl -X POST \
+  -H "X-API-Key: junkos-api-key-12345" \
   -H "Content-Type: application/json" \
   -d '{
-    "tenant_id": "YOUR-TENANT-ID",
-    "email": "admin@demo.com",
-    "password": "admin123",
-    "first_name": "Admin",
-    "last_name": "User",
-    "role": "admin"
-  }'
-
-# 2. Login
-curl -X POST http://localhost:5000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "admin@demo.com",
-    "password": "admin123"
-  }'
-
-# 3. Use token for authenticated requests
-curl http://localhost:5000/api/bookings \
-  -H "Authorization: Bearer YOUR-JWT-TOKEN"
+    "address": "123 Main St, New York, NY 10001",
+    "zip_code": "10001",
+    "services": [1],
+    "scheduled_datetime": "2026-02-08 09:00",
+    "customer": {
+      "name": "John Doe",
+      "email": "john@example.com",
+      "phone": "+1-555-123-4567"
+    }
+  }' \
+  http://localhost:8080/api/bookings
 ```
 
-## Troubleshooting
-
-### Database Connection Issues
-
+### Get booking:
 ```bash
-# Check PostgreSQL is running
-pg_isready
-
-# Test connection
-psql -U your_user -d junkos_dev -c "SELECT 1"
-
-# Check DATABASE_URL format
-echo $DATABASE_URL
-# Should be: postgresql://username:password@host:port/database
+curl -H "X-API-Key: junkos-api-key-12345" \
+  http://localhost:8080/api/bookings/1
 ```
 
-### Import Errors
+---
 
-```bash
-# Make sure virtual environment is activated
-source venv/bin/activate
+## CORS
 
-# Reinstall dependencies
-pip install -r requirements.txt
+CORS is enabled for all origins to support iOS app development. Restrict this in production:
 
-# Check Python version
-python --version  # Should be 3.9+
+```python
+CORS(app, resources={r"/api/*": {"origins": "https://your-ios-app.com"}})
 ```
 
-### CORS Issues
-
-If frontend can't connect, check:
-1. `.env` has correct `CORS_ORIGINS`
-2. Frontend is using the correct API URL
-3. JWT token is being sent in `Authorization` header
+---
 
 ## Next Steps
 
-### Recommended Enhancements
+- [ ] Add Stripe payment integration
+- [ ] Implement user authentication (JWT)
+- [ ] Add photo upload endpoint
+- [ ] Email confirmations
+- [ ] Admin dashboard endpoints
+- [ ] Real-time availability checking
+- [ ] Rate limiting
+- [ ] Input validation with schemas
 
-1. **Add more endpoints**: Update/delete for bookings, customers, etc.
-2. **Geocoding**: Integrate Google Maps API to populate latitude/longitude
-3. **Email notifications**: Add email service for booking confirmations
-4. **Payment integration**: Connect Stripe or Square APIs
-5. **File uploads**: Add photo upload endpoints
-6. **Webhooks**: Implement webhook handlers for payment processors
-7. **Rate limiting**: Add rate limiting with Flask-Limiter
-8. **Logging**: Implement structured logging
-9. **Testing**: Add pytest test suite
-10. **API documentation**: Generate OpenAPI/Swagger docs
+---
 
-### Migration to Production
+## File Structure
 
-- Set up proper database backups
-- Configure SSL/TLS certificates
-- Set up monitoring (Sentry, DataDog, etc.)
-- Implement proper logging and error tracking
-- Add health checks and metrics endpoints
-- Set up CI/CD pipeline
-
-## Support
-
-For issues or questions:
-- Check the database schema: `../junk_removal_schema.sql`
-- Review Flask documentation: https://flask.palletsprojects.com/
-- SQLAlchemy docs: https://docs.sqlalchemy.org/
-
-## License
-
-MIT License - see LICENSE file for details
+```
+backend/
+├── app.py              # Main Flask application
+├── database.py         # Database models and queries
+├── app_config.py       # Configuration settings
+├── requirements.txt    # Python dependencies
+├── run.sh             # Quick start script
+├── .env               # Environment variables (not in git)
+├── .env.example       # Environment template
+├── junkos.db          # SQLite database (auto-created)
+└── README.md          # This file
+```

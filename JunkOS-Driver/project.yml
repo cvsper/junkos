@@ -1,0 +1,52 @@
+name: JunkOS-Driver
+options:
+  bundleIdPrefix: com.junkos
+  deploymentTarget:
+    iOS: "17.0"
+  xcodeVersion: "16.0"
+  generateEmptyDirectories: true
+
+settings:
+  base:
+    SWIFT_VERSION: "5.9"
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: 2
+
+packages:
+  SocketIO:
+    url: https://github.com/socketio/socket.io-client-swift
+    from: "16.1.1"
+
+targets:
+  JunkOS-Driver:
+    type: application
+    platform: iOS
+    sources:
+      - path: .
+        excludes:
+          - project.yml
+          - "*.xcodeproj"
+          - "*.xcworkspace"
+          - DerivedData
+          - build
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.junkos.drivers
+        DEVELOPMENT_TEAM: 24GH82AX9R
+        CODE_SIGN_STYLE: Automatic
+        GENERATE_INFOPLIST_FILE: true
+        INFOPLIST_GENERATION_MODE: GeneratedFile
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: true
+        INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: true
+        INFOPLIST_KEY_UILaunchScreen_Generation: true
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: UIInterfaceOrientationPortrait
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+        INFOPLIST_KEY_CFBundleIconName: AppIcon
+        INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: "JunkOS Driver needs your location to show you nearby jobs and share your position with customers."
+        INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription: "JunkOS Driver needs continuous location access to track your position during active jobs."
+        INFOPLIST_KEY_NSCameraUsageDescription: "JunkOS Driver needs camera access to take before and after photos of job sites."
+        INFOPLIST_KEY_NSPhotoLibraryUsageDescription: "JunkOS Driver needs photo library access to upload job site photos."
+        INFOPLIST_KEY_UIBackgroundModes: "location"
+    dependencies:
+      - package: SocketIO
+        product: SocketIO
