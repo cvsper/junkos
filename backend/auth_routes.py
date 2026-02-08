@@ -145,40 +145,45 @@ def verify_code():
 @auth_bp.route('/signup', methods=['POST'])
 def signup():
     """Create new user account with email/password"""
+    from werkzeug.security import generate_password_hash
     data = request.get_json()
     email = data.get('email')
     password = data.get('password')
     name = data.get('name')
-    
+    first_name = data.get('first_name', '')
+    last_name = data.get('last_name', '')
+    if not name and (first_name or last_name):
+        name = f"{first_name} {last_name}".strip()
+
     if not email or not password:
         return jsonify({'error': 'Email and password required'}), 400
-    
-    # Check if email already exists
-    for user in users_db.values():
-        if user.get('email') == email:
-            return jsonify({'error': 'Email already registered'}), 409
-    
-    # Create user
-    user_id = secrets.token_hex(16)
-    users_db[user_id] = {
-        'id': user_id,
-        'email': email,
-        'password_hash': hash_password(password),
-        'name': name,
-        'phoneNumber': None
-    }
-    
+
+    # Check if email already exists in DB
+    existing = User.query.filter_by(email=email).first()
+    if existing:
+        return jsonify({'error': 'Email already registered'}), 409
+
+    # Create user in database
+    new_user = User(
+        email=email,
+        name=name,
+        password_hash=generate_password_hash(password),
+        role='driver'
+    )
+    db.session.add(new_user)
+    db.session.commit()
+
     # Generate token
-    token = generate_token(user_id)
-    
+    token = generate_token(new_user.id)
+
     return jsonify({
         'success': True,
         'token': token,
         'user': {
-            'id': user_id,
-            'name': name,
-            'email': email,
-            'phoneNumber': None
+            'id': new_user.id,
+            'name': new_user.name,
+            'email': new_user.email,
+            'phoneNumber': new_user.phone
         }
     })
 
@@ -192,30 +197,7 @@ def login():
     if not email or not password:
         return jsonify({'error': 'Email and password required'}), 400
 
-    # 1) Check in-memory users_db first
-    user = None
-    for u in users_db.values():
-        if u.get('email') == email:
-            user = u
-            break
-
-    if user:
-        password_hash = hash_password(password)
-        if user.get('password_hash') != password_hash:
-            return jsonify({'error': 'Invalid email or password'}), 401
-        token = generate_token(user['id'])
-        return jsonify({
-            'success': True,
-            'token': token,
-            'user': {
-                'id': user['id'],
-                'name': user.get('name'),
-                'email': user['email'],
-                'phoneNumber': user.get('phoneNumber')
-            }
-        })
-
-    # 2) Fallback to SQLAlchemy User table
+    # Check database
     db_user = User.query.filter_by(email=email).first()
     if not db_user or not db_user.check_password(password):
         return jsonify({'error': 'Invalid email or password'}), 401
