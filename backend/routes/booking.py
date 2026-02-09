@@ -1,10 +1,14 @@
 """
 Booking API routes for JunkOS.
 Customer booking flow: estimate, create job, and check status.
+
+Pricing engine v2 -- tiered item categories with size variants, volume
+discounts (4 tiers), time-based surge, zone-based surge, and a minimum
+job price of $89.
 """
 
 from flask import Blueprint, request, jsonify
-from datetime import datetime, timezone
+from datetime import datetime, timezone, date as date_type, timedelta
 from math import radians, cos, sin, asin, sqrt
 
 import sys
@@ -12,64 +16,194 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from models import (
-    db, Job, Payment, PricingRule, SurgeZone, Contractor, Notification,
-    generate_uuid, utcnow,
+    db, Job, Payment, PricingRule, PricingConfig, SurgeZone, Contractor,
+    Notification, generate_uuid, utcnow,
 )
 from auth_routes import require_auth
+from geofencing import is_in_service_area
 
 booking_bp = Blueprint("booking", __name__, url_prefix="/api/booking")
 
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
-BASE_PRICE = 99.00
-SERVICE_FEE_RATE = 0.08  # 8% of subtotal
+BASE_PRICE = 0.0            # Removed flat base -- pricing is fully item-driven
+SERVICE_FEE_RATE = 0.08     # 8 % of subtotal
+MINIMUM_JOB_PRICE = 89.00   # Floor price for any job
 
-FALLBACK_PRICES = {
-    "furniture": 75.00,
-    "appliances": 100.00,
-    "electronics": 50.00,
-    "construction": 85.00,
-    "yard_waste": 60.00,
-    "general": 45.00,
-    "other": 55.00,
+# ---------------------------------------------------------------------------
+# Default category prices (size-dependent where applicable).
+# Keyed by category -> size -> price.  A flat-rate category uses "default".
+# Admin PricingRules in the DB override these when present.
+# ---------------------------------------------------------------------------
+CATEGORY_PRICES = {
+    "furniture": {
+        "small":   45.00,
+        "medium":  65.00,
+        "large":   85.00,
+        "default": 65.00,
+    },
+    "appliances": {
+        "small":   60.00,
+        "medium":  90.00,
+        "large":  120.00,
+        "default": 90.00,
+    },
+    "electronics": {
+        "small":   25.00,
+        "medium":  35.00,
+        "large":   50.00,
+        "default": 35.00,
+    },
+    "yard_waste": {
+        "default": 35.00,   # per cubic yard
+    },
+    "construction": {
+        "default": 55.00,   # per cubic yard
+    },
+    "general": {
+        "default": 30.00,
+    },
+    "mattress": {
+        "default": 50.00,
+    },
+    "hot_tub": {
+        "small":  250.00,
+        "medium": 325.00,
+        "large":  400.00,
+        "default": 325.00,
+    },
+    "other": {
+        "default": 30.00,
+    },
 }
 
-# Volume discount thresholds
-VOLUME_DISCOUNT = {
-    # (min_qty, max_qty): discount_rate
-    (1, 3): 0.0,
-    (4, 6): 0.10,
-    (7, None): 0.15,
-}
+# Legacy flat-price mapping (used as ultimate fallback)
+FALLBACK_PRICES = {cat: sizes["default"] for cat, sizes in CATEGORY_PRICES.items()}
+
+# ---------------------------------------------------------------------------
+# Volume discount tiers
+# ---------------------------------------------------------------------------
+VOLUME_DISCOUNT_TIERS = [
+    # (min_qty, max_qty, discount_rate)
+    (1,  3,  0.00),
+    (4,  7,  0.10),
+    (8,  15, 0.15),
+    (16, None, 0.20),
+]
+
+# ---------------------------------------------------------------------------
+# Time-based surge configuration (additive percentages)
+# ---------------------------------------------------------------------------
+SAME_DAY_SURGE  = 0.25   # +25 %
+NEXT_DAY_SURGE  = 0.10   # +10 %
+WEEKEND_SURGE   = 0.15   # +15 %
 
 EARTH_RADIUS_KM = 6371.0
 NEARBY_CONTRACTOR_RADIUS_KM = 50.0
 
-# Average minutes per item for duration estimation
+# Duration estimation constants
 MINUTES_PER_ITEM = 8
 BASE_DURATION_MINUTES = 30
 
+# Truck size thresholds
+TRUCK_SIZE_THRESHOLDS = [
+    (1,  5,  "Standard Pickup"),
+    (6,  12, "Large Truck"),
+    (13, None, "Extra-Large Truck / Multiple Loads"),
+]
 
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-def _get_item_price(category):
-    """Look up the price for an item category from PricingRule, with fallback."""
+
+# ============================================================================
+# Admin-overridable config loader
+# ============================================================================
+def _load_config(key, default):
+    """Load a pricing config value from the DB, falling back to *default*."""
+    try:
+        row = db.session.get(PricingConfig, key)
+        if row is not None and row.value is not None:
+            return row.value
+    except Exception:
+        pass  # DB not ready or table missing -- use default
+    return default
+
+
+def _get_minimum_job_price():
+    return float(_load_config("minimum_job_price", MINIMUM_JOB_PRICE))
+
+
+def _get_volume_discount_tiers():
+    """Return volume discount tiers, preferring DB override."""
+    raw = _load_config("volume_discount_tiers", None)
+    if raw and isinstance(raw, list):
+        return [(t["min_qty"], t.get("max_qty"), t["discount_rate"]) for t in raw]
+    return VOLUME_DISCOUNT_TIERS
+
+
+def _get_time_surge_rates():
+    """Return (same_day, next_day, weekend) surge rates."""
+    same_day = float(_load_config("same_day_surge", SAME_DAY_SURGE))
+    next_day = float(_load_config("next_day_surge", NEXT_DAY_SURGE))
+    weekend = float(_load_config("weekend_surge", WEEKEND_SURGE))
+    return same_day, next_day, weekend
+
+
+def _get_service_fee_rate():
+    return float(_load_config("service_fee_rate", SERVICE_FEE_RATE))
+
+
+# ============================================================================
+# Helpers -- item pricing
+# ============================================================================
+def _get_item_price(category, size=None):
+    """Return the unit price for a (category, size) pair.
+
+    Resolution order:
+      1. Active PricingRule in the database whose ``item_type`` matches
+         ``<category>:<size>`` (size-specific) or ``<category>`` (flat).
+      2. Hardcoded CATEGORY_PRICES dict (size-aware).
+      3. FALLBACK_PRICES flat default.
+    """
+    cat_lower = (category or "other").lower()
+    size_lower = (size or "").lower().strip()
+
+    # --- Try DB rule (size-specific first, then flat category) ---
+    if size_lower:
+        sized_key = "{}:{}".format(cat_lower, size_lower)
+        rule = PricingRule.query.filter(
+            PricingRule.item_type == sized_key,
+            PricingRule.is_active == True,
+        ).first()
+        if rule:
+            return rule.base_price
+
     rule = PricingRule.query.filter(
-        PricingRule.item_type == category,
+        PricingRule.item_type == cat_lower,
         PricingRule.is_active == True,
     ).first()
-
     if rule:
         return rule.base_price
 
-    return FALLBACK_PRICES.get(category.lower(), FALLBACK_PRICES["other"])
+    # --- Hardcoded tier ---
+    cat_prices = CATEGORY_PRICES.get(cat_lower)
+    if cat_prices:
+        if size_lower and size_lower in cat_prices:
+            return cat_prices[size_lower]
+        return cat_prices.get("default", 30.00)
+
+    return FALLBACK_PRICES.get(cat_lower, FALLBACK_PRICES["other"])
 
 
+# ============================================================================
+# Helpers -- volume discount
+# ============================================================================
 def _volume_discount_rate(total_quantity):
-    """Return the discount rate based on total item quantity."""
-    for (lo, hi), rate in VOLUME_DISCOUNT.items():
+    """Return the discount rate based on total item quantity.
+
+    Reads from admin-overridable config first, then falls back to defaults.
+    """
+    tiers = _get_volume_discount_tiers()
+    for lo, hi, rate in tiers:
         if hi is None and total_quantity >= lo:
             return rate
         if hi is not None and lo <= total_quantity <= hi:
@@ -77,6 +211,18 @@ def _volume_discount_rate(total_quantity):
     return 0.0
 
 
+def _volume_discount_label(total_quantity):
+    """Human-readable label for the discount tier that applies."""
+    rate = _volume_discount_rate(total_quantity)
+    if rate <= 0:
+        return None
+    pct = int(rate * 100)
+    return "{}% volume discount ({} items)".format(pct, total_quantity)
+
+
+# ============================================================================
+# Helpers -- zone-based surge (existing behaviour)
+# ============================================================================
 def _active_surge_multiplier(lat=None, lng=None):
     """Return the highest active surge multiplier that applies right now."""
     now = datetime.now(timezone.utc)
@@ -99,9 +245,172 @@ def _active_surge_multiplier(lat=None, lng=None):
     return max_surge
 
 
+# ============================================================================
+# Helpers -- time-based surge (new)
+# ============================================================================
+def _time_based_surge(scheduled_date_str):
+    """Compute additive surge percentage and a human-readable reason list
+    based on the *scheduled pickup date* relative to today (UTC).
+
+    Returns ``(surge_pct, [reason_strings])``.
+    """
+    if not scheduled_date_str:
+        return 0.0, []
+
+    try:
+        if isinstance(scheduled_date_str, str):
+            sched = datetime.strptime(scheduled_date_str[:10], "%Y-%m-%d").date()
+        elif isinstance(scheduled_date_str, datetime):
+            sched = scheduled_date_str.date()
+        elif isinstance(scheduled_date_str, date_type):
+            sched = scheduled_date_str
+        else:
+            return 0.0, []
+    except (ValueError, TypeError):
+        return 0.0, []
+
+    today = datetime.now(timezone.utc).date()
+    delta_days = (sched - today).days
+
+    same_day_rate, next_day_rate, weekend_rate = _get_time_surge_rates()
+
+    surge = 0.0
+    reasons = []
+
+    # Same-day
+    if delta_days <= 0:
+        surge += same_day_rate
+        reasons.append("Same-day pickup (+{}%)".format(int(same_day_rate * 100)))
+    # Next-day
+    elif delta_days == 1:
+        surge += next_day_rate
+        reasons.append("Next-day pickup (+{}%)".format(int(next_day_rate * 100)))
+
+    # Weekend (Saturday=5, Sunday=6)
+    if sched.weekday() in (5, 6):
+        surge += weekend_rate
+        reasons.append("Weekend pickup (+{}%)".format(int(weekend_rate * 100)))
+
+    return surge, reasons
+
+
+# ============================================================================
+# Helpers -- duration & truck size
+# ============================================================================
 def _estimate_duration(total_quantity):
     """Estimate job duration in minutes."""
     return BASE_DURATION_MINUTES + (total_quantity * MINUTES_PER_ITEM)
+
+
+def _estimate_truck_size(total_quantity):
+    """Return a truck-size label based on item count."""
+    for lo, hi, label in TRUCK_SIZE_THRESHOLDS:
+        if hi is None and total_quantity >= lo:
+            return label
+        if hi is not None and lo <= total_quantity <= hi:
+            return label
+    return "Standard Pickup"
+
+
+# ============================================================================
+# Core pricing function  (shared by estimate + booking endpoints)
+# ============================================================================
+def calculate_estimate(items, scheduled_date=None, lat=None, lng=None):
+    """Compute the full pricing breakdown.
+
+    Parameters
+    ----------
+    items : list[dict]
+        Each dict: ``{ category, quantity, size? }``
+    scheduled_date : str | datetime | None
+        ISO date string or datetime for time-based surge.
+    lat, lng : float | None
+        Customer location for zone-based surge.
+
+    Returns
+    -------
+    dict with detailed pricing breakdown.
+    """
+    item_total = 0.0
+    total_quantity = 0
+    item_breakdown = []
+
+    for entry in items:
+        category = entry.get("category") or "other"
+        quantity = int(entry.get("quantity", 1))
+        size = entry.get("size")  # optional
+        if quantity <= 0:
+            continue
+
+        unit_price = _get_item_price(category, size)
+        line_total = unit_price * quantity
+        item_total += line_total
+        total_quantity += quantity
+
+        line = {
+            "category": category,
+            "quantity": quantity,
+            "unit_price": round(unit_price, 2),
+            "line_total": round(line_total, 2),
+        }
+        if size:
+            line["size"] = size
+        item_breakdown.append(line)
+
+    # --- Volume discount ---
+    discount_rate = _volume_discount_rate(total_quantity)
+    volume_discount = round(item_total * discount_rate, 2)
+    volume_discount_label = _volume_discount_label(total_quantity)
+
+    items_subtotal = round(item_total - volume_discount, 2)
+
+    # --- Zone-based surge multiplier ---
+    zone_surge = _active_surge_multiplier(lat, lng)
+
+    # --- Time-based surge ---
+    time_surge_pct, surge_reasons = _time_based_surge(scheduled_date)
+
+    # Combined: zone multiplier is multiplicative, time surge is additive on top
+    combined_multiplier = zone_surge * (1.0 + time_surge_pct)
+
+    surged_subtotal = round(items_subtotal * combined_multiplier, 2)
+    surge_amount = round(surged_subtotal - items_subtotal, 2)
+
+    if zone_surge > 1.0:
+        surge_reasons.insert(0, "High-demand zone (x{})".format(round(zone_surge, 2)))
+
+    # --- Service fee (admin-overridable) ---
+    fee_rate = _get_service_fee_rate()
+    service_fee = round(surged_subtotal * fee_rate, 2)
+
+    # --- Total (with minimum floor, admin-overridable) ---
+    min_price = _get_minimum_job_price()
+    raw_total = round(surged_subtotal + service_fee, 2)
+    total = max(raw_total, min_price)
+    minimum_applied = total > raw_total
+
+    # --- Duration & truck size ---
+    estimated_duration = _estimate_duration(total_quantity)
+    truck_size = _estimate_truck_size(total_quantity)
+
+    return {
+        "items_subtotal": round(item_total, 2),
+        "items": item_breakdown,
+        "volume_discount": volume_discount,
+        "volume_discount_rate": discount_rate,
+        "volume_discount_label": volume_discount_label,
+        "surge_multiplier": round(combined_multiplier, 4),
+        "surge_amount": surge_amount,
+        "surge_reasons": surge_reasons,
+        "base_price": round(items_subtotal, 2),
+        "service_fee": service_fee,
+        "total": total,
+        "minimum_applied": minimum_applied,
+        "minimum_job_price": min_price,
+        "estimated_duration": estimated_duration,
+        "truck_size": truck_size,
+        "total_quantity": total_quantity,
+    }
 
 
 def _haversine(lat1, lng1, lat2, lng2):
@@ -122,9 +431,10 @@ def estimate():
     Calculate a price estimate for the customer booking flow.
 
     Body JSON:
-        items: [ { category: str, quantity: int }, ... ]
+        items: [ { category: str, quantity: int, size?: str }, ... ]
         address: { lat: float, lng: float }
-        scheduled_date: str (ISO date, optional -- used for context only)
+        scheduledDate: str (ISO date for time-based surge)
+        scheduled_date: str (alias)
     """
     data = request.get_json()
     if not data:
@@ -138,59 +448,16 @@ def estimate():
     lat = address.get("lat")
     lng = address.get("lng")
 
-    # --- Item pricing ---
-    item_total = 0.0
-    total_quantity = 0
-    item_breakdown = []
+    scheduled_date = data.get("scheduledDate") or data.get("scheduled_date")
 
-    for entry in items:
-        category = entry.get("category")
-        quantity = int(entry.get("quantity", 1))
-        if not category:
-            continue
+    result = calculate_estimate(items, scheduled_date=scheduled_date, lat=lat, lng=lng)
 
-        unit_price = _get_item_price(category)
-        line_total = unit_price * quantity
-        item_total += line_total
-        total_quantity += quantity
-        item_breakdown.append({
-            "category": category,
-            "quantity": quantity,
-            "unit_price": round(unit_price, 2),
-            "line_total": round(line_total, 2),
-        })
-
-    if total_quantity == 0:
+    if result["total_quantity"] == 0:
         return jsonify({"error": "At least one item with a valid category is required"}), 400
-
-    # --- Volume discount ---
-    discount_rate = _volume_discount_rate(total_quantity)
-    volume_adjustment = round(-(item_total * discount_rate), 2)
-
-    # --- Surge multiplier ---
-    surge_multiplier = _active_surge_multiplier(lat, lng)
-
-    # --- Subtotal & service fee ---
-    subtotal = BASE_PRICE + item_total + volume_adjustment
-    surged_subtotal = subtotal * surge_multiplier
-    service_fee = round(surged_subtotal * SERVICE_FEE_RATE, 2)
-    total = round(surged_subtotal + service_fee, 2)
-
-    # --- Duration estimate ---
-    estimated_duration = _estimate_duration(total_quantity)
 
     return jsonify({
         "success": True,
-        "estimate": {
-            "base_price": BASE_PRICE,
-            "item_total": round(item_total, 2),
-            "items": item_breakdown,
-            "volume_adjustment": volume_adjustment,
-            "surge_multiplier": surge_multiplier,
-            "service_fee": service_fee,
-            "total": total,
-            "estimated_duration": estimated_duration,
-        },
+        "estimate": result,
     }), 200
 
 
@@ -207,7 +474,7 @@ def create_booking(user_id):
         address: str
         lat: float
         lng: float
-        items: list
+        items: list  [{ category, quantity, size? }]
         photos: list (optional, URLs from upload endpoint)
         scheduled_date: str (ISO date)
         scheduled_time: str (HH:MM)
@@ -225,6 +492,17 @@ def create_booking(user_id):
 
     lat = data.get("lat")
     lng = data.get("lng")
+
+    # --- Service area geofence check ---
+    if lat is not None and lng is not None:
+        try:
+            if not is_in_service_area(float(lat), float(lng)):
+                return jsonify({
+                    "error": "Address is outside our service area. "
+                             "We currently serve Miami-Dade, Broward, and Palm Beach counties."
+                }), 400
+        except (TypeError, ValueError):
+            pass  # Invalid coords -- skip check, let downstream handle it
 
     items = data.get("items")
     if not items or not isinstance(items, list):
@@ -254,23 +532,13 @@ def create_booking(user_id):
     photos = data.get("photos", [])
     notes = data.get("notes", "")
 
-    # --- Re-calculate pricing for record keeping ---
-    item_total = 0.0
-    total_quantity = 0
-    for entry in items:
-        category = entry.get("category", "other")
-        quantity = int(entry.get("quantity", 1))
-        unit_price = _get_item_price(category)
-        item_total += unit_price * quantity
-        total_quantity += quantity
+    # --- Re-calculate pricing with the v2 engine ---
+    est = calculate_estimate(items, scheduled_date=scheduled_date, lat=lat, lng=lng)
 
-    discount_rate = _volume_discount_rate(total_quantity)
-    volume_adjustment = round(-(item_total * discount_rate), 2)
-    surge_multiplier = _active_surge_multiplier(lat, lng)
-    subtotal = BASE_PRICE + item_total + volume_adjustment
-    surged_subtotal = subtotal * surge_multiplier
-    service_fee = round(surged_subtotal * SERVICE_FEE_RATE, 2)
-    total = round(surged_subtotal + service_fee, 2)
+    total = est["total"]
+    service_fee = est["service_fee"]
+    surge_multiplier = est["surge_multiplier"]
+    item_total = est["items_subtotal"]
 
     # --- Create Job ---
     job = Job(
@@ -283,7 +551,7 @@ def create_booking(user_id):
         items=items,
         photos=photos,
         scheduled_at=scheduled_at,
-        base_price=BASE_PRICE,
+        base_price=est["base_price"],
         item_total=round(item_total, 2),
         service_fee=service_fee,
         surge_multiplier=surge_multiplier,

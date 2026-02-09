@@ -4,6 +4,8 @@ All database entities for the on-demand junk removal marketplace.
 """
 
 import uuid
+import string
+import random
 from datetime import datetime, timezone
 
 from flask_sqlalchemy import SQLAlchemy
@@ -25,6 +27,12 @@ def utcnow():
     return datetime.now(timezone.utc)
 
 
+def generate_referral_code():
+    """Generate a unique 8-character alphanumeric referral code."""
+    chars = string.ascii_uppercase + string.digits
+    return ''.join(random.choices(chars, k=8))
+
+
 # ---------------------------------------------------------------------------
 # User
 # ---------------------------------------------------------------------------
@@ -41,11 +49,14 @@ class User(db.Model):
     stripe_customer_id = Column(String(255), nullable=True)
     status = Column(String(20), nullable=False, default="active")
     apple_id = Column(String(255), nullable=True, unique=True)
+    referral_code = Column(String(8), unique=True, nullable=True, index=True, default=generate_referral_code)
 
     created_at = Column(DateTime, default=utcnow)
     updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
 
     contractor_profile = relationship("Contractor", back_populates="user", uselist=False, lazy="joined")
+    referrals_made = relationship("Referral", foreign_keys="Referral.referrer_id", back_populates="referrer", lazy="dynamic")
+    referral_received = relationship("Referral", foreign_keys="Referral.referee_id", back_populates="referee", uselist=False, lazy="joined")
     notifications = relationship("Notification", back_populates="user", lazy="dynamic")
     device_tokens = relationship("DeviceToken", back_populates="user", lazy="dynamic", cascade="all, delete-orphan")
     ratings_given = relationship("Rating", foreign_keys="Rating.from_user_id", back_populates="from_user", lazy="dynamic")
@@ -68,6 +79,7 @@ class User(db.Model):
             "role": self.role,
             "avatar_url": self.avatar_url,
             "status": self.status,
+            "referral_code": self.referral_code,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
@@ -443,4 +455,128 @@ class DeviceToken(db.Model):
             "token": self.token,
             "platform": self.platform,
             "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
+
+
+# ---------------------------------------------------------------------------
+# PricingConfig (singleton-style key/value for admin-overridable settings)
+# ---------------------------------------------------------------------------
+class PricingConfig(db.Model):
+    __tablename__ = "pricing_config"
+
+    key = Column(String(100), primary_key=True)
+    value = Column(JSON, nullable=False)
+    updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
+
+    def to_dict(self):
+        return {
+            "key": self.key,
+            "value": self.value,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+
+# ---------------------------------------------------------------------------
+# RecurringBooking
+# ---------------------------------------------------------------------------
+class RecurringBooking(db.Model):
+    __tablename__ = "recurring_bookings"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    customer_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+
+    frequency = Column(String(20), nullable=False)  # "weekly", "biweekly", "monthly"
+    day_of_week = Column(Integer, nullable=True)     # 0=Monday .. 6=Sunday (for weekly/biweekly)
+    day_of_month = Column(Integer, nullable=True)    # 1-28 (for monthly)
+    preferred_time = Column(String(5), nullable=False, default="09:00")  # "HH:MM"
+
+    address = Column(Text, nullable=False)
+    lat = Column(Float, nullable=True)
+    lng = Column(Float, nullable=True)
+
+    items = Column(JSON, nullable=True, default=list)
+    notes = Column(Text, nullable=True)
+
+    is_active = Column(Boolean, default=True)
+    next_scheduled_at = Column(DateTime, nullable=True)
+    total_bookings_created = Column(Integer, default=0)
+
+    created_at = Column(DateTime, default=utcnow)
+    updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
+
+    __table_args__ = (
+        CheckConstraint(
+            "frequency IN ('weekly', 'biweekly', 'monthly')",
+            name="ck_recurring_frequency",
+        ),
+        CheckConstraint(
+            "day_of_week IS NULL OR (day_of_week >= 0 AND day_of_week <= 6)",
+            name="ck_recurring_day_of_week",
+        ),
+        CheckConstraint(
+            "day_of_month IS NULL OR (day_of_month >= 1 AND day_of_month <= 28)",
+            name="ck_recurring_day_of_month",
+        ),
+    )
+
+    customer = relationship("User", foreign_keys=[customer_id], backref="recurring_bookings")
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "customer_id": self.customer_id,
+            "frequency": self.frequency,
+            "day_of_week": self.day_of_week,
+            "day_of_month": self.day_of_month,
+            "preferred_time": self.preferred_time,
+            "address": self.address,
+            "lat": self.lat,
+            "lng": self.lng,
+            "items": self.items or [],
+            "notes": self.notes,
+            "is_active": self.is_active,
+            "next_scheduled_at": self.next_scheduled_at.isoformat() if self.next_scheduled_at else None,
+            "total_bookings_created": self.total_bookings_created,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+
+# ---------------------------------------------------------------------------
+# Referral
+# ---------------------------------------------------------------------------
+class Referral(db.Model):
+    __tablename__ = "referrals"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    referrer_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    referee_id = Column(String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    referral_code = Column(String(8), nullable=False, index=True)
+    status = Column(String(20), nullable=False, default="pending")
+    reward_amount = Column(Float, default=10.00)
+    created_at = Column(DateTime, default=utcnow)
+    completed_at = Column(DateTime, nullable=True)
+
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('pending', 'signed_up', 'completed', 'rewarded')",
+            name="ck_referral_status",
+        ),
+    )
+
+    referrer = relationship("User", foreign_keys=[referrer_id], back_populates="referrals_made")
+    referee = relationship("User", foreign_keys=[referee_id], back_populates="referral_received")
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "referrer_id": self.referrer_id,
+            "referee_id": self.referee_id,
+            "referral_code": self.referral_code,
+            "status": self.status,
+            "reward_amount": self.reward_amount,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "completed_at": self.completed_at.isoformat() if self.completed_at else None,
+            "referrer_name": self.referrer.name if self.referrer else None,
+            "referee_name": self.referee.name if self.referee else None,
         }

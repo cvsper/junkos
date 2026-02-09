@@ -16,7 +16,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from models import (
     db, User, Contractor, Job, Payment, PricingRule, SurgeZone, Notification,
-    generate_uuid, utcnow,
+    PricingConfig, generate_uuid, utcnow,
 )
 from auth_routes import require_auth
 
@@ -904,3 +904,73 @@ def list_payments(user_id):
         "page": pagination.page,
         "pages": pagination.pages,
     }), 200
+
+
+# ---------------------------------------------------------------------------
+# Pricing Config (admin-overridable pricing settings)
+# ---------------------------------------------------------------------------
+
+@admin_bp.route("/pricing/config", methods=["GET"])
+@require_admin
+def get_pricing_config(user_id):
+    """Return all pricing config overrides."""
+    configs = PricingConfig.query.all()
+    return jsonify({
+        "success": True,
+        "config": {c.key: c.value for c in configs},
+    }), 200
+
+
+@admin_bp.route("/pricing/config", methods=["PUT"])
+@require_admin
+def update_pricing_config(user_id):
+    """Bulk upsert pricing configuration values.
+
+    Body JSON:
+        config: {
+            "minimum_job_price": 89.00,
+            "volume_discount_tiers": [
+                {"min_qty": 1, "max_qty": 3, "discount_rate": 0.0},
+                {"min_qty": 4, "max_qty": 7, "discount_rate": 0.10},
+                ...
+            ],
+            "same_day_surge": 0.25,
+            "next_day_surge": 0.10,
+            "weekend_surge": 0.15,
+        }
+
+    Each key is stored as a separate PricingConfig row so individual
+    settings can be updated independently.
+    """
+    data = request.get_json() or {}
+    config_data = data.get("config", {})
+
+    if not isinstance(config_data, dict):
+        return jsonify({"error": "config must be an object"}), 400
+
+    ALLOWED_KEYS = {
+        "minimum_job_price",
+        "volume_discount_tiers",
+        "same_day_surge",
+        "next_day_surge",
+        "weekend_surge",
+        "service_fee_rate",
+    }
+
+    updated = {}
+    for key, value in config_data.items():
+        if key not in ALLOWED_KEYS:
+            continue
+
+        row = db.session.get(PricingConfig, key)
+        if row:
+            row.value = value
+            row.updated_at = utcnow()
+        else:
+            row = PricingConfig(key=key, value=value)
+            db.session.add(row)
+        updated[key] = value
+
+    db.session.commit()
+
+    return jsonify({"success": True, "config": updated}), 200

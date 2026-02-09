@@ -10,7 +10,7 @@ import jwt
 import datetime
 from functools import wraps
 
-from models import db, User
+from models import db, User, Referral, generate_referral_code
 from extensions import limiter
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/api/auth')
@@ -179,14 +179,40 @@ def signup():
     if existing:
         return jsonify({'error': 'Email already registered'}), 409
 
+    # Extract optional referral code
+    referral_code_input = data.get('referral_code', '').strip().upper() or None
+
+    # Generate a unique referral code for the new user
+    new_user_referral_code = None
+    for _ in range(10):
+        candidate = generate_referral_code()
+        if not User.query.filter_by(referral_code=candidate).first():
+            new_user_referral_code = candidate
+            break
+
     # Create user in database
     new_user = User(
         email=email,
         name=name,
         password_hash=generate_password_hash(password),
-        role='driver'
+        role='customer',
+        referral_code=new_user_referral_code,
     )
     db.session.add(new_user)
+    db.session.flush()  # flush to get new_user.id before creating referral
+
+    # If a valid referral code was provided, link the referral
+    if referral_code_input:
+        referrer = User.query.filter_by(referral_code=referral_code_input).first()
+        if referrer and referrer.id != new_user.id:
+            referral = Referral(
+                referrer_id=referrer.id,
+                referee_id=new_user.id,
+                referral_code=referral_code_input,
+                status='signed_up',
+            )
+            db.session.add(referral)
+
     db.session.commit()
 
     # --- Send welcome email ---
@@ -207,7 +233,8 @@ def signup():
             'id': new_user.id,
             'name': new_user.name,
             'email': new_user.email,
-            'phoneNumber': new_user.phone
+            'phoneNumber': new_user.phone,
+            'referral_code': new_user.referral_code
         }
     })
 

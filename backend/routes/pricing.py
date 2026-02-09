@@ -1,6 +1,7 @@
 """
 Pricing API routes for JunkOS.
-Hybrid pricing: item-based + volume-based + surge multiplier.
+Exposes the v2 pricing engine, pricing rules, surge zones, and category
+catalogue for admin and frontend consumption.
 """
 
 from flask import Blueprint, request, jsonify
@@ -11,91 +12,66 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from models import db, PricingRule, SurgeZone
+from routes.booking import (
+    calculate_estimate,
+    CATEGORY_PRICES,
+    VOLUME_DISCOUNT_TIERS,
+    MINIMUM_JOB_PRICE,
+    SAME_DAY_SURGE,
+    NEXT_DAY_SURGE,
+    WEEKEND_SURGE,
+)
 
 pricing_bp = Blueprint("pricing", __name__, url_prefix="/api/pricing")
 
-BASE_SERVICE_FEE = 15.00
-VOLUME_RATE_PER_YARD = 35.00
 COMMISSION_RATE = 0.20
-
-
-def _active_surge_multiplier(lat=None, lng=None):
-    """Return the highest active surge multiplier that applies right now."""
-    now = datetime.now(timezone.utc)
-    current_day = now.weekday()
-    current_time = now.strftime("%H:%M")
-
-    zones = SurgeZone.query.filter_by(is_active=True).all()
-    max_surge = 1.0
-
-    for zone in zones:
-        if zone.days_of_week and current_day not in zone.days_of_week:
-            continue
-        if zone.start_time and current_time < zone.start_time:
-            continue
-        if zone.end_time and current_time > zone.end_time:
-            continue
-        if zone.surge_multiplier > max_surge:
-            max_surge = zone.surge_multiplier
-
-    return max_surge
 
 
 @pricing_bp.route("/estimate", methods=["POST"])
 def get_estimate():
     """
-    Calculate a hybrid price estimate.
-    Body JSON: items (list of str), volume (float), lat (float), lng (float)
+    Calculate a price estimate using the v2 pricing engine.
+
+    Body JSON (v2 format -- preferred):
+        items: [ { category: str, quantity: int, size?: str }, ... ]
+        scheduledDate: str (ISO date)
+        address: { lat: float, lng: float }
+
+    Body JSON (legacy format -- still supported):
+        items: list of str (item-type names)
+        volume: float (cubic yards)
+        lat: float
+        lng: float
+
+    Returns the full v2 breakdown.
     """
     data = request.get_json() or {}
-    item_names = data.get("items", [])
+
+    # --- Detect format: v2 (list of dicts) vs legacy (list of strings) ---
+    raw_items = data.get("items", [])
+
+    if raw_items and isinstance(raw_items[0], dict):
+        # v2 format
+        items = raw_items
+    else:
+        # Legacy format: list of item-type strings -> convert to v2
+        items = [{"category": name, "quantity": 1} for name in raw_items]
+
+    # Support legacy volume field by adding a "yard_waste" line
     volume = data.get("volume")
-    lat = data.get("lat")
-    lng = data.get("lng")
-
-    # Item-based pricing
-    item_total = 0.0
-    matched_items = []
-    if item_names:
-        rules = PricingRule.query.filter(
-            PricingRule.item_type.in_(item_names),
-            PricingRule.is_active == True,
-        ).all()
-        rule_map = {r.item_type: r for r in rules}
-
-        for name in item_names:
-            rule = rule_map.get(name)
-            if rule:
-                item_total += rule.base_price
-                matched_items.append({"item_type": name, "price": rule.base_price})
-            else:
-                matched_items.append({"item_type": name, "price": 0.0, "note": "no pricing rule found"})
-
-    # Volume-based pricing
-    volume_price = 0.0
     if volume and float(volume) > 0:
-        volume_price = float(volume) * VOLUME_RATE_PER_YARD
+        items.append({"category": "yard_waste", "quantity": int(float(volume))})
 
-    # Surge
-    surge = _active_surge_multiplier(lat, lng)
+    address = data.get("address") or {}
+    lat = address.get("lat") or data.get("lat")
+    lng = address.get("lng") or data.get("lng")
+    scheduled_date = data.get("scheduledDate") or data.get("scheduled_date")
 
-    subtotal = item_total + volume_price
-    surged_subtotal = subtotal * surge
-    service_fee = BASE_SERVICE_FEE
-    total = round(surged_subtotal + service_fee, 2)
+    result = calculate_estimate(items, scheduled_date=scheduled_date, lat=lat, lng=lng)
 
     return jsonify({
         "success": True,
-        "estimate": {
-            "item_total": round(item_total, 2),
-            "volume_price": round(volume_price, 2),
-            "subtotal": round(subtotal, 2),
-            "surge_multiplier": surge,
-            "surged_subtotal": round(surged_subtotal, 2),
-            "service_fee": service_fee,
-            "total": total,
-            "items": matched_items,
-        },
+        "estimate": result,
     }), 200
 
 
@@ -121,4 +97,58 @@ def get_surge_zones():
     return jsonify({
         "success": True,
         "surge_zones": [z.to_dict() for z in zones],
+    }), 200
+
+
+@pricing_bp.route("/categories", methods=["GET"])
+def get_categories():
+    """Return the full category catalogue with default prices.
+
+    Merges hardcoded defaults with any active PricingRule overrides from the
+    database so the frontend always has a complete list.
+    """
+    # Start with hardcoded defaults
+    categories = {}
+    for cat, sizes in CATEGORY_PRICES.items():
+        categories[cat] = dict(sizes)
+
+    # Layer on DB overrides
+    rules = PricingRule.query.filter_by(is_active=True).all()
+    for rule in rules:
+        key = rule.item_type  # e.g. "furniture" or "furniture:large"
+        if ":" in key:
+            cat, size = key.split(":", 1)
+            if cat not in categories:
+                categories[cat] = {"default": rule.base_price}
+            categories[cat][size] = rule.base_price
+        else:
+            if key not in categories:
+                categories[key] = {}
+            categories[key]["default"] = rule.base_price
+
+    return jsonify({
+        "success": True,
+        "categories": categories,
+    }), 200
+
+
+@pricing_bp.route("/config", methods=["GET"])
+def get_pricing_config():
+    """Return the full pricing configuration so the frontend / admin panel
+    can display current tiers, surge rates, and minimum price."""
+    return jsonify({
+        "success": True,
+        "config": {
+            "minimum_job_price": MINIMUM_JOB_PRICE,
+            "volume_discount_tiers": [
+                {"min_qty": lo, "max_qty": hi, "discount_rate": rate}
+                for lo, hi, rate in VOLUME_DISCOUNT_TIERS
+            ],
+            "time_surge": {
+                "same_day": SAME_DAY_SURGE,
+                "next_day": NEXT_DAY_SURGE,
+                "weekend": WEEKEND_SURGE,
+            },
+            "commission_rate": COMMISSION_RATE,
+        },
     }), 200

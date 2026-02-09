@@ -12,7 +12,7 @@ import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from models import db, User, Contractor, Job, Notification, OperatorInvite, generate_uuid, utcnow
+from models import db, User, Contractor, Job, Notification, OperatorInvite, Referral, generate_uuid, utcnow
 from auth_routes import require_auth
 
 drivers_bp = Blueprint("drivers", __name__, url_prefix="/api/drivers")
@@ -338,6 +338,22 @@ def update_job_status(user_id, job_id):
                 "Driver: %s",
                 job.id, ", ".join(missing), contractor.id,
             )
+
+        # --- Referral completion: check if this customer was referred ---
+        try:
+            referral = Referral.query.filter_by(
+                referee_id=job.customer_id,
+                status="signed_up",
+            ).first()
+            if referral:
+                referral.status = "completed"
+                referral.completed_at = utcnow()
+                logger.info(
+                    "Referral %s completed: referee %s first job %s done",
+                    referral.id, job.customer_id, job.id,
+                )
+        except Exception as e:
+            logger.warning("Failed to update referral on job completion: %s", e)
 
     if data.get("before_photos"):
         job.before_photos = data["before_photos"]

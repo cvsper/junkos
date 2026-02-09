@@ -13,6 +13,9 @@ from .tracking import tracking_bp
 from .driver import driver_bp
 from .operator import operator_bp
 from .push import push_bp
+from .service_area import service_area_bp
+from .recurring import recurring_bp
+from .referrals import referrals_bp
 
 __all__ = [
     "drivers_bp",
@@ -28,4 +31,7 @@ __all__ = [
     "driver_bp",
     "operator_bp",
     "push_bp",
+    "service_area_bp",
+    "recurring_bp",
+    "referrals_bp",
 ]

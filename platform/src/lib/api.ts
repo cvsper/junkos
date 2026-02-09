@@ -87,11 +87,25 @@ export const authApi = {
       body: JSON.stringify({ email, password }),
     }),
 
-  signup: (email: string, password: string, name: string, phone: string) =>
-    apiFetch<AuthResponse>("/api/auth/signup", {
+  signup: (email: string, password: string, name: string, phone: string, referralCode?: string) => {
+    // Check localStorage for a referral code if none was provided
+    const refCode =
+      referralCode ||
+      (typeof window !== "undefined"
+        ? localStorage.getItem("junkos_referral_code") || undefined
+        : undefined);
+
+    return apiFetch<AuthResponse>("/api/auth/signup", {
       method: "POST",
-      body: JSON.stringify({ email, password, name, phone }),
-    }),
+      body: JSON.stringify({
+        email,
+        password,
+        name,
+        phone,
+        ...(refCode ? { referral_code: refCode } : {}),
+      }),
+    });
+  },
 
   me: () => apiFetch<User>("/api/auth/me"),
 };
@@ -764,6 +778,59 @@ export const operatorApi = {
   markAllNotificationsRead: () =>
     apiFetch<{ success: boolean }>("/api/operator/notifications/read-all", {
       method: "PUT",
+    }),
+};
+
+// ---------------------------------------------------------------------------
+// Referrals API
+// ---------------------------------------------------------------------------
+
+export interface ReferralRecord {
+  id: string;
+  referrer_id: string;
+  referee_id: string | null;
+  referral_code: string;
+  status: "pending" | "signed_up" | "completed" | "rewarded";
+  reward_amount: number;
+  created_at: string;
+  completed_at: string | null;
+  referrer_name: string | null;
+  referee_name: string | null;
+}
+
+export interface ReferralStats {
+  total_referred: number;
+  signed_up: number;
+  completed: number;
+  total_earned: number;
+  reward_per_referral: number;
+}
+
+export const referralsApi = {
+  /** GET /api/referrals/my-code -- get current user's referral code */
+  getMyCode: () =>
+    apiFetch<{
+      success: boolean;
+      referral_code: string;
+      share_url: string;
+    }>("/api/referrals/my-code"),
+
+  /** GET /api/referrals/stats -- get referral statistics */
+  getStats: () =>
+    apiFetch<{
+      success: boolean;
+      stats: ReferralStats;
+      referrals: ReferralRecord[];
+    }>("/api/referrals/stats"),
+
+  /** POST /api/referrals/validate/:code -- validate a referral code */
+  validate: (code: string) =>
+    apiFetch<{
+      success: boolean;
+      referrer_name: string;
+      referral_code: string;
+    }>(`/api/referrals/validate/${code}`, {
+      method: "POST",
     }),
 };
 

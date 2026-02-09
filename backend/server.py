@@ -12,7 +12,7 @@ from database import Database
 from auth_routes import auth_bp
 from models import db as sqlalchemy_db
 from socket_events import socketio
-from routes import drivers_bp, pricing_bp, ratings_bp, admin_bp, payments_bp, webhook_bp, booking_bp, upload_bp, jobs_bp, tracking_bp, driver_bp, operator_bp, push_bp
+from routes import drivers_bp, pricing_bp, ratings_bp, admin_bp, payments_bp, webhook_bp, booking_bp, upload_bp, jobs_bp, tracking_bp, driver_bp, operator_bp, push_bp, service_area_bp, recurring_bp, referrals_bp
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -93,6 +93,9 @@ app.register_blueprint(tracking_bp)
 app.register_blueprint(driver_bp)
 app.register_blueprint(operator_bp)
 app.register_blueprint(push_bp)
+app.register_blueprint(service_area_bp)
+app.register_blueprint(recurring_bp)
+app.register_blueprint(referrals_bp)
 
 # ---------------------------------------------------------------------------
 # Input sanitization middleware (XSS / injection prevention)
@@ -405,21 +408,35 @@ def upload_booking_photos():
 
 @app.route("/api/bookings/estimate", methods=["POST"])
 def portal_estimate():
-    """Price estimate compatible with customer portal API shape"""
+    """Price estimate compatible with customer portal API shape.
+
+    Accepts EITHER the simple portal format (itemCategory + quantity) OR the
+    full v2 format (items array with optional size + scheduledDate).
+    """
     data = request.get_json() or {}
 
-    category = data.get("itemCategory") or data.get("category", "general")
-    quantity = int(data.get("quantity", 1))
+    from routes.booking import calculate_estimate
 
-    from routes.booking import _get_item_price, _estimate_duration, BASE_PRICE, SERVICE_FEE_RATE
+    # --- Build items list from whichever format the caller uses ---
+    items = data.get("items")
+    if not items or not isinstance(items, list):
+        # Legacy simple format: single category + quantity
+        category = data.get("itemCategory") or data.get("category", "general")
+        quantity = int(data.get("quantity", 1))
+        size = data.get("size")
+        items = [{"category": category, "quantity": quantity}]
+        if size:
+            items[0]["size"] = size
 
-    unit_price = _get_item_price(category)
-    item_total = unit_price * quantity
-    subtotal = BASE_PRICE + item_total
-    service_fee = round(subtotal * SERVICE_FEE_RATE, 2)
-    total = round(subtotal + service_fee, 2)
-    duration_min = _estimate_duration(quantity)
+    scheduled_date = data.get("scheduledDate") or data.get("scheduled_date")
+    address = data.get("address") or {}
+    lat = address.get("lat")
+    lng = address.get("lng")
 
+    est = calculate_estimate(items, scheduled_date=scheduled_date, lat=lat, lng=lng)
+
+    # --- Format duration label ---
+    duration_min = est["estimated_duration"]
     if duration_min <= 60:
         duration_label = "{} minutes".format(duration_min)
     else:
@@ -427,17 +444,25 @@ def portal_estimate():
         remaining = duration_min % 60
         duration_label = "{}-{} hours".format(hours, hours + 1) if remaining else "{} hour{}".format(hours, "s" if hours > 1 else "")
 
-    truck_size = "Large Truck" if quantity > 5 else "Standard Truck"
-
+    # Return both the portal-compatible shape AND the full v2 breakdown
     return jsonify({
         "success": True,
         "estimate": {
-            "subtotal": round(subtotal, 2),
-            "serviceFee": service_fee,
+            "subtotal": est["base_price"],
+            "serviceFee": est["service_fee"],
             "tax": 0,
-            "total": total,
+            "total": est["total"],
             "estimatedDuration": duration_label,
-            "truckSize": truck_size,
+            "truckSize": est["truck_size"],
+            # v2 detailed breakdown
+            "items_subtotal": est["items_subtotal"],
+            "items": est["items"],
+            "volume_discount": est["volume_discount"],
+            "volume_discount_label": est["volume_discount_label"],
+            "surge_multiplier": est["surge_multiplier"],
+            "surge_amount": est["surge_amount"],
+            "surge_reasons": est["surge_reasons"],
+            "minimum_applied": est["minimum_applied"],
         }
     }), 200
 
@@ -467,7 +492,7 @@ def portal_create_booking():
     """
     from werkzeug.security import generate_password_hash
     from models import Job, Payment, User, Notification, generate_uuid, utcnow
-    from routes.booking import _get_item_price, _notify_nearby_contractors, BASE_PRICE, SERVICE_FEE_RATE
+    from routes.booking import calculate_estimate, _notify_nearby_contractors
 
     data = request.get_json() or {}
 
@@ -493,25 +518,30 @@ def portal_create_booking():
 
     category = data.get("itemCategory") or data.get("category") or "general"
     quantity = int(data.get("quantity", 1))
+    size = data.get("size")
     total_amount = float(data.get("totalAmount", 0))
     # Also accept total from estimate object
     if total_amount <= 0:
-        estimate = data.get("estimate") or {}
-        total_amount = float(estimate.get("total", 0))
-
-    # Recalculate price if not provided
-    if total_amount <= 0:
-        unit_price = _get_item_price(category)
-        item_total = unit_price * quantity
-        subtotal = BASE_PRICE + item_total
-        service_fee = round(subtotal * SERVICE_FEE_RATE, 2)
-        total_amount = round(subtotal + service_fee, 2)
+        estimate_data = data.get("estimate") or {}
+        total_amount = float(estimate_data.get("total", 0))
 
     # Parse location from addressDetails if available
     addr_details = data.get("addressDetails") or {}
     location = addr_details.get("location") or {}
     lat = location.get("lat")
     lng = location.get("lng")
+
+    # --- Service area geofence check ---
+    if lat is not None and lng is not None:
+        from geofencing import is_in_service_area
+        try:
+            if not is_in_service_area(float(lat), float(lng)):
+                return jsonify({
+                    "error": "Address is outside our service area. "
+                             "We currently serve Miami-Dade, Broward, and Palm Beach counties."
+                }), 400
+        except (TypeError, ValueError):
+            pass  # Invalid coords -- skip check, let downstream handle it
 
     # Parse scheduled datetime
     scheduled_at = None
@@ -541,7 +571,22 @@ def portal_create_booking():
             pass
 
     items = [{"category": category, "quantity": quantity}]
+    if size:
+        items[0]["size"] = size
     photos = data.get("photoUrls") or data.get("photos") or []
+
+    # Use the v2 pricing engine for accurate calculation
+    scheduled_date_for_pricing = selected_date[:10] if selected_date and isinstance(selected_date, str) else None
+    est = calculate_estimate(
+        items,
+        scheduled_date=scheduled_date_for_pricing,
+        lat=float(lat) if lat else None,
+        lng=float(lng) if lng else None,
+    )
+
+    # Use calculated total, unless the caller provided a valid totalAmount
+    if total_amount <= 0:
+        total_amount = est["total"]
 
     job = Job(
         id=generate_uuid(),
@@ -553,9 +598,10 @@ def portal_create_booking():
         items=items,
         photos=photos,
         scheduled_at=scheduled_at,
-        base_price=BASE_PRICE,
-        item_total=round(total_amount - BASE_PRICE, 2),
-        service_fee=round(total_amount * SERVICE_FEE_RATE, 2),
+        base_price=est["base_price"],
+        item_total=est["items_subtotal"],
+        service_fee=est["service_fee"],
+        surge_multiplier=est["surge_multiplier"],
         total_price=total_amount,
         notes=data.get("itemDescription") or data.get("description", ""),
     )
@@ -565,7 +611,7 @@ def portal_create_booking():
         id=generate_uuid(),
         job_id=job.id,
         amount=total_amount,
-        service_fee=round(total_amount * SERVICE_FEE_RATE, 2),
+        service_fee=est["service_fee"],
         payment_status="pending",
     )
     sqlalchemy_db.session.add(payment)
