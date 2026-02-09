@@ -69,7 +69,12 @@ def register_contractor(user_id):
         ).first()
         if invite:
             now = utcnow()
-            expired = invite.expires_at and invite.expires_at < now
+            # Ensure both datetimes are tz-aware for comparison
+            invite_exp = invite.expires_at
+            if invite_exp and invite_exp.tzinfo is None:
+                from datetime import timezone as _tz
+                invite_exp = invite_exp.replace(tzinfo=_tz.utc)
+            expired = invite_exp and invite_exp < now
             maxed = invite.use_count >= invite.max_uses
             if not expired and not maxed:
                 contractor.operator_id = invite.operator_id
