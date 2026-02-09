@@ -415,8 +415,9 @@ def update_job_status(user_id, job_id):
                         ),
                         {"job_id": job.id, "driver_id": contractor.id},
                     )
-    except Exception:
-        pass  # Notifications must never block the main flow
+    except Exception as e:
+        import logging as _log
+        _log.getLogger(__name__).exception("Notification failed for job %s: %s", job.id, e)
 
     # Broadcast via SocketIO
     from socket_events import broadcast_job_status

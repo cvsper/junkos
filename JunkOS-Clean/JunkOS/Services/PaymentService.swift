@@ -27,7 +27,7 @@ struct PaymentConfirmResponse: Codable {
     let message: String?
 }
 
-/// Request body for creating a payment intent via the simple (no-auth) endpoint.
+/// Request body for creating a payment intent.
 /// The backend expects: amount (float, in dollars), bookingId (string).
 private struct CreateIntentRequest: Codable {
     let amount: Double       // Amount in dollars (e.g. 149.00)
@@ -35,7 +35,7 @@ private struct CreateIntentRequest: Codable {
     let customerEmail: String?
 }
 
-/// Request body for confirming a payment via the simple (no-auth) endpoint
+/// Request body for confirming a payment
 private struct ConfirmPaymentRequest: Codable {
     let paymentIntentId: String
     let paymentMethodType: String
@@ -110,8 +110,7 @@ class PaymentService: ObservableObject {
     // MARK: - Create Payment Intent
 
     /// Creates a PaymentIntent on the backend and returns the client secret.
-    /// Uses the `/api/payments/create-intent-simple` endpoint which does not
-    /// require JWT authentication (suitable for guest / customer checkout).
+    /// Uses the `/api/payments/create-intent-simple` endpoint.
     /// - Parameters:
     ///   - amountInDollars: The total amount to charge in dollars (e.g., 149.00)
     ///   - bookingId: Optional booking ID to associate with the payment
@@ -146,6 +145,9 @@ class PaymentService: ObservableObject {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue(config.apiKey, forHTTPHeaderField: "X-API-Key")
+        if let authToken = UserDefaults.standard.string(forKey: "authToken") {
+            request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+        }
         request.httpBody = body
 
         do {
@@ -190,8 +192,7 @@ class PaymentService: ObservableObject {
     // MARK: - Confirm Payment
 
     /// Confirms a payment on the backend after client-side authorization.
-    /// Uses the `/api/payments/confirm-simple` endpoint which does not
-    /// require JWT authentication (suitable for guest / customer checkout).
+    /// Uses the `/api/payments/confirm-simple` endpoint (requires JWT auth).
     /// - Parameters:
     ///   - paymentIntentId: The ID of the PaymentIntent to confirm
     ///   - paymentMethodType: The method used (e.g., "apple_pay" or "card")
@@ -223,6 +224,9 @@ class PaymentService: ObservableObject {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue(config.apiKey, forHTTPHeaderField: "X-API-Key")
+        if let authToken = UserDefaults.standard.string(forKey: "authToken") {
+            request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+        }
         request.httpBody = body
 
         do {

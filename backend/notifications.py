@@ -382,21 +382,18 @@ def send_password_reset_email(to_email, reset_token, customer_name=None):
 
 
 # ---------------------------------------------------------------------------
-# Push notification (stub -- requires APNs/FCM integration)
+# Push notification (delegates to push_notifications.py APNs sender)
 # ---------------------------------------------------------------------------
 def send_push_notification(user_id, title, body, data=None):
-    """Send a push notification to a user's device(s).
+    """Send a push notification to a user's device(s) via APNs.
 
-    This is a stub that logs the intent. Replace with APNs/FCM implementation
-    when device tokens are stored.
+    Delegates to push_notifications.send_push_notification which queries
+    DeviceToken and sends real APNs pushes via HTTP/2.
     Never raises.
     """
     try:
-        logger.info(
-            "[PUSH] Would send push to user %s: %s - %s (data=%s)",
-            user_id, title, body, data,
-        )
-        return None
+        from push_notifications import send_push_notification as _send_apns
+        return _send_apns(user_id, title, body, data=data)
     except Exception:
         logger.exception("Failed in send_push_notification for user %s", user_id)
         return None
