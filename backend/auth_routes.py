@@ -405,6 +405,36 @@ def seed_admin():
     return jsonify({'success': True, 'message': f'{email} is now admin'})
 
 
+@auth_bp.route('/bootstrap-admin', methods=['POST'])
+def bootstrap_admin():
+    """One-time admin bootstrap. Only works when zero admins exist."""
+    from werkzeug.security import generate_password_hash
+    admin_count = User.query.filter_by(role='admin').count()
+    if admin_count > 0:
+        return jsonify({'error': 'Admin already exists. Use seed-admin instead.'}), 403
+
+    data = request.get_json(force=True)
+    email = data.get('email', 'admin@junkos.app')
+    password = data.get('password', 'admin123')
+    name = data.get('name', 'Admin')
+
+    user = User.query.filter_by(email=email).first()
+    if user:
+        user.role = 'admin'
+    else:
+        user = User(
+            email=email,
+            name=name,
+            role='admin',
+            password_hash=generate_password_hash(password),
+            referral_code=generate_referral_code(),
+        )
+        db.session.add(user)
+
+    db.session.commit()
+    return jsonify({'success': True, 'message': f'{email} is now admin', 'user_id': user.id})
+
+
 # MARK: - Token Validation
 
 @auth_bp.route('/validate', methods=['POST'])
