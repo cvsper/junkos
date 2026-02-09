@@ -102,6 +102,14 @@ def list_contractors(user_id):
     contractors = []
     for c in pagination.items:
         c_data = c.to_dict()
+        # Flatten user fields to the top level so the admin frontend can
+        # access name / email / phone directly (instead of c.user.name etc.)
+        user_obj = c_data.pop("user", None) or {}
+        c_data["name"] = user_obj.get("name")
+        c_data["email"] = user_obj.get("email")
+        c_data["phone"] = user_obj.get("phone")
+        # Frontend expects "rating" but the model stores "avg_rating"
+        c_data["rating"] = c_data.get("avg_rating")
         # Add operator name for fleet contractors
         if c.operator_id and c.operator:
             c_data["operator_name"] = c.operator.user.name if c.operator.user else None
@@ -748,4 +756,86 @@ def list_surge_zones(user_id):
     return jsonify({
         "success": True,
         "surge_zones": [z.to_dict() for z in zones],
+    }), 200
+
+
+# ---------------------------------------------------------------------------
+# Payments / Payouts
+# ---------------------------------------------------------------------------
+
+@admin_bp.route("/payments", methods=["GET"])
+@require_admin
+def list_payments(user_id):
+    """
+    List payment records with the actual 3-way split amounts
+    (commission, operator_payout_amount, driver_payout_amount)
+    plus associated job, driver, and operator info.
+    """
+    page = request.args.get("page", 1, type=int)
+    per_page = request.args.get("per_page", 50, type=int)
+    status_filter = request.args.get("status")  # e.g. 'succeeded', 'pending'
+
+    query = Payment.query
+    if status_filter:
+        query = query.filter_by(payment_status=status_filter)
+
+    pagination = query.order_by(Payment.created_at.desc()).paginate(
+        page=page, per_page=per_page, error_out=False
+    )
+
+    # Aggregate totals across ALL matching payments (not just this page)
+    agg = db.session.query(
+        func.coalesce(func.sum(Payment.amount), 0.0),
+        func.coalesce(func.sum(Payment.commission), 0.0),
+        func.coalesce(func.sum(Payment.driver_payout_amount), 0.0),
+        func.coalesce(func.sum(Payment.operator_payout_amount), 0.0),
+    )
+    if status_filter:
+        agg = agg.filter(Payment.payment_status == status_filter)
+    agg_row = agg.one()
+
+    payments = []
+    for p in pagination.items:
+        job = p.job
+        driver_name = None
+        operator_name = None
+
+        if job:
+            # Driver name
+            if job.driver and job.driver.user:
+                driver_name = job.driver.user.name
+            # Operator name
+            if job.operator_rel and job.operator_rel.user:
+                operator_name = job.operator_rel.user.name
+
+        payments.append({
+            "id": p.id,
+            "job_id": p.job_id,
+            "amount": p.amount,
+            "commission": p.commission,
+            "driver_payout_amount": p.driver_payout_amount,
+            "operator_payout_amount": p.operator_payout_amount or 0.0,
+            "payout_status": p.payout_status,
+            "payment_status": p.payment_status,
+            "tip_amount": p.tip_amount,
+            "created_at": p.created_at.isoformat() if p.created_at else None,
+            "job_address": job.address if job else None,
+            "job_status": job.status if job else None,
+            "driver_name": driver_name,
+            "operator_name": operator_name,
+            "customer_name": job.customer.name if job and job.customer else None,
+        })
+
+    return jsonify({
+        "success": True,
+        "payments": payments,
+        "totals": {
+            "total_revenue": round(float(agg_row[0]), 2),
+            "total_commission": round(float(agg_row[1]), 2),
+            "total_driver_payouts": round(float(agg_row[2]), 2),
+            "total_operator_payouts": round(float(agg_row[3]), 2),
+        },
+        "total": pagination.total,
+        "page": pagination.page,
+        "pages": pagination.pages,
     }), 200

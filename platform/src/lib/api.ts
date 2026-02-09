@@ -183,6 +183,41 @@ export const bookingApi = {
 };
 
 // ---------------------------------------------------------------------------
+// Payments API
+// ---------------------------------------------------------------------------
+
+interface CreatePaymentIntentResponse {
+  clientSecret: string;
+  paymentIntentId: string;
+}
+
+interface ConfirmPaymentResponse {
+  success: boolean;
+  payment: {
+    id: string;
+    amount: number;
+    status: string;
+  };
+}
+
+export const paymentsApi = {
+  createIntent: (bookingId: string, amount: number) =>
+    apiFetch<CreatePaymentIntentResponse>(
+      "/api/payments/create-intent-simple",
+      {
+        method: "POST",
+        body: JSON.stringify({ bookingId, amount }),
+      }
+    ),
+
+  confirm: (paymentIntentId: string, bookingId: string) =>
+    apiFetch<ConfirmPaymentResponse>("/api/payments/confirm-simple", {
+      method: "POST",
+      body: JSON.stringify({ paymentIntentId, bookingId }),
+    }),
+};
+
+// ---------------------------------------------------------------------------
 // Tracking API
 // ---------------------------------------------------------------------------
 
@@ -265,6 +300,40 @@ export interface AdminCustomerRecord {
   created_at: string;
 }
 
+export interface AdminPaymentRecord {
+  id: string;
+  job_id: string;
+  amount: number;
+  commission: number;
+  driver_payout_amount: number;
+  operator_payout_amount: number;
+  payout_status: string;
+  payment_status: string;
+  tip_amount: number;
+  created_at: string | null;
+  job_address: string | null;
+  job_status: string | null;
+  driver_name: string | null;
+  operator_name: string | null;
+  customer_name: string | null;
+}
+
+export interface AdminPaymentTotals {
+  total_revenue: number;
+  total_commission: number;
+  total_driver_payouts: number;
+  total_operator_payouts: number;
+}
+
+interface AdminPaymentsResponse {
+  success: boolean;
+  payments: AdminPaymentRecord[];
+  totals: AdminPaymentTotals;
+  total: number;
+  page: number;
+  pages: number;
+}
+
 interface AdminFilters {
   [key: string]: string | number | boolean | undefined;
 }
@@ -338,6 +407,20 @@ export const adminApi = {
     apiFetch<{ success: boolean }>(`/api/admin/contractors/${id}/promote-operator`, {
       method: "PUT",
     }),
+
+  /** GET /api/admin/payments -- payment records with 3-way split data */
+  payments: (filters?: AdminFilters) => {
+    const params = new URLSearchParams();
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== "") params.append(key, String(value));
+      });
+    }
+    const query = params.toString();
+    return apiFetch<AdminPaymentsResponse>(
+      `/api/admin/payments${query ? `?${query}` : ""}`
+    );
+  },
 
   /** GET /api/admin/analytics -- dashboard chart data */
   analytics: () =>

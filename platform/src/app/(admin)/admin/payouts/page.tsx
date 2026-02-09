@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { adminApi } from "@/lib/api";
-import type { DashboardData, AdminJobRecord } from "@/lib/api";
+import type { AdminPaymentRecord, AdminPaymentTotals } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -21,9 +21,8 @@ import {
   RefreshCw,
   ExternalLink,
   Info,
+  Users,
 } from "lucide-react";
-
-const COMMISSION_RATE = 0.2;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -38,12 +37,23 @@ function formatCurrency(value: number): string {
   }).format(value);
 }
 
-function getJobTotal(job: AdminJobRecord): number {
-  return job.final_price || job.estimated_price || 0;
-}
-
-function getContractorName(job: AdminJobRecord): string {
-  return job.customer_name || "Unassigned";
+function payoutStatusBadge(status: string) {
+  switch (status) {
+    case "paid":
+      return <Badge className="text-xs">Paid</Badge>;
+    case "pending":
+      return (
+        <Badge variant="secondary" className="text-xs">
+          Pending
+        </Badge>
+      );
+    default:
+      return (
+        <Badge variant="outline" className="text-xs">
+          {status}
+        </Badge>
+      );
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -51,10 +61,9 @@ function getContractorName(job: AdminJobRecord): string {
 // ---------------------------------------------------------------------------
 
 export default function AdminPayoutsPage() {
-  const [dashboardStats, setDashboardStats] = useState<DashboardData | null>(
-    null
-  );
-  const [completedJobs, setCompletedJobs] = useState<AdminJobRecord[]>([]);
+  const [payments, setPayments] = useState<AdminPaymentRecord[]>([]);
+  const [totals, setTotals] = useState<AdminPaymentTotals | null>(null);
+  const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -62,16 +71,10 @@ export default function AdminPayoutsPage() {
     setLoading(true);
     setError(null);
     try {
-      const [dashRes, jobsRes] = await Promise.all([
-        adminApi.dashboard(),
-        adminApi.jobs({ status: "completed" }),
-      ]);
-
-      // Unwrap the dashboard payload
-      setDashboardStats(dashRes.dashboard);
-
-      // Unwrap the paginated jobs payload
-      setCompletedJobs(jobsRes.jobs || []);
+      const res = await adminApi.payments({ status: "succeeded" });
+      setPayments(res.payments || []);
+      setTotals(res.totals || null);
+      setTotalCount(res.total || 0);
     } catch (err: unknown) {
       setError(
         err instanceof Error ? err.message : "Failed to load payout data"
@@ -85,13 +88,24 @@ export default function AdminPayoutsPage() {
     fetchData();
   }, [fetchData]);
 
-  // ---- Derived values ----
-  const totalRevenue = dashboardStats?.revenue_30d || 0;
-  const totalCommission = dashboardStats?.commission_30d || totalRevenue * COMMISSION_RATE;
-  const totalPaidOut = totalRevenue - totalCommission;
-  const pendingPayouts = completedJobs
-    .filter((j) => j.status === "completed")
-    .reduce((sum, j) => sum + getJobTotal(j) * (1 - COMMISSION_RATE), 0);
+  // ---- Derived values from server-computed totals ----
+  const totalRevenue = totals?.total_revenue ?? 0;
+  const totalCommission = totals?.total_commission ?? 0;
+  const totalDriverPayouts = totals?.total_driver_payouts ?? 0;
+  const totalOperatorPayouts = totals?.total_operator_payouts ?? 0;
+
+  // Pending payouts = payments where payout_status is still "pending"
+  const pendingPayoutTotal = payments
+    .filter((p) => p.payout_status === "pending")
+    .reduce((sum, p) => sum + p.driver_payout_amount + p.operator_payout_amount, 0);
+  const pendingPayoutCount = payments.filter(
+    (p) => p.payout_status === "pending"
+  ).length;
+
+  // Check if any payment has a non-zero operator payout (to show/hide operator column)
+  const hasOperatorPayouts = payments.some(
+    (p) => p.operator_payout_amount > 0 || p.operator_name
+  );
 
   // ---- Loading state ----
   if (loading) {
@@ -154,37 +168,20 @@ export default function AdminPayoutsPage() {
       {/* ------------------------------------------------------------------ */}
       {/* Summary Cards                                                       */}
       {/* ------------------------------------------------------------------ */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-muted-foreground">
-                Total Paid Out
+                Total Revenue
               </span>
-              <Banknote className="h-5 w-5 text-muted-foreground" />
+              <DollarSign className="h-5 w-5 text-muted-foreground" />
             </div>
             <p className="text-2xl font-display font-bold">
-              {formatCurrency(totalPaidOut)}
+              {formatCurrency(totalRevenue)}
             </p>
             <p className="text-xs text-muted-foreground mt-1">
-              80% of total revenue to contractors
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-muted-foreground">
-                Pending Payouts
-              </span>
-              <Clock className="h-5 w-5 text-muted-foreground" />
-            </div>
-            <p className="text-2xl font-display font-bold">
-              {formatCurrency(pendingPayouts)}
-            </p>
-            <p className="text-xs text-muted-foreground mt-1">
-              {completedJobs.length} completed job
-              {completedJobs.length !== 1 ? "s" : ""} awaiting payout
+              {totalCount} payment{totalCount !== 1 ? "s" : ""} total
             </p>
           </CardContent>
         </Card>
@@ -194,13 +191,49 @@ export default function AdminPayoutsPage() {
               <span className="text-sm font-medium text-muted-foreground">
                 Platform Commission
               </span>
-              <DollarSign className="h-5 w-5 text-muted-foreground" />
+              <Banknote className="h-5 w-5 text-muted-foreground" />
             </div>
             <p className="text-2xl font-display font-bold">
               {formatCurrency(totalCommission)}
             </p>
             <p className="text-xs text-muted-foreground mt-1">
-              20% commission earned
+              Platform&apos;s share of revenue
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-muted-foreground">
+                Driver Payouts
+              </span>
+              <Users className="h-5 w-5 text-muted-foreground" />
+            </div>
+            <p className="text-2xl font-display font-bold text-green-600">
+              {formatCurrency(totalDriverPayouts)}
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Total paid to drivers
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-muted-foreground">
+                {totalOperatorPayouts > 0 ? "Operator Payouts" : "Pending Payouts"}
+              </span>
+              <Clock className="h-5 w-5 text-muted-foreground" />
+            </div>
+            <p className="text-2xl font-display font-bold">
+              {totalOperatorPayouts > 0
+                ? formatCurrency(totalOperatorPayouts)
+                : formatCurrency(pendingPayoutTotal)}
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {totalOperatorPayouts > 0
+                ? "Total paid to operators"
+                : `${pendingPayoutCount} payment${pendingPayoutCount !== 1 ? "s" : ""} awaiting payout`}
             </p>
           </CardContent>
         </Card>
@@ -238,23 +271,23 @@ export default function AdminPayoutsPage() {
       </Card>
 
       {/* ------------------------------------------------------------------ */}
-      {/* Completed Jobs / Payout Breakdown Table                             */}
+      {/* Payment Breakdown Table                                              */}
       {/* ------------------------------------------------------------------ */}
       <Card>
         <CardHeader>
           <CardTitle className="font-display text-lg">
-            Recent Completed Jobs
+            Payment Breakdown
           </CardTitle>
           <CardDescription>
-            Breakdown of job revenue, commission, and driver payouts
+            Actual commission, operator, and driver payout amounts per payment
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {completedJobs.length === 0 ? (
+          {payments.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-sm text-muted-foreground">
-                No completed jobs to display. Payouts will appear here after
-                jobs are completed.
+                No payments to display. Payouts will appear here after
+                jobs are completed and paid.
               </p>
             </div>
           ) : (
@@ -264,101 +297,123 @@ export default function AdminPayoutsPage() {
                   <thead>
                     <tr className="border-b border-border bg-muted/50">
                       <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3">
-                        Job ID
+                        Job
                       </th>
                       <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3">
-                        Contractor
+                        Driver
+                      </th>
+                      {hasOperatorPayouts && (
+                        <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3">
+                          Operator
+                        </th>
+                      )}
+                      <th className="text-right text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3">
+                        Total
                       </th>
                       <th className="text-right text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3">
-                        Job Total
+                        Platform Commission
                       </th>
+                      {hasOperatorPayouts && (
+                        <th className="text-right text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3">
+                          Operator Payout
+                        </th>
+                      )}
                       <th className="text-right text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3">
-                        Commission (20%)
-                      </th>
-                      <th className="text-right text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3">
-                        Driver Payout (80%)
+                        Driver Payout
                       </th>
                       <th className="text-center text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3">
-                        Status
+                        Payout Status
                       </th>
                     </tr>
                   </thead>
                   <tbody>
-                    {completedJobs.map((job) => {
-                      const total = getJobTotal(job);
-                      const commission = total * COMMISSION_RATE;
-                      const driverPayout = total * (1 - COMMISSION_RATE);
-                      return (
-                        <tr
-                          key={job.id}
-                          className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors"
-                        >
-                          <td className="px-4 py-3 text-sm font-mono">
-                            {job.id.length > 8
-                              ? `${job.id.slice(0, 8)}...`
-                              : job.id}
+                    {payments.map((payment) => (
+                      <tr
+                        key={payment.id}
+                        className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors"
+                      >
+                        <td className="px-4 py-3">
+                          <div className="text-sm font-mono">
+                            {payment.job_id.length > 8
+                              ? `${payment.job_id.slice(0, 8)}...`
+                              : payment.job_id}
+                          </div>
+                          {payment.customer_name && (
+                            <div className="text-xs text-muted-foreground mt-0.5">
+                              {payment.customer_name}
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-sm font-medium">
+                          {payment.driver_name || "Unassigned"}
+                        </td>
+                        {hasOperatorPayouts && (
+                          <td className="px-4 py-3 text-sm">
+                            {payment.operator_name ? (
+                              <span className="font-medium">
+                                {payment.operator_name}
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground">--</span>
+                            )}
                           </td>
-                          <td className="px-4 py-3 text-sm font-medium">
-                            {getContractorName(job)}
+                        )}
+                        <td className="px-4 py-3 text-sm text-right font-medium">
+                          {formatCurrency(payment.amount)}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-right text-muted-foreground">
+                          {formatCurrency(payment.commission)}
+                        </td>
+                        {hasOperatorPayouts && (
+                          <td className="px-4 py-3 text-sm text-right text-blue-600">
+                            {payment.operator_payout_amount > 0
+                              ? formatCurrency(payment.operator_payout_amount)
+                              : "--"}
                           </td>
-                          <td className="px-4 py-3 text-sm text-right font-medium">
-                            {formatCurrency(total)}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-right text-muted-foreground">
-                            {formatCurrency(commission)}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-right font-medium text-green-600">
-                            {formatCurrency(driverPayout)}
-                          </td>
-                          <td className="px-4 py-3 text-center">
-                            <Badge
-                              variant={
-                                job.status === "completed"
-                                  ? "default"
-                                  : "secondary"
-                              }
-                              className="text-xs"
-                            >
-                              {job.status === "completed"
-                                ? "Paid"
-                                : job.status}
-                            </Badge>
-                          </td>
-                        </tr>
-                      );
-                    })}
+                        )}
+                        <td className="px-4 py-3 text-sm text-right font-medium text-green-600">
+                          {formatCurrency(payment.driver_payout_amount)}
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          {payoutStatusBadge(payment.payout_status)}
+                        </td>
+                      </tr>
+                    ))}
                   </tbody>
                   {/* Table footer with totals */}
                   <tfoot>
                     <tr className="border-t-2 border-border bg-muted/30">
                       <td
-                        colSpan={2}
+                        colSpan={hasOperatorPayouts ? 3 : 2}
                         className="px-4 py-3 text-sm font-semibold"
                       >
-                        Totals ({completedJobs.length} jobs)
+                        Totals ({payments.length} payment
+                        {payments.length !== 1 ? "s" : ""})
                       </td>
                       <td className="px-4 py-3 text-sm text-right font-semibold">
                         {formatCurrency(
-                          completedJobs.reduce(
-                            (sum, j) => sum + getJobTotal(j),
-                            0
-                          )
+                          payments.reduce((sum, p) => sum + p.amount, 0)
                         )}
                       </td>
                       <td className="px-4 py-3 text-sm text-right text-muted-foreground font-semibold">
                         {formatCurrency(
-                          completedJobs.reduce(
-                            (sum, j) =>
-                              sum + getJobTotal(j) * COMMISSION_RATE,
-                            0
-                          )
+                          payments.reduce((sum, p) => sum + p.commission, 0)
                         )}
                       </td>
+                      {hasOperatorPayouts && (
+                        <td className="px-4 py-3 text-sm text-right font-semibold text-blue-600">
+                          {formatCurrency(
+                            payments.reduce(
+                              (sum, p) => sum + p.operator_payout_amount,
+                              0
+                            )
+                          )}
+                        </td>
+                      )}
                       <td className="px-4 py-3 text-sm text-right font-semibold text-green-600">
                         {formatCurrency(
-                          completedJobs.reduce(
-                            (sum, j) =>
-                              sum + getJobTotal(j) * (1 - COMMISSION_RATE),
+                          payments.reduce(
+                            (sum, p) => sum + p.driver_payout_amount,
                             0
                           )
                         )}

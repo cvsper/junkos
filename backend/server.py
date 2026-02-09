@@ -512,51 +512,6 @@ def portal_create_booking():
     }), 201
 
 
-@app.route("/api/payments/confirm-simple", methods=["POST"])
-def confirm_payment_simple():
-    """Confirm a payment without auth (for customer portal).
-
-    In dev mode (no Stripe webhook), this acts as the payment-succeeded handler:
-    marks the payment as succeeded, updates job status, and auto-assigns a driver.
-    """
-    from models import Payment, Job, Notification, generate_uuid, utcnow
-
-    data = request.get_json() or {}
-    intent_id = data.get("paymentIntentId") or data.get("payment_intent_id")
-
-    if not intent_id:
-        return jsonify({"error": "paymentIntentId is required"}), 400
-
-    payment = Payment.query.filter_by(stripe_payment_intent_id=intent_id).first()
-    if not payment:
-        return jsonify({"error": "Payment not found"}), 404
-
-    payment.payment_status = "succeeded"
-    payment.updated_at = utcnow()
-
-    # Update job status and trigger auto-assignment
-    job = sqlalchemy_db.session.get(Job, payment.job_id)
-    if job and job.status == "pending":
-        job.status = "confirmed"
-        job.updated_at = utcnow()
-
-        # Auto-assign nearest driver
-        from routes.payments import _auto_assign_driver
-        _auto_assign_driver(job)
-
-        # Broadcast status update
-        from socket_events import broadcast_job_status
-        broadcast_job_status(job.id, job.status)
-
-    sqlalchemy_db.session.commit()
-
-    return jsonify({
-        "success": True,
-        "payment": payment.to_dict(),
-        "job": job.to_dict() if job else None,
-    }), 200
-
-
 # Serve uploaded files
 @app.route("/uploads/<filename>")
 def serve_uploaded_file(filename):

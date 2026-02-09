@@ -1,6 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { loadStripe } from "@stripe/stripe-js";
+import {
+  Elements,
+  CardElement,
+  PaymentRequestButtonElement,
+  useStripe,
+  useElements,
+} from "@stripe/react-stripe-js";
+import type { StripeCardElementChangeEvent, PaymentRequest } from "@stripe/stripe-js";
 import {
   CreditCard,
   User,
@@ -9,14 +18,28 @@ import {
   CheckCircle2,
   Loader2,
   Shield,
+  Lock,
+  AlertCircle,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useBookingStore } from "@/stores/booking-store";
+import { bookingApi, paymentsApi } from "@/lib/api";
+
+// ---------------------------------------------------------------------------
+// Stripe singleton
+// ---------------------------------------------------------------------------
+
+const stripePromise = loadStripe(
+  process.env.NEXT_PUBLIC_STRIPE_KEY || ""
+);
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
 
 function formatPhoneNumber(value: string): string {
-  // Strip everything except digits
   const digits = value.replace(/\D/g, "");
   if (digits.length === 0) return "";
   if (digits.length <= 3) return `(${digits}`;
@@ -52,34 +75,205 @@ function formatDate(dateStr: string): string {
   });
 }
 
+// ---------------------------------------------------------------------------
+// Card element styling (adapts to theme via CSS custom properties)
+// ---------------------------------------------------------------------------
+
+const CARD_ELEMENT_OPTIONS = {
+  style: {
+    base: {
+      fontSize: "16px",
+      color: "#1f2937",
+      fontFamily: "Inter, system-ui, -apple-system, sans-serif",
+      fontSmoothing: "antialiased",
+      "::placeholder": {
+        color: "#9ca3af",
+      },
+    },
+    invalid: {
+      color: "#dc2626",
+      iconColor: "#dc2626",
+    },
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
 interface FormErrors {
   name?: string;
   email?: string;
   phone?: string;
+  card?: string;
+  general?: string;
 }
 
-export function Step6Payment() {
+// ---------------------------------------------------------------------------
+// Inner payment form (has access to Stripe context via useStripe / useElements)
+// ---------------------------------------------------------------------------
+
+function PaymentFormInner() {
+  const stripe = useStripe();
+  const elements = useElements();
+
   const {
     address,
+    items,
     scheduledDate,
     scheduledTimeSlot,
     estimatedPrice,
+    notes,
+    photos,
     isSubmitting,
     setIsSubmitting,
   } = useBookingStore();
 
+  // Contact info
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+
+  // Card state
+  const [cardComplete, setCardComplete] = useState(false);
+  const [cardError, setCardError] = useState<string | undefined>();
+
+  // General state
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSuccess, setIsSuccess] = useState(false);
   const [bookingId, setBookingId] = useState("");
 
+  // Apple Pay / Google Pay
+  const [paymentRequest, setPaymentRequest] = useState<PaymentRequest | null>(null);
+  const [canMakePayment, setCanMakePayment] = useState(false);
+  const paymentRequestRef = useRef<PaymentRequest | null>(null);
+
+  // ---------------------------------------------------------------------------
+  // Apple Pay / Google Pay setup
+  // ---------------------------------------------------------------------------
+  useEffect(() => {
+    if (!stripe || !estimatedPrice || estimatedPrice <= 0) return;
+
+    const pr = stripe.paymentRequest({
+      country: "US",
+      currency: "usd",
+      total: {
+        label: "JunkOS Junk Removal",
+        amount: Math.round(estimatedPrice * 100),
+      },
+      requestPayerName: true,
+      requestPayerEmail: true,
+      requestPayerPhone: true,
+    });
+
+    pr.canMakePayment().then((result) => {
+      if (result) {
+        setCanMakePayment(true);
+        setPaymentRequest(pr);
+        paymentRequestRef.current = pr;
+      }
+    });
+
+    // Handle the payment method event from Apple Pay / Google Pay
+    pr.on("paymentmethod", async (ev) => {
+      try {
+        const payerName = ev.payerName || "";
+        const payerEmail = ev.payerEmail || "";
+        const payerPhone = ev.payerPhone || "";
+
+        // 1. Submit booking to backend
+        const bookingResult = await bookingApi.submit({
+          step: 6,
+          address,
+          photos,
+          photoUrls: [],
+          items,
+          scheduledDate,
+          scheduledTimeSlot,
+          notes,
+          estimatedPrice,
+        });
+
+        const newBookingId = bookingResult.id || generateBookingId();
+
+        // 2. Create payment intent
+        const piResult = await paymentsApi.createIntent(
+          newBookingId,
+          estimatedPrice
+        );
+
+        // 3. Confirm with the payment method from Apple Pay / Google Pay
+        const { error, paymentIntent } = await stripe.confirmCardPayment(
+          piResult.clientSecret,
+          { payment_method: ev.paymentMethod.id },
+          { handleActions: false }
+        );
+
+        if (error) {
+          ev.complete("fail");
+          setErrors((prev) => ({ ...prev, general: error.message }));
+          return;
+        }
+
+        if (paymentIntent?.status === "requires_action") {
+          const { error: actionError } = await stripe.confirmCardPayment(
+            piResult.clientSecret
+          );
+          if (actionError) {
+            ev.complete("fail");
+            setErrors((prev) => ({ ...prev, general: actionError.message }));
+            return;
+          }
+        }
+
+        ev.complete("success");
+
+        // 4. Confirm in backend
+        if (paymentIntent) {
+          await paymentsApi.confirm(paymentIntent.id, newBookingId);
+        }
+
+        // Update UI
+        setName(payerName);
+        setEmail(payerEmail);
+        setPhone(payerPhone);
+        setBookingId(newBookingId);
+        setIsSuccess(true);
+      } catch (err) {
+        ev.complete("fail");
+        const message =
+          err instanceof Error ? err.message : "Payment failed. Please try again.";
+        setErrors((prev) => ({ ...prev, general: message }));
+      }
+    });
+
+    return () => {
+      paymentRequestRef.current = null;
+    };
+  }, [stripe, estimatedPrice, address, items, scheduledDate, scheduledTimeSlot, notes, photos]);
+
+  // ---------------------------------------------------------------------------
+  // Card change handler
+  // ---------------------------------------------------------------------------
+  const handleCardChange = useCallback((event: StripeCardElementChangeEvent) => {
+    setCardComplete(event.complete);
+    setCardError(event.error?.message);
+    if (errors.card) {
+      setErrors((prev) => ({ ...prev, card: undefined }));
+    }
+  }, [errors.card]);
+
+  // ---------------------------------------------------------------------------
+  // Phone formatting
+  // ---------------------------------------------------------------------------
   const handlePhoneChange = (value: string) => {
     setPhone(formatPhoneNumber(value));
     if (errors.phone) setErrors((prev) => ({ ...prev, phone: undefined }));
   };
 
+  // ---------------------------------------------------------------------------
+  // Validation
+  // ---------------------------------------------------------------------------
   const validate = (): boolean => {
     const newErrors: FormErrors = {};
 
@@ -97,29 +291,95 @@ export function Step6Payment() {
       newErrors.phone = "Please enter a valid 10-digit phone number.";
     }
 
+    if (!cardComplete) {
+      newErrors.card = "Please complete your card information.";
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
+  // ---------------------------------------------------------------------------
+  // Submit handler (card payment)
+  // ---------------------------------------------------------------------------
   const handleSubmit = async () => {
     if (!validate()) return;
+    if (!stripe || !elements) {
+      setErrors({ general: "Payment system is still loading. Please wait." });
+      return;
+    }
 
     setIsSubmitting(true);
+    setErrors({});
 
-    // Simulate API call / booking submission
     try {
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      const id = generateBookingId();
-      setBookingId(id);
+      // 1. Submit the booking to the backend
+      const bookingResult = await bookingApi.submit({
+        step: 6,
+        address,
+        photos,
+        photoUrls: [],
+        items,
+        scheduledDate,
+        scheduledTimeSlot,
+        notes,
+        estimatedPrice,
+      });
+
+      const newBookingId = bookingResult.id || generateBookingId();
+
+      // 2. Create payment intent on the server
+      const paymentIntentResult = await paymentsApi.createIntent(
+        newBookingId,
+        estimatedPrice
+      );
+
+      const clientSecret = paymentIntentResult.clientSecret;
+
+      // 3. Confirm the card payment with Stripe
+      const cardElement = elements.getElement(CardElement);
+      if (!cardElement) {
+        throw new Error("Card element not found.");
+      }
+
+      const { error, paymentIntent } = await stripe.confirmCardPayment(
+        clientSecret,
+        {
+          payment_method: {
+            card: cardElement,
+            billing_details: {
+              name: name.trim(),
+              email: email.trim(),
+              phone: phone.trim(),
+            },
+          },
+        }
+      );
+
+      if (error) {
+        throw new Error(error.message || "Payment was declined.");
+      }
+
+      // 4. Confirm payment in the backend
+      if (paymentIntent) {
+        await paymentsApi.confirm(paymentIntent.id, newBookingId);
+      }
+
+      // Success
+      setBookingId(newBookingId);
       setIsSuccess(true);
-    } catch {
-      // Handle error silently - would show toast in production
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Payment failed. Please try again.";
+      setErrors({ general: message });
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  // ---------------------------------------------------------------------------
   // SUCCESS STATE
+  // ---------------------------------------------------------------------------
   if (isSuccess) {
     return (
       <div className="flex flex-col items-center text-center py-8 space-y-6">
@@ -166,7 +426,7 @@ export function Step6Payment() {
               </span>
             </div>
             <div className="flex justify-between border-t border-border pt-2">
-              <span className="font-semibold text-foreground">Total</span>
+              <span className="font-semibold text-foreground">Total Paid</span>
               <span className="font-bold text-primary text-lg">
                 ${estimatedPrice.toFixed(2)}
               </span>
@@ -188,6 +448,9 @@ export function Step6Payment() {
             setEmail("");
             setPhone("");
             setBookingId("");
+            setCardComplete(false);
+            setCardError(undefined);
+            setErrors({});
           }}
           variant="outline"
           className="mt-4"
@@ -198,7 +461,9 @@ export function Step6Payment() {
     );
   }
 
+  // ---------------------------------------------------------------------------
   // PAYMENT FORM STATE
+  // ---------------------------------------------------------------------------
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -207,9 +472,58 @@ export function Step6Payment() {
           Complete Your Booking
         </h2>
         <p className="mt-1 text-muted-foreground">
-          Enter your contact information and confirm payment.
+          Enter your contact information and pay securely with Stripe.
         </p>
       </div>
+
+      {/* Global error */}
+      {errors.general && (
+        <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/5 p-4">
+          <AlertCircle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-medium text-destructive">
+              Payment Error
+            </p>
+            <p className="text-sm text-destructive/80 mt-0.5">
+              {errors.general}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Apple Pay / Google Pay */}
+      {paymentRequest && canMakePayment && (
+        <>
+          <div className="space-y-3">
+            <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider">
+              Express Checkout
+            </h3>
+            <PaymentRequestButtonElement
+              options={{
+                paymentRequest,
+                style: {
+                  paymentRequestButton: {
+                    type: "default",
+                    theme: "dark",
+                    height: "48px",
+                  },
+                },
+              }}
+            />
+          </div>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-border" />
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="bg-card px-4 text-muted-foreground">
+                or pay with card
+              </span>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Customer Info */}
       <div className="space-y-5">
@@ -235,6 +549,7 @@ export function Step6Payment() {
                   if (errors.name)
                     setErrors((prev) => ({ ...prev, name: undefined }));
                 }}
+                disabled={isSubmitting}
                 className="pl-10 h-11"
               />
             </div>
@@ -262,6 +577,7 @@ export function Step6Payment() {
                   if (errors.email)
                     setErrors((prev) => ({ ...prev, email: undefined }));
                 }}
+                disabled={isSubmitting}
                 className="pl-10 h-11"
               />
             </div>
@@ -285,6 +601,7 @@ export function Step6Payment() {
                 placeholder="(555) 123-4567"
                 value={phone}
                 onChange={(e) => handlePhoneChange(e.target.value)}
+                disabled={isSubmitting}
                 className="pl-10 h-11"
               />
             </div>
@@ -297,27 +614,41 @@ export function Step6Payment() {
         </div>
       </div>
 
-      {/* Payment Placeholder */}
+      {/* Card Information */}
       <div className="space-y-5">
         <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider">
           Payment Method
         </h3>
 
-        <div className="rounded-lg border-2 border-dashed border-border bg-muted/30 p-8 text-center">
-          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 mx-auto mb-3">
-            <CreditCard className="h-6 w-6 text-primary" />
+        <div className="space-y-2">
+          <Label className="text-sm font-medium flex items-center gap-2">
+            <CreditCard className="h-4 w-4 text-muted-foreground" />
+            Card Information
+          </Label>
+          <div className="rounded-lg border-2 border-border bg-background p-4 transition-all focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
+            <CardElement
+              options={CARD_ELEMENT_OPTIONS}
+              onChange={handleCardChange}
+            />
           </div>
-          <p className="text-sm font-semibold text-foreground">
-            Stripe Payment Integration
-          </p>
-          <p className="text-xs text-muted-foreground mt-1">
-            Stripe payment form will be integrated here
-          </p>
-          <div className="flex items-center justify-center gap-1.5 mt-3">
-            <Shield className="h-3.5 w-3.5 text-emerald-600" />
-            <span className="text-xs text-muted-foreground">
-              Secure, encrypted payment processing
-            </span>
+          {(errors.card || cardError) && (
+            <p className="text-sm text-destructive font-medium">
+              {errors.card || cardError}
+            </p>
+          )}
+        </div>
+
+        {/* Security Badge */}
+        <div className="flex items-center gap-3 rounded-lg bg-muted/50 border border-border p-3">
+          <Shield className="h-5 w-5 text-emerald-600 shrink-0" />
+          <div className="text-sm">
+            <p className="font-medium text-foreground">
+              Secure Payment
+            </p>
+            <p className="text-muted-foreground text-xs">
+              Your payment info is encrypted end-to-end by Stripe. We never
+              store your card details.
+            </p>
           </div>
         </div>
       </div>
@@ -335,23 +666,47 @@ export function Step6Payment() {
 
         <Button
           onClick={handleSubmit}
-          disabled={isSubmitting}
+          disabled={isSubmitting || !stripe || !elements}
           className="w-full h-12 text-base font-semibold"
           size="lg"
         >
           {isSubmitting ? (
             <>
               <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-              Processing...
+              Processing Payment...
             </>
           ) : (
             <>
-              <CheckCircle2 className="mr-2 h-5 w-5" />
-              Complete Booking
+              <Lock className="mr-2 h-5 w-5" />
+              Pay ${estimatedPrice.toFixed(2)}
             </>
           )}
         </Button>
+
+        <p className="text-xs text-muted-foreground text-center mt-3">
+          By completing this booking, you agree to our{" "}
+          <a href="#" className="underline hover:text-foreground">
+            Terms of Service
+          </a>{" "}
+          and{" "}
+          <a href="#" className="underline hover:text-foreground">
+            Privacy Policy
+          </a>
+          .
+        </p>
       </div>
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Exported wrapper -- wraps inner form in Stripe Elements provider
+// ---------------------------------------------------------------------------
+
+export function Step6Payment() {
+  return (
+    <Elements stripe={stripePromise}>
+      <PaymentFormInner />
+    </Elements>
   );
 }

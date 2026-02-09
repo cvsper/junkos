@@ -18,7 +18,7 @@ payments_bp = Blueprint("payments", __name__, url_prefix="/api/payments")
 _stripe = None
 
 PLATFORM_COMMISSION = 0.20
-SERVICE_FEE = 15.00
+SERVICE_FEE_RATE = 0.08  # 8% of amount – matches booking.py
 
 
 def _get_stripe():
@@ -41,6 +41,9 @@ def create_payment_intent(user_id):
     job_id = data.get("job_id")
     tip_amount = float(data.get("tip_amount", 0))
 
+    if tip_amount < 0:
+        return jsonify({"error": "tip_amount cannot be negative"}), 400
+
     if not job_id:
         return jsonify({"error": "job_id is required"}), 400
 
@@ -55,7 +58,8 @@ def create_payment_intent(user_id):
 
     amount = round(job.total_price + tip_amount, 2)
     commission = round(amount * PLATFORM_COMMISSION, 2)
-    driver_payout = round(amount - commission - SERVICE_FEE, 2)
+    service_fee = round(amount * SERVICE_FEE_RATE, 2)
+    driver_payout = max(0, round(amount - commission - service_fee, 2))
 
     stripe = _get_stripe()
     stripe_key = os.environ.get("STRIPE_SECRET_KEY", "")
@@ -88,7 +92,7 @@ def create_payment_intent(user_id):
 
     payment.stripe_payment_intent_id = intent_id
     payment.amount = amount
-    payment.service_fee = SERVICE_FEE
+    payment.service_fee = service_fee
     payment.commission = commission
     payment.driver_payout_amount = driver_payout
     payment.tip_amount = tip_amount
@@ -210,10 +214,17 @@ def create_simple_payment_intent():
     data = request.get_json() or {}
     booking_id = data.get("bookingId") or data.get("booking_id")
     customer_email = data.get("customerEmail") or data.get("customer_email")
-    amount = float(data.get("amount", 0))
+
+    try:
+        amount = float(data.get("amount", 0))
+    except (ValueError, TypeError):
+        return jsonify({"error": "Invalid amount"}), 400
 
     if amount <= 0:
         return jsonify({"error": "amount is required and must be positive"}), 400
+
+    if amount > 10000:
+        return jsonify({"error": "amount exceeds maximum allowed ($10,000)"}), 400
 
     stripe = _get_stripe()
     stripe_key = os.environ.get("STRIPE_SECRET_KEY", "")
@@ -264,12 +275,11 @@ def create_simple_payment_intent():
 
 
 @payments_bp.route("/confirm-simple", methods=["POST"])
-def confirm_simple_payment():
+@require_auth
+def confirm_simple_payment(user_id):
     """
-    Confirm / mark a payment as succeeded without auth (for customer portal / iOS app).
-    In production, Stripe webhooks handle the actual confirmation; this endpoint
-    lets the client signal that the user completed the payment flow so the backend
-    can optimistically update the record.
+    Confirm / mark a payment as succeeded (for customer portal / iOS app).
+    Validates the PaymentIntent status against Stripe before marking as paid.
     Body JSON: paymentIntentId (str, required), paymentMethodType (str, optional)
     """
     data = request.get_json() or {}
@@ -278,23 +288,45 @@ def confirm_simple_payment():
     if not intent_id:
         return jsonify({"error": "paymentIntentId is required"}), 400
 
+    # Validate against Stripe that the intent actually succeeded (skip for dev intents)
+    if not intent_id.startswith("pi_dev_"):
+        stripe = _get_stripe()
+        stripe_key = os.environ.get("STRIPE_SECRET_KEY", "")
+        if stripe_key:
+            try:
+                intent_obj = stripe.PaymentIntent.retrieve(intent_id)
+                if intent_obj.status != "succeeded":
+                    return jsonify({"error": "Payment intent has not succeeded (status: {})".format(intent_obj.status)}), 400
+            except Exception as e:
+                return jsonify({"error": "Failed to verify payment with Stripe: {}".format(str(e))}), 502
+
     # Look up existing payment record
     payment = Payment.query.filter_by(stripe_payment_intent_id=intent_id).first()
 
-    if payment:
-        payment.payment_status = "succeeded"
-        payment.updated_at = utcnow()
+    if not payment:
+        return jsonify({"error": "Payment not found"}), 404
 
-        job = db.session.get(Job, payment.job_id)
-        if job and job.status == "pending":
-            job.status = "confirmed"
-            job.updated_at = utcnow()
+    payment.payment_status = "succeeded"
+    payment.updated_at = utcnow()
 
-        db.session.commit()
+    job = db.session.get(Job, payment.job_id)
+    if job and job.status == "pending":
+        job.status = "confirmed"
+        job.updated_at = utcnow()
+
+        # Auto-assign nearest driver
+        _auto_assign_driver(job)
+
+        # Broadcast status update via SocketIO
+        from socket_events import broadcast_job_status
+        broadcast_job_status(job.id, job.status)
+
+    db.session.commit()
 
     return jsonify({
         "success": True,
-        "message": "Payment confirmed",
+        "payment": payment.to_dict(),
+        "job": job.to_dict() if job else None,
     }), 200
 
 
@@ -417,7 +449,7 @@ def _handle_payment_succeeded(intent):
 
     payment.commission = platform_commission
     payment.operator_payout_amount = operator_payout
-    payment.driver_payout_amount = round(driver_gross - operator_payout, 2)
+    payment.driver_payout_amount = max(0, round(driver_gross - operator_payout, 2))
 
     if job:
         # Move job from pending to confirmed now that payment succeeded
