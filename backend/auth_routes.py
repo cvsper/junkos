@@ -150,7 +150,7 @@ def verify_code():
 def signup():
     """Create new user account with email/password"""
     from werkzeug.security import generate_password_hash
-    data = request.get_json()
+    data = request.get_json(force=True)
     email = data.get('email')
     password = data.get('password')
     name = data.get('name')
@@ -194,7 +194,7 @@ def signup():
 @auth_bp.route('/login', methods=['POST'])
 def login():
     """Login with email and password"""
-    data = request.get_json()
+    data = request.get_json(force=True)
     email = data.get('email')
     password = data.get('password')
 
@@ -328,6 +328,30 @@ def get_current_user(user_id):
         })
 
     return jsonify({'error': 'User not found'}), 404
+
+
+# MARK: - Seed Admin
+
+@auth_bp.route('/seed-admin', methods=['POST'])
+def seed_admin():
+    """Promote a user to admin role. Requires a seed secret."""
+    import os
+    data = request.get_json(force=True)
+    secret = data.get('secret')
+    email = data.get('email')
+
+    # Use env var or fallback for initial setup
+    expected = os.environ.get('ADMIN_SEED_SECRET', 'junkos-seed-2026')
+    if secret != expected:
+        return jsonify({'error': 'Unauthorized'}), 403
+
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+
+    user.role = 'admin'
+    db.session.commit()
+    return jsonify({'success': True, 'message': f'{email} is now admin'})
 
 
 # MARK: - Token Validation
