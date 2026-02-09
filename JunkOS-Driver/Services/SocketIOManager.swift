@@ -18,6 +18,7 @@ final class SocketIOManager {
 
     var isConnected = false
     var newJobAlert: DriverJob?
+    var assignedJobId: String?
 
     private init() {}
 
@@ -49,6 +50,13 @@ final class SocketIOManager {
             self?.newJobAlert = job
         }
 
+        // Listen for direct job assignments (auto-assigned or admin-assigned)
+        socket?.on("job:assigned") { [weak self] data, _ in
+            guard let dict = data.first as? [String: Any],
+                  let jobId = dict["job_id"] as? String else { return }
+            self?.assignedJobId = jobId
+        }
+
         socket?.connect()
     }
 
@@ -61,8 +69,11 @@ final class SocketIOManager {
 
     // MARK: - GPS Streaming
 
-    func emitLocation(lat: Double, lng: Double) {
-        socket?.emit("driver:location", ["lat": lat, "lng": lng])
+    func emitLocation(lat: Double, lng: Double, contractorId: String? = nil, jobId: String? = nil) {
+        var data: [String: Any] = ["lat": lat, "lng": lng]
+        if let contractorId { data["contractor_id"] = contractorId }
+        if let jobId { data["job_id"] = jobId }
+        socket?.emit("driver:location", data)
     }
 
     // MARK: - Room Management

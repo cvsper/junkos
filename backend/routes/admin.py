@@ -492,6 +492,78 @@ def map_data(user_id):
 # Pricing Rules (GET)
 # ---------------------------------------------------------------------------
 
+@admin_bp.route("/jobs/<job_id>/assign", methods=["PUT"])
+@require_admin
+def assign_job(user_id, job_id):
+    """Manually assign a contractor to a job."""
+    job = db.session.get(Job, job_id)
+    if not job:
+        return jsonify({"error": "Job not found"}), 404
+
+    data = request.get_json() or {}
+    contractor_id = data.get("contractor_id")
+    if not contractor_id:
+        return jsonify({"error": "contractor_id is required"}), 400
+
+    contractor = db.session.get(Contractor, contractor_id)
+    if not contractor:
+        return jsonify({"error": "Contractor not found"}), 404
+
+    if contractor.approval_status != "approved":
+        return jsonify({"error": "Contractor is not approved"}), 403
+
+    job.driver_id = contractor.id
+    if job.status in ("pending", "confirmed"):
+        job.status = "assigned"
+    job.updated_at = utcnow()
+
+    # Notify driver
+    notification = Notification(
+        id=generate_uuid(),
+        user_id=contractor.user_id,
+        type="job_assigned",
+        title="New Job Assigned",
+        body="An admin has assigned you a job at {}.".format(job.address or "an address"),
+        data={"job_id": job.id, "address": job.address, "total_price": job.total_price},
+    )
+    db.session.add(notification)
+
+    # Notify customer
+    notification_cust = Notification(
+        id=generate_uuid(),
+        user_id=job.customer_id,
+        type="job_update",
+        title="Driver Assigned",
+        body="A driver has been assigned to your job.",
+        data={"job_id": job.id, "status": "assigned"},
+    )
+    db.session.add(notification_cust)
+    db.session.commit()
+
+    # Broadcast via SocketIO
+    from socket_events import broadcast_job_status, socketio
+    broadcast_job_status(job.id, job.status, {"driver_id": contractor.id})
+
+    socketio.emit("job:assigned", {
+        "job_id": job.id,
+        "contractor_id": contractor.id,
+        "contractor_name": contractor.user.name if contractor.user else None,
+    }, room="driver:{}".format(contractor.id))
+
+    socketio.emit("job:driver-assigned", {
+        "job_id": job.id,
+        "driver": {
+            "id": contractor.id,
+            "name": contractor.user.name if contractor.user else None,
+            "truck_type": contractor.truck_type,
+            "avg_rating": contractor.avg_rating,
+            "total_jobs": contractor.total_jobs,
+        },
+    }, room=job.id)
+
+    return jsonify({"success": True, "job": job.to_dict()}), 200
+
+
 @admin_bp.route("/pricing/rules", methods=["GET"])
 @require_admin
 def list_pricing_rules(user_id):

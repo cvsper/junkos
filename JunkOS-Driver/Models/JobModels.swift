@@ -12,6 +12,8 @@ import SwiftUI
 
 enum JobStatus: String, Codable, CaseIterable {
     case pending
+    case confirmed
+    case assigned
     case accepted
     case enRoute = "en_route"
     case arrived
@@ -22,6 +24,8 @@ enum JobStatus: String, Codable, CaseIterable {
     var displayName: String {
         switch self {
         case .pending: return "Pending"
+        case .confirmed: return "Confirmed"
+        case .assigned: return "Assigned"
         case .accepted: return "Accepted"
         case .enRoute: return "En Route"
         case .arrived: return "Arrived"
@@ -34,6 +38,8 @@ enum JobStatus: String, Codable, CaseIterable {
     var color: Color {
         switch self {
         case .pending: return .statusPending
+        case .confirmed: return .statusPending
+        case .assigned: return .statusAccepted
         case .accepted: return .statusAccepted
         case .enRoute: return .statusEnRoute
         case .arrived: return .statusArrived
@@ -46,6 +52,8 @@ enum JobStatus: String, Codable, CaseIterable {
     var icon: String {
         switch self {
         case .pending: return "clock"
+        case .confirmed: return "checkmark.circle"
+        case .assigned: return "person.badge.clock"
         case .accepted: return "checkmark.circle"
         case .enRoute: return "car.fill"
         case .arrived: return "mappin.circle.fill"
@@ -55,9 +63,19 @@ enum JobStatus: String, Codable, CaseIterable {
         }
     }
 
-    /// The lifecycle steps displayed in the stepper (excludes pending/cancelled).
+    /// Whether this status means the job is actively assigned to this driver.
+    var isAssignedToDriver: Bool {
+        switch self {
+        case .assigned, .accepted, .enRoute, .arrived, .started:
+            return true
+        default:
+            return false
+        }
+    }
+
+    /// The lifecycle steps displayed in the stepper (excludes pending/confirmed/cancelled).
     static var lifecycleSteps: [JobStatus] {
-        [.accepted, .enRoute, .arrived, .started, .completed]
+        [.assigned, .accepted, .enRoute, .arrived, .started, .completed]
     }
 
     var stepIndex: Int {

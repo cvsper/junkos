@@ -64,6 +64,23 @@ def handle_admin_leave():
     leave_room("admin")
 
 
+@socketio.on("customer:join")
+def handle_customer_join(data):
+    """Customer joins a job room to receive live tracking updates."""
+    job_id = data.get("job_id")
+    if job_id:
+        join_room(job_id)
+        emit("joined", {"room": job_id}, room=request.sid)
+
+
+@socketio.on("customer:leave")
+def handle_customer_leave(data):
+    """Customer leaves a job room."""
+    job_id = data.get("job_id")
+    if job_id:
+        leave_room(job_id)
+
+
 @socketio.on("driver:location")
 def handle_driver_location(data):
     """
@@ -88,6 +105,7 @@ def handle_driver_location(data):
         db.session.rollback()
 
     if job_id:
+        # Broadcast to everyone in the job room (customers tracking this job)
         emit("driver:location", {
             "contractor_id": contractor_id,
             "lat": lat,

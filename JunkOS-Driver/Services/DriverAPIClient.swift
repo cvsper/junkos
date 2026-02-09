@@ -155,6 +155,10 @@ actor DriverAPIClient {
         try await request("/api/drivers/jobs/\(jobId)/accept", method: "POST")
     }
 
+    func declineJob(jobId: String) async throws -> JobActionResponse {
+        try await request("/api/drivers/jobs/\(jobId)/decline", method: "POST")
+    }
+
     func updateJobStatus(
         jobId: String,
         status: String,

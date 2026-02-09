@@ -127,8 +127,37 @@ final class LiveMapViewModel {
     }
 
     func declineJob() {
+        guard let job = incomingJobAlert else {
+            stopCountdown()
+            incomingJobAlert = nil
+            return
+        }
         stopCountdown()
+        let jobId = job.id
+
+        // If this was an assigned job (not just a nearby alert), call decline API
+        if job.status == "assigned" || job.driverId != nil {
+            Task { @MainActor in
+                _ = try? await api.declineJob(jobId: jobId)
+            }
+        }
+
         incomingJobAlert = nil
+    }
+
+    /// Handle a direct job assignment from the backend (auto or admin assigned).
+    func handleAssignment(jobId: String) {
+        Task { @MainActor in
+            do {
+                // Fetch the job details
+                let response = try await api.getAvailableJobs()
+                if let job = response.jobs.first(where: { $0.id == jobId }) {
+                    showJobAlert(job)
+                }
+            } catch {
+                errorMessage = "Failed to load assigned job"
+            }
+        }
     }
 
     // MARK: - Route Calculation

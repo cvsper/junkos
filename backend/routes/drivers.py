@@ -128,7 +128,16 @@ def get_available_jobs(user_id):
 
     radius_km = float(request.args.get("radius", DEFAULT_SEARCH_RADIUS_KM))
 
-    pending_jobs = Job.query.filter_by(status="pending").all()
+    # Include pending jobs + jobs already assigned to this contractor
+    pending_jobs = Job.query.filter(
+        db.or_(
+            Job.status.in_(["pending", "confirmed"]),
+            db.and_(
+                Job.driver_id == contractor.id,
+                Job.status.in_(["assigned", "accepted", "en_route", "arrived", "started"]),
+            ),
+        )
+    ).all()
 
     nearby = []
     for job in pending_jobs:
@@ -151,7 +160,7 @@ def get_available_jobs(user_id):
 @drivers_bp.route("/jobs/<job_id>/accept", methods=["POST"])
 @require_auth
 def accept_job(user_id, job_id):
-    """Accept a pending job."""
+    """Accept a pending/confirmed/assigned job."""
     contractor = Contractor.query.filter_by(user_id=user_id).first()
     if not contractor:
         return jsonify({"error": "Contractor profile not found"}), 404
@@ -163,7 +172,7 @@ def accept_job(user_id, job_id):
     if not job:
         return jsonify({"error": "Job not found"}), 404
 
-    if job.status != "pending":
+    if job.status not in ("pending", "confirmed", "assigned"):
         return jsonify({"error": "Job cannot be accepted (current status: {})".format(job.status)}), 409
 
     job.driver_id = contractor.id
@@ -181,10 +190,65 @@ def accept_job(user_id, job_id):
     db.session.add(notification)
     db.session.commit()
 
+    # Broadcast via SocketIO
+    from socket_events import broadcast_job_status, socketio
+    broadcast_job_status(job.id, "accepted", {
+        "driver_id": contractor.id,
+        "driver_name": contractor.user.name if contractor.user else None,
+    })
+
+    # Also notify the customer's job room
+    socketio.emit("job:driver-assigned", {
+        "job_id": job.id,
+        "driver": {
+            "id": contractor.id,
+            "name": contractor.user.name if contractor.user else None,
+            "truck_type": contractor.truck_type,
+            "avg_rating": contractor.avg_rating,
+            "total_jobs": contractor.total_jobs,
+        },
+    }, room=job.id)
+
+    return jsonify({"success": True, "job": job.to_dict()}), 200
+
+
+@drivers_bp.route("/jobs/<job_id>/decline", methods=["POST"])
+@require_auth
+def decline_job(user_id, job_id):
+    """Decline an assigned job (only if assigned to this driver)."""
+    contractor = Contractor.query.filter_by(user_id=user_id).first()
+    if not contractor:
+        return jsonify({"error": "Contractor profile not found"}), 404
+
+    job = db.session.get(Job, job_id)
+    if not job:
+        return jsonify({"error": "Job not found"}), 404
+
+    if job.driver_id != contractor.id:
+        return jsonify({"error": "Job is not assigned to you"}), 403
+
+    if job.status not in ("assigned", "accepted"):
+        return jsonify({"error": "Cannot decline job in status: {}".format(job.status)}), 409
+
+    # Unassign driver, revert to confirmed
+    job.driver_id = None
+    job.status = "confirmed"
+    job.updated_at = utcnow()
+    db.session.commit()
+
+    # Re-run auto-assignment to find another driver
+    from routes.payments import _auto_assign_driver
+    _auto_assign_driver(job)
+    db.session.commit()
+
+    from socket_events import broadcast_job_status
+    broadcast_job_status(job.id, job.status)
+
     return jsonify({"success": True, "job": job.to_dict()}), 200
 
 
 VALID_STATUS_TRANSITIONS = {
+    "assigned": ["accepted", "cancelled"],
     "accepted": ["en_route", "cancelled"],
     "en_route": ["arrived", "cancelled"],
     "arrived": ["started", "cancelled"],
@@ -244,5 +308,9 @@ def update_job_status(user_id, job_id):
     )
     db.session.add(notification)
     db.session.commit()
+
+    # Broadcast via SocketIO
+    from socket_events import broadcast_job_status
+    broadcast_job_status(job.id, new_status)
 
     return jsonify({"success": True, "job": job.to_dict()}), 200

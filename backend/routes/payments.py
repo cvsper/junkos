@@ -346,7 +346,7 @@ def stripe_webhook():
 
 
 def _handle_payment_succeeded(intent):
-    """Mark payment as succeeded and notify contractor."""
+    """Mark payment as succeeded, update job to confirmed, and trigger auto-assignment."""
     intent_id = intent.get("id", "")
     payment = Payment.query.filter_by(stripe_payment_intent_id=intent_id).first()
     if not payment:
@@ -357,7 +357,12 @@ def _handle_payment_succeeded(intent):
 
     job = db.session.get(Job, payment.job_id)
     if job:
-        # Notify assigned contractor
+        # Move job from pending to confirmed now that payment succeeded
+        if job.status == "pending":
+            job.status = "confirmed"
+            job.updated_at = utcnow()
+
+        # Notify assigned contractor if one exists
         if job.driver_id:
             contractor = db.session.get(Contractor, job.driver_id)
             if contractor:
@@ -387,7 +392,99 @@ def _handle_payment_succeeded(intent):
                 total_amount=payment.amount,
             )
 
+        # Auto-assign to nearest available driver
+        if not job.driver_id:
+            _auto_assign_driver(job)
+
+        # Broadcast status update via SocketIO
+        from socket_events import broadcast_job_status
+        broadcast_job_status(job.id, job.status)
+
     db.session.commit()
+
+
+def _auto_assign_driver(job):
+    """Find the nearest online approved contractor and assign the job."""
+    from math import radians, cos, sin, asin, sqrt
+
+    EARTH_RADIUS_KM = 6371.0
+    AUTO_ASSIGN_RADIUS_KM = 50.0
+
+    def haversine(lat1, lng1, lat2, lng2):
+        lat1, lng1, lat2, lng2 = map(radians, [lat1, lng1, lat2, lng2])
+        dlat = lat2 - lat1
+        dlng = lng2 - lng1
+        a = sin(dlat / 2) ** 2 + cos(lat1) * cos(lat2) * sin(dlng / 2) ** 2
+        return 2 * EARTH_RADIUS_KM * asin(sqrt(a))
+
+    contractors = Contractor.query.filter_by(
+        is_online=True, approval_status="approved"
+    ).all()
+
+    if not contractors:
+        return
+
+    # If job has location, sort by distance; otherwise pick first available
+    best = None
+    best_dist = float("inf")
+
+    for c in contractors:
+        # Skip contractors already handling active jobs
+        active = Job.query.filter(
+            Job.driver_id == c.id,
+            Job.status.in_(["accepted", "en_route", "arrived", "started"]),
+        ).first()
+        if active:
+            continue
+
+        if job.lat is not None and job.lng is not None and c.current_lat is not None and c.current_lng is not None:
+            dist = haversine(job.lat, job.lng, c.current_lat, c.current_lng)
+            if dist <= AUTO_ASSIGN_RADIUS_KM and dist < best_dist:
+                best = c
+                best_dist = dist
+        elif best is None:
+            best = c
+
+    if best:
+        job.driver_id = best.id
+        job.status = "assigned"
+        job.updated_at = utcnow()
+
+        # Notify driver
+        notification = Notification(
+            id=generate_uuid(),
+            user_id=best.user_id,
+            type="job_assigned",
+            title="New Job Assigned",
+            body="You've been assigned a job at {}.".format(job.address or "an address"),
+            data={"job_id": job.id, "address": job.address, "total_price": job.total_price},
+        )
+        db.session.add(notification)
+
+        # Notify customer
+        notification_cust = Notification(
+            id=generate_uuid(),
+            user_id=job.customer_id,
+            type="job_update",
+            title="Driver Assigned",
+            body="A driver has been assigned to your job.",
+            data={"job_id": job.id, "status": "assigned"},
+        )
+        db.session.add(notification_cust)
+
+        # Emit SocketIO events
+        from socket_events import socketio
+        socketio.emit("job:assigned", {
+            "job_id": job.id,
+            "contractor_id": best.id,
+            "contractor_name": best.user.name if best.user else None,
+        }, room="driver:{}".format(best.id))
+
+        socketio.emit("job:status", {
+            "job_id": job.id,
+            "status": "assigned",
+            "driver_id": best.id,
+        }, room=job.id)
 
 
 def _handle_payment_failed(intent):

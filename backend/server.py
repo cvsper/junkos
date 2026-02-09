@@ -9,7 +9,7 @@ from database import Database
 from auth_routes import auth_bp
 from models import db as sqlalchemy_db
 from socket_events import socketio
-from routes import drivers_bp, pricing_bp, ratings_bp, admin_bp, payments_bp, webhook_bp, booking_bp, upload_bp, jobs_bp
+from routes import drivers_bp, pricing_bp, ratings_bp, admin_bp, payments_bp, webhook_bp, booking_bp, upload_bp, jobs_bp, tracking_bp
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -52,6 +52,7 @@ app.register_blueprint(webhook_bp)
 app.register_blueprint(booking_bp)
 app.register_blueprint(upload_bp)
 app.register_blueprint(jobs_bp)
+app.register_blueprint(tracking_bp)
 
 # ---------------------------------------------------------------------------
 # Create all SQLAlchemy tables on startup
@@ -398,9 +399,13 @@ def portal_create_booking():
         sqlalchemy_db.session.add(user)
         sqlalchemy_db.session.flush()
 
-    category = data.get("itemCategory") or "general"
+    category = data.get("itemCategory") or data.get("category") or "general"
     quantity = int(data.get("quantity", 1))
     total_amount = float(data.get("totalAmount", 0))
+    # Also accept total from estimate object
+    if total_amount <= 0:
+        estimate = data.get("estimate") or {}
+        total_amount = float(estimate.get("total", 0))
 
     # Recalculate price if not provided
     if total_amount <= 0:
@@ -445,7 +450,7 @@ def portal_create_booking():
         item_total=round(total_amount - BASE_PRICE, 2),
         service_fee=round(total_amount * SERVICE_FEE_RATE, 2),
         total_price=total_amount,
-        notes=data.get("itemDescription", ""),
+        notes=data.get("itemDescription") or data.get("description", ""),
     )
     sqlalchemy_db.session.add(job)
 
@@ -486,7 +491,11 @@ def portal_create_booking():
 
 @app.route("/api/payments/confirm-simple", methods=["POST"])
 def confirm_payment_simple():
-    """Confirm a payment without auth (for customer portal)."""
+    """Confirm a payment without auth (for customer portal).
+
+    In dev mode (no Stripe webhook), this acts as the payment-succeeded handler:
+    marks the payment as succeeded, updates job status, and auto-assigns a driver.
+    """
     from models import Payment, Job, Notification, generate_uuid, utcnow
 
     data = request.get_json() or {}
@@ -501,9 +510,28 @@ def confirm_payment_simple():
 
     payment.payment_status = "succeeded"
     payment.updated_at = utcnow()
+
+    # Update job status and trigger auto-assignment
+    job = sqlalchemy_db.session.get(Job, payment.job_id)
+    if job and job.status == "pending":
+        job.status = "confirmed"
+        job.updated_at = utcnow()
+
+        # Auto-assign nearest driver
+        from routes.payments import _auto_assign_driver
+        _auto_assign_driver(job)
+
+        # Broadcast status update
+        from socket_events import broadcast_job_status
+        broadcast_job_status(job.id, job.status)
+
     sqlalchemy_db.session.commit()
 
-    return jsonify({"success": True, "payment": payment.to_dict()}), 200
+    return jsonify({
+        "success": True,
+        "payment": payment.to_dict(),
+        "job": job.to_dict() if job else None,
+    }), 200
 
 
 # Serve uploaded files

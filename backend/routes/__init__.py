@@ -9,6 +9,7 @@ from .payments import payments_bp, webhook_bp
 from .booking import booking_bp
 from .upload import upload_bp
 from .jobs import jobs_bp
+from .tracking import tracking_bp
 
 __all__ = [
     "drivers_bp",
@@ -20,4 +21,5 @@ __all__ = [
     "booking_bp",
     "upload_bp",
     "jobs_bp",
+    "tracking_bp",
 ]

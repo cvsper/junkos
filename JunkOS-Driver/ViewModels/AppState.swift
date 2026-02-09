@@ -97,8 +97,13 @@ final class AppState {
             let lat = location.coordinate.latitude
             let lng = location.coordinate.longitude
 
-            // Emit via socket for real-time
-            self?.socket.emitLocation(lat: lat, lng: lng)
+            // Emit via socket for real-time (include contractor_id and active job_id)
+            self?.socket.emitLocation(
+                lat: lat,
+                lng: lng,
+                contractorId: self?.contractorProfile?.id,
+                jobId: self?.activeJob?.id
+            )
 
             // Also update via REST periodically
             Task {
@@ -124,5 +129,12 @@ final class AppState {
         guard let job = socket.newJobAlert else { return nil }
         socket.newJobAlert = nil
         return job
+    }
+
+    /// Consume a direct job assignment ID (auto-assigned or admin-assigned).
+    func consumeAssignment() -> String? {
+        guard let jobId = socket.assignedJobId else { return nil }
+        socket.assignedJobId = nil
+        return jobId
     }
 }
