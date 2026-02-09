@@ -44,3 +44,6 @@ secrets/
 tmp/
 temp/
 *.tmp
+
+# Deprecated apps (replaced by platform/)
+customer-portal/
