@@ -634,6 +634,27 @@ def assign_job(user_id, job_id):
     db.session.add(notification_cust)
     db.session.commit()
 
+    # --- Email / SMS / Push notifications ---
+    driver_name = contractor.user.name if contractor.user else None
+    try:
+        from notifications import (
+            send_driver_assigned_email, send_driver_assigned_sms, send_push_notification,
+        )
+        customer = db.session.get(User, job.customer_id)
+        if customer:
+            if customer.email:
+                send_driver_assigned_email(customer.email, customer.name, driver_name, job.address)
+            if customer.phone:
+                send_driver_assigned_sms(customer.phone, driver_name, job.address)
+        # Push to driver: new job assigned
+        send_push_notification(
+            contractor.user_id, "New Job Assigned",
+            "New job assigned: {}".format(job.address or "an address"),
+            {"job_id": job.id},
+        )
+    except Exception:
+        pass  # Notifications must never block the main flow
+
     # Broadcast via SocketIO
     from socket_events import broadcast_job_status, socketio
     broadcast_job_status(job.id, job.status, {"driver_id": contractor.id})

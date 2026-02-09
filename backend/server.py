@@ -12,7 +12,7 @@ from database import Database
 from auth_routes import auth_bp
 from models import db as sqlalchemy_db
 from socket_events import socketio
-from routes import drivers_bp, pricing_bp, ratings_bp, admin_bp, payments_bp, webhook_bp, booking_bp, upload_bp, jobs_bp, tracking_bp, driver_bp, operator_bp
+from routes import drivers_bp, pricing_bp, ratings_bp, admin_bp, payments_bp, webhook_bp, booking_bp, upload_bp, jobs_bp, tracking_bp, driver_bp, operator_bp, push_bp
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -92,6 +92,7 @@ app.register_blueprint(jobs_bp)
 app.register_blueprint(tracking_bp)
 app.register_blueprint(driver_bp)
 app.register_blueprint(operator_bp)
+app.register_blueprint(push_bp)
 
 # ---------------------------------------------------------------------------
 # Input sanitization middleware (XSS / injection prevention)

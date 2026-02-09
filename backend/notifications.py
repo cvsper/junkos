@@ -12,6 +12,16 @@ takes down a booking or payment flow.
 import os
 import logging
 
+from email_templates import (
+    booking_confirmation_html,
+    booking_assigned_html,
+    driver_en_route_html,
+    job_completed_html,
+    payment_receipt_html,
+    welcome_html,
+    password_reset_html,
+)
+
 logger = logging.getLogger(__name__)
 
 
@@ -174,58 +184,13 @@ def send_booking_confirmation_email(to_email, customer_name, booking_id, address
         short_id = str(booking_id)[:8] if booking_id else "N/A"
         subject = "Your JunkOS Booking is Confirmed! #{}".format(short_id)
 
-        html = """
-    <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #fafaf8; padding: 40px 20px;">
-        <div style="text-align: center; margin-bottom: 30px;">
-            <h1 style="color: #2d8a6e; font-size: 28px; margin: 0;">JunkOS</h1>
-            <p style="color: #6b7280; margin: 5px 0 0;">Premium Junk Removal</p>
-        </div>
-
-        <div style="background: white; border-radius: 12px; padding: 30px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-            <h2 style="color: #111827; margin-top: 0;">Booking Confirmed!</h2>
-            <p style="color: #4b5563;">Hi {name},</p>
-            <p style="color: #4b5563;">Your junk removal is scheduled. Here are your details:</p>
-
-            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 20px; margin: 20px 0;">
-                <table style="width: 100%; border-collapse: collapse;">
-                    <tr>
-                        <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Booking ID</td>
-                        <td style="padding: 8px 0; color: #111827; font-weight: 600; text-align: right;">#{id}</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Address</td>
-                        <td style="padding: 8px 0; color: #111827; font-weight: 600; text-align: right;">{address}</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Date</td>
-                        <td style="padding: 8px 0; color: #111827; font-weight: 600; text-align: right;">{date}</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Time</td>
-                        <td style="padding: 8px 0; color: #111827; font-weight: 600; text-align: right;">{time}</td>
-                    </tr>
-                    <tr style="border-top: 1px solid #d1fae5;">
-                        <td style="padding: 12px 0 0; color: #111827; font-size: 16px; font-weight: 700;">Total</td>
-                        <td style="padding: 12px 0 0; color: #2d8a6e; font-size: 20px; font-weight: 700; text-align: right;">${total}</td>
-                    </tr>
-                </table>
-            </div>
-
-            <p style="color: #4b5563; font-size: 14px;">We'll send you a reminder 24 hours before your appointment. If you need to reschedule, just reply to this email or call us at <strong>(561) 888-3427</strong>.</p>
-        </div>
-
-        <div style="text-align: center; margin-top: 30px; color: #9ca3af; font-size: 12px;">
-            <p>JunkOS - South Florida's Premium Junk Removal</p>
-            <p>Palm Beach & Broward County</p>
-        </div>
-    </div>
-        """.format(
-            name=customer_name or "there",
-            id=short_id,
-            address=address or "",
-            date=scheduled_date or "TBD",
-            time=scheduled_time or "",
-            total="{:.2f}".format(float(total_amount)) if total_amount else "0.00",
+        html = booking_confirmation_html(
+            customer_name=customer_name,
+            booking_id=booking_id,
+            address=address,
+            date=scheduled_date,
+            time=scheduled_time,
+            total=total_amount,
         )
 
         return send_email(to_email, subject, html)
@@ -235,30 +200,203 @@ def send_booking_confirmation_email(to_email, customer_name, booking_id, address
 
 
 # ---------------------------------------------------------------------------
+# Job lifecycle: Driver Assigned
+# ---------------------------------------------------------------------------
+def send_driver_assigned_email(to_email, customer_name, driver_name, address,
+                                truck_type=None, eta=None):
+    """Email customer that a driver has been assigned. Never raises.
+
+    Backward compatible: ``address`` is kept as positional for existing
+    callers; ``truck_type`` and ``eta`` are optional enhancements.
+    """
+    try:
+        subject = "Your JunkOS Driver Has Been Assigned"
+
+        html = booking_assigned_html(
+            customer_name=customer_name,
+            driver_name=driver_name,
+            truck_type=truck_type,
+            eta=eta or address,
+        )
+
+        return send_email(to_email, subject, html)
+    except Exception:
+        logger.exception("Failed in send_driver_assigned_email for %s", to_email)
+        return None
+
+
+def send_driver_assigned_sms(to_number, driver_name, address):
+    """SMS customer that a driver has been assigned. Never raises."""
+    try:
+        body = "JunkOS: Driver {} assigned to your pickup at {}".format(
+            driver_name or "your driver", address or "your location"
+        )
+        return send_sms(to_number, body)
+    except Exception:
+        logger.exception("Failed in send_driver_assigned_sms for %s", to_number)
+        return None
+
+
+# ---------------------------------------------------------------------------
+# Job lifecycle: Driver En Route
+# ---------------------------------------------------------------------------
+def send_driver_en_route_email(to_email, customer_name, driver_name, address,
+                                eta_minutes=None):
+    """Email customer that driver is on the way. Never raises.
+
+    Backward compatible: ``address`` is kept as positional for existing
+    callers; ``eta_minutes`` is an optional enhancement.
+    """
+    try:
+        subject = "Your JunkOS Driver Is On The Way!"
+
+        html = driver_en_route_html(
+            customer_name=customer_name,
+            driver_name=driver_name,
+            eta_minutes=eta_minutes,
+        )
+
+        return send_email(to_email, subject, html)
+    except Exception:
+        logger.exception("Failed in send_driver_en_route_email for %s", to_email)
+        return None
+
+
+# Convenience alias matching the task specification
+send_en_route_email = send_driver_en_route_email
+
+
+def send_driver_en_route_sms(to_number, driver_name, address):
+    """SMS customer that driver is en route. Never raises."""
+    try:
+        body = "JunkOS: Driver {} is en route to {}".format(
+            driver_name or "your driver", address or "your location"
+        )
+        return send_sms(to_number, body)
+    except Exception:
+        logger.exception("Failed in send_driver_en_route_sms for %s", to_number)
+        return None
+
+
+# ---------------------------------------------------------------------------
+# Job lifecycle: Job Completed
+# ---------------------------------------------------------------------------
+def send_job_completed_email(to_email, customer_name, job_id, address,
+                              total=None, rating_url=None):
+    """Email customer that pickup is complete, asking for a rating. Never raises.
+
+    Backward compatible: ``job_id`` and ``address`` are positional for
+    existing callers; ``total`` and ``rating_url`` are optional enhancements.
+    """
+    try:
+        short_id = str(job_id)[:8] if job_id else "N/A"
+        subject = "Your JunkOS Pickup Is Complete! #{}".format(short_id)
+
+        html = job_completed_html(
+            customer_name=customer_name,
+            booking_id=job_id,
+            total=total,
+            rating_url=rating_url,
+        )
+
+        return send_email(to_email, subject, html)
+    except Exception:
+        logger.exception("Failed in send_job_completed_email for %s", to_email)
+        return None
+
+
+# ---------------------------------------------------------------------------
+# Payment receipt email
+# ---------------------------------------------------------------------------
+def send_payment_receipt_email(to_email, customer_name, job_id, address, amount,
+                                payment_method_last4=None, date=None):
+    """Email customer a payment receipt. Never raises.
+
+    Backward compatible: ``job_id``, ``address``, and ``amount`` are
+    positional for existing callers; ``payment_method_last4`` and ``date``
+    are optional enhancements.
+    """
+    try:
+        short_id = str(job_id)[:8] if job_id else "N/A"
+        subject = "JunkOS Payment Receipt #{}".format(short_id)
+
+        html = payment_receipt_html(
+            customer_name=customer_name,
+            booking_id=job_id,
+            amount=amount,
+            payment_method_last4=payment_method_last4,
+            date=date,
+        )
+
+        return send_email(to_email, subject, html)
+    except Exception:
+        logger.exception("Failed in send_payment_receipt_email for %s", to_email)
+        return None
+
+
+# ---------------------------------------------------------------------------
+# Welcome email (new user registration)
+# ---------------------------------------------------------------------------
+def send_welcome_email(to_email, user_name):
+    """Send a welcome email to a newly registered user. Never raises."""
+    try:
+        subject = "Welcome to JunkOS!"
+
+        html = welcome_html(name=user_name)
+
+        return send_email(to_email, subject, html)
+    except Exception:
+        logger.exception("Failed in send_welcome_email for %s", to_email)
+        return None
+
+
+# ---------------------------------------------------------------------------
 # Password reset email
 # ---------------------------------------------------------------------------
-def send_password_reset_email(to_email, reset_token):
-    """Send a password reset email. Never raises."""
+def send_password_reset_email(to_email, reset_token, customer_name=None):
+    """Send a password reset email. Never raises.
+
+    Backward compatible: ``reset_token`` can be a raw token string (legacy
+    callers pass just a token) or a full URL.  If it does not look like a
+    URL the template builds one automatically.  ``customer_name`` is optional.
+    """
     try:
         subject = "Reset Your JunkOS Password"
 
-        html = """
-    <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #fafaf8; padding: 40px 20px;">
-        <div style="text-align: center; margin-bottom: 30px;">
-            <h1 style="color: #2d8a6e; font-size: 28px; margin: 0;">JunkOS</h1>
-        </div>
-        <div style="background: white; border-radius: 12px; padding: 30px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-            <h2 style="color: #111827; margin-top: 0;">Password Reset</h2>
-            <p style="color: #4b5563;">You requested a password reset. Use the code below to reset your password:</p>
-            <div style="background: #f3f4f6; border-radius: 8px; padding: 20px; text-align: center; margin: 20px 0;">
-                <code style="font-size: 24px; font-weight: 700; color: #111827; letter-spacing: 2px;">{token}</code>
-            </div>
-            <p style="color: #6b7280; font-size: 14px;">This link expires in 1 hour. If you didn't request this, you can safely ignore this email.</p>
-        </div>
-    </div>
-        """.format(token=reset_token)
+        # Build a reset URL if the caller passed a bare token
+        if reset_token and not str(reset_token).startswith("http"):
+            base = os.environ.get("FRONTEND_URL", "https://junkos.com")
+            reset_url = "{}/reset-password?token={}".format(base.rstrip("/"), reset_token)
+        else:
+            reset_url = str(reset_token) if reset_token else ""
+
+        html = password_reset_html(
+            name=customer_name,
+            reset_url=reset_url,
+        )
 
         return send_email(to_email, subject, html)
     except Exception:
         logger.exception("Failed in send_password_reset_email for %s", to_email)
+        return None
+
+
+# ---------------------------------------------------------------------------
+# Push notification (stub -- requires APNs/FCM integration)
+# ---------------------------------------------------------------------------
+def send_push_notification(user_id, title, body, data=None):
+    """Send a push notification to a user's device(s).
+
+    This is a stub that logs the intent. Replace with APNs/FCM implementation
+    when device tokens are stored.
+    Never raises.
+    """
+    try:
+        logger.info(
+            "[PUSH] Would send push to user %s: %s - %s (data=%s)",
+            user_id, title, body, data,
+        )
+        return None
+    except Exception:
+        logger.exception("Failed in send_push_notification for user %s", user_id)
         return None

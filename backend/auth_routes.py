@@ -189,6 +189,14 @@ def signup():
     db.session.add(new_user)
     db.session.commit()
 
+    # --- Send welcome email ---
+    try:
+        from notifications import send_welcome_email
+        if new_user.email:
+            send_welcome_email(new_user.email, new_user.name)
+    except Exception:
+        pass  # Notifications must never block the main flow
+
     # Generate token
     token = generate_token(new_user.id)
 

@@ -47,6 +47,7 @@ class User(db.Model):
 
     contractor_profile = relationship("Contractor", back_populates="user", uselist=False, lazy="joined")
     notifications = relationship("Notification", back_populates="user", lazy="dynamic")
+    device_tokens = relationship("DeviceToken", back_populates="user", lazy="dynamic", cascade="all, delete-orphan")
     ratings_given = relationship("Rating", foreign_keys="Rating.from_user_id", back_populates="from_user", lazy="dynamic")
     ratings_received = relationship("Rating", foreign_keys="Rating.to_user_id", back_populates="to_user", lazy="dynamic")
 
@@ -411,5 +412,33 @@ class OperatorInvite(db.Model):
             "use_count": self.use_count,
             "expires_at": self.expires_at.isoformat() if self.expires_at else None,
             "is_active": self.is_active,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
+
+
+# ---------------------------------------------------------------------------
+# DeviceToken (APNs / FCM push notification tokens)
+# ---------------------------------------------------------------------------
+class DeviceToken(db.Model):
+    __tablename__ = "device_tokens"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    token = Column(String(512), unique=True, nullable=False)
+    platform = Column(String(10), nullable=False, default="ios")  # "ios" or "android"
+    created_at = Column(DateTime, default=utcnow)
+
+    __table_args__ = (
+        CheckConstraint("platform IN ('ios', 'android')", name="ck_device_token_platform"),
+    )
+
+    user = relationship("User", back_populates="device_tokens")
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "user_id": self.user_id,
+            "token": self.token,
+            "platform": self.platform,
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }

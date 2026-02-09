@@ -337,6 +337,53 @@ def update_job_status(user_id, job_id):
     db.session.add(notification)
     db.session.commit()
 
+    # --- Email / SMS / Push notifications for key status changes ---
+    driver_name = contractor.user.name if contractor.user else None
+    try:
+        from notifications import (
+            send_driver_en_route_email, send_driver_en_route_sms,
+            send_job_completed_email, send_push_notification,
+        )
+        customer = db.session.get(User, job.customer_id)
+
+        if new_status == "en_route":
+            # Email + SMS customer, push to customer
+            if customer:
+                if customer.email:
+                    send_driver_en_route_email(customer.email, customer.name, driver_name, job.address)
+                if customer.phone:
+                    send_driver_en_route_sms(customer.phone, driver_name, job.address)
+                send_push_notification(
+                    customer.id, "Your Driver Is On The Way!",
+                    "Your driver is on the way!",
+                    {"job_id": job.id, "status": "en_route"},
+                )
+
+        elif new_status == "completed":
+            # Email + push to customer
+            if customer:
+                if customer.email:
+                    send_job_completed_email(customer.email, customer.name, job.id, job.address)
+                send_push_notification(
+                    customer.id, "Pickup Complete!",
+                    "Pickup complete! Rate your experience",
+                    {"job_id": job.id, "status": "completed"},
+                )
+            # Push to operator if job was delegated
+            if job.operator_id:
+                from models import Contractor as _Contractor
+                op = db.session.get(_Contractor, job.operator_id)
+                if op:
+                    send_push_notification(
+                        op.user_id, "Job Completed",
+                        "Job {} completed by {}".format(
+                            str(job.id)[:8], driver_name or "driver"
+                        ),
+                        {"job_id": job.id, "driver_id": contractor.id},
+                    )
+    except Exception:
+        pass  # Notifications must never block the main flow
+
     # Broadcast via SocketIO
     from socket_events import broadcast_job_status
     broadcast_job_status(job.id, new_status)

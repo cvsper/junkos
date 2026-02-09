@@ -147,6 +147,20 @@ def confirm_payment(user_id):
             db.session.add(notification)
 
     db.session.commit()
+
+    # --- Send payment receipt email to customer ---
+    try:
+        if job:
+            customer = db.session.get(User, job.customer_id)
+            if customer and customer.email:
+                from notifications import send_payment_receipt_email
+                send_payment_receipt_email(
+                    customer.email, customer.name, job.id,
+                    job.address, payment.amount,
+                )
+    except Exception:
+        pass  # Notifications must never block the main flow
+
     return jsonify({"success": True, "payment": payment.to_dict()}), 200
 
 
@@ -326,6 +340,19 @@ def confirm_simple_payment(user_id):
         broadcast_job_status(job.id, job.status)
 
     db.session.commit()
+
+    # --- Send payment receipt email to customer ---
+    try:
+        if job:
+            customer = db.session.get(User, job.customer_id)
+            if customer and customer.email:
+                from notifications import send_payment_receipt_email
+                send_payment_receipt_email(
+                    customer.email, customer.name, job.id,
+                    job.address, payment.amount,
+                )
+    except Exception:
+        pass  # Notifications must never block the main flow
 
     return jsonify({
         "success": True,
