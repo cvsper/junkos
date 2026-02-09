@@ -538,9 +538,7 @@ struct ConfirmationView: View {
                 customerPhone: bookingData.customerPhone,
                 notes: notes
             ) { success in
-                if success {
-                    bookingData.bookingCompleted = true
-                }
+                // BookingSuccessView handles completion when user taps "Done"
             }
         }
     }

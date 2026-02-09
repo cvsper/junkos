@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
-import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
-import { CreditCard, Lock, Loader, CheckCircle, AlertCircle, Mail, Phone, User } from 'lucide-react';
+import { Elements, CardElement, PaymentRequestButtonElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { CreditCard, Lock, Loader, CheckCircle, AlertCircle, Mail, Phone, User, Smartphone } from 'lucide-react';
 import { validateEmail, validatePhone, formatPhoneNumber, formatCurrency } from '../../utils/validation';
 import { api } from '../../services/api';
 
@@ -28,19 +28,111 @@ const CARD_ELEMENT_OPTIONS = {
 const PaymentForm = ({ formData, updateCustomerInfo, prevStep, setError, resetForm }) => {
   const stripe = useStripe();
   const elements = useElements();
-  
+
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [bookingId, setBookingId] = useState(null);
-  
+
   const [customerInfo, setCustomerInfo] = useState({
     name: formData.customerInfo?.name || '',
     email: formData.customerInfo?.email || '',
     phone: formData.customerInfo?.phone || '',
   });
-  
+
   const [errors, setErrors] = useState({});
   const [cardComplete, setCardComplete] = useState(false);
+
+  // Apple Pay / Google Pay
+  const [paymentRequest, setPaymentRequest] = useState(null);
+  const [canMakePayment, setCanMakePayment] = useState(null);
+  const paymentRequestRef = useRef(null);
+
+  useEffect(() => {
+    if (!stripe || !formData.estimate?.total) return;
+
+    const pr = stripe.paymentRequest({
+      country: 'US',
+      currency: 'usd',
+      total: {
+        label: 'JunkOS Junk Removal',
+        amount: Math.round(formData.estimate.total * 100),
+      },
+      requestPayerName: true,
+      requestPayerEmail: true,
+      requestPayerPhone: true,
+    });
+
+    pr.canMakePayment().then((result) => {
+      if (result) {
+        setCanMakePayment(result);
+        setPaymentRequest(pr);
+        paymentRequestRef.current = pr;
+      }
+    });
+
+    pr.on('paymentmethod', async (ev) => {
+      try {
+        // Extract payer info from Apple Pay / Google Pay
+        const payerName = ev.payerName || '';
+        const payerEmail = ev.payerEmail || '';
+        const payerPhone = ev.payerPhone || '';
+
+        // 1. Create booking
+        const bookingData = {
+          ...formData,
+          customerInfo: { name: payerName, email: payerEmail, phone: payerPhone },
+          totalAmount: formData.estimate.total,
+        };
+        const bookingResult = await api.createBooking(bookingData);
+        const newBookingId = bookingResult.bookingId;
+
+        // 2. Create payment intent
+        const piResult = await api.createPaymentIntent(newBookingId, formData.estimate.total);
+
+        // 3. Confirm with the payment method from Apple Pay / Google Pay
+        const { error, paymentIntent } = await stripe.confirmCardPayment(
+          piResult.clientSecret,
+          { payment_method: ev.paymentMethod.id },
+          { handleActions: false }
+        );
+
+        if (error) {
+          ev.complete('fail');
+          setError(error.message);
+          return;
+        }
+
+        if (paymentIntent.status === 'requires_action') {
+          const { error: actionError } = await stripe.confirmCardPayment(piResult.clientSecret);
+          if (actionError) {
+            ev.complete('fail');
+            setError(actionError.message);
+            return;
+          }
+        }
+
+        ev.complete('success');
+
+        // 4. Confirm in backend
+        await api.confirmPayment(paymentIntent.id, newBookingId);
+
+        // Update UI
+        setBookingId(newBookingId);
+        setPaymentSuccess(true);
+        updateCustomerInfo('name', payerName);
+        updateCustomerInfo('email', payerEmail);
+        updateCustomerInfo('phone', payerPhone);
+        setCustomerInfo({ name: payerName, email: payerEmail, phone: payerPhone });
+      } catch (err) {
+        ev.complete('fail');
+        setError(err.message || 'Payment failed. Please try again.');
+      }
+    });
+
+    return () => {
+      paymentRequestRef.current = null;
+    };
+  }, [stripe, formData.estimate?.total]);
 
   const handleCustomerInfoChange = (field, value) => {
     setCustomerInfo((prev) => ({
@@ -150,49 +242,112 @@ const PaymentForm = ({ formData, updateCustomerInfo, prevStep, setError, resetFo
   if (paymentSuccess) {
     return (
       <div className="card animate-fade-in">
-        <div className="text-center py-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-green-100 rounded-full mb-6">
+        <div className="text-center pt-8 pb-4">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-green-100 rounded-full mb-5">
             <CheckCircle className="w-12 h-12 text-green-600" />
           </div>
-          
-          <h2 className="text-3xl font-bold text-gray-900 mb-3">
-            Booking Confirmed! 🎉
+
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            Your pickup is booked.
           </h2>
-          
-          <p className="text-lg text-gray-600 mb-6">
-            Your junk removal is scheduled and paid for.
+
+          <p className="text-gray-600 mb-1">
+            This is a no-obligation service — you'll know the exact cost before we start.
           </p>
 
-          <div className="bg-gray-50 rounded-lg p-6 mb-6 text-left max-w-md mx-auto">
-            <h3 className="font-semibold text-gray-900 mb-3">Booking Details</h3>
-            <div className="space-y-2 text-sm">
-              <p><strong>Booking ID:</strong> {bookingId}</p>
-              <p><strong>Amount Paid:</strong> {formatCurrency(formData.estimate.total)}</p>
-              <p><strong>Email:</strong> {customerInfo.email}</p>
-              <p><strong>Phone:</strong> {customerInfo.phone}</p>
+          <p className="text-sm text-gray-500 mb-6">
+            A confirmation email has been sent to <strong className="text-gray-700">{customerInfo.email}</strong>.
+          </p>
+        </div>
+
+        {/* Booking summary */}
+        <div className="bg-gray-50 rounded-lg p-5 mb-6">
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div>
+              <span className="text-gray-500">Booking ID</span>
+              <p className="font-medium text-gray-900">{bookingId?.slice(0, 8)}</p>
+            </div>
+            <div>
+              <span className="text-gray-500">Amount</span>
+              <p className="font-medium text-gray-900">{formatCurrency(formData.estimate.total)}</p>
+            </div>
+            <div>
+              <span className="text-gray-500">Date</span>
+              <p className="font-medium text-gray-900">
+                {formData.selectedDate
+                  ? new Date(formData.selectedDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+                  : 'TBD'}
+              </p>
+            </div>
+            <div>
+              <span className="text-gray-500">Time</span>
+              <p className="font-medium text-gray-900">{formData.selectedTime || 'TBD'}</p>
             </div>
           </div>
+        </div>
 
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 text-left max-w-md mx-auto">
-            <div className="flex gap-3">
-              <Mail className="w-5 h-5 text-blue-600 mt-0.5" />
-              <div className="text-sm text-blue-900">
-                <p className="font-medium mb-1">Confirmation Sent</p>
-                <p className="text-blue-800">
-                  We've sent a confirmation email to <strong>{customerInfo.email}</strong> with all your booking details.
-                  We'll also send a reminder 24 hours before your appointment.
+        {/* What happens next */}
+        <div className="mb-6">
+          <h3 className="font-semibold text-gray-900 mb-4">What happens next?</h3>
+
+          <div className="space-y-5">
+            {/* Step 1 */}
+            <div className="flex gap-4">
+              <div className="flex-shrink-0 w-8 h-8 bg-primary-100 text-primary-700 rounded-full flex items-center justify-center font-bold text-sm">
+                1
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900">We'll call to confirm your appointment</p>
+                <p className="text-sm text-gray-600 mt-0.5">
+                  You'll get a call 15–30 minutes before your scheduled window. We'll confirm the timing and go over any details.
+                </p>
+              </div>
+            </div>
+
+            {/* Step 2 */}
+            <div className="flex gap-4">
+              <div className="flex-shrink-0 w-8 h-8 bg-primary-100 text-primary-700 rounded-full flex items-center justify-center font-bold text-sm">
+                2
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900">We'll assess your items and give an exact price</p>
+                <p className="text-sm text-gray-600 mt-0.5">
+                  Our crew will look at everything on-site and provide an all-inclusive price. No obligation — if it doesn't work for you, there's no charge.
+                </p>
+              </div>
+            </div>
+
+            {/* Step 3 */}
+            <div className="flex gap-4">
+              <div className="flex-shrink-0 w-8 h-8 bg-primary-100 text-primary-700 rounded-full flex items-center justify-center font-bold text-sm">
+                3
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900">We take care of everything, hassle-free</p>
+                <p className="text-sm text-gray-600 mt-0.5">
+                  Once you give the go-ahead, we'll remove your items, sweep up the area, and you're done. It's that easy.
                 </p>
               </div>
             </div>
           </div>
-
-          <button
-            onClick={resetForm}
-            className="btn-primary"
-          >
-            Book Another Pickup
-          </button>
         </div>
+
+        {/* Reminder note */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <div className="flex gap-3">
+            <Mail className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+            <p className="text-sm text-blue-900">
+              We'll send you a reminder <strong>24 hours before</strong> your appointment with everything you need to know.
+            </p>
+          </div>
+        </div>
+
+        <button
+          onClick={resetForm}
+          className="btn-primary w-full"
+        >
+          Book Another Pickup
+        </button>
       </div>
     );
   }
@@ -221,6 +376,34 @@ const PaymentForm = ({ formData, updateCustomerInfo, prevStep, setError, resetFo
             </span>
           </div>
         </div>
+
+        {/* Apple Pay / Google Pay */}
+        {paymentRequest && canMakePayment && (
+          <>
+            <div>
+              <PaymentRequestButtonElement
+                options={{
+                  paymentRequest,
+                  style: {
+                    paymentRequestButton: {
+                      type: 'default',
+                      theme: 'dark',
+                      height: '48px',
+                    },
+                  },
+                }}
+              />
+            </div>
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="bg-white px-4 text-gray-500">or pay with card</span>
+              </div>
+            </div>
+          </>
+        )}
 
         {/* Customer Information */}
         <div className="space-y-4">

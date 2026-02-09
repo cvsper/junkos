@@ -17,6 +17,7 @@ struct PaymentView: View {
     @EnvironmentObject var bookingData: BookingData
     @StateObject private var viewModel = PaymentViewModel()
     @Environment(\.dismiss) private var dismiss
+    @State private var navigateToSuccess = false
 
     /// The price breakdown passed from the confirmation step
     let priceBreakdown: PriceBreakdown
@@ -108,6 +109,15 @@ struct PaymentView: View {
                 onCancel: { viewModel.handleApplePayCancel() }
             )
             .ignoresSafeArea()
+        }
+        .navigationDestination(isPresented: $navigateToSuccess) {
+            BookingSuccessView(
+                customerEmail: bookingData.customerEmail,
+                totalAmount: priceBreakdown.total,
+                scheduledDate: formattedScheduledDate,
+                scheduledTime: formattedScheduledTime
+            )
+            .environmentObject(bookingData)
         }
     }
 
@@ -462,11 +472,27 @@ struct PaymentView: View {
                     viewModel.showSuccess = false
                 }
                 onPaymentSuccess?()
+                navigateToSuccess = true
             }
         }
     }
 
     // MARK: - Helpers
+
+    private var formattedScheduledDate: String {
+        guard let date = bookingData.selectedDate else { return "Scheduled" }
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        return formatter.string(from: date)
+    }
+
+    private var formattedScheduledTime: String {
+        guard let slotId = bookingData.selectedTimeSlot else { return "Your time window" }
+        if let slot = TimeSlot.slots.first(where: { $0.id == slotId }) {
+            return slot.time
+        }
+        return slotId
+    }
 
     private func formatPrice(_ price: Double) -> String {
         String(format: "%.2f", price)
