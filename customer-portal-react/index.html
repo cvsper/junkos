@@ -8,18 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script>
-      (function() {
-        var k = '%VITE_GOOGLE_MAPS_API_KEY%';
-        if (k && k !== '' && !k.startsWith('%')) {
-          var s = document.createElement('script');
-          s.src = 'https://maps.googleapis.com/maps/api/js?key=' + k + '&libraries=places';
-          s.async = true;
-          s.defer = true;
-          document.head.appendChild(s);
-        }
-      })();
-    </script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBxdtr5sgLCOYhNKnRjIz49etwjpFMRHHM&libraries=places" async defer></script>
   </head>
   <body>
     <div id="root"></div>
