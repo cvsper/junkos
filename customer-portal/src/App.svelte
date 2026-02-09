@@ -67,11 +67,12 @@
 <Layout>
   {#if trackingJobId}
     <!-- Tracking Page -->
-    <div class="text-center mb-6" in:fade={{ duration: 400 }}>
-      <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-2 font-heading">
+    <div class="text-center mb-8" in:fade={{ duration: 400 }}>
+      <div class="section-badge mx-auto mb-4">Live Tracking</div>
+      <h1 class="text-3xl md:text-4xl font-bold text-warm-900 mb-2 font-heading">
         Track Your Pickup
       </h1>
-      <p class="text-gray-600">Real-time updates on your junk removal</p>
+      <p class="text-warm-500">Real-time updates on your junk removal</p>
     </div>
     <TrackingPage jobId={trackingJobId} />
   {:else}
@@ -79,14 +80,15 @@
 
     <!-- Hero Section - Only show on step 1 -->
     {#if $currentStep === 1}
-      <div class="text-center mb-8" in:fade={{ duration: 400 }}>
-        <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-4 font-heading bg-gradient-to-r from-primary-600 to-indigo-600 bg-clip-text text-transparent">
-          Easy Junk Removal in Minutes
+      <div class="text-center mb-10" in:fade={{ duration: 400 }}>
+        <div class="section-badge mx-auto mb-5">Book in 60 Seconds</div>
+        <h1 class="text-4xl md:text-5xl font-bold text-warm-900 mb-4 font-heading leading-[1.1] text-balance">
+          Junk removal,<br class="hidden sm:block" />
+          <span class="text-primary-600">made simple.</span>
         </h1>
-        <p class="text-xl md:text-2xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-          Schedule your pickup, get an instant estimate, and say goodbye to your junk.
-          <br class="hidden md:block" />
-          <span class="text-cta-600 font-semibold">Professional service, transparent pricing.</span>
+        <p class="text-lg text-warm-500 max-w-lg mx-auto leading-relaxed">
+          Get an instant estimate, pick a time, and we'll handle the rest.
+          Same-day service available in South Florida.
         </p>
       </div>
     {/if}
@@ -97,22 +99,22 @@
     <!-- Error Message -->
     {#if $error}
       <div
-        class="mb-6 bg-red-50 border-2 border-red-200 rounded-xl p-4 shadow-md"
+        class="mb-6 bg-red-50 border border-red-200 rounded-xl p-4 shadow-soft"
         in:fly={{ y: -20, duration: 300 }}
         out:fade={{ duration: 200 }}
       >
         <div class="flex gap-3">
-          <AlertCircle class="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+          <AlertCircle class="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
           <div class="flex-1">
-            <p class="font-semibold text-red-900">Error</p>
-            <p class="text-sm text-red-800 mt-1">{$error}</p>
+            <p class="font-semibold text-red-900 text-sm">Something went wrong</p>
+            <p class="text-sm text-red-700 mt-0.5">{$error}</p>
           </div>
           <button
             on:click={dismissError}
-            class="text-red-600 hover:text-red-800 transition-colors p-1"
+            class="text-red-400 hover:text-red-600 transition-colors p-1"
             aria-label="Dismiss error"
           >
-            <X class="w-5 h-5" />
+            <X class="w-4 h-4" />
           </button>
         </div>
       </div>

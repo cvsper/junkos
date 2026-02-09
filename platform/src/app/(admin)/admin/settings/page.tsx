@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -102,6 +102,24 @@ const NOTIFICATION_TEMPLATES: NotificationTemplate[] = [
 ];
 
 // ---------------------------------------------------------------------------
+// localStorage keys
+// ---------------------------------------------------------------------------
+
+const LS_KEY_GENERAL = "junkos_settings_general";
+const LS_KEY_SCHEDULE = "junkos_settings_schedule";
+
+function loadFromStorage<T>(key: string, fallback: T): T {
+  if (typeof window === "undefined") return fallback;
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return fallback;
+    return JSON.parse(raw) as T;
+  } catch {
+    return fallback;
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
@@ -110,6 +128,12 @@ export default function AdminSettingsPage() {
   const [schedule, setSchedule] = useState<DaySchedule[]>(DEFAULT_SCHEDULE);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+
+  // Load persisted settings on mount (client-only)
+  useEffect(() => {
+    setGeneral(loadFromStorage<GeneralSettings>(LS_KEY_GENERAL, DEFAULT_GENERAL));
+    setSchedule(loadFromStorage<DaySchedule[]>(LS_KEY_SCHEDULE, DEFAULT_SCHEDULE));
+  }, []);
 
   // ---- Handlers ----
 
@@ -129,14 +153,21 @@ export default function AdminSettingsPage() {
     setSaved(false);
   };
 
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     setSaving(true);
-    // Simulate save delay -- backend persistence coming later
-    await new Promise((resolve) => setTimeout(resolve, 800));
-    setSaving(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 4000);
-  };
+    try {
+      localStorage.setItem(LS_KEY_GENERAL, JSON.stringify(general));
+      localStorage.setItem(LS_KEY_SCHEDULE, JSON.stringify(schedule));
+      // Small delay so the UI transition feels natural
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      setSaved(true);
+      setTimeout(() => setSaved(false), 4000);
+    } catch {
+      // localStorage might be full or blocked -- fail silently for now
+    } finally {
+      setSaving(false);
+    }
+  }, [general, schedule]);
 
   const formatTime = (time24: string): string => {
     const [h, m] = time24.split(":").map(Number);
@@ -175,8 +206,7 @@ export default function AdminSettingsPage() {
           <div className="flex items-center gap-2">
             <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
             <p className="text-sm font-medium text-green-800 dark:text-green-200">
-              Settings saved successfully. Backend persistence will be available
-              in a future update.
+              Settings saved successfully.
             </p>
           </div>
         </div>
@@ -434,8 +464,8 @@ export default function AdminSettingsPage() {
         <div className="flex items-start gap-2 rounded-md bg-muted/50 border border-border p-4">
           <Info className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
           <p className="text-sm text-muted-foreground">
-            Settings are stored locally for now. Backend persistence will be
-            connected in a future release. Changes will be lost on page refresh.
+            Settings are saved to your browser&apos;s local storage. They will
+            persist across page refreshes but are specific to this browser.
           </p>
         </div>
       </div>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { adminApi } from "@/lib/api";
+import type { DashboardData, AdminJobRecord } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -22,30 +23,6 @@ import {
   Info,
 } from "lucide-react";
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-interface DashboardStats {
-  totalRevenue: number;
-  totalJobs: number;
-  activeJobs: number;
-  totalCustomers: number;
-  totalContractors: number;
-  jobsByStatus: Record<string, number>;
-}
-
-interface CompletedJob {
-  id: string;
-  contractor_name?: string;
-  contractor?: { name?: string };
-  total_price?: number;
-  estimatedPrice?: number;
-  status: string;
-  scheduled_date?: string;
-  completedAt?: string;
-}
-
 const COMMISSION_RATE = 0.2;
 
 // ---------------------------------------------------------------------------
@@ -61,12 +38,12 @@ function formatCurrency(value: number): string {
   }).format(value);
 }
 
-function getJobTotal(job: CompletedJob): number {
-  return job.total_price || job.estimatedPrice || 0;
+function getJobTotal(job: AdminJobRecord): number {
+  return job.final_price || job.estimated_price || 0;
 }
 
-function getContractorName(job: CompletedJob): string {
-  return job.contractor_name || job.contractor?.name || "Unassigned";
+function getContractorName(job: AdminJobRecord): string {
+  return job.customer_name || "Unassigned";
 }
 
 // ---------------------------------------------------------------------------
@@ -74,10 +51,10 @@ function getContractorName(job: CompletedJob): string {
 // ---------------------------------------------------------------------------
 
 export default function AdminPayoutsPage() {
-  const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(
+  const [dashboardStats, setDashboardStats] = useState<DashboardData | null>(
     null
   );
-  const [completedJobs, setCompletedJobs] = useState<CompletedJob[]>([]);
+  const [completedJobs, setCompletedJobs] = useState<AdminJobRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -90,14 +67,11 @@ export default function AdminPayoutsPage() {
         adminApi.jobs({ status: "completed" }),
       ]);
 
-      setDashboardStats(dashRes as unknown as DashboardStats);
+      // Unwrap the dashboard payload
+      setDashboardStats(dashRes.dashboard);
 
-      // Handle paginated response shape
-      const jobsData = jobsRes as unknown as {
-        data?: CompletedJob[];
-        jobs?: CompletedJob[];
-      };
-      setCompletedJobs(jobsData.data || jobsData.jobs || []);
+      // Unwrap the paginated jobs payload
+      setCompletedJobs(jobsRes.jobs || []);
     } catch (err: unknown) {
       setError(
         err instanceof Error ? err.message : "Failed to load payout data"
@@ -112,9 +86,9 @@ export default function AdminPayoutsPage() {
   }, [fetchData]);
 
   // ---- Derived values ----
-  const totalRevenue = dashboardStats?.totalRevenue || 0;
-  const totalPaidOut = totalRevenue * (1 - COMMISSION_RATE);
-  const totalCommission = totalRevenue * COMMISSION_RATE;
+  const totalRevenue = dashboardStats?.revenue_30d || 0;
+  const totalCommission = dashboardStats?.commission_30d || totalRevenue * COMMISSION_RATE;
+  const totalPaidOut = totalRevenue - totalCommission;
   const pendingPayouts = completedJobs
     .filter((j) => j.status === "completed")
     .reduce((sum, j) => sum + getJobTotal(j) * (1 - COMMISSION_RATE), 0);
