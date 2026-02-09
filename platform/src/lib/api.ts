@@ -391,6 +391,21 @@ export const adminApi = {
       contractors: MapContractorPoint[];
       jobs: MapJobPoint[];
     }>("/api/admin/map-data"),
+
+  notifications: (includeRead?: boolean) =>
+    apiFetch<NotificationsResponse>(
+      `/api/admin/notifications${includeRead ? "?include_read=true" : ""}`
+    ),
+
+  markNotificationRead: (id: string) =>
+    apiFetch<{ success: boolean }>(`/api/admin/notifications/${id}/read`, {
+      method: "PUT",
+    }),
+
+  markAllNotificationsRead: () =>
+    apiFetch<{ success: boolean }>("/api/admin/notifications/read-all", {
+      method: "PUT",
+    }),
 };
 
 // ---------------------------------------------------------------------------
@@ -531,6 +546,35 @@ export interface OperatorEarnings {
   }[];
 }
 
+export interface OperatorAnalytics {
+  earnings_by_week: { week_start: string; amount: number }[];
+  jobs_by_day: { date: string; count: number }[];
+  per_contractor_jobs: {
+    contractor_id: string;
+    name: string | null;
+    jobs: number;
+    commission: number;
+  }[];
+  delegation_time_avg: number | null;
+}
+
+export interface NotificationRecord {
+  id: string;
+  user_id: string;
+  type: string;
+  title: string;
+  body: string | null;
+  data: Record<string, unknown> | null;
+  is_read: boolean;
+  created_at: string;
+}
+
+export interface NotificationsResponse {
+  success: boolean;
+  notifications: NotificationRecord[];
+  unread_count: number;
+}
+
 export const operatorApi = {
   dashboard: () =>
     apiFetch<{ success: boolean; dashboard: OperatorDashboardData }>(
@@ -582,6 +626,27 @@ export const operatorApi = {
     apiFetch<{ success: boolean; earnings: OperatorEarnings }>(
       "/api/operator/earnings"
     ),
+
+  /** GET /api/operator/analytics -- operator analytics chart data */
+  analytics: () =>
+    apiFetch<{ success: boolean; analytics: OperatorAnalytics }>(
+      "/api/operator/analytics"
+    ),
+
+  notifications: (includeRead?: boolean) =>
+    apiFetch<NotificationsResponse>(
+      `/api/operator/notifications${includeRead ? "?include_read=true" : ""}`
+    ),
+
+  markNotificationRead: (id: string) =>
+    apiFetch<{ success: boolean }>(`/api/operator/notifications/${id}/read`, {
+      method: "PUT",
+    }),
+
+  markAllNotificationsRead: () =>
+    apiFetch<{ success: boolean }>("/api/operator/notifications/read-all", {
+      method: "PUT",
+    }),
 };
 
 // Re-export the error class for consumers

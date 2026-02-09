@@ -216,8 +216,7 @@ final class APIClientTests: XCTestCase {
         let response = try decoder.decode(BookingResponse.self, from: data)
         
         // Then
-        XCTAssertTrue(response.success)
-        XCTAssertEqual(response.bookingId, 12345)
+        XCTAssertEqual(response.bookingId, "12345")
         XCTAssertEqual(response.estimatedPrice, 199.99, accuracy: 0.01)
         XCTAssertEqual(response.confirmation, "ABC123")
         XCTAssertEqual(response.scheduledDatetime, "2026-02-08T10:00:00")

@@ -671,6 +671,60 @@ def admin_cancel_job(user_id, job_id):
     return jsonify({"success": True, "job": job.to_dict()}), 200
 
 
+@admin_bp.route("/notifications", methods=["GET"])
+@require_admin
+def list_admin_notifications(user_id):
+    """List notifications for this admin (most recent first)."""
+    limit = request.args.get("limit", 20, type=int)
+    include_read = request.args.get("include_read", "false").lower() == "true"
+
+    query = Notification.query.filter_by(user_id=user_id)
+    if not include_read:
+        query = query.filter_by(is_read=False)
+
+    notifications = (
+        query.order_by(Notification.created_at.desc())
+        .limit(limit)
+        .all()
+    )
+
+    unread_count = Notification.query.filter_by(user_id=user_id, is_read=False).count()
+
+    return jsonify({
+        "success": True,
+        "notifications": [n.to_dict() for n in notifications],
+        "unread_count": unread_count,
+    }), 200
+
+
+@admin_bp.route("/notifications/<notification_id>/read", methods=["PUT"])
+@require_admin
+def mark_admin_notification_read(user_id, notification_id):
+    """Mark a single notification as read."""
+    notification = db.session.get(Notification, notification_id)
+    if not notification or notification.user_id != user_id:
+        return jsonify({"error": "Notification not found"}), 404
+
+    notification.is_read = True
+    db.session.commit()
+
+    return jsonify({"success": True}), 200
+
+
+@admin_bp.route("/notifications/read-all", methods=["PUT"])
+@require_admin
+def mark_all_admin_notifications_read(user_id):
+    """Mark all notifications for this admin as read."""
+    Notification.query.filter_by(user_id=user_id, is_read=False).update({"is_read": True})
+    db.session.commit()
+
+    return jsonify({"success": True}), 200
+
+
+# ---------------------------------------------------------------------------
+# Pricing Rules (GET)
+# ---------------------------------------------------------------------------
+
 @admin_bp.route("/pricing/rules", methods=["GET"])
 @require_admin
 def list_pricing_rules(user_id):

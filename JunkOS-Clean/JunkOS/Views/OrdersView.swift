@@ -139,15 +139,22 @@ struct BookingCard: View {
             HStack {
                 statusBadge
                 Spacer()
-                Text("#\(booking.bookingId)")
+                Text("#\(String(booking.bookingId.prefix(8)))")
                     .font(JunkTypography.captionFont)
                     .foregroundColor(.junkTextMuted)
             }
 
+            // Operator delegation badge
+            if booking.isDelegated {
+                operatorBadge
+            }
+
             // Service info
-            Text(booking.services.map { $0.name }.joined(separator: ", "))
-                .font(JunkTypography.h3Font)
-                .foregroundColor(.junkText)
+            if !booking.services.isEmpty {
+                Text(booking.services.map { $0.name }.joined(separator: ", "))
+                    .font(JunkTypography.h3Font)
+                    .foregroundColor(.junkText)
+            }
 
             // Date and time
             HStack(spacing: JunkSpacing.small) {
@@ -174,11 +181,16 @@ struct BookingCard: View {
     }
 
     private var statusBadge: some View {
-        let status = booking.confirmation.lowercased()
+        // Use job status if available, otherwise fall back to confirmation string
+        let resolvedStatus = booking.status?.lowercased() ?? booking.confirmation.lowercased()
         let (text, color): (String, Color) = {
-            if status.contains("confirmed") { return ("Confirmed", Color.junkPrimary) }
-            if status.contains("completed") { return ("Completed", Color.junkSuccess) }
-            if status.contains("cancelled") { return ("Cancelled", Color.junkError) }
+            if resolvedStatus.contains("completed") { return ("Completed", Color.junkSuccess) }
+            if resolvedStatus.contains("in_progress") || resolvedStatus.contains("in progress") { return ("In Progress", Color.junkInfo) }
+            if resolvedStatus.contains("assigned") { return ("Assigned", Color.categoryPurple) }
+            if resolvedStatus.contains("delegating") { return ("Delegating", Color.categoryOrange) }
+            if resolvedStatus.contains("confirmed") { return ("Confirmed", Color.junkPrimary) }
+            if resolvedStatus.contains("cancelled") || resolvedStatus.contains("canceled") { return ("Cancelled", Color.junkError) }
+            if resolvedStatus.contains("pending") { return ("Pending", Color.junkWarning) }
             return ("Pending", Color.junkWarning)
         }()
         return Text(text)
@@ -187,6 +199,29 @@ struct BookingCard: View {
             .padding(.horizontal, JunkSpacing.medium)
             .padding(.vertical, JunkSpacing.tiny)
             .background(Capsule().fill(color))
+    }
+
+    // MARK: - Operator Badge
+    private var operatorBadge: some View {
+        HStack(spacing: JunkSpacing.small) {
+            Image(systemName: "person.badge.shield.checkmark.fill")
+                .font(.system(size: 13))
+                .foregroundColor(.categoryPurple)
+
+            Text("Managed by \(booking.operatorName ?? "Operator")")
+                .font(JunkTypography.captionFont)
+                .foregroundColor(.categoryPurple)
+
+            if let delegatedAt = booking.delegatedAt {
+                Text("· \(formatDelegatedDate(delegatedAt))")
+                    .font(JunkTypography.smallFont)
+                    .foregroundColor(.junkTextTertiary)
+            }
+        }
+        .padding(.horizontal, JunkSpacing.medium)
+        .padding(.vertical, JunkSpacing.tiny + 2)
+        .background(Color.categoryPurple.opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: JunkRadius.sm))
     }
 
     private func formatDate(_ dateString: String) -> String {
@@ -198,11 +233,40 @@ struct BookingCard: View {
             outputFormatter.timeStyle = .short
             return outputFormatter.string(from: date)
         }
-        // Fallback: try ISO format
+        // Fallback: try ISO 8601 format
+        let isoFormatter = ISO8601DateFormatter()
+        isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let date = isoFormatter.date(from: dateString) {
+            let outputFormatter = DateFormatter()
+            outputFormatter.dateStyle = .medium
+            outputFormatter.timeStyle = .short
+            return outputFormatter.string(from: date)
+        }
+        // Fallback: try date-only format
         inputFormatter.dateFormat = "yyyy-MM-dd"
         if let date = inputFormatter.date(from: dateString) {
             let outputFormatter = DateFormatter()
             outputFormatter.dateStyle = .medium
+            return outputFormatter.string(from: date)
+        }
+        return dateString
+    }
+
+    private func formatDelegatedDate(_ dateString: String) -> String {
+        let isoFormatter = ISO8601DateFormatter()
+        isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let date = isoFormatter.date(from: dateString) {
+            let outputFormatter = DateFormatter()
+            outputFormatter.dateStyle = .short
+            outputFormatter.timeStyle = .short
+            return outputFormatter.string(from: date)
+        }
+        // Fallback: try without fractional seconds
+        isoFormatter.formatOptions = [.withInternetDateTime]
+        if let date = isoFormatter.date(from: dateString) {
+            let outputFormatter = DateFormatter()
+            outputFormatter.dateStyle = .short
+            outputFormatter.timeStyle = .short
             return outputFormatter.string(from: date)
         }
         return dateString

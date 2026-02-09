@@ -286,6 +286,60 @@ def delegate_job(user_id, operator, job_id):
 
 
 # ---------------------------------------------------------------------------
+# Notifications
+# ---------------------------------------------------------------------------
+
+@operator_bp.route("/notifications", methods=["GET"])
+@require_operator
+def list_notifications(user_id, operator):
+    """List unread notifications for this operator (most recent first)."""
+    limit = request.args.get("limit", 20, type=int)
+    include_read = request.args.get("include_read", "false").lower() == "true"
+
+    query = Notification.query.filter_by(user_id=user_id)
+    if not include_read:
+        query = query.filter_by(is_read=False)
+
+    notifications = (
+        query.order_by(Notification.created_at.desc())
+        .limit(limit)
+        .all()
+    )
+
+    unread_count = Notification.query.filter_by(user_id=user_id, is_read=False).count()
+
+    return jsonify({
+        "success": True,
+        "notifications": [n.to_dict() for n in notifications],
+        "unread_count": unread_count,
+    }), 200
+
+
+@operator_bp.route("/notifications/<notification_id>/read", methods=["PUT"])
+@require_operator
+def mark_notification_read(user_id, operator, notification_id):
+    """Mark a single notification as read."""
+    notification = db.session.get(Notification, notification_id)
+    if not notification or notification.user_id != user_id:
+        return jsonify({"error": "Notification not found"}), 404
+
+    notification.is_read = True
+    db.session.commit()
+
+    return jsonify({"success": True}), 200
+
+
+@operator_bp.route("/notifications/read-all", methods=["PUT"])
+@require_operator
+def mark_all_notifications_read(user_id, operator):
+    """Mark all notifications for this operator as read."""
+    Notification.query.filter_by(user_id=user_id, is_read=False).update({"is_read": True})
+    db.session.commit()
+
+    return jsonify({"success": True}), 200
+
+
+# ---------------------------------------------------------------------------
 # Earnings
 # ---------------------------------------------------------------------------
 
@@ -356,5 +410,147 @@ def earnings(user_id, operator):
             "earnings_30d": round(e_30d, 2),
             "earnings_7d": round(e_7d, 2),
             "per_contractor": list(per_contractor.values()),
+        },
+    }), 200
+
+
+# ---------------------------------------------------------------------------
+# Analytics
+# ---------------------------------------------------------------------------
+
+@operator_bp.route("/analytics", methods=["GET"])
+@require_operator
+def analytics(user_id, operator):
+    """Operator analytics: weekly earnings, daily jobs, per-contractor stats, delegation time."""
+    from sqlalchemy import func, case
+
+    now = utcnow()
+    twelve_weeks_ago = now - timedelta(weeks=12)
+    thirty_days_ago = now - timedelta(days=30)
+
+    fleet = Contractor.query.filter_by(operator_id=operator.id).all()
+    fleet_ids = [c.id for c in fleet]
+    contractor_map = {c.id: c for c in fleet}
+
+    # ---- earnings_by_week: last 12 weeks of commission ----
+    earnings_by_week = []
+    if fleet_ids:
+        payments = (
+            Payment.query
+            .join(Job, Payment.job_id == Job.id)
+            .filter(
+                Job.operator_id == operator.id,
+                Job.driver_id.in_(fleet_ids),
+                Payment.payment_status == "succeeded",
+                Payment.created_at >= twelve_weeks_ago,
+            )
+            .all()
+        )
+        # Bucket by ISO week
+        week_buckets = {}
+        for p in payments:
+            if p.created_at:
+                # Monday of that week
+                week_start = (p.created_at - timedelta(days=p.created_at.weekday())).strftime("%Y-%m-%d")
+                week_buckets[week_start] = week_buckets.get(week_start, 0.0) + (p.operator_payout_amount or 0.0)
+
+        # Build ordered list for the last 12 weeks
+        for i in range(11, -1, -1):
+            d = now - timedelta(weeks=i)
+            week_start = (d - timedelta(days=d.weekday())).strftime("%Y-%m-%d")
+            earnings_by_week.append({
+                "week_start": week_start,
+                "amount": round(week_buckets.get(week_start, 0.0), 2),
+            })
+        # Deduplicate (keep last occurrence per week_start)
+        seen = {}
+        deduped = []
+        for entry in earnings_by_week:
+            seen[entry["week_start"]] = entry
+        for entry in earnings_by_week:
+            if entry["week_start"] in seen:
+                deduped.append(seen.pop(entry["week_start"]))
+        earnings_by_week = deduped
+
+    # ---- jobs_by_day: last 30 days of delegated jobs ----
+    jobs_by_day = []
+    day_buckets = {}
+    operator_jobs_30d = (
+        Job.query
+        .filter(
+            Job.operator_id == operator.id,
+            Job.created_at >= thirty_days_ago,
+        )
+        .all()
+    )
+    for j in operator_jobs_30d:
+        if j.created_at:
+            day_key = j.created_at.strftime("%Y-%m-%d")
+            day_buckets[day_key] = day_buckets.get(day_key, 0) + 1
+
+    for i in range(29, -1, -1):
+        d = now - timedelta(days=i)
+        day_key = d.strftime("%Y-%m-%d")
+        jobs_by_day.append({
+            "date": day_key,
+            "count": day_buckets.get(day_key, 0),
+        })
+
+    # ---- per_contractor_jobs ----
+    per_contractor_jobs = []
+    if fleet_ids:
+        for cid in fleet_ids:
+            c = contractor_map[cid]
+            job_count = Job.query.filter(
+                Job.operator_id == operator.id,
+                Job.driver_id == cid,
+            ).count()
+            commission = 0.0
+            c_payments = (
+                Payment.query
+                .join(Job, Payment.job_id == Job.id)
+                .filter(
+                    Job.operator_id == operator.id,
+                    Job.driver_id == cid,
+                    Payment.payment_status == "succeeded",
+                )
+                .all()
+            )
+            commission = sum(p.operator_payout_amount or 0.0 for p in c_payments)
+            per_contractor_jobs.append({
+                "contractor_id": cid,
+                "name": c.user.name if c.user else None,
+                "jobs": job_count,
+                "commission": round(commission, 2),
+            })
+
+    # ---- delegation_time_avg: avg minutes from delegating->assigned ----
+    delegation_time_avg = None
+    delegated_jobs = (
+        Job.query
+        .filter(
+            Job.operator_id == operator.id,
+            Job.delegated_at.isnot(None),
+            Job.created_at.isnot(None),
+        )
+        .all()
+    )
+    if delegated_jobs:
+        deltas = []
+        for j in delegated_jobs:
+            if j.delegated_at and j.created_at:
+                diff = (j.delegated_at - j.created_at).total_seconds() / 60.0
+                if diff >= 0:
+                    deltas.append(diff)
+        if deltas:
+            delegation_time_avg = round(sum(deltas) / len(deltas), 1)
+
+    return jsonify({
+        "success": True,
+        "analytics": {
+            "earnings_by_week": earnings_by_week,
+            "jobs_by_day": jobs_by_day,
+            "per_contractor_jobs": per_contractor_jobs,
+            "delegation_time_avg": delegation_time_avg,
         },
     }), 200

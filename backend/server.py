@@ -239,7 +239,7 @@ def get_booking(booking_id):
 @app.route("/api/bookings/customer", methods=["POST"])
 def get_customer_bookings():
     """Get all bookings for a customer by email"""
-    from models import Job, User
+    from models import Job, User, Contractor
     data = request.get_json()
     email = data.get("email") if data else None
 
@@ -258,6 +258,12 @@ def get_customer_bookings():
     for job in jobs:
         booking = job.to_dict()
         booking["confirmation"] = "Booking #{} confirmed".format(job.id[:8])
+        # Include operator name for delegated jobs
+        if job.operator_id and job.operator_rel:
+            op_user = job.operator_rel.user
+            booking["operator_name"] = op_user.name if op_user else None
+        else:
+            booking["operator_name"] = None
         bookings.append(booking)
 
     return jsonify({"success": True, "bookings": bookings}), 200

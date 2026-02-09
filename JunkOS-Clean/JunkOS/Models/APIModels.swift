@@ -108,21 +108,113 @@ struct CustomerInfo: Codable {
 }
 
 // MARK: - Booking Response
+// Handles both legacy booking creation responses and Job-based customer booking lists.
 struct BookingResponse: Codable {
-    let success: Bool
-    let bookingId: Int
-    let estimatedPrice: Double
+    // Core identification — legacy uses booking_id (Int), Job model uses id (String)
+    let bookingId: String
     let confirmation: String
+
+    // Pricing
+    let estimatedPrice: Double
+
+    // Schedule
     let scheduledDatetime: String
+
+    // Status
+    let status: String?
+
+    // Services (only present in legacy creation response)
     let services: [APIService]
-    
+
+    // Operator delegation fields
+    let operatorId: String?
+    let operatorName: String?
+    let delegatedAt: String?
+
+    // Driver assignment
+    let driverId: String?
+
     enum CodingKeys: String, CodingKey {
-        case success
+        // Legacy creation response keys
         case bookingId = "booking_id"
         case estimatedPrice = "estimated_price"
-        case confirmation
         case scheduledDatetime = "scheduled_datetime"
         case services
+        case confirmation
+        case success
+        // Job model keys
+        case id
+        case totalPrice = "total_price"
+        case scheduledAt = "scheduled_at"
+        case status
+        // Operator fields
+        case operatorId = "operator_id"
+        case operatorName = "operator_name"
+        case delegatedAt = "delegated_at"
+        // Driver
+        case driverId = "driver_id"
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        // bookingId: try legacy "booking_id" (Int -> String), then Job "id" (String)
+        if let legacyId = try? container.decode(Int.self, forKey: .bookingId) {
+            bookingId = String(legacyId)
+        } else if let jobId = try? container.decode(String.self, forKey: .id) {
+            bookingId = jobId
+        } else {
+            bookingId = "unknown"
+        }
+
+        // estimatedPrice: try "estimated_price", then "total_price"
+        if let ep = try? container.decode(Double.self, forKey: .estimatedPrice) {
+            estimatedPrice = ep
+        } else if let tp = try? container.decode(Double.self, forKey: .totalPrice) {
+            estimatedPrice = tp
+        } else {
+            estimatedPrice = 0.0
+        }
+
+        // scheduledDatetime: try "scheduled_datetime", then "scheduled_at"
+        if let sd = try? container.decode(String.self, forKey: .scheduledDatetime) {
+            scheduledDatetime = sd
+        } else if let sa = try? container.decode(String.self, forKey: .scheduledAt) {
+            scheduledDatetime = sa
+        } else {
+            scheduledDatetime = ""
+        }
+
+        confirmation = (try? container.decode(String.self, forKey: .confirmation)) ?? "Confirmed"
+        services = (try? container.decode([APIService].self, forKey: .services)) ?? []
+        status = try? container.decode(String.self, forKey: .status)
+
+        // Operator fields
+        operatorId = try? container.decode(String.self, forKey: .operatorId)
+        operatorName = try? container.decode(String.self, forKey: .operatorName)
+        delegatedAt = try? container.decode(String.self, forKey: .delegatedAt)
+
+        // Driver
+        driverId = try? container.decode(String.self, forKey: .driverId)
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(bookingId, forKey: .id)
+        try container.encode(estimatedPrice, forKey: .estimatedPrice)
+        try container.encode(scheduledDatetime, forKey: .scheduledDatetime)
+        try container.encode(confirmation, forKey: .confirmation)
+        try container.encode(services, forKey: .services)
+        try container.encodeIfPresent(status, forKey: .status)
+        try container.encodeIfPresent(operatorId, forKey: .operatorId)
+        try container.encodeIfPresent(operatorName, forKey: .operatorName)
+        try container.encodeIfPresent(delegatedAt, forKey: .delegatedAt)
+        try container.encodeIfPresent(driverId, forKey: .driverId)
+    }
+
+    /// Whether this job was delegated to an operator
+    var isDelegated: Bool {
+        operatorId != nil && !operatorId!.isEmpty
     }
 }
 

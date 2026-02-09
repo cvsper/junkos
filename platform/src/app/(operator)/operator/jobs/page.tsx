@@ -1,6 +1,14 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import {
+  Briefcase,
+  ChevronLeft,
+  ChevronRight,
+  ClipboardList,
+  Loader2,
+  X,
+} from "lucide-react";
 import { operatorApi, type OperatorJobRecord, type OperatorFleetContractor } from "@/lib/api";
 
 const STATUS_BADGES: Record<string, string> = {
@@ -68,6 +76,19 @@ export default function OperatorJobsPage() {
     }
   };
 
+  const getEmptyMessage = () => {
+    switch (filter) {
+      case "delegating":
+        return "No jobs waiting for delegation. You're all caught up!";
+      case "active":
+        return "No active jobs at the moment. Jobs in progress will appear here.";
+      case "completed":
+        return "No completed jobs yet. Completed jobs will show up here.";
+      default:
+        return "No jobs found. Jobs from your customers will appear here once they book.";
+    }
+  };
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-display font-bold">Jobs</h1>
@@ -78,7 +99,7 @@ export default function OperatorJobsPage() {
           <button
             key={tab.key}
             onClick={() => { setFilter(tab.key); setPage(1); }}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            className={`px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
               filter === tab.key
                 ? "bg-primary text-primary-foreground"
                 : "bg-muted text-muted-foreground hover:text-foreground"
@@ -89,8 +110,8 @@ export default function OperatorJobsPage() {
         ))}
       </div>
 
-      {/* Jobs Table */}
-      <div className="rounded-xl border border-border bg-card overflow-hidden">
+      {/* Jobs Table - Desktop */}
+      <div className="rounded-xl border border-border bg-card overflow-hidden hidden md:block">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -107,18 +128,30 @@ export default function OperatorJobsPage() {
             <tbody className="divide-y divide-border">
               {loading ? (
                 [...Array(5)].map((_, i) => (
-                  <tr key={i}>
-                    {[...Array(7)].map((_, j) => (
-                      <td key={j} className="px-4 py-3">
-                        <div className="h-4 bg-muted rounded animate-pulse w-20" />
-                      </td>
-                    ))}
+                  <tr key={i} className="animate-pulse">
+                    <td className="px-4 py-3"><div className="h-4 bg-muted rounded w-16" /></td>
+                    <td className="px-4 py-3">
+                      <div className="space-y-1">
+                        <div className="h-4 bg-muted rounded w-24" />
+                        <div className="h-3 bg-muted rounded w-32" />
+                      </div>
+                    </td>
+                    <td className="px-4 py-3"><div className="h-4 bg-muted rounded w-40" /></td>
+                    <td className="px-4 py-3"><div className="h-6 bg-muted rounded-full w-20" /></td>
+                    <td className="px-4 py-3"><div className="h-4 bg-muted rounded w-20" /></td>
+                    <td className="px-4 py-3"><div className="h-4 bg-muted rounded w-16" /></td>
+                    <td className="px-4 py-3"><div className="h-8 bg-muted rounded w-20" /></td>
                   </tr>
                 ))
               ) : jobs.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
-                    No jobs found
+                  <td colSpan={7} className="px-4 py-12 text-center">
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-1">
+                        <ClipboardList className="w-6 h-6 text-muted-foreground/60" />
+                      </div>
+                      <p className="text-sm text-muted-foreground">{getEmptyMessage()}</p>
+                    </div>
                   </td>
                 </tr>
               ) : (
@@ -156,14 +189,15 @@ export default function OperatorJobsPage() {
           </table>
         </div>
 
-        {/* Pagination */}
-        {totalPages > 1 && (
+        {/* Pagination - Desktop */}
+        {!loading && totalPages > 1 && (
           <div className="px-4 py-3 border-t border-border flex items-center justify-between">
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="text-sm px-3 py-1.5 rounded-lg border border-border hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+              className="inline-flex items-center gap-1 text-sm px-3 py-1.5 rounded-lg border border-border hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
             >
+              <ChevronLeft className="w-4 h-4" />
               Previous
             </button>
             <span className="text-sm text-muted-foreground">
@@ -172,9 +206,98 @@ export default function OperatorJobsPage() {
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
-              className="text-sm px-3 py-1.5 rounded-lg border border-border hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+              className="inline-flex items-center gap-1 text-sm px-3 py-1.5 rounded-lg border border-border hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Next
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Jobs Cards - Mobile */}
+      <div className="md:hidden space-y-3">
+        {loading ? (
+          [...Array(4)].map((_, i) => (
+            <div key={i} className="rounded-xl border border-border bg-card p-4 animate-pulse space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="h-6 bg-muted rounded-full w-20" />
+                <div className="h-4 bg-muted rounded w-16" />
+              </div>
+              <div className="space-y-2">
+                <div className="h-4 bg-muted rounded w-3/4" />
+                <div className="h-3 bg-muted rounded w-1/2" />
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="h-3 bg-muted rounded w-24" />
+                <div className="h-8 bg-muted rounded w-20" />
+              </div>
+            </div>
+          ))
+        ) : jobs.length === 0 ? (
+          <div className="rounded-xl border border-border bg-card px-4 py-12 flex flex-col items-center text-center">
+            <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-3">
+              <ClipboardList className="w-6 h-6 text-muted-foreground/60" />
+            </div>
+            <p className="text-sm text-muted-foreground">{getEmptyMessage()}</p>
+          </div>
+        ) : (
+          jobs.map((job) => (
+            <div key={job.id} className="rounded-xl border border-border bg-card p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${STATUS_BADGES[job.status] || "bg-gray-100 text-gray-700"}`}>
+                  {job.status}
+                </span>
+                <span className="text-sm font-semibold">${job.total_price?.toFixed(2)}</span>
+              </div>
+              <div>
+                <p className="text-sm font-medium">{job.address}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {job.customer_name || "N/A"} &middot; {job.customer_email}
+                </p>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="text-xs text-muted-foreground">
+                  {job.driver_name ? (
+                    <span>Driver: <span className="font-medium text-foreground">{job.driver_name}</span></span>
+                  ) : (
+                    <span className="font-mono">{job.id.slice(0, 8)}</span>
+                  )}
+                </div>
+                {job.status === "delegating" && (
+                  <button
+                    onClick={() => setDelegateJob(job)}
+                    className="text-xs bg-amber-100 text-amber-700 px-3 py-1.5 rounded-lg font-medium hover:bg-amber-200 transition-colors"
+                  >
+                    Delegate
+                  </button>
+                )}
+              </div>
+            </div>
+          ))
+        )}
+
+        {/* Pagination - Mobile */}
+        {!loading && totalPages > 1 && (
+          <div className="flex items-center justify-between pt-2">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="inline-flex items-center gap-1 text-sm px-3 py-1.5 rounded-lg border border-border hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              Prev
+            </button>
+            <span className="text-sm text-muted-foreground">
+              {page} / {totalPages}
+            </span>
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+              className="inline-flex items-center gap-1 text-sm px-3 py-1.5 rounded-lg border border-border hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Next
+              <ChevronRight className="w-4 h-4" />
             </button>
           </div>
         )}
@@ -182,15 +305,31 @@ export default function OperatorJobsPage() {
 
       {/* Delegate Modal */}
       {delegateJob && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setDelegateJob(null)}>
-          <div className="bg-card rounded-xl border border-border shadow-xl w-full max-w-md mx-4" onClick={(e) => e.stopPropagation()}>
-            <div className="px-6 py-4 border-b border-border">
-              <h3 className="font-semibold">Delegate Job</h3>
-              <p className="text-sm text-muted-foreground mt-1 truncate">{delegateJob.address}</p>
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50" onClick={() => setDelegateJob(null)}>
+          <div
+            className="bg-card rounded-t-xl sm:rounded-xl border border-border shadow-xl w-full sm:max-w-md sm:mx-4 max-h-[85vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-4 sm:px-6 py-4 border-b border-border flex items-center justify-between flex-shrink-0">
+              <div className="min-w-0 pr-4">
+                <h3 className="font-semibold">Delegate Job</h3>
+                <p className="text-sm text-muted-foreground mt-1 truncate">{delegateJob.address}</p>
+              </div>
+              <button
+                onClick={() => setDelegateJob(null)}
+                className="p-1 rounded-lg hover:bg-muted transition-colors flex-shrink-0"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
-            <div className="px-6 py-4 max-h-80 overflow-y-auto">
+            <div className="px-4 sm:px-6 py-4 overflow-y-auto flex-1">
               {fleet.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4">No fleet contractors available</p>
+                <div className="flex flex-col items-center py-8 text-center">
+                  <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-3">
+                    <Briefcase className="w-6 h-6 text-muted-foreground/60" />
+                  </div>
+                  <p className="text-sm text-muted-foreground">No fleet contractors available</p>
+                </div>
               ) : (
                 <div className="space-y-2">
                   {fleet.filter((c) => c.approval_status === "approved").map((c) => (
@@ -206,13 +345,18 @@ export default function OperatorJobsPage() {
                           {c.truck_type || "N/A"} &middot; {c.total_jobs} jobs &middot; {c.avg_rating.toFixed(1)} stars
                         </p>
                       </div>
-                      <span className={`w-2.5 h-2.5 rounded-full ${c.is_online ? "bg-green-500" : "bg-gray-300"}`} />
+                      <div className="flex items-center gap-2">
+                        {delegating && (
+                          <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                        )}
+                        <span className={`w-2.5 h-2.5 rounded-full ${c.is_online ? "bg-green-500" : "bg-gray-300"}`} />
+                      </div>
                     </button>
                   ))}
                 </div>
               )}
             </div>
-            <div className="px-6 py-3 border-t border-border flex justify-end">
+            <div className="px-4 sm:px-6 py-3 border-t border-border flex justify-end flex-shrink-0">
               <button
                 onClick={() => setDelegateJob(null)}
                 className="text-sm px-4 py-2 rounded-lg border border-border hover:bg-muted transition-colors"
