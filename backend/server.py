@@ -62,11 +62,7 @@ socketio.init_app(app, cors_allowed_origins=_allowed_origins, async_mode="eventl
 # ---------------------------------------------------------------------------
 # Rate limiting (in-memory; upgrade to Redis via RATELIMIT_STORAGE_URI)
 # ---------------------------------------------------------------------------
-limiter.init_app(
-    app,
-    default_limits=["100 per minute"],
-    enabled=not app.config.get("TESTING", False),
-)
+limiter.init_app(app)
 
 
 @app.errorhandler(429)
