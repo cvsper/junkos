@@ -685,11 +685,11 @@ function PaymentFormInner() {
 
         <p className="text-xs text-muted-foreground text-center mt-3">
           By completing this booking, you agree to our{" "}
-          <a href="#" className="underline hover:text-foreground">
+          <a href="/terms" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">
             Terms of Service
           </a>{" "}
           and{" "}
-          <a href="#" className="underline hover:text-foreground">
+          <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">
             Privacy Policy
           </a>
           .

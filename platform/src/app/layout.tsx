@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Space_Grotesk } from "next/font/google";
 import "@/styles/globals.css";
+import { Analytics } from "@/components/analytics";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -14,10 +15,45 @@ const spaceGrotesk = Space_Grotesk({
   display: "swap",
 });
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://junkos.app";
+
 export const metadata: Metadata = {
-  title: "JunkOS - On-Demand Junk Removal",
+  title: {
+    default: "JunkOS | Premium Junk Removal in South Florida",
+    template: "%s | JunkOS",
+  },
   description:
-    "South Florida's premier on-demand junk removal marketplace. Book a pickup in minutes, track your hauler in real-time, and get rid of your junk stress-free.",
+    "Book professional junk removal in South Florida. Fast, reliable, affordable. Get instant quotes and real-time tracking.",
+  metadataBase: new URL(SITE_URL),
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    title: "JunkOS | Premium Junk Removal in South Florida",
+    description:
+      "Book professional junk removal in South Florida. Fast, reliable, affordable. Get instant quotes and real-time tracking.",
+    siteName: "JunkOS",
+    type: "website",
+    locale: "en_US",
+    url: SITE_URL,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "JunkOS | Premium Junk Removal in South Florida",
+    description:
+      "Book professional junk removal in South Florida. Fast, reliable, affordable. Get instant quotes and real-time tracking.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
 };
 
 export default function RootLayout({
@@ -29,6 +65,7 @@ export default function RootLayout({
     <html lang="en" className={`${inter.variable} ${spaceGrotesk.variable}`}>
       <body className="font-sans antialiased bg-background text-foreground min-h-screen">
         {children}
+        <Analytics />
       </body>
     </html>
   );
