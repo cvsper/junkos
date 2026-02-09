@@ -175,4 +175,32 @@ actor DriverAPIClient {
             )
         )
     }
+
+    // MARK: - Push Notifications
+
+    func registerPushToken(_ token: String) async throws -> PushTokenResponse {
+        try await request(
+            "/api/push/register-token",
+            method: "POST",
+            body: PushTokenRequest(token: token, platform: "ios", appType: "driver")
+        )
+    }
+}
+
+// MARK: - Push Token Models
+
+struct PushTokenRequest: Codable {
+    let token: String
+    let platform: String
+    let appType: String
+
+    enum CodingKeys: String, CodingKey {
+        case token
+        case platform
+        case appType = "app_type"
+    }
+}
+
+struct PushTokenResponse: Codable {
+    let success: Bool
 }

@@ -65,6 +65,9 @@ class BookingData: ObservableObject {
     @Published var beforePhotos: [Data] = []
     @Published var estimatedWeight: WeightCategory = .medium
 
+    // Referral code (loaded from stored referral or entered manually)
+    @Published var referralCode: String = ""
+
     // Customer info (filled during confirmation step)
     @Published var customerName: String = ""
     @Published var customerEmail: String = ""
@@ -110,6 +113,7 @@ class BookingData: ObservableObject {
         selectedItems = []
         beforePhotos = []
         estimatedWeight = .medium
+        referralCode = ""
         customerName = ""
         customerEmail = ""
         customerPhone = ""

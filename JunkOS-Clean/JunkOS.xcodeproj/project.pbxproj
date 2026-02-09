@@ -69,6 +69,7 @@
 		5DC0864DB58C489DB7633A3B /* PaymentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FEB1C0CFE8A4201B3540879 /* PaymentView.swift */; };
 		CDB687E6F7E84384879FDFAE /* CameraPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4FFB908C7184F8F99358601 /* CameraPickerView.swift */; };
 		CD34EF56AB12CD34EF56AB12 /* BookingSuccessView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB12CD34EF56AB12CD34EF56 /* BookingSuccessView.swift */; };
+		AAFF00112233445566778899 /* ReferralView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBFF00112233445566778899 /* ReferralView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -136,6 +137,7 @@
 		4FEB1C0CFE8A4201B3540879 /* PaymentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentView.swift; sourceTree = "<group>"; };
 		D4FFB908C7184F8F99358601 /* CameraPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraPickerView.swift; sourceTree = "<group>"; };
 		AB12CD34EF56AB12CD34EF56 /* BookingSuccessView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookingSuccessView.swift; sourceTree = "<group>"; };
+		BBFF00112233445566778899 /* ReferralView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReferralView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -187,6 +189,7 @@
 				CF7C17AD2F37BC810083FF08 /* OrdersView.swift */,
 				CF7C17AE2F37BC810083FF08 /* PhotoUploadView.swift */,
 				CF7C17AF2F37BC810083FF08 /* ProfileView.swift */,
+				BBFF00112233445566778899 /* ReferralView.swift */,
 				CF7C17B02F37BC810083FF08 /* ServiceSelectionRedesignView.swift */,
 				CF7C17B12F37BC810083FF08 /* ServiceSelectionView.swift */,
 				CF7C17B22F37BC810083FF08 /* WelcomeView.swift */,
@@ -497,6 +500,7 @@
 				596F12A23226F6D9277A0312 /* APIClient.swift in Sources */,
 				EE6ED07F2A53D504E2E75373 /* Config.swift in Sources */,
 				CD34EF56AB12CD34EF56AB12 /* BookingSuccessView.swift in Sources */,
+				AAFF00112233445566778899 /* ReferralView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -527,6 +527,11 @@ struct ConfirmationView: View {
                 .joined(separator: "\n")
         }
 
+        // Load stored referral code if bookingData doesn't already have one
+        let referral = bookingData.referralCode.isEmpty
+            ? UserDefaults.standard.string(forKey: "appliedReferralCode")
+            : bookingData.referralCode
+
         Task {
             await viewModel.submitBooking(
                 address: bookingData.address,
@@ -536,7 +541,8 @@ struct ConfirmationView: View {
                 customerName: bookingData.customerName,
                 customerEmail: bookingData.customerEmail,
                 customerPhone: bookingData.customerPhone,
-                notes: notes
+                notes: notes,
+                referralCode: referral
             ) { success in
                 // BookingSuccessView handles completion when user taps "Done"
             }

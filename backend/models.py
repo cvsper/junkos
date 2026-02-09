@@ -580,3 +580,39 @@ class Referral(db.Model):
             "referrer_name": self.referrer.name if self.referrer else None,
             "referee_name": self.referee.name if self.referee else None,
         }
+
+
+# ---------------------------------------------------------------------------
+# SupportMessage
+# ---------------------------------------------------------------------------
+class SupportMessage(db.Model):
+    __tablename__ = "support_messages"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    name = Column(String(255), nullable=False)
+    email = Column(String(255), nullable=False)
+    message = Column(Text, nullable=False)
+    category = Column(String(50), nullable=False, default="other")
+    status = Column(String(20), nullable=False, default="open")
+
+    created_at = Column(DateTime, default=utcnow)
+
+    __table_args__ = (
+        CheckConstraint("status IN ('open', 'resolved')", name="ck_support_message_status"),
+        Index("ix_support_messages_status", "status"),
+    )
+
+    user = relationship("User", foreign_keys=[user_id])
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "user_id": self.user_id,
+            "name": self.name,
+            "email": self.email,
+            "message": self.message,
+            "category": self.category,
+            "status": self.status,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }

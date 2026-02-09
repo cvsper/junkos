@@ -46,28 +46,30 @@ class ConfirmationViewModel: ObservableObject {
         customerEmail: String,
         customerPhone: String,
         notes: String?,
+        referralCode: String? = nil,
         completion: @escaping (Bool) -> Void
     ) async {
         // Light haptic on button press
         HapticManager.shared.lightTap()
-        
+
         isSubmitting = true
         errorMessage = nil
-        
+
         do {
             let customer = CustomerInfo(
                 name: customerName,
                 email: customerEmail,
                 phone: customerPhone
             )
-            
+
             let response = try await apiClient.createBooking(
                 address: address,
                 serviceIds: serviceIds,
                 photos: photos,
                 scheduledDateTime: scheduledDateTime,
                 customer: customer,
-                notes: notes
+                notes: notes,
+                referralCode: referralCode
             )
             
             bookingResponse = response

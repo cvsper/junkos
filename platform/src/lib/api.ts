@@ -516,6 +516,25 @@ export const adminApi = {
       method: "PUT",
     }),
 
+  /** GET /api/pricing/config -- full pricing configuration */
+  getPricingConfig: () =>
+    apiFetch<{ success: boolean; config: PricingConfigData }>(
+      "/api/pricing/config"
+    ),
+
+  /** PUT /api/admin/pricing/config -- update pricing configuration */
+  updatePricingConfig: (config: Partial<PricingConfigUpdatePayload>) =>
+    apiFetch<{ success: boolean; config: Record<string, unknown> }>(
+      "/api/admin/pricing/config",
+      { method: "PUT", body: JSON.stringify({ config }) }
+    ),
+
+  /** GET /api/admin/onboarding -- onboarding readiness checks */
+  getOnboardingStatus: () =>
+    apiFetch<{ success: boolean; checks: OnboardingChecks }>(
+      "/api/admin/onboarding"
+    ),
+
   /** GET /api/admin/map-data -- live map contractors + jobs */
   mapData: () =>
     apiFetch<{
@@ -604,6 +623,43 @@ export interface MapJobPoint {
   customer_name: string | null;
   driver_id: string | null;
   total_price: number;
+}
+
+// Pricing configuration types
+export interface PricingConfigData {
+  minimum_job_price: number;
+  volume_discount_tiers: {
+    min_qty: number;
+    max_qty: number | null;
+    discount_rate: number;
+  }[];
+  time_surge: {
+    same_day: number;
+    next_day: number;
+    weekend: number;
+  };
+  commission_rate: number;
+}
+
+export interface PricingConfigUpdatePayload {
+  minimum_job_price: number;
+  volume_discount_tiers: {
+    min_qty: number;
+    max_qty: number | null;
+    discount_rate: number;
+  }[];
+  same_day_surge: number;
+  next_day_surge: number;
+  weekend_surge: number;
+  service_fee_rate: number;
+}
+
+export interface OnboardingChecks {
+  stripe_configured: boolean;
+  admin_created: boolean;
+  pricing_configured: boolean;
+  service_area_defined: boolean;
+  contractor_registered: boolean;
 }
 
 interface SurgeZoneUpsertData {
@@ -832,6 +888,61 @@ export const referralsApi = {
     }>(`/api/referrals/validate/${code}`, {
       method: "POST",
     }),
+};
+
+// ---------------------------------------------------------------------------
+// Support API
+// ---------------------------------------------------------------------------
+
+export interface SupportMessageRecord {
+  id: string;
+  user_id: string | null;
+  name: string;
+  email: string;
+  message: string;
+  category: string;
+  status: "open" | "resolved";
+  created_at: string;
+}
+
+export const supportApi = {
+  /** POST /api/support/message -- submit a support message (public) */
+  send: (data: {
+    name: string;
+    email: string;
+    message: string;
+    category: string;
+  }) =>
+    apiFetch<{ success: boolean; id: string }>("/api/support/message", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  /** GET /api/admin/support-messages -- admin: list support messages */
+  list: (filters?: { status?: string; page?: number; per_page?: number }) => {
+    const params = new URLSearchParams();
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== "")
+          params.append(key, String(value));
+      });
+    }
+    const query = params.toString();
+    return apiFetch<{
+      success: boolean;
+      messages: SupportMessageRecord[];
+      total: number;
+      page: number;
+      pages: number;
+    }>(`/api/admin/support-messages${query ? `?${query}` : ""}`);
+  },
+
+  /** PUT /api/admin/support-messages/:id/resolve -- admin: resolve a message */
+  resolve: (id: string) =>
+    apiFetch<{ success: boolean; message: SupportMessageRecord }>(
+      `/api/admin/support-messages/${id}/resolve`,
+      { method: "PUT" }
+    ),
 };
 
 // Re-export the error class for consumers

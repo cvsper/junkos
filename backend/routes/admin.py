@@ -974,3 +974,29 @@ def update_pricing_config(user_id):
     db.session.commit()
 
     return jsonify({"success": True, "config": updated}), 200
+
+
+# ---------------------------------------------------------------------------
+# Database Migration (admin trigger)
+# ---------------------------------------------------------------------------
+
+@admin_bp.route("/migrate", methods=["POST"])
+@require_admin
+def run_db_migration(user_id):
+    """Run pending database migrations (add new columns / create new tables).
+
+    Safe to call multiple times (idempotent).
+    """
+    try:
+        from migrate import run_migrations
+        from flask import current_app
+
+        url = current_app.config["SQLALCHEMY_DATABASE_URI"]
+        actions = run_migrations(url)
+
+        return jsonify({
+            "success": True,
+            "actions": actions,
+        }), 200
+    except Exception as e:
+        return jsonify({"error": "Migration failed: {}".format(str(e))}), 500

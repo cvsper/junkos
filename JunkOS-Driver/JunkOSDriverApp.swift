@@ -2,13 +2,36 @@
 //  JunkOSDriverApp.swift
 //  JunkOS Driver
 //
-//  Entry point: Splash → Auth → Registration → Main tabs.
+//  Entry point: Splash -> Auth -> Registration -> Main tabs.
+//  Includes AppDelegate for push notification token handling.
 //
 
 import SwiftUI
+import UserNotifications
+
+// MARK: - App Delegate
+
+class DriverAppDelegate: NSObject, UIApplicationDelegate {
+    func application(
+        _ application: UIApplication,
+        didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
+    ) {
+        NotificationManager.shared.handleDeviceToken(deviceToken)
+    }
+
+    func application(
+        _ application: UIApplication,
+        didFailToRegisterForRemoteNotificationsWithError error: Error
+    ) {
+        NotificationManager.shared.handleRegistrationError(error)
+    }
+}
+
+// MARK: - App Entry Point
 
 @main
 struct JunkOSDriverApp: App {
+    @UIApplicationDelegateAdaptor(DriverAppDelegate.self) private var appDelegate
     @State private var appState = AppState()
     @State private var showingSplash = true
 
@@ -31,12 +54,16 @@ struct JunkOSDriverApp: App {
                     RoleSelectionView(appState: appState)
                         .task { await appState.loadContractorProfile() }
                 } else if appState.isOperator {
-                    // Operator registered — redirect to web dashboard
+                    // Operator registered -- redirect to web dashboard
                     OperatorWebRedirectView(appState: appState)
                 } else if !appState.isRegistered {
                     ContractorRegistrationView(appState: appState)
                 } else {
                     DriverTabView(appState: appState)
+                        .onAppear {
+                            // Request push notification permission once authenticated and registered
+                            NotificationManager.shared.requestPermission()
+                        }
                 }
             }
             .preferredColorScheme(.light)

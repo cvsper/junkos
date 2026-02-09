@@ -51,6 +51,8 @@ final class AppState {
             let response = try await api.getContractorProfile()
             contractorProfile = response.contractor
             isOnline = response.contractor.isOnline
+            // Re-register push token now that we have an auth context
+            registerPushTokenIfNeeded()
         } catch {
             contractorProfile = nil
         }
@@ -129,6 +131,13 @@ final class AppState {
             socket.leaveDriverRoom(driverId: contractorId)
         }
         socket.disconnect()
+    }
+
+    // MARK: - Push Notifications
+
+    /// Re-register push token with backend after login or profile load
+    func registerPushTokenIfNeeded() {
+        NotificationManager.shared.reRegisterTokenIfNeeded()
     }
 
     // MARK: - Job Alerts

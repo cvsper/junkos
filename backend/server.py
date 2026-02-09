@@ -12,7 +12,7 @@ from database import Database
 from auth_routes import auth_bp
 from models import db as sqlalchemy_db
 from socket_events import socketio
-from routes import drivers_bp, pricing_bp, ratings_bp, admin_bp, payments_bp, webhook_bp, booking_bp, upload_bp, jobs_bp, tracking_bp, driver_bp, operator_bp, push_bp, service_area_bp, recurring_bp, referrals_bp
+from routes import drivers_bp, pricing_bp, ratings_bp, admin_bp, payments_bp, webhook_bp, booking_bp, upload_bp, jobs_bp, tracking_bp, driver_bp, operator_bp, push_bp, service_area_bp, recurring_bp, referrals_bp, support_bp
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -96,6 +96,7 @@ app.register_blueprint(push_bp)
 app.register_blueprint(service_area_bp)
 app.register_blueprint(recurring_bp)
 app.register_blueprint(referrals_bp)
+app.register_blueprint(support_bp)
 
 # ---------------------------------------------------------------------------
 # Input sanitization middleware (XSS / injection prevention)
@@ -148,6 +149,23 @@ def set_security_headers(response):
 # ---------------------------------------------------------------------------
 with app.app_context():
     sqlalchemy_db.create_all()
+
+
+# ---------------------------------------------------------------------------
+# Flask CLI command:  flask db-migrate
+# ---------------------------------------------------------------------------
+import click
+
+@app.cli.command("db-migrate")
+def cli_db_migrate():
+    """Run database migrations (add new columns / create new tables)."""
+    from migrate import run_migrations
+    url = app.config["SQLALCHEMY_DATABASE_URI"]
+    click.echo("Running JunkOS database migrations...")
+    actions = run_migrations(url)
+    for action in actions:
+        click.echo("  -> {}".format(action))
+    click.echo("Migration complete.")
 
 
 # ---------------------------------------------------------------------------

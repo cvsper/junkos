@@ -88,7 +88,8 @@ struct BookingRequest: Codable {
     let scheduledDatetime: String
     let notes: String?
     let customer: CustomerInfo
-    
+    let referralCode: String?
+
     enum CodingKeys: String, CodingKey {
         case address
         case zipCode = "zip_code"
@@ -97,6 +98,7 @@ struct BookingRequest: Codable {
         case scheduledDatetime = "scheduled_datetime"
         case notes
         case customer
+        case referralCode = "referral_code"
     }
 }
 
@@ -238,6 +240,21 @@ struct ForgotPasswordResponse: Codable {
 struct APIError: Codable {
     let error: String
     let details: String?
+}
+
+// MARK: - Referral Code Response
+struct ReferralCodeResponse: Codable {
+    let success: Bool
+    let referralCode: String
+    let totalReferrals: Int?
+    let creditsEarned: Double?
+
+    enum CodingKeys: String, CodingKey {
+        case success
+        case referralCode = "referral_code"
+        case totalReferrals = "total_referrals"
+        case creditsEarned = "credits_earned"
+    }
 }
 
 // MARK: - Generic API Response

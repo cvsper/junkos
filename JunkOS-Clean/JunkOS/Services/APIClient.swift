@@ -150,14 +150,19 @@ class APIClient {
         photos: [Data],
         scheduledDateTime: String,
         customer: CustomerInfo,
-        notes: String?
+        notes: String?,
+        referralCode: String? = nil
     ) async throws -> BookingResponse {
         // Convert photos to base64
         let base64Photos = photos.map { $0.base64EncodedString() }
-        
+
         // Format address
         let fullAddress = address.fullAddress
-        
+
+        // Only pass referral code if non-empty
+        let code = referralCode?.trimmingCharacters(in: .whitespaces)
+        let effectiveCode = (code?.isEmpty == false) ? code : nil
+
         let bookingRequest = BookingRequest(
             address: fullAddress,
             zipCode: address.zipCode,
@@ -165,17 +170,18 @@ class APIClient {
             photos: base64Photos,
             scheduledDatetime: scheduledDateTime,
             notes: notes,
-            customer: customer
+            customer: customer,
+            referralCode: effectiveCode
         )
-        
+
         let body = try JSONEncoder().encode(bookingRequest)
-        
+
         let request = try createRequest(
             endpoint: "/api/bookings",
             method: "POST",
             body: body
         )
-        
+
         return try await performRequest(request)
     }
     
@@ -241,5 +247,17 @@ class APIClient {
         let request = try createRequest(endpoint: "/api/health")
         let response: [String: String] = try await performRequest(request)
         return response["status"] == "healthy"
+    }
+
+    // MARK: - Referrals
+
+    /// Get the current user's referral code
+    func getReferralCode() async throws -> ReferralCodeResponse {
+        var request = try createRequest(endpoint: "/api/referrals/my-code")
+        // Attach auth token
+        if let authToken = UserDefaults.standard.string(forKey: "authToken") {
+            request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+        }
+        return try await performRequest(request)
     }
 }

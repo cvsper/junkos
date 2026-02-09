@@ -12,6 +12,7 @@ struct AccountView: View {
     @State private var showLogoutAlert = false
     @State private var showEditProfile = false
     @State private var showPaymentMethods = false
+    @State private var showReferral = false
 
     var body: some View {
         ScrollView {
@@ -48,6 +49,18 @@ struct AccountView: View {
         }
         .sheet(isPresented: $showPaymentMethods) {
             PaymentMethodsSheet()
+        }
+        .sheet(isPresented: $showReferral) {
+            NavigationStack {
+                ReferralView()
+                    .environmentObject(authManager)
+                    .toolbar {
+                        ToolbarItem(placement: .topBarLeading) {
+                            Button("Done") { showReferral = false }
+                                .foregroundColor(.junkPrimary)
+                        }
+                    }
+            }
         }
         .alert(
             authManager.currentUser?.id == "guest" ? "Exit Guest Mode" : "Log Out",
@@ -183,6 +196,10 @@ struct AccountView: View {
             Divider().padding(.leading, 56)
             AccountMenuItem(icon: "creditcard.fill", title: "Payment Methods", color: .categoryBlue) {
                 showPaymentMethods = true
+            }
+            Divider().padding(.leading, 56)
+            AccountMenuItem(icon: "gift.fill", title: "Refer a Friend", color: .categoryOrange) {
+                showReferral = true
             }
             Divider().padding(.leading, 56)
             AccountMenuItem(icon: "doc.text.fill", title: "Terms & Privacy", color: .categoryPurple) {

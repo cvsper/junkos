@@ -32,6 +32,9 @@ enum NotificationCategory: String, CaseIterable {
 // MARK: - NotificationManager
 
 class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterDelegate {
+    /// Shared singleton for accessing push token methods from outside SwiftUI
+    static let shared = NotificationManager()
+
     // MARK: - Published Properties
     @Published var isPermissionGranted = false
 
@@ -122,7 +125,21 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
 
     /// Register the device token with the backend
     func registerToken(_ token: String) {
-        guard let url = URL(string: "\(baseURL)/api/notifications/register") else {
+        // Store token locally for re-registration after login
+        UserDefaults.standard.set(token, forKey: "pushDeviceToken")
+        sendTokenToBackend(token)
+    }
+
+    /// Re-send stored device token to backend (call after login)
+    func reRegisterTokenIfNeeded() {
+        guard let token = UserDefaults.standard.string(forKey: "pushDeviceToken"),
+              !token.isEmpty else { return }
+        sendTokenToBackend(token)
+    }
+
+    /// Send the push token to the backend API
+    private func sendTokenToBackend(_ token: String) {
+        guard let url = URL(string: "\(baseURL)/api/push/register-token") else {
             print("Invalid notification registration URL")
             return
         }
@@ -132,15 +149,22 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
         request.addValue(apiKey, forHTTPHeaderField: "X-API-Key")
 
+        // Attach auth token if available
+        if let authToken = UserDefaults.standard.string(forKey: "authToken") {
+            request.addValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+        }
+
         let body: [String: Any] = [
             "token": token,
-            "platform": "ios"
+            "platform": "ios",
+            "app_type": "customer"
         ]
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
 
         URLSession.shared.dataTask(with: request) { data, response, error in
             if let error = error {
                 print("Error registering notification token: \(error.localizedDescription)")
+                UserDefaults.standard.set(false, forKey: "pushTokenRegistered")
                 return
             }
 
@@ -150,8 +174,10 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
             }
 
             if httpResponse.statusCode == 200 {
+                UserDefaults.standard.set(true, forKey: "pushTokenRegistered")
                 print("Notification token registered successfully")
             } else {
+                UserDefaults.standard.set(false, forKey: "pushTokenRegistered")
                 print("Notification token registration failed with status: \(httpResponse.statusCode)")
             }
         }.resume()

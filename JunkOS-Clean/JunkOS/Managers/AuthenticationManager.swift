@@ -331,10 +331,13 @@ class AuthenticationManager: ObservableObject {
         self.currentUser = user
         self.authToken = token
         self.isAuthenticated = true
-        
+
         // Store auth token
         UserDefaults.standard.set(token, forKey: "authToken")
         UserDefaults.standard.set(user.id, forKey: "userId")
+
+        // Re-register push token with the backend now that we have auth
+        NotificationManager.shared.reRegisterTokenIfNeeded()
     }
     
     private func loadStoredAuth() {

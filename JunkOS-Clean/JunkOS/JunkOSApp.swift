@@ -36,7 +36,7 @@ struct JunkOSApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @StateObject private var bookingData = BookingData()
     @StateObject private var authManager = AuthenticationManager()
-    @StateObject private var notificationManager = NotificationManager()
+    @ObservedObject private var notificationManager = NotificationManager.shared
     @State private var showingSplash = true
     @State private var didSetupNotifications = false
 

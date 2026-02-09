@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/auth-store";
+import { SupportChat } from "@/components/support-chat";
 
 export default function CustomerLayout({
   children,
@@ -94,6 +95,9 @@ export default function CustomerLayout({
 
       {/* Main Content */}
       <main className="flex-1">{children}</main>
+
+      {/* Support Chat Widget */}
+      <SupportChat />
     </div>
   );
 }

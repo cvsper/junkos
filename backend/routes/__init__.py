@@ -16,6 +16,7 @@ from .push import push_bp
 from .service_area import service_area_bp
 from .recurring import recurring_bp
 from .referrals import referrals_bp
+from .support import support_bp
 
 __all__ = [
     "drivers_bp",
@@ -34,4 +35,5 @@ __all__ = [
     "service_area_bp",
     "recurring_bp",
     "referrals_bp",
+    "support_bp",
 ]

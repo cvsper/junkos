@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { adminApi } from "@/lib/api";
+import type { OnboardingChecks } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -24,6 +26,9 @@ import {
   Phone,
   Building2,
   Info,
+  CheckCircle2,
+  Circle,
+  Rocket,
 } from "lucide-react";
 
 // ---------------------------------------------------------------------------
@@ -129,11 +134,43 @@ export default function AdminSettingsPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
+  // ---- Onboarding Checklist State ----
+  const [onboarding, setOnboarding] = useState<OnboardingChecks | null>(null);
+  const [onboardingLoading, setOnboardingLoading] = useState(true);
+
   // Load persisted settings on mount (client-only)
   useEffect(() => {
     setGeneral(loadFromStorage<GeneralSettings>(LS_KEY_GENERAL, DEFAULT_GENERAL));
     setSchedule(loadFromStorage<DaySchedule[]>(LS_KEY_SCHEDULE, DEFAULT_SCHEDULE));
   }, []);
+
+  // Fetch onboarding status
+  const fetchOnboarding = useCallback(async () => {
+    setOnboardingLoading(true);
+    try {
+      const res = await adminApi.getOnboardingStatus();
+      setOnboarding(
+        (res as { success: boolean; checks: OnboardingChecks }).checks
+      );
+    } catch {
+      // If the endpoint isn't available, show a sensible default.
+      // Admin is viewing the page so admin_created is true.
+      // Service area is always hardcoded to true.
+      setOnboarding({
+        stripe_configured: false,
+        admin_created: true,
+        pricing_configured: false,
+        service_area_defined: true,
+        contractor_registered: false,
+      });
+    } finally {
+      setOnboardingLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchOnboarding();
+  }, [fetchOnboarding]);
 
   // ---- Handlers ----
 
@@ -213,6 +250,132 @@ export default function AdminSettingsPage() {
       )}
 
       <div className="space-y-8 max-w-4xl">
+        {/* ---------------------------------------------------------------- */}
+        {/* Section 0: Onboarding Checklist                                   */}
+        {/* ---------------------------------------------------------------- */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 font-display text-lg">
+              <Rocket className="h-5 w-5 text-primary" />
+              Launch Readiness Checklist
+            </CardTitle>
+            <CardDescription>
+              Complete these steps to go live with your junk removal service.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {onboardingLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                <span className="ml-2 text-sm text-muted-foreground">
+                  Checking readiness...
+                </span>
+              </div>
+            ) : onboarding ? (
+              <>
+                {/* Progress summary */}
+                {(() => {
+                  const checks = [
+                    onboarding.stripe_configured,
+                    onboarding.admin_created,
+                    onboarding.pricing_configured,
+                    onboarding.service_area_defined,
+                    onboarding.contractor_registered,
+                  ];
+                  const completed = checks.filter(Boolean).length;
+                  const total = checks.length;
+                  const allDone = completed === total;
+
+                  return (
+                    <div className="mb-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-sm font-medium">
+                          {allDone
+                            ? "All checks passed -- you are ready to launch!"
+                            : `${completed} of ${total} steps completed`}
+                        </p>
+                        <Badge
+                          variant={allDone ? "default" : "secondary"}
+                          className="text-xs"
+                        >
+                          {allDone ? "Ready" : "In Progress"}
+                        </Badge>
+                      </div>
+                      <div className="w-full bg-muted rounded-full h-2">
+                        <div
+                          className="bg-primary h-2 rounded-full transition-all"
+                          style={{
+                            width: `${(completed / total) * 100}%`,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Checklist items */}
+                <div className="space-y-3">
+                  {[
+                    {
+                      label: "Stripe payment keys configured",
+                      description:
+                        "STRIPE_SECRET_KEY and STRIPE_PUBLISHABLE_KEY environment variables are set.",
+                      done: onboarding.stripe_configured,
+                    },
+                    {
+                      label: "Admin account created",
+                      description:
+                        "At least one admin user exists and can access the dashboard.",
+                      done: onboarding.admin_created,
+                    },
+                    {
+                      label: "Pricing configured",
+                      description:
+                        "Item category prices and fee settings have been saved.",
+                      done: onboarding.pricing_configured,
+                    },
+                    {
+                      label: "Service area defined",
+                      description:
+                        "Geographic service zones are configured for dispatch.",
+                      done: onboarding.service_area_defined,
+                    },
+                    {
+                      label: "At least 1 contractor registered",
+                      description:
+                        "An approved contractor is available to accept jobs.",
+                      done: onboarding.contractor_registered,
+                    },
+                  ].map((item) => (
+                    <div
+                      key={item.label}
+                      className="flex items-start gap-3 rounded-md border border-border p-3"
+                    >
+                      {item.done ? (
+                        <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400 shrink-0 mt-0.5" />
+                      ) : (
+                        <Circle className="h-5 w-5 text-muted-foreground/40 shrink-0 mt-0.5" />
+                      )}
+                      <div>
+                        <p
+                          className={`text-sm font-medium ${
+                            item.done ? "" : "text-muted-foreground"
+                          }`}
+                        >
+                          {item.label}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {item.description}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : null}
+          </CardContent>
+        </Card>
+
         {/* ---------------------------------------------------------------- */}
         {/* Section 1: General Settings                                       */}
         {/* ---------------------------------------------------------------- */}
