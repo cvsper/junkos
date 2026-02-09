@@ -460,6 +460,22 @@ def portal_create_booking():
     _notify_nearby_contractors(job)
     sqlalchemy_db.session.commit()
 
+    # Send confirmation email and SMS
+    from notifications import send_booking_confirmation_email, send_booking_sms
+    date_str = selected_date[:10] if selected_date and isinstance(selected_date, str) else "TBD"
+    if email:
+        send_booking_confirmation_email(
+            to_email=email,
+            customer_name=name,
+            booking_id=job.id,
+            address=address,
+            scheduled_date=date_str,
+            scheduled_time=selected_time,
+            total_amount=total_amount,
+        )
+    if phone:
+        send_booking_sms(phone, job.id, date_str, address)
+
     return jsonify({
         "success": True,
         "bookingId": job.id,

@@ -83,16 +83,20 @@ def send_verification_code():
         'expires_at': expires_at
     }
     
-    # TODO: Send SMS via Twilio
-    # For demo, print to console
-    print(f"📱 SMS Code for {phone_number}: {code}")
-    
-    return jsonify({
+    # Send SMS via Twilio (falls back to console print in dev mode)
+    from notifications import send_verification_sms
+    send_verification_sms(phone_number, code)
+
+    response_data = {
         'success': True,
         'message': 'Verification code sent',
-        # Include code in response for demo (remove in production!)
-        'code': code
-    })
+    }
+    # Include code in response only when Twilio is not configured (dev mode)
+    import os
+    if not os.environ.get("TWILIO_ACCOUNT_SID"):
+        response_data['code'] = code
+
+    return jsonify(response_data)
 
 @auth_bp.route('/verify-code', methods=['POST'])
 def verify_code():
@@ -284,10 +288,10 @@ def forgot_password():
         if not found:
             return jsonify({'error': 'No account found with that email'}), 404
 
-    # Generate reset token (in production, send via email)
+    # Generate reset token and send via email
     reset_token = secrets.token_urlsafe(32)
-    # TODO: Send reset email via SendGrid/Mailgun
-    print(f"🔑 Password reset token for {email}: {reset_token}")
+    from notifications import send_password_reset_email
+    send_password_reset_email(email, reset_token)
 
     return jsonify({
         'success': True,

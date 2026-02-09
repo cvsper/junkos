@@ -15,3 +15,5 @@ geopy==2.4.1
 eventlet==0.35.1
 Werkzeug==3.0.1
 SQLAlchemy==2.0.36
+twilio==9.0.4
+sendgrid==6.11.0
