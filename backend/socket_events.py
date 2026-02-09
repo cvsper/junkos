@@ -64,6 +64,24 @@ def handle_admin_leave():
     leave_room("admin")
 
 
+@socketio.on("operator:join")
+def handle_operator_join(data):
+    """Operator joins their room to receive delegated job notifications."""
+    operator_id = data.get("operator_id")
+    if operator_id:
+        room = f"operator:{operator_id}"
+        join_room(room)
+        emit("joined", {"room": room}, room=request.sid)
+
+
+@socketio.on("operator:leave")
+def handle_operator_leave(data):
+    """Operator leaves their room."""
+    operator_id = data.get("operator_id")
+    if operator_id:
+        leave_room(f"operator:{operator_id}")
+
+
 @socketio.on("customer:join")
 def handle_customer_join(data):
     """Customer joins a job room to receive live tracking updates."""
@@ -139,7 +157,7 @@ def notify_nearby_drivers(job):
         socketio.emit("job:new", job.to_dict(), namespace="/")
         return
 
-    contractors = Contractor.query.filter_by(is_online=True, approval_status="approved").all()
+    contractors = Contractor.query.filter_by(is_online=True, approval_status="approved", is_operator=False).all()
     for c in contractors:
         if c.current_lat is None or c.current_lng is None:
             continue

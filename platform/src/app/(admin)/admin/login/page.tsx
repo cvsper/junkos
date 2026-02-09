@@ -24,19 +24,29 @@ export default function AdminLoginPage() {
 
       // Map the backend user response to the frontend User type.
       // The backend may not return all User fields, so we fill in defaults.
+      const backendRole = (response.user as unknown as { role?: string }).role || "admin";
       const mappedUser: User = {
         id: response.user.id,
         email: response.user.email,
         name: response.user.name || "",
         phone: (response.user as unknown as { phoneNumber?: string }).phoneNumber || response.user.phone || "",
-        role: "admin" as const,
+        role: backendRole as User["role"],
         emailVerified: true,
         createdAt: response.user.createdAt || "",
         updatedAt: response.user.updatedAt || "",
       };
 
       useAuthStore.getState().login(mappedUser, response.token);
-      router.push("/admin");
+
+      if (backendRole === "operator") {
+        router.push("/operator");
+      } else if (backendRole === "admin") {
+        router.push("/admin");
+      } else {
+        setError("This account does not have admin or operator access.");
+        useAuthStore.getState().logout();
+        return;
+      }
     } catch (err) {
       if (err instanceof ApiError) {
         setError(err.message);

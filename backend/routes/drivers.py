@@ -11,7 +11,7 @@ import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from models import db, User, Contractor, Job, Notification, generate_uuid, utcnow
+from models import db, User, Contractor, Job, Notification, OperatorInvite, generate_uuid, utcnow
 from auth_routes import require_auth
 
 drivers_bp = Blueprint("drivers", __name__, url_prefix="/api/drivers")
@@ -42,6 +42,9 @@ def register_contractor(user_id):
 
     data = request.get_json() or {}
 
+    is_operator = bool(data.get("is_operator", False))
+    invite_code = data.get("invite_code")
+
     contractor = Contractor(
         id=generate_uuid(),
         user_id=user.id,
@@ -51,8 +54,28 @@ def register_contractor(user_id):
         truck_type=data.get("truck_type"),
         truck_capacity=data.get("truck_capacity"),
         approval_status="pending",
+        is_operator=is_operator,
     )
-    user.role = "driver"
+
+    if is_operator:
+        user.role = "operator"
+    else:
+        user.role = "driver"
+
+    # Handle invite code — link contractor to an operator's fleet
+    if invite_code and not is_operator:
+        invite = OperatorInvite.query.filter_by(
+            invite_code=invite_code, is_active=True
+        ).first()
+        if invite:
+            now = utcnow()
+            expired = invite.expires_at and invite.expires_at < now
+            maxed = invite.use_count >= invite.max_uses
+            if not expired and not maxed:
+                contractor.operator_id = invite.operator_id
+                invite.use_count += 1
+                if invite.use_count >= invite.max_uses:
+                    invite.is_active = False
 
     db.session.add(contractor)
     db.session.commit()

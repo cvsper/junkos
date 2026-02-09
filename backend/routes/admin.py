@@ -85,15 +85,38 @@ def list_contractors(user_id):
     page = request.args.get("page", 1, type=int)
     per_page = request.args.get("per_page", 20, type=int)
 
+    type_filter = request.args.get("type")
+
     query = Contractor.query
     if status_filter:
         query = query.filter_by(approval_status=status_filter)
+    if type_filter == "operator":
+        query = query.filter_by(is_operator=True)
+    elif type_filter == "fleet":
+        query = query.filter(Contractor.operator_id.isnot(None), Contractor.is_operator == False)
+    elif type_filter == "independent":
+        query = query.filter(Contractor.operator_id.is_(None), Contractor.is_operator == False)
 
     pagination = query.order_by(Contractor.created_at.desc()).paginate(page=page, per_page=per_page, error_out=False)
 
+    contractors = []
+    for c in pagination.items:
+        c_data = c.to_dict()
+        # Add operator name for fleet contractors
+        if c.operator_id and c.operator:
+            c_data["operator_name"] = c.operator.user.name if c.operator.user else None
+        else:
+            c_data["operator_name"] = None
+        # Add fleet size for operators
+        if c.is_operator:
+            c_data["fleet_size"] = Contractor.query.filter_by(operator_id=c.id).count()
+        else:
+            c_data["fleet_size"] = 0
+        contractors.append(c_data)
+
     return jsonify({
         "success": True,
-        "contractors": [c.to_dict() for c in pagination.items],
+        "contractors": contractors,
         "total": pagination.total,
         "page": pagination.page,
         "pages": pagination.pages,
@@ -144,6 +167,39 @@ def suspend_contractor(user_id, contractor_id):
         title="Account Suspended",
         body="Your contractor account has been suspended. Please contact support.",
         data={"approval_status": "suspended"},
+    )
+    db.session.add(notification)
+    db.session.commit()
+
+    return jsonify({"success": True, "contractor": contractor.to_dict()}), 200
+
+
+@admin_bp.route("/contractors/<contractor_id>/promote-operator", methods=["PUT"])
+@require_admin
+def promote_contractor_to_operator(user_id, contractor_id):
+    """Promote a contractor to operator status."""
+    contractor = db.session.get(Contractor, contractor_id)
+    if not contractor:
+        return jsonify({"error": "Contractor not found"}), 404
+
+    if contractor.is_operator:
+        return jsonify({"error": "Contractor is already an operator"}), 409
+
+    contractor.is_operator = True
+    contractor.updated_at = utcnow()
+
+    # Update the associated user role to operator
+    user = db.session.get(User, contractor.user_id)
+    if user:
+        user.role = "operator"
+
+    notification = Notification(
+        id=generate_uuid(),
+        user_id=contractor.user_id,
+        type="system",
+        title="Promoted to Operator",
+        body="You have been promoted to operator status. You can now manage a fleet of contractors.",
+        data={"is_operator": True},
     )
     db.session.add(notification)
     db.session.commit()
@@ -512,6 +568,36 @@ def assign_job(user_id, job_id):
     if contractor.approval_status != "approved":
         return jsonify({"error": "Contractor is not approved"}), 403
 
+    # If assigning to an operator, set as delegating (operator will assign to fleet)
+    if contractor.is_operator:
+        job.operator_id = contractor.id
+        if job.status in ("pending", "confirmed"):
+            job.status = "delegating"
+        job.updated_at = utcnow()
+
+        # Notify operator
+        notification = Notification(
+            id=generate_uuid(),
+            user_id=contractor.user_id,
+            type="job_assigned",
+            title="New Job for Delegation",
+            body="A job at {} needs delegation to your fleet.".format(job.address or "an address"),
+            data={"job_id": job.id, "address": job.address, "total_price": job.total_price},
+        )
+        db.session.add(notification)
+        db.session.commit()
+
+        from socket_events import broadcast_job_status, socketio
+        broadcast_job_status(job.id, job.status, {"operator_id": contractor.id})
+        socketio.emit("operator:new-job", {
+            "job_id": job.id,
+            "address": job.address,
+            "total_price": job.total_price,
+        }, room="operator:{}".format(contractor.id))
+
+        return jsonify({"success": True, "job": job.to_dict()}), 200
+
+    # Regular contractor assignment
     job.driver_id = contractor.id
     if job.status in ("pending", "confirmed"):
         job.status = "assigned"

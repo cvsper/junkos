@@ -97,11 +97,18 @@ class Contractor(db.Model):
     approval_status = Column(String(20), default="pending")
     availability_schedule = Column(JSON, nullable=True, default=dict)
 
+    # Operator fields
+    is_operator = Column(Boolean, default=False)
+    operator_id = Column(String(36), ForeignKey("contractors.id", ondelete="SET NULL"), nullable=True, index=True)
+    operator_commission_rate = Column(Float, default=0.15)
+
     created_at = Column(DateTime, default=utcnow)
     updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
 
     user = relationship("User", back_populates="contractor_profile")
-    jobs = relationship("Job", back_populates="driver", lazy="dynamic")
+    jobs = relationship("Job", back_populates="driver", lazy="dynamic", foreign_keys="Job.driver_id")
+    # Self-referential: operator -> fleet contractors
+    operator = relationship("Contractor", remote_side="Contractor.id", backref="fleet_contractors", foreign_keys=[operator_id])
 
     def to_dict(self):
         return {
@@ -120,6 +127,9 @@ class Contractor(db.Model):
             "total_jobs": self.total_jobs,
             "approval_status": self.approval_status,
             "availability_schedule": self.availability_schedule or {},
+            "is_operator": self.is_operator or False,
+            "operator_id": self.operator_id,
+            "operator_commission_rate": self.operator_commission_rate or 0.15,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
@@ -134,8 +144,10 @@ class Job(db.Model):
     id = Column(String(36), primary_key=True, default=generate_uuid)
     customer_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     driver_id = Column(String(36), ForeignKey("contractors.id", ondelete="SET NULL"), nullable=True, index=True)
+    operator_id = Column(String(36), ForeignKey("contractors.id", ondelete="SET NULL"), nullable=True, index=True)
 
     status = Column(String(30), nullable=False, default="pending")
+    delegated_at = Column(DateTime, nullable=True)
 
     address = Column(Text, nullable=False)
     lat = Column(Float, nullable=True)
@@ -164,7 +176,8 @@ class Job(db.Model):
     updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
 
     customer = relationship("User", foreign_keys=[customer_id], backref="customer_jobs")
-    driver = relationship("Contractor", back_populates="jobs")
+    driver = relationship("Contractor", foreign_keys=[driver_id], back_populates="jobs")
+    operator_rel = relationship("Contractor", foreign_keys=[operator_id], backref="operator_jobs")
     payment = relationship("Payment", back_populates="job", uselist=False, lazy="joined")
     rating = relationship("Rating", back_populates="job", uselist=False, lazy="joined")
 
@@ -178,7 +191,9 @@ class Job(db.Model):
             "id": self.id,
             "customer_id": self.customer_id,
             "driver_id": self.driver_id,
+            "operator_id": self.operator_id,
             "status": self.status,
+            "delegated_at": self.delegated_at.isoformat() if self.delegated_at else None,
             "address": self.address,
             "lat": self.lat,
             "lng": self.lng,
@@ -250,6 +265,7 @@ class Payment(db.Model):
     service_fee = Column(Float, default=0.0)
     commission = Column(Float, default=0.0)
     driver_payout_amount = Column(Float, default=0.0)
+    operator_payout_amount = Column(Float, default=0.0)
     payout_status = Column(String(30), default="pending")
     payment_status = Column(String(30), default="pending")
     tip_amount = Column(Float, default=0.0)
@@ -268,6 +284,7 @@ class Payment(db.Model):
             "service_fee": self.service_fee,
             "commission": self.commission,
             "driver_payout_amount": self.driver_payout_amount,
+            "operator_payout_amount": self.operator_payout_amount or 0.0,
             "payout_status": self.payout_status,
             "payment_status": self.payment_status,
             "tip_amount": self.tip_amount,
@@ -362,5 +379,37 @@ class Notification(db.Model):
             "body": self.body,
             "data": self.data,
             "is_read": self.is_read,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
+
+
+# ---------------------------------------------------------------------------
+# OperatorInvite
+# ---------------------------------------------------------------------------
+class OperatorInvite(db.Model):
+    __tablename__ = "operator_invites"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    operator_id = Column(String(36), ForeignKey("contractors.id", ondelete="CASCADE"), nullable=False, index=True)
+    invite_code = Column(String(20), unique=True, nullable=False, index=True)
+    email = Column(String(255), nullable=True)
+    max_uses = Column(Integer, default=1)
+    use_count = Column(Integer, default=0)
+    expires_at = Column(DateTime, nullable=True)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=utcnow)
+
+    operator = relationship("Contractor", foreign_keys=[operator_id])
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "operator_id": self.operator_id,
+            "invite_code": self.invite_code,
+            "email": self.email,
+            "max_uses": self.max_uses,
+            "use_count": self.use_count,
+            "expires_at": self.expires_at.isoformat() if self.expires_at else None,
+            "is_active": self.is_active,
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }

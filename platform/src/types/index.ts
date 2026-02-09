@@ -2,7 +2,7 @@
 // JunkOS Platform TypeScript Types
 // ============================================
 
-export type UserRole = "customer" | "driver" | "admin";
+export type UserRole = "customer" | "driver" | "admin" | "operator";
 
 export interface User {
   id: string;
@@ -19,6 +19,7 @@ export interface User {
 export type JobStatus =
   | "pending"
   | "confirmed"
+  | "delegating"
   | "assigned"
   | "en_route"
   | "arrived"

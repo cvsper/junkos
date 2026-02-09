@@ -11,6 +11,7 @@ import {
   CheckCircle,
   XCircle,
   Star,
+  Shield,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,33 @@ const FILTER_TABS = [
   { label: "Approved", value: "approved" },
   { label: "Suspended", value: "suspended" },
 ] as const;
+
+const TYPE_TABS = [
+  { label: "All Types", value: "" },
+  { label: "Operators", value: "operator" },
+  { label: "Fleet", value: "fleet" },
+  { label: "Independent", value: "independent" },
+] as const;
+
+function getTypeBadge(c: AdminContractorRecord) {
+  if (c.is_operator) {
+    return (
+      <Badge className="bg-amber-500/15 text-amber-700 border-amber-300 hover:bg-amber-500/25">
+        Operator{c.fleet_size ? ` (${c.fleet_size})` : ""}
+      </Badge>
+    );
+  }
+  if (c.operator_id) {
+    return (
+      <Badge className="bg-blue-500/15 text-blue-700 border-blue-300 hover:bg-blue-500/25">
+        Fleet{c.operator_name ? ` - ${c.operator_name}` : ""}
+      </Badge>
+    );
+  }
+  return (
+    <Badge variant="secondary">Independent</Badge>
+  );
+}
 
 function getApprovalBadge(status: string) {
   const s = status.toLowerCase();
@@ -58,6 +86,7 @@ export default function AdminContractorsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
@@ -69,6 +98,7 @@ export default function AdminContractorsPage() {
     try {
       const filters: Record<string, string | number> = { page, limit: 20 };
       if (filter) filters.approval_status = filter;
+      if (typeFilter) filters.type = typeFilter;
       const res = await adminApi.contractors(filters);
       setContractors(res.contractors || []);
       setTotalPages(res.pages || 1);
@@ -80,7 +110,7 @@ export default function AdminContractorsPage() {
     } finally {
       setLoading(false);
     }
-  }, [filter, page]);
+  }, [filter, typeFilter, page]);
 
   useEffect(() => {
     fetchContractors();
@@ -133,10 +163,31 @@ export default function AdminContractorsPage() {
     }
   };
 
+  const handlePromoteToOperator = async (contractor: AdminContractorRecord) => {
+    const confirmed = window.confirm(
+      `Are you sure you want to promote ${contractor.name || "this contractor"} to Operator? They will be able to manage a fleet of contractors.`
+    );
+    if (!confirmed) return;
+
+    setActionLoading(contractor.id);
+    try {
+      await adminApi.promoteToOperator(contractor.id);
+      await fetchContractors();
+    } catch (err) {
+      alert(
+        err instanceof Error
+          ? err.message
+          : "Failed to promote contractor. Please try again."
+      );
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   // Table skeleton rows
   const SkeletonRow = () => (
     <tr className="border-b border-border">
-      {Array.from({ length: 8 }).map((_, i) => (
+      {Array.from({ length: 9 }).map((_, i) => (
         <td key={i} className="px-4 py-3">
           <div className="h-4 w-full max-w-[100px] rounded bg-muted animate-pulse" />
         </td>
@@ -188,6 +239,20 @@ export default function AdminContractorsPage() {
         )}
       </div>
 
+      {/* Type Filter Tabs */}
+      <div className="flex items-center gap-2 mb-6 flex-wrap">
+        {TYPE_TABS.map((tab) => (
+          <Button
+            key={tab.value}
+            variant={typeFilter === tab.value ? "default" : "outline"}
+            size="sm"
+            onClick={() => { setTypeFilter(tab.value); setPage(1); }}
+          >
+            {tab.label}
+          </Button>
+        ))}
+      </div>
+
       {/* Error State */}
       {error && (
         <Card className="mb-6">
@@ -225,6 +290,9 @@ export default function AdminContractorsPage() {
                     Status
                   </th>
                   <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3">
+                    Type
+                  </th>
+                  <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3">
                     Rating
                   </th>
                   <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3">
@@ -242,7 +310,7 @@ export default function AdminContractorsPage() {
                   ))
                 ) : contractors.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="text-center py-12">
+                    <td colSpan={9} className="text-center py-12">
                       <div className="flex flex-col items-center gap-2">
                         <HardHat className="h-10 w-10 text-muted-foreground/50" />
                         <p className="text-muted-foreground text-sm">
@@ -283,6 +351,9 @@ export default function AdminContractorsPage() {
                         </td>
                         <td className="px-4 py-3">
                           {getApprovalBadge(c.approval_status || "pending")}
+                        </td>
+                        <td className="px-4 py-3">
+                          {getTypeBadge(c)}
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-1">
@@ -329,6 +400,24 @@ export default function AdminContractorsPage() {
                                   <>
                                     <XCircle className="h-3.5 w-3.5 mr-1" />
                                     Suspend
+                                  </>
+                                )}
+                              </Button>
+                            )}
+                            {status === "approved" && !c.is_operator && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                disabled={isActioning}
+                                onClick={() => handlePromoteToOperator(c)}
+                                className="h-8"
+                              >
+                                {isActioning ? (
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                  <>
+                                    <Shield className="h-3.5 w-3.5 mr-1" />
+                                    Promote to Operator
                                   </>
                                 )}
                               </Button>

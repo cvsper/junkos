@@ -11,6 +11,7 @@ from .upload import upload_bp
 from .jobs import jobs_bp
 from .tracking import tracking_bp
 from .driver import driver_bp
+from .operator import operator_bp
 
 __all__ = [
     "drivers_bp",
@@ -24,4 +25,5 @@ __all__ = [
     "jobs_bp",
     "tracking_bp",
     "driver_bp",
+    "operator_bp",
 ]

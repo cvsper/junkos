@@ -37,6 +37,9 @@
 		5C4180CB8AE424D51E75FF1F /* HapticManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FCB1498666015B9BBBC1DF1 /* HapticManager.swift */; };
 		5E9FA33210F489FBB5632E05 /* SocketIOManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF8D49E5C00DA1F5B18B2699 /* SocketIOManager.swift */; };
 		60FCA470DEE7BC6DF3C2D582 /* ContractorRegistrationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3650D5429433D4FB66AA8423 /* ContractorRegistrationView.swift */; };
+		D4C3B2A1F0E9D8C7B6A5F4E3 /* InviteCodeStepView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3D4E5F6A7B8C9D0E1F2A3B4 /* InviteCodeStepView.swift */; };
+		E3D2C1B0A9F8E7D6C5B4A3F2 /* OperatorWebRedirectView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F6A7B8C9D0E1F2A3 /* OperatorWebRedirectView.swift */; };
+		F2E1D0C9B8A7F6E5D4C3B2A1 /* RoleSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6A7B8C9D0E1F2 /* RoleSelectionView.swift */; };
 		73B788CB2FFF7D35CBCB64A8 /* DashboardViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B6653495EF4591ACD6E5C9 /* DashboardViewModel.swift */; };
 		742D649EF5A5BF7294AC2428 /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63007B62EFC23A0A6757B294 /* DashboardView.swift */; };
 		82DEFA8055CC0754E1141F49 /* AfterPhotosView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AA0B3DB0C558CAF78DD76C4 /* AfterPhotosView.swift */; };
@@ -86,6 +89,9 @@
 		24F8F8ADE1A72C73B582B02B /* PayoutSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PayoutSettingsView.swift; sourceTree = "<group>"; };
 		344C45FBFECAA97F6CB507F5 /* ActiveJobMapOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveJobMapOverlay.swift; sourceTree = "<group>"; };
 		3650D5429433D4FB66AA8423 /* ContractorRegistrationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContractorRegistrationView.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F6A7B8C9D0E1F2 /* RoleSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoleSelectionView.swift; sourceTree = "<group>"; };
+		B2C3D4E5F6A7B8C9D0E1F2A3 /* OperatorWebRedirectView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OperatorWebRedirectView.swift; sourceTree = "<group>"; };
+		C3D4E5F6A7B8C9D0E1F2A3B4 /* InviteCodeStepView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InviteCodeStepView.swift; sourceTree = "<group>"; };
 		3988FAD16A2B52B69264800C /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
 		39B6653495EF4591ACD6E5C9 /* DashboardViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardViewModel.swift; sourceTree = "<group>"; };
 		3AC9DCA75B3DE3D624F8A427 /* AuthModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthModels.swift; sourceTree = "<group>"; };
@@ -376,6 +382,9 @@
 			children = (
 				3650D5429433D4FB66AA8423 /* ContractorRegistrationView.swift */,
 				D6FA3831A39891771A43D22D /* DocumentUploadView.swift */,
+				C3D4E5F6A7B8C9D0E1F2A3B4 /* InviteCodeStepView.swift */,
+				B2C3D4E5F6A7B8C9D0E1F2A3 /* OperatorWebRedirectView.swift */,
+				A1B2C3D4E5F6A7B8C9D0E1F2 /* RoleSelectionView.swift */,
 				D1DC4D6D20A3CCC9709A404C /* TruckTypeSelectionView.swift */,
 			);
 			path = Registration;
@@ -484,6 +493,9 @@
 				AA3166875E6CBF7682E70C80 /* ConnectionStatusBanner.swift in Sources */,
 				E0CE3BA170E2D3C662B69492 /* ContractorModels.swift in Sources */,
 				60FCA470DEE7BC6DF3C2D582 /* ContractorRegistrationView.swift in Sources */,
+				D4C3B2A1F0E9D8C7B6A5F4E3 /* InviteCodeStepView.swift in Sources */,
+				E3D2C1B0A9F8E7D6C5B4A3F2 /* OperatorWebRedirectView.swift in Sources */,
+				F2E1D0C9B8A7F6E5D4C3B2A1 /* RoleSelectionView.swift in Sources */,
 				742D649EF5A5BF7294AC2428 /* DashboardView.swift in Sources */,
 				73B788CB2FFF7D35CBCB64A8 /* DashboardViewModel.swift in Sources */,
 				07D3D958F6EC6B2561F6FEAA /* DistanceBadge.swift in Sources */,

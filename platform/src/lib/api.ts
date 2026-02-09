@@ -229,6 +229,8 @@ export interface AdminJobRecord {
   customer_email: string;
   address: string;
   status: string;
+  operator_id?: string;
+  delegated_at?: string;
   scheduled_date: string;
   scheduled_time_slot: string;
   estimated_price: number;
@@ -246,6 +248,10 @@ export interface AdminContractorRecord {
   rating: number;
   total_jobs: number;
   is_online: boolean;
+  is_operator?: boolean;
+  operator_id?: string;
+  operator_name?: string;
+  fleet_size?: number;
   created_at: string;
 }
 
@@ -325,6 +331,11 @@ export const adminApi = {
 
   suspendContractor: (id: string) =>
     apiFetch<{ success: boolean }>(`/api/admin/contractors/${id}/suspend`, {
+      method: "PUT",
+    }),
+
+  promoteToOperator: (id: string) =>
+    apiFetch<{ success: boolean }>(`/api/admin/contractors/${id}/promote-operator`, {
       method: "PUT",
     }),
 
@@ -458,6 +469,120 @@ interface SurgeZoneUpsertData {
   end_time?: string;
   days_of_week?: string[];
 }
+
+// ---------------------------------------------------------------------------
+// Operator API
+// ---------------------------------------------------------------------------
+
+export interface OperatorDashboardData {
+  fleet_size: number;
+  online_count: number;
+  pending_delegation: number;
+  earnings_30d: number;
+}
+
+export interface OperatorFleetContractor {
+  id: string;
+  name: string | null;
+  email: string | null;
+  truck_type: string | null;
+  is_online: boolean;
+  avg_rating: number;
+  total_jobs: number;
+  approval_status: string;
+}
+
+export interface OperatorInvite {
+  id: string;
+  operator_id: string;
+  invite_code: string;
+  email: string | null;
+  max_uses: number;
+  use_count: number;
+  expires_at: string | null;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface OperatorJobRecord {
+  id: string;
+  customer_id: string;
+  driver_id: string | null;
+  operator_id: string | null;
+  status: string;
+  address: string;
+  total_price: number;
+  created_at: string;
+  delegated_at: string | null;
+  driver_name: string | null;
+  customer_name: string | null;
+  customer_email: string | null;
+}
+
+export interface OperatorEarnings {
+  total: number;
+  earnings_30d: number;
+  earnings_7d: number;
+  per_contractor: {
+    contractor_id: string;
+    name: string | null;
+    commission: number;
+    jobs: number;
+  }[];
+}
+
+export const operatorApi = {
+  dashboard: () =>
+    apiFetch<{ success: boolean; dashboard: OperatorDashboardData }>(
+      "/api/operator/dashboard"
+    ),
+
+  fleet: () =>
+    apiFetch<{ success: boolean; contractors: OperatorFleetContractor[] }>(
+      "/api/operator/fleet"
+    ),
+
+  createInvite: (data: { email?: string; max_uses?: number; expires_days?: number }) =>
+    apiFetch<{ success: boolean; invite: OperatorInvite }>(
+      "/api/operator/invites",
+      { method: "POST", body: JSON.stringify(data) }
+    ),
+
+  listInvites: () =>
+    apiFetch<{ success: boolean; invites: OperatorInvite[] }>(
+      "/api/operator/invites"
+    ),
+
+  revokeInvite: (id: string) =>
+    apiFetch<{ success: boolean }>(`/api/operator/invites/${id}`, {
+      method: "DELETE",
+    }),
+
+  jobs: (filter?: string, page?: number) => {
+    const params = new URLSearchParams();
+    if (filter) params.append("filter", filter);
+    if (page) params.append("page", String(page));
+    const query = params.toString();
+    return apiFetch<{
+      success: boolean;
+      jobs: OperatorJobRecord[];
+      total: number;
+      page: number;
+      pages: number;
+    }>(`/api/operator/jobs${query ? `?${query}` : ""}`);
+  },
+
+  delegateJob: (jobId: string, contractorId: string) =>
+    apiFetch<{ success: boolean }>(`/api/operator/jobs/${jobId}/delegate`, {
+      method: "PUT",
+      body: JSON.stringify({ contractor_id: contractorId }),
+    }),
+
+  earnings: () =>
+    apiFetch<{ success: boolean; earnings: OperatorEarnings }>(
+      "/api/operator/earnings"
+    ),
+};
 
 // Re-export the error class for consumers
 export { ApiError };

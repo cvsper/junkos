@@ -402,7 +402,23 @@ def _handle_payment_succeeded(intent):
     payment.payment_status = "succeeded"
     payment.updated_at = utcnow()
 
+    # Recalculate commission split (platform 20%, operator commission from remainder)
+    amount = payment.amount or 0.0
+    platform_commission = round(amount * PLATFORM_COMMISSION, 2)
+    driver_gross = round(amount - platform_commission - (payment.service_fee or 0.0), 2)
+
     job = db.session.get(Job, payment.job_id)
+    operator_payout = 0.0
+    if job and job.operator_id:
+        op = db.session.get(Contractor, job.operator_id)
+        if op:
+            rate = op.operator_commission_rate or 0.15
+            operator_payout = round(driver_gross * rate, 2)
+
+    payment.commission = platform_commission
+    payment.operator_payout_amount = operator_payout
+    payment.driver_payout_amount = round(driver_gross - operator_payout, 2)
+
     if job:
         # Move job from pending to confirmed now that payment succeeded
         if job.status == "pending":
@@ -464,9 +480,18 @@ def _auto_assign_driver(job):
         a = sin(dlat / 2) ** 2 + cos(lat1) * cos(lat2) * sin(dlng / 2) ** 2
         return 2 * EARTH_RADIUS_KM * asin(sqrt(a))
 
-    contractors = Contractor.query.filter_by(
-        is_online=True, approval_status="approved"
-    ).all()
+    query = Contractor.query.filter_by(
+        is_online=True, approval_status="approved", is_operator=False
+    )
+
+    # If job belongs to an operator, only assign to that operator's fleet
+    if job.operator_id:
+        query = query.filter_by(operator_id=job.operator_id)
+    else:
+        # Only independent contractors (not in any fleet)
+        query = query.filter(Contractor.operator_id.is_(None))
+
+    contractors = query.all()
 
     if not contractors:
         return

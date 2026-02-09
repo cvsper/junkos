@@ -14,6 +14,9 @@ final class RegistrationViewModel {
     var currentStep = 0
     let totalSteps = 3
 
+    // Invite code (optional, set before starting registration)
+    var inviteCode: String = ""
+
     // Step 1: Truck
     var selectedTruckType: TruckType?
     var truckCapacity: String = ""
@@ -91,7 +94,9 @@ final class RegistrationViewModel {
                 truckCapacity: capacity,
                 licenseUrl: licenseUrl,
                 insuranceUrl: insuranceUrl,
-                truckPhotos: nil
+                truckPhotos: nil,
+                inviteCode: inviteCode.isEmpty ? nil : inviteCode,
+                isOperator: nil
             )
 
             _ = try await DriverAPIClient.shared.registerContractor(request)

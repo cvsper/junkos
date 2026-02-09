@@ -75,6 +75,8 @@ struct ContractorProfile: Codable, Identifiable {
     let totalJobs: Int
     let approvalStatus: String
     let availabilitySchedule: [String: [String]]?
+    let isOperator: Bool?
+    let operatorId: String?
     let createdAt: String?
     let updatedAt: String?
 
@@ -97,6 +99,8 @@ struct ContractorProfile: Codable, Identifiable {
         case totalJobs = "total_jobs"
         case approvalStatus = "approval_status"
         case availabilitySchedule = "availability_schedule"
+        case isOperator = "is_operator"
+        case operatorId = "operator_id"
         case createdAt = "created_at"
         case updatedAt = "updated_at"
         case user
@@ -120,6 +124,8 @@ struct RegistrationRequest: Codable {
     let licenseUrl: String?
     let insuranceUrl: String?
     let truckPhotos: [String]?
+    let inviteCode: String?
+    let isOperator: Bool?
 
     enum CodingKeys: String, CodingKey {
         case truckType = "truck_type"
@@ -127,6 +133,8 @@ struct RegistrationRequest: Codable {
         case licenseUrl = "license_url"
         case insuranceUrl = "insurance_url"
         case truckPhotos = "truck_photos"
+        case inviteCode = "invite_code"
+        case isOperator = "is_operator"
     }
 }
 

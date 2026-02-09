@@ -32,6 +32,12 @@ export const useAuthStore = create<AuthState>()(
     {
       name: "junkos-auth",
       partialize: (state) => ({ token: state.token, user: state.user }),
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          state.isAuthenticated = !!(state.token && state.user);
+          state.isLoading = false;
+        }
+      },
     }
   )
 );

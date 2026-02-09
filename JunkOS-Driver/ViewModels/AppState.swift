@@ -8,15 +8,24 @@
 
 import Foundation
 
+enum SelectedRole: String {
+    case contractor
+    case operator_
+}
+
 @Observable
 final class AppState {
     // Auth
     let auth = AuthenticationManager()
 
+    // Role selection (before registration)
+    var selectedRole: SelectedRole?
+
     // Contractor
     var contractorProfile: ContractorProfile?
     var isRegistered: Bool { contractorProfile != nil }
     var isApproved: Bool { contractorProfile?.approval == .approved }
+    var isOperator: Bool { contractorProfile?.isOperator == true }
 
     // Online status
     var isOnline = false

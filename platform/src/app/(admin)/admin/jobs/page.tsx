@@ -35,6 +35,13 @@ const STATUS_TABS = [
 
 function getStatusBadge(status: string) {
   const s = status.toLowerCase();
+  if (s === "delegating") {
+    return (
+      <Badge className="bg-orange-500/15 text-orange-700 border-orange-300 hover:bg-orange-500/25">
+        {status}
+      </Badge>
+    );
+  }
   if (s === "pending" || s === "confirmed") {
     return (
       <Badge className="bg-yellow-500/15 text-yellow-700 border-yellow-300 hover:bg-yellow-500/25">
@@ -125,7 +132,7 @@ function ActionDropdown({
   }, []);
 
   const canAssign =
-    job.status === "pending" || job.status === "confirmed";
+    job.status === "pending" || job.status === "confirmed" || job.status === "delegating";
   const canCancel =
     job.status !== "completed" && job.status !== "cancelled";
 
@@ -275,53 +282,108 @@ function AssignDriverModal({
               </p>
             </div>
           ) : (
-            <div className="space-y-2">
-              {contractors.map((c) => (
-                <div
-                  key={c.id}
-                  className="flex items-center justify-between rounded-lg border border-border p-3 hover:bg-muted/30 transition-colors"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <span className="text-sm font-medium text-primary">
-                        {(c.name || "?")[0]?.toUpperCase()}
-                      </span>
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium truncate">
-                        {c.name || "Unnamed"}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {c.truck_type || "No vehicle info"}
-                        {c.is_online && (
-                          <span className="ml-2 text-green-600">
-                            ● Online
-                          </span>
-                        )}
-                        {!c.is_online && (
-                          <span className="ml-2 text-muted-foreground">
-                            ○ Offline
-                          </span>
-                        )}
-                      </p>
-                    </div>
+            <div className="space-y-4">
+              {/* Operators Section */}
+              {contractors.filter((c) => c.is_operator).length > 0 && (
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Fleet Operators</p>
+                  <div className="space-y-2">
+                    {contractors.filter((c) => c.is_operator).map((c) => (
+                      <div
+                        key={c.id}
+                        className="flex items-center justify-between rounded-lg border border-amber-200 bg-amber-50/50 p-3 hover:bg-amber-50 transition-colors"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-9 h-9 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+                            <span className="text-sm font-medium text-amber-700">
+                              {(c.name || "?")[0]?.toUpperCase()}
+                            </span>
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium truncate">
+                              {c.name || "Unnamed"}
+                              <Badge className="ml-2 bg-amber-500/15 text-amber-700 border-amber-300 text-xs">
+                                Operator{c.fleet_size ? ` (${c.fleet_size} drivers)` : ""}
+                              </Badge>
+                            </p>
+                          </div>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={assigning !== null}
+                          onClick={() => handleAssign(c.id)}
+                          className="border-amber-300 text-amber-700 hover:bg-amber-100"
+                        >
+                          {assigning === c.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <>
+                              <Check className="h-4 w-4 mr-1" />
+                              Delegate
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    ))}
                   </div>
-                  <Button
-                    size="sm"
-                    disabled={assigning !== null}
-                    onClick={() => handleAssign(c.id)}
-                  >
-                    {assigning === c.id ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <>
-                        <Check className="h-4 w-4 mr-1" />
-                        Assign
-                      </>
-                    )}
-                  </Button>
                 </div>
-              ))}
+              )}
+
+              {/* Regular Contractors Section */}
+              {contractors.filter((c) => !c.is_operator).length > 0 && (
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Contractors</p>
+                  <div className="space-y-2">
+                    {contractors.filter((c) => !c.is_operator).map((c) => (
+                      <div
+                        key={c.id}
+                        className="flex items-center justify-between rounded-lg border border-border p-3 hover:bg-muted/30 transition-colors"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                            <span className="text-sm font-medium text-primary">
+                              {(c.name || "?")[0]?.toUpperCase()}
+                            </span>
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium truncate">
+                              {c.name || "Unnamed"}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {c.truck_type || "No vehicle info"}
+                              {c.is_online && (
+                                <span className="ml-2 text-green-600">
+                                  ● Online
+                                </span>
+                              )}
+                              {!c.is_online && (
+                                <span className="ml-2 text-muted-foreground">
+                                  ○ Offline
+                                </span>
+                              )}
+                            </p>
+                          </div>
+                        </div>
+                        <Button
+                          size="sm"
+                          disabled={assigning !== null}
+                          onClick={() => handleAssign(c.id)}
+                        >
+                          {assigning === c.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <>
+                              <Check className="h-4 w-4 mr-1" />
+                              Assign
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -473,7 +535,7 @@ export default function AdminJobsPage() {
 
   const SkeletonRow = () => (
     <tr className="border-b border-border">
-      {Array.from({ length: 7 }).map((_, i) => (
+      {Array.from({ length: 8 }).map((_, i) => (
         <td key={i} className="px-4 py-3">
           <div className="h-4 w-full max-w-[120px] rounded bg-muted animate-pulse" />
         </td>
@@ -559,6 +621,9 @@ export default function AdminJobsPage() {
                     Status
                   </th>
                   <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3">
+                    Operator
+                  </th>
+                  <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3">
                     Scheduled
                   </th>
                   <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3">
@@ -576,7 +641,7 @@ export default function AdminJobsPage() {
                   ))
                 ) : jobs.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="text-center py-12">
+                    <td colSpan={8} className="text-center py-12">
                       <div className="flex flex-col items-center gap-2">
                         <Briefcase className="h-10 w-10 text-muted-foreground/50" />
                         <p className="text-muted-foreground text-sm">
@@ -609,6 +674,11 @@ export default function AdminJobsPage() {
                       </td>
                       <td className="px-4 py-3">
                         {getStatusBadge(job.status)}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-muted-foreground">
+                        {job.operator_id
+                          ? <Badge className="bg-amber-500/15 text-amber-700 border-amber-300 text-xs">Operator</Badge>
+                          : "-"}
                       </td>
                       <td className="px-4 py-3 text-sm text-muted-foreground">
                         {formatDate(job.scheduled_date)}
