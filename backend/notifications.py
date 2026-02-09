@@ -1,9 +1,18 @@
 """
 Notification services for JunkOS.
-Twilio SMS for phone verification, SendGrid for booking confirmations.
+
+Email: Resend (preferred) or SendGrid (legacy fallback).
+SMS: Twilio.
+
+IMPORTANT: No function in this module should ever raise an exception.
+All errors are caught and logged so that a notification failure never
+takes down a booking or payment flow.
 """
 
 import os
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
@@ -17,81 +26,155 @@ TWILIO_FROM_NUMBER = os.environ.get("TWILIO_FROM_NUMBER", "")
 
 
 def _get_twilio():
+    """Lazily initialise the Twilio client."""
     global _twilio_client
     if _twilio_client is None and TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN:
-        from twilio.rest import Client
-        _twilio_client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+        try:
+            from twilio.rest import Client
+            _twilio_client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+        except Exception:
+            logger.exception("Failed to initialise Twilio client")
     return _twilio_client
 
 
 def send_sms(to_number, body):
-    """Send an SMS via Twilio. Returns message SID or None in dev mode."""
-    client = _get_twilio()
-    if not client or not TWILIO_FROM_NUMBER:
-        print("[DEV] SMS to {}: {}".format(to_number, body))
-        return None
+    """Send an SMS via Twilio. Returns message SID or None.
 
-    message = client.messages.create(
-        body=body,
-        from_=TWILIO_FROM_NUMBER,
-        to=to_number,
-    )
-    return message.sid
+    Never raises. Logs errors and returns None on failure.
+    """
+    try:
+        client = _get_twilio()
+        if not client or not TWILIO_FROM_NUMBER:
+            logger.info("[DEV] SMS to %s: %s", to_number, body)
+            return None
+
+        message = client.messages.create(
+            body=body,
+            from_=TWILIO_FROM_NUMBER,
+            to=to_number,
+        )
+        logger.info("SMS sent to %s (SID: %s)", to_number, message.sid)
+        return message.sid
+    except Exception:
+        logger.exception("Failed to send SMS to %s", to_number)
+        return None
 
 
 def send_verification_sms(phone_number, code):
-    """Send a verification code via SMS."""
-    body = "Your JunkOS verification code is: {}. It expires in 10 minutes.".format(code)
-    return send_sms(phone_number, body)
+    """Send a verification code via SMS. Never raises."""
+    try:
+        body = "Your JunkOS verification code is: {}. It expires in 10 minutes.".format(code)
+        return send_sms(phone_number, body)
+    except Exception:
+        logger.exception("Failed in send_verification_sms for %s", phone_number)
+        return None
 
 
 def send_booking_sms(phone_number, booking_id, scheduled_date, address):
-    """Send booking confirmation via SMS."""
-    body = (
-        "JunkOS Booking Confirmed!\n"
-        "Booking: #{}\n"
-        "Date: {}\n"
-        "Address: {}\n\n"
-        "We'll send a reminder 24h before your pickup."
-    ).format(booking_id[:8], scheduled_date, address)
-    return send_sms(phone_number, body)
+    """Send booking confirmation via SMS. Never raises."""
+    try:
+        short_id = str(booking_id)[:8] if booking_id else "N/A"
+        body = (
+            "JunkOS Booking Confirmed!\n"
+            "Booking: #{}\n"
+            "Date: {}\n"
+            "Address: {}\n\n"
+            "We'll send a reminder 24h before your pickup."
+        ).format(short_id, scheduled_date, address)
+        return send_sms(phone_number, body)
+    except Exception:
+        logger.exception("Failed in send_booking_sms for %s", phone_number)
+        return None
 
 
 # ---------------------------------------------------------------------------
-# SendGrid Email
+# Email — Resend (preferred) or SendGrid (legacy fallback)
 # ---------------------------------------------------------------------------
+RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "")
 SENDGRID_API_KEY = os.environ.get("SENDGRID_API_KEY", "")
-SENDGRID_FROM_EMAIL = os.environ.get("SENDGRID_FROM_EMAIL", "bookings@junkos.com")
-SENDGRID_FROM_NAME = os.environ.get("SENDGRID_FROM_NAME", "JunkOS")
+EMAIL_FROM = os.environ.get("EMAIL_FROM",
+                            os.environ.get("SENDGRID_FROM_EMAIL", "bookings@junkos.com"))
+EMAIL_FROM_NAME = os.environ.get("EMAIL_FROM_NAME",
+                                 os.environ.get("SENDGRID_FROM_NAME", "JunkOS"))
 
 
 def send_email(to_email, subject, html_content):
-    """Send an email via SendGrid. Returns status code or None in dev mode."""
-    if not SENDGRID_API_KEY:
-        print("[DEV] Email to {}: {} - {}".format(to_email, subject, html_content[:100]))
+    """Send an email via Resend (preferred) or SendGrid (fallback).
+
+    Returns a status indicator or None in dev mode. Never raises.
+    """
+    try:
+        # --- Resend (preferred) ---
+        if RESEND_API_KEY:
+            return _send_email_resend(to_email, subject, html_content)
+
+        # --- SendGrid (legacy fallback) ---
+        if SENDGRID_API_KEY:
+            return _send_email_sendgrid(to_email, subject, html_content)
+
+        # --- Dev mode: no email provider configured ---
+        logger.info(
+            "[DEV] Email to %s: %s — %s",
+            to_email, subject, html_content[:120],
+        )
+        return None
+    except Exception:
+        logger.exception("Failed to send email to %s", to_email)
         return None
 
-    from sendgrid import SendGridAPIClient
-    from sendgrid.helpers.mail import Mail
 
-    message = Mail(
-        from_email=(SENDGRID_FROM_EMAIL, SENDGRID_FROM_NAME),
-        to_emails=to_email,
-        subject=subject,
-        html_content=html_content,
-    )
+def _send_email_resend(to_email, subject, html_content):
+    """Send via the Resend API. Returns the response id or None."""
+    try:
+        import resend
+        resend.api_key = RESEND_API_KEY
 
-    sg = SendGridAPIClient(SENDGRID_API_KEY)
-    response = sg.send(message)
-    return response.status_code
+        params = {
+            "from": "{} <{}>".format(EMAIL_FROM_NAME, EMAIL_FROM),
+            "to": [to_email],
+            "subject": subject,
+            "html": html_content,
+        }
+        response = resend.Emails.send(params)
+        logger.info("Email sent via Resend to %s (id: %s)", to_email, response.get("id"))
+        return response.get("id")
+    except Exception:
+        logger.exception("Resend email failed for %s", to_email)
+        return None
 
 
+def _send_email_sendgrid(to_email, subject, html_content):
+    """Send via SendGrid. Returns status code or None."""
+    try:
+        from sendgrid import SendGridAPIClient
+        from sendgrid.helpers.mail import Mail
+
+        message = Mail(
+            from_email=(EMAIL_FROM, EMAIL_FROM_NAME),
+            to_emails=to_email,
+            subject=subject,
+            html_content=html_content,
+        )
+        sg = SendGridAPIClient(SENDGRID_API_KEY)
+        response = sg.send(message)
+        logger.info("Email sent via SendGrid to %s (status: %s)", to_email, response.status_code)
+        return response.status_code
+    except Exception:
+        logger.exception("SendGrid email failed for %s", to_email)
+        return None
+
+
+# ---------------------------------------------------------------------------
+# Booking confirmation email
+# ---------------------------------------------------------------------------
 def send_booking_confirmation_email(to_email, customer_name, booking_id, address,
                                      scheduled_date, scheduled_time, total_amount):
-    """Send a booking confirmation email."""
-    subject = "Your JunkOS Booking is Confirmed! #{}".format(booking_id[:8])
+    """Send a booking confirmation email. Never raises."""
+    try:
+        short_id = str(booking_id)[:8] if booking_id else "N/A"
+        subject = "Your JunkOS Booking is Confirmed! #{}".format(short_id)
 
-    html = """
+        html = """
     <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #fafaf8; padding: 40px 20px;">
         <div style="text-align: center; margin-bottom: 30px;">
             <h1 style="color: #2d8a6e; font-size: 28px; margin: 0;">JunkOS</h1>
@@ -136,23 +219,30 @@ def send_booking_confirmation_email(to_email, customer_name, booking_id, address
             <p>Palm Beach & Broward County</p>
         </div>
     </div>
-    """.format(
-        name=customer_name or "there",
-        id=booking_id[:8],
-        address=address,
-        date=scheduled_date,
-        time=scheduled_time,
-        total="{:.2f}".format(total_amount),
-    )
+        """.format(
+            name=customer_name or "there",
+            id=short_id,
+            address=address or "",
+            date=scheduled_date or "TBD",
+            time=scheduled_time or "",
+            total="{:.2f}".format(float(total_amount)) if total_amount else "0.00",
+        )
 
-    return send_email(to_email, subject, html)
+        return send_email(to_email, subject, html)
+    except Exception:
+        logger.exception("Failed in send_booking_confirmation_email for %s", to_email)
+        return None
 
 
+# ---------------------------------------------------------------------------
+# Password reset email
+# ---------------------------------------------------------------------------
 def send_password_reset_email(to_email, reset_token):
-    """Send a password reset email."""
-    subject = "Reset Your JunkOS Password"
+    """Send a password reset email. Never raises."""
+    try:
+        subject = "Reset Your JunkOS Password"
 
-    html = """
+        html = """
     <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #fafaf8; padding: 40px 20px;">
         <div style="text-align: center; margin-bottom: 30px;">
             <h1 style="color: #2d8a6e; font-size: 28px; margin: 0;">JunkOS</h1>
@@ -166,6 +256,9 @@ def send_password_reset_email(to_email, reset_token):
             <p style="color: #6b7280; font-size: 14px;">This link expires in 1 hour. If you didn't request this, you can safely ignore this email.</p>
         </div>
     </div>
-    """.format(token=reset_token)
+        """.format(token=reset_token)
 
-    return send_email(to_email, subject, html)
+        return send_email(to_email, subject, html)
+    except Exception:
+        logger.exception("Failed in send_password_reset_email for %s", to_email)
+        return None

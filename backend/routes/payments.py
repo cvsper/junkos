@@ -12,6 +12,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from models import db, Job, Payment, Contractor, User, Notification, generate_uuid, utcnow
 from auth_routes import require_auth
+from extensions import limiter
 
 payments_bp = Blueprint("payments", __name__, url_prefix="/api/payments")
 
@@ -31,6 +32,7 @@ def _get_stripe():
 
 
 @payments_bp.route("/create-intent", methods=["POST"])
+@limiter.limit("10 per minute")
 @require_auth
 def create_payment_intent(user_id):
     """
@@ -205,6 +207,7 @@ def trigger_payout(user_id, job_id):
 
 
 @payments_bp.route("/create-intent-simple", methods=["POST"])
+@limiter.limit("10 per minute")
 def create_simple_payment_intent():
     """
     Create a Stripe PaymentIntent without auth (for customer portal / iOS app).
@@ -275,6 +278,7 @@ def create_simple_payment_intent():
 
 
 @payments_bp.route("/confirm-simple", methods=["POST"])
+@limiter.limit("10 per minute")
 @require_auth
 def confirm_simple_payment(user_id):
     """

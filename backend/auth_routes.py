@@ -11,6 +11,7 @@ import datetime
 from functools import wraps
 
 from models import db, User
+from extensions import limiter
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/api/auth')
 
@@ -18,9 +19,18 @@ auth_bp = Blueprint('auth', __name__, url_prefix='/api/auth')
 verification_codes = {}  # phone_number: {code, expires_at}
 users_db = {}  # user_id: {id, name, email, phone, password_hash}
 
-# JWT secret — persistent across restarts
+# JWT secret — read from env (shared with app_config.Config.JWT_SECRET)
 import os
-JWT_SECRET = os.environ.get('JWT_SECRET', 'junkos-jwt-default-secret-2026')
+import logging as _logging
+_auth_logger = _logging.getLogger(__name__)
+
+JWT_SECRET = os.environ.get('JWT_SECRET', '')
+if not JWT_SECRET:
+    # Generate a random secret for development; will rotate on restart
+    import secrets as _s
+    JWT_SECRET = 'dev-only-' + _s.token_hex(32)
+    if os.environ.get('FLASK_ENV', 'development') != 'development':
+        _auth_logger.warning("JWT_SECRET is not set! Using a random value that will not survive restarts.")
 
 # MARK: - Helper Functions
 
@@ -148,6 +158,7 @@ def verify_code():
 # MARK: - Email Authentication Routes
 
 @auth_bp.route('/signup', methods=['POST'])
+@limiter.limit("3 per minute")
 def signup():
     """Create new user account with email/password"""
     from werkzeug.security import generate_password_hash
@@ -193,6 +204,7 @@ def signup():
     })
 
 @auth_bp.route('/login', methods=['POST'])
+@limiter.limit("5 per minute")
 def login():
     """Login with email and password"""
     data = request.get_json(force=True)
@@ -273,6 +285,7 @@ def apple_signin():
 # MARK: - Forgot Password
 
 @auth_bp.route('/forgot-password', methods=['POST'])
+@limiter.limit("3 per minute")
 def forgot_password():
     """Request a password reset link"""
     data = request.get_json()
@@ -341,8 +354,10 @@ def seed_admin():
     secret = data.get('secret')
     email = data.get('email')
 
-    # Use env var or fallback for initial setup
-    expected = os.environ.get('ADMIN_SEED_SECRET', 'junkos-seed-2026')
+    # Use env var — no hardcoded fallback for security
+    expected = os.environ.get('ADMIN_SEED_SECRET', '')
+    if not expected:
+        return jsonify({'error': 'ADMIN_SEED_SECRET is not configured'}), 503
     if secret != expected:
         return jsonify({'error': 'Unauthorized'}), 403
 

@@ -4,6 +4,9 @@ from functools import wraps
 from datetime import datetime, timedelta
 import os
 
+from sanitize import sanitize_dict
+from extensions import limiter
+
 from app_config import Config
 from database import Database
 from auth_routes import auth_bp
@@ -30,11 +33,45 @@ else:
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 # ---------------------------------------------------------------------------
+# CORS configuration
+# ---------------------------------------------------------------------------
+_is_development = os.environ.get("FLASK_ENV", "development") == "development"
+
+_DEFAULT_ORIGINS = [
+    "https://platform-olive-nu.vercel.app",
+    "https://landing-page-premium-five.vercel.app",
+    "https://junkos-backend.onrender.com",
+]
+
+_cors_env = os.environ.get("CORS_ORIGINS", "")
+if _cors_env:
+    # Honour explicit env-var override (comma-separated list)
+    _allowed_origins = [o.strip() for o in _cors_env.split(",") if o.strip()]
+elif _is_development:
+    _allowed_origins = "*"
+else:
+    _allowed_origins = _DEFAULT_ORIGINS
+
+# ---------------------------------------------------------------------------
 # Initialize extensions
 # ---------------------------------------------------------------------------
-CORS(app, resources={r"/api/*": {"origins": app.config.get("CORS_ORIGINS", "*")}})
+CORS(app, resources={r"/api/*": {"origins": _allowed_origins}})
 sqlalchemy_db.init_app(app)
-socketio.init_app(app, cors_allowed_origins="*", async_mode="eventlet")
+socketio.init_app(app, cors_allowed_origins=_allowed_origins, async_mode="eventlet")
+
+# ---------------------------------------------------------------------------
+# Rate limiting (in-memory; upgrade to Redis via RATELIMIT_STORAGE_URI)
+# ---------------------------------------------------------------------------
+limiter.init_app(
+    app,
+    default_limits=["100 per minute"],
+    enabled=not app.config.get("TESTING", False),
+)
+
+
+@app.errorhandler(429)
+def ratelimit_handler(e):
+    return jsonify({"error": "Rate limit exceeded. Please try again later."}), 429
 
 # Legacy SQLite database (kept for backward compatibility with existing endpoints)
 legacy_db = Database(app.config["DATABASE_PATH"])
@@ -55,6 +92,52 @@ app.register_blueprint(jobs_bp)
 app.register_blueprint(tracking_bp)
 app.register_blueprint(driver_bp)
 app.register_blueprint(operator_bp)
+
+# ---------------------------------------------------------------------------
+# Input sanitization middleware (XSS / injection prevention)
+# ---------------------------------------------------------------------------
+# Paths that must NOT have their bodies sanitized (file uploads, webhooks).
+_SANITIZE_SKIP_PREFIXES = ("/api/bookings/upload-photos", "/uploads/", "/api/webhooks/")
+
+
+@app.before_request
+def sanitize_json_input():
+    """Sanitize all string values in incoming JSON bodies.
+
+    Skips file-upload and webhook endpoints so that binary payloads and
+    third-party webhook signatures are not corrupted.
+    """
+    if request.path.startswith(_SANITIZE_SKIP_PREFIXES):
+        return  # skip
+
+    if request.is_json:
+        try:
+            raw = request.get_json(silent=True)
+            if raw is not None:
+                # Replace the parsed JSON cache with sanitized data so that
+                # downstream calls to request.get_json() return clean values.
+                request._cached_data = request.get_data()
+                sanitized = sanitize_dict(raw)
+                request._json = sanitized  # type: ignore[attr-defined]
+        except Exception:
+            pass  # If JSON parsing fails, let the route handler deal with it.
+
+
+# ---------------------------------------------------------------------------
+# Security headers middleware
+# ---------------------------------------------------------------------------
+@app.after_request
+def set_security_headers(response):
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+    response.headers["Content-Security-Policy"] = "default-src 'none'"
+    if not _is_development:
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    return response
+
 
 # ---------------------------------------------------------------------------
 # Create all SQLAlchemy tables on startup
