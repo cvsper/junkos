@@ -108,7 +108,9 @@
 
           // Ensure we have a booking
           if (!bookingId) {
-            bookingId = 'BOOK-' + Date.now();
+            ev.complete('fail');
+            error.set('No booking found. Please go back and try again.');
+            return;
           }
 
           // Create payment intent
@@ -141,6 +143,20 @@
 
   async function createBooking() {
     try {
+      // Extract a 24h time string from the selected time slot (e.g. "8:00 AM - 10:00 AM" -> "08:00")
+      let timeForBackend = $formData.selectedTime;
+      if (typeof timeForBackend === 'string' && timeForBackend.includes('AM') || typeof timeForBackend === 'string' && timeForBackend.includes('PM')) {
+        const match = timeForBackend.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+        if (match) {
+          let hours = parseInt(match[1], 10);
+          const minutes = match[2];
+          const period = match[3].toUpperCase();
+          if (period === 'PM' && hours !== 12) hours += 12;
+          if (period === 'AM' && hours === 12) hours = 0;
+          timeForBackend = `${String(hours).padStart(2, '0')}:${minutes}`;
+        }
+      }
+
       const result = await api.createBooking({
         address: $formData.address,
         addressDetails: $formData.addressDetails,
@@ -149,16 +165,20 @@
         quantity: $formData.quantity,
         photoUrls: $formData.photoUrls,
         selectedDate: $formData.selectedDate,
-        selectedTime: $formData.selectedTime,
+        selectedTime: timeForBackend,
         estimate: $formData.estimate,
         customerInfo: $formData.customerInfo,
         totalAmount: $formData.estimate?.total || 0,
       });
 
-      bookingId = result.bookingId || 'BOOK-' + Date.now();
+      bookingId = result.bookingId || result.booking_id || null;
+      if (!bookingId) {
+        console.error('Booking created but no bookingId returned:', result);
+        error.set('Booking was created but we could not retrieve its ID. Please contact support.');
+      }
     } catch (err) {
-      // Generate a local booking ID if backend is unavailable
-      bookingId = 'BOOK-' + Date.now();
+      console.error('Failed to create booking:', err);
+      error.set('Could not create your booking. Please check your connection and try again.');
     }
   }
 
@@ -172,6 +192,11 @@
 
     if (!stripe || !cardElement) {
       error.set('Payment system not loaded. Please refresh the page.');
+      return;
+    }
+
+    if (!bookingId) {
+      error.set('No booking found. Please go back and try again.');
       return;
     }
 
@@ -212,12 +237,7 @@
         paymentSuccess = true;
       }
     } catch (err) {
-      // If backend is unavailable, show demo success for testing
-      if (err.message && err.message.includes('Failed to create payment intent')) {
-        paymentSuccess = true;
-      } else {
-        error.set(err.message);
-      }
+      error.set(err.message || 'Payment failed. Please try again.');
     } finally {
       processingPayment = false;
     }
@@ -308,6 +328,17 @@
         Secure checkout powered by Stripe.
       </p>
     </div>
+
+    <!-- Global Error Display -->
+    {#if $error}
+      <div class="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 flex items-start gap-3" transition:fly={{ y: -10, duration: 200 }}>
+        <AlertCircle class="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
+        <div>
+          <p class="text-sm font-semibold text-red-800">Something went wrong</p>
+          <p class="text-xs text-red-600 mt-0.5">{$error}</p>
+        </div>
+      </div>
+    {/if}
 
     <!-- Payment Summary -->
     <div class="bg-warm-50 rounded-xl p-5 mb-6 border border-warm-200">

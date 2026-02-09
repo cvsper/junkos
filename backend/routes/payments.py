@@ -203,15 +203,17 @@ def trigger_payout(user_id, job_id):
 @payments_bp.route("/create-intent-simple", methods=["POST"])
 def create_simple_payment_intent():
     """
-    Create a Stripe PaymentIntent without auth (for customer portal).
-    Body JSON: bookingId (str), amount (float)
+    Create a Stripe PaymentIntent without auth (for customer portal / iOS app).
+    Body JSON: amount (float, in dollars, required), bookingId (str, optional),
+               customerEmail (str, optional)
     """
     data = request.get_json() or {}
     booking_id = data.get("bookingId") or data.get("booking_id")
+    customer_email = data.get("customerEmail") or data.get("customer_email")
     amount = float(data.get("amount", 0))
 
-    if not booking_id or amount <= 0:
-        return jsonify({"error": "bookingId and amount are required"}), 400
+    if amount <= 0:
+        return jsonify({"error": "amount is required and must be positive"}), 400
 
     stripe = _get_stripe()
     stripe_key = os.environ.get("STRIPE_SECRET_KEY", "")
@@ -219,13 +221,22 @@ def create_simple_payment_intent():
     intent_id = None
     client_secret = None
 
+    metadata = {}
+    if booking_id:
+        metadata["booking_id"] = booking_id
+    if customer_email:
+        metadata["customer_email"] = customer_email
+
     if stripe_key:
         try:
-            intent = stripe.PaymentIntent.create(
-                amount=int(amount * 100),
-                currency="usd",
-                metadata={"booking_id": booking_id},
-            )
+            intent_kwargs = {
+                "amount": int(amount * 100),
+                "currency": "usd",
+                "metadata": metadata,
+            }
+            if customer_email:
+                intent_kwargs["receipt_email"] = customer_email
+            intent = stripe.PaymentIntent.create(**intent_kwargs)
             intent_id = intent.id
             client_secret = intent.client_secret
         except Exception as e:
@@ -235,20 +246,56 @@ def create_simple_payment_intent():
         intent_id = "pi_dev_{}".format(generate_uuid()[:8])
         client_secret = "{}_secret_dev".format(intent_id)
 
-    # Link intent to the job's payment record
-    payment = Payment.query.filter_by(job_id=booking_id).first()
-    if payment:
-        payment.stripe_payment_intent_id = intent_id
-        payment.amount = amount
-        payment.payment_status = "pending"
-        payment.updated_at = utcnow()
-        db.session.commit()
+    # Link intent to the job's payment record if booking exists
+    if booking_id:
+        payment = Payment.query.filter_by(job_id=booking_id).first()
+        if payment:
+            payment.stripe_payment_intent_id = intent_id
+            payment.amount = amount
+            payment.payment_status = "pending"
+            payment.updated_at = utcnow()
+            db.session.commit()
 
     return jsonify({
         "success": True,
         "clientSecret": client_secret,
         "paymentIntentId": intent_id,
     }), 201
+
+
+@payments_bp.route("/confirm-simple", methods=["POST"])
+def confirm_simple_payment():
+    """
+    Confirm / mark a payment as succeeded without auth (for customer portal / iOS app).
+    In production, Stripe webhooks handle the actual confirmation; this endpoint
+    lets the client signal that the user completed the payment flow so the backend
+    can optimistically update the record.
+    Body JSON: paymentIntentId (str, required), paymentMethodType (str, optional)
+    """
+    data = request.get_json() or {}
+    intent_id = data.get("paymentIntentId") or data.get("payment_intent_id")
+
+    if not intent_id:
+        return jsonify({"error": "paymentIntentId is required"}), 400
+
+    # Look up existing payment record
+    payment = Payment.query.filter_by(stripe_payment_intent_id=intent_id).first()
+
+    if payment:
+        payment.payment_status = "succeeded"
+        payment.updated_at = utcnow()
+
+        job = db.session.get(Job, payment.job_id)
+        if job and job.status == "pending":
+            job.status = "confirmed"
+            job.updated_at = utcnow()
+
+        db.session.commit()
+
+    return jsonify({
+        "success": True,
+        "message": "Payment confirmed",
+    }), 200
 
 
 @payments_bp.route("/earnings", methods=["GET"])

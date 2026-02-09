@@ -11,47 +11,34 @@ import PassKit
 
 // MARK: - Payment Models
 
-/// Response from POST /api/payments/create-intent
+/// Response from POST /api/payments/create-intent-simple
+/// The backend returns camelCase keys: clientSecret, paymentIntentId
 struct PaymentIntentResponse: Codable {
     let clientSecret: String
     let paymentIntentId: String
 
-    enum CodingKeys: String, CodingKey {
-        case clientSecret = "client_secret"
-        case paymentIntentId = "payment_intent_id"
-    }
+    // The simple endpoint returns camelCase keys directly,
+    // so no custom CodingKeys mapping needed.
 }
 
-/// Response from POST /api/payments/confirm
+/// Response from POST /api/payments/confirm-simple
 struct PaymentConfirmResponse: Codable {
     let success: Bool
     let message: String?
 }
 
-/// Request body for creating a payment intent
+/// Request body for creating a payment intent via the simple (no-auth) endpoint.
+/// The backend expects: amount (float, in dollars), bookingId (string).
 private struct CreateIntentRequest: Codable {
-    let amount: Int          // Amount in cents
-    let currency: String
-    let bookingId: Int?
+    let amount: Double       // Amount in dollars (e.g. 149.00)
+    let bookingId: String?
     let customerEmail: String?
-
-    enum CodingKeys: String, CodingKey {
-        case amount
-        case currency
-        case bookingId = "booking_id"
-        case customerEmail = "customer_email"
-    }
 }
 
-/// Request body for confirming a payment
+/// Request body for confirming a payment via the simple (no-auth) endpoint
 private struct ConfirmPaymentRequest: Codable {
     let paymentIntentId: String
     let paymentMethodType: String
-
-    enum CodingKeys: String, CodingKey {
-        case paymentIntentId = "payment_intent_id"
-        case paymentMethodType = "payment_method_type"
-    }
 }
 
 // MARK: - Payment Error
@@ -122,7 +109,9 @@ class PaymentService: ObservableObject {
 
     // MARK: - Create Payment Intent
 
-    /// Creates a PaymentIntent on the backend and returns the client secret
+    /// Creates a PaymentIntent on the backend and returns the client secret.
+    /// Uses the `/api/payments/create-intent-simple` endpoint which does not
+    /// require JWT authentication (suitable for guest / customer checkout).
     /// - Parameters:
     ///   - amountInDollars: The total amount to charge in dollars (e.g., 149.00)
     ///   - bookingId: Optional booking ID to associate with the payment
@@ -131,7 +120,7 @@ class PaymentService: ObservableObject {
     @MainActor
     func createPaymentIntent(
         amountInDollars: Double,
-        bookingId: Int? = nil,
+        bookingId: String? = nil,
         customerEmail: String? = nil
     ) async throws -> PaymentIntentResponse {
         isProcessing = true
@@ -139,18 +128,15 @@ class PaymentService: ObservableObject {
 
         defer { isProcessing = false }
 
-        let amountInCents = Int(amountInDollars * 100)
-
         let requestBody = CreateIntentRequest(
-            amount: amountInCents,
-            currency: "usd",
+            amount: amountInDollars,
             bookingId: bookingId,
             customerEmail: customerEmail
         )
 
         let body = try JSONEncoder().encode(requestBody)
 
-        guard let url = URL(string: config.baseURL + "/api/payments/create-intent") else {
+        guard let url = URL(string: config.baseURL + "/api/payments/create-intent-simple") else {
             let error = PaymentError.invalidURL
             lastError = error
             throw error
@@ -203,7 +189,9 @@ class PaymentService: ObservableObject {
 
     // MARK: - Confirm Payment
 
-    /// Confirms a payment on the backend after client-side authorization
+    /// Confirms a payment on the backend after client-side authorization.
+    /// Uses the `/api/payments/confirm-simple` endpoint which does not
+    /// require JWT authentication (suitable for guest / customer checkout).
     /// - Parameters:
     ///   - paymentIntentId: The ID of the PaymentIntent to confirm
     ///   - paymentMethodType: The method used (e.g., "apple_pay" or "card")
@@ -225,7 +213,7 @@ class PaymentService: ObservableObject {
 
         let body = try JSONEncoder().encode(requestBody)
 
-        guard let url = URL(string: config.baseURL + "/api/payments/confirm") else {
+        guard let url = URL(string: config.baseURL + "/api/payments/confirm-simple") else {
             let error = PaymentError.invalidURL
             lastError = error
             throw error

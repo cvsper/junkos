@@ -564,6 +564,27 @@ def assign_job(user_id, job_id):
     return jsonify({"success": True, "job": job.to_dict()}), 200
 
 
+@admin_bp.route("/jobs/<job_id>/cancel", methods=["PUT"])
+@require_admin
+def admin_cancel_job(user_id, job_id):
+    """Admin cancels a job regardless of ownership."""
+    job = db.session.get(Job, job_id)
+    if not job:
+        return jsonify({"error": "Job not found"}), 404
+
+    if job.status in ("completed", "cancelled"):
+        return jsonify({"error": "Job cannot be cancelled in its current status"}), 409
+
+    job.status = "cancelled"
+    job.updated_at = utcnow()
+    db.session.commit()
+
+    from socket_events import broadcast_job_status
+    broadcast_job_status(job.id, "cancelled", {})
+
+    return jsonify({"success": True, "job": job.to_dict()}), 200
+
+
 @admin_bp.route("/pricing/rules", methods=["GET"])
 @require_admin
 def list_pricing_rules(user_id):

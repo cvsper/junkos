@@ -9,7 +9,7 @@ from database import Database
 from auth_routes import auth_bp
 from models import db as sqlalchemy_db
 from socket_events import socketio
-from routes import drivers_bp, pricing_bp, ratings_bp, admin_bp, payments_bp, webhook_bp, booking_bp, upload_bp, jobs_bp, tracking_bp
+from routes import drivers_bp, pricing_bp, ratings_bp, admin_bp, payments_bp, webhook_bp, booking_bp, upload_bp, jobs_bp, tracking_bp, driver_bp
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -53,6 +53,7 @@ app.register_blueprint(booking_bp)
 app.register_blueprint(upload_bp)
 app.register_blueprint(jobs_bp)
 app.register_blueprint(tracking_bp)
+app.register_blueprint(driver_bp)
 
 # ---------------------------------------------------------------------------
 # Create all SQLAlchemy tables on startup
@@ -425,6 +426,21 @@ def portal_create_booking():
     scheduled_at = None
     selected_date = data.get("selectedDate")
     selected_time = data.get("selectedTime", "09:00")
+
+    # Normalize time: convert "8:00 AM - 10:00 AM" or "2:00 PM" to "HH:MM"
+    if selected_time and isinstance(selected_time, str):
+        import re
+        am_pm_match = re.match(r"(\d{1,2}):(\d{2})\s*(AM|PM)", selected_time, re.IGNORECASE)
+        if am_pm_match:
+            hour = int(am_pm_match.group(1))
+            minute = am_pm_match.group(2)
+            period = am_pm_match.group(3).upper()
+            if period == "PM" and hour != 12:
+                hour += 12
+            if period == "AM" and hour == 12:
+                hour = 0
+            selected_time = "{:02d}:{}".format(hour, minute)
+
     if selected_date:
         try:
             date_str = selected_date[:10] if isinstance(selected_date, str) else selected_date.strftime("%Y-%m-%d")

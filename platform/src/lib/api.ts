@@ -360,6 +360,19 @@ export const adminApi = {
       { method: "POST", body: JSON.stringify(data) }
     ),
 
+  /** PUT /api/admin/jobs/:id/assign -- assign contractor to job */
+  assignJob: (jobId: string, contractorId: string) =>
+    apiFetch<{ success: boolean }>(`/api/admin/jobs/${jobId}/assign`, {
+      method: "PUT",
+      body: JSON.stringify({ contractor_id: contractorId }),
+    }),
+
+  /** PUT /api/admin/jobs/:id/cancel -- cancel a job */
+  cancelJob: (jobId: string) =>
+    apiFetch<{ success: boolean }>(`/api/admin/jobs/${jobId}/cancel`, {
+      method: "PUT",
+    }),
+
   /** GET /api/admin/map-data -- live map contractors + jobs */
   mapData: () =>
     apiFetch<{

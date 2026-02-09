@@ -190,6 +190,10 @@ struct LiveMapView: View {
             guard newId != nil, let job = appState.consumeJobAlert() else { return }
             mapVM.showJobAlert(job)
         }
+        .onChange(of: appState.socket.assignedJobId) { _, newId in
+            guard let jobId = appState.consumeAssignment() else { return }
+            mapVM.handleAssignment(jobId: jobId)
+        }
     }
 
     private func handleStatusUpdate(for job: DriverJob) async {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import {
   Loader2,
   AlertCircle,
@@ -9,11 +9,21 @@ import {
   ChevronRight,
   Briefcase,
   MoreHorizontal,
+  UserPlus,
+  XCircle,
+  Eye,
+  Check,
+  X,
+  Truck,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { adminApi, type AdminJobRecord } from "@/lib/api";
+import {
+  adminApi,
+  type AdminJobRecord,
+  type AdminContractorRecord,
+} from "@/lib/api";
 
 const STATUS_TABS = [
   { label: "All", value: "" },
@@ -55,9 +65,7 @@ function getStatusBadge(status: string) {
     );
   }
   if (s === "cancelled") {
-    return (
-      <Badge variant="destructive">{status}</Badge>
-    );
+    return <Badge variant="destructive">{status}</Badge>;
   }
   return <Badge variant="secondary">{status}</Badge>;
 }
@@ -88,6 +96,330 @@ function formatPrice(amount: number | undefined | null): string {
   })}`;
 }
 
+// ---------------------------------------------------------------------------
+// Action Dropdown
+// ---------------------------------------------------------------------------
+
+function ActionDropdown({
+  job,
+  onAssign,
+  onViewDetails,
+  onCancel,
+}: {
+  job: AdminJobRecord;
+  onAssign: () => void;
+  onViewDetails: () => void;
+  onCancel: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const canAssign =
+    job.status === "pending" || job.status === "confirmed";
+  const canCancel =
+    job.status !== "completed" && job.status !== "cancelled";
+
+  return (
+    <div className="relative" ref={ref}>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-8 w-8"
+        onClick={() => setOpen(!open)}
+      >
+        <MoreHorizontal className="h-4 w-4" />
+      </Button>
+      {open && (
+        <div className="absolute right-0 top-full mt-1 w-48 rounded-md border border-border bg-card shadow-lg z-50">
+          <div className="py-1">
+            <button
+              className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-muted transition-colors"
+              onClick={() => {
+                setOpen(false);
+                onViewDetails();
+              }}
+            >
+              <Eye className="h-4 w-4 text-muted-foreground" />
+              View Details
+            </button>
+            {canAssign && (
+              <button
+                className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-muted transition-colors text-primary font-medium"
+                onClick={() => {
+                  setOpen(false);
+                  onAssign();
+                }}
+              >
+                <UserPlus className="h-4 w-4" />
+                Assign Driver
+              </button>
+            )}
+            {canCancel && (
+              <button
+                className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-muted transition-colors text-destructive"
+                onClick={() => {
+                  setOpen(false);
+                  onCancel();
+                }}
+              >
+                <XCircle className="h-4 w-4" />
+                Cancel Job
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Assign Driver Modal
+// ---------------------------------------------------------------------------
+
+function AssignDriverModal({
+  job,
+  onClose,
+  onAssigned,
+}: {
+  job: AdminJobRecord;
+  onClose: () => void;
+  onAssigned: () => void;
+}) {
+  const [contractors, setContractors] = useState<AdminContractorRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [assigning, setAssigning] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const res = await adminApi.contractors({ status: "approved" });
+        setContractors(res.contractors || []);
+      } catch {
+        setError("Failed to load drivers");
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, []);
+
+  const handleAssign = async (contractorId: string) => {
+    setAssigning(contractorId);
+    setError(null);
+    try {
+      await adminApi.assignJob(job.id, contractorId);
+      onAssigned();
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to assign driver"
+      );
+      setAssigning(null);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div
+        className="absolute inset-0 bg-black/50"
+        onClick={onClose}
+      />
+      <div className="relative bg-card border border-border rounded-lg shadow-xl w-full max-w-lg mx-4 max-h-[80vh] flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+          <div>
+            <h2 className="font-display text-lg font-bold">Assign Driver</h2>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              Job {truncateId(job.id)} — {job.address || "No address"}
+            </p>
+          </div>
+          <Button variant="ghost" size="icon" onClick={onClose}>
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto px-6 py-4">
+          {error && (
+            <div className="mb-4 rounded-md bg-destructive/10 border border-destructive/20 px-4 py-3">
+              <p className="text-sm text-destructive">{error}</p>
+            </div>
+          )}
+
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              <span className="ml-2 text-sm text-muted-foreground">
+                Loading available drivers...
+              </span>
+            </div>
+          ) : contractors.length === 0 ? (
+            <div className="text-center py-12">
+              <Truck className="h-10 w-10 text-muted-foreground/50 mx-auto mb-3" />
+              <p className="text-sm text-muted-foreground">
+                No approved drivers available.
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Register and approve drivers in the Contractors tab first.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {contractors.map((c) => (
+                <div
+                  key={c.id}
+                  className="flex items-center justify-between rounded-lg border border-border p-3 hover:bg-muted/30 transition-colors"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <span className="text-sm font-medium text-primary">
+                        {(c.name || "?")[0]?.toUpperCase()}
+                      </span>
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">
+                        {c.name || "Unnamed"}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {c.truck_type || "No vehicle info"}
+                        {c.is_online && (
+                          <span className="ml-2 text-green-600">
+                            ● Online
+                          </span>
+                        )}
+                        {!c.is_online && (
+                          <span className="ml-2 text-muted-foreground">
+                            ○ Offline
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    disabled={assigning !== null}
+                    onClick={() => handleAssign(c.id)}
+                  >
+                    {assigning === c.id ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <>
+                        <Check className="h-4 w-4 mr-1" />
+                        Assign
+                      </>
+                    )}
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Job Detail Modal
+// ---------------------------------------------------------------------------
+
+function JobDetailModal({
+  job,
+  onClose,
+}: {
+  job: AdminJobRecord;
+  onClose: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+      <div className="relative bg-card border border-border rounded-lg shadow-xl w-full max-w-md mx-4 max-h-[80vh] overflow-y-auto">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+          <h2 className="font-display text-lg font-bold">Job Details</h2>
+          <Button variant="ghost" size="icon" onClick={onClose}>
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+        <div className="px-6 py-4 space-y-4">
+          <div>
+            <p className="text-xs text-muted-foreground uppercase tracking-wider">
+              Job ID
+            </p>
+            <p className="text-sm font-mono mt-0.5">{job.id}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground uppercase tracking-wider">
+              Customer
+            </p>
+            <p className="text-sm font-medium mt-0.5">
+              {job.customer_name || "--"}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {job.customer_email || ""}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground uppercase tracking-wider">
+              Address
+            </p>
+            <p className="text-sm mt-0.5">{job.address || "--"}</p>
+          </div>
+          <div className="flex gap-8">
+            <div>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider">
+                Status
+              </p>
+              <div className="mt-1">{getStatusBadge(job.status)}</div>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider">
+                Price
+              </p>
+              <p className="text-sm font-medium mt-0.5">
+                {formatPrice(job.final_price ?? job.estimated_price)}
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-8">
+            <div>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider">
+                Scheduled
+              </p>
+              <p className="text-sm mt-0.5">
+                {formatDate(job.scheduled_date)}
+                {job.scheduled_time_slot
+                  ? ` at ${job.scheduled_time_slot}`
+                  : ""}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider">
+                Created
+              </p>
+              <p className="text-sm mt-0.5">{formatDate(job.created_at)}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Main Page
+// ---------------------------------------------------------------------------
+
 export default function AdminJobsPage() {
   const [jobs, setJobs] = useState<AdminJobRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -96,6 +428,10 @@ export default function AdminJobsPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
+
+  // Modals
+  const [assignJob, setAssignJob] = useState<AdminJobRecord | null>(null);
+  const [detailJob, setDetailJob] = useState<AdminJobRecord | null>(null);
 
   const fetchJobs = useCallback(async () => {
     setLoading(true);
@@ -118,13 +454,23 @@ export default function AdminJobsPage() {
     fetchJobs();
   }, [fetchJobs]);
 
-  // Reset page when filter changes
   const handleFilterChange = (value: string) => {
     setStatusFilter(value);
     setPage(1);
   };
 
-  // Table skeleton rows
+  const handleCancelJob = async (job: AdminJobRecord) => {
+    if (!confirm(`Cancel job ${truncateId(job.id)}?`)) return;
+    try {
+      await adminApi.cancelJob(job.id);
+      fetchJobs();
+    } catch (err) {
+      alert(
+        err instanceof Error ? err.message : "Failed to cancel job"
+      );
+    }
+  };
+
   const SkeletonRow = () => (
     <tr className="border-b border-border">
       {Array.from({ length: 7 }).map((_, i) => (
@@ -147,8 +493,15 @@ export default function AdminJobsPage() {
             Manage and monitor all junk removal jobs.
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={fetchJobs} disabled={loading}>
-          <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={fetchJobs}
+          disabled={loading}
+        >
+          <RefreshCw
+            className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`}
+          />
           Refresh
         </Button>
       </div>
@@ -223,10 +576,7 @@ export default function AdminJobsPage() {
                   ))
                 ) : jobs.length === 0 ? (
                   <tr>
-                    <td
-                      colSpan={7}
-                      className="text-center py-12"
-                    >
+                    <td colSpan={7} className="text-center py-12">
                       <div className="flex flex-col items-center gap-2">
                         <Briefcase className="h-10 w-10 text-muted-foreground/50" />
                         <p className="text-muted-foreground text-sm">
@@ -247,7 +597,9 @@ export default function AdminJobsPage() {
                         <span title={job.id}>{truncateId(job.id)}</span>
                       </td>
                       <td className="px-4 py-3">
-                        <p className="text-sm font-medium">{job.customer_name || "--"}</p>
+                        <p className="text-sm font-medium">
+                          {job.customer_name || "--"}
+                        </p>
                         <p className="text-xs text-muted-foreground">
                           {job.customer_email || ""}
                         </p>
@@ -265,9 +617,12 @@ export default function AdminJobsPage() {
                         {formatPrice(job.final_price ?? job.estimated_price)}
                       </td>
                       <td className="px-4 py-3">
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
+                        <ActionDropdown
+                          job={job}
+                          onAssign={() => setAssignJob(job)}
+                          onViewDetails={() => setDetailJob(job)}
+                          onCancel={() => handleCancelJob(job)}
+                        />
                       </td>
                     </tr>
                   ))
@@ -292,35 +647,38 @@ export default function AdminJobsPage() {
                   <ChevronLeft className="h-4 w-4 mr-1" />
                   Previous
                 </Button>
-                {/* Page number buttons (show up to 5) */}
-                {Array.from({ length: Math.min(5, totalPages) }).map((_, i) => {
-                  let pageNum: number;
-                  if (totalPages <= 5) {
-                    pageNum = i + 1;
-                  } else if (page <= 3) {
-                    pageNum = i + 1;
-                  } else if (page >= totalPages - 2) {
-                    pageNum = totalPages - 4 + i;
-                  } else {
-                    pageNum = page - 2 + i;
+                {Array.from({ length: Math.min(5, totalPages) }).map(
+                  (_, i) => {
+                    let pageNum: number;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (page <= 3) {
+                      pageNum = i + 1;
+                    } else if (page >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = page - 2 + i;
+                    }
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={pageNum === page ? "default" : "outline"}
+                        size="sm"
+                        className="w-9"
+                        onClick={() => setPage(pageNum)}
+                      >
+                        {pageNum}
+                      </Button>
+                    );
                   }
-                  return (
-                    <Button
-                      key={pageNum}
-                      variant={pageNum === page ? "default" : "outline"}
-                      size="sm"
-                      className="w-9"
-                      onClick={() => setPage(pageNum)}
-                    >
-                      {pageNum}
-                    </Button>
-                  );
-                })}
+                )}
                 <Button
                   variant="outline"
                   size="sm"
                   disabled={page >= totalPages}
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  onClick={() =>
+                    setPage((p) => Math.min(totalPages, p + 1))
+                  }
                 >
                   Next
                   <ChevronRight className="h-4 w-4 ml-1" />
@@ -329,6 +687,26 @@ export default function AdminJobsPage() {
             </div>
           )}
         </div>
+      )}
+
+      {/* Assign Driver Modal */}
+      {assignJob && (
+        <AssignDriverModal
+          job={assignJob}
+          onClose={() => setAssignJob(null)}
+          onAssigned={() => {
+            setAssignJob(null);
+            fetchJobs();
+          }}
+        />
+      )}
+
+      {/* Job Detail Modal */}
+      {detailJob && (
+        <JobDetailModal
+          job={detailJob}
+          onClose={() => setDetailJob(null)}
+        />
       )}
     </div>
   );
