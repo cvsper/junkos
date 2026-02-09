@@ -9,7 +9,7 @@ from database import Database
 from auth_routes import auth_bp
 from models import db as sqlalchemy_db
 from socket_events import socketio
-from routes import drivers_bp, pricing_bp, ratings_bp, admin_bp, payments_bp, booking_bp, upload_bp, jobs_bp
+from routes import drivers_bp, pricing_bp, ratings_bp, admin_bp, payments_bp, webhook_bp, booking_bp, upload_bp, jobs_bp
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -48,6 +48,7 @@ app.register_blueprint(pricing_bp)
 app.register_blueprint(ratings_bp)
 app.register_blueprint(admin_bp)
 app.register_blueprint(payments_bp)
+app.register_blueprint(webhook_bp)
 app.register_blueprint(booking_bp)
 app.register_blueprint(upload_bp)
 app.register_blueprint(jobs_bp)

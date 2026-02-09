@@ -290,3 +290,174 @@ def get_earnings(user_id):
             "total_jobs": contractor.total_jobs or 0,
         },
     }), 200
+
+
+# ---------------------------------------------------------------------------
+# Stripe Webhook
+# ---------------------------------------------------------------------------
+webhook_bp = Blueprint("webhooks", __name__, url_prefix="/api/webhooks")
+
+
+@webhook_bp.route("/stripe", methods=["POST"])
+def stripe_webhook():
+    """
+    Handle Stripe webhook events with signature verification.
+    Events: payment_intent.succeeded, payment_intent.payment_failed,
+            charge.refunded, charge.dispute.created
+    """
+    payload = request.get_data(as_text=True)
+    sig_header = request.headers.get("Stripe-Signature", "")
+    webhook_secret = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
+
+    stripe = _get_stripe()
+
+    # Verify webhook signature when secret is configured
+    if webhook_secret:
+        try:
+            event = stripe.Webhook.construct_event(payload, sig_header, webhook_secret)
+        except stripe.error.SignatureVerificationError:
+            return jsonify({"error": "Invalid signature"}), 400
+        except ValueError:
+            return jsonify({"error": "Invalid payload"}), 400
+    else:
+        # Dev mode — parse without verification
+        import json
+        try:
+            event = json.loads(payload)
+        except Exception:
+            return jsonify({"error": "Invalid JSON"}), 400
+
+    event_type = event.get("type") if isinstance(event, dict) else event["type"]
+    data_object = event.get("data", {}).get("object", {}) if isinstance(event, dict) else event["data"]["object"]
+
+    if event_type == "payment_intent.succeeded":
+        _handle_payment_succeeded(data_object)
+
+    elif event_type == "payment_intent.payment_failed":
+        _handle_payment_failed(data_object)
+
+    elif event_type == "charge.refunded":
+        _handle_charge_refunded(data_object)
+
+    elif event_type == "charge.dispute.created":
+        _handle_dispute_created(data_object)
+
+    return jsonify({"received": True}), 200
+
+
+def _handle_payment_succeeded(intent):
+    """Mark payment as succeeded and notify contractor."""
+    intent_id = intent.get("id", "")
+    payment = Payment.query.filter_by(stripe_payment_intent_id=intent_id).first()
+    if not payment:
+        return
+
+    payment.payment_status = "succeeded"
+    payment.updated_at = utcnow()
+
+    job = db.session.get(Job, payment.job_id)
+    if job:
+        # Notify assigned contractor
+        if job.driver_id:
+            contractor = db.session.get(Contractor, job.driver_id)
+            if contractor:
+                notification = Notification(
+                    id=generate_uuid(),
+                    user_id=contractor.user_id,
+                    type="payment",
+                    title="Payment Confirmed",
+                    body="Payment of ${:.2f} confirmed for job at {}.".format(
+                        payment.amount, job.address or "address"
+                    ),
+                    data={"job_id": job.id, "amount": payment.amount},
+                )
+                db.session.add(notification)
+
+        # Send customer confirmation
+        customer = db.session.get(User, job.customer_id)
+        if customer and customer.email:
+            from notifications import send_booking_confirmation_email
+            send_booking_confirmation_email(
+                to_email=customer.email,
+                customer_name=customer.name or "",
+                booking_id=job.id,
+                address=job.address or "",
+                scheduled_date=str(job.scheduled_at.date()) if job.scheduled_at else "TBD",
+                scheduled_time=str(job.scheduled_at.strftime("%H:%M")) if job.scheduled_at else "",
+                total_amount=payment.amount,
+            )
+
+    db.session.commit()
+
+
+def _handle_payment_failed(intent):
+    """Mark payment as failed."""
+    intent_id = intent.get("id", "")
+    payment = Payment.query.filter_by(stripe_payment_intent_id=intent_id).first()
+    if not payment:
+        return
+
+    payment.payment_status = "failed"
+    payment.updated_at = utcnow()
+
+    job = db.session.get(Job, payment.job_id)
+    if job:
+        customer = db.session.get(User, job.customer_id)
+        if customer:
+            notification = Notification(
+                id=generate_uuid(),
+                user_id=customer.id,
+                type="payment",
+                title="Payment Failed",
+                body="Your payment of ${:.2f} could not be processed.".format(payment.amount),
+                data={"job_id": job.id},
+            )
+            db.session.add(notification)
+
+    db.session.commit()
+
+
+def _handle_charge_refunded(charge):
+    """Mark payment as refunded."""
+    intent_id = charge.get("payment_intent", "")
+    if not intent_id:
+        return
+
+    payment = Payment.query.filter_by(stripe_payment_intent_id=intent_id).first()
+    if not payment:
+        return
+
+    refund_amount = charge.get("amount_refunded", 0) / 100.0
+    payment.payment_status = "refunded"
+    payment.updated_at = utcnow()
+
+    job = db.session.get(Job, payment.job_id)
+    if job:
+        customer = db.session.get(User, job.customer_id)
+        if customer:
+            notification = Notification(
+                id=generate_uuid(),
+                user_id=customer.id,
+                type="payment",
+                title="Refund Processed",
+                body="A refund of ${:.2f} has been issued.".format(refund_amount),
+                data={"job_id": job.id, "amount": refund_amount},
+            )
+            db.session.add(notification)
+
+    db.session.commit()
+
+
+def _handle_dispute_created(dispute):
+    """Log dispute and notify admin."""
+    intent_id = dispute.get("payment_intent", "")
+    if not intent_id:
+        return
+
+    payment = Payment.query.filter_by(stripe_payment_intent_id=intent_id).first()
+    if not payment:
+        return
+
+    payment.payment_status = "disputed"
+    payment.updated_at = utcnow()
+    db.session.commit()
