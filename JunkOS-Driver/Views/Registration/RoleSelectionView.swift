@@ -111,7 +111,7 @@ struct RoleCard: View {
 
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                     .font(.title3)
-                    .foregroundStyle(isSelected ? .accentColor : .secondary)
+                    .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
             }
             .padding(16)
             .background(Color(.systemBackground))

@@ -15,7 +15,7 @@ struct InviteCodeStepView: View {
             // Illustration
             Image(systemName: "envelope.open.fill")
                 .font(.system(size: 48))
-                .foregroundStyle(.accentColor)
+                .foregroundStyle(Color.accentColor)
                 .padding(.top, 16)
 
             VStack(spacing: 8) {

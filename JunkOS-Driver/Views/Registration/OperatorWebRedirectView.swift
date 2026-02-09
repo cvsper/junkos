@@ -17,7 +17,7 @@ struct OperatorWebRedirectView: View {
             VStack(spacing: 16) {
                 Image(systemName: "desktopcomputer")
                     .font(.system(size: 64))
-                    .foregroundStyle(.accentColor)
+                    .foregroundStyle(Color.accentColor)
 
                 Text("Manage from the Web")
                     .font(.title2)
@@ -53,7 +53,7 @@ struct OperatorWebRedirectView: View {
 
                 // Sign Out
                 Button {
-                    appState.auth.signOut()
+                    appState.auth.logout()
                     appState.selectedRole = nil
                     appState.contractorProfile = nil
                 } label: {
@@ -69,7 +69,7 @@ struct OperatorWebRedirectView: View {
     }
 
     private var dashboardURL: String {
-        let base = DriverAPIClient.shared.baseURL
+        let base = AppConfig.shared.baseURL
             .replacingOccurrences(of: "/api", with: "")
             .replacingOccurrences(of: ":5001", with: ":3000")
         return "\(base)/operator"
