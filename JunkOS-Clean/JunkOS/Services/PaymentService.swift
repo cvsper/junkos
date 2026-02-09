@@ -108,11 +108,11 @@ class PaymentService: ObservableObject {
 
     // MARK: - Apple Pay Availability
 
-    /// Check if Apple Pay is available with supported networks
+    /// Check if Apple Pay is available on this device.
+    /// Uses the base `canMakePayments()` check so the button appears
+    /// even when no cards are added yet (iOS will prompt to add one).
     var isApplePayAvailable: Bool {
-        PKPaymentAuthorizationViewController.canMakePayments(
-            usingNetworks: supportedPaymentNetworks
-        )
+        PKPaymentAuthorizationViewController.canMakePayments()
     }
 
     /// Supported Apple Pay payment networks
