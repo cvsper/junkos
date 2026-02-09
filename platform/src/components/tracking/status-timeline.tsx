@@ -11,15 +11,16 @@ import type { JobStatus } from "@/types";
 interface StatusStep {
   key: JobStatus;
   label: string;
+  description?: string;
 }
 
 const STEPS: StatusStep[] = [
-  { key: "pending", label: "Booked" },
-  { key: "confirmed", label: "Confirmed" },
-  { key: "en_route", label: "En Route" },
-  { key: "arrived", label: "Arrived" },
-  { key: "in_progress", label: "In Progress" },
-  { key: "completed", label: "Completed" },
+  { key: "pending", label: "Booked", description: "Your pickup is confirmed" },
+  { key: "assigned", label: "Assigned", description: "A crew has been assigned" },
+  { key: "en_route", label: "En Route", description: "Crew is on the way" },
+  { key: "arrived", label: "Arrived", description: "Crew is at your location" },
+  { key: "in_progress", label: "In Progress", description: "Loading your items" },
+  { key: "completed", label: "Completed", description: "Pickup complete" },
 ];
 
 // Map each status to its index so we can determine completed/active/future
@@ -27,6 +28,9 @@ const STATUS_INDEX: Record<string, number> = {};
 STEPS.forEach((s, i) => {
   STATUS_INDEX[s.key] = i;
 });
+
+// "confirmed" maps to the same visual position as "pending" (booked)
+STATUS_INDEX["confirmed"] = 0;
 
 // -----------------------------------------------------------------------
 // Component
@@ -41,12 +45,9 @@ export default function StatusTimeline({
   currentStatus,
   timestamps,
 }: StatusTimelineProps) {
-  // "assigned" maps to the same visual position as "confirmed"
-  const resolvedStatus =
-    currentStatus === "assigned" ? "confirmed" : currentStatus;
   const currentIndex =
-    resolvedStatus && resolvedStatus in STATUS_INDEX
-      ? STATUS_INDEX[resolvedStatus]
+    currentStatus && currentStatus in STATUS_INDEX
+      ? STATUS_INDEX[currentStatus]
       : -1;
 
   return (
@@ -84,7 +85,7 @@ export default function StatusTimeline({
               )}
             </div>
 
-            {/* Label + optional timestamp */}
+            {/* Label + optional timestamp + description */}
             <div className="pb-6 min-w-0">
               <p
                 className={cn(
@@ -104,6 +105,11 @@ export default function StatusTimeline({
               {isCurrent && !timestamps?.[step.key] && (
                 <p className="text-xs text-primary mt-0.5 font-medium">
                   Current
+                </p>
+              )}
+              {isCurrent && step.description && (
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {step.description}
                 </p>
               )}
             </div>

@@ -68,6 +68,15 @@ const STATUS_COLORS: Record<string, string> = {
   cancelled: "bg-red-100 text-red-800 border-red-200",
 };
 
+const ACTIVE_STATUSES = [
+  "pending",
+  "confirmed",
+  "assigned",
+  "en_route",
+  "arrived",
+  "in_progress",
+];
+
 const CANCELLABLE_STATUSES = ["pending", "confirmed"];
 
 // ---------------------------------------------------------------------------
@@ -107,7 +116,19 @@ function formatPrice(amount: number): string {
 }
 
 // ---------------------------------------------------------------------------
-// Star icon component
+// Star rating labels
+// ---------------------------------------------------------------------------
+
+const RATING_LABELS: Record<number, string> = {
+  1: "Poor",
+  2: "Fair",
+  3: "Good",
+  4: "Great",
+  5: "Excellent",
+};
+
+// ---------------------------------------------------------------------------
+// Star icon component (with animations)
 // ---------------------------------------------------------------------------
 
 function StarIcon({
@@ -116,32 +137,74 @@ function StarIcon({
   onMouseEnter,
   onMouseLeave,
   interactive = false,
+  size = "md",
+  animated = false,
+  index = 0,
 }: {
   filled: boolean;
   onClick?: () => void;
   onMouseEnter?: () => void;
   onMouseLeave?: () => void;
   interactive?: boolean;
+  size?: "sm" | "md" | "lg";
+  animated?: boolean;
+  index?: number;
 }) {
+  const sizeClasses = {
+    sm: "w-5 h-5",
+    md: "w-7 h-7",
+    lg: "w-9 h-9",
+  };
+
   return (
-    <svg
-      className={`w-6 h-6 transition-colors ${interactive ? "cursor-pointer" : ""} ${
-        filled ? "text-yellow-400 fill-yellow-400" : "text-gray-300"
-      }`}
-      viewBox="0 0 24 24"
-      fill={filled ? "currentColor" : "none"}
-      stroke="currentColor"
-      strokeWidth={1.5}
+    <button
+      type="button"
       onClick={onClick}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
+      disabled={!interactive}
+      className={`
+        relative inline-flex items-center justify-center p-0.5 border-0 bg-transparent
+        transition-transform duration-200 ease-out
+        ${interactive ? "cursor-pointer hover:scale-125 active:scale-95" : "cursor-default"}
+        ${animated ? "animate-[star-pop_0.3s_ease-out]" : ""}
+        focus:outline-none focus-visible:outline-none
+        disabled:opacity-100
+      `}
+      style={animated ? { animationDelay: `${index * 60}ms` } : undefined}
+      tabIndex={interactive ? 0 : -1}
     >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z"
-      />
-    </svg>
+      {/* Glow effect behind filled stars */}
+      {filled && (
+        <span
+          className={`absolute inset-0 rounded-full bg-amber-400/20 blur-sm transition-opacity duration-300 ${
+            filled ? "opacity-100" : "opacity-0"
+          }`}
+        />
+      )}
+      <svg
+        className={`
+          ${sizeClasses[size]}
+          transition-all duration-200 ease-out relative
+          ${filled
+            ? "text-amber-400 drop-shadow-[0_1px_2px_rgba(251,191,36,0.4)]"
+            : interactive
+              ? "text-gray-300 hover:text-amber-200"
+              : "text-gray-300"
+          }
+        `}
+        viewBox="0 0 24 24"
+        fill={filled ? "currentColor" : "none"}
+        stroke="currentColor"
+        strokeWidth={filled ? 0 : 1.5}
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z"
+        />
+      </svg>
+    </button>
   );
 }
 
@@ -319,6 +382,7 @@ export default function JobDetailPage() {
 
   const canCancel = CANCELLABLE_STATUSES.includes(job.status);
   const isCompleted = job.status === "completed";
+  const isActive = ACTIVE_STATUSES.includes(job.status);
   const hasRating = !!job.rating;
   const hasContractor = !!job.contractor;
   const hasPhotos = job.photos && job.photos.length > 0;
@@ -347,6 +411,54 @@ export default function JobDetailPage() {
           <p className="text-muted-foreground mt-1">
             Created {formatDateTime(job.created_at)}
           </p>
+          {/* Action links */}
+          <div className="flex items-center gap-3 mt-3">
+            {isActive && (
+              <Link href={`/track/${id}`}>
+                <Button variant="outline" size="sm" className="gap-2">
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={2}
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"
+                    />
+                  </svg>
+                  Live Tracking
+                </Button>
+              </Link>
+            )}
+            {isCompleted && (
+              <Link href={`/jobs/${id}/receipt`}>
+                <Button variant="outline" size="sm" className="gap-2">
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={2}
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"
+                    />
+                  </svg>
+                  View Receipt
+                </Button>
+              </Link>
+            )}
+          </div>
         </div>
         <Badge
           className={
@@ -507,12 +619,13 @@ export default function JobDetailPage() {
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <span className="text-muted-foreground">Rating</span>
-                    <div className="flex items-center gap-1 mt-0.5">
+                    <div className="flex items-center gap-0.5 mt-0.5">
                       <div className="flex">
                         {[1, 2, 3, 4, 5].map((star) => (
                           <StarIcon
                             key={star}
                             filled={star <= Math.round(job.contractor!.avg_rating)}
+                            size="sm"
                           />
                         ))}
                       </div>
@@ -586,41 +699,58 @@ export default function JobDetailPage() {
 
         {/* Rating section (only for completed jobs) */}
         {isCompleted && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="font-display text-lg">Rating</CardTitle>
+          <Card className="overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 border-b">
+              <CardTitle className="font-display text-lg flex items-center gap-2">
+                <svg className="w-5 h-5 text-amber-500" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
+                </svg>
+                Your Rating
+              </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-6">
               {hasRating && job.rating ? (
-                <div className="space-y-3">
-                  <div className="flex items-center gap-1">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <StarIcon
-                        key={star}
-                        filled={star <= job.rating!.stars}
-                      />
-                    ))}
-                    <span className="text-sm font-medium ml-2">
-                      {job.rating.stars} / 5
-                    </span>
+                /* ---- Read-only: already rated ---- */
+                <div className="space-y-4">
+                  <div className="flex flex-col items-center text-center">
+                    <div className="flex items-center gap-0.5 mb-2">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <StarIcon
+                          key={star}
+                          filled={star <= job.rating!.stars}
+                          size="lg"
+                          animated
+                          index={star}
+                        />
+                      ))}
+                    </div>
+                    <p className="text-lg font-semibold text-foreground">
+                      {RATING_LABELS[job.rating.stars] ?? ""}{" "}
+                      <span className="text-muted-foreground font-normal text-sm">
+                        ({job.rating.stars}/5)
+                      </span>
+                    </p>
                   </div>
                   {job.rating.comment && (
-                    <p className="text-sm text-muted-foreground">
-                      &ldquo;{job.rating.comment}&rdquo;
-                    </p>
+                    <div className="bg-muted/50 rounded-lg px-4 py-3 mx-auto max-w-md">
+                      <p className="text-sm text-muted-foreground italic leading-relaxed">
+                        &ldquo;{job.rating.comment}&rdquo;
+                      </p>
+                    </div>
                   )}
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-muted-foreground text-center">
                     Rated on {formatDate(job.rating.created_at)}
                   </p>
                 </div>
               ) : ratingSuccess ? (
-                <div className="text-center py-4">
-                  <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-3">
+                /* ---- Success state after submission ---- */
+                <div className="text-center py-6 animate-in fade-in-0 zoom-in-95 duration-500">
+                  <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto mb-4 animate-in zoom-in-50 duration-300">
                     <svg
-                      className="w-6 h-6 text-green-600"
+                      className="w-8 h-8 text-green-600 dark:text-green-400"
                       fill="none"
                       viewBox="0 0 24 24"
-                      strokeWidth={2}
+                      strokeWidth={2.5}
                       stroke="currentColor"
                     >
                       <path
@@ -630,38 +760,62 @@ export default function JobDetailPage() {
                       />
                     </svg>
                   </div>
-                  <p className="font-medium text-sm">
-                    Thank you for your feedback!
-                  </p>
-                  <p className="text-muted-foreground text-xs mt-1">
-                    Your rating has been submitted.
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <p className="text-sm text-muted-foreground">
-                    How was your experience? Rate your pickup.
-                  </p>
-
-                  {/* Star selector */}
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center justify-center gap-0.5 mb-3">
                     {[1, 2, 3, 4, 5].map((star) => (
                       <StarIcon
                         key={star}
-                        filled={
-                          star <= (ratingHover > 0 ? ratingHover : ratingStars)
-                        }
-                        interactive
-                        onClick={() => setRatingStars(star)}
-                        onMouseEnter={() => setRatingHover(star)}
-                        onMouseLeave={() => setRatingHover(0)}
+                        filled={star <= ratingStars}
+                        size="md"
+                        animated
+                        index={star}
                       />
                     ))}
-                    {ratingStars > 0 && (
-                      <span className="text-sm text-muted-foreground ml-2">
-                        {ratingStars} / 5
-                      </span>
-                    )}
+                  </div>
+                  <p className="font-semibold text-base">
+                    Thank you for your feedback!
+                  </p>
+                  <p className="text-muted-foreground text-sm mt-1">
+                    Your {ratingStars}-star rating has been submitted.
+                  </p>
+                </div>
+              ) : (
+                /* ---- Rating form ---- */
+                <div className="space-y-5">
+                  <div className="text-center">
+                    <p className="text-sm text-muted-foreground mb-1">
+                      How was your experience?
+                    </p>
+                    <p className="text-xs text-muted-foreground/70">
+                      Tap a star to rate your pickup
+                    </p>
+                  </div>
+
+                  {/* Star selector */}
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="flex items-center gap-0.5">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <StarIcon
+                          key={star}
+                          filled={
+                            star <= (ratingHover > 0 ? ratingHover : ratingStars)
+                          }
+                          interactive
+                          size="lg"
+                          onClick={() => setRatingStars(star)}
+                          onMouseEnter={() => setRatingHover(star)}
+                          onMouseLeave={() => setRatingHover(0)}
+                        />
+                      ))}
+                    </div>
+                    <div className="h-6 flex items-center">
+                      {(ratingHover > 0 || ratingStars > 0) && (
+                        <span
+                          className="text-sm font-medium text-amber-600 dark:text-amber-400 animate-in fade-in-0 duration-200"
+                        >
+                          {RATING_LABELS[ratingHover > 0 ? ratingHover : ratingStars]}
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   {/* Comment */}
@@ -670,28 +824,49 @@ export default function JobDetailPage() {
                       htmlFor="rating-comment"
                       className="text-sm text-muted-foreground block mb-1.5"
                     >
-                      Comment (optional)
+                      Comment <span className="text-muted-foreground/60">(optional)</span>
                     </label>
                     <textarea
                       id="rating-comment"
                       rows={3}
                       value={ratingComment}
                       onChange={(e) => setRatingComment(e.target.value)}
-                      placeholder="Share your experience..."
-                      className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 resize-none"
+                      placeholder="Tell us about your experience..."
+                      className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400 resize-none transition-all duration-200"
+                      maxLength={500}
                     />
+                    {ratingComment.length > 0 && (
+                      <p className="text-xs text-muted-foreground/50 mt-1 text-right">
+                        {ratingComment.length}/500
+                      </p>
+                    )}
                   </div>
 
                   {ratingError && (
-                    <p className="text-destructive text-sm">{ratingError}</p>
+                    <div className="rounded-md bg-destructive/10 border border-destructive/20 px-3 py-2">
+                      <p className="text-destructive text-sm">{ratingError}</p>
+                    </div>
                   )}
 
                   <Button
                     onClick={handleRatingSubmit}
                     disabled={ratingStars === 0 || ratingSubmitting}
-                    size="sm"
+                    className="w-full bg-amber-500 hover:bg-amber-600 text-white transition-all duration-200 disabled:opacity-40"
+                    size="default"
                   >
-                    {ratingSubmitting ? "Submitting..." : "Submit Rating"}
+                    {ratingSubmitting ? (
+                      <span className="flex items-center gap-2">
+                        <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                        </svg>
+                        Submitting...
+                      </span>
+                    ) : ratingStars === 0 ? (
+                      "Select a rating"
+                    ) : (
+                      `Submit ${ratingStars}-Star Rating`
+                    )}
                   </Button>
                 </div>
               )}

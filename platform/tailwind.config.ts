@@ -53,6 +53,16 @@ const config: Config = {
         sans: ["Inter", "sans-serif"],
         display: ["Space Grotesk", "sans-serif"],
       },
+      keyframes: {
+        "star-pop": {
+          "0%": { transform: "scale(0.5)", opacity: "0" },
+          "50%": { transform: "scale(1.2)" },
+          "100%": { transform: "scale(1)", opacity: "1" },
+        },
+      },
+      animation: {
+        "star-pop": "star-pop 0.3s ease-out forwards",
+      },
     },
   },
   plugins: [require("tailwindcss-animate")],

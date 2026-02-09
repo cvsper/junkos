@@ -8,7 +8,7 @@ import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from models import db, Job, Contractor, Rating, Payment
+from models import db, Job, Contractor, Rating, Payment, User
 from auth_routes import require_auth
 
 jobs_bp = Blueprint("jobs", __name__, url_prefix="/api/jobs")
@@ -124,3 +124,43 @@ def cancel_job(user_id, job_id):
     db.session.commit()
 
     return jsonify({"success": True, "job": job.to_dict()}), 200
+
+
+@jobs_bp.route("/<job_id>/proof", methods=["GET"])
+@require_auth
+def get_job_proof(user_id, job_id):
+    """
+    Return proof photos (before/after) for a job.
+
+    Accessible to:
+        - The customer who owns the job
+        - The driver assigned to the job
+        - An admin user
+    """
+    job = db.session.get(Job, job_id)
+    if not job:
+        return jsonify({"error": "Job not found"}), 404
+
+    # Determine access: customer, driver, or admin
+    user = db.session.get(User, user_id)
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    is_customer = job.customer_id == user_id
+    is_admin = user.role == "admin"
+
+    # Check if the user is the assigned driver
+    is_driver = False
+    if user.contractor_profile and job.driver_id == user.contractor_profile.id:
+        is_driver = True
+
+    if not (is_customer or is_driver or is_admin):
+        return jsonify({"error": "You do not have access to this job's proof photos"}), 403
+
+    return jsonify({
+        "success": True,
+        "job_id": job.id,
+        "before_photos": job.before_photos or [],
+        "after_photos": job.after_photos or [],
+        "proof_submitted_at": job.proof_submitted_at.isoformat() if job.proof_submitted_at else None,
+    }), 200

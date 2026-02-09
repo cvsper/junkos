@@ -64,6 +64,17 @@ const STATUS_COLORS: Record<string, string> = {
   cancelled: "bg-red-100 text-red-800 border-red-200",
 };
 
+const STATUS_ICONS: Record<string, string> = {
+  pending: "M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z",
+  confirmed: "M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
+  assigned: "M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z",
+  en_route: "M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12",
+  arrived: "M15 10.5a3 3 0 11-6 0 3 3 0 016 0z M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z",
+  in_progress: "M11.42 15.17l-4.655-5.653a.75.75 0 010-.964l4.655-5.653M20.25 12l-8.83-8.83M20.25 12l-8.83 8.83",
+  completed: "M4.5 12.75l6 6 9-13.5",
+  cancelled: "M6 18L18 6M6 6l12 12",
+};
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -98,6 +109,26 @@ function itemCount(items: { category: string; quantity: number }[]): string {
   return `${total} item${total !== 1 ? "s" : ""}`;
 }
 
+/** Sort: active jobs first (by creation date desc), then completed, then cancelled */
+function sortJobs(jobs: CustomerJob[]): CustomerJob[] {
+  const priority: Record<string, number> = {};
+  ACTIVE_STATUSES.forEach((s) => (priority[s] = 0));
+  priority["completed"] = 1;
+  priority["cancelled"] = 2;
+
+  return [...jobs].sort((a, b) => {
+    const pa = priority[a.status] ?? 1;
+    const pb = priority[b.status] ?? 1;
+    if (pa !== pb) return pa - pb;
+    // Within same priority group, sort by creation date descending
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+  });
+}
+
+function isActive(status: string): boolean {
+  return ACTIVE_STATUSES.includes(status);
+}
+
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
@@ -129,13 +160,26 @@ export default function DashboardPage() {
   }, [fetchJobs]);
 
   // Filter jobs by active tab
-  const filteredJobs = jobs.filter((job) => {
-    if (activeTab === "all") return true;
-    if (activeTab === "active") return ACTIVE_STATUSES.includes(job.status);
-    if (activeTab === "completed") return job.status === "completed";
-    if (activeTab === "cancelled") return job.status === "cancelled";
-    return true;
-  });
+  const filteredJobs = sortJobs(
+    jobs.filter((job) => {
+      if (activeTab === "all") return true;
+      if (activeTab === "active") return ACTIVE_STATUSES.includes(job.status);
+      if (activeTab === "completed") return job.status === "completed";
+      if (activeTab === "cancelled") return job.status === "cancelled";
+      return true;
+    })
+  );
+
+  // Counts for tab badges
+  const activeCount = jobs.filter((j) => ACTIVE_STATUSES.includes(j.status)).length;
+  const completedCount = jobs.filter((j) => j.status === "completed").length;
+  const cancelledCount = jobs.filter((j) => j.status === "cancelled").length;
+  const tabCounts: Record<TabKey, number> = {
+    all: jobs.length,
+    active: activeCount,
+    completed: completedCount,
+    cancelled: cancelledCount,
+  };
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8 sm:py-12">
@@ -255,13 +299,24 @@ export default function DashboardPage() {
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`px-4 py-2.5 text-sm font-medium transition-colors relative ${
+                className={`px-4 py-2.5 text-sm font-medium transition-colors relative flex items-center gap-2 ${
                   activeTab === tab.key
                     ? "text-foreground"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 {tab.label}
+                {tabCounts[tab.key] > 0 && (
+                  <span
+                    className={`text-xs rounded-full px-1.5 py-0.5 min-w-[20px] text-center ${
+                      activeTab === tab.key
+                        ? "bg-primary/10 text-primary"
+                        : "bg-muted text-muted-foreground"
+                    }`}
+                  >
+                    {tabCounts[tab.key]}
+                  </span>
+                )}
                 {activeTab === tab.key && (
                   <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full" />
                 )}
@@ -281,38 +336,78 @@ export default function DashboardPage() {
               {filteredJobs.map((job) => (
                 <Card
                   key={job.id}
-                  className="cursor-pointer hover:shadow-md transition-shadow"
+                  className={`cursor-pointer hover:shadow-md transition-all ${
+                    isActive(job.status)
+                      ? "border-primary/20 hover:border-primary/40"
+                      : ""
+                  }`}
                   onClick={() => router.push(`/jobs/${job.id}`)}
                 >
                   <CardContent className="p-5">
                     <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-                      {/* Left: status + address */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1.5">
-                          <Badge
-                            className={
-                              STATUS_COLORS[job.status] ??
-                              "bg-muted text-muted-foreground"
-                            }
+                      {/* Left: status icon + address */}
+                      <div className="flex items-start gap-3 flex-1 min-w-0">
+                        {/* Status icon circle */}
+                        <div
+                          className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${
+                            isActive(job.status)
+                              ? "bg-primary/10"
+                              : job.status === "completed"
+                              ? "bg-green-100"
+                              : "bg-red-100"
+                          }`}
+                        >
+                          <svg
+                            className={`w-5 h-5 ${
+                              isActive(job.status)
+                                ? "text-primary"
+                                : job.status === "completed"
+                                ? "text-green-600"
+                                : "text-red-600"
+                            }`}
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            strokeWidth={1.5}
+                            stroke="currentColor"
                           >
-                            {statusLabel(job.status)}
-                          </Badge>
-                          <span className="text-xs text-muted-foreground">
-                            #{job.id.slice(0, 8)}
-                          </span>
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d={
+                                STATUS_ICONS[job.status] ??
+                                STATUS_ICONS["pending"]
+                              }
+                            />
+                          </svg>
                         </div>
-                        <p className="font-medium text-sm truncate">
-                          {truncate(job.address, 60)}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          {job.scheduled_at
-                            ? formatDate(job.scheduled_at)
-                            : "Not scheduled"}
-                        </p>
+
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Badge
+                              className={
+                                STATUS_COLORS[job.status] ??
+                                "bg-muted text-muted-foreground"
+                              }
+                            >
+                              {statusLabel(job.status)}
+                            </Badge>
+                            <span className="text-xs text-muted-foreground">
+                              #{job.id.slice(0, 8)}
+                            </span>
+                          </div>
+                          <p className="font-medium text-sm truncate">
+                            {truncate(job.address, 60)}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {job.scheduled_at
+                              ? formatDate(job.scheduled_at)
+                              : "Not scheduled"}
+                          </p>
+                        </div>
                       </div>
 
-                      {/* Right: meta */}
-                      <div className="flex items-center gap-6 text-sm shrink-0">
+                      {/* Right: meta + actions */}
+                      <div className="flex items-center gap-4 sm:gap-6 text-sm shrink-0">
                         <div className="text-center">
                           <p className="text-muted-foreground text-xs">Items</p>
                           <p className="font-medium">{itemCount(job.items)}</p>
@@ -323,29 +418,82 @@ export default function DashboardPage() {
                             {formatPrice(job.total_price)}
                           </p>
                         </div>
-                        <div className="text-center min-w-[100px]">
+                        <div className="text-center min-w-[90px]">
                           <p className="text-muted-foreground text-xs">
                             Contractor
                           </p>
                           <p className="font-medium text-sm">
                             {job.contractor?.user?.name ??
-                              "Awaiting contractor"}
+                              "Awaiting"}
                           </p>
                         </div>
-                        {/* Chevron */}
-                        <svg
-                          className="w-5 h-5 text-muted-foreground hidden sm:block"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          strokeWidth={1.5}
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M8.25 4.5l7.5 7.5-7.5 7.5"
-                          />
-                        </svg>
+
+                        {/* Action links */}
+                        <div className="flex items-center gap-2">
+                          {isActive(job.status) && (
+                            <Link
+                              href={`/track/${job.id}`}
+                              onClick={(e) => e.stopPropagation()}
+                              className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:text-primary/80 transition-colors whitespace-nowrap"
+                            >
+                              <svg
+                                className="w-3.5 h-3.5"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                strokeWidth={2}
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"
+                                />
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"
+                                />
+                              </svg>
+                              Track
+                            </Link>
+                          )}
+                          {job.status === "completed" && (
+                            <Link
+                              href={`/jobs/${job.id}/receipt`}
+                              onClick={(e) => e.stopPropagation()}
+                              className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:text-primary/80 transition-colors whitespace-nowrap"
+                            >
+                              <svg
+                                className="w-3.5 h-3.5"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                strokeWidth={2}
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"
+                                />
+                              </svg>
+                              Receipt
+                            </Link>
+                          )}
+                          {/* Chevron */}
+                          <svg
+                            className="w-5 h-5 text-muted-foreground hidden sm:block"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            strokeWidth={1.5}
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M8.25 4.5l7.5 7.5-7.5 7.5"
+                            />
+                          </svg>
+                        </div>
                       </div>
                     </div>
                   </CardContent>

@@ -230,15 +230,50 @@ export const trackingApi = {
 // Ratings API
 // ---------------------------------------------------------------------------
 
+interface RatingResponse {
+  id: string;
+  job_id: string;
+  from_user_id: string;
+  to_user_id: string;
+  stars: number;
+  comment: string | null;
+  created_at: string;
+  from_user?: { id: string; name: string | null } | null;
+}
+
 export const ratingsApi = {
+  /** Submit a rating for a completed job */
   submit: (jobId: string, stars: number, comment?: string) =>
-    apiFetch<{ success: boolean; rating: { id: string; stars: number; comment: string | null } }>(
+    apiFetch<{ success: boolean; rating: RatingResponse }>(
       "/api/ratings",
       {
         method: "POST",
         body: JSON.stringify({ job_id: jobId, stars, comment: comment || null }),
       }
     ),
+
+  /** Get the rating for a specific job (returns null if not yet rated) */
+  getForJob: (jobId: string) =>
+    apiFetch<{ success: boolean; rating: RatingResponse | null }>(
+      `/api/ratings/job/${jobId}`
+    ),
+
+  /** Get all ratings for a contractor with pagination */
+  getForContractor: (contractorId: string, page?: number, perPage?: number) => {
+    const params = new URLSearchParams();
+    if (page) params.append("page", String(page));
+    if (perPage) params.append("per_page", String(perPage));
+    const query = params.toString();
+    return apiFetch<{
+      success: boolean;
+      contractor_id: string;
+      avg_rating: number;
+      ratings: RatingResponse[];
+      total: number;
+      page: number;
+      pages: number;
+    }>(`/api/ratings/contractor/${contractorId}${query ? `?${query}` : ""}`);
+  },
 };
 
 // ---------------------------------------------------------------------------

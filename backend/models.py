@@ -159,6 +159,7 @@ class Job(db.Model):
     photos = Column(JSON, nullable=True, default=list)
     before_photos = Column(JSON, nullable=True, default=list)
     after_photos = Column(JSON, nullable=True, default=list)
+    proof_submitted_at = Column(DateTime, nullable=True)
 
     scheduled_at = Column(DateTime, nullable=True)
     started_at = Column(DateTime, nullable=True)
@@ -203,6 +204,7 @@ class Job(db.Model):
             "photos": self.photos or [],
             "before_photos": self.before_photos or [],
             "after_photos": self.after_photos or [],
+            "proof_submitted_at": self.proof_submitted_at.isoformat() if self.proof_submitted_at else None,
             "scheduled_at": self.scheduled_at.isoformat() if self.scheduled_at else None,
             "started_at": self.started_at.isoformat() if self.started_at else None,
             "completed_at": self.completed_at.isoformat() if self.completed_at else None,

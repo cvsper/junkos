@@ -238,6 +238,50 @@ def list_jobs(user_id):
     }), 200
 
 
+@admin_bp.route("/jobs/<job_id>", methods=["GET"])
+@require_admin
+def get_job_detail(user_id, job_id):
+    """Return full job detail including proof photos, payment, driver, and customer info."""
+    job = db.session.get(Job, job_id)
+    if not job:
+        return jsonify({"error": "Job not found"}), 404
+
+    job_data = job.to_dict()
+
+    # Include customer info
+    if job.customer:
+        job_data["customer"] = job.customer.to_dict()
+    else:
+        job_data["customer"] = None
+
+    # Include driver/contractor info
+    if job.driver:
+        driver_data = job.driver.to_dict()
+        job_data["driver"] = driver_data
+    else:
+        job_data["driver"] = None
+
+    # Include operator info
+    if job.operator_rel:
+        job_data["operator"] = job.operator_rel.to_dict()
+    else:
+        job_data["operator"] = None
+
+    # Include payment info
+    if job.payment:
+        job_data["payment"] = job.payment.to_dict()
+    else:
+        job_data["payment"] = None
+
+    # Include rating info
+    if job.rating:
+        job_data["rating"] = job.rating.to_dict()
+    else:
+        job_data["rating"] = None
+
+    return jsonify({"success": True, "job": job_data}), 200
+
+
 @admin_bp.route("/pricing/rules", methods=["PUT"])
 @require_admin
 def update_pricing_rules(user_id):

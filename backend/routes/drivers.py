@@ -6,6 +6,7 @@ Handles contractor registration, availability, location, and job management.
 from flask import Blueprint, request, jsonify
 from datetime import datetime, timezone
 from math import radians, cos, sin, asin, sqrt
+import logging
 
 import sys
 import os
@@ -15,6 +16,8 @@ from models import db, User, Contractor, Job, Notification, OperatorInvite, gene
 from auth_routes import require_auth
 
 drivers_bp = Blueprint("drivers", __name__, url_prefix="/api/drivers")
+
+logger = logging.getLogger(__name__)
 
 EARTH_RADIUS_KM = 6371.0
 DEFAULT_SEARCH_RADIUS_KM = 30.0
@@ -321,6 +324,21 @@ def update_job_status(user_id, job_id):
         job.completed_at = utcnow()
         contractor.total_jobs = (contractor.total_jobs or 0) + 1
 
+        # Warn if proof photos have not been submitted
+        has_before = bool(job.before_photos)
+        has_after = bool(job.after_photos)
+        if not has_before or not has_after:
+            missing = []
+            if not has_before:
+                missing.append("before_photos")
+            if not has_after:
+                missing.append("after_photos")
+            logger.warning(
+                "Job %s completed without proof photos (missing: %s). "
+                "Driver: %s",
+                job.id, ", ".join(missing), contractor.id,
+            )
+
     if data.get("before_photos"):
         job.before_photos = data["before_photos"]
     if data.get("after_photos"):
@@ -387,5 +405,64 @@ def update_job_status(user_id, job_id):
     # Broadcast via SocketIO
     from socket_events import broadcast_job_status
     broadcast_job_status(job.id, new_status)
+
+    return jsonify({"success": True, "job": job.to_dict()}), 200
+
+
+@drivers_bp.route("/jobs/<job_id>/proof", methods=["POST"])
+@require_auth
+def submit_job_proof(user_id, job_id):
+    """Submit before/after proof photos for a job.
+
+    Accepts JSON body with:
+        - before_photos: list of photo URLs
+        - after_photos: list of photo URLs
+
+    Only works on jobs with status 'started' or 'completed'.
+    Sets proof_submitted_at to the current time.
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+
+    contractor = Contractor.query.filter_by(user_id=user_id).first()
+    if not contractor:
+        return jsonify({"error": "Contractor profile not found"}), 404
+
+    job = db.session.get(Job, job_id)
+    if not job:
+        return jsonify({"error": "Job not found"}), 404
+
+    if job.driver_id != contractor.id:
+        return jsonify({"error": "You are not assigned to this job"}), 403
+
+    if job.status not in ("started", "completed"):
+        return jsonify({
+            "error": "Proof can only be submitted for jobs with status 'started' or 'completed' (current: {})".format(job.status),
+        }), 409
+
+    data = request.get_json() or {}
+
+    before_photos = data.get("before_photos")
+    after_photos = data.get("after_photos")
+
+    if not before_photos and not after_photos:
+        return jsonify({"error": "At least one of before_photos or after_photos is required"}), 400
+
+    if before_photos is not None:
+        if not isinstance(before_photos, list):
+            return jsonify({"error": "before_photos must be a list of URLs"}), 400
+        job.before_photos = before_photos
+
+    if after_photos is not None:
+        if not isinstance(after_photos, list):
+            return jsonify({"error": "after_photos must be a list of URLs"}), 400
+        job.after_photos = after_photos
+
+    job.proof_submitted_at = utcnow()
+    job.updated_at = utcnow()
+
+    db.session.commit()
+
+    logger.info("Proof photos submitted for job %s by contractor %s", job.id, contractor.id)
 
     return jsonify({"success": True, "job": job.to_dict()}), 200

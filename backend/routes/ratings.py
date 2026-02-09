@@ -120,3 +120,66 @@ def get_user_ratings(target_user_id):
         "page": pagination.page,
         "pages": pagination.pages,
     }), 200
+
+
+@ratings_bp.route("/contractor/<contractor_id>", methods=["GET"])
+def get_contractor_ratings(contractor_id):
+    """
+    Return all ratings received by a contractor (i.e. ratings from customers
+    on jobs where this contractor was the driver).
+    Supports pagination via ?page= and ?per_page= query params.
+    """
+    contractor = db.session.get(Contractor, contractor_id)
+    if not contractor:
+        return jsonify({"error": "Contractor not found"}), 404
+
+    page = request.args.get("page", 1, type=int)
+    per_page = request.args.get("per_page", 20, type=int)
+
+    pagination = (
+        Rating.query
+        .filter_by(to_user_id=contractor.user_id)
+        .order_by(Rating.created_at.desc())
+        .paginate(page=page, per_page=per_page, error_out=False)
+    )
+
+    ratings = [r.to_dict() for r in pagination.items]
+
+    return jsonify({
+        "success": True,
+        "contractor_id": contractor_id,
+        "avg_rating": contractor.avg_rating,
+        "ratings": ratings,
+        "total": pagination.total,
+        "page": pagination.page,
+        "pages": pagination.pages,
+    }), 200
+
+
+@ratings_bp.route("/job/<job_id>", methods=["GET"])
+@require_auth
+def get_job_rating(user_id, job_id):
+    """
+    Return the rating for a specific job.
+    Only the job's customer or the assigned driver can view it.
+    """
+    job = db.session.get(Job, job_id)
+    if not job:
+        return jsonify({"error": "Job not found"}), 404
+
+    # Authorization: must be customer or the driver's user
+    is_customer = user_id == job.customer_id
+    is_driver = False
+    if job.driver_id:
+        contractor = db.session.get(Contractor, job.driver_id)
+        if contractor and contractor.user_id == user_id:
+            is_driver = True
+
+    if not is_customer and not is_driver:
+        return jsonify({"error": "Not authorized to view this rating"}), 403
+
+    rating = Rating.query.filter_by(job_id=job_id).first()
+    if not rating:
+        return jsonify({"success": True, "rating": None}), 200
+
+    return jsonify({"success": True, "rating": rating.to_dict()}), 200
