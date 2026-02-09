@@ -10,9 +10,9 @@ import UIKit
 
 @Observable
 final class RegistrationViewModel {
-    // Step tracking (3 steps: truck → license → insurance)
+    // Step tracking (4 steps: invite code → truck → license → insurance)
     var currentStep = 0
-    let totalSteps = 3
+    let totalSteps = 4
 
     // Invite code (optional, set before starting registration)
     var inviteCode: String = ""
@@ -34,27 +34,30 @@ final class RegistrationViewModel {
 
     var canProceed: Bool {
         switch currentStep {
-        case 0: return selectedTruckType != nil
-        case 1: return licenseImage != nil
-        case 2: return insuranceImage != nil
+        case 0: return true  // Invite code is optional
+        case 1: return selectedTruckType != nil
+        case 2: return licenseImage != nil
+        case 3: return insuranceImage != nil
         default: return false
         }
     }
 
     var stepTitle: String {
         switch currentStep {
-        case 0: return "Your Truck"
-        case 1: return "Driver's License"
-        case 2: return "Insurance"
+        case 0: return "Join a Fleet"
+        case 1: return "Your Truck"
+        case 2: return "Driver's License"
+        case 3: return "Insurance"
         default: return ""
         }
     }
 
     var stepSubtitle: String {
         switch currentStep {
-        case 0: return "Select the type of vehicle you'll use for pickups"
-        case 1: return "Take a photo of your valid driver's license"
-        case 2: return "Upload proof of commercial insurance"
+        case 0: return "If you have an invite code from a fleet operator, enter it below"
+        case 1: return "Select the type of vehicle you'll use for pickups"
+        case 2: return "Take a photo of your valid driver's license"
+        case 3: return "Upload proof of commercial insurance"
         default: return ""
         }
     }

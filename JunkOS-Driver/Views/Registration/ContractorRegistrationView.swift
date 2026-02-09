@@ -49,14 +49,16 @@ struct ContractorRegistrationView: View {
                 Group {
                     switch viewModel.currentStep {
                     case 0:
-                        TruckTypeSelectionView(selectedType: $viewModel.selectedTruckType)
+                        InviteCodeStepView(viewModel: viewModel)
                     case 1:
+                        TruckTypeSelectionView(selectedType: $viewModel.selectedTruckType)
+                    case 2:
                         DocumentUploadView(
                             title: "Driver's License",
                             image: $viewModel.licenseImage,
                             showCamera: $showCamera
                         )
-                    case 2:
+                    case 3:
                         DocumentUploadView(
                             title: "Insurance Document",
                             image: $viewModel.insuranceImage,
@@ -118,9 +120,9 @@ struct ContractorRegistrationView: View {
         }
         .sheet(isPresented: $showCamera) {
             CameraPickerView { image in
-                if viewModel.currentStep == 1 {
+                if viewModel.currentStep == 2 {
                     viewModel.licenseImage = image
-                } else if viewModel.currentStep == 2 {
+                } else if viewModel.currentStep == 3 {
                     viewModel.insuranceImage = image
                 }
             }
