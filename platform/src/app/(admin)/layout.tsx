@@ -1,4 +1,9 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useAuthStore } from "@/stores/auth-store";
 
 const sidebarLinks = [
   { href: "/admin", label: "Dashboard", icon: "M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" },
@@ -16,10 +21,67 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const { user, isAuthenticated, token } = useAuthStore();
+  const [hydrated, setHydrated] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const isLoginPage = pathname === "/admin/login";
+
+  // Wait for zustand hydration from localStorage
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
+
+  // Auth guard: redirect to login if not authenticated (except on login page)
+  useEffect(() => {
+    if (!hydrated) return;
+    if (!isLoginPage && !isAuthenticated) {
+      router.replace("/admin/login");
+    }
+  }, [hydrated, isAuthenticated, isLoginPage, router]);
+
+  // Login page — render without sidebar
+  if (isLoginPage) {
+    return <>{children}</>;
+  }
+
+  // Not hydrated yet or not authenticated — show loading
+  if (!hydrated || !isAuthenticated) {
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center mx-auto mb-3">
+            <span className="text-primary-foreground font-display font-bold text-sm">J</span>
+          </div>
+          <p className="text-sm text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const userName = user?.name || user?.email || "Admin";
+  const userInitial = userName[0]?.toUpperCase() || "A";
+
   return (
     <div className="h-screen flex overflow-hidden">
+      {/* Mobile Overlay */}
+      {mobileMenuOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-30 md:hidden"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className="w-64 border-r border-border bg-card flex-shrink-0 hidden md:flex md:flex-col h-screen sticky top-0">
+      <aside
+        className={`
+          w-64 border-r border-border bg-card flex-shrink-0 flex flex-col h-screen
+          fixed md:sticky top-0 z-40 transition-transform duration-200
+          ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
+        `}
+      >
         {/* Logo */}
         <div className="h-16 flex items-center px-6 border-b border-border">
           <Link href="/admin" className="flex items-center gap-2">
@@ -39,31 +101,46 @@ export default function AdminLayout({
 
         {/* Navigation */}
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-          {sidebarLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-            >
-              <svg
-                className="w-5 h-5 flex-shrink-0"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={1.5}
-                stroke="currentColor"
+          {sidebarLinks.map((link) => {
+            const isActive =
+              link.href === "/admin"
+                ? pathname === "/admin"
+                : pathname.startsWith(link.href);
+
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                onClick={() => setMobileMenuOpen(false)}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                  isActive
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                }`}
               >
-                <path strokeLinecap="round" strokeLinejoin="round" d={link.icon} />
-              </svg>
-              {link.label}
-            </Link>
-          ))}
+                <svg
+                  className="w-5 h-5 flex-shrink-0"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={1.5}
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d={link.icon} />
+                </svg>
+                {link.label}
+              </Link>
+            );
+          })}
         </nav>
 
         {/* Footer */}
-        <div className="p-4 border-t border-border">
-          <Link
-            href="/"
-            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        <div className="p-4 border-t border-border space-y-3">
+          <button
+            onClick={() => {
+              useAuthStore.getState().logout();
+              router.push("/admin/login");
+            }}
+            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors w-full"
           >
             <svg
               className="w-4 h-4"
@@ -78,8 +155,8 @@ export default function AdminLayout({
                 d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9"
               />
             </svg>
-            Back to Site
-          </Link>
+            Sign Out
+          </button>
         </div>
       </aside>
 
@@ -88,11 +165,20 @@ export default function AdminLayout({
         {/* Top Bar */}
         <header className="h-16 border-b border-border bg-card flex items-center px-6 flex-shrink-0 z-10">
           <div className="flex items-center justify-between w-full">
-            <h2 className="font-display text-lg font-semibold md:hidden">JunkOS Admin</h2>
+            {/* Mobile hamburger */}
+            <button
+              className="md:hidden p-2 -ml-2 rounded-lg hover:bg-muted transition-colors"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+              </svg>
+            </button>
+
             <div className="ml-auto flex items-center gap-4">
-              <span className="text-sm text-muted-foreground">Admin User</span>
+              <span className="text-sm text-muted-foreground">{userName}</span>
               <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                <span className="text-sm font-medium text-primary">A</span>
+                <span className="text-sm font-medium text-primary">{userInitial}</span>
               </div>
             </div>
           </div>

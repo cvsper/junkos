@@ -18,8 +18,9 @@ auth_bp = Blueprint('auth', __name__, url_prefix='/api/auth')
 verification_codes = {}  # phone_number: {code, expires_at}
 users_db = {}  # user_id: {id, name, email, phone, password_hash}
 
-# JWT secret (use environment variable in production)
-JWT_SECRET = secrets.token_hex(32)
+# JWT secret — persistent across restarts
+import os
+JWT_SECRET = os.environ.get('JWT_SECRET', 'junkos-jwt-default-secret-2026')
 
 # MARK: - Helper Functions
 
