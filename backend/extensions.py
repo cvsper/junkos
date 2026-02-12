@@ -19,10 +19,4 @@ limiter = Limiter(
     key_func=get_remote_address,
     storage_uri=_storage_uri,
     default_limits=["100 per minute"],
-    headers_enabled=True,           # X-RateLimit-Limit / Remaining / Reset
-    header_name_mapping={
-        "HEADER_LIMIT": "X-RateLimit-Limit",
-        "HEADER_REMAINING": "X-RateLimit-Remaining",
-        "HEADER_RESET": "X-RateLimit-Reset",
-    },
 )
