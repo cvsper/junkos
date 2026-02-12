@@ -155,9 +155,11 @@ def cancel_job(user_id, job_id):
 
     # --- Calculate cancellation fee ---
     cancellation_fee = 0.0
-    now = datetime.now(timezone.utc)
+    now = datetime.utcnow()
     if job.scheduled_at:
-        time_until = job.scheduled_at - now
+        # Ensure both are naive UTC for comparison
+        scheduled = job.scheduled_at.replace(tzinfo=None) if job.scheduled_at.tzinfo else job.scheduled_at
+        time_until = scheduled - now
         if time_until < timedelta(hours=2):
             cancellation_fee = 50.0
         elif time_until < timedelta(hours=24):
