@@ -75,6 +75,9 @@ COLUMN_MIGRATIONS = [
     # Job promo code fields
     ("jobs", "promo_code_id", "VARCHAR(36)", "VARCHAR(36)", "NULL"),
     ("jobs", "discount_amount", "FLOAT", "FLOAT", "0.0"),
+    ("jobs", "cancelled_at", "DATETIME", "TIMESTAMP", "NULL"),
+    ("jobs", "cancellation_fee", "FLOAT", "FLOAT", "0.0"),
+    ("jobs", "rescheduled_count", "INTEGER", "INTEGER", "0"),
 ]
 
 
@@ -169,6 +172,18 @@ NEW_TABLES_SQLITE = [
         created_by VARCHAR(36),
         CONSTRAINT ck_promo_discount_type CHECK (discount_type IN ('percentage', 'fixed'))
     )"""),
+    # chat_messages
+    dedent("""\
+    CREATE TABLE IF NOT EXISTS chat_messages (
+        id VARCHAR(36) PRIMARY KEY,
+        job_id VARCHAR(36) NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+        sender_id VARCHAR(36) NOT NULL,
+        sender_role VARCHAR(20) NOT NULL,
+        message TEXT NOT NULL,
+        read_at DATETIME,
+        created_at DATETIME,
+        CONSTRAINT ck_chat_sender_role CHECK (sender_role IN ('customer', 'driver'))
+    )"""),
 ]
 
 NEW_TABLES_PG = [
@@ -255,6 +270,17 @@ NEW_TABLES_PG = [
         created_by VARCHAR(36),
         CONSTRAINT ck_promo_discount_type CHECK (discount_type IN ('percentage', 'fixed'))
     )"""),
+    # chat_messages
+    dedent("""\
+    CREATE TABLE IF NOT EXISTS chat_messages (
+        id VARCHAR(36) PRIMARY KEY,
+        job_id VARCHAR(36) NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+        sender_id VARCHAR(36) NOT NULL,
+        sender_role VARCHAR(20) NOT NULL CHECK (sender_role IN ('customer', 'driver')),
+        message TEXT NOT NULL,
+        read_at TIMESTAMP,
+        created_at TIMESTAMP
+    )"""),
 ]
 
 # Table names for the new tables (used for reporting)
@@ -265,6 +291,7 @@ NEW_TABLE_NAMES = [
     "pricing_config",
     "operator_invites",
     "promo_codes",
+    "chat_messages",
 ]
 
 
