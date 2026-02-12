@@ -1,0 +1,88 @@
+# =============================================================================
+# JunkOS iOS Build Check
+# =============================================================================
+# Required GitHub Secrets:
+#   (none required -- builds without code signing for CI verification)
+#
+# Notes:
+#   - JunkOS-Clean  = customer-facing iOS app (scheme: JunkOS)
+#   - JunkOS-Driver  = driver-facing iOS app  (scheme: JunkOS-Driver)
+#   - JunkOS-Driver uses Swift Package Manager deps (SocketIO, Starscream)
+#   - Neither project uses CocoaPods
+#   - Builds run CODE_SIGNING_ALLOWED=NO so no provisioning profile is needed
+# =============================================================================
+
+name: iOS Build Check
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'JunkOS-Clean/**'
+      - 'JunkOS-Driver/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'JunkOS-Clean/**'
+      - 'JunkOS-Driver/**'
+
+jobs:
+  build-customer-app:
+    name: Build JunkOS (Customer)
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Cache Swift Package Manager resolved packages
+      - name: Cache SPM packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/Library/Developer/Xcode/DerivedData/**/SourcePackages
+          key: ${{ runner.os }}-spm-junkos-clean-${{ hashFiles('JunkOS-Clean/JunkOS.xcodeproj/project.pbxproj') }}
+          restore-keys: |
+            ${{ runner.os }}-spm-junkos-clean-
+
+      - name: Build JunkOS-Clean
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project JunkOS-Clean/JunkOS.xcodeproj \
+            -scheme JunkOS \
+            -destination 'platform=iOS Simulator,name=iPhone 16' \
+            -configuration Debug \
+            CODE_SIGNING_ALLOWED=NO \
+            COMPILER_INDEX_STORE_ENABLE=NO \
+            2>&1 | tee build.log | tail -30
+          echo "Build completed with exit code $?"
+
+  build-driver-app:
+    name: Build JunkOS-Driver
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Cache Swift Package Manager resolved packages (SocketIO, Starscream)
+      - name: Cache SPM packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/Library/Developer/Xcode/DerivedData/**/SourcePackages
+          key: ${{ runner.os }}-spm-junkos-driver-${{ hashFiles('JunkOS-Driver/JunkOS-Driver.xcodeproj/project.pbxproj') }}
+          restore-keys: |
+            ${{ runner.os }}-spm-junkos-driver-
+
+      - name: Build JunkOS-Driver
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project JunkOS-Driver/JunkOS-Driver.xcodeproj \
+            -scheme JunkOS-Driver \
+            -destination 'platform=iOS Simulator,name=iPhone 16' \
+            -configuration Debug \
+            CODE_SIGNING_ALLOWED=NO \
+            COMPILER_INDEX_STORE_ENABLE=NO \
+            2>&1 | tee build.log | tail -30
+          echo "Build completed with exit code $?"

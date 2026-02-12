@@ -58,8 +58,23 @@ COLUMN_MIGRATIONS = [
     ("contractors", "operator_id", "VARCHAR(36)", "VARCHAR(36)", "NULL"),
     ("contractors", "operator_commission_rate", "FLOAT", "FLOAT", "0.15"),
 
+    # Contractor onboarding fields
+    ("contractors", "onboarding_status", "VARCHAR(20)", "VARCHAR(20)", "'pending'"),
+    ("contractors", "background_check_status", "VARCHAR(20)", "VARCHAR(20)", "'not_started'"),
+    ("contractors", "insurance_document_url", "VARCHAR(500)", "VARCHAR(500)", "NULL"),
+    ("contractors", "drivers_license_url", "VARCHAR(500)", "VARCHAR(500)", "NULL"),
+    ("contractors", "vehicle_registration_url", "VARCHAR(500)", "VARCHAR(500)", "NULL"),
+    ("contractors", "insurance_expiry", "DATETIME", "TIMESTAMP", "NULL"),
+    ("contractors", "license_expiry", "DATETIME", "TIMESTAMP", "NULL"),
+    ("contractors", "onboarding_completed_at", "DATETIME", "TIMESTAMP", "NULL"),
+    ("contractors", "rejection_reason", "TEXT", "TEXT", "NULL"),
+
     # Payment table
     ("payments", "operator_payout_amount", "FLOAT", "FLOAT", "0.0"),
+
+    # Job promo code fields
+    ("jobs", "promo_code_id", "VARCHAR(36)", "VARCHAR(36)", "NULL"),
+    ("jobs", "discount_amount", "FLOAT", "FLOAT", "0.0"),
 ]
 
 
@@ -137,6 +152,23 @@ NEW_TABLES_SQLITE = [
         is_active BOOLEAN DEFAULT 1,
         created_at DATETIME
     )"""),
+    # promo_codes
+    dedent("""\
+    CREATE TABLE IF NOT EXISTS promo_codes (
+        id VARCHAR(36) PRIMARY KEY,
+        code VARCHAR(50) UNIQUE NOT NULL,
+        discount_type VARCHAR(20) NOT NULL,
+        discount_value FLOAT NOT NULL,
+        min_order_amount FLOAT DEFAULT 0.0,
+        max_discount FLOAT,
+        max_uses INTEGER,
+        use_count INTEGER DEFAULT 0,
+        expires_at DATETIME,
+        is_active BOOLEAN DEFAULT 1,
+        created_at DATETIME,
+        created_by VARCHAR(36),
+        CONSTRAINT ck_promo_discount_type CHECK (discount_type IN ('percentage', 'fixed'))
+    )"""),
 ]
 
 NEW_TABLES_PG = [
@@ -206,6 +238,23 @@ NEW_TABLES_PG = [
         is_active BOOLEAN DEFAULT TRUE,
         created_at TIMESTAMP
     )"""),
+    # promo_codes
+    dedent("""\
+    CREATE TABLE IF NOT EXISTS promo_codes (
+        id VARCHAR(36) PRIMARY KEY,
+        code VARCHAR(50) UNIQUE NOT NULL,
+        discount_type VARCHAR(20) NOT NULL,
+        discount_value FLOAT NOT NULL,
+        min_order_amount FLOAT DEFAULT 0.0,
+        max_discount FLOAT,
+        max_uses INTEGER,
+        use_count INTEGER DEFAULT 0,
+        expires_at TIMESTAMP,
+        is_active BOOLEAN DEFAULT TRUE,
+        created_at TIMESTAMP,
+        created_by VARCHAR(36),
+        CONSTRAINT ck_promo_discount_type CHECK (discount_type IN ('percentage', 'fixed'))
+    )"""),
 ]
 
 # Table names for the new tables (used for reporting)
@@ -215,6 +264,7 @@ NEW_TABLE_NAMES = [
     "device_tokens",
     "pricing_config",
     "operator_invites",
+    "promo_codes",
 ]
 
 

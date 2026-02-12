@@ -8,10 +8,33 @@ import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from models import db, Job, Contractor, Rating, Payment, User
+from datetime import datetime, timezone, timedelta
+from werkzeug.utils import secure_filename
+
+from models import db, Job, Contractor, Rating, Payment, User, Notification, generate_uuid, utcnow
 from auth_routes import require_auth
+from notifications import send_push_notification
 
 jobs_bp = Blueprint("jobs", __name__, url_prefix="/api/jobs")
+
+# ---------------------------------------------------------------------------
+# Upload constants (shared with routes/upload.py)
+# ---------------------------------------------------------------------------
+ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "webp"}
+MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
+MAX_FILES = 10
+UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "uploads")
+
+
+def _allowed_file(filename):
+    """Check if a filename has an allowed extension."""
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+def _ensure_upload_dir():
+    """Create the uploads directory if it does not exist."""
+    if not os.path.exists(UPLOAD_FOLDER):
+        os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 
 @jobs_bp.route("", methods=["GET"])
@@ -106,21 +129,175 @@ def get_job(user_id, job_id):
     return jsonify({"success": True, "job": job_dict}), 200
 
 
-@jobs_bp.route("/<job_id>/cancel", methods=["POST"])
+@jobs_bp.route("/<job_id>/cancel", methods=["POST", "PUT"])
 @require_auth
 def cancel_job(user_id, job_id):
     """
-    Cancel a job. Only allowed if the job status is 'pending' or 'confirmed'.
-    The job must belong to the authenticated customer.
+    Cancel a job.
+
+    Rules:
+    - Only the customer who created the job can cancel it.
+    - Cancellable statuses: pending, confirmed, assigned.
+    - Cancellation fee based on time until scheduled pickup:
+        - >24 hrs before: free
+        - <24 hrs before: $25
+        - <2 hrs before:  $50
+    - If cancelled after driver assignment, notify the driver via push.
+    - Creates a Notification record for the customer.
     """
     job = db.session.get(Job, job_id)
     if not job or job.customer_id != user_id:
         return jsonify({"error": "Job not found"}), 404
 
-    if job.status not in ("pending", "confirmed"):
+    cancellable = ("pending", "confirmed", "assigned")
+    if job.status not in cancellable:
         return jsonify({"error": "Job cannot be cancelled in its current status"}), 409
 
+    # --- Calculate cancellation fee ---
+    cancellation_fee = 0.0
+    now = datetime.now(timezone.utc)
+    if job.scheduled_at:
+        time_until = job.scheduled_at - now
+        if time_until < timedelta(hours=2):
+            cancellation_fee = 50.0
+        elif time_until < timedelta(hours=24):
+            cancellation_fee = 25.0
+        # else: > 24 hrs, free
+
+    # --- Update job ---
+    had_driver = job.driver_id is not None
     job.status = "cancelled"
+    job.cancelled_at = utcnow()
+    job.cancellation_fee = cancellation_fee
+
+    # --- Notify assigned driver via push ---
+    if had_driver:
+        driver = db.session.get(Contractor, job.driver_id)
+        if driver:
+            send_push_notification(
+                driver.user_id,
+                "Job Cancelled",
+                "Job #{} has been cancelled by the customer.".format(str(job.id)[:8]),
+                {"job_id": job.id, "status": "cancelled"},
+            )
+            # Notification record for the driver
+            driver_notif = Notification(
+                id=generate_uuid(),
+                user_id=driver.user_id,
+                type="job_cancelled",
+                title="Job Cancelled",
+                body="Job #{} has been cancelled by the customer.".format(str(job.id)[:8]),
+                data={"job_id": job.id},
+            )
+            db.session.add(driver_notif)
+
+    # --- Notification record for the customer ---
+    fee_msg = ""
+    if cancellation_fee > 0:
+        fee_msg = " A cancellation fee of ${:.2f} applies.".format(cancellation_fee)
+    customer_notif = Notification(
+        id=generate_uuid(),
+        user_id=user_id,
+        type="job_cancelled",
+        title="Job Cancelled",
+        body="Your job #{} has been cancelled.{}".format(str(job.id)[:8], fee_msg),
+        data={"job_id": job.id, "cancellation_fee": cancellation_fee},
+    )
+    db.session.add(customer_notif)
+
+    db.session.commit()
+
+    return jsonify({
+        "success": True,
+        "job": job.to_dict(),
+        "cancellation_fee": cancellation_fee,
+    }), 200
+
+
+@jobs_bp.route("/<job_id>/reschedule", methods=["PUT"])
+@require_auth
+def reschedule_job(user_id, job_id):
+    """
+    Reschedule a job to a new date/time.
+
+    Rules:
+    - Only the customer who created the job can reschedule.
+    - Reschedulable statuses: pending, confirmed, assigned.
+    - Accepts ``scheduled_date`` (YYYY-MM-DD) and ``scheduled_time`` (HH:MM)
+      in the request body. These are combined into ``scheduled_at``.
+    - Increments ``rescheduled_count``.
+    - If a driver is assigned, notify them of the change via push.
+    - Creates Notification records.
+    """
+    job = db.session.get(Job, job_id)
+    if not job or job.customer_id != user_id:
+        return jsonify({"error": "Job not found"}), 404
+
+    reschedulable = ("pending", "confirmed", "assigned")
+    if job.status not in reschedulable:
+        return jsonify({"error": "Job cannot be rescheduled in its current status"}), 409
+
+    data = request.get_json(silent=True) or {}
+    scheduled_date = data.get("scheduled_date")
+    scheduled_time = data.get("scheduled_time")
+
+    if not scheduled_date or not scheduled_time:
+        return jsonify({"error": "scheduled_date and scheduled_time are required"}), 400
+
+    # Parse into a datetime
+    try:
+        new_scheduled_at = datetime.strptime(
+            "{} {}".format(scheduled_date, scheduled_time), "%Y-%m-%d %H:%M"
+        ).replace(tzinfo=timezone.utc)
+    except ValueError:
+        return jsonify({"error": "Invalid date/time format. Use YYYY-MM-DD and HH:MM"}), 400
+
+    # Prevent scheduling in the past
+    if new_scheduled_at < datetime.now(timezone.utc):
+        return jsonify({"error": "Cannot schedule a job in the past"}), 400
+
+    # --- Update job ---
+    old_scheduled_at = job.scheduled_at
+    job.scheduled_at = new_scheduled_at
+    job.rescheduled_count = (job.rescheduled_count or 0) + 1
+
+    # --- Notify assigned driver ---
+    if job.driver_id:
+        driver = db.session.get(Contractor, job.driver_id)
+        if driver:
+            send_push_notification(
+                driver.user_id,
+                "Job Rescheduled",
+                "Job #{} has been rescheduled to {} at {}.".format(
+                    str(job.id)[:8], scheduled_date, scheduled_time
+                ),
+                {"job_id": job.id, "scheduled_date": scheduled_date, "scheduled_time": scheduled_time},
+            )
+            driver_notif = Notification(
+                id=generate_uuid(),
+                user_id=driver.user_id,
+                type="job_rescheduled",
+                title="Job Rescheduled",
+                body="Job #{} has been rescheduled to {} at {}.".format(
+                    str(job.id)[:8], scheduled_date, scheduled_time
+                ),
+                data={"job_id": job.id, "scheduled_date": scheduled_date, "scheduled_time": scheduled_time},
+            )
+            db.session.add(driver_notif)
+
+    # --- Notification record for the customer ---
+    customer_notif = Notification(
+        id=generate_uuid(),
+        user_id=user_id,
+        type="job_rescheduled",
+        title="Job Rescheduled",
+        body="Your job #{} has been rescheduled to {} at {}.".format(
+            str(job.id)[:8], scheduled_date, scheduled_time
+        ),
+        data={"job_id": job.id, "scheduled_date": scheduled_date, "scheduled_time": scheduled_time},
+    )
+    db.session.add(customer_notif)
+
     db.session.commit()
 
     return jsonify({"success": True, "job": job.to_dict()}), 200
@@ -164,3 +341,223 @@ def get_job_proof(user_id, job_id):
         "after_photos": job.after_photos or [],
         "proof_submitted_at": job.proof_submitted_at.isoformat() if job.proof_submitted_at else None,
     }), 200
+
+
+# ---------------------------------------------------------------------------
+# GET /api/jobs/<job_id>/photos  (customer or driver can view)
+# ---------------------------------------------------------------------------
+@jobs_bp.route("/<job_id>/photos", methods=["GET"])
+@require_auth
+def get_job_photos(user_id, job_id):
+    """
+    Return all photos for a job (before_photos, after_photos, and original photos).
+
+    Accessible to:
+        - The customer who owns the job
+        - The driver assigned to the job
+        - An admin user
+    """
+    job = db.session.get(Job, job_id)
+    if not job:
+        return jsonify({"error": "Job not found"}), 404
+
+    user = db.session.get(User, user_id)
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    is_customer = job.customer_id == user_id
+    is_admin = user.role == "admin"
+    is_driver = False
+    if user.contractor_profile and job.driver_id == user.contractor_profile.id:
+        is_driver = True
+
+    if not (is_customer or is_driver or is_admin):
+        return jsonify({"error": "You do not have access to this job's photos"}), 403
+
+    return jsonify({
+        "success": True,
+        "job_id": job.id,
+        "photos": job.photos or [],
+        "before_photos": job.before_photos or [],
+        "after_photos": job.after_photos or [],
+        "proof_submitted_at": job.proof_submitted_at.isoformat() if job.proof_submitted_at else None,
+    }), 200
+
+
+# ---------------------------------------------------------------------------
+# POST /api/jobs/<job_id>/photos/before  (driver uploads before photos)
+# ---------------------------------------------------------------------------
+@jobs_bp.route("/<job_id>/photos/before", methods=["POST"])
+@require_auth
+def upload_before_photos(user_id, job_id):
+    """
+    Driver uploads before photos for a job (multipart/form-data).
+
+    Only the assigned driver can upload.
+    Form field: ``files`` (multiple).
+    Appends uploaded URLs to ``job.before_photos``.
+    """
+    job = db.session.get(Job, job_id)
+    if not job:
+        return jsonify({"error": "Job not found"}), 404
+
+    # Verify the authenticated user is the assigned driver
+    user = db.session.get(User, user_id)
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    is_driver = False
+    if user.contractor_profile and job.driver_id == user.contractor_profile.id:
+        is_driver = True
+
+    if not is_driver:
+        return jsonify({"error": "Only the assigned driver can upload before photos"}), 403
+
+    # Parse files from the request
+    if "files" not in request.files:
+        return jsonify({"error": "No files provided. Use the 'files' form field."}), 400
+
+    files = request.files.getlist("files")
+    if len(files) == 0:
+        return jsonify({"error": "No files provided"}), 400
+    if len(files) > MAX_FILES:
+        return jsonify({"error": "Maximum {} files allowed per upload".format(MAX_FILES)}), 400
+
+    _ensure_upload_dir()
+
+    urls = []
+    errors = []
+
+    for file in files:
+        if not file or not file.filename:
+            errors.append({"file": "unknown", "error": "Empty file"})
+            continue
+
+        if not _allowed_file(file.filename):
+            errors.append({"file": file.filename, "error": "File type not allowed. Accepted: jpg, png, webp"})
+            continue
+
+        file.seek(0, os.SEEK_END)
+        size = file.tell()
+        file.seek(0)
+
+        if size > MAX_FILE_SIZE:
+            errors.append({"file": file.filename, "error": "File exceeds maximum size of 10 MB"})
+            continue
+
+        ext = file.filename.rsplit(".", 1)[1].lower()
+        unique_name = "{}.{}".format(generate_uuid(), ext)
+        safe_name = secure_filename(unique_name)
+        filepath = os.path.join(UPLOAD_FOLDER, safe_name)
+        file.save(filepath)
+
+        url = "/uploads/{}".format(safe_name)
+        urls.append(url)
+
+    if not urls:
+        return jsonify({"success": False, "error": "No files were uploaded successfully", "errors": errors}), 400
+
+    # Append to existing before_photos
+    existing = list(job.before_photos or [])
+    existing.extend(urls)
+    job.before_photos = existing
+
+    db.session.commit()
+
+    response = {"success": True, "urls": urls, "before_photos": job.before_photos}
+    if errors:
+        response["errors"] = errors
+
+    return jsonify(response), 201
+
+
+# ---------------------------------------------------------------------------
+# POST /api/jobs/<job_id>/photos/after  (driver uploads after photos)
+# ---------------------------------------------------------------------------
+@jobs_bp.route("/<job_id>/photos/after", methods=["POST"])
+@require_auth
+def upload_after_photos(user_id, job_id):
+    """
+    Driver uploads after photos for a job (multipart/form-data).
+
+    Only the assigned driver can upload.
+    Form field: ``files`` (multiple).
+    Appends uploaded URLs to ``job.after_photos``.
+    Sets ``proof_submitted_at`` on first upload.
+    """
+    job = db.session.get(Job, job_id)
+    if not job:
+        return jsonify({"error": "Job not found"}), 404
+
+    # Verify the authenticated user is the assigned driver
+    user = db.session.get(User, user_id)
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    is_driver = False
+    if user.contractor_profile and job.driver_id == user.contractor_profile.id:
+        is_driver = True
+
+    if not is_driver:
+        return jsonify({"error": "Only the assigned driver can upload after photos"}), 403
+
+    # Parse files from the request
+    if "files" not in request.files:
+        return jsonify({"error": "No files provided. Use the 'files' form field."}), 400
+
+    files = request.files.getlist("files")
+    if len(files) == 0:
+        return jsonify({"error": "No files provided"}), 400
+    if len(files) > MAX_FILES:
+        return jsonify({"error": "Maximum {} files allowed per upload".format(MAX_FILES)}), 400
+
+    _ensure_upload_dir()
+
+    urls = []
+    errors = []
+
+    for file in files:
+        if not file or not file.filename:
+            errors.append({"file": "unknown", "error": "Empty file"})
+            continue
+
+        if not _allowed_file(file.filename):
+            errors.append({"file": file.filename, "error": "File type not allowed. Accepted: jpg, png, webp"})
+            continue
+
+        file.seek(0, os.SEEK_END)
+        size = file.tell()
+        file.seek(0)
+
+        if size > MAX_FILE_SIZE:
+            errors.append({"file": file.filename, "error": "File exceeds maximum size of 10 MB"})
+            continue
+
+        ext = file.filename.rsplit(".", 1)[1].lower()
+        unique_name = "{}.{}".format(generate_uuid(), ext)
+        safe_name = secure_filename(unique_name)
+        filepath = os.path.join(UPLOAD_FOLDER, safe_name)
+        file.save(filepath)
+
+        url = "/uploads/{}".format(safe_name)
+        urls.append(url)
+
+    if not urls:
+        return jsonify({"success": False, "error": "No files were uploaded successfully", "errors": errors}), 400
+
+    # Append to existing after_photos
+    existing = list(job.after_photos or [])
+    existing.extend(urls)
+    job.after_photos = existing
+
+    # Mark proof submission timestamp on first after-photo upload
+    if not job.proof_submitted_at:
+        job.proof_submitted_at = utcnow()
+
+    db.session.commit()
+
+    response = {"success": True, "urls": urls, "after_photos": job.after_photos}
+    if errors:
+        response["errors"] = errors
+
+    return jsonify(response), 201

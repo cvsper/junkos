@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { ChatPanel } from "@/components/chat/chat-panel";
+import BeforeAfterSlider from "@/components/photos/before-after-slider";
 
 // ---------------------------------------------------------------------------
 // Local types (mirrors backend response shape)
@@ -39,6 +41,9 @@ interface JobDetail {
   address: string;
   items: { category: string; quantity: number }[];
   photos: string[];
+  before_photos: string[];
+  after_photos: string[];
+  proof_submitted_at: string | null;
   total_price: number;
   base_price: number;
   item_total: number;
@@ -48,6 +53,9 @@ interface JobDetail {
   scheduled_at: string | null;
   created_at: string;
   completed_at: string | null;
+  cancelled_at?: string | null;
+  cancellation_fee?: number;
+  rescheduled_count?: number;
   payment?: JobPayment | null;
   rating?: JobRating | null;
   contractor?: JobContractor | null;
@@ -77,7 +85,7 @@ const ACTIVE_STATUSES = [
   "in_progress",
 ];
 
-const CANCELLABLE_STATUSES = ["pending", "confirmed"];
+const CANCELLABLE_STATUSES = ["pending", "confirmed", "assigned"];
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -113,6 +121,17 @@ function formatDateTime(iso: string): string {
 
 function formatPrice(amount: number): string {
   return `$${amount.toFixed(2)}`;
+}
+
+/** Estimate the cancellation fee based on time until scheduled pickup. */
+function estimateCancellationFee(scheduledAt: string | null | undefined): number {
+  if (!scheduledAt) return 0;
+  const now = new Date();
+  const scheduled = new Date(scheduledAt);
+  const hoursUntil = (scheduled.getTime() - now.getTime()) / (1000 * 60 * 60);
+  if (hoursUntil < 2) return 50;
+  if (hoursUntil < 24) return 25;
+  return 0;
 }
 
 // ---------------------------------------------------------------------------
@@ -224,6 +243,17 @@ export default function JobDetailPage() {
   // Cancel state
   const [cancelConfirm, setCancelConfirm] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  const [cancelFeeReturned, setCancelFeeReturned] = useState<number | null>(null);
+
+  // Reschedule state
+  const [rescheduleOpen, setRescheduleOpen] = useState(false);
+  const [rescheduleDate, setRescheduleDate] = useState("");
+  const [rescheduleTime, setRescheduleTime] = useState("");
+  const [rescheduling, setRescheduling] = useState(false);
+  const [rescheduleError, setRescheduleError] = useState<string | null>(null);
+
+  // Chat state
+  const [chatOpen, setChatOpen] = useState(false);
 
   // Rating state
   const [ratingStars, setRatingStars] = useState(0);
@@ -265,6 +295,9 @@ export default function JobDetailPage() {
       if (res.job) {
         setJob(res.job);
       }
+      if (res.cancellation_fee !== undefined) {
+        setCancelFeeReturned(res.cancellation_fee);
+      }
       setCancelConfirm(false);
     } catch (err: unknown) {
       const message =
@@ -272,6 +305,34 @@ export default function JobDetailPage() {
       setError(message);
     } finally {
       setCancelling(false);
+    }
+  }
+
+  // Reschedule handler
+  async function handleReschedule() {
+    if (!rescheduleDate || !rescheduleTime) {
+      setRescheduleError("Please select both a date and time.");
+      return;
+    }
+    setRescheduling(true);
+    setRescheduleError(null);
+    try {
+      const res = await jobsApi.reschedule(id, {
+        scheduled_date: rescheduleDate,
+        scheduled_time: rescheduleTime,
+      });
+      if (res.job) {
+        setJob(res.job);
+      }
+      setRescheduleOpen(false);
+      setRescheduleDate("");
+      setRescheduleTime("");
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Failed to reschedule job.";
+      setRescheduleError(message);
+    } finally {
+      setRescheduling(false);
     }
   }
 
@@ -385,7 +446,11 @@ export default function JobDetailPage() {
   const isActive = ACTIVE_STATUSES.includes(job.status);
   const hasRating = !!job.rating;
   const hasContractor = !!job.contractor;
+  const canChat = hasContractor && ["assigned", "en_route", "arrived", "in_progress"].includes(job.status);
   const hasPhotos = job.photos && job.photos.length > 0;
+  const hasBeforeAfterPhotos =
+    (job.before_photos && job.before_photos.length > 0) ||
+    (job.after_photos && job.after_photos.length > 0);
   const hasSurge = job.surge_multiplier > 1.0;
 
   return (
@@ -457,6 +522,29 @@ export default function JobDetailPage() {
                   View Receipt
                 </Button>
               </Link>
+            )}
+            {canChat && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                onClick={() => setChatOpen(true)}
+              >
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={2}
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z"
+                  />
+                </svg>
+                Chat with Driver
+              </Button>
             )}
           </div>
         </div>
@@ -667,35 +755,52 @@ export default function JobDetailPage() {
           </CardContent>
         </Card>
 
-        {/* Photos */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-display text-lg">Photos</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {hasPhotos ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {job.photos.map((url, idx) => (
-                  <div
-                    key={idx}
-                    className="aspect-square rounded-lg overflow-hidden border border-border bg-muted"
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={url}
-                      alt={`Job photo ${idx + 1}`}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-muted-foreground text-sm">
-                No photos uploaded.
-              </p>
-            )}
-          </CardContent>
-        </Card>
+        {/* Original booking photos (hidden when before/after photos exist to avoid duplication) */}
+        {!hasBeforeAfterPhotos && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="font-display text-lg">Photos</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {hasPhotos ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {job.photos.map((url, idx) => (
+                    <div
+                      key={idx}
+                      className="aspect-square rounded-lg overflow-hidden border border-border bg-muted"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={url}
+                        alt={`Job photo ${idx + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-muted-foreground text-sm">
+                  No photos uploaded.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Before/After Photos - Proof of Completion */}
+        {hasBeforeAfterPhotos && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="font-display text-lg">Photos</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <BeforeAfterSlider
+                beforePhotos={job.before_photos || []}
+                afterPhotos={job.after_photos || []}
+              />
+            </CardContent>
+          </Card>
+        )}
 
         {/* Rating section (only for completed jobs) */}
         {isCompleted && (
@@ -874,14 +979,115 @@ export default function JobDetailPage() {
           </Card>
         )}
 
-        {/* Cancel button (only for pending/confirmed) */}
+        {/* Cancel & Reschedule actions (only for cancellable statuses) */}
         {canCancel && (
-          <div className="pt-2">
+          <div className="pt-2 space-y-4">
+            {/* Reschedule modal */}
+            {rescheduleOpen && (
+              <Card className="border-primary/30">
+                <CardHeader className="pb-3">
+                  <CardTitle className="font-display text-lg flex items-center gap-2">
+                    <svg
+                      className="w-5 h-5 text-primary"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth={2}
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"
+                      />
+                    </svg>
+                    Reschedule Job
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label
+                        htmlFor="reschedule-date"
+                        className="text-sm text-muted-foreground block mb-1.5"
+                      >
+                        New Date
+                      </label>
+                      <input
+                        id="reschedule-date"
+                        type="date"
+                        value={rescheduleDate}
+                        onChange={(e) => setRescheduleDate(e.target.value)}
+                        min={new Date().toISOString().split("T")[0]}
+                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-all duration-200"
+                      />
+                    </div>
+                    <div>
+                      <label
+                        htmlFor="reschedule-time"
+                        className="text-sm text-muted-foreground block mb-1.5"
+                      >
+                        New Time
+                      </label>
+                      <input
+                        id="reschedule-time"
+                        type="time"
+                        value={rescheduleTime}
+                        onChange={(e) => setRescheduleTime(e.target.value)}
+                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-all duration-200"
+                      />
+                    </div>
+                  </div>
+
+                  {rescheduleError && (
+                    <div className="rounded-md bg-destructive/10 border border-destructive/20 px-3 py-2">
+                      <p className="text-destructive text-sm">{rescheduleError}</p>
+                    </div>
+                  )}
+
+                  <div className="flex items-center gap-3">
+                    <Button
+                      size="sm"
+                      onClick={handleReschedule}
+                      disabled={rescheduling || !rescheduleDate || !rescheduleTime}
+                    >
+                      {rescheduling ? "Rescheduling..." : "Confirm New Time"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setRescheduleOpen(false);
+                        setRescheduleError(null);
+                      }}
+                      disabled={rescheduling}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Cancel confirmation dialog */}
             {cancelConfirm ? (
               <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
-                <p className="text-sm font-medium text-destructive mb-3">
+                <p className="text-sm font-medium text-destructive mb-2">
                   Are you sure you want to cancel this job?
                 </p>
+                {(() => {
+                  const fee = estimateCancellationFee(job.scheduled_at);
+                  return fee > 0 ? (
+                    <p className="text-sm text-destructive/80 mb-3">
+                      A cancellation fee of <span className="font-semibold">{formatPrice(fee)}</span> will
+                      apply because this job is scheduled within{" "}
+                      {fee === 50 ? "2 hours" : "24 hours"}.
+                    </p>
+                  ) : (
+                    <p className="text-sm text-muted-foreground mb-3">
+                      No cancellation fee will be charged.
+                    </p>
+                  );
+                })()}
                 <div className="flex items-center gap-3">
                   <Button
                     variant="destructive"
@@ -902,17 +1108,75 @@ export default function JobDetailPage() {
                 </div>
               </div>
             ) : (
-              <Button
-                variant="outline"
-                className="text-destructive border-destructive/30 hover:bg-destructive/5"
-                onClick={handleCancel}
-              >
-                Cancel Job
-              </Button>
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="outline"
+                  className="gap-2"
+                  onClick={() => setRescheduleOpen(!rescheduleOpen)}
+                >
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={2}
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"
+                    />
+                  </svg>
+                  Reschedule
+                </Button>
+                <Button
+                  variant="outline"
+                  className="text-destructive border-destructive/30 hover:bg-destructive/5 gap-2"
+                  onClick={handleCancel}
+                >
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={2}
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                  Cancel Job
+                </Button>
+              </div>
             )}
           </div>
         )}
+
+        {/* Cancellation info (shown when job is already cancelled) */}
+        {job.status === "cancelled" && (job.cancellation_fee ?? 0) > 0 && (
+          <div className="rounded-lg border border-red-200 bg-red-50 dark:bg-red-950/20 p-4">
+            <p className="text-sm text-red-800 dark:text-red-300">
+              This job was cancelled with a{" "}
+              <span className="font-semibold">
+                {formatPrice(job.cancellation_fee ?? 0)}
+              </span>{" "}
+              cancellation fee.
+            </p>
+          </div>
+        )}
       </div>
+
+      {/* Chat panel (slides in from right) */}
+      {canChat && (
+        <ChatPanel
+          jobId={id}
+          isOpen={chatOpen}
+          onClose={() => setChatOpen(false)}
+          userRole="customer"
+        />
+      )}
     </div>
   );
 }

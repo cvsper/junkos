@@ -1,0 +1,53 @@
+# =============================================================================
+# JunkOS Frontend (Platform) CI
+# =============================================================================
+# Required GitHub Secrets:
+#   (none required for build/lint)
+#
+# Notes:
+#   - platform/ is a Next.js 14 app with TypeScript
+#   - `npm run build` catches TS errors, missing imports, and bad pages
+#   - `npm run lint` runs next lint (ESLint)
+# =============================================================================
+
+name: Frontend Build
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'platform/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'platform/**'
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  build:
+    name: Build & Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: platform/package-lock.json
+
+      - name: Install dependencies
+        working-directory: platform
+        run: npm ci
+
+      - name: Run ESLint (next lint)
+        working-directory: platform
+        run: npm run lint
+
+      - name: Build Next.js app
+        working-directory: platform
+        run: npm run build

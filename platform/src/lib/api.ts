@@ -108,6 +108,23 @@ export const authApi = {
   },
 
   me: () => apiFetch<User>("/api/auth/me"),
+
+  updateProfile: (data: { name?: string; email?: string; phone?: string }) =>
+    apiFetch<{ success: boolean; user: User }>("/api/auth/me", {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+
+  changePassword: (data: { current_password: string; new_password: string }) =>
+    apiFetch<{ success: boolean; message: string }>("/api/auth/change-password", {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+
+  deleteAccount: () =>
+    apiFetch<{ success: boolean; message: string }>("/api/auth/me", {
+      method: "DELETE",
+    }),
 };
 
 // ---------------------------------------------------------------------------
@@ -122,6 +139,9 @@ interface CustomerJobResponse {
   address: string;
   items: { category: string; quantity: number }[];
   photos: string[];
+  before_photos: string[];
+  after_photos: string[];
+  proof_submitted_at: string | null;
   scheduled_at: string | null;
   total_price: number;
   base_price: number;
@@ -163,9 +183,26 @@ export const jobsApi = {
     apiFetch<{ success: boolean; job: CustomerJobResponse }>(`/api/jobs/${id}`),
 
   cancel: (id: string) =>
-    apiFetch<{ success: boolean; job: CustomerJobResponse }>(`/api/jobs/${id}/cancel`, {
-      method: "POST",
+    apiFetch<{ success: boolean; job: CustomerJobResponse; cancellation_fee?: number }>(`/api/jobs/${id}/cancel`, {
+      method: "PUT",
     }),
+
+  reschedule: (id: string, data: { scheduled_date: string; scheduled_time: string }) =>
+    apiFetch<{ success: boolean; job: CustomerJobResponse }>(`/api/jobs/${id}/reschedule`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+
+  /** GET /api/jobs/:id/photos -- get all photos (before/after) for a job */
+  getPhotos: (id: string) =>
+    apiFetch<{
+      success: boolean;
+      job_id: string;
+      photos: string[];
+      before_photos: string[];
+      after_photos: string[];
+      proof_submitted_at: string | null;
+    }>(`/api/jobs/${id}/photos`),
 };
 
 // ---------------------------------------------------------------------------
@@ -557,6 +594,159 @@ export const adminApi = {
     apiFetch<{ success: boolean }>("/api/admin/notifications/read-all", {
       method: "PUT",
     }),
+
+  /** GET /api/admin/onboarding/applications -- list onboarding applications */
+  onboardingApplications: (filters?: AdminFilters) => {
+    const params = new URLSearchParams();
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== "") params.append(key, String(value));
+      });
+    }
+    const query = params.toString();
+    return apiFetch<{
+      success: boolean;
+      applications: OnboardingApplicationRecord[];
+      total: number;
+      page: number;
+      pages: number;
+    }>(`/api/admin/onboarding/applications${query ? `?${query}` : ""}`);
+  },
+
+  /** PUT /api/admin/onboarding/:id/review -- approve or reject onboarding */
+  reviewOnboarding: (contractorId: string, action: "approve" | "reject", rejectionReason?: string) =>
+    apiFetch<{ success: boolean; contractor: OnboardingApplicationRecord; action: string }>(
+      `/api/admin/onboarding/${contractorId}/review`,
+      {
+        method: "PUT",
+        body: JSON.stringify({
+          action,
+          ...(rejectionReason ? { rejection_reason: rejectionReason } : {}),
+        }),
+      }
+    ),
+
+  /** GET /api/admin/promos -- list all promo codes */
+  promos: (filters?: AdminFilters) => {
+    const params = new URLSearchParams();
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== "") params.append(key, String(value));
+      });
+    }
+    const query = params.toString();
+    return apiFetch<{
+      success: boolean;
+      promos: AdminPromoCodeRecord[];
+      total: number;
+      page: number;
+      pages: number;
+    }>(`/api/admin/promos${query ? `?${query}` : ""}`);
+  },
+
+  /** POST /api/admin/promos -- create a new promo code */
+  createPromo: (data: PromoCodeCreatePayload) =>
+    apiFetch<{ success: boolean; promo: AdminPromoCodeRecord }>(
+      "/api/admin/promos",
+      { method: "POST", body: JSON.stringify(data) }
+    ),
+
+  /** PUT /api/admin/promos/:id -- update a promo code */
+  updatePromo: (id: string, data: Partial<PromoCodeCreatePayload>) =>
+    apiFetch<{ success: boolean; promo: AdminPromoCodeRecord }>(
+      `/api/admin/promos/${id}`,
+      { method: "PUT", body: JSON.stringify(data) }
+    ),
+
+  /** DELETE /api/admin/promos/:id -- deactivate a promo code */
+  deactivatePromo: (id: string) =>
+    apiFetch<{ success: boolean; promo: AdminPromoCodeRecord }>(
+      `/api/admin/promos/${id}`,
+      { method: "DELETE" }
+    ),
+};
+
+// ---------------------------------------------------------------------------
+// Onboarding types
+// ---------------------------------------------------------------------------
+
+export interface OnboardingApplicationRecord {
+  id: string;
+  user_id: string;
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+  truck_type: string | null;
+  onboarding_status: string;
+  background_check_status: string;
+  insurance_document_url: string | null;
+  drivers_license_url: string | null;
+  vehicle_registration_url: string | null;
+  insurance_expiry: string | null;
+  license_expiry: string | null;
+  onboarding_completed_at: string | null;
+  rejection_reason: string | null;
+  approval_status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// ---------------------------------------------------------------------------
+// Promo Code types
+// ---------------------------------------------------------------------------
+
+export interface AdminPromoCodeRecord {
+  id: string;
+  code: string;
+  discount_type: "percentage" | "fixed";
+  discount_value: number;
+  min_order_amount: number;
+  max_discount: number | null;
+  max_uses: number | null;
+  use_count: number;
+  expires_at: string | null;
+  is_active: boolean;
+  created_at: string;
+  created_by: string | null;
+}
+
+export interface PromoCodeCreatePayload {
+  code: string;
+  discount_type: "percentage" | "fixed";
+  discount_value: number;
+  min_order_amount?: number;
+  max_discount?: number | null;
+  max_uses?: number | null;
+  expires_at?: string | null;
+  is_active?: boolean;
+}
+
+export interface PromoValidationResponse {
+  valid: boolean;
+  error?: string;
+  promo?: {
+    id: string;
+    code: string;
+    discount_type: "percentage" | "fixed";
+    discount_value: number;
+    max_discount: number | null;
+    min_order_amount: number;
+  };
+  discount_amount?: number;
+  new_total?: number;
+}
+
+// ---------------------------------------------------------------------------
+// Promos API (public)
+// ---------------------------------------------------------------------------
+
+export const promosApi = {
+  /** POST /api/promos/validate -- validate a promo code */
+  validate: (code: string, orderAmount: number) =>
+    apiFetch<PromoValidationResponse>("/api/promos/validate", {
+      method: "POST",
+      body: JSON.stringify({ code, order_amount: orderAmount }),
+    }),
 };
 
 // ---------------------------------------------------------------------------
@@ -942,6 +1132,55 @@ export const supportApi = {
     apiFetch<{ success: boolean; message: SupportMessageRecord }>(
       `/api/admin/support-messages/${id}/resolve`,
       { method: "PUT" }
+    ),
+};
+
+// ---------------------------------------------------------------------------
+// Chat API
+// ---------------------------------------------------------------------------
+
+export interface ChatMessageRecord {
+  id: string;
+  job_id: string;
+  sender_id: string;
+  sender_role: "customer" | "driver";
+  message: string;
+  read_at: string | null;
+  created_at: string;
+}
+
+export const chatApi = {
+  /** GET /api/jobs/:id/messages -- get chat messages for a job */
+  getMessages: (jobId: string, before?: string, limit?: number) => {
+    const params = new URLSearchParams();
+    if (before) params.append("before", before);
+    if (limit) params.append("limit", String(limit));
+    const query = params.toString();
+    return apiFetch<{
+      success: boolean;
+      messages: ChatMessageRecord[];
+      has_more: boolean;
+    }>(`/api/jobs/${jobId}/messages${query ? `?${query}` : ""}`);
+  },
+
+  /** POST /api/jobs/:id/messages -- send a chat message */
+  sendMessage: (jobId: string, message: string) =>
+    apiFetch<{ success: boolean; message: ChatMessageRecord }>(
+      `/api/jobs/${jobId}/messages`,
+      { method: "POST", body: JSON.stringify({ message }) }
+    ),
+
+  /** PUT /api/jobs/:id/messages/read -- mark messages as read */
+  markRead: (jobId: string) =>
+    apiFetch<{ success: boolean; marked_read: number }>(
+      `/api/jobs/${jobId}/messages/read`,
+      { method: "PUT" }
+    ),
+
+  /** GET /api/jobs/:id/messages/unread-count -- get unread count */
+  unreadCount: (jobId: string) =>
+    apiFetch<{ success: boolean; unread_count: number }>(
+      `/api/jobs/${jobId}/messages/unread-count`
     ),
 };
 

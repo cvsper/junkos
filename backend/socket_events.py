@@ -148,6 +148,103 @@ def broadcast_job_status(job_id, status, extra=None):
     socketio.emit("admin:job-status", payload, room="admin")
 
 
+@socketio.on("chat:send")
+def handle_chat_send(data):
+    """
+    Receive a chat message via Socket.IO, persist to DB, and broadcast to job room.
+    data = { job_id, sender_id, sender_role, message }
+    """
+    from models import ChatMessage, generate_uuid
+
+    job_id = data.get("job_id")
+    sender_id = data.get("sender_id")
+    sender_role = data.get("sender_role")
+    message = (data.get("message") or "").strip()
+
+    if not job_id or not sender_id or not sender_role or not message:
+        emit("chat:error", {"error": "Missing required fields"}, room=request.sid)
+        return
+
+    if sender_role not in ("customer", "driver"):
+        emit("chat:error", {"error": "Invalid sender_role"}, room=request.sid)
+        return
+
+    if len(message) > 2000:
+        emit("chat:error", {"error": "Message too long"}, room=request.sid)
+        return
+
+    try:
+        msg = ChatMessage(
+            id=generate_uuid(),
+            job_id=job_id,
+            sender_id=sender_id,
+            sender_role=sender_role,
+            message=message,
+        )
+        db.session.add(msg)
+        db.session.commit()
+
+        msg_dict = msg.to_dict()
+        emit("chat:message", msg_dict, room=job_id)
+    except Exception as e:
+        db.session.rollback()
+        emit("chat:error", {"error": "Failed to save message"}, room=request.sid)
+
+
+@socketio.on("chat:typing")
+def handle_chat_typing(data):
+    """
+    Broadcast typing indicator to the job room.
+    data = { job_id, sender_id, sender_role, is_typing }
+    """
+    job_id = data.get("job_id")
+    if not job_id:
+        return
+    emit("chat:typing", {
+        "job_id": job_id,
+        "sender_id": data.get("sender_id"),
+        "sender_role": data.get("sender_role"),
+        "is_typing": data.get("is_typing", True),
+    }, room=job_id, include_self=False)
+
+
+@socketio.on("chat:read")
+def handle_chat_read(data):
+    """
+    Mark messages as read and notify the sender.
+    data = { job_id, reader_role }
+    """
+    from models import ChatMessage
+    from datetime import datetime, timezone
+
+    job_id = data.get("job_id")
+    reader_role = data.get("reader_role")
+    if not job_id or not reader_role:
+        return
+
+    other_role = "driver" if reader_role == "customer" else "customer"
+    now = datetime.now(timezone.utc)
+
+    try:
+        updated = (
+            ChatMessage.query
+            .filter_by(job_id=job_id, sender_role=other_role)
+            .filter(ChatMessage.read_at.is_(None))
+            .update({"read_at": now})
+        )
+        db.session.commit()
+
+        if updated > 0:
+            emit("chat:read", {
+                "job_id": job_id,
+                "read_by": reader_role,
+                "read_at": now.isoformat(),
+                "count": updated,
+            }, room=job_id)
+    except Exception:
+        db.session.rollback()
+
+
 def notify_nearby_drivers(job):
     """
     Called after a new job is created.

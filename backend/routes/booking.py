@@ -17,7 +17,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from models import (
     db, Job, Payment, PricingRule, PricingConfig, SurgeZone, Contractor,
-    Notification, generate_uuid, utcnow,
+    Notification, PromoCode, generate_uuid, utcnow,
 )
 from auth_routes import require_auth
 from geofencing import is_in_service_area
@@ -540,6 +540,22 @@ def create_booking(user_id):
     surge_multiplier = est["surge_multiplier"]
     item_total = est["items_subtotal"]
 
+    # --- Apply promo code if provided ---
+    promo_code_str = data.get("promo_code", "").strip()
+    promo_code_id = None
+    discount_amount = 0.0
+
+    if promo_code_str:
+        from routes.promos import validate_promo_code
+        promo, discount, promo_error = validate_promo_code(promo_code_str, total)
+        if promo_error:
+            return jsonify({"error": promo_error}), 400
+        promo_code_id = promo.id
+        discount_amount = discount
+        total = round(total - discount, 2)
+        # Increment use count
+        promo.use_count = (promo.use_count or 0) + 1
+
     # --- Create Job ---
     job = Job(
         id=generate_uuid(),
@@ -556,6 +572,8 @@ def create_booking(user_id):
         service_fee=service_fee,
         surge_multiplier=surge_multiplier,
         total_price=total,
+        promo_code_id=promo_code_id,
+        discount_amount=discount_amount,
         notes=notes,
     )
     db.session.add(job)

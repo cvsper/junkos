@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import BeforeAfterSlider from "@/components/photos/before-after-slider";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -33,6 +34,9 @@ interface JobDetail {
   address: string;
   items: { category: string; quantity: number }[];
   photos: string[];
+  before_photos: string[];
+  after_photos: string[];
+  proof_submitted_at: string | null;
   total_price: number;
   base_price: number;
   item_total: number;
@@ -511,6 +515,22 @@ export default function ReceiptPage() {
                 </p>
               )}
             </div>
+
+            {/* Proof of Completion photos */}
+            {((job.before_photos && job.before_photos.length > 0) ||
+              (job.after_photos && job.after_photos.length > 0)) && (
+              <>
+                <Separator className="my-6" />
+                <div className="mb-2">
+                  <BeforeAfterSlider
+                    beforePhotos={job.before_photos || []}
+                    afterPhotos={job.after_photos || []}
+                    label="Proof of Completion"
+                    compact
+                  />
+                </div>
+              </>
+            )}
 
             {/* Footer */}
             <div className="mt-8 pt-6 border-t border-border text-center">

@@ -110,6 +110,17 @@ class Contractor(db.Model):
     approval_status = Column(String(20), default="pending")
     availability_schedule = Column(JSON, nullable=True, default=dict)
 
+    # Onboarding fields
+    onboarding_status = Column(String(20), default="pending")  # pending, documents_submitted, under_review, approved, rejected
+    background_check_status = Column(String(20), default="not_started")  # not_started, pending, passed, failed
+    insurance_document_url = Column(String(500), nullable=True)
+    drivers_license_url = Column(String(500), nullable=True)
+    vehicle_registration_url = Column(String(500), nullable=True)
+    insurance_expiry = Column(DateTime, nullable=True)
+    license_expiry = Column(DateTime, nullable=True)
+    onboarding_completed_at = Column(DateTime, nullable=True)
+    rejection_reason = Column(Text, nullable=True)
+
     # Operator fields
     is_operator = Column(Boolean, default=False)
     operator_id = Column(String(36), ForeignKey("contractors.id", ondelete="SET NULL"), nullable=True, index=True)
@@ -140,11 +151,63 @@ class Contractor(db.Model):
             "total_jobs": self.total_jobs,
             "approval_status": self.approval_status,
             "availability_schedule": self.availability_schedule or {},
+            "onboarding_status": self.onboarding_status or "pending",
+            "background_check_status": self.background_check_status or "not_started",
+            "insurance_document_url": self.insurance_document_url,
+            "drivers_license_url": self.drivers_license_url,
+            "vehicle_registration_url": self.vehicle_registration_url,
+            "insurance_expiry": self.insurance_expiry.isoformat() if self.insurance_expiry else None,
+            "license_expiry": self.license_expiry.isoformat() if self.license_expiry else None,
+            "onboarding_completed_at": self.onboarding_completed_at.isoformat() if self.onboarding_completed_at else None,
+            "rejection_reason": self.rejection_reason,
             "is_operator": self.is_operator or False,
             "operator_id": self.operator_id,
             "operator_commission_rate": self.operator_commission_rate or 0.15,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+
+# ---------------------------------------------------------------------------
+# PromoCode
+# ---------------------------------------------------------------------------
+class PromoCode(db.Model):
+    __tablename__ = "promo_codes"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    code = Column(String(50), unique=True, nullable=False, index=True)
+    discount_type = Column(String(20), nullable=False)  # "percentage" or "fixed"
+    discount_value = Column(Float, nullable=False)  # e.g., 20 for 20% or 20 for $20
+    min_order_amount = Column(Float, default=0.0)
+    max_discount = Column(Float, nullable=True)  # cap for percentage discounts
+    max_uses = Column(Integer, nullable=True)  # null = unlimited
+    use_count = Column(Integer, default=0)
+    expires_at = Column(DateTime, nullable=True)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=utcnow)
+    created_by = Column(String(36), nullable=True)  # admin user_id
+
+    __table_args__ = (
+        CheckConstraint(
+            "discount_type IN ('percentage', 'fixed')",
+            name="ck_promo_discount_type",
+        ),
+    )
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "code": self.code,
+            "discount_type": self.discount_type,
+            "discount_value": self.discount_value,
+            "min_order_amount": self.min_order_amount or 0.0,
+            "max_discount": self.max_discount,
+            "max_uses": self.max_uses,
+            "use_count": self.use_count or 0,
+            "expires_at": self.expires_at.isoformat() if self.expires_at else None,
+            "is_active": self.is_active,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "created_by": self.created_by,
         }
 
 
@@ -184,7 +247,14 @@ class Job(db.Model):
     surge_multiplier = Column(Float, default=1.0)
     total_price = Column(Float, default=0.0)
 
+    promo_code_id = Column(String(36), ForeignKey("promo_codes.id", ondelete="SET NULL"), nullable=True)
+    discount_amount = Column(Float, default=0.0)
+
     notes = Column(Text, nullable=True)
+
+    cancelled_at = Column(DateTime, nullable=True)
+    cancellation_fee = Column(Float, default=0.0)
+    rescheduled_count = Column(Integer, default=0)
 
     created_at = Column(DateTime, default=utcnow)
     updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
@@ -194,6 +264,7 @@ class Job(db.Model):
     operator_rel = relationship("Contractor", foreign_keys=[operator_id], backref="operator_jobs")
     payment = relationship("Payment", back_populates="job", uselist=False, lazy="joined")
     rating = relationship("Rating", back_populates="job", uselist=False, lazy="joined")
+    promo_code = relationship("PromoCode", foreign_keys=[promo_code_id], backref="jobs")
 
     __table_args__ = (
         Index("ix_jobs_status", "status"),
@@ -226,7 +297,12 @@ class Job(db.Model):
             "service_fee": self.service_fee,
             "surge_multiplier": self.surge_multiplier,
             "total_price": self.total_price,
+            "promo_code_id": self.promo_code_id,
+            "discount_amount": self.discount_amount or 0.0,
             "notes": self.notes,
+            "cancelled_at": self.cancelled_at.isoformat() if self.cancelled_at else None,
+            "cancellation_fee": self.cancellation_fee or 0.0,
+            "rescheduled_count": self.rescheduled_count or 0,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
@@ -614,5 +690,38 @@ class SupportMessage(db.Model):
             "message": self.message,
             "category": self.category,
             "status": self.status,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
+
+
+# ---------------------------------------------------------------------------
+# ChatMessage (real-time chat between customer and driver on a job)
+# ---------------------------------------------------------------------------
+class ChatMessage(db.Model):
+    __tablename__ = "chat_messages"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    job_id = Column(String(36), ForeignKey("jobs.id", ondelete="CASCADE"), nullable=False, index=True)
+    sender_id = Column(String(36), nullable=False)  # user_id
+    sender_role = Column(String(20), nullable=False)  # "customer" or "driver"
+    message = Column(Text, nullable=False)
+    read_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=utcnow)
+
+    job = relationship("Job", backref="chat_messages")
+
+    __table_args__ = (
+        CheckConstraint("sender_role IN ('customer', 'driver')", name="ck_chat_sender_role"),
+        Index("ix_chat_messages_job_created", "job_id", "created_at"),
+    )
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "job_id": self.job_id,
+            "sender_id": self.sender_id,
+            "sender_role": self.sender_role,
+            "message": self.message,
+            "read_at": self.read_at.isoformat() if self.read_at else None,
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }

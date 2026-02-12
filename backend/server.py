@@ -3,6 +3,7 @@ from flask_cors import CORS
 from functools import wraps
 from datetime import datetime, timedelta
 import os
+import logging
 
 from sanitize import sanitize_dict
 from extensions import limiter
@@ -12,7 +13,58 @@ from database import Database
 from auth_routes import auth_bp
 from models import db as sqlalchemy_db
 from socket_events import socketio
-from routes import drivers_bp, pricing_bp, ratings_bp, admin_bp, payments_bp, webhook_bp, booking_bp, upload_bp, jobs_bp, tracking_bp, driver_bp, operator_bp, push_bp, service_area_bp, recurring_bp, referrals_bp, support_bp
+from routes import drivers_bp, pricing_bp, ratings_bp, admin_bp, payments_bp, webhook_bp, booking_bp, upload_bp, jobs_bp, tracking_bp, driver_bp, operator_bp, push_bp, service_area_bp, recurring_bp, referrals_bp, support_bp, chat_bp, onboarding_bp, promos_bp
+
+# ---------------------------------------------------------------------------
+# Sentry error monitoring (optional -- only active when SENTRY_DSN is set)
+# ---------------------------------------------------------------------------
+_sentry_dsn = os.environ.get("SENTRY_DSN")
+if _sentry_dsn:
+    import sentry_sdk
+    from sentry_sdk.integrations.flask import FlaskIntegration
+    sentry_sdk.init(
+        dsn=_sentry_dsn,
+        integrations=[FlaskIntegration()],
+        traces_sample_rate=0.1,
+    )
+
+# ---------------------------------------------------------------------------
+# Production startup checks
+# ---------------------------------------------------------------------------
+_startup_logger = logging.getLogger("junkos.startup")
+
+_CRITICAL_ENV_VARS = [
+    "JWT_SECRET",
+    "SECRET_KEY",
+    "DATABASE_URL",
+]
+
+_RECOMMENDED_ENV_VARS = [
+    "ADMIN_SEED_SECRET",
+    "STRIPE_SECRET_KEY",
+    "STRIPE_WEBHOOK_SECRET",
+    "CORS_ORIGINS",
+]
+
+_flask_env = os.environ.get("FLASK_ENV", "development")
+if _flask_env != "development":
+    _missing_critical = [v for v in _CRITICAL_ENV_VARS if not os.environ.get(v)]
+    _missing_recommended = [v for v in _RECOMMENDED_ENV_VARS if not os.environ.get(v)]
+
+    if _missing_critical:
+        _startup_logger.critical(
+            "MISSING CRITICAL ENV VARS (app may not work correctly): %s",
+            ", ".join(_missing_critical),
+        )
+    if _missing_recommended:
+        _startup_logger.warning(
+            "Missing recommended env vars: %s",
+            ", ".join(_missing_recommended),
+        )
+    if not _sentry_dsn:
+        _startup_logger.warning(
+            "SENTRY_DSN is not set -- error monitoring is disabled."
+        )
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -47,6 +99,13 @@ _cors_env = os.environ.get("CORS_ORIGINS", "")
 if _cors_env:
     # Honour explicit env-var override (comma-separated list)
     _allowed_origins = [o.strip() for o in _cors_env.split(",") if o.strip()]
+    # Block wildcard CORS in production -- it must be an explicit list
+    if not _is_development and "*" in _allowed_origins:
+        _startup_logger.critical(
+            "CORS_ORIGINS is set to '*' in a non-development environment! "
+            "Falling back to the default allow-list for safety."
+        )
+        _allowed_origins = _DEFAULT_ORIGINS
 elif _is_development:
     _allowed_origins = "*"
 else:
@@ -93,12 +152,15 @@ app.register_blueprint(service_area_bp)
 app.register_blueprint(recurring_bp)
 app.register_blueprint(referrals_bp)
 app.register_blueprint(support_bp)
+app.register_blueprint(chat_bp)
+app.register_blueprint(onboarding_bp)
+app.register_blueprint(promos_bp)
 
 # ---------------------------------------------------------------------------
 # Input sanitization middleware (XSS / injection prevention)
 # ---------------------------------------------------------------------------
 # Paths that must NOT have their bodies sanitized (file uploads, webhooks).
-_SANITIZE_SKIP_PREFIXES = ("/api/bookings/upload-photos", "/uploads/", "/api/webhooks/")
+_SANITIZE_SKIP_PREFIXES = ("/api/bookings/upload-photos", "/uploads/", "/api/webhooks/", "/api/upload/", "/api/drivers/onboarding/documents")
 
 
 @app.before_request
@@ -109,6 +171,10 @@ def sanitize_json_input():
     third-party webhook signatures are not corrupted.
     """
     if request.path.startswith(_SANITIZE_SKIP_PREFIXES):
+        return  # skip
+
+    # Skip sanitization for job photo uploads (multipart/form-data, not JSON)
+    if "/photos/before" in request.path or "/photos/after" in request.path:
         return  # skip
 
     if request.is_json:
@@ -602,6 +668,22 @@ def portal_create_booking():
     if total_amount <= 0:
         total_amount = est["total"]
 
+    # --- Apply promo code if provided ---
+    promo_code_str = data.get("promoCode", "").strip() or data.get("promo_code", "").strip()
+    promo_code_id = None
+    discount_amount = 0.0
+
+    if promo_code_str:
+        from routes.promos import validate_promo_code
+        from models import PromoCode as _PC
+        promo, discount, promo_error = validate_promo_code(promo_code_str, total_amount)
+        if promo_error:
+            return jsonify({"error": promo_error}), 400
+        promo_code_id = promo.id
+        discount_amount = discount
+        total_amount = round(total_amount - discount, 2)
+        promo.use_count = (promo.use_count or 0) + 1
+
     job = Job(
         id=generate_uuid(),
         customer_id=user.id,
@@ -617,6 +699,8 @@ def portal_create_booking():
         service_fee=est["service_fee"],
         surge_multiplier=est["surge_multiplier"],
         total_price=total_amount,
+        promo_code_id=promo_code_id,
+        discount_amount=discount_amount,
         notes=data.get("itemDescription") or data.get("description", ""),
     )
     sqlalchemy_db.session.add(job)

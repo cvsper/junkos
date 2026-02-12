@@ -137,6 +137,7 @@ export interface BookingFormData {
   scheduledTimeSlot: string;
   notes: string;
   estimatedPrice: number;
+  promo_code?: string;
 }
 
 // Tracking types

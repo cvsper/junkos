@@ -379,6 +379,95 @@ def get_current_user(user_id):
     return jsonify({'error': 'User not found'}), 404
 
 
+@auth_bp.route('/me', methods=['PUT'])
+@require_auth
+def update_profile(user_id):
+    """Update current user profile (name, email, phone)"""
+    db_user = db.session.get(User, user_id)
+    if not db_user:
+        return jsonify({'error': 'User not found'}), 404
+
+    data = request.get_json(force=True)
+
+    # Update name if provided
+    if 'name' in data and data['name'] is not None:
+        db_user.name = data['name'].strip() or db_user.name
+
+    # Update email if provided, checking uniqueness
+    if 'email' in data and data['email'] is not None:
+        new_email = data['email'].strip().lower()
+        if new_email and new_email != db_user.email:
+            existing = User.query.filter_by(email=new_email).first()
+            if existing and existing.id != db_user.id:
+                return jsonify({'error': 'Email already in use'}), 409
+            db_user.email = new_email
+
+    # Update phone if provided
+    if 'phone' in data and data['phone'] is not None:
+        new_phone = data['phone'].strip()
+        if new_phone and new_phone != db_user.phone:
+            existing = User.query.filter_by(phone=new_phone).first()
+            if existing and existing.id != db_user.id:
+                return jsonify({'error': 'Phone number already in use'}), 409
+            db_user.phone = new_phone
+
+    db.session.commit()
+
+    return jsonify({
+        'success': True,
+        'user': db_user.to_dict()
+    })
+
+
+@auth_bp.route('/change-password', methods=['PUT'])
+@require_auth
+def change_password(user_id):
+    """Change the current user's password"""
+    from werkzeug.security import generate_password_hash
+
+    db_user = db.session.get(User, user_id)
+    if not db_user:
+        return jsonify({'error': 'User not found'}), 404
+
+    data = request.get_json(force=True)
+    current_password = data.get('current_password')
+    new_password = data.get('new_password')
+
+    if not current_password or not new_password:
+        return jsonify({'error': 'Current password and new password are required'}), 400
+
+    if not db_user.check_password(current_password):
+        return jsonify({'error': 'Current password is incorrect'}), 401
+
+    if len(new_password) < 6:
+        return jsonify({'error': 'New password must be at least 6 characters'}), 400
+
+    db_user.password_hash = generate_password_hash(new_password)
+    db.session.commit()
+
+    return jsonify({
+        'success': True,
+        'message': 'Password changed successfully'
+    })
+
+
+@auth_bp.route('/me', methods=['DELETE'])
+@require_auth
+def delete_account(user_id):
+    """Soft-delete the current user account (set status to deactivated)"""
+    db_user = db.session.get(User, user_id)
+    if not db_user:
+        return jsonify({'error': 'User not found'}), 404
+
+    db_user.status = 'deactivated'
+    db.session.commit()
+
+    return jsonify({
+        'success': True,
+        'message': 'Account deactivated successfully'
+    })
+
+
 # MARK: - Seed Admin
 
 @auth_bp.route('/seed-admin', methods=['POST'])
@@ -415,12 +504,16 @@ def bootstrap_admin():
 
     data = request.get_json(force=True)
     email = data.get('email', 'admin@junkos.app')
-    password = data.get('password', 'admin123')
+    password = data.get('password')
     name = data.get('name', 'Admin')
+
+    if not password or len(password) < 8:
+        return jsonify({'error': 'A password with at least 8 characters is required'}), 400
 
     user = User.query.filter_by(email=email).first()
     if user:
         user.role = 'admin'
+        user.password_hash = generate_password_hash(password)
     else:
         user = User(
             email=email,

@@ -20,12 +20,14 @@ import {
   Shield,
   Lock,
   AlertCircle,
+  Tag,
+  X,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useBookingStore } from "@/stores/booking-store";
-import { bookingApi, paymentsApi } from "@/lib/api";
+import { bookingApi, paymentsApi, promosApi } from "@/lib/api";
 
 // ---------------------------------------------------------------------------
 // Stripe singleton
@@ -127,6 +129,11 @@ function PaymentFormInner() {
     photos,
     isSubmitting,
     setIsSubmitting,
+    promoCode: appliedPromoCode,
+    promoDiscount,
+    promoApplied,
+    applyPromo,
+    clearPromo,
   } = useBookingStore();
 
   // Contact info
@@ -143,6 +150,16 @@ function PaymentFormInner() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [bookingId, setBookingId] = useState("");
 
+  // Promo code state
+  const [promoInput, setPromoInput] = useState("");
+  const [promoLoading, setPromoLoading] = useState(false);
+  const [promoError, setPromoError] = useState<string | undefined>();
+
+  // Compute final price after discount
+  const finalPrice = promoApplied
+    ? Math.max(0, estimatedPrice - promoDiscount)
+    : estimatedPrice;
+
   // Apple Pay / Google Pay
   const [paymentRequest, setPaymentRequest] = useState<PaymentRequest | null>(null);
   const [canMakePayment, setCanMakePayment] = useState(false);
@@ -152,14 +169,14 @@ function PaymentFormInner() {
   // Apple Pay / Google Pay setup
   // ---------------------------------------------------------------------------
   useEffect(() => {
-    if (!stripe || !estimatedPrice || estimatedPrice <= 0) return;
+    if (!stripe || !finalPrice || finalPrice <= 0) return;
 
     const pr = stripe.paymentRequest({
       country: "US",
       currency: "usd",
       total: {
         label: "JunkOS Junk Removal",
-        amount: Math.round(estimatedPrice * 100),
+        amount: Math.round(finalPrice * 100),
       },
       requestPayerName: true,
       requestPayerEmail: true,
@@ -191,7 +208,8 @@ function PaymentFormInner() {
           scheduledDate,
           scheduledTimeSlot,
           notes,
-          estimatedPrice,
+          estimatedPrice: finalPrice,
+          ...(promoApplied ? { promo_code: appliedPromoCode } : {}),
         });
 
         const newBookingId = bookingResult.id || generateBookingId();
@@ -199,7 +217,7 @@ function PaymentFormInner() {
         // 2. Create payment intent
         const piResult = await paymentsApi.createIntent(
           newBookingId,
-          estimatedPrice
+          finalPrice
         );
 
         // 3. Confirm with the payment method from Apple Pay / Google Pay
@@ -250,7 +268,7 @@ function PaymentFormInner() {
     return () => {
       paymentRequestRef.current = null;
     };
-  }, [stripe, estimatedPrice, address, items, scheduledDate, scheduledTimeSlot, notes, photos]);
+  }, [stripe, finalPrice, estimatedPrice, address, items, scheduledDate, scheduledTimeSlot, notes, photos, promoApplied, appliedPromoCode]);
 
   // ---------------------------------------------------------------------------
   // Card change handler
@@ -269,6 +287,41 @@ function PaymentFormInner() {
   const handlePhoneChange = (value: string) => {
     setPhone(formatPhoneNumber(value));
     if (errors.phone) setErrors((prev) => ({ ...prev, phone: undefined }));
+  };
+
+  // ---------------------------------------------------------------------------
+  // Promo code handler
+  // ---------------------------------------------------------------------------
+  const handleApplyPromo = async () => {
+    const code = promoInput.trim();
+    if (!code) {
+      setPromoError("Please enter a promo code.");
+      return;
+    }
+
+    setPromoLoading(true);
+    setPromoError(undefined);
+
+    try {
+      const result = await promosApi.validate(code, estimatedPrice);
+      if (result.valid && result.discount_amount !== undefined) {
+        applyPromo(code, result.discount_amount);
+        setPromoInput("");
+      } else {
+        setPromoError(result.error || "Invalid promo code.");
+      }
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Failed to validate promo code.";
+      setPromoError(message);
+    } finally {
+      setPromoLoading(false);
+    }
+  };
+
+  const handleRemovePromo = () => {
+    clearPromo();
+    setPromoError(undefined);
   };
 
   // ---------------------------------------------------------------------------
@@ -323,7 +376,8 @@ function PaymentFormInner() {
         scheduledDate,
         scheduledTimeSlot,
         notes,
-        estimatedPrice,
+        estimatedPrice: finalPrice,
+        ...(promoApplied ? { promo_code: appliedPromoCode } : {}),
       });
 
       const newBookingId = bookingResult.id || generateBookingId();
@@ -331,7 +385,7 @@ function PaymentFormInner() {
       // 2. Create payment intent on the server
       const paymentIntentResult = await paymentsApi.createIntent(
         newBookingId,
-        estimatedPrice
+        finalPrice
       );
 
       const clientSecret = paymentIntentResult.clientSecret;
@@ -425,10 +479,18 @@ function PaymentFormInner() {
                 {TIME_SLOT_LABELS[scheduledTimeSlot] || scheduledTimeSlot}
               </span>
             </div>
+            {promoApplied && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Promo Discount</span>
+                <span className="font-medium text-emerald-600">
+                  -${promoDiscount.toFixed(2)}
+                </span>
+              </div>
+            )}
             <div className="flex justify-between border-t border-border pt-2">
               <span className="font-semibold text-foreground">Total Paid</span>
               <span className="font-bold text-primary text-lg">
-                ${estimatedPrice.toFixed(2)}
+                ${finalPrice.toFixed(2)}
               </span>
             </div>
           </div>
@@ -653,15 +715,97 @@ function PaymentFormInner() {
         </div>
       </div>
 
+      {/* Promo Code */}
+      <div className="space-y-3">
+        <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider">
+          Promo Code
+        </h3>
+
+        {promoApplied ? (
+          <div className="flex items-center justify-between rounded-lg border border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-900/20 p-3">
+            <div className="flex items-center gap-2">
+              <Tag className="h-4 w-4 text-emerald-600" />
+              <span className="text-sm font-medium text-emerald-700 dark:text-emerald-400">
+                {appliedPromoCode}
+              </span>
+              <span className="text-sm text-emerald-600 dark:text-emerald-400">
+                (-${promoDiscount.toFixed(2)})
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={handleRemovePromo}
+              className="text-muted-foreground hover:text-foreground transition-colors"
+              disabled={isSubmitting}
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        ) : (
+          <div className="flex gap-2">
+            <Input
+              placeholder="Enter promo code"
+              value={promoInput}
+              onChange={(e) => {
+                setPromoInput(e.target.value.toUpperCase());
+                if (promoError) setPromoError(undefined);
+              }}
+              disabled={isSubmitting || promoLoading}
+              className="flex-1"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  handleApplyPromo();
+                }
+              }}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleApplyPromo}
+              disabled={isSubmitting || promoLoading || !promoInput.trim()}
+            >
+              {promoLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                "Apply"
+              )}
+            </Button>
+          </div>
+        )}
+
+        {promoError && (
+          <p className="text-sm text-destructive font-medium">
+            {promoError}
+          </p>
+        )}
+      </div>
+
       {/* Total and Submit */}
       <div className="rounded-lg border border-border bg-card p-5">
-        <div className="flex items-center justify-between mb-4">
-          <span className="text-base font-bold text-foreground">
-            Total Due
-          </span>
-          <span className="text-2xl font-bold text-primary">
-            ${estimatedPrice.toFixed(2)}
-          </span>
+        <div className="space-y-2 mb-4">
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-muted-foreground">Subtotal</span>
+            <span className="text-sm text-foreground">
+              ${estimatedPrice.toFixed(2)}
+            </span>
+          </div>
+          {promoApplied && (
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-emerald-600">Promo Discount</span>
+              <span className="text-sm font-medium text-emerald-600">
+                -${promoDiscount.toFixed(2)}
+              </span>
+            </div>
+          )}
+          <div className="flex items-center justify-between border-t border-border pt-2">
+            <span className="text-base font-bold text-foreground">
+              Total Due
+            </span>
+            <span className="text-2xl font-bold text-primary">
+              ${finalPrice.toFixed(2)}
+            </span>
+          </div>
         </div>
 
         <Button
@@ -678,7 +822,7 @@ function PaymentFormInner() {
           ) : (
             <>
               <Lock className="mr-2 h-5 w-5" />
-              Pay ${estimatedPrice.toFixed(2)}
+              Pay ${finalPrice.toFixed(2)}
             </>
           )}
         </Button>

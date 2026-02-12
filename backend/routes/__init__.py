@@ -17,6 +17,9 @@ from .service_area import service_area_bp
 from .recurring import recurring_bp
 from .referrals import referrals_bp
 from .support import support_bp
+from .chat import chat_bp
+from .onboarding import onboarding_bp
+from .promos import promos_bp
 
 __all__ = [
     "drivers_bp",
@@ -36,4 +39,7 @@ __all__ = [
     "recurring_bp",
     "referrals_bp",
     "support_bp",
+    "chat_bp",
+    "onboarding_bp",
+    "promos_bp",
 ]

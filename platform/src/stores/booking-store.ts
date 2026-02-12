@@ -14,6 +14,11 @@ interface BookingState {
   estimatedPrice: number;
   isSubmitting: boolean;
 
+  // Promo code state
+  promoCode: string;
+  promoDiscount: number;
+  promoApplied: boolean;
+
   // Navigation actions
   setStep: (step: number) => void;
   nextStep: () => void;
@@ -39,6 +44,11 @@ interface BookingState {
   setEstimatedPrice: (price: number) => void;
   setIsSubmitting: (isSubmitting: boolean) => void;
 
+  // Promo code actions
+  setPromoCode: (code: string) => void;
+  applyPromo: (code: string, discount: number) => void;
+  clearPromo: () => void;
+
   // Reset
   reset: () => void;
 }
@@ -54,6 +64,9 @@ const initialState = {
   notes: "",
   estimatedPrice: 0,
   isSubmitting: false,
+  promoCode: "",
+  promoDiscount: 0,
+  promoApplied: false,
 };
 
 export const useBookingStore = create<BookingState>((set, get) => ({
@@ -106,6 +119,13 @@ export const useBookingStore = create<BookingState>((set, get) => ({
   setNotes: (notes) => set({ notes }),
   setEstimatedPrice: (estimatedPrice) => set({ estimatedPrice }),
   setIsSubmitting: (isSubmitting) => set({ isSubmitting }),
+
+  // Promo code
+  setPromoCode: (promoCode) => set({ promoCode }),
+  applyPromo: (promoCode, promoDiscount) =>
+    set({ promoCode, promoDiscount, promoApplied: true }),
+  clearPromo: () =>
+    set({ promoCode: "", promoDiscount: 0, promoApplied: false }),
 
   // Reset - revoke all object URLs before clearing
   reset: () => {
