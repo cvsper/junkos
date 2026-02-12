@@ -328,6 +328,135 @@ def welcome_html(name):
 
 
 # ---------------------------------------------------------------------------
+# 6a. Job status update (generic — covers assigned, en_route, arrived, completed, cancelled)
+# ---------------------------------------------------------------------------
+
+_STATUS_HEADLINES = {
+    'assigned':  'A Driver Has Been Assigned',
+    'accepted':  'Your Driver Has Accepted the Job',
+    'en_route':  'Your Driver Is On The Way',
+    'arrived':   'Your Driver Has Arrived',
+    'started':   'Junk Removal In Progress',
+    'completed': 'Your Pickup Is Complete!',
+    'cancelled': 'Your Booking Has Been Cancelled',
+}
+
+_STATUS_DESCRIPTIONS = {
+    'assigned':  'A driver has been assigned to your upcoming pickup and will contact you when it\'s time.',
+    'accepted':  'Your driver has confirmed and accepted the job. They\'ll be heading your way soon.',
+    'en_route':  'Your driver is on the way to your location. Please make sure items are accessible.',
+    'arrived':   'Your driver has arrived at the pickup location. Please meet them if possible.',
+    'started':   'The removal is underway! Your driver is loading up the junk right now.',
+    'completed': 'All done! Your junk has been hauled away. We hope everything went smoothly.',
+    'cancelled': 'This booking has been cancelled. If this was a mistake, please contact us to rebook.',
+}
+
+_STATUS_ICONS = {
+    'assigned':  '&#x1F69A;',  # truck
+    'accepted':  '&#x2705;',   # check
+    'en_route':  '&#x1F3CE;',  # racing car
+    'arrived':   '&#x1F4CD;',  # pin
+    'started':   '&#x1F4AA;',  # bicep
+    'completed': '&#x1F389;',  # party popper
+    'cancelled': '&#x274C;',   # cross
+}
+
+
+def job_status_update_html(customer_name, job_id, status, driver_name=None):
+    """Return HTML for a generic job-status-change email.
+
+    Covers: assigned, accepted, en_route, arrived, started, completed, cancelled.
+    """
+    name = _esc(str(customer_name)) if customer_name else 'there'
+    short_id = str(job_id)[:8] if job_id else 'N/A'
+    status_lower = (status or '').lower()
+
+    headline = _STATUS_HEADLINES.get(status_lower, 'Job Status Update')
+    description = _STATUS_DESCRIPTIONS.get(status_lower, 'Your job status has been updated to {}.'.format(_esc(status_lower)))
+    icon = _STATUS_ICONS.get(status_lower, '&#x1F4E6;')
+
+    body = (
+        '<h2 style="color:#111827;margin:0 0 12px;font-size:22px;">{icon} {headline}</h2>'
+        '<p style="color:#4b5563;line-height:1.6;">Hi {name},</p>'
+        '<p style="color:#4b5563;line-height:1.6;">{desc}</p>'
+    ).format(icon=icon, headline=_esc(headline), name=name, desc=description)
+
+    rows = [
+        ('Booking ID', '#{}'.format(short_id)),
+        ('Status', status_lower.replace('_', ' ').title()),
+    ]
+    if driver_name:
+        rows.insert(1, ('Driver', _esc(str(driver_name))))
+
+    body += _detail_table(rows)
+
+    if status_lower == 'completed':
+        body += (
+            '<p style="color:#4b5563;font-size:14px;line-height:1.6;text-align:center;">'
+            'We\'d love your feedback &mdash; it helps us improve!</p>'
+        )
+    elif status_lower == 'cancelled':
+        body += (
+            '<p style="color:#4b5563;font-size:14px;line-height:1.6;">'
+            'If you\'d like to rebook, visit our website or call us at '
+            '<strong>(561) 888-3427</strong>.</p>'
+        )
+    else:
+        body += (
+            '<p style="color:#4b5563;font-size:14px;line-height:1.6;">'
+            'Questions? Reply to this email or call <strong>(561) 888-3427</strong>.</p>'
+        )
+
+    return _wrap(body)
+
+
+# ---------------------------------------------------------------------------
+# 6b. Pickup reminder (24 hours before scheduled pickup)
+# ---------------------------------------------------------------------------
+
+def pickup_reminder_html(customer_name, job_id, address, date, time):
+    """Return HTML for a 24-hour pickup reminder email."""
+    name = _esc(str(customer_name)) if customer_name else 'there'
+    short_id = str(job_id)[:8] if job_id else 'N/A'
+
+    body = (
+        '<h2 style="color:#111827;margin:0 0 12px;font-size:22px;">&#x23F0; Pickup Reminder</h2>'
+        '<p style="color:#4b5563;line-height:1.6;">Hi {name},</p>'
+        '<p style="color:#4b5563;line-height:1.6;">'
+        'Just a friendly reminder that your junk removal pickup is '
+        '<strong>tomorrow</strong>! Here are the details:</p>'
+    ).format(name=name)
+
+    body += _detail_table([
+        ('Booking ID', '#{}'.format(short_id)),
+        ('Address', _esc(str(address)) if address else 'TBD'),
+        ('Date', _esc(str(date)) if date else 'TBD'),
+        ('Time', _esc(str(time)) if time else 'TBD'),
+    ])
+
+    body += (
+        '<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;'
+        'padding:16px;margin:20px 0;">'
+        '<p style="color:#92400e;margin:0;font-size:14px;line-height:1.6;">'
+        '<strong>Preparation tips:</strong></p>'
+        '<ul style="color:#92400e;padding-left:20px;margin:8px 0 0;font-size:13px;line-height:1.8;">'
+        '<li>Make sure all items are accessible and easy to reach</li>'
+        '<li>Clear a path from the items to the nearest door or garage</li>'
+        '<li>Disconnect any appliances ahead of time</li>'
+        '<li>Move vehicles if the items are in the garage or driveway</li>'
+        '</ul></div>'
+    )
+
+    body += (
+        '<p style="color:#4b5563;font-size:14px;line-height:1.6;">'
+        'Need to reschedule? Call us at <strong>(561) 888-3427</strong> '
+        'or reply to this email as soon as possible.</p>'
+    )
+
+    return _wrap(body)
+
+
+# ---------------------------------------------------------------------------
 # 7. Password reset
 # ---------------------------------------------------------------------------
 

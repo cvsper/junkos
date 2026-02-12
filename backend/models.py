@@ -695,6 +695,66 @@ class SupportMessage(db.Model):
 
 
 # ---------------------------------------------------------------------------
+# Refund
+# ---------------------------------------------------------------------------
+class Refund(db.Model):
+    __tablename__ = "refunds"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    payment_id = Column(String(36), ForeignKey("payments.id", ondelete="CASCADE"), nullable=False, index=True)
+    amount = Column(Float, nullable=False)
+    reason = Column(Text, nullable=True)
+    stripe_refund_id = Column(String(255), nullable=True, unique=True)
+    status = Column(String(30), nullable=False, default="pending")
+    created_at = Column(DateTime, default=utcnow)
+
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('pending', 'succeeded', 'failed', 'cancelled')",
+            name="ck_refund_status",
+        ),
+    )
+
+    payment = relationship("Payment", backref="refunds")
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "payment_id": self.payment_id,
+            "amount": self.amount,
+            "reason": self.reason,
+            "stripe_refund_id": self.stripe_refund_id,
+            "status": self.status,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
+
+
+# ---------------------------------------------------------------------------
+# WebhookEvent (audit log for all incoming Stripe webhook events)
+# ---------------------------------------------------------------------------
+class WebhookEvent(db.Model):
+    __tablename__ = "webhook_events"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    stripe_event_id = Column(String(255), nullable=True, unique=True, index=True)
+    event_type = Column(String(100), nullable=False)
+    payload = Column(JSON, nullable=True)
+    status = Column(String(20), nullable=False, default="processed")
+    error_message = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=utcnow)
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "stripe_event_id": self.stripe_event_id,
+            "event_type": self.event_type,
+            "status": self.status,
+            "error_message": self.error_message,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
+
+
+# ---------------------------------------------------------------------------
 # ChatMessage (real-time chat between customer and driver on a job)
 # ---------------------------------------------------------------------------
 class ChatMessage(db.Model):
@@ -723,5 +783,40 @@ class ChatMessage(db.Model):
             "sender_role": self.sender_role,
             "message": self.message,
             "read_at": self.read_at.isoformat() if self.read_at else None,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
+
+
+# ---------------------------------------------------------------------------
+# Review (customer review of a completed job)
+# ---------------------------------------------------------------------------
+class Review(db.Model):
+    __tablename__ = "reviews"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    job_id = Column(String(36), ForeignKey("jobs.id", ondelete="CASCADE"), nullable=False, unique=True, index=True)
+    customer_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    contractor_id = Column(String(36), ForeignKey("contractors.id", ondelete="CASCADE"), nullable=False, index=True)
+    rating = Column(Integer, nullable=False)  # 1-5
+    comment = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=utcnow)
+
+    __table_args__ = (
+        CheckConstraint("rating >= 1 AND rating <= 5", name="ck_review_rating"),
+    )
+
+    job = relationship("Job", backref="review")
+    customer = relationship("User", foreign_keys=[customer_id])
+    contractor = relationship("Contractor", backref="reviews")
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "job_id": self.job_id,
+            "customer_id": self.customer_id,
+            "contractor_id": self.contractor_id,
+            "rating": self.rating,
+            "comment": self.comment,
+            "customer_name": self.customer.name if self.customer else None,
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }

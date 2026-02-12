@@ -20,6 +20,7 @@ from .support import support_bp
 from .chat import chat_bp
 from .onboarding import onboarding_bp
 from .promos import promos_bp
+from .reviews import reviews_bp
 
 __all__ = [
     "drivers_bp",
@@ -42,4 +43,5 @@ __all__ = [
     "chat_bp",
     "onboarding_bp",
     "promos_bp",
+    "reviews_bp",
 ]

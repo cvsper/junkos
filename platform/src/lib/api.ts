@@ -514,6 +514,14 @@ export const adminApi = {
       "/api/admin/analytics"
     ),
 
+  /** GET /api/admin/reviews -- list all reviews */
+  getReviews: (rating?: number) => {
+    const params = rating ? `?rating=${rating}` : "";
+    return apiFetch<{ success: boolean; reviews: ReviewRecord[] }>(
+      `/api/admin/reviews${params}`
+    );
+  },
+
   /** GET /api/admin/pricing/rules -- list all pricing rules */
   pricingRules: () =>
     apiFetch<{ success: boolean; rules: AdminPricingRule[] }>(
@@ -1182,6 +1190,47 @@ export const chatApi = {
     apiFetch<{ success: boolean; unread_count: number }>(
       `/api/jobs/${jobId}/messages/unread-count`
     ),
+};
+
+// ---------------------------------------------------------------------------
+// Reviews API
+// ---------------------------------------------------------------------------
+
+export interface ReviewRecord {
+  id: string;
+  job_id: string;
+  customer_id: string;
+  contractor_id: string;
+  rating: number;
+  comment: string | null;
+  customer_name: string | null;
+  created_at: string | null;
+}
+
+export const reviewsApi = {
+  /** POST /api/reviews -- create a review */
+  create: (jobId: string, rating: number, comment?: string) =>
+    apiFetch<{ success: boolean; review: ReviewRecord }>("/api/reviews", {
+      method: "POST",
+      body: JSON.stringify({ job_id: jobId, rating, comment }),
+    }),
+
+  /** GET /api/reviews/job/:id -- get review for a job */
+  getForJob: (jobId: string) =>
+    apiFetch<{ success: boolean; review: ReviewRecord | null }>(
+      `/api/reviews/job/${jobId}`
+    ),
+
+  /** GET /api/reviews/contractor/:id -- get all reviews for a contractor */
+  getForContractor: (contractorId: string, page = 1) =>
+    apiFetch<{
+      success: boolean;
+      reviews: ReviewRecord[];
+      avg_rating: number;
+      total_reviews: number;
+      page: number;
+      pages: number;
+    }>(`/api/reviews/contractor/${contractorId}?page=${page}`),
 };
 
 // Re-export the error class for consumers

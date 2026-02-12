@@ -20,6 +20,7 @@ from models import (
     Notification, PromoCode, generate_uuid, utcnow,
 )
 from auth_routes import require_auth
+from extensions import limiter
 from geofencing import is_in_service_area
 
 booking_bp = Blueprint("booking", __name__, url_prefix="/api/booking")

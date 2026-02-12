@@ -184,6 +184,41 @@ NEW_TABLES_SQLITE = [
         created_at DATETIME,
         CONSTRAINT ck_chat_sender_role CHECK (sender_role IN ('customer', 'driver'))
     )"""),
+    # reviews
+    dedent("""\
+    CREATE TABLE IF NOT EXISTS reviews (
+        id VARCHAR(36) PRIMARY KEY,
+        job_id VARCHAR(36) NOT NULL UNIQUE REFERENCES jobs(id) ON DELETE CASCADE,
+        customer_id VARCHAR(36) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        contractor_id VARCHAR(36) NOT NULL REFERENCES contractors(id) ON DELETE CASCADE,
+        rating INTEGER NOT NULL,
+        comment TEXT,
+        created_at DATETIME,
+        CONSTRAINT ck_review_rating CHECK (rating >= 1 AND rating <= 5)
+    )"""),
+    # refunds
+    dedent("""\
+    CREATE TABLE IF NOT EXISTS refunds (
+        id VARCHAR(36) PRIMARY KEY,
+        payment_id VARCHAR(36) NOT NULL REFERENCES payments(id) ON DELETE CASCADE,
+        amount FLOAT NOT NULL,
+        reason TEXT,
+        stripe_refund_id VARCHAR(255) UNIQUE,
+        status VARCHAR(30) NOT NULL DEFAULT 'pending',
+        created_at DATETIME,
+        CONSTRAINT ck_refund_status CHECK (status IN ('pending', 'succeeded', 'failed', 'cancelled'))
+    )"""),
+    # webhook_events
+    dedent("""\
+    CREATE TABLE IF NOT EXISTS webhook_events (
+        id VARCHAR(36) PRIMARY KEY,
+        stripe_event_id VARCHAR(255) UNIQUE,
+        event_type VARCHAR(100) NOT NULL,
+        payload TEXT,
+        status VARCHAR(20) NOT NULL DEFAULT 'processed',
+        error_message TEXT,
+        created_at DATETIME
+    )"""),
 ]
 
 NEW_TABLES_PG = [
@@ -281,6 +316,41 @@ NEW_TABLES_PG = [
         read_at TIMESTAMP,
         created_at TIMESTAMP
     )"""),
+    # reviews
+    dedent("""\
+    CREATE TABLE IF NOT EXISTS reviews (
+        id VARCHAR(36) PRIMARY KEY,
+        job_id VARCHAR(36) NOT NULL UNIQUE REFERENCES jobs(id) ON DELETE CASCADE,
+        customer_id VARCHAR(36) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        contractor_id VARCHAR(36) NOT NULL REFERENCES contractors(id) ON DELETE CASCADE,
+        rating INTEGER NOT NULL,
+        comment TEXT,
+        created_at TIMESTAMP,
+        CONSTRAINT ck_review_rating CHECK (rating >= 1 AND rating <= 5)
+    )"""),
+    # refunds
+    dedent("""\
+    CREATE TABLE IF NOT EXISTS refunds (
+        id VARCHAR(36) PRIMARY KEY,
+        payment_id VARCHAR(36) NOT NULL REFERENCES payments(id) ON DELETE CASCADE,
+        amount FLOAT NOT NULL,
+        reason TEXT,
+        stripe_refund_id VARCHAR(255) UNIQUE,
+        status VARCHAR(30) NOT NULL DEFAULT 'pending',
+        created_at TIMESTAMP,
+        CONSTRAINT ck_refund_status CHECK (status IN ('pending', 'succeeded', 'failed', 'cancelled'))
+    )"""),
+    # webhook_events
+    dedent("""\
+    CREATE TABLE IF NOT EXISTS webhook_events (
+        id VARCHAR(36) PRIMARY KEY,
+        stripe_event_id VARCHAR(255) UNIQUE,
+        event_type VARCHAR(100) NOT NULL,
+        payload JSON,
+        status VARCHAR(20) NOT NULL DEFAULT 'processed',
+        error_message TEXT,
+        created_at TIMESTAMP
+    )"""),
 ]
 
 # Table names for the new tables (used for reporting)
@@ -292,6 +362,9 @@ NEW_TABLE_NAMES = [
     "operator_invites",
     "promo_codes",
     "chat_messages",
+    "reviews",
+    "refunds",
+    "webhook_events",
 ]
 
 

@@ -16,7 +16,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from models import (
     db, User, Contractor, Job, Payment, PricingRule, SurgeZone, Notification,
-    PricingConfig, generate_uuid, utcnow,
+    PricingConfig, Review, generate_uuid, utcnow,
 )
 from auth_routes import require_auth
 
@@ -1001,3 +1001,56 @@ def run_db_migration(user_id):
         }), 200
     except Exception as e:
         return jsonify({"error": "Migration failed: {}".format(str(e))}), 500
+
+
+# ---------------------------------------------------------------------------
+# GET /api/admin/reviews — List all reviews
+# ---------------------------------------------------------------------------
+@admin_bp.route("/reviews", methods=["GET"])
+@require_admin
+def list_reviews(user_id):
+    """List all customer reviews with optional rating filter."""
+    rating_filter = request.args.get("rating", type=int)
+
+    query = Review.query.order_by(Review.created_at.desc())
+
+    if rating_filter and 1 <= rating_filter <= 5:
+        query = query.filter_by(rating=rating_filter)
+
+    reviews = query.limit(200).all()
+
+    return jsonify({
+        "success": True,
+        "reviews": [r.to_dict() for r in reviews],
+    }), 200
+
+
+# ---------------------------------------------------------------------------
+# POST /api/admin/sms/send — Send custom SMS to a customer
+# ---------------------------------------------------------------------------
+@admin_bp.route("/sms/send", methods=["POST"])
+@require_admin
+def admin_send_sms(user_id):
+    """Send a custom SMS to a customer (admin only)."""
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "Request body is required"}), 400
+
+    target_user_id = data.get("user_id")
+    message = data.get("message", "").strip()
+
+    if not target_user_id:
+        return jsonify({"error": "user_id is required"}), 400
+    if not message:
+        return jsonify({"error": "message is required"}), 400
+
+    target_user = db.session.get(User, target_user_id)
+    if not target_user:
+        return jsonify({"error": "User not found"}), 404
+    if not target_user.phone:
+        return jsonify({"error": "User has no phone number on file"}), 400
+
+    from sms_service import sms_custom
+    sms_custom(target_user.phone, message)
+
+    return jsonify({"success": True, "message": "SMS queued"}), 200

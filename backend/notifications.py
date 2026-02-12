@@ -7,10 +7,14 @@ SMS: Twilio.
 IMPORTANT: No function in this module should ever raise an exception.
 All errors are caught and logged so that a notification failure never
 takes down a booking or payment flow.
+
+Email sending is performed asynchronously via a background thread so that
+HTTP request handlers are never blocked by network I/O to the email provider.
 """
 
 import os
 import logging
+import threading
 
 from email_templates import (
     booking_confirmation_html,
@@ -20,6 +24,8 @@ from email_templates import (
     payment_receipt_html,
     welcome_html,
     password_reset_html,
+    job_status_update_html,
+    pickup_reminder_html,
 )
 
 logger = logging.getLogger(__name__)
@@ -108,8 +114,8 @@ EMAIL_FROM_NAME = os.environ.get("EMAIL_FROM_NAME",
                                  os.environ.get("SENDGRID_FROM_NAME", "JunkOS"))
 
 
-def send_email(to_email, subject, html_content):
-    """Send an email via Resend (preferred) or SendGrid (fallback).
+def _send_email_sync(to_email, subject, html_content):
+    """Send an email synchronously via Resend (preferred) or SendGrid (fallback).
 
     Returns a status indicator or None in dev mode. Never raises.
     """
@@ -131,6 +137,32 @@ def send_email(to_email, subject, html_content):
     except Exception:
         logger.exception("Failed to send email to %s", to_email)
         return None
+
+
+def send_email(to_email, subject, html_content):
+    """Send an email asynchronously in a background thread.
+
+    This ensures the HTTP request handler is never blocked by email I/O.
+    Returns immediately. Never raises.
+    """
+    try:
+        thread = threading.Thread(
+            target=_send_email_sync,
+            args=(to_email, subject, html_content),
+            daemon=True,
+        )
+        thread.start()
+        logger.debug("Email queued (async) to %s: %s", to_email, subject)
+    except Exception:
+        logger.exception("Failed to queue async email to %s", to_email)
+
+
+def send_email_sync(to_email, subject, html_content):
+    """Public synchronous email sender (for cases where you need to wait).
+
+    Prefer ``send_email`` (async) for request handlers.
+    """
+    return _send_email_sync(to_email, subject, html_content)
 
 
 def _send_email_resend(to_email, subject, html_content):

@@ -13,7 +13,7 @@ from database import Database
 from auth_routes import auth_bp
 from models import db as sqlalchemy_db
 from socket_events import socketio
-from routes import drivers_bp, pricing_bp, ratings_bp, admin_bp, payments_bp, webhook_bp, booking_bp, upload_bp, jobs_bp, tracking_bp, driver_bp, operator_bp, push_bp, service_area_bp, recurring_bp, referrals_bp, support_bp, chat_bp, onboarding_bp, promos_bp
+from routes import drivers_bp, pricing_bp, ratings_bp, admin_bp, payments_bp, webhook_bp, booking_bp, upload_bp, jobs_bp, tracking_bp, driver_bp, operator_bp, push_bp, service_area_bp, recurring_bp, referrals_bp, support_bp, chat_bp, onboarding_bp, promos_bp, reviews_bp
 
 # ---------------------------------------------------------------------------
 # Sentry error monitoring (optional -- only active when SENTRY_DSN is set)
@@ -126,7 +126,14 @@ limiter.init_app(app)
 
 @app.errorhandler(429)
 def ratelimit_handler(e):
-    return jsonify({"error": "Rate limit exceeded. Please try again later."}), 429
+    # e.description is set by Flask-Limiter and contains the limit that was hit.
+    # Retry-After header is automatically set by Flask-Limiter; read it back.
+    retry_after = e.get_headers().get("Retry-After") if hasattr(e, "get_headers") else None
+    retry_after_seconds = int(retry_after) if retry_after else 60
+    return jsonify({
+        "error": "Too many requests. Please try again later.",
+        "retry_after": retry_after_seconds,
+    }), 429
 
 # Legacy SQLite database (kept for backward compatibility with existing endpoints)
 legacy_db = Database(app.config["DATABASE_PATH"])
@@ -155,6 +162,7 @@ app.register_blueprint(support_bp)
 app.register_blueprint(chat_bp)
 app.register_blueprint(onboarding_bp)
 app.register_blueprint(promos_bp)
+app.register_blueprint(reviews_bp)
 
 # ---------------------------------------------------------------------------
 # Input sanitization middleware (XSS / injection prevention)
@@ -211,6 +219,12 @@ def set_security_headers(response):
 # ---------------------------------------------------------------------------
 with app.app_context():
     sqlalchemy_db.create_all()
+
+# ---------------------------------------------------------------------------
+# Background scheduler (recurring jobs, pickup reminders)
+# ---------------------------------------------------------------------------
+from scheduler import init_scheduler
+_scheduler = init_scheduler(app)
 
 
 # ---------------------------------------------------------------------------
@@ -287,8 +301,9 @@ def get_available_time_slots(requested_date=None):
 # Legacy API Routes (kept for backward compatibility)
 # ---------------------------------------------------------------------------
 @app.route("/api/health", methods=["GET"])
+@limiter.exempt
 def health_check():
-    """Health check endpoint"""
+    """Health check endpoint (exempt from rate limiting)"""
     return jsonify({"status": "healthy", "service": "JunkOS API"}), 200
 
 
