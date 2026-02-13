@@ -25,14 +25,7 @@ export default function CustomerLayout({
         <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground font-display font-bold text-sm">
-                U
-              </span>
-            </div>
-            <span className="font-display font-bold text-xl tracking-tight">
-              Umuve
-            </span>
+            <img src="/logo-nav.png" alt="Umuve" className="h-9 w-auto object-contain" />
           </Link>
 
           {/* Navigation Links */}

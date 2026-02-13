@@ -17,8 +17,8 @@ enum APIEnvironment {
             return "http://localhost:8080"
         case .production:
             // TODO: Replace with your actual Render URL after deployment
-            // Example: https://umuve-backend.onrender.com
-            return "https://umuve-backend.onrender.com"
+            // Example: https://junkos-backend.onrender.com
+            return "https://junkos-backend.onrender.com"
         }
     }
     

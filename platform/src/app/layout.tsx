@@ -25,6 +25,10 @@ const jetbrainsMono = JetBrains_Mono({
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://goumuve.com";
 
 export const metadata: Metadata = {
+  icons: {
+    icon: "/logo.png",
+    apple: "/logo.png",
+  },
   title: {
     default: "Umuve | Premium Junk Removal in South Florida",
     template: "%s | Umuve",

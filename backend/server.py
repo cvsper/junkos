@@ -95,6 +95,7 @@ _DEFAULT_ORIGINS = [
     "https://umuve-backend.onrender.com",
     "https://goumuve.com",
     "https://www.goumuve.com",
+    "https://app.goumuve.com",
 ]
 
 _cors_env = os.environ.get("CORS_ORIGINS", "")

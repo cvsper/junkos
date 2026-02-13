@@ -35,9 +35,12 @@ export default function LegalLayout({
       <footer className="border-t border-border bg-card/50">
         <div className="mx-auto max-w-3xl px-6 py-8">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
-            <p className="font-display font-semibold text-foreground">
-              Umuve
-            </p>
+            <div className="flex items-center gap-2">
+              <img src="/logo.png" alt="Umuve" className="h-6 w-6 object-contain" />
+              <p className="font-display font-semibold text-foreground">
+                Umuve
+              </p>
+            </div>
             <div className="flex items-center gap-6">
               <Link
                 href="/terms"

@@ -306,11 +306,7 @@ export default function ReceiptPage() {
             <div className="flex items-start justify-between mb-8">
               <div>
                 <div className="flex items-center gap-2 mb-2">
-                  <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                    <span className="text-primary-foreground font-display font-bold text-sm">
-                      U
-                    </span>
-                  </div>
+                  <img src="/logo.png" alt="Umuve" className="h-10 w-10 object-contain" />
                   <span className="font-display font-bold text-xl tracking-tight">
                     Umuve
                   </span>

@@ -17,7 +17,7 @@ enum APIEnvironment {
         case .development:
             return "http://localhost:8080"
         case .production:
-            return "https://umuve-backend.onrender.com"
+            return "https://junkos-backend.onrender.com"
         }
     }
 
@@ -26,7 +26,7 @@ enum APIEnvironment {
         case .development:
             return "http://localhost:8080"
         case .production:
-            return "https://umuve-backend.onrender.com"
+            return "https://junkos-backend.onrender.com"
         }
     }
 }

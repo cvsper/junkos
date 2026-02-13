@@ -58,9 +58,7 @@ export default function AdminLayout({
     return (
       <div className="h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center mx-auto mb-3">
-            <span className="text-primary-foreground font-display font-bold text-sm">U</span>
-          </div>
+          <img src="/logo.png" alt="Umuve" className="h-8 w-8 object-contain mx-auto mb-3" />
           <p className="text-sm text-muted-foreground">Loading...</p>
         </div>
       </div>
@@ -91,14 +89,7 @@ export default function AdminLayout({
         {/* Logo */}
         <div className="h-16 flex items-center px-6 border-b border-border">
           <Link href="/admin" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground font-display font-bold text-sm">
-                U
-              </span>
-            </div>
-            <span className="font-display font-bold text-lg tracking-tight">
-              Umuve
-            </span>
+            <img src="/logo-nav.png" alt="Umuve" className="h-9 w-auto object-contain" />
             <span className="text-xs font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
               Admin
             </span>

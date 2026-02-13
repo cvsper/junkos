@@ -8,7 +8,16 @@
     <title>Umuve — Hauling Made Simple</title>
 
     <link rel="stylesheet" href="styles.css">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23DC2626'/><text x='50' y='72' font-size='60' font-weight='bold' font-family='Arial' fill='white' text-anchor='middle'>U</text></svg>">
+    <link rel="icon" type="image/png" href="logo-icon.png">
+
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-XXXXXXXXXX');
+    </script>
 
     <!-- Preload critical fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -107,9 +116,7 @@
         <div class="container">
             <div class="nav-content">
                 <div class="logo">
-                    <svg class="icon icon-logo"><use href="#icon-truck"/></svg>
-                    <span class="logo-text">Umuve</span>
-                    <span class="badge">Premium</span>
+                    <img src="logo-nav.png" alt="Umuve" style="height: 70px; width: auto;">
                 </div>
 
                 <!-- Hamburger Toggle -->
@@ -123,7 +130,7 @@
                     <a href="#how-it-works" class="nav-link">How It Works</a>
                     <a href="#areas" class="nav-link">Service Areas</a>
                     <a href="#faq" class="nav-link">FAQ</a>
-                    <a href="https://platform-olive-nu.vercel.app/book" class="btn btn-glow" rel="noopener">
+                    <a href="https://app.goumuve.com/book" class="btn btn-glow" rel="noopener">
                         <svg class="icon icon-btn"><use href="#icon-sparkles"/></svg>
                         <span>Book Online</span>
                     </a>
@@ -139,6 +146,15 @@
         </video>
         <img class="hero-mobile-img" src="hero-mobile.jpg" alt="" aria-hidden="true">
         <div class="hero-overlay"></div>
+
+        <!-- Decorative faded vertical border lines -->
+        <div class="hero-borders" aria-hidden="true">
+            <div class="hero-border hero-border--outer-left"></div>
+            <div class="hero-border hero-border--outer-right"></div>
+            <div class="hero-border hero-border--inner-left"></div>
+            <div class="hero-border hero-border--inner-right"></div>
+        </div>
+
         <div class="container">
             <div class="hero-content">
                 <!-- Floating Badge -->
@@ -162,7 +178,7 @@
 
                 <!-- CTA Buttons -->
                 <div class="hero-cta" data-animate>
-                    <a href="https://platform-olive-nu.vercel.app/book" class="btn btn-primary btn-xl" rel="noopener">
+                    <a href="https://app.goumuve.com/book" class="btn btn-primary btn-xl" rel="noopener">
                         <svg class="icon icon-btn"><use href="#icon-sparkles"/></svg>
                         <span>Book Online Now</span>
                     </a>
@@ -172,37 +188,38 @@
                     </a>
                 </div>
 
-                <!-- Trust Indicators -->
-                <div class="trust-bar" data-animate>
-                    <div class="trust-item">
-                        <div class="trust-icon">
-                            <svg class="icon"><use href="#icon-check"/></svg>
-                        </div>
-                        <div class="trust-text">
-                            <strong>500+</strong>
-                            <span>Happy Customers</span>
-                        </div>
+                <!-- Hero Stats -->
+                <div class="hero-stats" data-animate>
+                    <div class="hero-stat">
+                        <span class="hero-stat-number" data-count="500">0</span>
+                        <span class="hero-stat-label">Jobs Completed</span>
                     </div>
-                    <div class="trust-separator"></div>
-                    <div class="trust-item">
-                        <div class="trust-icon">
-                            <svg class="icon"><use href="#icon-recycle"/></svg>
-                        </div>
-                        <div class="trust-text">
-                            <strong>Eco-Friendly</strong>
-                            <span>Recycle & Donate</span>
-                        </div>
+                    <div class="hero-stat-divider"></div>
+                    <div class="hero-stat">
+                        <span class="hero-stat-number">4.9</span>
+                        <span class="hero-stat-label">Google Rating</span>
                     </div>
-                    <div class="trust-separator"></div>
-                    <div class="trust-item">
-                        <div class="trust-icon">
-                            <svg class="icon"><use href="#icon-shield"/></svg>
-                        </div>
-                        <div class="trust-text">
-                            <strong>Licensed</strong>
-                            <span>Fully Insured</span>
-                        </div>
+                    <div class="hero-stat-divider"></div>
+                    <div class="hero-stat">
+                        <span class="hero-stat-number">Same Day</span>
+                        <span class="hero-stat-label">Service Available</span>
                     </div>
+                </div>
+
+                <!-- Trust Pills -->
+                <div class="trust-pills" data-animate>
+                    <span class="trust-pill">
+                        <svg class="icon" style="width:16px;height:16px;"><use href="#icon-check"/></svg>
+                        Licensed & Insured
+                    </span>
+                    <span class="trust-pill">
+                        <svg class="icon" style="width:16px;height:16px;"><use href="#icon-recycle"/></svg>
+                        Eco-Friendly Disposal
+                    </span>
+                    <span class="trust-pill">
+                        <svg class="icon" style="width:16px;height:16px;"><use href="#icon-shield"/></svg>
+                        Satisfaction Guaranteed
+                    </span>
                 </div>
             </div>
         </div>
@@ -211,6 +228,64 @@
         <div class="scroll-indicator" data-animate>
             <span>Scroll to explore</span>
             <div class="scroll-line"></div>
+        </div>
+    </section>
+
+    <!-- Trust Badges — Social Proof -->
+    <section class="logo-cloud-section" data-animate>
+        <h2 class="logo-cloud-title">Trusted by <strong>hundreds of customers</strong> across South Florida</h2>
+        <div class="logo-cloud-track">
+            <div class="logo-cloud-slider">
+                <span class="trust-badge">
+                    <svg class="trust-badge-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#FBBC04"/></svg>
+                    <span class="trust-badge-text"><strong>4.9</strong> Google Reviews</span>
+                </span>
+                <span class="trust-badge">
+                    <svg class="trust-badge-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#FF1A1A"/></svg>
+                    <span class="trust-badge-text"><strong>5.0</strong> on Yelp</span>
+                </span>
+                <span class="trust-badge">
+                    <svg class="trust-badge-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" stroke="#2563EB" stroke-width="2" fill="none"/><path d="m9 12 2 2 4-4" stroke="#2563EB" stroke-width="2" fill="none"/></svg>
+                    <span class="trust-badge-text">BBB Accredited</span>
+                </span>
+                <span class="trust-badge">
+                    <svg class="trust-badge-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" stroke="#16A34A" stroke-width="2" fill="none"/><path d="m9 12 2 2 4-4" stroke="#16A34A" stroke-width="2" fill="none"/></svg>
+                    <span class="trust-badge-text">Licensed & Insured</span>
+                </span>
+                <span class="trust-badge">
+                    <svg class="trust-badge-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 19H4.815a1.83 1.83 0 0 1-1.57-.881 1.785 1.785 0 0 1-.004-1.784L7.196 9.5" stroke="#16A34A" stroke-width="2" fill="none"/><path d="M11 19h8.203a1.83 1.83 0 0 0 1.556-.89 1.784 1.784 0 0 0 0-1.775l-1.226-2.12" stroke="#16A34A" stroke-width="2" fill="none"/><path d="m14 16-3 3 3 3" stroke="#16A34A" stroke-width="2" fill="none"/><path d="M8.293 13.596 7.196 9.5 3.1 10.598" stroke="#16A34A" stroke-width="2" fill="none"/><path d="m9.344 5.811 1.093-1.892A1.83 1.83 0 0 1 11.985 3a1.784 1.784 0 0 1 1.546.888l3.943 6.843" stroke="#16A34A" stroke-width="2" fill="none"/><path d="m13.378 9.633 4.096 1.098 1.097-4.096" stroke="#16A34A" stroke-width="2" fill="none"/></svg>
+                    <span class="trust-badge-text">Eco-Friendly Disposal</span>
+                </span>
+                <span class="trust-badge">
+                    <svg class="trust-badge-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" stroke="#DC2626" stroke-width="2" fill="none"/><polyline points="12 6 12 12 16 14" stroke="#DC2626" stroke-width="2" fill="none"/></svg>
+                    <span class="trust-badge-text">Same-Day Service</span>
+                </span>
+                <!-- Duplicate for seamless loop -->
+                <span class="trust-badge">
+                    <svg class="trust-badge-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#FBBC04"/></svg>
+                    <span class="trust-badge-text"><strong>4.9</strong> Google Reviews</span>
+                </span>
+                <span class="trust-badge">
+                    <svg class="trust-badge-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#FF1A1A"/></svg>
+                    <span class="trust-badge-text"><strong>5.0</strong> on Yelp</span>
+                </span>
+                <span class="trust-badge">
+                    <svg class="trust-badge-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" stroke="#2563EB" stroke-width="2" fill="none"/><path d="m9 12 2 2 4-4" stroke="#2563EB" stroke-width="2" fill="none"/></svg>
+                    <span class="trust-badge-text">BBB Accredited</span>
+                </span>
+                <span class="trust-badge">
+                    <svg class="trust-badge-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" stroke="#16A34A" stroke-width="2" fill="none"/><path d="m9 12 2 2 4-4" stroke="#16A34A" stroke-width="2" fill="none"/></svg>
+                    <span class="trust-badge-text">Licensed & Insured</span>
+                </span>
+                <span class="trust-badge">
+                    <svg class="trust-badge-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 19H4.815a1.83 1.83 0 0 1-1.57-.881 1.785 1.785 0 0 1-.004-1.784L7.196 9.5" stroke="#16A34A" stroke-width="2" fill="none"/><path d="M11 19h8.203a1.83 1.83 0 0 0 1.556-.89 1.784 1.784 0 0 0 0-1.775l-1.226-2.12" stroke="#16A34A" stroke-width="2" fill="none"/><path d="m14 16-3 3 3 3" stroke="#16A34A" stroke-width="2" fill="none"/><path d="M8.293 13.596 7.196 9.5 3.1 10.598" stroke="#16A34A" stroke-width="2" fill="none"/><path d="m9.344 5.811 1.093-1.892A1.83 1.83 0 0 1 11.985 3a1.784 1.784 0 0 1 1.546.888l3.943 6.843" stroke="#16A34A" stroke-width="2" fill="none"/><path d="m13.378 9.633 4.096 1.098 1.097-4.096" stroke="#16A34A" stroke-width="2" fill="none"/></svg>
+                    <span class="trust-badge-text">Eco-Friendly Disposal</span>
+                </span>
+                <span class="trust-badge">
+                    <svg class="trust-badge-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" stroke="#DC2626" stroke-width="2" fill="none"/><polyline points="12 6 12 12 16 14" stroke="#DC2626" stroke-width="2" fill="none"/></svg>
+                    <span class="trust-badge-text">Same-Day Service</span>
+                </span>
+            </div>
         </div>
     </section>
 
@@ -223,7 +298,7 @@
                 <p class="section-subtitle">One call, and we show up ready to haul away whatever you need gone.</p>
             </div>
 
-            <div class="bento-grid" data-animate>
+            <div class="bento-grid" data-animate data-animate-stagger>
                 <!-- Feature Card 1 - Hero (accent card) -->
                 <div class="bento-card bento-hero bento-accent">
                     <div class="card-icon-wrap card-icon-wrap--light">
@@ -231,7 +306,7 @@
                     </div>
                     <h3>Book in Minutes</h3>
                     <p>Text us photos, get instant pricing. No surprises, no hidden fees. Book your pickup in seconds.</p>
-                    <a href="https://platform-olive-nu.vercel.app/book" class="card-cta" rel="noopener">Book Online &rarr;</a>
+                    <a href="https://app.goumuve.com/book" class="card-cta" rel="noopener">Book Online &rarr;</a>
                 </div>
 
                 <!-- Feature Card 2 -->
@@ -298,101 +373,260 @@
                 <h2 class="section-title">Three Steps to a Clutter-Free Space</h2>
             </div>
 
-            <div class="process-grid" data-animate>
+            <div class="process-grid" data-animate data-animate-stagger>
                 <div class="process-card">
                     <div class="process-number">01</div>
-                    <div class="process-icon">
-                        <svg class="icon icon-process"><use href="#icon-camera"/></svg>
+                    <div class="process-card-body">
+                        <div class="process-icon">
+                            <svg class="icon icon-process"><use href="#icon-camera"/></svg>
+                        </div>
+                        <h3>Text Us Photos</h3>
+                        <p>Send pictures of what you need removed. We'll reply with an instant quote.</p>
                     </div>
-                    <h3>Text Us Photos</h3>
-                    <p>Send pictures of what you need removed. We'll reply with an instant quote.</p>
-                    <div class="process-line"></div>
                 </div>
 
                 <div class="process-card">
                     <div class="process-number">02</div>
-                    <div class="process-icon">
-                        <svg class="icon icon-process"><use href="#icon-clock"/></svg>
+                    <div class="process-card-body">
+                        <div class="process-icon">
+                            <svg class="icon icon-process"><use href="#icon-clock"/></svg>
+                        </div>
+                        <h3>Choose Your Time</h3>
+                        <p>Pick a pickup window. Same-day and next-day slots available.</p>
                     </div>
-                    <h3>Choose Your Time</h3>
-                    <p>Pick a pickup window. Same-day and next-day slots available.</p>
-                    <div class="process-line"></div>
                 </div>
 
                 <div class="process-card">
                     <div class="process-number">03</div>
-                    <div class="process-icon">
-                        <svg class="icon icon-process"><use href="#icon-check-circle"/></svg>
+                    <div class="process-card-body">
+                        <div class="process-icon">
+                            <svg class="icon icon-process"><use href="#icon-check-circle"/></svg>
+                        </div>
+                        <h3>We Handle Everything</h3>
+                        <p>Our crew shows up, loads everything, cleans up, and hauls it away. Done.</p>
                     </div>
-                    <h3>We Handle Everything</h3>
-                    <p>Our crew shows up, loads everything, cleans up, and hauls it away. Done.</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Social Proof -->
+    <!-- Social Proof — Scrolling Columns -->
     <section class="section testimonials-section">
         <div class="container">
             <div class="section-header" data-animate>
-                <span class="section-label">Reviews</span>
+                <span class="section-label">Testimonials</span>
                 <h2 class="section-title">What Our Customers Say</h2>
+                <p class="section-subtitle">See what our customers have to say about us.</p>
             </div>
 
-            <div class="testimonials-grid" data-animate>
-                <div class="testimonial-card">
-                    <div class="stars">
-                        <svg class="icon icon-star"><use href="#icon-star"/></svg>
-                        <svg class="icon icon-star"><use href="#icon-star"/></svg>
-                        <svg class="icon icon-star"><use href="#icon-star"/></svg>
-                        <svg class="icon icon-star"><use href="#icon-star"/></svg>
-                        <svg class="icon icon-star"><use href="#icon-star"/></svg>
-                    </div>
-                    <p class="quote">"Fastest service I've ever experienced. Texted them at 9am, they showed up at 2pm same day and cleared everything in 20 minutes. Incredible."</p>
-                    <div class="author">
-                        <div class="author-avatar">M</div>
-                        <div class="author-info">
-                            <strong>Maria S.</strong>
-                            <span>Boca Raton</span>
+            <div class="testimonials-columns" data-animate>
+                <!-- Column 1 (visible on all screens) -->
+                <div class="testimonials-col">
+                    <div class="testimonials-scroll testimonials-scroll--slow">
+                        <!-- Set 1 -->
+                        <div class="tc-card">
+                            <p class="tc-text">"Fastest service I've ever experienced. Texted them at 9am, they showed up at 2pm same day and cleared everything in 20 minutes. Incredible."</p>
+                            <div class="tc-author">
+                                <img src="https://randomuser.me/api/portraits/women/1.jpg" alt="Maria S." class="tc-avatar">
+                                <div class="tc-meta">
+                                    <div class="tc-name">Maria S.</div>
+                                    <div class="tc-role">Boca Raton</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tc-card">
+                            <p class="tc-text">"I was dreading cleaning out my late father's estate. Umuve handled everything professionally and respectfully. They even donated items to local charities."</p>
+                            <div class="tc-author">
+                                <img src="https://randomuser.me/api/portraits/men/2.jpg" alt="David T." class="tc-avatar">
+                                <div class="tc-meta">
+                                    <div class="tc-name">David T.</div>
+                                    <div class="tc-role">Delray Beach</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tc-card">
+                            <p class="tc-text">"Got quotes from 3 companies. Umuve was the most transparent and actually came in under budget. Great crew, super professional."</p>
+                            <div class="tc-author">
+                                <img src="https://randomuser.me/api/portraits/women/3.jpg" alt="Jennifer M." class="tc-avatar">
+                                <div class="tc-meta">
+                                    <div class="tc-name">Jennifer M.</div>
+                                    <div class="tc-role">Fort Lauderdale</div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Duplicate for seamless loop -->
+                        <div class="tc-card">
+                            <p class="tc-text">"Fastest service I've ever experienced. Texted them at 9am, they showed up at 2pm same day and cleared everything in 20 minutes. Incredible."</p>
+                            <div class="tc-author">
+                                <img src="https://randomuser.me/api/portraits/women/1.jpg" alt="Maria S." class="tc-avatar">
+                                <div class="tc-meta">
+                                    <div class="tc-name">Maria S.</div>
+                                    <div class="tc-role">Boca Raton</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tc-card">
+                            <p class="tc-text">"I was dreading cleaning out my late father's estate. Umuve handled everything professionally and respectfully. They even donated items to local charities."</p>
+                            <div class="tc-author">
+                                <img src="https://randomuser.me/api/portraits/men/2.jpg" alt="David T." class="tc-avatar">
+                                <div class="tc-meta">
+                                    <div class="tc-name">David T.</div>
+                                    <div class="tc-role">Delray Beach</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tc-card">
+                            <p class="tc-text">"Got quotes from 3 companies. Umuve was the most transparent and actually came in under budget. Great crew, super professional."</p>
+                            <div class="tc-author">
+                                <img src="https://randomuser.me/api/portraits/women/3.jpg" alt="Jennifer M." class="tc-avatar">
+                                <div class="tc-meta">
+                                    <div class="tc-name">Jennifer M.</div>
+                                    <div class="tc-role">Fort Lauderdale</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="testimonial-card">
-                    <div class="stars">
-                        <svg class="icon icon-star"><use href="#icon-star"/></svg>
-                        <svg class="icon icon-star"><use href="#icon-star"/></svg>
-                        <svg class="icon icon-star"><use href="#icon-star"/></svg>
-                        <svg class="icon icon-star"><use href="#icon-star"/></svg>
-                        <svg class="icon icon-star"><use href="#icon-star"/></svg>
-                    </div>
-                    <p class="quote">"I was dreading cleaning out my late father's estate. Umuve handled everything professionally and respectfully. They even donated items to local charities."</p>
-                    <div class="author">
-                        <div class="author-avatar">D</div>
-                        <div class="author-info">
-                            <strong>David T.</strong>
-                            <span>Delray Beach</span>
+                <!-- Column 2 (hidden on mobile) -->
+                <div class="testimonials-col testimonials-col--md">
+                    <div class="testimonials-scroll testimonials-scroll--mid">
+                        <div class="tc-card">
+                            <p class="tc-text">"Called on a Saturday morning and they came by noon. Took away an entire garage full of old furniture and junk. Couldn't believe how fast they were."</p>
+                            <div class="tc-author">
+                                <img src="https://randomuser.me/api/portraits/men/4.jpg" alt="Carlos R." class="tc-avatar">
+                                <div class="tc-meta">
+                                    <div class="tc-name">Carlos R.</div>
+                                    <div class="tc-role">Wellington</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tc-card">
+                            <p class="tc-text">"Moving out of my condo and needed everything cleared in a day. Umuve showed up on time, worked fast, and left the place spotless. Highly recommend."</p>
+                            <div class="tc-author">
+                                <img src="https://randomuser.me/api/portraits/women/5.jpg" alt="Alicia W." class="tc-avatar">
+                                <div class="tc-meta">
+                                    <div class="tc-name">Alicia W.</div>
+                                    <div class="tc-role">Coral Springs</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tc-card">
+                            <p class="tc-text">"The crew was polite, efficient, and careful not to damage anything. They recycled most of the items too. Great eco-friendly service."</p>
+                            <div class="tc-author">
+                                <img src="https://randomuser.me/api/portraits/men/6.jpg" alt="Robert P." class="tc-avatar">
+                                <div class="tc-meta">
+                                    <div class="tc-name">Robert P.</div>
+                                    <div class="tc-role">Pompano Beach</div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Duplicate for seamless loop -->
+                        <div class="tc-card">
+                            <p class="tc-text">"Called on a Saturday morning and they came by noon. Took away an entire garage full of old furniture and junk. Couldn't believe how fast they were."</p>
+                            <div class="tc-author">
+                                <img src="https://randomuser.me/api/portraits/men/4.jpg" alt="Carlos R." class="tc-avatar">
+                                <div class="tc-meta">
+                                    <div class="tc-name">Carlos R.</div>
+                                    <div class="tc-role">Wellington</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tc-card">
+                            <p class="tc-text">"Moving out of my condo and needed everything cleared in a day. Umuve showed up on time, worked fast, and left the place spotless. Highly recommend."</p>
+                            <div class="tc-author">
+                                <img src="https://randomuser.me/api/portraits/women/5.jpg" alt="Alicia W." class="tc-avatar">
+                                <div class="tc-meta">
+                                    <div class="tc-name">Alicia W.</div>
+                                    <div class="tc-role">Coral Springs</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tc-card">
+                            <p class="tc-text">"The crew was polite, efficient, and careful not to damage anything. They recycled most of the items too. Great eco-friendly service."</p>
+                            <div class="tc-author">
+                                <img src="https://randomuser.me/api/portraits/men/6.jpg" alt="Robert P." class="tc-avatar">
+                                <div class="tc-meta">
+                                    <div class="tc-name">Robert P.</div>
+                                    <div class="tc-role">Pompano Beach</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="testimonial-card">
-                    <div class="stars">
-                        <svg class="icon icon-star"><use href="#icon-star"/></svg>
-                        <svg class="icon icon-star"><use href="#icon-star"/></svg>
-                        <svg class="icon icon-star"><use href="#icon-star"/></svg>
-                        <svg class="icon icon-star"><use href="#icon-star"/></svg>
-                        <svg class="icon icon-star"><use href="#icon-star"/></svg>
-                    </div>
-                    <p class="quote">"Got quotes from 3 companies. Umuve was the most transparent and actually came in under budget. Great crew, super professional."</p>
-                    <div class="author">
-                        <div class="author-avatar">J</div>
-                        <div class="author-info">
-                            <strong>Jennifer M.</strong>
-                            <span>Fort Lauderdale</span>
+                <!-- Column 3 (hidden on mobile + tablet) -->
+                <div class="testimonials-col testimonials-col--lg">
+                    <div class="testimonials-scroll testimonials-scroll--fast">
+                        <div class="tc-card">
+                            <p class="tc-text">"Upfront pricing with no surprises. They quoted me over text with photos and the final price was exactly what they said. Refreshing honesty."</p>
+                            <div class="tc-author">
+                                <img src="https://randomuser.me/api/portraits/women/7.jpg" alt="Sandra K." class="tc-avatar">
+                                <div class="tc-meta">
+                                    <div class="tc-name">Sandra K.</div>
+                                    <div class="tc-role">Boynton Beach</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tc-card">
+                            <p class="tc-text">"Used Umuve for a commercial cleanout at our office. They handled desks, chairs, old equipment — everything. Done in under two hours."</p>
+                            <div class="tc-author">
+                                <img src="https://randomuser.me/api/portraits/men/8.jpg" alt="Marcus T." class="tc-avatar">
+                                <div class="tc-meta">
+                                    <div class="tc-name">Marcus T.</div>
+                                    <div class="tc-role">Plantation</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tc-card">
+                            <p class="tc-text">"I didn't even have to be home. Left a key, went to work, came back to a completely empty garage. They even swept the floor. Amazing."</p>
+                            <div class="tc-author">
+                                <img src="https://randomuser.me/api/portraits/women/9.jpg" alt="Lisa N." class="tc-avatar">
+                                <div class="tc-meta">
+                                    <div class="tc-name">Lisa N.</div>
+                                    <div class="tc-role">Lake Worth</div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Duplicate for seamless loop -->
+                        <div class="tc-card">
+                            <p class="tc-text">"Upfront pricing with no surprises. They quoted me over text with photos and the final price was exactly what they said. Refreshing honesty."</p>
+                            <div class="tc-author">
+                                <img src="https://randomuser.me/api/portraits/women/7.jpg" alt="Sandra K." class="tc-avatar">
+                                <div class="tc-meta">
+                                    <div class="tc-name">Sandra K.</div>
+                                    <div class="tc-role">Boynton Beach</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tc-card">
+                            <p class="tc-text">"Used Umuve for a commercial cleanout at our office. They handled desks, chairs, old equipment — everything. Done in under two hours."</p>
+                            <div class="tc-author">
+                                <img src="https://randomuser.me/api/portraits/men/8.jpg" alt="Marcus T." class="tc-avatar">
+                                <div class="tc-meta">
+                                    <div class="tc-name">Marcus T.</div>
+                                    <div class="tc-role">Plantation</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tc-card">
+                            <p class="tc-text">"I didn't even have to be home. Left a key, went to work, came back to a completely empty garage. They even swept the floor. Amazing."</p>
+                            <div class="tc-author">
+                                <img src="https://randomuser.me/api/portraits/women/9.jpg" alt="Lisa N." class="tc-avatar">
+                                <div class="tc-meta">
+                                    <div class="tc-name">Lisa N.</div>
+                                    <div class="tc-role">Lake Worth</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
+            </div>
+
+            <!-- Aggregate rating -->
+            <div class="testimonial-aggregate" data-animate>
+                <svg class="icon icon-star" style="width:20px;height:20px;"><use href="#icon-star"/></svg>
+                <strong>4.9/5</strong> from 100+ reviews on Google
             </div>
         </div>
     </section>
@@ -405,7 +639,7 @@
                 <h2 class="section-title">Serving Palm Beach & Broward County</h2>
             </div>
 
-            <div class="areas-grid" data-animate>
+            <div class="areas-grid" data-animate data-animate-stagger>
                 <div class="area-card">
                     <h3>
                         <svg class="icon icon-inline"><use href="#icon-map-pin"/></svg>
@@ -454,7 +688,7 @@
                 <p class="section-subtitle">Everything you need to know about our junk removal service.</p>
             </div>
 
-            <div class="faq-list" data-animate>
+            <div class="faq-list" data-animate data-animate-stagger>
                 <div class="faq-item">
                     <button class="faq-question" aria-expanded="false">
                         <span>How much does junk removal cost?</span>
@@ -531,7 +765,7 @@
                 <p class="cta-subtitle">Get your free estimate in the next 15 minutes. Same-day slots filling fast.</p>
 
                 <div class="cta-buttons">
-                    <a href="https://platform-olive-nu.vercel.app/book" class="btn btn-primary btn-xl" rel="noopener">
+                    <a href="https://app.goumuve.com/book" class="btn btn-primary btn-xl" rel="noopener">
                         <svg class="icon icon-btn"><use href="#icon-sparkles"/></svg>
                         <span>Book Online Now</span>
                     </a>
@@ -552,7 +786,7 @@
             <div class="footer-grid">
                 <div class="footer-brand">
                     <div class="logo">
-                        <svg class="icon icon-logo"><use href="#icon-truck"/></svg>
+                        <img src="logo-full.png" alt="Umuve" style="height: 36px; width: auto;">
                         <span class="logo-text">Umuve</span>
                     </div>
                     <p>South Florida's fastest junk removal service</p>
