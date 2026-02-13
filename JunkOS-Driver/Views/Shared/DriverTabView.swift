@@ -38,5 +38,16 @@ struct DriverTabView: View {
                 .tag(3)
         }
         .tint(Color.driverPrimary)
+        .onReceive(NotificationCenter.default.publisher(for: .didTapPushNotification)) { notification in
+            let type = notification.userInfo?["type"] as? String ?? ""
+            switch type {
+            case "new_job", "job_assigned", "job_update":
+                selectedTab = 1 // Jobs
+            case "earnings", "payout":
+                selectedTab = 2 // Earnings
+            default:
+                selectedTab = 0 // Home
+            }
+        }
     }
 }

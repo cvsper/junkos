@@ -8,6 +8,10 @@
 import UserNotifications
 import UIKit
 
+extension Notification.Name {
+    static let didTapPushNotification = Notification.Name("didTapPushNotification")
+}
+
 final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
     static let shared = NotificationManager()
 
@@ -110,7 +114,11 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
     ) {
         let userInfo = response.notification.request.content.userInfo
         print("[Push] Tapped notification: \(userInfo)")
-        // TODO: Navigate to relevant job screen based on userInfo
+        NotificationCenter.default.post(
+            name: .didTapPushNotification,
+            object: nil,
+            userInfo: userInfo
+        )
         completionHandler()
     }
 }

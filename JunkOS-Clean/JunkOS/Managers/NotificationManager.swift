@@ -37,6 +37,7 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
 
     // MARK: - Published Properties
     @Published var isPermissionGranted = false
+    @Published var pendingDeepLink: NotificationCategory?
 
     // MARK: - API Configuration
     private let baseURL = Config.shared.baseURL
@@ -215,16 +216,8 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
 
     /// Process a notification tap based on its category
     private func handleNotificationAction(for category: NotificationCategory, userInfo: [AnyHashable: Any]) {
-        switch category {
-        case .bookingConfirmed:
-            print("User tapped booking confirmed notification")
-            // TODO: Navigate to booking details
-        case .driverEnRoute:
-            print("User tapped driver en route notification")
-            // TODO: Navigate to live tracking view
-        case .jobCompleted:
-            print("User tapped job completed notification")
-            // TODO: Navigate to job summary / review
+        DispatchQueue.main.async {
+            self.pendingDeepLink = category
         }
     }
 }

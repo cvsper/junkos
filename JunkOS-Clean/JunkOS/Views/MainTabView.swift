@@ -10,6 +10,7 @@ import SwiftUI
 struct MainTabView: View {
     @EnvironmentObject var bookingData: BookingData
     @EnvironmentObject var authManager: AuthenticationManager
+    @EnvironmentObject var notificationManager: NotificationManager
     @State private var selectedTab = 0
     @State private var homeNavPath = NavigationPath()
 
@@ -42,15 +43,19 @@ struct MainTabView: View {
         .tint(.umuvePrimary)
         .onChange(of: bookingData.bookingCompleted) { completed in
             if completed {
-                // Pop the entire booking flow back to root
                 homeNavPath = NavigationPath()
-                // Switch to Orders tab
                 selectedTab = 1
-                // Reset the flag
                 bookingData.bookingCompleted = false
-                // Reset booking data for next booking
                 bookingData.reset()
             }
+        }
+        .onChange(of: notificationManager.pendingDeepLink) { deepLink in
+            guard let deepLink else { return }
+            switch deepLink {
+            case .bookingConfirmed, .driverEnRoute, .jobCompleted:
+                selectedTab = 1 // Orders tab
+            }
+            notificationManager.pendingDeepLink = nil
         }
     }
 }
