@@ -55,10 +55,7 @@ export default function CustomerLoginPage() {
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="text-center mb-8">
-          <img src="/logo-full.png" alt="Umuve" className="h-16 w-auto object-contain mx-auto mb-4" />
-          <h1 className="font-display text-2xl font-bold tracking-tight">
-            Umuve
-          </h1>
+          <img src="/logo-login.png" alt="Umuve — Hauling made simple" className="h-36 w-auto object-contain mx-auto mb-4" />
           <p className="text-muted-foreground text-sm mt-1">
             Sign in to your account
           </p>

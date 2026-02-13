@@ -6,6 +6,19 @@ import { useEffect, useState } from "react";
 import { useAuthStore } from "@/stores/auth-store";
 import { NotificationBell } from "@/components/notification-bell";
 import { adminApi } from "@/lib/api";
+import { ActionSearchBar, type Action } from "@/components/ui/action-search-bar";
+import {
+  Briefcase,
+  Users,
+  DollarSign,
+  MapPin,
+  BarChart2,
+  Settings,
+  Tag,
+  Star,
+  ClipboardCheck,
+  CreditCard,
+} from "lucide-react";
 
 const sidebarLinks = [
   { href: "/admin", label: "Dashboard", icon: "M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" },
@@ -67,6 +80,19 @@ export default function AdminLayout({
 
   const userName = user?.name || user?.email || "Admin";
   const userInitial = userName[0]?.toUpperCase() || "A";
+
+  const adminActions: Action[] = [
+    { id: "1", label: "View Jobs", icon: <Briefcase className="h-4 w-4 text-blue-500" />, description: "All jobs", short: "⌘J", end: "Navigate" },
+    { id: "2", label: "Contractors", icon: <Users className="h-4 w-4 text-orange-500" />, description: "Manage team", short: "⌘C", end: "Navigate" },
+    { id: "3", label: "Onboarding", icon: <ClipboardCheck className="h-4 w-4 text-green-500" />, description: "Applications", short: "", end: "Navigate" },
+    { id: "4", label: "Pricing", icon: <DollarSign className="h-4 w-4 text-emerald-500" />, description: "Rate cards", short: "", end: "Navigate" },
+    { id: "5", label: "Promo Codes", icon: <Tag className="h-4 w-4 text-purple-500" />, description: "Discounts", short: "", end: "Navigate" },
+    { id: "6", label: "Reviews", icon: <Star className="h-4 w-4 text-yellow-500" />, description: "Customer feedback", short: "", end: "Navigate" },
+    { id: "7", label: "Payouts", icon: <CreditCard className="h-4 w-4 text-blue-500" />, description: "Earnings", short: "", end: "Navigate" },
+    { id: "8", label: "Live Map", icon: <MapPin className="h-4 w-4 text-red-500" />, description: "Track drivers", short: "⌘M", end: "Navigate" },
+    { id: "9", label: "Analytics", icon: <BarChart2 className="h-4 w-4 text-indigo-500" />, description: "Reports", short: "", end: "Navigate" },
+    { id: "10", label: "Settings", icon: <Settings className="h-4 w-4 text-gray-500" />, description: "Configuration", short: "⌘,", end: "Navigate" },
+  ];
 
   return (
     <div className="h-screen flex overflow-hidden">
@@ -171,6 +197,11 @@ export default function AdminLayout({
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
               </svg>
             </button>
+
+            {/* Command Search */}
+            <div className="hidden md:block flex-1 max-w-md mx-4">
+              <ActionSearchBar actions={adminActions} />
+            </div>
 
             <div className="ml-auto flex items-center gap-4">
               <NotificationBell
