@@ -4,9 +4,11 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { jobsApi } from "@/lib/api";
+import { useAuthStore } from "@/stores/auth-store";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 
 // ---------------------------------------------------------------------------
 // Local types (mirrors backend response, not importing from @/types)
@@ -29,6 +31,29 @@ interface CustomerJob {
   scheduled_at: string | null;
   created_at: string;
   contractor?: JobContractor | null;
+}
+
+interface LookedUpJob {
+  id: string;
+  confirmation_code: string;
+  status: string;
+  address: string;
+  items: { category: string; quantity: number }[];
+  photos: string[];
+  before_photos: string[];
+  after_photos: string[];
+  scheduled_at: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+  total_price: number;
+  created_at: string;
+  notes: string | null;
+  contractor?: {
+    name: string | null;
+    truck_type: string | null;
+    avg_rating: number;
+    total_jobs: number;
+  } | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -120,7 +145,6 @@ function sortJobs(jobs: CustomerJob[]): CustomerJob[] {
     const pa = priority[a.status] ?? 1;
     const pb = priority[b.status] ?? 1;
     if (pa !== pb) return pa - pb;
-    // Within same priority group, sort by creation date descending
     return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
   });
 }
@@ -130,10 +154,246 @@ function isActive(status: string): boolean {
 }
 
 // ---------------------------------------------------------------------------
-// Component
+// Guest Lookup Component
 // ---------------------------------------------------------------------------
 
-export default function DashboardPage() {
+function GuestLookup() {
+  const [code, setCode] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [job, setJob] = useState<LookedUpJob | null>(null);
+
+  const handleLookup = async () => {
+    const trimmed = code.trim().toUpperCase();
+    if (trimmed.length !== 8) {
+      setError("Please enter a valid 8-character confirmation code.");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    setJob(null);
+
+    try {
+      const res = await jobsApi.lookup(trimmed);
+      setJob(res.job);
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Job not found. Please check your code.";
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="max-w-xl mx-auto px-4 py-12 sm:py-20">
+      <div className="text-center mb-8">
+        <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+          <svg
+            className="w-8 h-8 text-primary"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={1.5}
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
+            />
+          </svg>
+        </div>
+        <h1 className="font-display text-3xl sm:text-4xl font-bold tracking-tight">
+          Track Your Pickup
+        </h1>
+        <p className="text-muted-foreground mt-2">
+          Enter the confirmation code from your booking to view your job status.
+        </p>
+      </div>
+
+      <Card>
+        <CardContent className="p-6 space-y-4">
+          <div className="flex gap-3">
+            <Input
+              placeholder="e.g. ABCD1234"
+              value={code}
+              onChange={(e) => {
+                setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8));
+                if (error) setError(null);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleLookup();
+              }}
+              className="flex-1 text-center text-lg font-mono tracking-widest uppercase h-12"
+              maxLength={8}
+              disabled={loading}
+            />
+            <Button
+              onClick={handleLookup}
+              disabled={loading || code.trim().length < 8}
+              className="h-12 px-6"
+            >
+              {loading ? (
+                <svg
+                  className="h-5 w-5 animate-spin"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+              ) : (
+                "Track"
+              )}
+            </Button>
+          </div>
+
+          {error && (
+            <p className="text-sm text-destructive font-medium text-center">{error}</p>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Looked-up job result */}
+      {job && (
+        <Card className="mt-6 border-primary/20">
+          <CardContent className="p-6 space-y-5">
+            {/* Status header */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div
+                  className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                    isActive(job.status)
+                      ? "bg-primary/10"
+                      : job.status === "completed"
+                      ? "bg-green-100"
+                      : "bg-red-100"
+                  }`}
+                >
+                  <svg
+                    className={`w-5 h-5 ${
+                      isActive(job.status)
+                        ? "text-primary"
+                        : job.status === "completed"
+                        ? "text-green-600"
+                        : "text-red-600"
+                    }`}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.5}
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d={STATUS_ICONS[job.status] ?? STATUS_ICONS["pending"]}
+                    />
+                  </svg>
+                </div>
+                <div>
+                  <Badge className={STATUS_COLORS[job.status] ?? "bg-muted text-muted-foreground"}>
+                    {statusLabel(job.status)}
+                  </Badge>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Code: {job.confirmation_code}
+                  </p>
+                </div>
+              </div>
+              <p className="text-xl font-bold text-primary">
+                {formatPrice(job.total_price)}
+              </p>
+            </div>
+
+            {/* Details */}
+            <div className="space-y-3 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Address</span>
+                <span className="font-medium text-right max-w-[250px]">
+                  {job.address}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Scheduled</span>
+                <span className="font-medium">
+                  {job.scheduled_at ? formatDate(job.scheduled_at) : "Not scheduled"}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Items</span>
+                <span className="font-medium">{itemCount(job.items)}</span>
+              </div>
+              {job.contractor && (
+                <>
+                  <div className="border-t border-border pt-3 flex justify-between">
+                    <span className="text-muted-foreground">Contractor</span>
+                    <span className="font-medium">
+                      {job.contractor.name ?? "Assigned"}
+                    </span>
+                  </div>
+                  {job.contractor.truck_type && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Truck</span>
+                      <span className="font-medium">{job.contractor.truck_type}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Rating</span>
+                    <span className="font-medium">
+                      {job.contractor.avg_rating.toFixed(1)} / 5.0
+                    </span>
+                  </div>
+                </>
+              )}
+              {!job.contractor && (
+                <div className="border-t border-border pt-3 flex justify-between">
+                  <span className="text-muted-foreground">Contractor</span>
+                  <span className="text-muted-foreground italic">Awaiting assignment</span>
+                </div>
+              )}
+            </div>
+
+            {/* Track link for active jobs */}
+            {isActive(job.status) && (
+              <Link
+                href={`/track/${job.id}`}
+                className="flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors w-full"
+              >
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={2}
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+                </svg>
+                Live Tracking
+              </Link>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Sign in link */}
+      <p className="text-center text-sm text-muted-foreground mt-8">
+        Have an account?{" "}
+        <Link href="/login" className="text-primary font-medium hover:underline">
+          Sign in
+        </Link>{" "}
+        for full dashboard access.
+      </p>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Authenticated Dashboard Component
+// ---------------------------------------------------------------------------
+
+function AuthenticatedDashboard() {
   const router = useRouter();
   const [jobs, setJobs] = useState<CustomerJob[]>([]);
   const [loading, setLoading] = useState(true);
@@ -505,4 +765,35 @@ export default function DashboardPage() {
       )}
     </div>
   );
+}
+
+// ---------------------------------------------------------------------------
+// Main Page Component — dual mode
+// ---------------------------------------------------------------------------
+
+export default function DashboardPage() {
+  const { isAuthenticated, isLoading } = useAuthStore();
+
+  // Show nothing while auth state is loading to avoid flash
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <svg
+          className="h-8 w-8 animate-spin text-primary"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+        </svg>
+      </div>
+    );
+  }
+
+  if (isAuthenticated) {
+    return <AuthenticatedDashboard />;
+  }
+
+  return <GuestLookup />;
 }

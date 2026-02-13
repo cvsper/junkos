@@ -176,7 +176,42 @@ interface CustomerJobResponse {
   } | null;
 }
 
+interface PublicJobLookupResponse {
+  id: string;
+  confirmation_code: string;
+  status: string;
+  address: string;
+  items: { category: string; quantity: number }[];
+  photos: string[];
+  before_photos: string[];
+  after_photos: string[];
+  scheduled_at: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+  total_price: number;
+  created_at: string;
+  notes: string | null;
+  contractor?: {
+    name: string | null;
+    truck_type: string | null;
+    avg_rating: number;
+    total_jobs: number;
+  } | null;
+}
+
 export const jobsApi = {
+  /** Public lookup by confirmation code — no auth required */
+  lookup: async (code: string): Promise<{ success: boolean; job: PublicJobLookupResponse }> => {
+    const res = await fetch(`${API_BASE_URL}/api/jobs/lookup/${encodeURIComponent(code)}`, {
+      headers: { "Content-Type": "application/json" },
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new ApiError(data?.error || res.statusText, res.status, data);
+    }
+    return data;
+  },
+
   list: (status?: string) => {
     const params = status ? `?status=${status}` : "";
     return apiFetch<{ success: boolean; jobs: CustomerJobResponse[] }>(`/api/jobs${params}`);

@@ -251,6 +251,7 @@ class Job(db.Model):
     discount_amount = Column(Float, default=0.0)
 
     notes = Column(Text, nullable=True)
+    confirmation_code = Column(String(8), unique=True, nullable=True, index=True, default=generate_referral_code)
 
     cancelled_at = Column(DateTime, nullable=True)
     cancellation_fee = Column(Float, default=0.0)
@@ -300,6 +301,7 @@ class Job(db.Model):
             "promo_code_id": self.promo_code_id,
             "discount_amount": self.discount_amount or 0.0,
             "notes": self.notes,
+            "confirmation_code": self.confirmation_code,
             "cancelled_at": self.cancelled_at.isoformat() if self.cancelled_at else None,
             "cancellation_fee": self.cancellation_fee or 0.0,
             "rescheduled_count": self.rescheduled_count or 0,

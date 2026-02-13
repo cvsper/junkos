@@ -17,7 +17,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from models import (
     db, Job, Payment, PricingRule, PricingConfig, SurgeZone, Contractor,
-    Notification, PromoCode, generate_uuid, utcnow,
+    Notification, PromoCode, generate_uuid, utcnow, generate_referral_code,
 )
 from auth_routes import require_auth
 from extensions import limiter
@@ -576,6 +576,7 @@ def create_booking(user_id):
         promo_code_id=promo_code_id,
         discount_amount=discount_amount,
         notes=notes,
+        confirmation_code=generate_referral_code(),
     )
     db.session.add(job)
 

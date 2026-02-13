@@ -37,6 +37,60 @@ def _ensure_upload_dir():
         os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 
+# ---------------------------------------------------------------------------
+# GET /api/jobs/lookup/<confirmation_code>  (PUBLIC -- no auth required)
+# ---------------------------------------------------------------------------
+@jobs_bp.route("/lookup/<confirmation_code>", methods=["GET"])
+def lookup_by_confirmation_code(confirmation_code):
+    """
+    Public endpoint: look up a job by its 8-character confirmation code.
+    Returns job details suitable for unauthenticated customers to track
+    their pickup status. Does NOT expose sensitive internal data.
+    """
+    code = confirmation_code.strip().upper()
+    if not code or len(code) != 8:
+        return jsonify({"error": "Invalid confirmation code format"}), 400
+
+    job = Job.query.filter_by(confirmation_code=code).first()
+    if not job:
+        return jsonify({"error": "No job found with that confirmation code"}), 404
+
+    # Build a safe public response (no customer_id, payment details, internal IDs)
+    result = {
+        "id": job.id,
+        "confirmation_code": job.confirmation_code,
+        "status": job.status,
+        "address": job.address,
+        "items": job.items or [],
+        "photos": job.photos or [],
+        "before_photos": job.before_photos or [],
+        "after_photos": job.after_photos or [],
+        "scheduled_at": job.scheduled_at.isoformat() if job.scheduled_at else None,
+        "started_at": job.started_at.isoformat() if job.started_at else None,
+        "completed_at": job.completed_at.isoformat() if job.completed_at else None,
+        "total_price": job.total_price,
+        "created_at": job.created_at.isoformat() if job.created_at else None,
+        "notes": job.notes,
+    }
+
+    # Include contractor info if assigned
+    if job.driver_id:
+        contractor = db.session.get(Contractor, job.driver_id)
+        if contractor:
+            result["contractor"] = {
+                "name": contractor.user.name if contractor.user else None,
+                "truck_type": contractor.truck_type,
+                "avg_rating": contractor.avg_rating,
+                "total_jobs": contractor.total_jobs,
+            }
+        else:
+            result["contractor"] = None
+    else:
+        result["contractor"] = None
+
+    return jsonify({"success": True, "job": result}), 200
+
+
 @jobs_bp.route("", methods=["GET"])
 @require_auth
 def list_jobs(user_id):

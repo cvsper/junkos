@@ -149,6 +149,7 @@ function PaymentFormInner() {
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSuccess, setIsSuccess] = useState(false);
   const [bookingId, setBookingId] = useState("");
+  const [confirmationCode, setConfirmationCode] = useState("");
 
   // Promo code state
   const [promoInput, setPromoInput] = useState("");
@@ -256,6 +257,9 @@ function PaymentFormInner() {
         setEmail(payerEmail);
         setPhone(payerPhone);
         setBookingId(newBookingId);
+        // Extract confirmation code from nested job response
+        const jobData = (bookingResult as unknown as Record<string, unknown>).job as Record<string, unknown> | undefined;
+        setConfirmationCode((jobData?.confirmation_code as string) || "");
         setIsSuccess(true);
       } catch (err) {
         ev.complete("fail");
@@ -421,6 +425,9 @@ function PaymentFormInner() {
 
       // Success
       setBookingId(newBookingId);
+      // Extract confirmation code from nested job response
+      const jobData = (bookingResult as unknown as Record<string, unknown>).job as Record<string, unknown> | undefined;
+      setConfirmationCode((jobData?.confirmation_code as string) || "");
       setIsSuccess(true);
     } catch (err) {
       const message =
@@ -459,6 +466,21 @@ function PaymentFormInner() {
               {bookingId}
             </p>
           </div>
+
+          {confirmationCode && (
+            <div className="rounded-lg border-2 border-dashed border-primary/30 bg-primary/5 p-4 text-center">
+              <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
+                Confirmation Code
+              </p>
+              <p className="text-2xl font-bold font-mono tracking-widest text-primary">
+                {confirmationCode}
+              </p>
+              <p className="text-xs text-muted-foreground mt-2">
+                Save this code to track your pickup at{" "}
+                <span className="font-medium text-foreground">/dashboard</span>
+              </p>
+            </div>
+          )}
 
           <div className="border-t border-border pt-3 space-y-2 text-sm">
             <div className="flex justify-between">
@@ -510,6 +532,7 @@ function PaymentFormInner() {
             setEmail("");
             setPhone("");
             setBookingId("");
+            setConfirmationCode("");
             setCardComplete(false);
             setCardError(undefined);
             setErrors({});
