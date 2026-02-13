@@ -11,7 +11,7 @@ open JunkOS.xcodeproj
 ```
 
 **In Xcode:**
-1. Right-click "Views" folder → "Add Files to JunkOS"
+1. Right-click "Views" folder → "Add Files to Umuve"
 2. Select all 7 new files:
    - MainTabView.swift
    - HomeView.swift
@@ -21,7 +21,7 @@ open JunkOS.xcodeproj
    - ServiceSelectionRedesignView.swift
    - EnhancedWelcomeView.swift
 3. **Uncheck** "Copy items if needed"
-4. **Check** "JunkOS" target
+4. **Check** "Umuve" target
 5. Click "Add"
 
 ### Step 2: Build & Run
@@ -93,7 +93,7 @@ EnhancedWelcomeView (3s splash)
 ### If files show as red in Xcode:
 1. Select the file
 2. Right panel → Target Membership
-3. Check "JunkOS"
+3. Check "Umuve"
 
 ### If colors don't work:
 - The color extensions are in `Design/DesignSystem.swift`
@@ -218,7 +218,7 @@ VStack(spacing: JunkSpacing.small) {
 ## 🐛 Common Issues
 
 **Issue:** App crashes on launch  
-**Fix:** Make sure all new files are added to JunkOS target
+**Fix:** Make sure all new files are added to Umuve target
 
 **Issue:** Colors show as gray  
 **Fix:** Verify DesignSystem.swift is in target

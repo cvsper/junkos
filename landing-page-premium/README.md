@@ -1,4 +1,4 @@
-# 🚛 JunkOS Premium Landing Page
+# 🚛 Umuve Premium Landing Page
 
 **Award-Winning Redesign** using Premium Frontend Design patterns, glassmorphism, neon accents, and cinematic animations.
 
@@ -9,7 +9,7 @@
 ### Visual Excellence
 - **Dark Mode First** - Deep blacks (#050505) with strategic accent colors
 - **Glassmorphism** - Frosted glass cards with backdrop blur
-- **Neon Accents** - Emerald (#10b981) + Electric Purple (#a855f7)
+- **Neon Accents** - Red (#DC2626) + Electric Purple (#a855f7)
 - **Mesh Gradients** - Layered radial gradients for depth
 - **Ambient Glows** - Floating orbs with blur effects
 - **Film Grain** - Subtle texture overlay for sophistication
@@ -101,7 +101,7 @@ vercel --prod
 
 Custom domain setup:
 ```bash
-vercel domains add junkos.com
+vercel domains add goumuve.com
 ```
 
 ### Option 2: Netlify
@@ -119,7 +119,7 @@ git init
 git add .
 git commit -m "Premium landing page"
 git branch -M main
-git remote add origin https://github.com/username/junkos-landing.git
+git remote add origin https://github.com/username/umuve-landing.git
 git push -u origin main
 
 # Enable GitHub Pages in repo settings
@@ -158,7 +158,7 @@ Already included:
 Edit CSS variables in `styles.css`:
 ```css
 :root {
-    --color-accent: #10b981;        /* Emerald */
+    --color-accent: #DC2626;        /* Red */
     --color-secondary: #a855f7;     /* Purple */
     --color-bg: #050505;            /* Dark background */
 }
@@ -245,7 +245,7 @@ To switch from the old landing page:
 
 1. **Keep old version as backup**:
    ```bash
-   cd ~/Documents/programs/webapps/junkos
+   cd ~/Documents/programs/webapps/umuve
    mv landing-page landing-page-old
    mv landing-page-premium landing-page
    ```
@@ -370,10 +370,10 @@ Add GA4 tracking code to `<head>`:
 
 Questions about the design or code?
 
-- **Email**: hello@junkos.com
+- **Email**: hello@goumuve.com
 - **Phone**: (561) 888-3427
 - **Service Area**: Palm Beach & Broward County, FL
 
 ---
 
-**Built with 🦾 by Zim for JunkOS**
+**Built with 🦾 by Zim for Umuve**

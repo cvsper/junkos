@@ -1,13 +1,13 @@
 # =============================================================================
-# JunkOS iOS Build Check
+# Umuve iOS Build Check
 # =============================================================================
 # Required GitHub Secrets:
 #   (none required -- builds without code signing for CI verification)
 #
 # Notes:
-#   - JunkOS-Clean  = customer-facing iOS app (scheme: JunkOS)
-#   - JunkOS-Driver  = driver-facing iOS app  (scheme: JunkOS-Driver)
-#   - JunkOS-Driver uses Swift Package Manager deps (SocketIO, Starscream)
+#   - JunkOS-Clean  = customer-facing iOS app (scheme: Umuve)      [dir not yet renamed]
+#   - JunkOS-Driver = driver-facing iOS app  (scheme: Umuve Pro)  [dir not yet renamed]
+#   - Umuve Pro uses Swift Package Manager deps (SocketIO, Starscream)
 #   - Neither project uses CocoaPods
 #   - Builds run CODE_SIGNING_ALLOWED=NO so no provisioning profile is needed
 # =============================================================================
@@ -28,7 +28,7 @@ on:
 
 jobs:
   build-customer-app:
-    name: Build JunkOS (Customer)
+    name: Build Umuve (Customer)
     runs-on: macos-latest
 
     steps:
@@ -40,11 +40,11 @@ jobs:
         with:
           path: |
             ~/Library/Developer/Xcode/DerivedData/**/SourcePackages
-          key: ${{ runner.os }}-spm-junkos-clean-${{ hashFiles('JunkOS-Clean/JunkOS.xcodeproj/project.pbxproj') }}
+          key: ${{ runner.os }}-spm-umuve-clean-${{ hashFiles('JunkOS-Clean/JunkOS.xcodeproj/project.pbxproj') }}
           restore-keys: |
-            ${{ runner.os }}-spm-junkos-clean-
+            ${{ runner.os }}-spm-umuve-clean-
 
-      - name: Build JunkOS-Clean
+      - name: Build Umuve (Customer App)
         run: |
           set -o pipefail
           xcodebuild build \
@@ -58,7 +58,7 @@ jobs:
           echo "Build completed with exit code $?"
 
   build-driver-app:
-    name: Build JunkOS-Driver
+    name: Build Umuve Pro (Driver)
     runs-on: macos-latest
 
     steps:
@@ -70,11 +70,11 @@ jobs:
         with:
           path: |
             ~/Library/Developer/Xcode/DerivedData/**/SourcePackages
-          key: ${{ runner.os }}-spm-junkos-driver-${{ hashFiles('JunkOS-Driver/JunkOS-Driver.xcodeproj/project.pbxproj') }}
+          key: ${{ runner.os }}-spm-umuve-driver-${{ hashFiles('JunkOS-Driver/JunkOS-Driver.xcodeproj/project.pbxproj') }}
           restore-keys: |
-            ${{ runner.os }}-spm-junkos-driver-
+            ${{ runner.os }}-spm-umuve-driver-
 
-      - name: Build JunkOS-Driver
+      - name: Build Umuve Pro (Driver App)
         run: |
           set -o pipefail
           xcodebuild build \

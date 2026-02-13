@@ -1,7 +1,7 @@
-# JunkOS App Store Submission Materials
+# Umuve App Store Submission Materials
 
 **Created:** February 6, 2026  
-**Purpose:** Complete App Store Connect submission package for JunkOS iOS app
+**Purpose:** Complete App Store Connect submission package for Umuve iOS app
 
 ---
 
@@ -27,7 +27,7 @@
 - [ ] Prepare "What's New" for v1.0 launch from template
 - [ ] Create screenshots matching the captions in app-preview-screenshots.md
 - [ ] Upload support-faq.md to your support URL
-- [ ] Update contact information (support@junkos.app, phone numbers)
+- [ ] Update contact information (support@goumuve.com, phone numbers)
 - [ ] Verify all pricing examples match your actual pricing model
 - [ ] Review service area mentions and update to match coverage
 
@@ -39,13 +39,13 @@
 
 | Field | Source | Character Limit |
 |-------|--------|-----------------|
-| Name | `JunkOS` | 30 |
+| Name | `Umuve` | 30 |
 | Subtitle | `Junk Removal Made Simple` | 30 |
 | Description | app-description.md | 4,000 |
 | Keywords | keywords.md | 100 |
 | Promotional Text | promotional-text.md | 170 |
-| Support URL | `https://www.junkos.app/support` | - |
-| Marketing URL | `https://www.junkos.app` | - |
+| Support URL | `https://www.goumuve.com/support` | - |
+| Marketing URL | `https://www.goumuve.com` | - |
 
 ### Version Information
 
@@ -185,8 +185,8 @@ All support content lives in **support-faq.md**:
 - Issue resolution workflows
 
 **Action Items:**
-1. Upload support-faq.md to https://www.junkos.app/support
-2. Ensure support email (support@junkos.app) is monitored
+1. Upload support-faq.md to https://www.goumuve.com/support
+2. Ensure support email (support@goumuve.com) is monitored
 3. Set up phone line (1-800-JUNK-OS1) with IVR routing
 4. Configure in-app chat if available
 

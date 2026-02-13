@@ -1,8 +1,8 @@
-# JunkOS Driver Quick Start Guide
+# Umuve Driver Quick Start Guide
 
-**Get started with the JunkOS Driver App in minutes** 🚛
+**Get started with the Umuve Driver App in minutes** 🚛
 
-This guide will help drivers get up and running with the JunkOS mobile app to view jobs, navigate to customers, complete work, and collect payments.
+This guide will help drivers get up and running with the Umuve mobile app to view jobs, navigate to customers, complete work, and collect payments.
 
 ---
 
@@ -22,7 +22,7 @@ This guide will help drivers get up and running with the JunkOS mobile app to vi
 
 1. Open the **App Store** on your iPhone
 2. Tap the **Search** tab at the bottom
-3. Search for **"JunkOS Driver"**
+3. Search for **"Umuve Driver"**
 4. Tap **"Get"** then **"Install"**
 5. Enter your Apple ID password or use Face/Touch ID
 6. Wait for download to complete
@@ -33,7 +33,7 @@ This guide will help drivers get up and running with the JunkOS mobile app to vi
 
 1. Open **Google Play Store** on your Android phone
 2. Tap the **Search** bar at the top
-3. Search for **"JunkOS Driver"**
+3. Search for **"Umuve Driver"**
 4. Tap **"Install"**
 5. Wait for download to complete
 
@@ -43,10 +43,10 @@ This guide will help drivers get up and running with the JunkOS mobile app to vi
 
 Until mobile apps are released, you can use the web app:
 1. Open your phone's web browser (Safari, Chrome)
-2. Go to **app.junkos.com/driver**
+2. Go to **app.goumuve.com/driver**
 3. Tap the **Share** button (iOS) or **Menu** (Android)
 4. Select **"Add to Home Screen"**
-5. Name it "JunkOS" and tap **"Add"**
+5. Name it "Umuve" and tap **"Add"**
 
 **[SCREENSHOT: Add to home screen process]**
 
@@ -56,7 +56,7 @@ Until mobile apps are released, you can use the web app:
 
 ### First-Time Login
 
-1. **Open the JunkOS Driver app**
+1. **Open the Umuve Driver app**
 2. Tap **"Get Started"**
 3. Enter the **email address** your operator sent the invitation to
 4. Enter the **temporary password** from your invitation email
@@ -103,8 +103,8 @@ After logging in for the first time, complete your driver profile.
 
 1. When prompted, tap **"Allow Notifications"**
 2. If you missed this, go to your phone's Settings:
-   - **iOS**: Settings → JunkOS → Notifications → Allow Notifications
-   - **Android**: Settings → Apps → JunkOS → Notifications → Allow
+   - **iOS**: Settings → Umuve → Notifications → Allow Notifications
+   - **Android**: Settings → Apps → Umuve → Notifications → Allow
 
 **[SCREENSHOT: Notification permission prompt]**
 
@@ -114,8 +114,8 @@ After logging in for the first time, complete your driver profile.
 
 1. When prompted, tap **"Allow While Using App"** or **"Allow All the Time"**
 2. If you missed this:
-   - **iOS**: Settings → JunkOS → Location → While Using the App
-   - **Android**: Settings → Apps → JunkOS → Permissions → Location → Allow
+   - **iOS**: Settings → Umuve → Location → While Using the App
+   - **Android**: Settings → Apps → Umuve → Permissions → Location → Allow
 
 **[SCREENSHOT: Location permission prompt]**
 
@@ -396,7 +396,7 @@ This helps your operator track disposal costs and profitability.
 
 ## Daily Workflow Summary
 
-Here's your typical day with JunkOS:
+Here's your typical day with Umuve:
 
 ### Morning
 1. ☕ Open app and review today's jobs
@@ -567,9 +567,9 @@ Customize which alerts you receive:
 1. **Update app**: Check App Store/Play Store for updates
 2. **Restart app**: Close completely and reopen
 3. **Restart phone**: Power off and back on
-4. **Clear cache** (Android): Settings → Apps → JunkOS → Clear Cache
+4. **Clear cache** (Android): Settings → Apps → Umuve → Clear Cache
 5. **Reinstall app**: Delete and download again (won't lose data)
-6. Report issue to support@junkos.app with:
+6. Report issue to support@goumuve.com with:
    - Phone model and OS version
    - What you were doing when it crashed
 
@@ -610,11 +610,11 @@ For job-specific questions:
 - Call your dispatch/operator directly
 - Don't text personal numbers unless instructed
 
-### JunkOS Support
+### Umuve Support
 
 For app technical issues:
 
-- **Email**: driversupport@junkos.app
+- **Email**: driversupport@goumuve.com
 - **Phone**: 1-800-JUNK-OS (1-800-586-5667)
   - Press 2 for Driver Support
   - Available: Mon-Fri 8am-8pm EST, Sat 9am-5pm EST
@@ -719,7 +719,7 @@ Check your company's tipping policy.
 
 ## Welcome to the Team! 🎉
 
-You're now ready to hit the road and provide excellent junk removal service with JunkOS. Remember:
+You're now ready to hit the road and provide excellent junk removal service with Umuve. Remember:
 
 - **Communicate** with your operator
 - **Document** everything with photos
@@ -730,6 +730,6 @@ Your success is our success. Let's make every customer happy!
 
 ---
 
-**Questions?** Contact your operator or email driversupport@junkos.app
+**Questions?** Contact your operator or email driversupport@goumuve.com
 
 *Last updated: February 2026*

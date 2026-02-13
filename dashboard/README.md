@@ -1,6 +1,6 @@
-# JunkOS Dashboard
+# Umuve Dashboard
 
-A modern, responsive operator dashboard for JunkOS junk removal operations. Built with React, Tailwind CSS, and shadcn/ui components.
+A modern, responsive operator dashboard for Umuve junk removal operations. Built with React, Tailwind CSS, and shadcn/ui components.
 
 ## Features
 
@@ -156,8 +156,8 @@ The dashboard listens for these WebSocket events:
 ## Default Credentials
 
 For testing/demo purposes:
-- **Admin**: admin@junkos.com / admin123
-- **Dispatcher**: dispatcher@junkos.com / dispatch123
+- **Admin**: admin@goumuve.com / admin123
+- **Dispatcher**: dispatcher@goumuve.com / dispatch123
 
 ## Role-Based Access
 
@@ -264,8 +264,8 @@ For issues, feature requests, or contributions:
 
 ## License
 
-Private - JunkOS Internal Use Only
+Private - Umuve Internal Use Only
 
 ---
 
-Built with ❤️ for JunkOS operations teams
+Built with ❤️ for Umuve operations teams

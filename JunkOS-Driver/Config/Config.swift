@@ -1,6 +1,6 @@
 //
 //  Config.swift
-//  JunkOS Driver
+//  Umuve Pro
 //
 //  Environment configuration for API access.
 //  Shares the same backend as the customer app.
@@ -17,7 +17,7 @@ enum APIEnvironment {
         case .development:
             return "http://localhost:8080"
         case .production:
-            return "https://junkos-backend.onrender.com"
+            return "https://umuve-backend.onrender.com"
         }
     }
 
@@ -26,7 +26,7 @@ enum APIEnvironment {
         case .development:
             return "http://localhost:8080"
         case .production:
-            return "https://junkos-backend.onrender.com"
+            return "https://umuve-backend.onrender.com"
         }
     }
 }

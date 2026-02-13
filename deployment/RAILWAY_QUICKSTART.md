@@ -1,6 +1,6 @@
-# Deploy JunkOS Backend to Railway in 15 Minutes 🚀
+# Deploy Umuve Backend to Railway in 15 Minutes 🚀
 
-Get your JunkOS backend live in production with Railway - the fastest path from code to deployed.
+Get your Umuve backend live in production with Railway - the fastest path from code to deployed.
 
 ## Why Railway?
 
@@ -17,7 +17,7 @@ Get your JunkOS backend live in production with Railway - the fastest path from 
 
 ## Prerequisites
 
-- [ ] GitHub account with JunkOS backend repo
+- [ ] GitHub account with Umuve backend repo
 - [ ] Stripe account (test mode is fine to start)
 - [ ] Domain name (optional, Railway provides subdomain)
 - [ ] 15 minutes ⏱️
@@ -41,7 +41,7 @@ Get your JunkOS backend live in production with Railway - the fastest path from 
 If your repo has a `railway.json` or `railway.toml`:
 
 1. Click **"Deploy from GitHub"**
-2. Select repository: `your-username/junkos-backend`
+2. Select repository: `your-username/umuve-backend`
 3. Railway automatically:
    - Detects Node.js
    - Installs dependencies
@@ -52,7 +52,7 @@ If your repo has a `railway.json` or `railway.toml`:
 
 1. **New Project** → **Deploy from GitHub repo**
 2. Authorize Railway to access your GitHub
-3. Select repository: `junkos-backend`
+3. Select repository: `umuve-backend`
 4. Select branch: `main`
 5. Railway auto-detects `package.json`
 6. Click **"Deploy Now"**
@@ -104,7 +104,7 @@ PORT=8080
 # JWT & Security
 JWT_SECRET=your-256-bit-secret-here
 SESSION_SECRET=your-256-bit-secret-here
-CORS_ORIGIN=https://junkos.com
+CORS_ORIGIN=https://goumuve.com
 
 # Stripe (use test keys first)
 STRIPE_SECRET_KEY=sk_test_xxxxxxxxxxxxxxxx
@@ -142,7 +142,7 @@ STRIPE_SECRET_KEY=sk_test_...
 
 1. Get your Railway URL:
    - Go to your service → **"Settings"** → **"Domains"**
-   - Copy generated URL (e.g., `junkos-backend-production.up.railway.app`)
+   - Copy generated URL (e.g., `umuve-backend-production.up.railway.app`)
 
 2. Configure Stripe webhook:
    - [Stripe Dashboard](https://dashboard.stripe.com/webhooks)
@@ -164,7 +164,7 @@ STRIPE_SECRET_KEY=sk_test_...
 
 1. **Railway:** Your service → **"Settings"** → **"Domains"**
 2. Click **"Custom Domain"**
-3. Enter: `api.junkos.com`
+3. Enter: `api.goumuve.com`
 4. Railway shows DNS records to add
 
 ### Configure DNS
@@ -180,7 +180,7 @@ CNAME  api    your-app.up.railway.app
 
 **Verify:**
 ```bash
-curl https://api.junkos.com/health
+curl https://api.goumuve.com/health
 ```
 
 ---
@@ -548,7 +548,7 @@ Need more control or different features?
 - [Railway Feedback](https://feedback.railway.app)
 - [Status Page](https://status.railway.app)
 
-**JunkOS Backend Issues:**
+**Umuve Backend Issues:**
 - Check application logs in Railway
 - Review [PRODUCTION_DEPLOYMENT.md](./PRODUCTION_DEPLOYMENT.md)
 - Monitor Sentry for errors
@@ -557,7 +557,7 @@ Need more control or different features?
 
 ## Summary
 
-You've deployed JunkOS backend to production! 🎉
+You've deployed Umuve backend to production! 🎉
 
 **What you've accomplished:**
 - ✅ Backend deployed with automatic HTTPS

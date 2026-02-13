@@ -207,7 +207,7 @@ Customers send photos, you provide a quote remotely.
 
 **New technology:** AI-powered photo estimation tools analyze customer photos and suggest pricing based on historical data. These systems learn from your completed jobs, improving accuracy over time.
 
-[JunkOS includes AI photo estimation](https://junkos.com) that helps you quote jobs faster and more accurately, reducing underpricing losses.
+[Umuve includes AI photo estimation](https://goumuve.com) that helps you quote jobs faster and more accurately, reducing underpricing losses.
 
 ### Phone Estimates
 
@@ -387,7 +387,7 @@ Upload customer photos, AI analyzes volume and suggests pricing based on your hi
 - Learns from your completed jobs (accuracy improves over time)
 - Reduces underpricing losses by 15-30%
 
-[JunkOS pricing calculator](https://junkos.com) combines AI photo estimation with your custom pricing rules, giving you accurate quotes in seconds.
+[Umuve pricing calculator](https://goumuve.com) combines AI photo estimation with your custom pricing rules, giving you accurate quotes in seconds.
 
 ### CRM with Pricing History
 
@@ -489,7 +489,7 @@ The best pricing strategy:
 
 Start with industry benchmarks, track your actual costs, and refine based on data. Over time, you'll develop pricing intuition—but always validate it with math.
 
-**Ready to quote jobs faster and more accurately?** [Try JunkOS's AI-powered pricing calculator](https://junkos.com)—upload a photo, get an instant estimate based on your pricing rules and historical data. Stop underpricing jobs and start maximizing profitability.
+**Ready to quote jobs faster and more accurately?** [Try Umuve's AI-powered pricing calculator](https://goumuve.com)—upload a photo, get an instant estimate based on your pricing rules and historical data. Stop underpricing jobs and start maximizing profitability.
 
 ---
 

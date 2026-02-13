@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Add new LoadUp-style view files to Xcode project
+Add new view files to Umuve Xcode project
 """
 
 import subprocess

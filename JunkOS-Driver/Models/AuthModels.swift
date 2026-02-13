@@ -1,6 +1,6 @@
 //
 //  AuthModels.swift
-//  JunkOS Driver
+//  Umuve Pro
 //
 //  Authentication-related data models matching backend API contracts.
 //

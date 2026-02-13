@@ -1,6 +1,6 @@
 //
 //  ProfileViewModel.swift
-//  JunkOS Driver
+//  Umuve Pro
 //
 //  Profile editing and logout.
 //

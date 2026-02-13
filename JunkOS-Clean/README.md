@@ -1,11 +1,11 @@
-# JunkOS - Clean iOS Project
+# Umuve - Clean iOS Project
 
-Clean, minimal SwiftUI iOS app for JunkOS junk removal booking.
+Clean, minimal SwiftUI iOS app for Umuve junk removal booking.
 
 ## Project Details
 
-- **Name:** JunkOS
-- **Bundle ID:** com.junkos.app
+- **Name:** Umuve
+- **Bundle ID:** com.goumuve.com
 - **Platform:** iOS 16+
 - **Interface:** SwiftUI
 - **Language:** Swift
@@ -13,8 +13,8 @@ Clean, minimal SwiftUI iOS app for JunkOS junk removal booking.
 ## Project Structure
 
 ```
-JunkOS/
-├── JunkOSApp.swift              # App entry point
+Umuve/
+├── UmuveApp.swift              # App entry point
 ├── Design/
 │   └── DesignSystem.swift       # Design tokens and reusable components
 ├── Models/
@@ -38,7 +38,7 @@ JunkOS/
 
 ## Files Copied
 
-From `~/Documents/programs/webapps/junkos/ios-native/JunkOS/`:
+From `~/Documents/programs/webapps/junkos/ios-native/Umuve/`:
 
 ✅ Design/DesignSystem.swift
 ✅ Models/BookingModels.swift
@@ -48,7 +48,7 @@ From `~/Documents/programs/webapps/junkos/ios-native/JunkOS/`:
 ✅ Views/PhotoUploadView.swift
 ✅ Views/DateTimePickerView.swift
 ✅ Views/ConfirmationView.swift
-✅ JunkOSApp.swift
+✅ UmuveApp.swift
 ✅ Info.plist
 ✅ Assets.xcassets
 
@@ -68,7 +68,7 @@ To support the views, these minimal utility files were created:
 
 ```bash
 cd ~/Documents/programs/webapps/junkos/JunkOS-Clean
-xcodebuild -scheme JunkOS -sdk iphonesimulator -configuration Debug build
+xcodebuild -scheme Umuve -sdk iphonesimulator -configuration Debug build
 ```
 
 ## What's NOT Included

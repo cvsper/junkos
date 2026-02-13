@@ -1,4 +1,4 @@
-# JunkOS Database Migration Tool Requirements
+# Umuve Database Migration Tool Requirements
 # ============================================
 
 # PostgreSQL adapter for Python

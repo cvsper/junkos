@@ -1,8 +1,8 @@
 {
-  "name": "junkos-dashboard",
+  "name": "umuve-dashboard",
   "version": "1.0.0",
   "type": "module",
-  "description": "JunkOS Operator Dashboard - Admin panel for junk removal operations",
+  "description": "Umuve Operator Dashboard - Admin panel for hauling operations",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

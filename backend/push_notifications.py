@@ -1,5 +1,5 @@
 """
-JunkOS APNs Push Notification Service
+Umuve APNs Push Notification Service
 
 Sends iOS push notifications via Apple's HTTP/2 APNs gateway.
 Uses a .p8 auth key (token-based authentication) and httpx for HTTP/2 support.
@@ -8,7 +8,7 @@ Required environment variables:
     APNS_KEY_ID        - The 10-character Key ID from Apple Developer portal
     APNS_TEAM_ID       - Your Apple Developer Team ID
     APNS_AUTH_KEY_PATH - Absolute path to the .p8 private key file
-    APNS_BUNDLE_ID     - Your app's bundle identifier (e.g. com.junkos.driver)
+    APNS_BUNDLE_ID     - Your app's bundle identifier (e.g. com.goumuve.driver)
     FLASK_ENV          - When "development", uses the APNs sandbox endpoint
 """
 

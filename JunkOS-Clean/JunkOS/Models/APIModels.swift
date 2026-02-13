@@ -1,6 +1,6 @@
 //
 //  APIModels.swift
-//  JunkOS
+//  Umuve
 //
 //  API request and response models
 //

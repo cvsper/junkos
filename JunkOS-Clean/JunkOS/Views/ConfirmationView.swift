@@ -1,6 +1,6 @@
 //
 //  ConfirmationView.swift
-//  JunkOS
+//  Umuve
 //
 //  Booking confirmation and submission screen
 //  Enhanced with success haptic and celebration animation
@@ -25,7 +25,7 @@ struct ConfirmationView: View {
     var body: some View {
         ZStack {
             ScrollView {
-            VStack(spacing: JunkSpacing.xxlarge) {
+            VStack(spacing: UmuveSpacing.xxlarge) {
                 // Header
                 ScreenHeader(
                     title: "Review Booking",
@@ -66,9 +66,9 @@ struct ConfirmationView: View {
 
                 Spacer()
             }
-            .padding(JunkSpacing.large)
+            .padding(UmuveSpacing.large)
         }
-            .background(Color.junkBackground.ignoresSafeArea())
+            .background(Color.umuveBackground.ignoresSafeArea())
             .navigationBarTitleDisplayMode(.inline)
             .safeAreaInset(edge: .bottom) {
                 confirmButton
@@ -129,76 +129,76 @@ struct ConfirmationView: View {
     
     // MARK: - Customer Info Section
     private var customerInfoSection: some View {
-        JunkCard {
-            VStack(alignment: .leading, spacing: JunkSpacing.normal) {
+        UmuveCard {
+            VStack(alignment: .leading, spacing: UmuveSpacing.normal) {
                 SectionTitle(icon: "person.fill", text: "Your Information")
 
-                VStack(spacing: JunkSpacing.medium) {
-                    VStack(alignment: .leading, spacing: JunkSpacing.tiny) {
+                VStack(spacing: UmuveSpacing.medium) {
+                    VStack(alignment: .leading, spacing: UmuveSpacing.tiny) {
                         Text("Name")
-                            .font(JunkTypography.captionFont)
-                            .foregroundColor(.junkTextMuted)
+                            .font(UmuveTypography.captionFont)
+                            .foregroundColor(.umuveTextMuted)
                         TextField("Full name", text: $customerName)
-                            .font(JunkTypography.bodyFont)
+                            .font(UmuveTypography.bodyFont)
                             .textContentType(.name)
-                            .padding(JunkSpacing.medium)
-                            .background(Color.junkBackground)
-                            .clipShape(RoundedRectangle(cornerRadius: JunkRadius.sm))
+                            .padding(UmuveSpacing.medium)
+                            .background(Color.umuveBackground)
+                            .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.sm))
                     }
 
-                    VStack(alignment: .leading, spacing: JunkSpacing.tiny) {
+                    VStack(alignment: .leading, spacing: UmuveSpacing.tiny) {
                         Text("Email")
-                            .font(JunkTypography.captionFont)
-                            .foregroundColor(.junkTextMuted)
+                            .font(UmuveTypography.captionFont)
+                            .foregroundColor(.umuveTextMuted)
                         TextField("Email address", text: $customerEmail)
-                            .font(JunkTypography.bodyFont)
+                            .font(UmuveTypography.bodyFont)
                             .keyboardType(.emailAddress)
                             .textContentType(.emailAddress)
                             .autocapitalization(.none)
-                            .padding(JunkSpacing.medium)
-                            .background(Color.junkBackground)
-                            .clipShape(RoundedRectangle(cornerRadius: JunkRadius.sm))
+                            .padding(UmuveSpacing.medium)
+                            .background(Color.umuveBackground)
+                            .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.sm))
                     }
 
-                    VStack(alignment: .leading, spacing: JunkSpacing.tiny) {
+                    VStack(alignment: .leading, spacing: UmuveSpacing.tiny) {
                         Text("Phone")
-                            .font(JunkTypography.captionFont)
-                            .foregroundColor(.junkTextMuted)
+                            .font(UmuveTypography.captionFont)
+                            .foregroundColor(.umuveTextMuted)
                         TextField("Phone number", text: $customerPhone)
-                            .font(JunkTypography.bodyFont)
+                            .font(UmuveTypography.bodyFont)
                             .keyboardType(.phonePad)
                             .textContentType(.telephoneNumber)
-                            .padding(JunkSpacing.medium)
-                            .background(Color.junkBackground)
-                            .clipShape(RoundedRectangle(cornerRadius: JunkRadius.sm))
+                            .padding(UmuveSpacing.medium)
+                            .background(Color.umuveBackground)
+                            .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.sm))
                     }
                 }
             }
-            .padding(JunkSpacing.large)
+            .padding(UmuveSpacing.large)
         }
     }
 
     // MARK: - Booking Summary
     private var bookingSummary: some View {
-        JunkCard {
-            VStack(alignment: .leading, spacing: JunkSpacing.normal) {
+        UmuveCard {
+            VStack(alignment: .leading, spacing: UmuveSpacing.normal) {
                 // SF Symbol: mappin.circle.fill for location
                 SectionTitle(icon: "mappin.circle.fill", text: "Location")
                 Text(bookingData.address.fullAddress)
-                    .font(JunkTypography.bodyFont)
-                    .foregroundColor(.junkTextMuted)
+                    .font(UmuveTypography.bodyFont)
+                    .foregroundColor(.umuveTextMuted)
                 
                 Divider()
-                    .padding(.vertical, JunkSpacing.small)
+                    .padding(.vertical, UmuveSpacing.small)
                 
                 // SF Symbol: camera.fill for photos
                 SectionTitle(icon: "camera.fill", text: "Photos")
                 Text("\(bookingData.photos.count) photo\(bookingData.photos.count == 1 ? "" : "s") uploaded")
-                    .font(JunkTypography.bodyFont)
-                    .foregroundColor(.junkTextMuted)
+                    .font(UmuveTypography.bodyFont)
+                    .foregroundColor(.umuveTextMuted)
                 
                 Divider()
-                    .padding(.vertical, JunkSpacing.small)
+                    .padding(.vertical, UmuveSpacing.small)
                 
                 // SF Symbol: arrow.3.trianglepath for recycling/services
                 SectionTitle(icon: "arrow.3.trianglepath", text: "Services")
@@ -206,98 +206,98 @@ struct ConfirmationView: View {
                     ForEach(Array(bookingData.selectedServices), id: \.self) { serviceId in
                         if let service = Service.all.first(where: { $0.id == serviceId }) {
                             Text("• \(service.name)")
-                                .font(JunkTypography.bodyFont)
-                                .foregroundColor(.junkTextMuted)
+                                .font(UmuveTypography.bodyFont)
+                                .foregroundColor(.umuveTextMuted)
                         }
                     }
                 }
                 
                 if !bookingData.serviceDetails.isEmpty {
                     Text(bookingData.serviceDetails)
-                        .font(JunkTypography.bodySmallFont)
-                        .foregroundColor(.junkTextMuted)
+                        .font(UmuveTypography.bodySmallFont)
+                        .foregroundColor(.umuveTextMuted)
                         .italic()
-                        .padding(.top, JunkSpacing.small)
+                        .padding(.top, UmuveSpacing.small)
                 }
                 
                 Divider()
-                    .padding(.vertical, JunkSpacing.small)
+                    .padding(.vertical, UmuveSpacing.small)
                 
                 // SF Symbol: calendar for date/scheduling
                 SectionTitle(icon: "calendar", text: "Scheduled")
                 if let date = bookingData.selectedDate,
                    let timeSlot = TimeSlot.slots.first(where: { $0.id == bookingData.selectedTimeSlot }) {
                     Text("\(date, style: .date) at \(timeSlot.time)")
-                        .font(JunkTypography.bodyFont)
-                        .foregroundColor(.junkTextMuted)
+                        .font(UmuveTypography.bodyFont)
+                        .foregroundColor(.umuveTextMuted)
                 }
             }
-            .padding(JunkSpacing.large)
+            .padding(UmuveSpacing.large)
         }
     }
     
     // MARK: - LoadUp Feature #2: Don't Need to Be Home
     private var dontNeedToBeHomeSection: some View {
-        JunkCard {
-            VStack(alignment: .leading, spacing: JunkSpacing.normal) {
+        UmuveCard {
+            VStack(alignment: .leading, spacing: UmuveSpacing.normal) {
                 Toggle(isOn: $bookingData.dontNeedToBeHome) {
                     HStack {
                         Image(systemName: "house.fill")
-                            .foregroundColor(.junkPrimary)
+                            .foregroundColor(.umuvePrimary)
                         Text("Don't Need to Be Home")
-                            .font(JunkTypography.h3Font)
-                            .foregroundColor(.junkText)
+                            .font(UmuveTypography.h3Font)
+                            .foregroundColor(.umuveText)
                     }
                 }
                 
                 if bookingData.dontNeedToBeHome {
-                    VStack(alignment: .leading, spacing: JunkSpacing.small) {
+                    VStack(alignment: .leading, spacing: UmuveSpacing.small) {
                         Text("Outdoor Placement Instructions")
-                            .font(JunkTypography.bodyFont.weight(.semibold))
-                            .foregroundColor(.junkText)
+                            .font(UmuveTypography.bodyFont.weight(.semibold))
+                            .foregroundColor(.umuveText)
                         
                         TextEditor(text: $bookingData.outdoorPlacementInstructions)
-                            .font(JunkTypography.bodyFont)
+                            .font(UmuveTypography.bodyFont)
                             .frame(height: 80)
-                            .padding(JunkSpacing.small)
-                            .background(Color.junkBackground)
+                            .padding(UmuveSpacing.small)
+                            .background(Color.umuveBackground)
                             .cornerRadius(8)
                         
                         Text("Special Notes for Loaders")
-                            .font(JunkTypography.bodyFont.weight(.semibold))
-                            .foregroundColor(.junkText)
-                            .padding(.top, JunkSpacing.small)
+                            .font(UmuveTypography.bodyFont.weight(.semibold))
+                            .foregroundColor(.umuveText)
+                            .padding(.top, UmuveSpacing.small)
                         
                         TextEditor(text: $bookingData.loaderNotes)
-                            .font(JunkTypography.bodyFont)
+                            .font(UmuveTypography.bodyFont)
                             .frame(height: 80)
-                            .padding(JunkSpacing.small)
-                            .background(Color.junkBackground)
+                            .padding(UmuveSpacing.small)
+                            .background(Color.umuveBackground)
                             .cornerRadius(8)
                     }
                     .transition(.opacity)
                 }
             }
-            .padding(JunkSpacing.large)
+            .padding(UmuveSpacing.large)
         }
     }
     
     // MARK: - LoadUp Feature #4: Commercial Details
     private var commercialDetailsSection: some View {
-        JunkCard {
-            VStack(alignment: .leading, spacing: JunkSpacing.normal) {
+        UmuveCard {
+            VStack(alignment: .leading, spacing: UmuveSpacing.normal) {
                 HStack {
                     Image(systemName: "building.2.fill")
-                        .foregroundColor(.junkPrimary)
+                        .foregroundColor(.umuvePrimary)
                     Text("Commercial Booking")
-                        .font(JunkTypography.h3Font)
-                        .foregroundColor(.junkText)
+                        .font(UmuveTypography.h3Font)
+                        .foregroundColor(.umuveText)
                 }
                 
-                VStack(alignment: .leading, spacing: JunkSpacing.small) {
+                VStack(alignment: .leading, spacing: UmuveSpacing.small) {
                     Text("Business Name")
-                        .font(JunkTypography.bodyFont.weight(.semibold))
-                        .foregroundColor(.junkText)
+                        .font(UmuveTypography.bodyFont.weight(.semibold))
+                        .foregroundColor(.umuveText)
                     
                     TextField("Enter business name", text: $bookingData.businessName)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
@@ -305,15 +305,15 @@ struct ConfirmationView: View {
                 
                 Toggle(isOn: $bookingData.isRecurringPickup) {
                     Text("Recurring Pickup")
-                        .font(JunkTypography.bodyFont)
-                        .foregroundColor(.junkText)
+                        .font(UmuveTypography.bodyFont)
+                        .foregroundColor(.umuveText)
                 }
                 
                 if bookingData.isRecurringPickup {
-                    VStack(alignment: .leading, spacing: JunkSpacing.small) {
+                    VStack(alignment: .leading, spacing: UmuveSpacing.small) {
                         Text("Frequency")
-                            .font(JunkTypography.bodyFont.weight(.semibold))
-                            .foregroundColor(.junkText)
+                            .font(UmuveTypography.bodyFont.weight(.semibold))
+                            .foregroundColor(.umuveText)
                         
                         Picker("Frequency", selection: $bookingData.recurringFrequency) {
                             ForEach(RecurringFrequency.allCases, id: \.self) { frequency in
@@ -327,31 +327,31 @@ struct ConfirmationView: View {
                 
                 HStack {
                     Image(systemName: "tag.fill")
-                        .foregroundColor(.junkSuccess)
+                        .foregroundColor(.umuveSuccess)
                     Text("15% bulk discount applied")
-                        .font(JunkTypography.bodyFont)
-                        .foregroundColor(.junkSuccess)
+                        .font(UmuveTypography.bodyFont)
+                        .foregroundColor(.umuveSuccess)
                 }
-                .padding(.top, JunkSpacing.small)
+                .padding(.top, UmuveSpacing.small)
             }
-            .padding(JunkSpacing.large)
+            .padding(UmuveSpacing.large)
         }
     }
     
     // MARK: - LoadUp Feature #3: Eco-Friendly Section
     private var ecoFriendlySection: some View {
-        JunkCard {
-            VStack(alignment: .leading, spacing: JunkSpacing.normal) {
+        UmuveCard {
+            VStack(alignment: .leading, spacing: UmuveSpacing.normal) {
                 HStack {
                     Image(systemName: "leaf.fill")
                         .font(.system(size: 24))
-                        .foregroundColor(.junkSuccess)
+                        .foregroundColor(.umuveSuccess)
                     Text("Responsible Disposal")
-                        .font(JunkTypography.h2Font)
-                        .foregroundColor(.junkText)
+                        .font(UmuveTypography.h2Font)
+                        .foregroundColor(.umuveText)
                 }
                 
-                VStack(alignment: .leading, spacing: JunkSpacing.small) {
+                VStack(alignment: .leading, spacing: UmuveSpacing.small) {
                     ResponsibleDisposalItem(
                         icon: "arrow.3.trianglepath",
                         title: "Recycle",
@@ -372,60 +372,60 @@ struct ConfirmationView: View {
                 }
                 
                 Text("We aim to divert 60% of items from landfills through our eco-friendly practices.")
-                    .font(JunkTypography.bodySmallFont)
-                    .foregroundColor(.junkTextMuted)
+                    .font(UmuveTypography.bodySmallFont)
+                    .foregroundColor(.umuveTextMuted)
                     .italic()
-                    .padding(.top, JunkSpacing.small)
+                    .padding(.top, UmuveSpacing.small)
             }
-            .padding(JunkSpacing.large)
+            .padding(UmuveSpacing.large)
         }
-        .background(Color.junkSuccess.opacity(0.05))
+        .background(Color.umuveSuccess.opacity(0.05))
     }
     
     // MARK: - Price Section
     private var priceSection: some View {
-        JunkCard {
-            VStack(spacing: JunkSpacing.normal) {
+        UmuveCard {
+            VStack(spacing: UmuveSpacing.normal) {
                 HStack {
                     Text("Base Service")
-                        .font(JunkTypography.bodyFont)
-                        .foregroundColor(.junkText)
+                        .font(UmuveTypography.bodyFont)
+                        .foregroundColor(.umuveText)
                     Spacer()
                     Text("$\(viewModel.formatPrice(viewModel.priceBreakdown.basePrice))")
-                        .font(JunkTypography.bodyFont)
-                        .foregroundColor(.junkText)
+                        .font(UmuveTypography.bodyFont)
+                        .foregroundColor(.umuveText)
                 }
                 
                 HStack {
                     Text("Items Charge")
-                        .font(JunkTypography.bodyFont)
-                        .foregroundColor(.junkText)
+                        .font(UmuveTypography.bodyFont)
+                        .foregroundColor(.umuveText)
                     Spacer()
                     Text("$\(viewModel.formatPrice(viewModel.priceBreakdown.itemsCharge))")
-                        .font(JunkTypography.bodyFont)
-                        .foregroundColor(.junkText)
+                        .font(UmuveTypography.bodyFont)
+                        .foregroundColor(.umuveText)
                 }
                 
                 HStack {
                     Text("Disposal Fee")
-                        .font(JunkTypography.bodyFont)
-                        .foregroundColor(.junkText)
+                        .font(UmuveTypography.bodyFont)
+                        .foregroundColor(.umuveText)
                     Spacer()
                     Text("$\(viewModel.formatPrice(viewModel.priceBreakdown.disposalFee))")
-                        .font(JunkTypography.bodyFont)
-                        .foregroundColor(.junkText)
+                        .font(UmuveTypography.bodyFont)
+                        .foregroundColor(.umuveText)
                 }
                 
                 // LoadUp Feature #1: Service Tier Discount
                 if viewModel.priceBreakdown.tierDiscount > 0 {
                     HStack {
                         Text("\(bookingData.serviceTier.rawValue) Discount")
-                            .font(JunkTypography.bodyFont)
-                            .foregroundColor(.junkSuccess)
+                            .font(UmuveTypography.bodyFont)
+                            .foregroundColor(.umuveSuccess)
                         Spacer()
                         Text("-$\(viewModel.formatPrice(viewModel.priceBreakdown.tierDiscount))")
-                            .font(JunkTypography.bodyFont)
-                            .foregroundColor(.junkSuccess)
+                            .font(UmuveTypography.bodyFont)
+                            .foregroundColor(.umuveSuccess)
                     }
                 }
                 
@@ -433,51 +433,51 @@ struct ConfirmationView: View {
                 if viewModel.priceBreakdown.commercialDiscount > 0 {
                     HStack {
                         Text("Commercial Discount")
-                            .font(JunkTypography.bodyFont)
-                            .foregroundColor(.junkSuccess)
+                            .font(UmuveTypography.bodyFont)
+                            .foregroundColor(.umuveSuccess)
                         Spacer()
                         Text("-$\(viewModel.formatPrice(viewModel.priceBreakdown.commercialDiscount))")
-                            .font(JunkTypography.bodyFont)
-                            .foregroundColor(.junkSuccess)
+                            .font(UmuveTypography.bodyFont)
+                            .foregroundColor(.umuveSuccess)
                     }
                 }
                 
                 Divider()
-                    .padding(.vertical, JunkSpacing.small)
+                    .padding(.vertical, UmuveSpacing.small)
                 
                 HStack {
                     Text("Estimated Total")
-                        .font(JunkTypography.h3Font)
-                        .foregroundColor(.junkText)
+                        .font(UmuveTypography.h3Font)
+                        .foregroundColor(.umuveText)
                     Spacer()
                     Text("$\(viewModel.formatPrice(viewModel.priceBreakdown.total))")
-                        .font(JunkTypography.h2Font)
-                        .foregroundColor(.junkCTA)
+                        .font(UmuveTypography.h2Font)
+                        .foregroundColor(.umuveCTA)
                 }
                 
                 Text("*Final price determined after on-site inspection")
-                    .font(JunkTypography.bodySmallFont)
-                    .foregroundColor(.junkTextMuted)
+                    .font(UmuveTypography.bodySmallFont)
+                    .foregroundColor(.umuveTextMuted)
                     .multilineTextAlignment(.center)
-                    .padding(.top, JunkSpacing.small)
+                    .padding(.top, UmuveSpacing.small)
             }
-            .padding(JunkSpacing.large)
+            .padding(UmuveSpacing.large)
         }
     }
     
     // MARK: - What's Next Section
     private var whatsNextSection: some View {
-        JunkCard {
-            VStack(alignment: .leading, spacing: JunkSpacing.normal) {
+        UmuveCard {
+            VStack(alignment: .leading, spacing: UmuveSpacing.normal) {
                 Text("What's Next?")
-                    .font(JunkTypography.h2Font)
-                    .foregroundColor(.junkText)
+                    .font(UmuveTypography.h2Font)
+                    .foregroundColor(.umuveText)
                 
                 NextStep(number: 1, text: "You'll receive a confirmation email")
                 NextStep(number: 2, text: "Our team will text you 30 min before arrival")
                 NextStep(number: 3, text: "We load, haul, and dispose responsibly")
             }
-            .padding(JunkSpacing.large)
+            .padding(UmuveSpacing.large)
         }
     }
     
@@ -500,9 +500,9 @@ struct ConfirmationView: View {
         } label: {
             Text("Continue to Payment")
         }
-        .buttonStyle(JunkPrimaryButtonStyle(isEnabled: isFormValid))
-        .padding(JunkSpacing.large)
-        .background(Color.junkBackground)
+        .buttonStyle(UmuvePrimaryButtonStyle(isEnabled: isFormValid))
+        .padding(UmuveSpacing.large)
+        .background(Color.umuveBackground)
         .disabled(!isFormValid)
         .simultaneousGesture(TapGesture().onEnded {
             // Sync customer info to bookingData before navigating
@@ -557,15 +557,15 @@ struct SectionTitle: View {
     let text: String
     
     var body: some View {
-        HStack(spacing: JunkSpacing.small) {
+        HStack(spacing: UmuveSpacing.small) {
             // Using SF Symbol instead of emoji
             // https://developer.apple.com/design/human-interface-guidelines/sf-symbols
             Image(systemName: icon)
                 .font(.system(size: 20))
-                .foregroundColor(.junkPrimary)
+                .foregroundColor(.umuvePrimary)
             Text(text)
-                .font(JunkTypography.h3Font)
-                .foregroundColor(.junkText)
+                .font(UmuveTypography.h3Font)
+                .foregroundColor(.umuveText)
         }
     }
 }
@@ -575,20 +575,20 @@ struct NextStep: View {
     let text: String
     
     var body: some View {
-        HStack(spacing: JunkSpacing.medium) {
+        HStack(spacing: UmuveSpacing.medium) {
             ZStack {
                 Circle()
-                    .fill(Color.junkPrimary.opacity(0.1))
+                    .fill(Color.umuvePrimary.opacity(0.1))
                     .frame(width: 32, height: 32)
                 
                 Text("\(number)")
-                    .font(JunkTypography.bodyFont.weight(.bold))
-                    .foregroundColor(.junkPrimary)
+                    .font(UmuveTypography.bodyFont.weight(.bold))
+                    .foregroundColor(.umuvePrimary)
             }
             
             Text(text)
-                .font(JunkTypography.bodyFont)
-                .foregroundColor(.junkText)
+                .font(UmuveTypography.bodyFont)
+                .foregroundColor(.umuveText)
             
             Spacer()
         }
@@ -601,20 +601,20 @@ struct ResponsibleDisposalItem: View {
     let description: String
 
     var body: some View {
-        HStack(spacing: JunkSpacing.normal) {
+        HStack(spacing: UmuveSpacing.normal) {
             Image(systemName: icon)
                 .font(.system(size: 20))
-                .foregroundColor(.junkSuccess)
+                .foregroundColor(.umuveSuccess)
                 .frame(width: 30)
             
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(JunkTypography.bodyFont.weight(.semibold))
-                    .foregroundColor(.junkText)
+                    .font(UmuveTypography.bodyFont.weight(.semibold))
+                    .foregroundColor(.umuveText)
                 
                 Text(description)
-                    .font(JunkTypography.bodySmallFont)
-                    .foregroundColor(.junkTextMuted)
+                    .font(UmuveTypography.bodySmallFont)
+                    .foregroundColor(.umuveTextMuted)
             }
             
             Spacer()

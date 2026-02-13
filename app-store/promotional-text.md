@@ -1,4 +1,4 @@
-# JunkOS Promotional Text
+# Umuve Promotional Text
 **Character limit: 170 (updatable without app review)**
 
 ---
@@ -17,7 +17,7 @@
 ### Spring (March-May)
 **Character count: 168**
 ```
-🌸 Spring cleaning made easy! AI instant estimates + same-day pickup. $25 off your first haul. Clear your space in minutes. Download JunkOS & get started today!
+🌸 Spring cleaning made easy! AI instant estimates + same-day pickup. $25 off your first haul. Clear your space in minutes. Download Umuve & get started today!
 ```
 
 ### Summer (June-August)  
@@ -29,13 +29,13 @@
 ### Fall (September-November)
 **Character count: 165**
 ```
-🍂 Fall refresh? Instant AI pricing + real-time booking. $25 off your first pickup. Perfect for back-to-school decluttering. Download JunkOS & clear space today!
+🍂 Fall refresh? Instant AI pricing + real-time booking. $25 off your first pickup. Perfect for back-to-school decluttering. Download Umuve & clear space today!
 ```
 
 ### Winter/Holiday (December-February)
 **Character count: 169**
 ```
-❄️ New year, new space! AI photo estimates + instant booking. $25 off first hauls. Out with the old in minutes. Download JunkOS & start fresh—same-day pickup!
+❄️ New year, new space! AI photo estimates + instant booking. $25 off first hauls. Out with the old in minutes. Download Umuve & start fresh—same-day pickup!
 ```
 
 ---
@@ -45,25 +45,25 @@
 ### Value-Focused
 **Character count: 156**
 ```
-💰 Instant AI pricing—no surprises! Compare quotes in seconds. Same-day pickup. $25 off first hauls. Download JunkOS & get transparent junk removal now!
+💰 Instant AI pricing—no surprises! Compare quotes in seconds. Same-day pickup. $25 off first hauls. Download Umuve & get transparent junk removal now!
 ```
 
 ### Speed-Focused
 **Character count: 147**
 ```
-⚡ From cluttered to clear in 30 seconds! AI estimates + real-time booking. $25 off first pickup. Download JunkOS & schedule your haul right now!
+⚡ From cluttered to clear in 30 seconds! AI estimates + real-time booking. $25 off first pickup. Download Umuve & schedule your haul right now!
 ```
 
 ### Trust-Focused
 **Character count: 163**
 ```
-✅ Vetted pros. Transparent pricing. Instant booking. Same-day pickup available. $25 off your first haul with JunkOS. Download now & declutter with confidence!
+✅ Vetted pros. Transparent pricing. Instant booking. Same-day pickup available. $25 off your first haul with Umuve. Download now & declutter with confidence!
 ```
 
 ### Problem-Solution
 **Character count: 169**
 ```
-😤 Tired of vague quotes & phone tag? JunkOS gives instant AI estimates + same-day pickup. $25 off first hauls. Download now & experience junk removal done right!
+😤 Tired of vague quotes & phone tag? Umuve gives instant AI estimates + same-day pickup. $25 off first hauls. Download now & experience junk removal done right!
 ```
 
 ---

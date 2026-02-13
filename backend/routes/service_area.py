@@ -1,5 +1,5 @@
 """
-Service Area API routes for JunkOS.
+Service Area API routes for Umuve.
 
 Public endpoints for querying the service area polygon and checking whether
 a given address / coordinate pair falls within it.

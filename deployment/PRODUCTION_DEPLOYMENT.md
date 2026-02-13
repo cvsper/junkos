@@ -1,6 +1,6 @@
-# JunkOS Backend - Production Deployment Guide
+# Umuve Backend - Production Deployment Guide
 
-Complete guide for deploying JunkOS backend to production with security best practices.
+Complete guide for deploying Umuve backend to production with security best practices.
 
 ## Table of Contents
 
@@ -39,8 +39,8 @@ Always maintain separate environments:
 
 | Environment | Purpose | Database | Stripe Keys | Domain |
 |-------------|---------|----------|-------------|--------|
-| **Production** | Live user traffic | Production DB | Live keys | app.junkos.com |
-| **Staging** | Pre-release testing | Staging DB | Test keys | staging.junkos.com |
+| **Production** | Live user traffic | Production DB | Live keys | app.goumuve.com |
+| **Staging** | Pre-release testing | Staging DB | Test keys | staging.goumuve.com |
 | **Development** | Local development | Local DB | Test keys | localhost:3000 |
 
 **Best Practice:** Never use production credentials in staging/development environments.
@@ -64,11 +64,11 @@ Always maintain separate environments:
    ```bash
    # Via AWS Console or CLI
    aws rds create-db-instance \
-     --db-instance-identifier junkos-prod \
+     --db-instance-identifier umuve-prod \
      --db-instance-class db.t3.micro \
      --engine postgres \
      --engine-version 15.4 \
-     --master-username junkosadmin \
+     --master-username umuveadmin \
      --master-user-password <STRONG_PASSWORD> \
      --allocated-storage 20 \
      --storage-type gp3 \
@@ -85,7 +85,7 @@ Always maintain separate environments:
 
 3. **Connection String**
    ```
-   postgresql://junkosadmin:<PASSWORD>@junkos-prod.xxxxx.us-east-1.rds.amazonaws.com:5432/junkos
+   postgresql://umuveadmin:<PASSWORD>@umuve-prod.xxxxx.us-east-1.rds.amazonaws.com:5432/junkos
    ```
 
 ### Option 2: Railway PostgreSQL (Recommended for Startups)
@@ -165,11 +165,11 @@ Always maintain separate environments:
 2. **Configure Build**
    ```yaml
    # .do/app.yaml
-   name: junkos-backend
+   name: umuve-backend
    services:
      - name: api
        github:
-         repo: your-username/junkos-backend
+         repo: your-username/umuve-backend
          branch: main
        build_command: npm install && npm run build
        run_command: npm start
@@ -208,7 +208,7 @@ Always maintain separate environments:
 
 1. **Create Heroku App**
    ```bash
-   heroku create junkos-backend
+   heroku create umuve-backend
    heroku addons:create heroku-postgresql:mini
    ```
 
@@ -242,7 +242,7 @@ Create a `.env.production` template (DO NOT commit actual values):
 # Application
 NODE_ENV=production
 PORT=8080
-API_BASE_URL=https://api.junkos.com
+API_BASE_URL=https://api.goumuve.com
 
 # Database
 DATABASE_URL=postgresql://user:password@host:5432/dbname
@@ -254,7 +254,7 @@ DB_POOL_MAX=10
 JWT_SECRET=<GENERATE_256_BIT_KEY>
 JWT_EXPIRATION=7d
 SESSION_SECRET=<GENERATE_256_BIT_KEY>
-CORS_ORIGIN=https://junkos.com,https://www.junkos.com
+CORS_ORIGIN=https://goumuve.com,https://www.goumuve.com
 
 # Stripe
 STRIPE_SECRET_KEY=sk_live_xxxxxxxxxxxxxxxx
@@ -266,7 +266,7 @@ SMTP_HOST=smtp.sendgrid.net
 SMTP_PORT=587
 SMTP_USER=apikey
 SMTP_PASSWORD=<SENDGRID_API_KEY>
-FROM_EMAIL=noreply@junkos.com
+FROM_EMAIL=noreply@goumuve.com
 
 # Monitoring
 SENTRY_DSN=https://xxxxx@sentry.io/xxxxx
@@ -329,7 +329,7 @@ openssl rand -hex 32
 
 3. **Configure Webhooks**
 
-   **Webhook Endpoint:** `https://api.junkos.com/webhooks/stripe`
+   **Webhook Endpoint:** `https://api.goumuve.com/webhooks/stripe`
 
    **Events to Subscribe:**
    - `checkout.session.completed`
@@ -395,18 +395,18 @@ Point your domain to your deployment:
 
 **For Railway/Heroku:**
 ```
-CNAME  api.junkos.com  →  your-app.railway.app
+CNAME  api.goumuve.com  →  your-app.railway.app
 ```
 
 **For AWS (with Load Balancer):**
 ```
-A      api.junkos.com  →  52.1.2.3 (ELB IP)
-CNAME  api.junkos.com  →  junkos-alb-123456.us-east-1.elb.amazonaws.com
+A      api.goumuve.com  →  52.1.2.3 (ELB IP)
+CNAME  api.goumuve.com  →  junkos-alb-123456.us-east-1.elb.amazonaws.com
 ```
 
 **For DigitalOcean:**
 ```
-CNAME  api.junkos.com  →  your-app.ondigitalocean.app
+CNAME  api.goumuve.com  →  your-app.ondigitalocean.app
 ```
 
 ### SSL/TLS Certificate
@@ -421,7 +421,7 @@ CNAME  api.junkos.com  →  your-app.ondigitalocean.app
 
 1. **Generate Certificate with Certbot**
    ```bash
-   certbot certonly --standalone -d api.junkos.com
+   certbot certonly --standalone -d api.goumuve.com
    ```
 
 2. **Configure in your platform**
@@ -515,8 +515,8 @@ Add to `package.json`:
 Create a one-off task:
 ```bash
 aws ecs run-task \
-  --cluster junkos-prod \
-  --task-definition junkos-migrate \
+  --cluster umuve-prod \
+  --task-definition umuve-migrate \
   --launch-type FARGATE \
   --network-configuration "awsvpcConfiguration={subnets=[subnet-xxx],securityGroups=[sg-xxx]}"
 ```
@@ -588,7 +588,7 @@ psql $DATABASE_URL < backup_20260206_153000.sql
   "logConfiguration": {
     "logDriver": "awslogs",
     "options": {
-      "awslogs-group": "/ecs/junkos-backend",
+      "awslogs-group": "/ecs/umuve-backend",
       "awslogs-region": "us-east-1",
       "awslogs-stream-prefix": "ecs"
     }
@@ -599,7 +599,7 @@ psql $DATABASE_URL < backup_20260206_153000.sql
 **Query logs:**
 ```bash
 aws logs filter-log-events \
-  --log-group-name /ecs/junkos-backend \
+  --log-group-name /ecs/umuve-backend \
   --filter-pattern "ERROR" \
   --start-time $(date -d '1 hour ago' +%s)000
 ```
@@ -614,7 +614,7 @@ const winston = require('winston');
 const logger = winston.createLogger({
   level: process.env.LOG_LEVEL || 'info',
   format: winston.format.json(),
-  defaultMeta: { service: 'junkos-backend' },
+  defaultMeta: { service: 'umuve-backend' },
   transports: [
     new winston.transports.Console({
       format: winston.format.simple()
@@ -677,8 +677,8 @@ Set up alerts for:
 # backup-db.sh
 
 DATE=$(date +%Y%m%d_%H%M%S)
-BACKUP_FILE="junkos_backup_$DATE.sql.gz"
-S3_BUCKET="s3://junkos-backups/database/"
+BACKUP_FILE="umuve_backup_$DATE.sql.gz"
+S3_BUCKET="s3://umuve-backups/database/"
 
 # Create backup
 pg_dump $DATABASE_URL | gzip > $BACKUP_FILE
@@ -687,7 +687,7 @@ pg_dump $DATABASE_URL | gzip > $BACKUP_FILE
 aws s3 cp $BACKUP_FILE $S3_BUCKET
 
 # Keep only last 30 days locally
-find . -name "junkos_backup_*.sql.gz" -mtime +30 -delete
+find . -name "umuve_backup_*.sql.gz" -mtime +30 -delete
 
 echo "Backup completed: $BACKUP_FILE"
 ```

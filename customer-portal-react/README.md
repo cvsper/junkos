@@ -1,4 +1,4 @@
-# JunkOS Frontend - Customer Booking Portal
+# Umuve Frontend - Customer Booking Portal
 
 A modern, mobile-first React application for booking junk removal services. Built with Vite, React, Tailwind CSS, and Stripe.
 
@@ -32,7 +32,7 @@ A modern, mobile-first React application for booking junk removal services. Buil
 - Node.js 18+ and npm
 - Google Maps API key (for address autocomplete)
 - Stripe public key (for payment processing)
-- Backend API running (JunkOS Flask backend)
+- Backend API running (Umuve Flask backend)
 
 ## Installation
 
@@ -275,12 +275,12 @@ Comprehensive client-side validation:
 
 ## License
 
-Copyright © 2026 JunkOS. All rights reserved.
+Copyright © 2026 Umuve. All rights reserved.
 
 ## Support
 
 For issues or questions:
-- Email: support@junkos.com
+- Email: support@goumuve.com
 - Phone: 1-800-JUNK-OS
 - GitHub Issues: [repo link]
 

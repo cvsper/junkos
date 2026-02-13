@@ -1,6 +1,6 @@
 //
 //  LocationManager.swift
-//  JunkOS
+//  Umuve
 //
 //  Simple location manager for address auto-detection
 //

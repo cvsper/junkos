@@ -47,7 +47,7 @@ export default function DashboardLayout({ children }) {
             <div className="flex h-16 items-center justify-between px-4 border-b">
               <div className="flex items-center">
                 <Truck className="h-8 w-8 text-primary" />
-                <span className="ml-2 text-xl font-bold">JunkOS</span>
+                <span className="ml-2 text-xl font-bold">Umuve</span>
               </div>
               <button onClick={() => setSidebarOpen(false)}>
                 <X className="h-6 w-6" />
@@ -100,7 +100,7 @@ export default function DashboardLayout({ children }) {
         <div className="flex flex-col flex-grow bg-white border-r overflow-y-auto">
           <div className="flex items-center h-16 px-4 border-b">
             <Truck className="h-8 w-8 text-primary" />
-            <span className="ml-2 text-xl font-bold">JunkOS</span>
+            <span className="ml-2 text-xl font-bold">Umuve</span>
           </div>
           <nav className="flex-1 space-y-1 px-2 py-4">
             {filteredNavigation.map((item) => {
@@ -155,7 +155,7 @@ export default function DashboardLayout({ children }) {
           <div className="flex flex-1 items-center justify-between px-4">
             <div className="flex items-center">
               <Truck className="h-6 w-6 text-primary" />
-              <span className="ml-2 text-lg font-bold">JunkOS</span>
+              <span className="ml-2 text-lg font-bold">Umuve</span>
             </div>
           </div>
         </div>

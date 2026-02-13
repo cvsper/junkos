@@ -245,14 +245,14 @@ jobs:
           context: ./${{ matrix.service }}
           file: ./${{ matrix.service }}/Dockerfile
           load: true
-          tags: junkos-${{ matrix.service }}:scan
+          tags: umuve-${{ matrix.service }}:scan
           cache-from: type=gha
           cache-to: type=gha,mode=max
       
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: junkos-${{ matrix.service }}:scan
+          image-ref: umuve-${{ matrix.service }}:scan
           format: 'sarif'
           output: 'trivy-${{ matrix.service }}.sarif'
           severity: 'CRITICAL,HIGH'
@@ -267,7 +267,7 @@ jobs:
       - name: Run Trivy (JSON format for artifacts)
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: junkos-${{ matrix.service }}:scan
+          image-ref: umuve-${{ matrix.service }}:scan
           format: 'json'
           output: 'trivy-${{ matrix.service }}.json'
           severity: 'UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL'
@@ -286,7 +286,7 @@ jobs:
             -v /var/run/docker.sock:/var/run/docker.sock \
             aquasec/trivy image \
             --severity CRITICAL,HIGH \
-            junkos-${{ matrix.service }}:scan || true
+            umuve-${{ matrix.service }}:scan || true
 
   secret-scan:
     name: Secret Detection

@@ -1,4 +1,4 @@
-# JunkOS Legal Documents - Customization Checklist
+# Umuve Legal Documents - Customization Checklist
 
 Use this checklist to customize your legal documents before publishing.
 
@@ -10,8 +10,8 @@ Use your text editor's find-and-replace feature to update these placeholders acr
 
 | Placeholder | Replace With | Example |
 |-------------|--------------|---------|
-| `[insert support email]` | Your support email | `support@junkos.app` |
-| `[privacy email]` | Your privacy contact email | `privacy@junkos.app` or same as support |
+| `[insert support email]` | Your support email | `support@goumuve.com` |
+| `[privacy email]` | Your privacy contact email | `privacy@goumuve.com` or same as support |
 | `[support phone number]` | Your support phone | `(813) 555-0123` |
 | `[Tampa, FL address]` or `[Tampa, FL address if applicable]` | Your business address | `123 Main St, Tampa, FL 33602` |
 
@@ -19,7 +19,7 @@ Use your text editor's find-and-replace feature to update these placeholders acr
 
 | Placeholder | Replace With | Example |
 |-------------|--------------|---------|
-| `[link to hosted privacy policy]` | URL where you'll host the policy | `https://junkos.app/privacy-policy.html` |
+| `[link to hosted privacy policy]` | URL where you'll host the policy | `https://goumuve.com/privacy-policy.html` |
 
 ---
 
@@ -75,10 +75,10 @@ grep -r "\[link" .
 
 ```bash
 # Replace support email
-find . -type f \( -name "*.md" -o -name "*.html" \) -exec sed -i.bak 's/\[insert support email\]/support@junkos.app/g' {} +
+find . -type f \( -name "*.md" -o -name "*.html" \) -exec sed -i.bak 's/\[insert support email\]/support@goumuve.com/g' {} +
 
 # Replace privacy email
-find . -type f \( -name "*.md" -o -name "*.html" \) -exec sed -i.bak 's/\[privacy email\]/privacy@junkos.app/g' {} +
+find . -type f \( -name "*.md" -o -name "*.html" \) -exec sed -i.bak 's/\[privacy email\]/privacy@goumuve.com/g' {} +
 
 # Replace phone number
 find . -type f \( -name "*.md" -o -name "*.html" \) -exec sed -i.bak 's/\[support phone number\]/(813) 555-0123/g' {} +
@@ -88,7 +88,7 @@ find . -type f \( -name "*.md" -o -name "*.html" \) -exec sed -i.bak 's/\[Tampa,
 find . -type f \( -name "*.md" -o -name "*.html" \) -exec sed -i.bak 's/\[Tampa, FL address if applicable\]/123 Main St, Tampa, FL 33602/g' {} +
 
 # Replace privacy policy link
-find . -type f \( -name "*.md" -o -name "*.html" \) -exec sed -i.bak 's|\[link to hosted privacy policy\]|https://junkos.app/privacy-policy.html|g' {} +
+find . -type f \( -name "*.md" -o -name "*.html" \) -exec sed -i.bak 's|\[link to hosted privacy policy\]|https://goumuve.com/privacy-policy.html|g' {} +
 
 # Remove backup files after verifying
 rm *.bak
@@ -128,7 +128,7 @@ Before going live:
 
 **Good examples:**
 
-- Email: `support@junkos.app` or `contact@junkos.com`
+- Email: `support@goumuve.com` or `contact@goumuve.com`
 - Phone: `(813) 555-0123` or `813-555-0123`
 - Address: `123 Main Street, Tampa, FL 33602` (include suite # if applicable)
 

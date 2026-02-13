@@ -1,8 +1,8 @@
-# JunkOS Platform Design
+# Umuve Platform Design
 
 ## Overview
 
-JunkOS is an on-demand junk removal marketplace — "Uber for junk removal." Independent contractors with trucks sign up, customers book pickups, and JunkOS facilitates the transaction, taking a commission + service fee.
+Umuve is an on-demand junk removal marketplace — "Uber for junk removal." Independent contractors with trucks sign up, customers book pickups, and Umuve facilitates the transaction, taking a commission + service fee.
 
 **Service area:** Palm Beach & Broward County, South Florida (expandable).
 
@@ -24,8 +24,8 @@ JunkOS is an on-demand junk removal marketplace — "Uber for junk removal." Ind
 | Real-time Service | WebSockets (Socket.IO) | Live GPS, status updates |
 
 **URLs:**
-- `junkos.com` — Landing page (live)
-- `app.junkos.com` — Customer web app + operator dashboard
+- `goumuve.com` — Landing page (live)
+- `app.goumuve.com` — Customer web app + operator dashboard
 - App Store — Customer app + Driver app
 
 **iOS apps:** One Xcode workspace, two app targets, shared Swift package for networking, models, auth, and map components.
@@ -93,7 +93,7 @@ JunkOS is an on-demand junk removal marketplace — "Uber for junk removal." Ind
 
 ## Operator Dashboard
 
-Accessible at `app.junkos.com/admin`. Web-only.
+Accessible at `app.goumuve.com/admin`. Web-only.
 
 | Section | Purpose |
 |---------|---------|
@@ -279,8 +279,8 @@ Total:        $206.25
 
 | Asset | Status | Reuse Plan |
 |-------|--------|------------|
-| Landing page | Live at Vercel | Add "Book Now" link to app.junkos.com |
+| Landing page | Live at Vercel | Add "Book Now" link to app.goumuve.com |
 | React booking flow | Working prototype | Reference for rebuilding in Next.js |
 | Flask backend | Partial (auth, bookings, payments) | Extend with new models and WebSocket |
-| JunkOS-Clean iOS | SwiftUI scaffolded (auth, views, models) | Becomes the Xcode workspace for both apps |
+| Umuve-Clean iOS | SwiftUI scaffolded (auth, views, models) | Becomes the Xcode workspace for both apps |
 | Stripe integration | Basic in prototypes | Upgrade to Stripe Connect for marketplace |

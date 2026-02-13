@@ -89,10 +89,13 @@ export const authApi = {
 
   signup: (email: string, password: string, name: string, phone: string, referralCode?: string) => {
     // Check localStorage for a referral code if none was provided
+    // Try new key first, fall back to legacy key for migration
     const refCode =
       referralCode ||
       (typeof window !== "undefined"
-        ? localStorage.getItem("junkos_referral_code") || undefined
+        ? localStorage.getItem("umuve_referral_code") ||
+          localStorage.getItem("junkos_referral_code") ||
+          undefined
         : undefined);
 
     return apiFetch<AuthResponse>("/api/auth/signup", {

@@ -1,4 +1,4 @@
-# JunkOS Flask Backend - Build Summary
+# Umuve Flask Backend - Build Summary
 
 ## ✅ Completed Tasks
 
@@ -202,7 +202,7 @@ backend/
 
 ```bash
 # 1. Setup
-cd ~/Documents/programs/webapps/junkos/backend
+cd ~/Documents/programs/webapps/umuve/backend
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
@@ -212,8 +212,8 @@ cp .env.example .env
 # Edit .env with your DATABASE_URL
 
 # 3. Database
-createdb junkos_dev
-psql -d junkos_dev -f ../junk_removal_schema.sql
+createdb umuve_dev
+psql -d umuve_dev -f ../junk_removal_schema.sql
 
 # 4. Seed demo data
 flask seed-db
@@ -271,4 +271,4 @@ A **production-ready Flask backend** has been built with:
 - Email/SMS integration
 - Deployment to production
 
-All files saved to: `~/Documents/programs/webapps/junkos/backend/`
+All files saved to: `~/Documents/programs/webapps/umuve/backend/`

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# JunkOS Icon Generator
+# Umuve Icon Generator
 # Generates all required iOS app icon sizes from SVG template
 # Requires: ImageMagick (brew install imagemagick)
 
@@ -12,7 +12,7 @@ BLUE='\033[0;34m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
-echo -e "${BLUE}JunkOS Icon Generator${NC}"
+echo -e "${BLUE}Umuve Icon Generator${NC}"
 echo "=========================="
 
 # Check if ImageMagick is installed

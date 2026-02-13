@@ -1,6 +1,6 @@
 //
 //  DistanceBadge.swift
-//  JunkOS Driver
+//  Umuve Pro
 //
 //  "2.3 mi" distance badge.
 //

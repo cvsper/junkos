@@ -1,6 +1,6 @@
 # CI/CD Pipeline Quick Start
 
-Get your JunkOS CI/CD pipeline running in 5 minutes! 🚀
+Get your Umuve CI/CD pipeline running in 5 minutes! 🚀
 
 ## Step 1: Add Required Secrets (5 min)
 
@@ -23,7 +23,7 @@ AWS_SECRET_ACCESS_KEY=<your-aws-secret>
 AWS_REGION=us-east-1
 
 # Database (Production)
-PRODUCTION_DATABASE_URL=postgresql://user:pass@host:5432/junkos_prod
+PRODUCTION_DATABASE_URL=postgresql://user:pass@host:5432/umuve_prod
 ```
 
 ### Optional (but recommended):
@@ -34,8 +34,8 @@ DISCORD_WEBHOOK=https://discord.com/api/webhooks/...
 SLACK_WEBHOOK=https://hooks.slack.com/services/...
 
 # Environment URLs
-STAGING_URL=https://staging.junkos.app
-PRODUCTION_URL=https://junkos.app
+STAGING_URL=https://staging.goumuve.com
+PRODUCTION_URL=https://goumuve.com
 ```
 
 ## Step 2: Set Up GitHub Environment
@@ -127,7 +127,7 @@ docker build -t test .
 ```bash
 # Run tests with same config as CI
 cd backend
-DATABASE_URL=postgresql://test:test@localhost:5432/junkos_test pytest
+DATABASE_URL=postgresql://test:test@localhost:5432/umuve_test pytest
 ```
 
 ### ❌ Staging deployment succeeds but can't access site

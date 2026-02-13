@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Script to add JunkOSTests and JunkOSUITests targets to the Xcode project
+Script to add test targets (JunkOSTests, JunkOSUITests) to the Umuve Xcode project
 """
 
 import re
@@ -395,7 +395,7 @@ def add_test_targets_to_project(project_path):
 \t\t\t\tGENERATE_INFOPLIST_FILE = YES;
 \t\t\t\tIPHONEOS_DEPLOYMENT_TARGET = 17.0;
 \t\t\t\tMARKETING_VERSION = 1.0;
-\t\t\t\tPRODUCT_BUNDLE_IDENTIFIER = com.junkos.app.tests;
+\t\t\t\tPRODUCT_BUNDLE_IDENTIFIER = com.goumuve.app.tests;
 \t\t\t\tPRODUCT_NAME = "$(TARGET_NAME)";
 \t\t\t\tSWIFT_EMIT_LOC_STRINGS = NO;
 \t\t\t\tSWIFT_VERSION = 5.0;
@@ -413,7 +413,7 @@ def add_test_targets_to_project(project_path):
 \t\t\t\tGENERATE_INFOPLIST_FILE = YES;
 \t\t\t\tIPHONEOS_DEPLOYMENT_TARGET = 17.0;
 \t\t\t\tMARKETING_VERSION = 1.0;
-\t\t\t\tPRODUCT_BUNDLE_IDENTIFIER = com.junkos.app.tests;
+\t\t\t\tPRODUCT_BUNDLE_IDENTIFIER = com.goumuve.app.tests;
 \t\t\t\tPRODUCT_NAME = "$(TARGET_NAME)";
 \t\t\t\tSWIFT_EMIT_LOC_STRINGS = NO;
 \t\t\t\tSWIFT_VERSION = 5.0;
@@ -430,7 +430,7 @@ def add_test_targets_to_project(project_path):
 \t\t\t\tGENERATE_INFOPLIST_FILE = YES;
 \t\t\t\tIPHONEOS_DEPLOYMENT_TARGET = 17.0;
 \t\t\t\tMARKETING_VERSION = 1.0;
-\t\t\t\tPRODUCT_BUNDLE_IDENTIFIER = com.junkos.app.uitests;
+\t\t\t\tPRODUCT_BUNDLE_IDENTIFIER = com.goumuve.app.uitests;
 \t\t\t\tPRODUCT_NAME = "$(TARGET_NAME)";
 \t\t\t\tSWIFT_EMIT_LOC_STRINGS = NO;
 \t\t\t\tSWIFT_VERSION = 5.0;
@@ -447,7 +447,7 @@ def add_test_targets_to_project(project_path):
 \t\t\t\tGENERATE_INFOPLIST_FILE = YES;
 \t\t\t\tIPHONEOS_DEPLOYMENT_TARGET = 17.0;
 \t\t\t\tMARKETING_VERSION = 1.0;
-\t\t\t\tPRODUCT_BUNDLE_IDENTIFIER = com.junkos.app.uitests;
+\t\t\t\tPRODUCT_BUNDLE_IDENTIFIER = com.goumuve.app.uitests;
 \t\t\t\tPRODUCT_NAME = "$(TARGET_NAME)";
 \t\t\t\tSWIFT_EMIT_LOC_STRINGS = NO;
 \t\t\t\tSWIFT_VERSION = 5.0;

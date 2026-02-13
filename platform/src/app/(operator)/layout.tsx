@@ -61,7 +61,7 @@ export default function OperatorLayout({
       <div className="h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center mx-auto mb-3 animate-pulse">
-            <span className="text-primary-foreground font-display font-bold text-sm">J</span>
+            <span className="text-primary-foreground font-display font-bold text-sm">U</span>
           </div>
           <p className="text-sm text-muted-foreground">Loading...</p>
         </div>
@@ -93,9 +93,9 @@ export default function OperatorLayout({
         <div className="h-16 flex items-center justify-between px-6 border-b border-border">
           <Link href="/operator" className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground font-display font-bold text-sm">J</span>
+              <span className="text-primary-foreground font-display font-bold text-sm">U</span>
             </div>
-            <span className="font-display font-bold text-lg tracking-tight">JunkOS</span>
+            <span className="font-display font-bold text-lg tracking-tight">Umuve</span>
             <span className="text-xs font-medium text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded">
               Operator
             </span>

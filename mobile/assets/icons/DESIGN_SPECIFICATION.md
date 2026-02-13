@@ -1,7 +1,7 @@
-# JunkOS iOS App Icon - Design Specification
+# Umuve iOS App Icon - Design Specification
 
 ## Overview
-JunkOS app icon represents a modern, clean digital cleanup tool. The design features a stylized trash bin with an upward-pointing arrow, symbolizing the removal and clearing of unwanted items.
+Umuve app icon represents a modern, clean digital cleanup tool. The design features a stylized trash bin with an upward-pointing arrow, symbolizing the removal and clearing of unwanted items.
 
 ## Design Concept
 

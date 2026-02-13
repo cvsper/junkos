@@ -1,5 +1,5 @@
 """
-Support chat API routes for JunkOS.
+Support chat API routes for Umuve.
 POST /api/support/message  -- public (rate-limited) endpoint for customers.
 GET  /api/admin/support-messages -- admin-only listing.
 """
@@ -76,7 +76,7 @@ def create_support_message():
             "<hr/><p>{}</p>"
         ).format(name or "Guest", email, category, message.replace("\n", "<br/>"))
         send_email(
-            to_email="support@junkos.app",
+            to_email="support@goumuve.com",
             subject="New support message from {} ({})".format(name or "Guest", category),
             html_content=html_body,
         )

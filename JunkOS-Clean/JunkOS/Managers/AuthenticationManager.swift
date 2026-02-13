@@ -1,6 +1,6 @@
 //
 //  AuthenticationManager.swift
-//  JunkOS
+//  Umuve
 //
 //  Manages user authentication state and API calls
 //

@@ -1,5 +1,5 @@
 """
-Promo Code / Coupon API routes for JunkOS.
+Promo Code / Coupon API routes for Umuve.
 Public: validate a promo code.
 Admin: CRUD promo codes.
 """

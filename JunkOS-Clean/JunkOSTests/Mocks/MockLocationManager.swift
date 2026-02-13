@@ -1,13 +1,13 @@
 //
 //  MockLocationManager.swift
-//  JunkOSTests
+//  UmuveTests
 //
 //  Mock LocationManager for testing
 //
 
 import Foundation
 import CoreLocation
-@testable import JunkOS
+@testable import Umuve
 
 class MockLocationManager: LocationManager {
     // MARK: - Mock Properties

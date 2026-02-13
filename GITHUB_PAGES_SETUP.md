@@ -1,4 +1,4 @@
-# GitHub Pages Setup Guide for JunkOS
+# GitHub Pages Setup Guide for Umuve
 
 ## ✅ What's Been Completed
 
@@ -25,7 +25,7 @@ gh repo create junkos --public --source=. --remote=origin --push
 
 1. Go to https://github.com/new
 2. Repository name: `junkos`
-3. Description: "JunkOS - Junk Removal Management System"
+3. Description: "Umuve - Junk Removal Management System"
 4. Choose: **Public** (required for free GitHub Pages)
 5. **DO NOT** initialize with README, .gitignore, or license (we already have these)
 6. Click "Create repository"
@@ -141,7 +141,7 @@ If you want to use a different folder:
 1. In Settings → Pages, add your custom domain
 2. Add a `CNAME` file to `docs/` with your domain:
    ```bash
-   echo "privacy.junkos.com" > docs/CNAME
+   echo "privacy.goumuve.com" > docs/CNAME
    git add docs/CNAME
    git commit -m "Add custom domain"
    git push

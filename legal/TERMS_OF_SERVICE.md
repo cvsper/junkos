@@ -1,4 +1,4 @@
-# Terms of Service for JunkOS
+# Terms of Service for Umuve
 
 **Effective Date:** February 7, 2026  
 **Last Updated:** February 7, 2026
@@ -7,15 +7,15 @@
 
 ## 1. Agreement to Terms
 
-Welcome to JunkOS! These Terms of Service ("Terms") govern your use of the JunkOS mobile application ("App") operated by Gymbuddy / Shamar Donaldson ("we," "us," or "our").
+Welcome to Umuve! These Terms of Service ("Terms") govern your use of the Umuve mobile application ("App") operated by Gymbuddy / Shamar Donaldson ("we," "us," or "our").
 
-**By creating an account or using JunkOS, you agree to be bound by these Terms and our Privacy Policy.** If you don't agree, please don't use the App.
+**By creating an account or using Umuve, you agree to be bound by these Terms and our Privacy Policy.** If you don't agree, please don't use the App.
 
 ---
 
 ## 2. Service Description
 
-JunkOS is an on-demand junk removal booking platform serving the Tampa, Florida area. Through the App, you can:
+Umuve is an on-demand junk removal booking platform serving the Tampa, Florida area. Through the App, you can:
 
 - Request quotes for junk removal services
 - Upload photos of items to be removed
@@ -23,13 +23,13 @@ JunkOS is an on-demand junk removal booking platform serving the Tampa, Florida 
 - Track your service requests
 - Communicate with our team
 
-**JunkOS connects you with our junk removal service—we are the service provider, not a marketplace.**
+**Umuve connects you with our junk removal service—we are the service provider, not a marketplace.**
 
 ---
 
 ## 3. Eligibility
 
-To use JunkOS, you must:
+To use Umuve, you must:
 
 - Be at least 18 years old
 - Have the legal capacity to enter into a binding contract
@@ -44,7 +44,7 @@ To use JunkOS, you must:
 
 ### 4.1 Creating an Account
 
-To use JunkOS, you must create an account by providing:
+To use Umuve, you must create an account by providing:
 - Your name
 - Email address
 - Phone number
@@ -73,7 +73,7 @@ You may delete your account at any time through the App settings. We may suspend
 
 ### 5.1 Requesting Services
 
-When you request junk removal through JunkOS:
+When you request junk removal through Umuve:
 
 1. You upload photos of items to be removed
 2. We provide a quote based on the items and location
@@ -82,7 +82,7 @@ When you request junk removal through JunkOS:
 
 ### 5.2 Service Area
 
-JunkOS currently serves the Tampa, Florida area. We reserve the right to change or expand our service area at any time.
+Umuve currently serves the Tampa, Florida area. We reserve the right to change or expand our service area at any time.
 
 ### 5.3 Quotes & Pricing
 
@@ -165,14 +165,14 @@ You agree not to:
 
 ### 8.1 Our Rights
 
-JunkOS, including all content, features, logos, and trademarks, is owned by Gymbuddy / Shamar Donaldson. You may not:
+Umuve, including all content, features, logos, and trademarks, is owned by Gymbuddy / Shamar Donaldson. You may not:
 - Copy, modify, or distribute our App or content
 - Use our branding without written permission
-- Create derivative works based on JunkOS
+- Create derivative works based on Umuve
 
 ### 8.2 Your Content
 
-When you upload photos or provide information through JunkOS:
+When you upload photos or provide information through Umuve:
 - You retain ownership of your content
 - You grant us a license to use, store, and process your content to provide our services
 - You represent that you have the right to upload the content
@@ -184,7 +184,7 @@ When you upload photos or provide information through JunkOS:
 
 ### 9.1 "As Is" Service
 
-JunkOS is provided "as is" and "as available" without warranties of any kind, express or implied. We do not guarantee:
+Umuve is provided "as is" and "as available" without warranties of any kind, express or implied. We do not guarantee:
 - Uninterrupted or error-free operation
 - That the App will meet your specific needs
 - That all bugs or issues will be fixed immediately
@@ -194,7 +194,7 @@ JunkOS is provided "as is" and "as available" without warranties of any kind, ex
 **To the maximum extent permitted by law:**
 
 - We are not liable for any indirect, incidental, special, or consequential damages
-- Our total liability to you for any claim related to JunkOS shall not exceed the amount you paid for the services in the past 12 months (or $100 if no payment was made)
+- Our total liability to you for any claim related to Umuve shall not exceed the amount you paid for the services in the past 12 months (or $100 if no payment was made)
 - We are not liable for delays, cancellations, or issues caused by circumstances beyond our control (weather, traffic, equipment failure, etc.)
 
 ### 9.3 Property Damage
@@ -211,7 +211,7 @@ While we take care during junk removal, we are not responsible for:
 ## 10. Indemnification
 
 You agree to indemnify and hold harmless Gymbuddy, Shamar Donaldson, and our employees from any claims, losses, or damages arising from:
-- Your use of JunkOS
+- Your use of Umuve
 - Your violation of these Terms
 - Your violation of any third-party rights
 - Any false or misleading information you provide
@@ -244,9 +244,9 @@ We may update these Terms from time to time. When we do:
 
 - We'll post the updated Terms in the App and update the "Last Updated" date
 - For significant changes, we'll notify you via email or in-app notification
-- Your continued use of JunkOS after changes constitutes acceptance of the new Terms
+- Your continued use of Umuve after changes constitutes acceptance of the new Terms
 
-If you don't agree to the updated Terms, you must stop using JunkOS and delete your account.
+If you don't agree to the updated Terms, you must stop using Umuve and delete your account.
 
 ---
 
@@ -258,7 +258,7 @@ If any provision of these Terms is found to be invalid or unenforceable, the rem
 
 ## 14. Entire Agreement
 
-These Terms, together with our Privacy Policy, constitute the entire agreement between you and Gymbuddy regarding JunkOS. They supersede any prior agreements or understandings.
+These Terms, together with our Privacy Policy, constitute the entire agreement between you and Gymbuddy regarding Umuve. They supersede any prior agreements or understandings.
 
 ---
 
@@ -281,8 +281,8 @@ If you have questions about these Terms, please contact us:
 
 ## 17. Acknowledgment
 
-By using JunkOS, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service.
+By using Umuve, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service.
 
 ---
 
-**Thank you for choosing JunkOS for your junk removal needs!** 🗑️✨
+**Thank you for choosing Umuve for your junk removal needs!** 🗑️✨

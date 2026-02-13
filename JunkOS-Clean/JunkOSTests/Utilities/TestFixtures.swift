@@ -1,12 +1,12 @@
 //
 //  TestFixtures.swift
-//  JunkOSTests
+//  UmuveTests
 //
 //  Sample data fixtures for testing
 //
 
 import Foundation
-@testable import JunkOS
+@testable import Umuve
 
 struct TestFixtures {
     

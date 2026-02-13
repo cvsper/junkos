@@ -52,7 +52,7 @@ export default function ConfirmationScreen({ navigation, route }: Props) {
 
         <Text style={styles.title}>Booking Confirmed!</Text>
         <Text style={styles.subtitle}>
-          We've received your junk removal request
+          We've received your hauling request
         </Text>
 
         {booking && (
@@ -152,7 +152,7 @@ export default function ConfirmationScreen({ navigation, route }: Props) {
               <Text style={styles.supportIcon}>💬</Text>
               <Text style={styles.supportTitle}>Need Help?</Text>
               <Text style={styles.supportText}>
-                Contact us anytime at support@junkos.com{'\n'}
+                Contact us anytime at support@goumuve.com{'\n'}
                 or call (555) 123-4567
               </Text>
             </View>

@@ -1,6 +1,6 @@
 //
 //  LoginOptionsView.swift
-//  JunkOS
+//  Umuve
 //
 //  Login screen with multiple authentication options
 //
@@ -16,14 +16,14 @@ struct LoginOptionsView: View {
     
     var body: some View {
         ScrollView {
-            VStack(spacing: JunkSpacing.xxlarge) {
+            VStack(spacing: UmuveSpacing.xxlarge) {
                 // Close button
                 HStack {
                     Spacer()
                     Button(action: { dismiss() }) {
                         Image(systemName: "xmark")
                             .font(.title3)
-                            .foregroundColor(.junkText)
+                            .foregroundColor(.umuveText)
                             .padding()
                     }
                 }
@@ -31,32 +31,32 @@ struct LoginOptionsView: View {
                 Spacer(minLength: 40)
                 
                 // Header
-                VStack(spacing: JunkSpacing.large) {
+                VStack(spacing: UmuveSpacing.large) {
                     Image(systemName: "trash.circle.fill")
                         .font(.system(size: 80))
                         .foregroundStyle(
                             LinearGradient(
-                                colors: [Color.junkPrimary, Color.junkCTA],
+                                colors: [Color.umuvePrimary, Color.umuveCTA],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             )
                         )
                     
-                    VStack(spacing: JunkSpacing.small) {
+                    VStack(spacing: UmuveSpacing.small) {
                         Text("Welcome back")
                             .font(.system(size: 32, weight: .bold))
-                            .foregroundColor(.junkText)
+                            .foregroundColor(.umuveText)
                             .multilineTextAlignment(.center)
                         
                         Text("Login to access your account")
-                            .font(JunkTypography.bodyFont)
-                            .foregroundColor(.junkTextMuted)
+                            .font(UmuveTypography.bodyFont)
+                            .foregroundColor(.umuveTextMuted)
                             .multilineTextAlignment(.center)
                     }
                 }
                 
                 // Login options
-                VStack(spacing: JunkSpacing.normal) {
+                VStack(spacing: UmuveSpacing.normal) {
                     // Email login
                     Button(action: {
                         showEmailLogin = true
@@ -65,18 +65,18 @@ struct LoginOptionsView: View {
                             Image(systemName: "envelope.fill")
                                 .font(.title3)
                             Text("Log in with Email")
-                                .font(JunkTypography.h3Font)
+                                .font(UmuveTypography.h3Font)
                             Spacer()
                         }
-                        .foregroundColor(.junkText)
+                        .foregroundColor(.umuveText)
                         .frame(maxWidth: .infinity)
                         .frame(height: 56)
-                        .padding(.horizontal, JunkSpacing.large)
+                        .padding(.horizontal, UmuveSpacing.large)
                         .background(Color.white)
                         .cornerRadius(28)
                         .overlay(
                             RoundedRectangle(cornerRadius: 28)
-                                .stroke(Color.junkBorder, lineWidth: 2)
+                                .stroke(Color.umuveBorder, lineWidth: 2)
                         )
                     }
                     
@@ -88,18 +88,18 @@ struct LoginOptionsView: View {
                             Image(systemName: "phone.fill")
                                 .font(.title3)
                             Text("Log in with Phone")
-                                .font(JunkTypography.h3Font)
+                                .font(UmuveTypography.h3Font)
                             Spacer()
                         }
-                        .foregroundColor(.junkText)
+                        .foregroundColor(.umuveText)
                         .frame(maxWidth: .infinity)
                         .frame(height: 56)
-                        .padding(.horizontal, JunkSpacing.large)
+                        .padding(.horizontal, UmuveSpacing.large)
                         .background(Color.white)
                         .cornerRadius(28)
                         .overlay(
                             RoundedRectangle(cornerRadius: 28)
-                                .stroke(Color.junkBorder, lineWidth: 2)
+                                .stroke(Color.umuveBorder, lineWidth: 2)
                         )
                     }
                     
@@ -116,7 +116,7 @@ struct LoginOptionsView: View {
                     .cornerRadius(28)
                     .signInWithAppleButtonStyle(.black)
                 }
-                .padding(.horizontal, JunkSpacing.xlarge)
+                .padding(.horizontal, UmuveSpacing.xlarge)
                 
                 Spacer()
                 
@@ -127,19 +127,19 @@ struct LoginOptionsView: View {
                 }) {
                     VStack(spacing: 4) {
                         Text("Don't have an account yet?")
-                            .foregroundColor(.junkTextMuted)
+                            .foregroundColor(.umuveTextMuted)
                         Text("Create an account")
                             .fontWeight(.bold)
-                            .foregroundColor(.junkPrimary)
+                            .foregroundColor(.umuvePrimary)
                     }
-                    .font(JunkTypography.bodyFont)
+                    .font(UmuveTypography.bodyFont)
                     .multilineTextAlignment(.center)
                 }
                 .frame(maxWidth: .infinity)
-                .padding(.bottom, JunkSpacing.xlarge)
+                .padding(.bottom, UmuveSpacing.xlarge)
             }
         }
-        .background(Color.junkBackground.ignoresSafeArea())
+        .background(Color.umuveBackground.ignoresSafeArea())
         .fullScreenCover(isPresented: $showEmailLogin) {
             NavigationView {
                 EmailLoginView()

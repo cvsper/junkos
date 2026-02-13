@@ -1,4 +1,4 @@
-# JunkOS Design System
+# Umuve Design System
 
 Generated: 2026-02-06
 
@@ -19,12 +19,12 @@ Generated: 2026-02-06
 |------|-----|-------|
 | Primary | #6366F1 (Indigo) | Main brand color, primary buttons, links |
 | Secondary | #818CF8 (Light Indigo) | Secondary actions, hover states |
-| CTA | #10B981 (Emerald) | Call-to-action buttons, success states |
+| CTA | #DC2626 (Red) | Call-to-action buttons, success states |
 | Background | #F5F3FF (Light Purple) | Page background, card backgrounds |
 | Text | #1E1B4B (Dark Indigo) | Primary text, headings |
 
 ### Extended Palette (Light Mode)
-- **Success:** #10B981 (Emerald)
+- **Success:** #DC2626 (Red)
 - **Warning:** #F59E0B (Amber)
 - **Error:** #EF4444 (Red)
 - **Info:** #3B82F6 (Blue)
@@ -93,7 +93,7 @@ fontFamily: {
 
 ### Interactive Elements
 - **Buttons:** 
-  - Primary: #10B981 background, white text, 8px border-radius
+  - Primary: #DC2626 background, white text, 8px border-radius
   - Hover: Darken 10%, add shadow
   - Active: Scale 0.98
 - **Cards:** 
@@ -216,7 +216,7 @@ Before shipping any UI code:
 **Colors:**
 ```css
 bg-indigo-600      /* Primary */
-bg-emerald-500     /* CTA */
+bg-red-600     /* CTA */
 text-indigo-950    /* Primary text */
 border-slate-200   /* Borders */
 ```

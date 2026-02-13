@@ -1,4 +1,4 @@
-# JunkOS Accessibility Audit Report
+# Umuve Accessibility Audit Report
 
 **Date:** February 7, 2026  
 **Version:** 1.0  
@@ -7,7 +7,7 @@
 
 ## Executive Summary
 
-This document provides a comprehensive accessibility audit for the JunkOS iOS application. The audit covers VoiceOver support, Dynamic Type, color contrast, and other iOS accessibility features.
+This document provides a comprehensive accessibility audit for the Umuve iOS application. The audit covers VoiceOver support, Dynamic Type, color contrast, and other iOS accessibility features.
 
 ## Audit Methodology
 
@@ -394,7 +394,7 @@ This document provides a comprehensive accessibility audit for the JunkOS iOS ap
 
 **Overall Accessibility Score:** 🟡 **75/100** (Good, needs improvement)
 
-The JunkOS app has a solid accessibility foundation with good VoiceOver support and Dynamic Type implementation. However, several areas need attention before TestFlight release:
+The Umuve app has a solid accessibility foundation with good VoiceOver support and Dynamic Type implementation. However, several areas need attention before TestFlight release:
 
 **Strengths:**
 - ✅ Clear navigation structure

@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy - JunkOS",
+  title: "Privacy Policy - Umuve",
   description:
-    "Privacy Policy for JunkOS junk removal platform. Learn how we collect, use, and protect your personal information.",
+    "Privacy Policy for Umuve junk removal platform. Learn how we collect, use, and protect your personal information.",
 };
 
 const LAST_UPDATED = "February 9, 2026";
@@ -35,7 +35,7 @@ export default function PrivacyPolicyPage() {
           Last updated: {LAST_UPDATED}
         </p>
         <p className="text-base text-muted-foreground leading-relaxed">
-          JunkOS (&quot;we,&quot; &quot;us,&quot; or &quot;our&quot;) is
+          Umuve (&quot;we,&quot; &quot;us,&quot; or &quot;our&quot;) is
           committed to protecting your privacy. This Privacy Policy explains
           how we collect, use, disclose, and safeguard your information when
           you use our platform and junk removal services. Please read this
@@ -199,7 +199,7 @@ export default function PrivacyPolicyPage() {
               <li>
                 <strong className="text-foreground">Safety:</strong>{" "}
                 When we believe disclosure is necessary to protect the safety,
-                rights, or property of JunkOS, our users, or the public
+                rights, or property of Umuve, our users, or the public
               </li>
               <li>
                 <strong className="text-foreground">Business transfers:</strong>{" "}
@@ -404,7 +404,7 @@ export default function PrivacyPolicyPage() {
               <li>
                 <strong className="text-foreground">Right to Opt-Out:</strong>{" "}
                 You have the right to opt out of the sale of your personal
-                information. JunkOS does not sell personal information
+                information. Umuve does not sell personal information
               </li>
               <li>
                 <strong className="text-foreground">
@@ -424,10 +424,10 @@ export default function PrivacyPolicyPage() {
             <p>
               To exercise any of these rights, please contact us at{" "}
               <a
-                href="mailto:privacy@junkos.com"
+                href="mailto:privacy@goumuve.com"
                 className="text-primary hover:underline"
               >
-                privacy@junkos.com
+                privacy@goumuve.com
               </a>
               . We will respond to verified requests within 45 days. You may
               also designate an authorized agent to submit a request on your
@@ -493,7 +493,7 @@ export default function PrivacyPolicyPage() {
           </h2>
           <div className="space-y-3 text-muted-foreground leading-relaxed">
             <p>
-              JunkOS is not intended for use by individuals under the age of 18.
+              Umuve is not intended for use by individuals under the age of 18.
               We do not knowingly collect personal information from children
               under 18. If we become aware that we have collected personal
               information from a child under 18, we will take steps to promptly
@@ -503,10 +503,10 @@ export default function PrivacyPolicyPage() {
               If you are a parent or guardian and believe that your child has
               provided us with personal information, please contact us at{" "}
               <a
-                href="mailto:privacy@junkos.com"
+                href="mailto:privacy@goumuve.com"
                 className="text-primary hover:underline"
               >
-                privacy@junkos.com
+                privacy@goumuve.com
               </a>{" "}
               so we can take appropriate action.
             </p>
@@ -556,24 +556,24 @@ export default function PrivacyPolicyPage() {
             </p>
             <div className="rounded-lg border border-border bg-muted/30 p-6 space-y-2">
               <p className="font-display font-semibold text-foreground">
-                JunkOS - Privacy Team
+                Umuve - Privacy Team
               </p>
               <p>
                 Email:{" "}
                 <a
-                  href="mailto:privacy@junkos.com"
+                  href="mailto:privacy@goumuve.com"
                   className="text-primary hover:underline"
                 >
-                  privacy@junkos.com
+                  privacy@goumuve.com
                 </a>
               </p>
               <p>
                 General Support:{" "}
                 <a
-                  href="mailto:support@junkos.com"
+                  href="mailto:support@goumuve.com"
                   className="text-primary hover:underline"
                 >
-                  support@junkos.com
+                  support@goumuve.com
                 </a>
               </p>
               <p>South Florida, United States</p>

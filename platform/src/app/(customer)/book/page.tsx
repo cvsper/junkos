@@ -32,7 +32,7 @@ function BookPageInner() {
     const refCode = searchParams.get("ref");
     if (refCode) {
       // Store in localStorage for use during signup
-      localStorage.setItem("junkos_referral_code", refCode.toUpperCase());
+      localStorage.setItem("umuve_referral_code", refCode.toUpperCase());
 
       // Validate the code and show referrer name
       referralsApi
@@ -42,17 +42,17 @@ function BookPageInner() {
         })
         .catch(() => {
           // Invalid code -- silently ignore
-          localStorage.removeItem("junkos_referral_code");
+          localStorage.removeItem("umuve_referral_code");
         });
     } else {
       // Check if we already have a stored referral code
-      const stored = localStorage.getItem("junkos_referral_code");
+      const stored = localStorage.getItem("umuve_referral_code");
       if (stored) {
         referralsApi
           .validate(stored)
           .then((res) => setReferrerName(res.referrer_name))
           .catch(() => {
-            localStorage.removeItem("junkos_referral_code");
+            localStorage.removeItem("umuve_referral_code");
           });
       }
     }

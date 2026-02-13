@@ -1,12 +1,12 @@
 //
 //  ConfirmationViewModelTests.swift
-//  JunkOSTests
+//  UmuveTests
 //
 //  Unit tests for ConfirmationViewModel
 //
 
 import XCTest
-@testable import JunkOS
+@testable import Umuve
 
 @MainActor
 final class ConfirmationViewModelTests: XCTestCase {

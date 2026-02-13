@@ -1,6 +1,6 @@
 //
 //  HapticManager.swift
-//  JunkOS Driver
+//  Umuve Pro
 //
 //  Haptic feedback manager for consistent tactile feedback.
 //

@@ -1,12 +1,12 @@
 //
 //  APIClientTests.swift
-//  JunkOSTests
+//  UmuveTests
 //
 //  Unit tests for APIClient
 //
 
 import XCTest
-@testable import JunkOS
+@testable import Umuve
 
 @MainActor
 final class APIClientTests: XCTestCase {

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Admin Login",
-  description: "Sign in to the JunkOS admin dashboard.",
+  description: "Sign in to the Umuve admin dashboard.",
   robots: {
     index: false,
     follow: false,

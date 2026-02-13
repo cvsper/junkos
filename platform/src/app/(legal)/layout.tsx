@@ -36,7 +36,7 @@ export default function LegalLayout({
         <div className="mx-auto max-w-3xl px-6 py-8">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
             <p className="font-display font-semibold text-foreground">
-              JunkOS
+              Umuve
             </p>
             <div className="flex items-center gap-6">
               <Link
@@ -52,7 +52,7 @@ export default function LegalLayout({
                 Privacy Policy
               </Link>
             </div>
-            <p>&copy; {new Date().getFullYear()} JunkOS. All rights reserved.</p>
+            <p>&copy; {new Date().getFullYear()} Umuve. All rights reserved.</p>
           </div>
         </div>
       </footer>

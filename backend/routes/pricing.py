@@ -1,5 +1,5 @@
 """
-Pricing API routes for JunkOS.
+Pricing API routes for Umuve.
 Exposes the v2 pricing engine, pricing rules, surge zones, and category
 catalogue for admin and frontend consumption.
 """

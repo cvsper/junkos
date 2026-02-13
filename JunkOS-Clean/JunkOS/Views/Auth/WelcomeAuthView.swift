@@ -1,6 +1,6 @@
 //
 //  WelcomeAuthView.swift
-//  JunkOS
+//  Umuve
 //
 //  Initial welcome screen with login/signup options
 //
@@ -16,29 +16,29 @@ struct WelcomeAuthView: View {
         ZStack {
             // Background gradient
             LinearGradient(
-                colors: [Color.junkPrimary, Color.junkCTA],
+                colors: [Color.umuvePrimary, Color.umuveCTA],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
             .ignoresSafeArea()
             
-            VStack(spacing: JunkSpacing.xxlarge) {
+            VStack(spacing: UmuveSpacing.xxlarge) {
                 Spacer()
                 
                 // Logo and branding
-                VStack(spacing: JunkSpacing.large) {
+                VStack(spacing: UmuveSpacing.large) {
                     Image(systemName: "trash.circle.fill")
                         .font(.system(size: 120))
                         .foregroundStyle(.white)
                         .shadow(color: .black.opacity(0.2), radius: 20, x: 0, y: 10)
                     
-                    VStack(spacing: JunkSpacing.small) {
-                        Text("JunkOS")
+                    VStack(spacing: UmuveSpacing.small) {
+                        Text("Umuve")
                             .font(.system(size: 48, weight: .bold))
                             .foregroundColor(.white)
                         
                         Text("Junk removal made simple")
-                            .font(JunkTypography.bodyFont)
+                            .font(UmuveTypography.bodyFont)
                             .foregroundColor(.white.opacity(0.9))
                             .multilineTextAlignment(.center)
                     }
@@ -47,14 +47,14 @@ struct WelcomeAuthView: View {
                 Spacer()
                 
                 // Action buttons
-                VStack(spacing: JunkSpacing.normal) {
+                VStack(spacing: UmuveSpacing.normal) {
                     // Create Account (Primary action)
                     Button(action: {
                         showPhoneSignUp = true
                     }) {
                         Text("Create an account")
-                            .font(JunkTypography.h3Font)
-                            .foregroundColor(.junkPrimary)
+                            .font(UmuveTypography.h3Font)
+                            .foregroundColor(.umuvePrimary)
                             .frame(maxWidth: .infinity)
                             .frame(height: 56)
                             .background(Color.white)
@@ -67,7 +67,7 @@ struct WelcomeAuthView: View {
                         HapticManager.shared.lightTap()
                     }) {
                         Text("Continue as Guest")
-                            .font(JunkTypography.h3Font)
+                            .font(UmuveTypography.h3Font)
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
                             .frame(height: 56)
@@ -90,13 +90,13 @@ struct WelcomeAuthView: View {
                                 .fontWeight(.bold)
                                 .foregroundColor(.white)
                         }
-                        .font(JunkTypography.bodyFont)
+                        .font(UmuveTypography.bodyFont)
                         .multilineTextAlignment(.center)
                     }
                     .frame(maxWidth: .infinity)
                 }
-                .padding(.horizontal, JunkSpacing.xlarge)
-                .padding(.bottom, JunkSpacing.xxlarge)
+                .padding(.horizontal, UmuveSpacing.xlarge)
+                .padding(.bottom, UmuveSpacing.xxlarge)
             }
         }
         .fullScreenCover(isPresented: $showPhoneSignUp) {

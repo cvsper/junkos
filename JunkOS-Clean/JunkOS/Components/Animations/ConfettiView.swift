@@ -1,6 +1,6 @@
 //
 //  ConfettiView.swift
-//  JunkOS
+//  Umuve
 //
 //  Confetti animation for celebrations
 //
@@ -26,9 +26,9 @@ struct ConfettiView: View {
     @Environment(\.accessibilityReduceMotion) var reduceMotion
     
     let colors: [Color] = [
-        .junkPrimary,
-        .junkSecondary,
-        .junkCTA,
+        .umuvePrimary,
+        .umuveSecondary,
+        .umuveCTA,
         .pink,
         .orange,
         .yellow
@@ -65,7 +65,7 @@ struct ConfettiView: View {
                 y: -20,
                 rotation: Double.random(in: 0...360),
                 scale: CGFloat.random(in: 0.5...1.5),
-                color: colors.randomElement() ?? .junkPrimary,
+                color: colors.randomElement() ?? .umuvePrimary,
                 velocity: CGFloat.random(in: 2...5),
                 angularVelocity: Double.random(in: -10...10)
             )
@@ -105,7 +105,7 @@ struct SuccessCheckmark: View {
     var body: some View {
         ZStack {
             Circle()
-                .fill(Color.junkCTA)
+                .fill(Color.umuveCTA)
                 .frame(width: 100, height: 100)
                 .scaleEffect(scale)
                 .opacity(opacity)
@@ -190,21 +190,21 @@ struct BounceAnimation: ViewModifier {
 struct ConfettiView_Previews: PreviewProvider {
     static var previews: some View {
         ZStack {
-            Color.junkBackground.ignoresSafeArea()
+            Color.umuveBackground.ignoresSafeArea()
             
             VStack(spacing: 40) {
                 SuccessCheckmark()
                 
                 Text("Pulse Animation")
                     .padding()
-                    .background(Color.junkPrimary)
+                    .background(Color.umuvePrimary)
                     .foregroundColor(.white)
                     .cornerRadius(8)
                     .pulse()
                 
                 Text("Tap me for bounce")
                     .padding()
-                    .background(Color.junkCTA)
+                    .background(Color.umuveCTA)
                     .foregroundColor(.white)
                     .cornerRadius(8)
             }

@@ -1,6 +1,6 @@
-# JunkOS Legal Documents
+# Umuve Legal Documents
 
-This directory contains production-ready legal documents for the JunkOS mobile app.
+This directory contains production-ready legal documents for the Umuve mobile app.
 
 ## 📁 Files Included
 
@@ -20,7 +20,7 @@ This directory contains production-ready legal documents for the JunkOS mobile a
 **You MUST customize the following placeholders:**
 
 1. **Contact Information** (appears in all documents):
-   - `[insert support email]` → Replace with actual support email (e.g., support@junkos.com)
+   - `[insert support email]` → Replace with actual support email (e.g., support@goumuve.com)
    - `[privacy email]` → Replace with privacy contact (can be same as support)
    - `[Tampa, FL address if applicable]` → Add physical business address
    - `[support phone number]` → Add support phone number
@@ -174,7 +174,7 @@ If you have questions about implementing these documents:
 ---
 
 **Created:** February 7, 2026  
-**For:** JunkOS by Gymbuddy / Shamar Donaldson  
+**For:** Umuve by Gymbuddy / Shamar Donaldson  
 **Service Area:** Tampa, FL
 
 Good luck with your app launch! 🗑️✨

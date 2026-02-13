@@ -1,12 +1,12 @@
 -- ============================================================================
--- JunkOS Database Schema
+-- Umuve Database Schema
 -- ============================================================================
 -- Purpose: Create all tables, indexes, triggers, and constraints
--- Usage: psql -U postgres -d junkos -f 02_schema.sql
+-- Usage: psql -U postgres -d umuve -f 02_schema.sql
 -- ============================================================================
 
 -- Ensure we're connected to the right database
-\c junkos
+\c umuve
 
 BEGIN;
 

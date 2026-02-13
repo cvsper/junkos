@@ -51,7 +51,7 @@ function formatPhoneNumber(value: string): string {
 
 function generateBookingId(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let id = "JNK-";
+  let id = "UMV-";
   for (let i = 0; i < 6; i++) {
     id += chars.charAt(Math.floor(Math.random() * chars.length));
   }
@@ -86,7 +86,7 @@ const CARD_ELEMENT_OPTIONS = {
     base: {
       fontSize: "16px",
       color: "#1f2937",
-      fontFamily: "Inter, system-ui, -apple-system, sans-serif",
+      fontFamily: "DM Sans, system-ui, -apple-system, sans-serif",
       fontSmoothing: "antialiased",
       "::placeholder": {
         color: "#9ca3af",
@@ -175,7 +175,7 @@ function PaymentFormInner() {
       country: "US",
       currency: "usd",
       total: {
-        label: "JunkOS Junk Removal",
+        label: "Umuve Junk Removal",
         amount: Math.round(finalPrice * 100),
       },
       requestPayerName: true,

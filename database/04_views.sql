@@ -1,11 +1,11 @@
 -- ============================================================================
--- JunkOS Database Views
+-- Umuve Database Views
 -- ============================================================================
 -- Purpose: Create useful views for common queries and reporting
--- Usage: psql -U postgres -d junkos -f 04_views.sql
+-- Usage: psql -U postgres -d umuve -f 04_views.sql
 -- ============================================================================
 
-\c junkos
+\c umuve
 
 BEGIN;
 

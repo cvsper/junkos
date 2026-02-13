@@ -1,4 +1,4 @@
-JunkOS Database Structure
+Umuve Database Structure
 ========================
 
 database/

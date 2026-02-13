@@ -1,5 +1,5 @@
 """
-Geofencing utilities for JunkOS.
+Geofencing utilities for Umuve.
 
 Defines the South Florida service area (Miami-Dade, Broward, Palm Beach counties)
 and provides functions to check whether coordinates fall within it.

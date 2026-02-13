@@ -1,8 +1,8 @@
-# JunkOS Icon Package - Contents Summary
+# Umuve Icon Package - Contents Summary
 
 ## 📦 Package Overview
 
-Complete iOS app icon asset package for **JunkOS** mobile app, including:
+Complete iOS app icon asset package for **Umuve** mobile app, including:
 - ✅ Editable SVG source template
 - ✅ Complete design specifications
 - ✅ Generation scripts (Bash & Node.js)

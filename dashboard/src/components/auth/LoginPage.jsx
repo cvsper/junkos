@@ -36,7 +36,7 @@ export default function LoginPage() {
           <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mb-2">
             <Truck className="h-8 w-8 text-white" />
           </div>
-          <CardTitle className="text-2xl font-bold">JunkOS Dashboard</CardTitle>
+          <CardTitle className="text-2xl font-bold">Umuve Dashboard</CardTitle>
           <CardDescription>Sign in to your operator account</CardDescription>
         </CardHeader>
         <CardContent>
@@ -48,7 +48,7 @@ export default function LoginPage() {
               <Input
                 id="email"
                 type="email"
-                placeholder="operator@junkos.com"
+                placeholder="operator@goumuve.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -86,7 +86,7 @@ export default function LoginPage() {
             </Button>
           </form>
           <div className="mt-4 text-center text-sm text-muted-foreground">
-            Demo credentials: admin@junkos.com / admin123
+            Demo credentials: admin@goumuve.com / admin123
           </div>
         </CardContent>
       </Card>

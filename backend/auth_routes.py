@@ -1,5 +1,5 @@
 """
-Authentication Routes for JunkOS Backend
+Authentication Routes for Umuve Backend
 Handles phone verification, email login, and Apple Sign In
 """
 
@@ -503,7 +503,7 @@ def bootstrap_admin():
         return jsonify({'error': 'Admin already exists. Use seed-admin instead.'}), 403
 
     data = request.get_json(force=True)
-    email = data.get('email', 'admin@junkos.app')
+    email = data.get('email', 'admin@goumuve.com')
     password = data.get('password')
     name = data.get('name', 'Admin')
 

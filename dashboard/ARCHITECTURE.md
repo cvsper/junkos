@@ -1,8 +1,8 @@
-# JunkOS Dashboard Architecture
+# Umuve Dashboard Architecture
 
 ## Overview
 
-The JunkOS Dashboard is a modern React-based admin panel for managing junk removal operations. It provides real-time job tracking, driver dispatch, scheduling, and analytics capabilities.
+The Umuve Dashboard is a modern React-based admin panel for managing junk removal operations. It provides real-time job tracking, driver dispatch, scheduling, and analytics capabilities.
 
 ## Technology Stack
 

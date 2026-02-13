@@ -1,6 +1,6 @@
 //
 //  ProfileView.swift
-//  JunkOS
+//  Umuve
 //
 //  Profile screen with settings, reviews, and legal links.
 //
@@ -9,33 +9,33 @@ import SwiftUI
 
 struct ProfileView: View {
     @State private var userName = "Guest User"
-    @State private var userEmail = "guest@junkos.com"
+    @State private var userEmail = "guest@goumuve.com"
 
     var body: some View {
         ScrollView {
-            VStack(spacing: JunkSpacing.xlarge) {
+            VStack(spacing: UmuveSpacing.xlarge) {
                 userInfoSection
                 settingsSection
                 reviewSection
                 aboutLegalSection
             }
-            .padding(.horizontal, JunkSpacing.large)
-            .padding(.bottom, JunkSpacing.xxlarge)
+            .padding(.horizontal, UmuveSpacing.large)
+            .padding(.bottom, UmuveSpacing.xxlarge)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.junkBackground.ignoresSafeArea())
+        .background(Color.umuveBackground.ignoresSafeArea())
         .navigationTitle("Profile")
         .navigationBarTitleDisplayMode(.large)
     }
 
     // MARK: - User Info Section
     private var userInfoSection: some View {
-        VStack(spacing: JunkSpacing.normal) {
+        VStack(spacing: UmuveSpacing.normal) {
             ZStack {
                 Circle()
                     .fill(
                         LinearGradient(
-                            colors: [Color.junkPrimary, Color.junkPrimaryDark],
+                            colors: [Color.umuvePrimary, Color.umuvePrimaryDark],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
@@ -48,61 +48,61 @@ struct ProfileView: View {
             }
 
             Text(userName)
-                .font(JunkTypography.h2Font)
-                .foregroundColor(.junkText)
+                .font(UmuveTypography.h2Font)
+                .foregroundColor(.umuveText)
 
             Text(userEmail)
-                .font(JunkTypography.bodySmallFont)
-                .foregroundColor(.junkTextMuted)
+                .font(UmuveTypography.bodySmallFont)
+                .foregroundColor(.umuveTextMuted)
 
             Button(action: {}) {
                 Text("Edit Profile")
-                    .font(JunkTypography.captionFont)
-                    .foregroundColor(.junkPrimary)
-                    .padding(.horizontal, JunkSpacing.large)
-                    .padding(.vertical, JunkSpacing.small)
-                    .background(Color.junkPrimary.opacity(0.1))
+                    .font(UmuveTypography.captionFont)
+                    .foregroundColor(.umuvePrimary)
+                    .padding(.horizontal, UmuveSpacing.large)
+                    .padding(.vertical, UmuveSpacing.small)
+                    .background(Color.umuvePrimary.opacity(0.1))
                     .clipShape(Capsule())
             }
         }
         .frame(maxWidth: .infinity)
-        .padding(JunkSpacing.xlarge)
+        .padding(UmuveSpacing.xlarge)
         .background(Color.white)
-        .clipShape(RoundedRectangle(cornerRadius: JunkRadius.lg))
+        .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.lg))
         .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
-        .padding(.top, JunkSpacing.normal)
+        .padding(.top, UmuveSpacing.normal)
     }
 
     // MARK: - Settings Section
     private var settingsSection: some View {
-        VStack(alignment: .leading, spacing: JunkSpacing.normal) {
+        VStack(alignment: .leading, spacing: UmuveSpacing.normal) {
             Text("App Settings")
-                .font(JunkTypography.h2Font)
-                .foregroundColor(.junkText)
+                .font(UmuveTypography.h2Font)
+                .foregroundColor(.umuveText)
 
             VStack(spacing: 0) {
                 SettingsRow(icon: "bell.fill", title: "Notifications", color: .categoryYellow, action: {})
                 Divider().padding(.leading, 50)
                 SettingsRow(icon: "location.fill", title: "Location Services", color: .categoryBlue, action: {})
                 Divider().padding(.leading, 50)
-                SettingsRow(icon: "creditcard.fill", title: "Payment Methods", color: .junkPrimary, action: {})
+                SettingsRow(icon: "creditcard.fill", title: "Payment Methods", color: .umuvePrimary, action: {})
                 Divider().padding(.leading, 50)
                 SettingsRow(icon: "globe", title: "Language", color: .categoryPurple, action: {})
             }
             .background(Color.white)
-            .clipShape(RoundedRectangle(cornerRadius: JunkRadius.lg))
+            .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.lg))
             .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
         }
     }
 
     // MARK: - Review Section
     private var reviewSection: some View {
-        VStack(alignment: .leading, spacing: JunkSpacing.normal) {
+        VStack(alignment: .leading, spacing: UmuveSpacing.normal) {
             Text("Review Us On")
-                .font(JunkTypography.h2Font)
-                .foregroundColor(.junkText)
+                .font(UmuveTypography.h2Font)
+                .foregroundColor(.umuveText)
 
-            VStack(spacing: JunkSpacing.small) {
+            VStack(spacing: UmuveSpacing.small) {
                 ReviewPlatformRow(platform: "Google", icon: "magnifyingglass", rating: "4.9", url: "https://google.com")
                 ReviewPlatformRow(platform: "App Store", icon: "apple.logo", rating: "4.8", url: "https://apps.apple.com")
                 ReviewPlatformRow(platform: "BBB", icon: "shield.checkered", rating: "A+", url: "https://bbb.org")
@@ -114,10 +114,10 @@ struct ProfileView: View {
 
     // MARK: - About & Legal Section
     private var aboutLegalSection: some View {
-        VStack(alignment: .leading, spacing: JunkSpacing.normal) {
+        VStack(alignment: .leading, spacing: UmuveSpacing.normal) {
             Text("About & Legal")
-                .font(JunkTypography.h2Font)
-                .foregroundColor(.junkText)
+                .font(UmuveTypography.h2Font)
+                .foregroundColor(.umuveText)
 
             VStack(spacing: 0) {
                 AboutRow(icon: "info.circle.fill", title: "About Us", action: {})
@@ -131,7 +131,7 @@ struct ProfileView: View {
                 AboutRow(icon: "envelope.fill", title: "Contact Us", action: {})
             }
             .background(Color.white)
-            .clipShape(RoundedRectangle(cornerRadius: JunkRadius.lg))
+            .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.lg))
             .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
         }
     }
@@ -146,7 +146,7 @@ struct SettingsRow: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: JunkSpacing.normal) {
+            HStack(spacing: UmuveSpacing.normal) {
                 ZStack {
                     Circle()
                         .fill(color.opacity(0.15))
@@ -158,16 +158,16 @@ struct SettingsRow: View {
                 }
 
                 Text(title)
-                    .font(JunkTypography.bodyFont)
-                    .foregroundColor(.junkText)
+                    .font(UmuveTypography.bodyFont)
+                    .foregroundColor(.umuveText)
 
                 Spacer()
 
                 Image(systemName: "chevron.right")
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(.junkTextTertiary)
+                    .foregroundColor(.umuveTextTertiary)
             }
-            .padding(JunkSpacing.normal)
+            .padding(UmuveSpacing.normal)
         }
         .buttonStyle(.plain)
     }
@@ -186,29 +186,29 @@ struct ReviewPlatformRow: View {
                 UIApplication.shared.open(url)
             }
         }) {
-            HStack(spacing: JunkSpacing.normal) {
+            HStack(spacing: UmuveSpacing.normal) {
                 ZStack {
                     Circle()
-                        .fill(Color.junkPrimary.opacity(0.1))
+                        .fill(Color.umuvePrimary.opacity(0.1))
                         .frame(width: 36, height: 36)
 
                     Image(systemName: icon)
                         .font(.system(size: 16))
-                        .foregroundColor(.junkPrimary)
+                        .foregroundColor(.umuvePrimary)
                 }
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(platform)
-                        .font(JunkTypography.bodyFont.weight(.semibold))
-                        .foregroundColor(.junkText)
+                        .font(UmuveTypography.bodyFont.weight(.semibold))
+                        .foregroundColor(.umuveText)
 
                     HStack(spacing: 4) {
                         Image(systemName: "star.fill")
                             .font(.system(size: 11))
                             .foregroundColor(.categoryYellow)
                         Text(rating)
-                            .font(JunkTypography.captionFont)
-                            .foregroundColor(.junkTextMuted)
+                            .font(UmuveTypography.captionFont)
+                            .foregroundColor(.umuveTextMuted)
                     }
                 }
 
@@ -216,11 +216,11 @@ struct ReviewPlatformRow: View {
 
                 Image(systemName: "arrow.up.right")
                     .font(.system(size: 13))
-                    .foregroundColor(.junkTextTertiary)
+                    .foregroundColor(.umuveTextTertiary)
             }
-            .padding(JunkSpacing.normal)
+            .padding(UmuveSpacing.normal)
             .background(Color.white)
-            .clipShape(RoundedRectangle(cornerRadius: JunkRadius.md))
+            .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.md))
             .shadow(color: .black.opacity(0.04), radius: 2, x: 0, y: 1)
         }
         .buttonStyle(.plain)
@@ -235,23 +235,23 @@ struct AboutRow: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: JunkSpacing.normal) {
+            HStack(spacing: UmuveSpacing.normal) {
                 Image(systemName: icon)
                     .font(.system(size: 18))
-                    .foregroundColor(.junkPrimary)
+                    .foregroundColor(.umuvePrimary)
                     .frame(width: 32)
 
                 Text(title)
-                    .font(JunkTypography.bodyFont)
-                    .foregroundColor(.junkText)
+                    .font(UmuveTypography.bodyFont)
+                    .foregroundColor(.umuveText)
 
                 Spacer()
 
                 Image(systemName: "chevron.right")
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(.junkTextTertiary)
+                    .foregroundColor(.umuveTextTertiary)
             }
-            .padding(JunkSpacing.normal)
+            .padding(UmuveSpacing.normal)
         }
         .buttonStyle(.plain)
     }

@@ -1,6 +1,6 @@
 //
 //  InviteCodeStepView.swift
-//  JunkOS Driver
+//  Umuve Pro
 //
 //  Optional invite code field shown before the truck type selection step.
 //

@@ -1,8 +1,8 @@
-# JunkOS Dashboard - Project Summary
+# Umuve Dashboard - Project Summary
 
 ## ✅ Project Complete
 
-A fully-featured operator dashboard for JunkOS junk removal operations has been built and is ready for use.
+A fully-featured operator dashboard for Umuve junk removal operations has been built and is ready for use.
 
 ## 📦 What Was Built
 
@@ -219,8 +219,8 @@ npm run dev
 ```
 
 ### Login Credentials
-- **Admin:** admin@junkos.com / admin123
-- **Dispatcher:** dispatcher@junkos.com / dispatch123
+- **Admin:** admin@goumuve.com / admin123
+- **Dispatcher:** dispatcher@goumuve.com / dispatch123
 
 ### Build for Production
 ```bash
@@ -389,7 +389,7 @@ npm audit fix
 
 ## 🎉 Ready to Use!
 
-The JunkOS Dashboard is complete and ready for:
+The Umuve Dashboard is complete and ready for:
 - ✅ Development testing
 - ✅ Backend integration
 - ✅ User acceptance testing

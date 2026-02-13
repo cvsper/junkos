@@ -1,6 +1,6 @@
 # TestFlight Setup Guide - Complete Walkthrough
 
-**App:** JunkOS  
+**App:** Umuve  
 **Version:** 1.0.0 (Build 1)  
 **Last Updated:** February 7, 2026
 
@@ -32,7 +32,7 @@ xcodebuild -project JunkOS.xcodeproj -showBuildSettings | grep -E "PRODUCT_BUNDL
 ```
 
 **Current Configuration:**
-- Bundle ID: `com.junkos.JunkOS`
+- Bundle ID: `com.goumuve.app`
 - Marketing Version: `1.0`
 - Build Number: `1`
 
@@ -40,7 +40,7 @@ xcodebuild -project JunkOS.xcodeproj -showBuildSettings | grep -E "PRODUCT_BUNDL
 
 Your Info.plist should contain:
 
-- ✅ `CFBundleDisplayName` = "JunkOS"
+- ✅ `CFBundleDisplayName` = "Umuve"
 - ✅ `CFBundleShortVersionString` = "1.0"
 - ✅ `CFBundleVersion` = "1"
 - ✅ `NSPhotoLibraryUsageDescription` (for photo picker)
@@ -51,10 +51,10 @@ Your Info.plist should contain:
 
 ```bash
 # Check for app icon
-ls -la JunkOS/Assets.xcassets/AppIcon.appiconset/
+ls -la Umuve/Assets.xcassets/AppIcon.appiconset/
 
 # Verify launch screen
-ls -la JunkOS/LaunchScreen.storyboard || echo "Using UILaunchScreen (iOS 14+)"
+ls -la Umuve/LaunchScreen.storyboard || echo "Using UILaunchScreen (iOS 14+)"
 ```
 
 Required assets:
@@ -67,10 +67,10 @@ Required assets:
 ```bash
 # Clean build folder
 cd ~/Documents/programs/webapps/junkos/JunkOS-Clean
-xcodebuild clean -project JunkOS.xcodeproj -scheme JunkOS
+xcodebuild clean -project JunkOS.xcodeproj -scheme Umuve
 
 # Test build for Release configuration
-xcodebuild -project JunkOS.xcodeproj -scheme JunkOS -configuration Release -sdk iphoneos CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
+xcodebuild -project JunkOS.xcodeproj -scheme Umuve -configuration Release -sdk iphoneos CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
 ```
 
 Build should succeed with:
@@ -130,7 +130,7 @@ Xcode manages certificates and profiles automatically.
 
 2. **Select project** in Navigator (blue icon at top)
 
-3. **Select JunkOS target** (not the project)
+3. **Select Umuve target** (not the project)
 
 4. **Go to "Signing & Capabilities" tab**
 
@@ -142,8 +142,8 @@ Xcode manages certificates and profiles automatically.
    - If not listed, click "Add Account..." and sign in
 
 7. **Verify Bundle Identifier:**
-   - Should show: `com.junkos.JunkOS`
-   - If you want to change it to `com.junkos.app`, update it here
+   - Should show: `com.goumuve.app`
+   - If you want to change it to `com.goumuve.com`, update it here
 
 8. **Check signing status:**
    - Should show green checkmark
@@ -181,14 +181,14 @@ For more control over certificates and profiles.
 
 **Platforms:** iOS
 
-**Name:** JunkOS
+**Name:** Umuve
 - Must be unique in the App Store
 - Max 30 characters
 - Cannot include "Apple" or trademarked terms
 
 **Primary Language:** English (U.S.)
 
-**Bundle ID:** Select `com.junkos.JunkOS` (or your chosen bundle ID)
+**Bundle ID:** Select `com.goumuve.app` (or your chosen bundle ID)
 - Must match your Xcode project exactly
 - Cannot be changed after submission
 
@@ -247,7 +247,7 @@ Click "Edit" next to Age Rating:
 **Quick Options:**
 
 1. **Create your own page:**
-   - Host at `https://junkos.app/privacy`
+   - Host at `https://goumuve.com/privacy`
    - Must be publicly accessible
    - See [Privacy Policy Template](#privacy-policy-template) below
 
@@ -265,14 +265,14 @@ Click "Edit" next to Age Rating:
 **Privacy Policy URL:** Add to App Store Connect:
 - Go to App Information
 - Scroll to "Privacy Policy URL"
-- Enter: `https://junkos.app/privacy` (or your URL)
+- Enter: `https://goumuve.com/privacy` (or your URL)
 - Click "Save"
 
 ### Step 6: Support Information
 
-**Support URL:** https://junkos.app/support (optional but recommended)
+**Support URL:** https://goumuve.com/support (optional but recommended)
 
-**Marketing URL:** https://junkos.app (optional)
+**Marketing URL:** https://goumuve.com (optional)
 
 **Copyright:** 2026 [Your Name or Company]
 
@@ -304,7 +304,7 @@ Click "Edit" next to Age Rating:
 
 **To increment build:**
 1. Select project in Navigator
-2. Select JunkOS target
+2. Select Umuve target
 3. Go to "General" tab
 4. Update "Build" number (e.g., 1 → 2)
 
@@ -387,7 +387,7 @@ agvtool next-version -all  # Increments build number
 **In App Store Connect:**
 
 1. Go to: https://appstoreconnect.apple.com
-2. Click "My Apps" → "JunkOS"
+2. Click "My Apps" → "Umuve"
 3. Click "TestFlight" tab
 4. Under "iOS Builds" section, you'll see:
    - **Processing:** Yellow warning icon (10-30 minutes)
@@ -411,7 +411,7 @@ agvtool next-version -all  # Increments build number
 
 Once processing is complete:
 
-1. **Go to App Store Connect** → **My Apps** → **JunkOS**
+1. **Go to App Store Connect** → **My Apps** → **Umuve**
 2. **Click "TestFlight" tab**
 3. **You should see your build** under "iOS Builds"
 
@@ -427,7 +427,7 @@ Once processing is complete:
 
 **Q1: Is your app designed to use cryptography or does it contain or incorporate cryptography?**
 - **Answer: NO** (unless you're using encryption beyond standard HTTPS)
-- JunkOS uses standard HTTPS which is exempt
+- Umuve uses standard HTTPS which is exempt
 
 **Result:** Compliance completed automatically
 
@@ -444,7 +444,7 @@ Once processing is complete:
 
 **What to Test (Beta App Description):**
 ```
-🎉 Welcome to JunkOS Beta!
+🎉 Welcome to Umuve Beta!
 
 This is our MVP (Minimum Viable Product) to validate the concept and gather feedback.
 
@@ -480,13 +480,13 @@ Thank you for being an early tester! 🙏
 ```
 
 3. **Feedback Email:** (Your email where tester feedback is sent)
-   - Enter: `beta@junkos.app` or your email
+   - Enter: `beta@goumuve.com` or your email
 
 4. **Click "Save"**
 
 ### Step 4: App Clip (if applicable)
 
-**Skip this** - JunkOS doesn't use App Clips
+**Skip this** - Umuve doesn't use App Clips
 
 ---
 
@@ -665,16 +665,16 @@ Thank you for being an early tester! 🙏
 
 ## Privacy Policy Template
 
-**Minimum viable privacy policy for JunkOS:**
+**Minimum viable privacy policy for Umuve:**
 
 ```markdown
-# Privacy Policy for JunkOS
+# Privacy Policy for Umuve
 
 **Last Updated:** February 7, 2026
 
 ## Introduction
 
-JunkOS ("we", "our", "us") respects your privacy. This policy describes how we collect, use, and share information when you use our mobile application.
+Umuve ("we", "our", "us") respects your privacy. This policy describes how we collect, use, and share information when you use our mobile application.
 
 ## Information We Collect
 
@@ -713,7 +713,7 @@ You may:
 
 ## Contact Us
 
-Email: privacy@junkos.app
+Email: privacy@goumuve.com
 Address: [Your Business Address]
 
 ## Changes to This Policy
@@ -722,7 +722,7 @@ We may update this policy. Changes will be posted with a new "Last Updated" date
 ```
 
 **Host this on:**
-- Your website (https://junkos.app/privacy)
+- Your website (https://goumuve.com/privacy)
 - GitHub Pages (free)
 - Notion (free, public page)
 
@@ -780,6 +780,6 @@ After following this guide:
 
 ---
 
-**Questions?** Email: support@junkos.app
+**Questions?** Email: support@goumuve.com
 
 **Status:** ✅ Ready to deploy

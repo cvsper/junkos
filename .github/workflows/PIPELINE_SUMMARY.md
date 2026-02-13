@@ -1,8 +1,8 @@
-# JunkOS CI/CD Pipeline - Implementation Summary
+# Umuve CI/CD Pipeline - Implementation Summary
 
 ## ✅ What Was Built
 
-A complete, production-ready CI/CD pipeline for JunkOS with automated testing, security scanning, and safe deployment strategies.
+A complete, production-ready CI/CD pipeline for Umuve with automated testing, security scanning, and safe deployment strategies.
 
 ## 📁 Files Created
 

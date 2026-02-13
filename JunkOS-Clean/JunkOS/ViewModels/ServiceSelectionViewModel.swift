@@ -1,6 +1,6 @@
 //
 //  ServiceSelectionViewModel.swift
-//  JunkOS
+//  Umuve
 //
 //  ViewModel for ServiceSelectionView
 //

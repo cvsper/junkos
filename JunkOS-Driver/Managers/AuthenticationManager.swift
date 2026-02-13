@@ -1,6 +1,6 @@
 //
 //  AuthenticationManager.swift
-//  JunkOS Driver
+//  Umuve Pro
 //
 //  Manages driver authentication state — login, signup, Apple Sign In.
 //  Stores JWT in Keychain for persistence. Uses async/await.

@@ -1,6 +1,6 @@
 //
 //  DashboardViewModel.swift
-//  JunkOS Driver
+//  Umuve Pro
 //
 //  Home screen logic: online toggle, today stats, active job.
 //

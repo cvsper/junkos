@@ -25,7 +25,7 @@
 │      │   🚛    │        │     with shadow
 │      └─────────┘        │
 │                         │
-│       JunkOS            │  ← Large title (48px)
+│       Umuve            │  ← Large title (48px)
 │                         │
 │  ╔═══════════════════╗  │  ← Gradient badge
 │  ║ Book junk removal ║  │
@@ -494,7 +494,7 @@ White (#FFFFFF)      → Cards, inputs, surfaces
 
 ### Typography Scale
 ```
-48px → Welcome title (JunkOS)
+48px → Welcome title (Umuve)
 28px → Screen titles
 20px → Section headings, card titles
 16-18px → Body text, button labels

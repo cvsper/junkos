@@ -1,6 +1,6 @@
-# JunkOS iOS App Icon Assets
+# Umuve iOS App Icon Assets
 
-Complete icon package for JunkOS iOS app with design specs, generation tools, and implementation guides.
+Complete icon package for Umuve iOS app with design specs, generation tools, and implementation guides.
 
 ## 📦 Package Contents
 
@@ -121,7 +121,7 @@ Detailed instructions in `icon-generation-guide.md` (search for "Adding to Xcode
 To create launch screen:
 1. Read `splash-screen-spec.md`
 2. Create `LaunchScreen.storyboard` in Xcode
-3. Add app icon image (160pt) + "JunkOS" text
+3. Add app icon image (160pt) + "Umuve" text
 4. Use same gradient background
 
 Time estimate: 20-40 minutes

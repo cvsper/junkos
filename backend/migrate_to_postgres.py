@@ -14,7 +14,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-def connect_sqlite(db_path='junkos.db'):
+def connect_sqlite(db_path='umuve.db'):
     """Connect to SQLite database"""
     if not os.path.exists(db_path):
         print(f"❌ SQLite database not found: {db_path}")
@@ -130,10 +130,10 @@ def verify_migration(sqlite_conn, postgres_conn, table_name):
 
 
 def main():
-    print("🚀 JunkOS Database Migration: SQLite → PostgreSQL\n")
+    print("🚀 Umuve Database Migration: SQLite → PostgreSQL\n")
     
     # Get database path
-    db_path = os.environ.get('DATABASE_PATH', 'junkos.db')
+    db_path = os.environ.get('DATABASE_PATH', 'umuve.db')
     
     # Connect to databases
     print("📡 Connecting to databases...")

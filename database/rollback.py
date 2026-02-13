@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-JunkOS Database Rollback Tool
+Umuve Database Rollback Tool
 ==============================
 Rollback the last applied migration or rollback to a specific version.
 
@@ -21,7 +21,7 @@ import re
 
 # Configuration
 MIGRATIONS_DIR = Path(__file__).parent / "migrations"
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres@localhost/junkos")
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres@localhost/umuve")
 
 
 class RollbackManager:
@@ -249,7 +249,7 @@ class RollbackManager:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="JunkOS Database Rollback Tool",
+        description="Umuve Database Rollback Tool",
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
     

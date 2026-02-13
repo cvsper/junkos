@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Fix JunkOS Xcode project by:
+Fix Umuve Xcode project by:
 1. Moving component files from Resources to Sources build phase
 2. Adding proper group structure for Components subdirectories
 """

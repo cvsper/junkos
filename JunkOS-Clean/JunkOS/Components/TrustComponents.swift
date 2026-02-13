@@ -1,6 +1,6 @@
 //
 //  TrustComponents.swift
-//  JunkOS
+//  Umuve
 //
 //  Trust badges, reviews, and social proof components
 //
@@ -57,18 +57,18 @@ struct ReviewCard: View {
     @Environment(\.dynamicTypeSize) var dynamicTypeSize
     
     var body: some View {
-        JunkCard {
-            VStack(alignment: .leading, spacing: JunkSpacing.medium) {
+        UmuveCard {
+            VStack(alignment: .leading, spacing: UmuveSpacing.medium) {
                 // Header with name and rating
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(review.name)
-                            .font(JunkTypography.bodyFont.weight(.semibold))
-                            .foregroundColor(.junkText)
+                            .font(UmuveTypography.bodyFont.weight(.semibold))
+                            .foregroundColor(.umuveText)
                         
                         Text("\(review.location) • \(review.date)")
-                            .font(JunkTypography.smallFont)
-                            .foregroundColor(.junkTextMuted)
+                            .font(UmuveTypography.smallFont)
+                            .foregroundColor(.umuveTextMuted)
                     }
                     
                     Spacer()
@@ -78,28 +78,28 @@ struct ReviewCard: View {
                         ForEach(0..<5) { index in
                             Image(systemName: index < review.rating ? "star.fill" : "star")
                                 .font(.system(size: 14))
-                                .foregroundColor(index < review.rating ? .yellow : .junkBorder)
+                                .foregroundColor(index < review.rating ? .yellow : .umuveBorder)
                         }
                     }
                 }
                 
                 // Comment
                 Text(review.comment)
-                    .font(JunkTypography.bodySmallFont)
-                    .foregroundColor(.junkText)
+                    .font(UmuveTypography.bodySmallFont)
+                    .foregroundColor(.umuveText)
                     .lineLimit(3)
                 
                 // Verified badge
                 HStack(spacing: 4) {
                     Image(systemName: "checkmark.seal.fill")
                         .font(.system(size: 12))
-                        .foregroundColor(.junkCTA)
+                        .foregroundColor(.umuveCTA)
                     Text("Verified Customer")
-                        .font(JunkTypography.smallFont)
-                        .foregroundColor(.junkTextMuted)
+                        .font(UmuveTypography.smallFont)
+                        .foregroundColor(.umuveTextMuted)
                 }
             }
-            .padding(JunkSpacing.normal)
+            .padding(UmuveSpacing.normal)
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(review.rating) star review from \(review.name). \(review.comment)")
@@ -115,13 +115,13 @@ struct ReviewsSection: View {
     }
     
     var body: some View {
-        VStack(alignment: .leading, spacing: JunkSpacing.normal) {
+        VStack(alignment: .leading, spacing: UmuveSpacing.normal) {
             // Section header
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("What Our Customers Say")
-                        .font(JunkTypography.h3Font)
-                        .foregroundColor(.junkText)
+                        .font(UmuveTypography.h3Font)
+                        .foregroundColor(.umuveText)
                     
                     HStack(spacing: 4) {
                         HStack(spacing: 2) {
@@ -132,17 +132,17 @@ struct ReviewsSection: View {
                             }
                         }
                         Text("4.9/5")
-                            .font(JunkTypography.captionFont)
-                            .foregroundColor(.junkTextMuted)
+                            .font(UmuveTypography.captionFont)
+                            .foregroundColor(.umuveTextMuted)
                         Text("(2,547 reviews)")
-                            .font(JunkTypography.smallFont)
-                            .foregroundColor(.junkTextMuted)
+                            .font(UmuveTypography.smallFont)
+                            .foregroundColor(.umuveTextMuted)
                     }
                 }
                 
                 Spacer()
             }
-            .padding(.bottom, JunkSpacing.small)
+            .padding(.bottom, UmuveSpacing.small)
             
             // Reviews
             ForEach(reviews) { review in
@@ -160,17 +160,17 @@ struct TrustBadge: View {
     let color: Color
     
     var body: some View {
-        HStack(spacing: JunkSpacing.small) {
+        HStack(spacing: UmuveSpacing.small) {
             Image(systemName: icon)
                 .font(.system(size: 20))
                 .foregroundColor(color)
             
             Text(text)
-                .font(JunkTypography.captionFont)
-                .foregroundColor(.junkText)
+                .font(UmuveTypography.captionFont)
+                .foregroundColor(.umuveText)
         }
-        .padding(.horizontal, JunkSpacing.medium)
-        .padding(.vertical, JunkSpacing.small)
+        .padding(.horizontal, UmuveSpacing.medium)
+        .padding(.vertical, UmuveSpacing.small)
         .background(color.opacity(0.1))
         .cornerRadius(20)
         .accessibilityElement(children: .combine)
@@ -182,13 +182,13 @@ struct TrustBadge: View {
 struct TrustBadgesBar: View {
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: JunkSpacing.medium) {
-                TrustBadge(icon: "shield.checkered", text: "Licensed & Insured", color: .junkCTA)
+            HStack(spacing: UmuveSpacing.medium) {
+                TrustBadge(icon: "shield.checkered", text: "Licensed & Insured", color: .umuveCTA)
                 TrustBadge(icon: "star.fill", text: "5-Star Rated", color: .yellow)
                 TrustBadge(icon: "leaf.fill", text: "Eco-Friendly", color: .green)
-                TrustBadge(icon: "clock.fill", text: "Same-Day Available", color: .junkPrimary)
+                TrustBadge(icon: "clock.fill", text: "Same-Day Available", color: .umuvePrimary)
             }
-            .padding(.horizontal, JunkSpacing.large)
+            .padding(.horizontal, UmuveSpacing.large)
         }
         .accessibilityElement(children: .contain)
     }
@@ -201,25 +201,25 @@ struct LiveBookingsCounter: View {
     @Environment(\.accessibilityReduceMotion) var reduceMotion
     
     var body: some View {
-        HStack(spacing: JunkSpacing.small) {
+        HStack(spacing: UmuveSpacing.small) {
             // Pulse indicator
             Circle()
-                .fill(Color.junkCTA)
+                .fill(Color.umuveCTA)
                 .frame(width: 8, height: 8)
                 .overlay(
                     Circle()
-                        .fill(Color.junkCTA.opacity(0.3))
+                        .fill(Color.umuveCTA.opacity(0.3))
                         .scaleEffect(isAnimating ? 2 : 1)
                         .opacity(isAnimating ? 0 : 1)
                 )
             
             Text("\(count) bookings today")
-                .font(JunkTypography.captionFont)
-                .foregroundColor(.junkTextMuted)
+                .font(UmuveTypography.captionFont)
+                .foregroundColor(.umuveTextMuted)
         }
-        .padding(.horizontal, JunkSpacing.normal)
-        .padding(.vertical, JunkSpacing.small)
-        .background(Color.junkWhite)
+        .padding(.horizontal, UmuveSpacing.normal)
+        .padding(.vertical, UmuveSpacing.small)
+        .background(Color.umuveWhite)
         .cornerRadius(20)
         .shadow(color: .black.opacity(0.06), radius: 4, x: 0, y: 2)
         .onAppear {
@@ -263,6 +263,6 @@ struct TrustComponents_Previews: PreviewProvider {
             }
             .padding()
         }
-        .background(Color.junkBackground)
+        .background(Color.umuveBackground)
     }
 }

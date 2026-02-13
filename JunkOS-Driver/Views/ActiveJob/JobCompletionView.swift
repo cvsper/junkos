@@ -1,6 +1,6 @@
 //
 //  JobCompletionView.swift
-//  JunkOS Driver
+//  Umuve Pro
 //
 //  Celebration screen after completing a job.
 //

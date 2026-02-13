@@ -1,6 +1,6 @@
 //
 //  AccessibilityHelpers.swift
-//  JunkOS
+//  Umuve
 //
 //  Accessibility helpers and view modifiers
 //
@@ -118,7 +118,7 @@ struct AccessibilityHelpers_Previews: PreviewProvider {
             ) {
                 Text("Accessible Button")
                     .padding()
-                    .background(Color.junkPrimary)
+                    .background(Color.umuvePrimary)
                     .foregroundColor(.white)
                     .cornerRadius(8)
             }
@@ -128,7 +128,7 @@ struct AccessibilityHelpers_Previews: PreviewProvider {
             
             Text("With Haptic")
                 .padding()
-                .background(Color.junkCTA)
+                .background(Color.umuveCTA)
                 .foregroundColor(.white)
                 .cornerRadius(8)
                 .hapticFeedback(.medium)

@@ -1,5 +1,5 @@
 """
-JunkOS Background Scheduler
+Umuve Background Scheduler
 
 Runs periodic tasks:
 - Generate jobs from due recurring bookings (hourly)
@@ -93,7 +93,7 @@ def _send_pickup_reminders(app):
                     from notifications import send_email
                     from email_templates import pickup_reminder_html
                     html = pickup_reminder_html(user.name, job.id, job.address, date_str, time_str)
-                    send_email(user.email, "Reminder: Your JunkOS Pickup is Tomorrow!", html)
+                    send_email(user.email, "Reminder: Your Umuve Pickup is Tomorrow!", html)
 
                 # SMS reminder
                 if user.phone:

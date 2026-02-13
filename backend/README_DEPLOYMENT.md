@@ -1,4 +1,4 @@
-# 🚀 JunkOS Backend - Ready for Production Deployment
+# 🚀 Umuve Backend - Ready for Production Deployment
 
 ## ✅ Status: PRODUCTION READY
 
@@ -51,7 +51,7 @@ Your Flask backend has been fully prepared for production deployment with Postgr
 
 ### 1. Push to GitHub
 ```bash
-cd ~/Documents/programs/webapps/junkos/backend
+cd ~/Documents/programs/webapps/umuve/backend
 
 # Initialize and commit
 git init
@@ -60,14 +60,14 @@ git commit -m "Production-ready backend with PostgreSQL"
 
 # Create GitHub repo at: https://github.com/new
 # Then push:
-git remote add origin https://github.com/YOUR_USERNAME/junkos-backend.git
+git remote add origin https://github.com/YOUR_USERNAME/umuve-backend.git
 git push -u origin main
 ```
 
 ### 2. Deploy to Railway (Recommended)
 1. Go to [railway.app](https://railway.app)
 2. Click **"New Project"** → **"Deploy from GitHub repo"**
-3. Select `junkos-backend`
+3. Select `umuve-backend`
 4. Click **"+ New"** → **"Database"** → **"PostgreSQL"**
 5. Add environment variables in **Variables** tab:
    ```
@@ -86,12 +86,12 @@ python3 -c "import secrets; print('junkos-' + secrets.token_hex(16))"
 ```
 
 ### 4. Get Your Production URL
-Railway provides: `https://junkos-backend-production.up.railway.app`
+Railway provides: `https://umuve-backend-production.up.railway.app`
 
 ### 5. Update iOS App
 Edit `Config.swift` (line 16) with your actual Railway URL:
 ```swift
-return "https://junkos-backend-production.up.railway.app"
+return "https://umuve-backend-production.up.railway.app"
 ```
 
 ### 6. Test Your API
@@ -100,7 +100,7 @@ return "https://junkos-backend-production.up.railway.app"
 curl https://your-url.railway.app/api/health
 
 # Should return:
-# {"status":"healthy","service":"JunkOS API"}
+# {"status":"healthy","service":"Umuve API"}
 ```
 
 ---

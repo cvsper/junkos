@@ -1,4 +1,4 @@
-# Contributing to JunkOS Mobile
+# Contributing to Umuve Mobile
 
 Guidelines for contributing to the mobile app codebase.
 

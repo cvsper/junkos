@@ -1,6 +1,6 @@
 # TestFlight Troubleshooting Guide
 
-**App:** JunkOS  
+**App:** Umuve  
 **Last Updated:** February 7, 2026
 
 ---
@@ -80,7 +80,7 @@ security unlock-keychain ~/Library/Keychains/login.keychain-db
 
 **Symptoms:**
 ```
-Error: No profiles for 'com.junkos.JunkOS' were found
+Error: No profiles for 'com.goumuve.app' were found
 ```
 
 **Causes:**
@@ -103,12 +103,12 @@ Error: No profiles for 'com.junkos.JunkOS' were found
 **In Xcode:**
 1. **Select project → Target**
 2. **General tab**
-3. **Bundle Identifier:** Must be `com.junkos.JunkOS` (exact match)
+3. **Bundle Identifier:** Must be `com.goumuve.app` (exact match)
 
 **In Developer Portal:**
 1. **Go to:** https://developer.apple.com/account
 2. **Identifiers → App IDs**
-3. **Find:** `com.junkos.JunkOS`
+3. **Find:** `com.goumuve.app`
 4. **Verify it exists and matches**
 
 #### Solution 3: Recreate Provisioning Profile
@@ -230,14 +230,14 @@ cd ~/Documents/programs/webapps/junkos/JunkOS-Clean
 
 # Export IPA
 xcodebuild -exportArchive \
-  -archivePath ~/Library/Developer/Xcode/Archives/[DATE]/JunkOS.xcarchive \
-  -exportPath ~/Desktop/JunkOS-ipa \
+  -archivePath ~/Library/Developer/Xcode/Archives/[DATE]/Umuve.xcarchive \
+  -exportPath ~/Desktop/Umuve-ipa \
   -exportOptionsPlist exportOptions.plist
 
 # Upload via xcrun
 xcrun altool --upload-app \
   --type ios \
-  --file ~/Desktop/JunkOS-ipa/JunkOS.ipa \
+  --file ~/Desktop/Umuve-ipa/Umuve.ipa \
   --username your@email.com \
   --password "app-specific-password"
 ```
@@ -309,7 +309,7 @@ rm -rf ~/Library/Developer/Xcode/DerivedData
 
 # Clean project
 cd ~/Documents/programs/webapps/junkos/JunkOS-Clean
-xcodebuild clean -project JunkOS.xcodeproj -scheme JunkOS
+xcodebuild clean -project JunkOS.xcodeproj -scheme Umuve
 
 # Archive again
 ```
@@ -334,17 +334,17 @@ Bundle ID in Xcode doesn't match App Store Connect.
 
 **In Xcode:**
 - Project → Target → General → Bundle Identifier
-- Should be: `com.junkos.JunkOS`
+- Should be: `com.goumuve.app`
 
 **In App Store Connect:**
-- My Apps → JunkOS → App Information
+- My Apps → Umuve → App Information
 - Bundle ID should match exactly
 
 #### Solution 2: Create App Record First
 
 1. **Go to:** https://appstoreconnect.apple.com
 2. **My Apps → +  → New App**
-3. **Enter Bundle ID:** `com.junkos.JunkOS`
+3. **Enter Bundle ID:** `com.goumuve.app`
 4. **Create app**
 5. **Then upload build**
 
@@ -354,7 +354,7 @@ Bundle ID in Xcode doesn't match App Store Connect.
 
 **Symptoms:**
 ```
-The app name 'JunkOS' is already in use
+The app name 'Umuve' is already in use
 ```
 
 **Cause:**
@@ -363,9 +363,9 @@ Another app (yours or someone else's) is using that name.
 **Solutions:**
 
 1. **Try variations:**
-   - JunkOS Pro
-   - JunkOS: Junk Removal
-   - JunkOS - Tampa Bay
+   - Umuve Pro
+   - Umuve: Junk Removal
+   - Umuve - Tampa Bay
 
 2. **Check your other apps:**
    - You might have created it before
@@ -388,7 +388,7 @@ Another app (yours or someone else's) is using that name.
 2. **Click "Manage"** next to Missing Compliance
 3. **Answer questions:**
    - **Q:** "Is your app designed to use cryptography?"
-   - **A:** **NO** (for JunkOS using only standard HTTPS)
+   - **A:** **NO** (for Umuve using only standard HTTPS)
 4. **Auto-completes and warning disappears**
 
 **If you answered YES:**
@@ -415,7 +415,7 @@ Another app (yours or someone else's) is using that name.
 
 #### Solution 2: Check for Errors
 
-1. **Go to:** App Store Connect → My Apps → JunkOS → Activity
+1. **Go to:** App Store Connect → My Apps → Umuve → Activity
 2. **Look for error messages**
 3. **Check email** for rejection notices
 
@@ -713,8 +713,8 @@ Invalid Bundle Structure. The binary file is not permitted.
 
 ```bash
 # Check bundle contents
-cd ~/Library/Developer/Xcode/Archives/.../JunkOS.xcarchive
-find Products/Applications/JunkOS.app -type f
+cd ~/Library/Developer/Xcode/Archives/.../Umuve.xcarchive
+find Products/Applications/Umuve.app -type f
 
 # Look for:
 # - .sh scripts (shouldn't be there)
@@ -786,9 +786,9 @@ Privacy policy URL doesn't work or isn't detailed enough.
 
 **Solution:**
 
-1. **Verify URL works:** https://junkos.app/privacy
+1. **Verify URL works:** https://goumuve.com/privacy
    ```bash
-   curl -I https://junkos.app/privacy
+   curl -I https://goumuve.com/privacy
    # Should return 200 OK
    ```
 
@@ -821,8 +821,8 @@ Crashed Thread: 0
 
 Thread 0 Crashed:
 0   libswiftCore.dylib    0x00000001a9c8b3a0 _assertionFailure
-1   JunkOS                0x0000000102a8c480 BookingViewModel.submitBooking()
-2   JunkOS                0x0000000102a8c590 closure #1 in BookingView.body
+1   Umuve                0x0000000102a8c480 BookingViewModel.submitBooking()
+2   Umuve                0x0000000102a8c590 closure #1 in BookingView.body
 ```
 
 **Key information:**
@@ -926,7 +926,7 @@ Wait and try again later.
 rm -rf ~/Library/Developer/Xcode/DerivedData
 
 # Clear specific project
-rm -rf ~/Library/Developer/Xcode/DerivedData/JunkOS-*
+rm -rf ~/Library/Developer/Xcode/DerivedData/Umuve-*
 
 # In Xcode
 # Product → Clean Build Folder (⌘⇧K)
@@ -966,7 +966,7 @@ cd ~/Documents/programs/webapps/junkos/JunkOS-Clean
 
 # Build and save log
 xcodebuild -project JunkOS.xcodeproj \
-  -scheme JunkOS \
+  -scheme Umuve \
   -configuration Release \
   -destination 'generic/platform=iOS' \
   clean build 2>&1 | tee build.log
@@ -1035,17 +1035,17 @@ ls ~/Library/MobileDevice/Provisioning\ Profiles/
 agvtool next-version -all
 
 # Clean build
-xcodebuild clean -project JunkOS.xcodeproj -scheme JunkOS
+xcodebuild clean -project JunkOS.xcodeproj -scheme Umuve
 
 # Clear derived data
 rm -rf ~/Library/Developer/Xcode/DerivedData
 
 # Verify code signature
-codesign -vv -d /path/to/JunkOS.app
+codesign -vv -d /path/to/Umuve.app
 
 # Check app info
-/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" JunkOS/Info.plist
-/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" JunkOS/Info.plist
+/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" Umuve/Info.plist
+/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" Umuve/Info.plist
 ```
 
 ---
@@ -1057,7 +1057,7 @@ codesign -vv -d /path/to/JunkOS.app
 3. ✅ Search Apple Developer Forums
 4. ✅ Check Stack Overflow
 5. ✅ Contact Apple Developer Support
-6. ✅ Email: support@junkos.app
+6. ✅ Email: support@goumuve.com
 
 ---
 

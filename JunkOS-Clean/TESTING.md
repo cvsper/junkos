@@ -1,16 +1,16 @@
-# JunkOS Testing Infrastructure
+# Umuve Testing Infrastructure
 
-This document describes the testing setup for the JunkOS iOS app.
+This document describes the testing setup for the Umuve iOS app.
 
 ## Test Targets
 
-### JunkOSTests (Unit Tests)
-- **Bundle ID:** `com.junkos.app.tests`
+### UmuveTests (Unit Tests)
+- **Bundle ID:** `com.goumuve.com.tests`
 - **Purpose:** Unit tests for ViewModels, Models, and Utilities
 - **Framework:** XCTest
 
-### JunkOSUITests (UI Tests)
-- **Bundle ID:** `com.junkos.app.uitests`
+### UmuveUITests (UI Tests)
+- **Bundle ID:** `com.goumuve.com.uitests`
 - **Purpose:** End-to-end UI tests for user flows
 - **Framework:** XCTest + XCUITest
 
@@ -18,7 +18,7 @@ This document describes the testing setup for the JunkOS iOS app.
 
 ```
 JunkOS-Clean/
-├── JunkOSTests/
+├── UmuveTests/
 │   ├── Info.plist
 │   ├── Mocks/
 │   │   ├── MockLocationManager.swift
@@ -33,7 +33,7 @@ JunkOS-Clean/
 │       ├── PhotoUploadViewModelTests.swift
 │       └── ConfirmationViewModelTests.swift
 │
-└── JunkOSUITests/
+└── UmuveUITests/
     ├── Info.plist
     └── Tests/
         ├── BookingFlowUITests.swift
@@ -93,25 +93,25 @@ JunkOS-Clean/
 ```bash
 # Run all unit tests
 xcodebuild test \
-  -scheme JunkOS \
+  -scheme Umuve \
   -destination 'platform=iOS Simulator,name=iPhone 15,OS=17.0' \
-  -only-testing:JunkOSTests
+  -only-testing:UmuveTests
 
 # Run all UI tests
 xcodebuild test \
-  -scheme JunkOS \
+  -scheme Umuve \
   -destination 'platform=iOS Simulator,name=iPhone 15,OS=17.0' \
-  -only-testing:JunkOSUITests
+  -only-testing:UmuveUITests
 
 # Run specific test
 xcodebuild test \
-  -scheme JunkOS \
+  -scheme Umuve \
   -destination 'platform=iOS Simulator,name=iPhone 15,OS=17.0' \
-  -only-testing:JunkOSTests/AddressInputViewModelTests
+  -only-testing:UmuveTests/AddressInputViewModelTests
 
 # Run with coverage
 xcodebuild test \
-  -scheme JunkOS \
+  -scheme Umuve \
   -destination 'platform=iOS Simulator,name=iPhone 15,OS=17.0' \
   -enableCodeCoverage YES
 ```
@@ -119,7 +119,7 @@ xcodebuild test \
 ### Xcode
 
 1. Open `JunkOS.xcodeproj`
-2. Select the test target (JunkOSTests or JunkOSUITests)
+2. Select the test target (UmuveTests or UmuveUITests)
 3. Press `Cmd+U` to run all tests
 4. Use the Test Navigator (Cmd+6) to run individual tests
 
@@ -146,7 +146,7 @@ Tests are designed to run in CI environments:
 - name: Run Tests
   run: |
     xcodebuild test \
-      -scheme JunkOS \
+      -scheme Umuve \
       -destination 'platform=iOS Simulator,name=iPhone 15' \
       -enableCodeCoverage YES \
       -resultBundlePath ./test-results
@@ -158,7 +158,7 @@ Tests are designed to run in CI environments:
 
 ```swift
 import XCTest
-@testable import JunkOS
+@testable import Umuve
 
 @MainActor
 final class MyViewModelTests: XCTestCase {
@@ -239,7 +239,7 @@ The test files have been created but need to be added to the Xcode project file.
 ### Option 1: Xcode GUI
 1. Open `JunkOS.xcodeproj` in Xcode
 2. Right-click on the project navigator
-3. Select "Add Files to JunkOS..."
+3. Select "Add Files to Umuve..."
 4. Select the test files and choose the appropriate target
 
 ### Option 2: Command Line (recommended)

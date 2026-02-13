@@ -1,27 +1,33 @@
 import type { Metadata } from "next";
-import { Inter, Space_Grotesk } from "next/font/google";
+import { DM_Sans, Outfit, JetBrains_Mono } from "next/font/google";
 import "@/styles/globals.css";
 import { Analytics } from "@/components/analytics";
 import { PostHogProvider } from "@/components/providers/posthog-provider";
 
-const inter = Inter({
+const dmSans = DM_Sans({
   subsets: ["latin"],
-  variable: "--font-inter",
+  variable: "--font-dm-sans",
   display: "swap",
 });
 
-const spaceGrotesk = Space_Grotesk({
+const outfit = Outfit({
   subsets: ["latin"],
-  variable: "--font-space-grotesk",
+  variable: "--font-outfit",
   display: "swap",
 });
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://junkos.app";
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-jetbrains-mono",
+  display: "swap",
+});
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://goumuve.com";
 
 export const metadata: Metadata = {
   title: {
-    default: "JunkOS | Premium Junk Removal in South Florida",
-    template: "%s | JunkOS",
+    default: "Umuve | Premium Junk Removal in South Florida",
+    template: "%s | Umuve",
   },
   description:
     "Book professional junk removal in South Florida. Fast, reliable, affordable. Get instant quotes and real-time tracking.",
@@ -30,17 +36,17 @@ export const metadata: Metadata = {
     canonical: "/",
   },
   openGraph: {
-    title: "JunkOS | Premium Junk Removal in South Florida",
+    title: "Umuve | Premium Junk Removal in South Florida",
     description:
       "Book professional junk removal in South Florida. Fast, reliable, affordable. Get instant quotes and real-time tracking.",
-    siteName: "JunkOS",
+    siteName: "Umuve",
     type: "website",
     locale: "en_US",
     url: SITE_URL,
   },
   twitter: {
     card: "summary_large_image",
-    title: "JunkOS | Premium Junk Removal in South Florida",
+    title: "Umuve | Premium Junk Removal in South Florida",
     description:
       "Book professional junk removal in South Florida. Fast, reliable, affordable. Get instant quotes and real-time tracking.",
   },
@@ -63,7 +69,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${inter.variable} ${spaceGrotesk.variable}`}>
+    <html lang="en" className={`${dmSans.variable} ${outfit.variable} ${jetbrainsMono.variable}`}>
       <body className="font-sans antialiased bg-background text-foreground min-h-screen">
         <PostHogProvider>
           {children}

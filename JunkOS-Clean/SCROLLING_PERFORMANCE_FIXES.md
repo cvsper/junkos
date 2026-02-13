@@ -1,7 +1,7 @@
 # Scrolling Performance Fixes
 
 **Date:** 2026-02-07  
-**Objective:** Fix scrolling lag and stuttering in JunkOS iOS app  
+**Objective:** Fix scrolling lag and stuttering in Umuve iOS app  
 **Target:** 60 FPS smooth scrolling
 
 ## 🐛 Issues Diagnosed
@@ -177,14 +177,14 @@ ScrollView(.horizontal) {
 ## 🔧 Code Changes
 
 ### Modified Files
-1. `JunkOS/Views/ServiceSelectionView.swift`
+1. `Umuve/Views/ServiceSelectionView.swift`
    - VStack → LazyVStack
    - HStack → LazyHStack (horizontal scrolls)
    - Conditional shadows
    - Debounced state updates
    - Added `isScrolling` parameter to ServiceCard
 
-2. `JunkOS/Views/DateTimePickerView.swift`
+2. `Umuve/Views/DateTimePickerView.swift`
    - VStack → LazyVStack
    - Static date formatters (cached)
    - Removed DragGesture overhead

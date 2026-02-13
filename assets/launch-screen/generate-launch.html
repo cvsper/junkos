@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>JunkOS Launch Screen Generator</title>
+    <title>Umuve Launch Screen Generator</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'SF Pro', sans-serif;
@@ -58,26 +58,26 @@
 </head>
 <body>
     <div class="container">
-        <h1>🚛 JunkOS Launch Screen Generator</h1>
+        <h1>🚛 Umuve Launch Screen Generator</h1>
         <p style="color: #86868b;">Clean, branded splash screen for iOS</p>
         
         <div class="canvas-grid">
             <div class="canvas-item">
                 <div class="size-label">iPhone 16 Pro (1290×2796)</div>
                 <canvas id="launch16pro"></canvas>
-                <button onclick="downloadCanvas('launch16pro', 'junkos-launch-16pro.png')">Download iPhone 16 Pro</button>
+                <button onclick="downloadCanvas('launch16pro', 'umuve-launch-16pro.png')">Download iPhone 16 Pro</button>
             </div>
             
             <div class="canvas-item">
                 <div class="size-label">iPhone 15 Pro (1179×2556)</div>
                 <canvas id="launch15pro"></canvas>
-                <button onclick="downloadCanvas('launch15pro', 'junkos-launch-15pro.png')">Download iPhone 15 Pro</button>
+                <button onclick="downloadCanvas('launch15pro', 'umuve-launch-15pro.png')">Download iPhone 15 Pro</button>
             </div>
             
             <div class="canvas-item">
                 <div class="size-label">iPhone SE (750×1334)</div>
                 <canvas id="launchse"></canvas>
-                <button onclick="downloadCanvas('launchse', 'junkos-launch-se.png')">Download iPhone SE</button>
+                <button onclick="downloadCanvas('launchse', 'umuve-launch-se.png')">Download iPhone SE</button>
             </div>
         </div>
     </div>
@@ -85,7 +85,7 @@
     <script>
         const COLORS = {
             primary: '#6366F1',
-            cta: '#10B981',
+            cta: '#DC2626',
             white: '#FFFFFF',
             background: '#F5F3FF',
             text: '#1E1B4B'
@@ -175,7 +175,7 @@
             ctx.fillStyle = COLORS.text;
             ctx.font = `bold ${logoSize * 0.22}px -apple-system, SF Pro Display`;
             ctx.textAlign = 'center';
-            ctx.fillText('JunkOS', width / 2, nameY);
+            ctx.fillText('Umuve', width / 2, nameY);
             
             // Tagline
             const taglineY = nameY + logoSize * 0.15;

@@ -1,4 +1,4 @@
-name: JunkOS Test Suite
+name: Umuve Test Suite
 
 on:
   push:
@@ -15,9 +15,9 @@ jobs:
       postgres:
         image: postgres:15
         env:
-          POSTGRES_USER: junkos_test
+          POSTGRES_USER: umuve_test
           POSTGRES_PASSWORD: test_password
-          POSTGRES_DB: junkos_test
+          POSTGRES_DB: umuve_test
         ports:
           - 5432:5432
         options: >-
@@ -50,7 +50,7 @@ jobs:
       - name: Run backend tests
         working-directory: ./backend
         env:
-          DATABASE_URL: postgresql://junkos_test:test_password@localhost:5432/junkos_test
+          DATABASE_URL: postgresql://umuve_test:test_password@localhost:5432/umuve_test
           FLASK_ENV: testing
           SECRET_KEY: test-secret-key
         run: |
@@ -117,9 +117,9 @@ jobs:
       postgres:
         image: postgres:15
         env:
-          POSTGRES_USER: junkos_test
+          POSTGRES_USER: umuve_test
           POSTGRES_PASSWORD: test_password
-          POSTGRES_DB: junkos_test
+          POSTGRES_DB: umuve_test
         ports:
           - 5432:5432
         options: >-
@@ -160,7 +160,7 @@ jobs:
       - name: Start backend server
         working-directory: ./backend
         env:
-          DATABASE_URL: postgresql://junkos_test:test_password@localhost:5432/junkos_test
+          DATABASE_URL: postgresql://umuve_test:test_password@localhost:5432/umuve_test
           FLASK_ENV: testing
         run: |
           python run.py &

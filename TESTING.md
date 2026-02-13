@@ -1,6 +1,6 @@
-# JunkOS Testing Guide
+# Umuve Testing Guide
 
-Comprehensive testing setup for the JunkOS junk removal SaaS platform. This document covers backend tests, frontend tests, E2E tests, and CI/CD integration.
+Comprehensive testing setup for the Umuve junk removal SaaS platform. This document covers backend tests, frontend tests, E2E tests, and CI/CD integration.
 
 ## Table of Contents
 
@@ -15,7 +15,7 @@ Comprehensive testing setup for the JunkOS junk removal SaaS platform. This docu
 
 ## Overview
 
-JunkOS uses a multi-layered testing strategy:
+Umuve uses a multi-layered testing strategy:
 
 - **Backend (Python/Flask)**: pytest with fixtures and factories
 - **Frontend (React)**: Jest + React Testing Library
@@ -545,7 +545,7 @@ npx playwright test --screenshot=on
 
 ```bash
 # Check database connection
-psql -h localhost -U junkos_test -d junkos_test
+psql -h localhost -U umuve_test -d umuve_test
 
 # Reset test database
 cd backend && flask db upgrade
@@ -602,4 +602,4 @@ When adding new features:
 ---
 
 **Last Updated:** February 6, 2024  
-**Maintained by:** JunkOS Development Team
+**Maintained by:** Umuve Development Team

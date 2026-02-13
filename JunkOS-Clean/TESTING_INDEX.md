@@ -31,7 +31,7 @@
 
 ### Unit Tests (13 files, ~2,000 lines)
 ```
-JunkOSTests/
+UmuveTests/
 ├── Mocks/
 │   ├── MockAPIClient.swift
 │   └── MockLocationManager.swift
@@ -50,7 +50,7 @@ JunkOSTests/
 
 ### UI Tests (3 files, ~900 lines)
 ```
-JunkOSUITests/
+UmuveUITests/
 └── Tests/
     ├── BookingFlowUITests.swift
     ├── NavigationUITests.swift
@@ -247,7 +247,7 @@ All primary objectives achieved:
 ## 🙏 Acknowledgments
 
 **Testing & Polish by:** testing-polish subagent  
-**Project:** JunkOS iOS App  
+**Project:** Umuve iOS App  
 **Quality:** Production-ready  
 **Status:** ✅ COMPLETE
 

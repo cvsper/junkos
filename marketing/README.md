@@ -1,6 +1,6 @@
-# JunkOS Marketing Landing Page
+# Umuve Marketing Landing Page
 
-A high-converting, mobile-responsive marketing landing page for JunkOS - the modern operating system for junk removal businesses.
+A high-converting, mobile-responsive marketing landing page for Umuve - the modern operating system for junk removal businesses.
 
 ## 📁 Files
 
@@ -36,8 +36,8 @@ A high-converting, mobile-responsive marketing landing page for JunkOS - the mod
 - ✅ Descriptive alt text placeholders
 
 ### Design System
-Following JunkOS design system specifications:
-- **Colors**: Primary #6366F1, CTA #10B981, Background #F5F3FF
+Following Umuve design system specifications:
+- **Colors**: Primary #6366F1, CTA #DC2626, Background #F5F3FF
 - **Fonts**: Poppins (headings), Open Sans (body)
 - **Spacing**: Consistent with design system guidelines
 - **Animations**: 200-300ms transitions, smooth interactions
@@ -71,7 +71,7 @@ Update CSS variables in `styles.css`:
 ```css
 :root {
     --primary: #6366F1;
-    --cta: #10B981;
+    --cta: #DC2626;
     /* ... */
 }
 ```
@@ -83,7 +83,7 @@ Edit pricing cards in the `#pricing` section of `index.html`
 Replace placeholder dashboard preview with actual screenshots:
 ```html
 <div class="hero-image">
-    <img src="dashboard-screenshot.png" alt="JunkOS Dashboard">
+    <img src="dashboard-screenshot.png" alt="Umuve Dashboard">
 </div>
 ```
 
@@ -149,5 +149,5 @@ Replace placeholder dashboard preview with actual screenshots:
 ---
 
 **Built**: 2026-02-06  
-**Design System**: JunkOS v1.0  
+**Design System**: Umuve v1.0  
 **Status**: Ready for deployment 🚀

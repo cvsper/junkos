@@ -2,7 +2,7 @@
 
 ## First-Time Setup
 
-Follow these steps to get the JunkOS Dashboard running:
+Follow these steps to get the Umuve Dashboard running:
 
 ### 1. Install Dependencies
 
@@ -58,7 +58,7 @@ Dashboard will open at: **http://localhost:3000**
 ### 5. Login
 
 Use demo credentials:
-- Email: `admin@junkos.com`
+- Email: `admin@goumuve.com`
 - Password: `admin123`
 
 ## Verifying Installation

@@ -31,7 +31,7 @@ if _sentry_dsn:
 # ---------------------------------------------------------------------------
 # Production startup checks
 # ---------------------------------------------------------------------------
-_startup_logger = logging.getLogger("junkos.startup")
+_startup_logger = logging.getLogger("umuve.startup")
 
 _CRITICAL_ENV_VARS = [
     "JWT_SECRET",
@@ -80,7 +80,7 @@ if database_url:
     app.config["SQLALCHEMY_DATABASE_URI"] = database_url
 else:
     # Fallback to SQLite for local development
-    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///junkos.db"
+    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///umuve.db"
 
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
@@ -92,7 +92,9 @@ _is_development = os.environ.get("FLASK_ENV", "development") == "development"
 _DEFAULT_ORIGINS = [
     "https://platform-olive-nu.vercel.app",
     "https://landing-page-premium-five.vercel.app",
-    "https://junkos-backend.onrender.com",
+    "https://umuve-backend.onrender.com",
+    "https://goumuve.com",
+    "https://www.goumuve.com",
 ]
 
 _cors_env = os.environ.get("CORS_ORIGINS", "")
@@ -237,7 +239,7 @@ def cli_db_migrate():
     """Run database migrations (add new columns / create new tables)."""
     from migrate import run_migrations
     url = app.config["SQLALCHEMY_DATABASE_URI"]
-    click.echo("Running JunkOS database migrations...")
+    click.echo("Running Umuve database migrations...")
     actions = run_migrations(url)
     for action in actions:
         click.echo("  -> {}".format(action))
@@ -304,7 +306,7 @@ def get_available_time_slots(requested_date=None):
 @limiter.exempt
 def health_check():
     """Health check endpoint (exempt from rate limiting)"""
-    return jsonify({"status": "healthy", "service": "JunkOS API"}), 200
+    return jsonify({"status": "healthy", "service": "Umuve API"}), 200
 
 
 @app.route("/api/services", methods=["GET"])

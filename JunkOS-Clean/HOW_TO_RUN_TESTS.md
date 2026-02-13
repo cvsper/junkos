@@ -18,21 +18,21 @@
    - Click project in navigator
    - Click "+" at bottom of targets list
    - Choose "iOS > Unit Testing Bundle"
-   - Name: `JunkOSTests`
-   - Bundle ID: `com.junkos.app.tests`
+   - Name: `UmuveTests`
+   - Bundle ID: `com.goumuve.com.tests`
    - Click Finish
 
 3. **Add UI Test Target**
    - Click "+" again
    - Choose "iOS > UI Testing Bundle"
-   - Name: `JunkOSUITests`
-   - Bundle ID: `com.junkos.app.uitests`
+   - Name: `UmuveUITests`
+   - Bundle ID: `com.goumuve.com.uitests`
    - Click Finish
 
 4. **Add Test Files to Targets**
-   - Select JunkOSTests folder in navigator
-   - In File Inspector, check JunkOSTests target
-   - Repeat for JunkOSUITests folder → check JunkOSUITests target
+   - Select UmuveTests folder in navigator
+   - In File Inspector, check UmuveTests target
+   - Repeat for UmuveUITests folder → check UmuveUITests target
 
 5. **Run Tests**
    ```
@@ -52,7 +52,7 @@
    - Product > Scheme > Edit Scheme
    - Select "Test" in sidebar
    - Click "+" to add test targets
-   - Add JunkOSTests and JunkOSUITests
+   - Add UmuveTests and UmuveUITests
    - Check "Code Coverage" checkbox
    - Click Close
 
@@ -60,21 +60,21 @@
    ```bash
    # Run all tests
    xcodebuild test \
-     -scheme JunkOS \
+     -scheme Umuve \
      -destination 'platform=iOS Simulator,name=iPhone 15 Pro' \
      -enableCodeCoverage YES
    
    # Run only unit tests
    xcodebuild test \
-     -scheme JunkOS \
+     -scheme Umuve \
      -destination 'platform=iOS Simulator,name=iPhone 15 Pro' \
-     -only-testing:JunkOSTests
+     -only-testing:UmuveTests
    
    # Run only UI tests
    xcodebuild test \
-     -scheme JunkOS \
+     -scheme Umuve \
      -destination 'platform=iOS Simulator,name=iPhone 15 Pro' \
-     -only-testing:JunkOSUITests
+     -only-testing:UmuveUITests
    ```
 
 ---
@@ -83,7 +83,7 @@
 
 ```
 JunkOS-Clean/
-├── JunkOSTests/
+├── UmuveTests/
 │   ├── Mocks/
 │   │   ├── MockAPIClient.swift
 │   │   └── MockLocationManager.swift
@@ -99,7 +99,7 @@ JunkOS-Clean/
 │   └── Services/
 │       └── APIClientTests.swift
 │
-└── JunkOSUITests/
+└── UmuveUITests/
     └── Tests/
         ├── BookingFlowUITests.swift
         ├── NavigationUITests.swift
@@ -154,8 +154,8 @@ Button("Continue") {
 ### "Target does not exist"
 → Follow Option 1 above to create test targets
 
-### "No such module 'JunkOS'"
-→ Ensure `@testable import JunkOS` is present and target is built
+### "No such module 'Umuve'"
+→ Ensure `@testable import Umuve` is present and target is built
 
 ### "Cannot find 'SomeViewModel' in scope"
 → Check that test target has access to app target
@@ -178,7 +178,7 @@ After running tests with coverage enabled:
 
 ```bash
 # View coverage report
-open ~/Library/Developer/Xcode/DerivedData/JunkOS-*/Logs/Test/*.xcresult
+open ~/Library/Developer/Xcode/DerivedData/Umuve-*/Logs/Test/*.xcresult
 ```
 
 Or in Xcode:
@@ -217,7 +217,7 @@ jobs:
     - name: Run tests
       run: |
         xcodebuild test \
-          -scheme JunkOS \
+          -scheme Umuve \
           -destination 'platform=iOS Simulator,name=iPhone 15 Pro' \
           -enableCodeCoverage YES
     
@@ -238,20 +238,20 @@ open JunkOS.xcodeproj
 
 # Run tests (once configured)
 xcodebuild test \
-  -scheme JunkOS \
+  -scheme Umuve \
   -destination 'platform=iOS Simulator,name=iPhone 15 Pro'
 
 # Run specific test class
 xcodebuild test \
-  -scheme JunkOS \
+  -scheme Umuve \
   -destination 'platform=iOS Simulator,name=iPhone 15 Pro' \
-  -only-testing:JunkOSTests/ServiceSelectionViewModelTests
+  -only-testing:UmuveTests/ServiceSelectionViewModelTests
 
 # Run specific test method
 xcodebuild test \
-  -scheme JunkOS \
+  -scheme Umuve \
   -destination 'platform=iOS Simulator,name=iPhone 15 Pro' \
-  -only-testing:JunkOSTests/ServiceSelectionViewModelTests/testInitialization
+  -only-testing:UmuveTests/ServiceSelectionViewModelTests/testInitialization
 ```
 
 ---

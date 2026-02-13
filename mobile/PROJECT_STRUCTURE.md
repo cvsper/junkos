@@ -1,4 +1,4 @@
-# JunkOS Mobile - Project Structure
+# Umuve Mobile - Project Structure
 
 Complete directory layout for the React Native booking app.
 
@@ -68,7 +68,7 @@ junkos/mobile/
 
 **app.json**
 - Expo project configuration
-- iOS bundle identifier: `com.junkos.booking`
+- iOS bundle identifier: `com.goumuve.app`
 - Camera & photo library permissions
 - Splash screen & icon settings
 
@@ -212,7 +212,7 @@ const API_URL = 'http://192.168.1.100:5000'; // Your computer's IP
 
 ### Production
 ```typescript
-const API_URL = 'https://api.junkos.com';
+const API_URL = 'https://api.goumuve.com';
 ```
 
 Update in `utils/api.ts` or use environment variables.
@@ -283,5 +283,5 @@ cd ios && pod install
 ---
 
 **Built with:** Expo SDK 51, React Native 0.74, TypeScript, NativeWind
-**Bundle ID:** com.junkos.booking
+**Bundle ID:** com.goumuve.app
 **Target:** iOS 13+

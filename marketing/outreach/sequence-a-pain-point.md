@@ -10,7 +10,7 @@ Quick question for {{company}} — how often do you lose jobs because someone el
 
 Most haulers in {{city}} tell us they're typing the same info into spreadsheets 10+ times per day. The winner isn't always the best operator — just the fastest quote.
 
-JunkOS generates quotes in 30 seconds. Live pricing, instant PDF, done.
+Umuve generates quotes in 30 seconds. Live pricing, instant PDF, done.
 
 Worth a 10-minute look?
 
@@ -29,7 +29,7 @@ Saw you didn't get a chance to respond — no worries.
 
 I wanted to share something relevant: Austin Haulers was losing $3K/month to no-shows and last-minute cancellations.
 
-They started using JunkOS's automated reminders (SMS + email). No-shows dropped 40% in the first 60 days. Now their {{truck_count}}-truck operation runs tighter than ever.
+They started using Umuve's automated reminders (SMS + email). No-shows dropped 40% in the first 60 days. Now their {{truck_count}}-truck operation runs tighter than ever.
 
 Figured {{company}} might face similar challenges.
 

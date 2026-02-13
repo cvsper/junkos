@@ -1,4 +1,4 @@
-# 🚛 JunkOS App Store Assets - Master Index
+# 🚛 Umuve App Store Assets - Master Index
 
 **Created:** February 7, 2026  
 **Status:** ✅ ALL COMPLETE  
@@ -100,4 +100,4 @@ open launch-screen/generate-launch.html
 
 ---
 
-**🚛 JunkOS - Let's ship it!**
+**🚛 Umuve - Let's ship it!**

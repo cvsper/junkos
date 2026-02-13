@@ -1,4 +1,4 @@
-# JunkOS - Junk Removal Management System
+# Umuve - Junk Removal Management System
 
 A complete Docker-based application for managing junk removal operations with customer portal and operator dashboard.
 
@@ -131,10 +131,10 @@ docker-compose up -d frontend
 make shell-db
 
 # Backup database
-docker-compose exec postgres pg_dump -U junkos junkos > backup.sql
+docker-compose exec postgres pg_dump -U umuve umuve > backup.sql
 
 # Restore database
-docker-compose exec -T postgres psql -U junkos junkos < backup.sql
+docker-compose exec -T postgres psql -U umuve umuve < backup.sql
 ```
 
 ## 🔧 Environment Variables
@@ -149,8 +149,8 @@ SECRET_KEY=your-secret-key        # Change in production!
 
 ### Database
 ```bash
-POSTGRES_DB=junkos
-POSTGRES_USER=junkos
+POSTGRES_DB=umuve
+POSTGRES_USER=umuve
 POSTGRES_PASSWORD=secure-password  # Change in production!
 ```
 
@@ -191,7 +191,7 @@ Before deploying to production:
 1. **On your production server:**
    ```bash
    git clone <your-repo>
-   cd junkos
+   cd umuve
    cp .env.example .env
    # Edit .env with production values
    ```
@@ -274,7 +274,7 @@ docker-compose restart postgres
 ## 📁 Project Structure
 
 ```
-junkos/
+umuve/
 ├── backend/
 │   ├── Dockerfile            # Multi-stage Python build
 │   ├── .dockerignore

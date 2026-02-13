@@ -1,5 +1,5 @@
 """
-Operator API routes for JunkOS.
+Operator API routes for Umuve.
 Fleet managers who receive jobs from admin and delegate them to their contractors.
 """
 

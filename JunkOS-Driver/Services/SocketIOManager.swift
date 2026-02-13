@@ -1,6 +1,6 @@
 //
 //  SocketIOManager.swift
-//  JunkOS Driver
+//  Umuve Pro
 //
 //  Socket.IO manager for real-time GPS streaming and job alerts.
 //  Depends on SocketIO SPM package (socket.io-client-swift).

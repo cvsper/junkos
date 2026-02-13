@@ -1,8 +1,8 @@
-# JunkOS Legal Documents - Delivery Summary
+# Umuve Legal Documents - Delivery Summary
 
 **Created:** February 7, 2026  
 **For:** Gymbuddy / Shamar Donaldson  
-**App:** JunkOS - On-Demand Junk Removal  
+**App:** Umuve - On-Demand Junk Removal  
 **Location:** Tampa, Florida
 
 ---
@@ -173,7 +173,7 @@ Use `CUSTOMIZATION_CHECKLIST.md` to replace placeholders:
 ### Terms of Service Features
 
 - **Clear service description**
-  - What JunkOS does
+  - What Umuve does
   - Service area and limitations
   - Booking process
 
@@ -340,7 +340,7 @@ Total: 8 files, ~62 KB
 
 ---
 
-**You're ready to submit JunkOS to the app stores with confidence!**
+**You're ready to submit Umuve to the app stores with confidence!**
 
 Good luck with your launch! 🗑️✨
 

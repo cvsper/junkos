@@ -1,4 +1,4 @@
-# JunkOS - Project Settings Report
+# Umuve - Project Settings Report
 
 **Generated:** February 7, 2026  
 **Project:** JunkOS-Clean  
@@ -9,8 +9,8 @@
 ## ✅ Project Configuration Summary
 
 ### Bundle & Versioning
-- **Bundle Identifier:** `com.junkos.app` ✅
-- **Display Name:** `JunkOS` ✅
+- **Bundle Identifier:** `com.goumuve.com` ✅
+- **Display Name:** `Umuve` ✅
 - **Marketing Version:** `1.0.0` ✅
 - **Build Number:** `1` ✅
 - **Deployment Target:** iOS 16.0+ ✅
@@ -28,10 +28,10 @@ All required privacy keys are present and configured:
   _"We need camera access so you can take photos of items you want removed."_
 
 - ✅ **NSHumanReadableCopyright**  
-  _"Copyright © 2026 JunkOS. All rights reserved."_
+  _"Copyright © 2026 Umuve. All rights reserved."_
 
 - ✅ **CFBundleDisplayName**  
-  _"JunkOS"_
+  _"Umuve"_
 
 ### Build Configurations
 
@@ -84,7 +84,7 @@ The `AppIcon.appiconset` structure has been created with proper metadata, but **
 ### Next Steps for App Icon:
 1. Use your icon generator tool to create all required sizes
 2. Place generated images in:  
-   `JunkOS/Assets.xcassets/AppIcon.appiconset/`
+   `Umuve/Assets.xcassets/AppIcon.appiconset/`
 3. Ensure filenames match those in `Contents.json`
 4. Verify in Xcode that all icon slots are filled
 
@@ -93,7 +93,7 @@ The `AppIcon.appiconset` structure has been created with proper metadata, but **
 ## 📋 Changes Made
 
 ### 1. Project Build Settings (`project.pbxproj`)
-- ✅ Changed Bundle ID from `com.junkos.JunkOS` → `com.junkos.app`
+- ✅ Changed Bundle ID from `com.goumuve.app` → `com.goumuve.com`
 - ✅ Changed Marketing Version from `1.0` → `1.0.0`
 - ✅ Changed Deployment Target from `17.0` → `16.0`
 - ✅ Added Release optimization: `-Os` (optimize for size)
@@ -101,7 +101,7 @@ The `AppIcon.appiconset` structure has been created with proper metadata, but **
 - ✅ Enabled deployment postprocessing for Release
 - ✅ Set Swift symbols stripping for Release
 
-### 2. Info.plist (`JunkOS/Info.plist`)
+### 2. Info.plist (`Umuve/Info.plist`)
 - ✅ Updated `CFBundleShortVersionString` from `1.0` → `1.0.0`
 - ✅ Added `NSHumanReadableCopyright` key
 

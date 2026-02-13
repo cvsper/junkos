@@ -1,6 +1,6 @@
 //
 //  MainTabView.swift
-//  JunkOS
+//  Umuve
 //
 //  Main tab navigation — Home, Orders, Account.
 //
@@ -39,7 +39,7 @@ struct MainTabView: View {
             }
             .tag(2)
         }
-        .tint(.junkPrimary)
+        .tint(.umuvePrimary)
         .onChange(of: bookingData.bookingCompleted) { completed in
             if completed {
                 // Pop the entire booking flow back to root

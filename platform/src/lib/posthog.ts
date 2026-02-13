@@ -1,5 +1,5 @@
 /**
- * PostHog analytics integration for JunkOS platform.
+ * PostHog analytics integration for Umuve platform.
  *
  * Initializes PostHog when NEXT_PUBLIC_POSTHOG_KEY is set.
  * Provides helper functions for tracking events and identifying users.

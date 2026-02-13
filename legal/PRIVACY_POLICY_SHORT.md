@@ -1,4 +1,4 @@
-# JunkOS Privacy Policy (App Store Summary)
+# Umuve Privacy Policy (App Store Summary)
 
 **Last Updated:** February 7, 2026
 
@@ -52,4 +52,4 @@ We use encryption (TLS/SSL) and industry-standard security practices to protect 
 
 **Full Privacy Policy:** [link to hosted privacy policy]
 
-By using JunkOS, you agree to this Privacy Policy.
+By using Umuve, you agree to this Privacy Policy.

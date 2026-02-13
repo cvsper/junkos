@@ -1,4 +1,4 @@
-# 🚀 Deploy JunkOS Backend to Render - Step by Step
+# 🚀 Deploy Umuve Backend to Render - Step by Step
 
 ## Step 1: Sign into Render (30 seconds)
 
@@ -14,12 +14,12 @@
 
 2. **Connect GitHub repo:**
    - You'll see a list of your repos
-   - Find and click **"Connect"** next to `cvsper/junkos-backend`
+   - Find and click **"Connect"** next to `cvsper/umuve-backend`
    - If you don't see it, click "Configure account" and grant access
 
 3. **Configure the service:**
 
-   **Name:** `junkos-backend`
+   **Name:** `umuve-backend`
    
    **Region:** `US East (Ohio)` (or closest to you)
    
@@ -41,8 +41,8 @@
 
    ```
    FLASK_ENV=production
-   SECRET_KEY=junkos-secret-key-change-in-production-12345
-   API_KEY=junkos-api-key-12345
+   SECRET_KEY=umuve-secret-key-change-in-production-12345
+   API_KEY=umuve-api-key-12345
    PORT=10000
    ```
 
@@ -60,7 +60,7 @@
 
 2. **Configure:**
    
-   **Name:** `junkos-db`
+   **Name:** `umuve-db`
    
    **Database:** `junkos`
    
@@ -81,9 +81,9 @@
 
 ## Step 4: Connect Database to Web Service (30 seconds)
 
-1. **Go back to your Web Service** (`junkos-backend`)
+1. **Go back to your Web Service** (`umuve-backend`)
    - Click "Dashboard" (top left)
-   - Click on `junkos-backend`
+   - Click on `umuve-backend`
 
 2. **Click "Environment" tab** (left sidebar)
 
@@ -101,7 +101,7 @@
 
 Once deployment completes, you'll see your app URL at the top:
 
-**Example:** `https://junkos-backend.onrender.com`
+**Example:** `https://umuve-backend.onrender.com`
 
 **Copy this URL!** You'll need it in a moment.
 
@@ -109,7 +109,7 @@ Once deployment completes, you'll see your app URL at the top:
 
 Open this in your browser (replace with your actual URL):
 ```
-https://junkos-backend.onrender.com/api/health
+https://umuve-backend.onrender.com/api/health
 ```
 
 You should see:
@@ -177,7 +177,7 @@ Once you give me your Render URL, I'll update the iOS app to use it.
 
 ## ✅ Next Steps After Deployment
 
-1. **Give me your Render URL** (e.g., `https://junkos-backend.onrender.com`)
+1. **Give me your Render URL** (e.g., `https://umuve-backend.onrender.com`)
 2. I'll update the iOS app to use it
 3. Test the full flow: iOS app → Production API
 4. Ready for TestFlight!

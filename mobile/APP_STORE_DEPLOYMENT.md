@@ -1,4 +1,4 @@
-# iOS App Store Deployment Guide for JunkOS
+# iOS App Store Deployment Guide for Umuve
 
 Source: https://medium.com/@tusharkumar27864/best-practices-for-deploying-your-react-native-app-to-the-ios-app-store-92b6a0ddcba6
 
@@ -36,8 +36,8 @@ if (__DEV__) {
 1. Go to [App Store Connect](https://appstoreconnect.apple.com/)
 2. Create "New App" in "My Apps" section
 3. Fill in:
-   - App name: **JunkOS**
-   - Bundle ID: `com.junkos.booking` (MUST be unique)
+   - App name: **Umuve**
+   - Bundle ID: `com.goumuve.app` (MUST be unique)
    - Description, pricing, category
    - Screenshots (1290x2796 for iPhone 14 Pro Max)
 
@@ -45,7 +45,7 @@ if (__DEV__) {
 ```xml
 <!-- In Info.plist -->
 <key>CFBundleIdentifier</key>
-<string>com.junkos.booking</string>
+<string>com.goumuve.app</string>
 ```
 
 **Critical:** Bundle ID must be unique across ALL App Store apps.
@@ -74,7 +74,7 @@ fastlane match appstore
 ### App Icon
 - Generate all required sizes (20x20 to 1024x1024)
 - Use [appicon.co](https://appicon.co/) or similar tool
-- Add to `ios/JunkOS/Images.xcassets/AppIcon.appiconset/`
+- Add to `ios/Umuve/Images.xcassets/AppIcon.appiconset/`
 
 ### Permission Descriptions (Info.plist)
 ```xml
@@ -94,12 +94,12 @@ fastlane match appstore
 ### Environment Variables
 ```javascript
 // ❌ BAD: Hardcoded API keys
-const API_URL = "https://api.junkos.com";
+const API_URL = "https://api.goumuve.com";
 
 // ✅ GOOD: Environment-based
 const API_URL = __DEV__
   ? "http://localhost:5000"
-  : "https://api.junkos.com";
+  : "https://api.goumuve.com";
 
 // ✅ BETTER: Use react-native-config
 import Config from 'react-native-config';
@@ -148,7 +148,7 @@ npx react-native clean-ios-build
 ## Step 7: App Store Submission
 
 ### Metadata Required:
-- **App Name:** JunkOS
+- **App Name:** Umuve
 - **Subtitle:** Modern junk removal booking
 - **Description:** 500-4000 characters (compelling copy!)
 - **Keywords:** junk removal, hauling, booking, waste, declutter (max 100 chars)
@@ -233,7 +233,7 @@ lane :beta do
   increment_build_number(xcodeproj: "JunkOS.xcodeproj")
   build_app(
     workspace: "JunkOS.xcworkspace",
-    scheme: "JunkOS"
+    scheme: "Umuve"
   )
   upload_to_testflight
   slack(message: "New TestFlight build uploaded!")
@@ -243,7 +243,7 @@ lane :release do
   increment_build_number(xcodeproj: "JunkOS.xcodeproj")
   build_app(
     workspace: "JunkOS.xcworkspace",
-    scheme: "JunkOS"
+    scheme: "Umuve"
   )
   upload_to_app_store
 end
@@ -281,11 +281,11 @@ npm run deploy:testflight
 
 ---
 
-## JunkOS-Specific Checklist
+## Umuve-Specific Checklist
 
 ### Before Submission:
 - [ ] Apple Developer account active
-- [ ] Bundle ID registered: `com.junkos.booking`
+- [ ] Bundle ID registered: `com.goumuve.app`
 - [ ] App icons generated (all sizes)
 - [ ] Privacy policy published
 - [ ] Backend API running on production URL
@@ -294,7 +294,7 @@ npm run deploy:testflight
 - [ ] TestFlight tested by 5+ users for 3+ days
 - [ ] Screenshots captured (booking flow, success)
 - [ ] App description written (compelling copy)
-- [ ] Support email set up (support@junkos.com)
+- [ ] Support email set up (support@goumuve.com)
 
 ### Post-Submission:
 - [ ] Monitor App Store Connect for review status

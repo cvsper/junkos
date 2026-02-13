@@ -1,6 +1,6 @@
 //
 //  RoleSelectionView.swift
-//  JunkOS Driver
+//  Umuve Pro
 //
 //  Two cards: "Contractor" / "Fleet Operator" role selection.
 //
@@ -20,7 +20,7 @@ struct RoleSelectionView: View {
                     .font(.system(size: 56))
                     .foregroundStyle(.primary)
 
-                Text("How will you use JunkOS?")
+                Text("How will you use Umuve?")
                     .font(.title2)
                     .fontWeight(.bold)
 

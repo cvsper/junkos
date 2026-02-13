@@ -10,7 +10,7 @@
 
 ## 📋 Task Summary
 
-**Objective:** Fix scrolling performance issues (lag, stuttering) in JunkOS iOS app
+**Objective:** Fix scrolling performance issues (lag, stuttering) in Umuve iOS app
 
 **Target Performance:** 60 FPS smooth scrolling
 
@@ -82,7 +82,7 @@ private let dayFormatter: DateFormatter = { ... }()
 
 ```bash
 xcodebuild -project JunkOS.xcodeproj \
-  -scheme JunkOS \
+  -scheme Umuve \
   -sdk iphonesimulator \
   -destination 'platform=iOS Simulator,name=iPhone 16' \
   build
@@ -110,9 +110,9 @@ No compilation errors, no warnings (related to changes).
 ## 📁 Deliverables
 
 ### Modified Files (3)
-1. `JunkOS/Views/ServiceSelectionView.swift` - Primary optimizations
-2. `JunkOS/Views/DateTimePickerView.swift` - Formatter caching, animation fixes
-3. `JunkOS/Views/OrdersView.swift` - LazyVStack implementation
+1. `Umuve/Views/ServiceSelectionView.swift` - Primary optimizations
+2. `Umuve/Views/DateTimePickerView.swift` - Formatter caching, animation fixes
+3. `Umuve/Views/OrdersView.swift` - LazyVStack implementation
 
 ### Documentation (3)
 1. `SCROLLING_PERFORMANCE_FIXES.md` - Detailed technical explanation

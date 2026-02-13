@@ -1,6 +1,6 @@
 //
 //  ProgressiveDisclosureComponents.swift
-//  JunkOS
+//  Umuve
 //
 //  Live price estimates and progressive information reveal
 //
@@ -49,24 +49,24 @@ struct LivePriceEstimate: View {
                     HStack {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Estimated Total")
-                                .font(JunkTypography.captionFont)
-                                .foregroundColor(.junkTextMuted)
+                                .font(UmuveTypography.captionFont)
+                                .foregroundColor(.umuveTextMuted)
                             
                             Text(PriceCalculator.formatPrice(estimate))
-                                .font(JunkTypography.h2Font)
-                                .foregroundColor(.junkText)
+                                .font(UmuveTypography.h2Font)
+                                .foregroundColor(.umuveText)
                         }
                         
                         Spacer()
                         
                         Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                            .foregroundColor(.junkPrimary)
+                            .foregroundColor(.umuvePrimary)
                             .font(.system(size: 16, weight: .semibold))
                     }
-                    .padding(JunkSpacing.normal)
+                    .padding(UmuveSpacing.normal)
                 }
                 .buttonStyle(PlainButtonStyle())
-                .background(Color.junkWhite)
+                .background(Color.umuveWhite)
                 .cornerRadius(isExpanded ? 0 : 12, corners: [.allCorners])
                 .cornerRadius(isExpanded ? 12 : 0, corners: [.topLeft, .topRight])
                 .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
@@ -76,11 +76,11 @@ struct LivePriceEstimate: View {
                 
                 // Breakdown (expandable)
                 if isExpanded {
-                    VStack(spacing: JunkSpacing.small) {
+                    VStack(spacing: UmuveSpacing.small) {
                         Divider()
-                            .padding(.horizontal, JunkSpacing.normal)
+                            .padding(.horizontal, UmuveSpacing.normal)
                         
-                        VStack(spacing: JunkSpacing.small) {
+                        VStack(spacing: UmuveSpacing.small) {
                             PriceRow(label: "Base Rate", value: "$89")
                             PriceRow(label: "\(services.count) Service(s)", value: "$\(services.count * 45)")
                             
@@ -88,16 +88,16 @@ struct LivePriceEstimate: View {
                                 PriceRow(label: "Volume Adjustment", value: "+15%", isHighlight: true)
                             }
                         }
-                        .padding(.horizontal, JunkSpacing.normal)
-                        .padding(.vertical, JunkSpacing.small)
+                        .padding(.horizontal, UmuveSpacing.normal)
+                        .padding(.vertical, UmuveSpacing.small)
                         
                         Text("*Final price may vary based on actual volume")
-                            .font(JunkTypography.smallFont)
-                            .foregroundColor(.junkTextMuted)
-                            .padding(.horizontal, JunkSpacing.normal)
-                            .padding(.bottom, JunkSpacing.normal)
+                            .font(UmuveTypography.smallFont)
+                            .foregroundColor(.umuveTextMuted)
+                            .padding(.horizontal, UmuveSpacing.normal)
+                            .padding(.bottom, UmuveSpacing.normal)
                     }
-                    .background(Color.junkWhite)
+                    .background(Color.umuveWhite)
                     .cornerRadius(12, corners: [.bottomLeft, .bottomRight])
                     .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
                     .transition(.opacity.combined(with: .move(edge: .top)))
@@ -128,14 +128,14 @@ struct PriceRow: View {
     var body: some View {
         HStack {
             Text(label)
-                .font(JunkTypography.bodySmallFont)
-                .foregroundColor(isHighlight ? .junkPrimary : .junkText)
+                .font(UmuveTypography.bodySmallFont)
+                .foregroundColor(isHighlight ? .umuvePrimary : .umuveText)
             
             Spacer()
             
             Text(value)
-                .font(JunkTypography.bodySmallFont.weight(.semibold))
-                .foregroundColor(isHighlight ? .junkPrimary : .junkText)
+                .font(UmuveTypography.bodySmallFont.weight(.semibold))
+                .foregroundColor(isHighlight ? .umuvePrimary : .umuveText)
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(label): \(value)")
@@ -162,24 +162,24 @@ struct BookingSummaryPreview: View {
     }
     
     var body: some View {
-        JunkCard {
-            VStack(alignment: .leading, spacing: JunkSpacing.normal) {
+        UmuveCard {
+            VStack(alignment: .leading, spacing: UmuveSpacing.normal) {
                 // Header
                 HStack {
                     Image(systemName: "doc.text.fill")
-                        .foregroundColor(.junkPrimary)
+                        .foregroundColor(.umuvePrimary)
                         .font(.system(size: 24))
                     
                     Text("Booking Summary")
-                        .font(JunkTypography.h3Font)
-                        .foregroundColor(.junkText)
+                        .font(UmuveTypography.h3Font)
+                        .foregroundColor(.umuveText)
                 }
-                .padding(.bottom, JunkSpacing.small)
+                .padding(.bottom, UmuveSpacing.small)
                 
                 Divider()
                 
                 // Details
-                VStack(spacing: JunkSpacing.medium) {
+                VStack(spacing: UmuveSpacing.medium) {
                     SummaryRow(icon: "mappin.circle.fill", label: "Address", value: address)
                     SummaryRow(icon: "square.grid.2x2", label: "Services", value: "\(services.count) selected")
                     SummaryRow(icon: "photo", label: "Photos", value: "\(photoCount) attached")
@@ -195,17 +195,17 @@ struct BookingSummaryPreview: View {
                 // Total
                 HStack {
                     Text("Estimated Total")
-                        .font(JunkTypography.bodyFont.weight(.semibold))
-                        .foregroundColor(.junkText)
+                        .font(UmuveTypography.bodyFont.weight(.semibold))
+                        .foregroundColor(.umuveText)
                     
                     Spacer()
                     
                     Text(PriceCalculator.formatPrice(estimate))
-                        .font(JunkTypography.h3Font)
-                        .foregroundColor(.junkPrimary)
+                        .font(UmuveTypography.h3Font)
+                        .foregroundColor(.umuvePrimary)
                 }
             }
-            .padding(JunkSpacing.normal)
+            .padding(UmuveSpacing.normal)
         }
         .accessibilityElement(children: .contain)
     }
@@ -218,20 +218,20 @@ struct SummaryRow: View {
     let value: String
     
     var body: some View {
-        HStack(spacing: JunkSpacing.medium) {
+        HStack(spacing: UmuveSpacing.medium) {
             Image(systemName: icon)
-                .foregroundColor(.junkPrimary)
+                .foregroundColor(.umuvePrimary)
                 .font(.system(size: 18))
                 .frame(width: 24)
             
             VStack(alignment: .leading, spacing: 2) {
                 Text(label)
-                    .font(JunkTypography.smallFont)
-                    .foregroundColor(.junkTextMuted)
+                    .font(UmuveTypography.smallFont)
+                    .foregroundColor(.umuveTextMuted)
                 
                 Text(value)
-                    .font(JunkTypography.bodyFont)
-                    .foregroundColor(.junkText)
+                    .font(UmuveTypography.bodyFont)
+                    .foregroundColor(.umuveText)
             }
             
             Spacer()
@@ -282,6 +282,6 @@ struct ProgressiveDisclosureComponents_Previews: PreviewProvider {
             }
             .padding()
         }
-        .background(Color.junkBackground)
+        .background(Color.umuveBackground)
     }
 }

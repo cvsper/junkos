@@ -14,9 +14,9 @@ export default function WelcomeScreen({ navigation }: Props) {
       <View style={styles.content}>
         <View style={styles.logoContainer}>
           <Text style={styles.logo}>🚛</Text>
-          <Text style={styles.title}>JunkOS</Text>
+          <Text style={styles.title}>Umuve</Text>
           <Text style={styles.subtitle}>
-            Professional Junk Removal{'\n'}Made Simple
+            Hauling made simple.
           </Text>
         </View>
 
@@ -38,7 +38,7 @@ export default function WelcomeScreen({ navigation }: Props) {
             Get Started
           </Button>
           <Text style={styles.footerText}>
-            Quick, easy, and eco-friendly junk removal
+            Quick, easy, and eco-friendly hauling
           </Text>
         </View>
       </View>

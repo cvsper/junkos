@@ -1,6 +1,6 @@
 //
 //  WelcomeViewModel.swift
-//  JunkOS
+//  Umuve
 //
 //  ViewModel for WelcomeView
 //

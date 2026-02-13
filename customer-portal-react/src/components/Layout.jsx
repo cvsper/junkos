@@ -13,16 +13,16 @@ const Layout = ({ children }) => {
                 <Trash2 className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">JunkOS</h1>
-                <p className="text-sm text-gray-500">Easy Junk Removal</p>
+                <h1 className="text-2xl font-bold text-gray-900">Umuve</h1>
+                <p className="text-sm text-gray-500">Hauling made simple.</p>
               </div>
             </div>
             <div className="hidden sm:block">
               <a
-                href="tel:1-800-JUNK-OS"
+                href="tel:1-800-UMUVE"
                 className="text-primary-600 hover:text-primary-700 font-medium"
               >
-                📞 1-800-JUNK-OS
+                📞 1-800-UMUVE
               </a>
             </div>
           </div>
@@ -38,7 +38,7 @@ const Layout = ({ children }) => {
       <footer className="bg-white border-t border-gray-200 mt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center text-gray-600 text-sm">
-            <p>&copy; {new Date().getFullYear()} JunkOS. All rights reserved.</p>
+            <p>&copy; {new Date().getFullYear()} Umuve. All rights reserved.</p>
             <div className="mt-2 space-x-4">
               <a href="#" className="hover:text-primary-600">
                 Privacy Policy

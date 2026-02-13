@@ -1,6 +1,6 @@
 //
 //  AppState.swift
-//  JunkOS Driver
+//  Umuve Pro
 //
 //  Root observable state for the entire app.
 //  Tracks auth, online status, active job, contractor profile.

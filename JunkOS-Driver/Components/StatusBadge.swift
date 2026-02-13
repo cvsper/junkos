@@ -1,6 +1,6 @@
 //
 //  StatusBadge.swift
-//  JunkOS Driver
+//  Umuve Pro
 //
 //  Color-coded job status pill.
 //

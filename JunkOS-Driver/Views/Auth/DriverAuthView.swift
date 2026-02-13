@@ -1,6 +1,6 @@
 //
 //  DriverAuthView.swift
-//  JunkOS Driver
+//  Umuve Pro
 //
 //  Welcome screen with login options — email, Apple Sign In.
 //
@@ -27,7 +27,7 @@ struct DriverAuthView: View {
                             .font(.system(size: 64))
                             .foregroundStyle(Color.driverPrimary)
 
-                        Text("Drive with JunkOS")
+                        Text("Drive with Umuve")
                             .font(DriverTypography.title)
                             .foregroundStyle(Color.driverText)
 

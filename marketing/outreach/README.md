@@ -1,4 +1,4 @@
-# JunkOS Cold Email Outreach Campaign
+# Umuve Cold Email Outreach Campaign
 
 Complete cold email automation system for customer acquisition targeting junk removal and hauling companies.
 
@@ -120,8 +120,8 @@ Edit `CONFIG` in `outreach-script.py`:
 ```python
 CONFIG = {
     'service': 'mailgun',  # or 'sendgrid'
-    'from_email': 'sales@junkos.com',
-    'from_name': 'Alex from JunkOS',
+    'from_email': 'sales@goumuve.com',
+    'from_name': 'Alex from Umuve',
     'email_delays': [0, 2, 5],  # Days between emails
     'track_opens': True,
     'track_clicks': True,
@@ -205,7 +205,7 @@ All emails MUST include:
 2. ✅ **Honest subject lines** — No deceptive subjects
 3. ✅ **Physical address** — Add to email footer:
    ```
-   JunkOS Inc.
+   Umuve Inc.
    123 Main Street, Suite 100
    Austin, TX 78701
    ```
@@ -242,7 +242,7 @@ All emails MUST include:
 Add to crontab for automated daily sends:
 ```bash
 # Send 20 prospects per day at 9 AM
-0 9 * * * cd ~/Documents/programs/webapps/junkos/marketing/outreach && python outreach-script.py --csv daily-prospects.csv --sequence A --live
+0 9 * * * cd ~/Documents/programs/webapps/umuve/marketing/outreach && python outreach-script.py --csv daily-prospects.csv --sequence A --live
 ```
 
 ### Integration with CRM
@@ -364,6 +364,6 @@ Before sending your first campaign:
 
 ---
 
-**Questions?** Contact the JunkOS team or review the [Sales Playbook](https://junkos.com/sales-playbook).
+**Questions?** Contact the Umuve team or review the [Sales Playbook](https://goumuve.com/sales-playbook).
 
 Happy hunting! 🎯

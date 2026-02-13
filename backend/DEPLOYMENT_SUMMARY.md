@@ -1,4 +1,4 @@
-# 🚀 JunkOS Backend - Production Deployment Summary
+# 🚀 Umuve Backend - Production Deployment Summary
 
 ## ✅ What Was Done
 
@@ -99,24 +99,24 @@
 
 1. **Push to GitHub:**
    ```bash
-   cd ~/Documents/programs/webapps/junkos/backend
+   cd ~/Documents/programs/webapps/umuve/backend
    git init
    git add .
    git commit -m "Production ready deployment"
-   git remote add origin https://github.com/YOUR_USERNAME/junkos-backend.git
+   git remote add origin https://github.com/YOUR_USERNAME/umuve-backend.git
    git push -u origin main
    ```
 
 2. **Deploy on Railway:**
    - Go to [railway.app](https://railway.app)
    - Click "New Project" → "Deploy from GitHub repo"
-   - Select `junkos-backend`
+   - Select `umuve-backend`
    - Add PostgreSQL database
    - Set environment variables (SECRET_KEY, API_KEY)
 
 3. **Get your URL:**
    - Copy from Railway dashboard
-   - Example: `https://junkos-backend-production.up.railway.app`
+   - Example: `https://umuve-backend-production.up.railway.app`
 
 4. **Update iOS app:**
    - Replace URL in `Config.swift` (line 16)
@@ -134,7 +134,7 @@
 2. **Deploy on Render:**
    - Go to [render.com](https://render.com)
    - Click "New +" → "Web Service"
-   - Select `junkos-backend`
+   - Select `umuve-backend`
    - Render detects `render.yaml` automatically
 
 3. **Set environment variables:**
@@ -183,7 +183,7 @@ After deployment, test these endpoints:
 1. **Health Check:**
    ```bash
    curl https://your-url/api/health
-   # Expected: {"status":"healthy","service":"JunkOS API"}
+   # Expected: {"status":"healthy","service":"Umuve API"}
    ```
 
 2. **Get Services:**

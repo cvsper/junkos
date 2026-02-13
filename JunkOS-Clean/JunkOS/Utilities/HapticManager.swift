@@ -1,6 +1,6 @@
 //
 //  HapticManager.swift
-//  JunkOS
+//  Umuve
 //
 //  Haptic feedback manager for consistent tactile feedback
 //  Reference: https://developer.apple.com/documentation/uikit/uifeedbackgenerator

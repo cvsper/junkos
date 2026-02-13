@@ -1,10 +1,10 @@
-# JunkOS App Icon Integration Complete ✅
+# Umuve App Icon Integration Complete ✅
 
 **Generated:** February 7, 2026 @ 09:17 EST
 
 ## Summary
 
-Successfully generated and integrated a professional app icon for JunkOS iOS app with all required sizes for iPhone, iPad, and App Store submission.
+Successfully generated and integrated a professional app icon for Umuve iOS app with all required sizes for iPhone, iPad, and App Store submission.
 
 ## Design Details
 
@@ -38,7 +38,7 @@ All 18 required icon sizes generated:
 
 All icons integrated into:
 ```
-~/Documents/programs/webapps/junkos/JunkOS-Clean/JunkOS/Assets.xcassets/AppIcon.appiconset/
+~/Documents/programs/webapps/junkos/JunkOS-Clean/Umuve/Assets.xcassets/AppIcon.appiconset/
 ```
 
 ## Verification

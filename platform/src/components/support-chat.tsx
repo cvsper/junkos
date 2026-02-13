@@ -184,7 +184,7 @@ export function SupportChat() {
             </div>
             <div>
               <h3 className="text-sm font-semibold leading-none">
-                JunkOS Support
+                Umuve Support
               </h3>
               <p className="text-[11px] opacity-80 mt-0.5">
                 We typically reply within 1 hour

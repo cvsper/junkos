@@ -1,12 +1,12 @@
 #!/bin/bash
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# JunkOS Premium Landing Page - Quick Deploy
+# Umuve Premium Landing Page - Quick Deploy
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 set -e  # Exit on error
 
-echo "🚛 JunkOS Premium Landing Page Deployment"
+echo "🚛 Umuve Premium Landing Page Deployment"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 

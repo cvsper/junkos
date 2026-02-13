@@ -1,5 +1,5 @@
 /* ================================
-   JunkOS Marketing Landing Page
+   Umuve Marketing Landing Page
    Modern, conversion-focused design
    ================================ */
 
@@ -14,12 +14,12 @@
     /* Colors from Design System */
     --primary: #6366F1;
     --secondary: #818CF8;
-    --cta: #10B981;
+    --cta: #DC2626;
     --background: #F5F3FF;
     --text: #1E1B4B;
     --muted: #64748B;
     --border: #E2E8F0;
-    --success: #10B981;
+    --success: #DC2626;
     --warning: #F59E0B;
     --error: #EF4444;
     --white: #FFFFFF;
@@ -195,9 +195,9 @@ img {
 }
 
 .btn-cta:hover {
-    background: #059669;
+    background: #B91C1C;
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
 }
 
 .btn-outline {

@@ -67,11 +67,11 @@ export default function AdminLoginPage() {
         <div className="text-center mb-8">
           <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center mx-auto mb-4">
             <span className="text-primary-foreground font-display font-bold text-xl">
-              J
+              U
             </span>
           </div>
           <h1 className="font-display text-2xl font-bold tracking-tight">
-            JunkOS Admin
+            Umuve Admin
           </h1>
           <p className="text-muted-foreground text-sm mt-1">
             Sign in to your admin account
@@ -99,7 +99,7 @@ export default function AdminLoginPage() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="admin@junkos.app"
+              placeholder="admin@goumuve.com"
               required
               className="w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-colors"
             />
@@ -160,7 +160,7 @@ export default function AdminLoginPage() {
             href="/"
             className="text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
-            Back to JunkOS
+            Back to Umuve
           </Link>
         </div>
       </div>

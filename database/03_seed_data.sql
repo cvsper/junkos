@@ -1,11 +1,11 @@
 -- ============================================================================
--- JunkOS Seed Data Script
+-- Umuve Seed Data Script
 -- ============================================================================
 -- Purpose: Populate database with sample data for testing and development
--- Usage: psql -U postgres -d junkos -f 03_seed_data.sql
+-- Usage: psql -U postgres -d umuve -f 03_seed_data.sql
 -- ============================================================================
 
-\c junkos
+\c umuve
 
 BEGIN;
 
@@ -27,7 +27,7 @@ INSERT INTO tenants (id, name, slug, status, subscription_tier, contact_email, c
         "primary_color": "#2563EB",
         "secondary_color": "#16A34A",
         "company_name": "QuickHaul Junk Removal",
-        "custom_domain": "quickhaul.junkos.com",
+        "custom_domain": "quickhaul.goumuve.com",
         "email_from_name": "QuickHaul Team",
         "email_from_address": "hello@quickhaul.com"
     }'::jsonb,

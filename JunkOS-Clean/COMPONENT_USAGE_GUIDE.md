@@ -1,6 +1,6 @@
 # Component Usage Guide
 
-Quick reference for using the new UI/UX components in JunkOS.
+Quick reference for using the new UI/UX components in Umuve.
 
 ---
 

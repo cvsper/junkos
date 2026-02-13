@@ -1,6 +1,6 @@
 //
 //  OnboardingView.swift
-//  JunkOS
+//  Umuve
 //
 //  Onboarding flow with 3 screens
 //
@@ -36,29 +36,29 @@ struct OnboardingView: View {
         OnboardingPage(
             id: 0,
             icon: "sparkles",
-            title: "Welcome to JunkOS",
+            title: "Welcome to Umuve",
             subtitle: "The fastest way to remove junk from your home. Book in just 3 taps!",
-            color: .junkPrimary
+            color: .umuvePrimary
         ),
         OnboardingPage(
             id: 1,
             icon: "camera.viewfinder",
             title: "Snap & Quote",
             subtitle: "Take photos of your items and get instant pricing. No hidden fees, ever.",
-            color: .junkSecondary
+            color: .umuveSecondary
         ),
         OnboardingPage(
             id: 2,
             icon: "calendar.badge.checkmark",
             title: "Book Your Time",
             subtitle: "Choose a time slot that works for you. Same-day service available!",
-            color: .junkCTA
+            color: .umuveCTA
         )
     ]
     
     var body: some View {
         ZStack {
-            Color.junkBackground.ignoresSafeArea()
+            Color.umuveBackground.ignoresSafeArea()
             
             VStack(spacing: 0) {
                 // Skip button
@@ -67,8 +67,8 @@ struct OnboardingView: View {
                     Button("Skip") {
                         completeOnboarding()
                     }
-                    .font(JunkTypography.bodyFont)
-                    .foregroundColor(.junkTextMuted)
+                    .font(UmuveTypography.bodyFont)
+                    .foregroundColor(.umuveTextMuted)
                     .padding()
                     .accessibilityLabel("Skip onboarding")
                     .accessibilityHint("Double tap to skip and go to main app")
@@ -88,12 +88,12 @@ struct OnboardingView: View {
                 HStack(spacing: 8) {
                     ForEach(pages, id: \.id) { page in
                         Circle()
-                            .fill(currentPage == page.id ? Color.junkPrimary : Color.junkBorder)
+                            .fill(currentPage == page.id ? Color.umuvePrimary : Color.umuveBorder)
                             .frame(width: 10, height: 10)
                             .animation(.easeInOut, value: currentPage)
                     }
                 }
-                .padding(.vertical, JunkSpacing.normal)
+                .padding(.vertical, UmuveSpacing.normal)
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel("Page \(currentPage + 1) of \(pages.count)")
                 
@@ -109,10 +109,10 @@ struct OnboardingView: View {
                 }) {
                     Text(currentPage == pages.count - 1 ? "Get Started" : "Next")
                 }
-                .buttonStyle(JunkPrimaryButtonStyle())
-                .padding(.horizontal, JunkSpacing.large)
-                .padding(.bottom, JunkSpacing.xlarge)
-                .accessibilityLabel(currentPage == pages.count - 1 ? "Get started with JunkOS" : "Next page")
+                .buttonStyle(UmuvePrimaryButtonStyle())
+                .padding(.horizontal, UmuveSpacing.large)
+                .padding(.bottom, UmuveSpacing.xlarge)
+                .accessibilityLabel(currentPage == pages.count - 1 ? "Get started with Umuve" : "Next page")
             }
         }
     }
@@ -130,7 +130,7 @@ struct OnboardingPageView: View {
     @Environment(\.accessibilityReduceMotion) var reduceMotion
     
     var body: some View {
-        VStack(spacing: JunkSpacing.xxlarge) {
+        VStack(spacing: UmuveSpacing.xxlarge) {
             Spacer()
             
             // Icon with gradient background
@@ -155,18 +155,18 @@ struct OnboardingPageView: View {
                     .scaleEffect(isAnimating ? 1 : 0.5)
             }
             
-            VStack(spacing: JunkSpacing.normal) {
+            VStack(spacing: UmuveSpacing.normal) {
                 Text(page.title)
-                    .font(JunkTypography.h1Font)
-                    .foregroundColor(.junkText)
+                    .font(UmuveTypography.h1Font)
+                    .foregroundColor(.umuveText)
                     .multilineTextAlignment(.center)
                     .opacity(isAnimating ? 1 : 0)
                 
                 Text(page.subtitle)
-                    .font(JunkTypography.bodyFont)
-                    .foregroundColor(.junkTextMuted)
+                    .font(UmuveTypography.bodyFont)
+                    .foregroundColor(.umuveTextMuted)
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, JunkSpacing.xlarge)
+                    .padding(.horizontal, UmuveSpacing.xlarge)
                     .opacity(isAnimating ? 1 : 0)
             }
             
@@ -195,69 +195,69 @@ struct PermissionPrePromptView: View {
     let denyAction: () -> Void
     
     var body: some View {
-        VStack(spacing: JunkSpacing.xlarge) {
+        VStack(spacing: UmuveSpacing.xlarge) {
             Spacer()
             
             // Icon
             ZStack {
                 Circle()
-                    .fill(Color.junkPrimary.opacity(0.1))
+                    .fill(Color.umuvePrimary.opacity(0.1))
                     .frame(width: 120, height: 120)
                 
                 Image(systemName: icon)
                     .font(.system(size: 60))
-                    .foregroundColor(.junkPrimary)
+                    .foregroundColor(.umuvePrimary)
             }
             
-            VStack(spacing: JunkSpacing.normal) {
+            VStack(spacing: UmuveSpacing.normal) {
                 Text(title)
-                    .font(JunkTypography.h2Font)
-                    .foregroundColor(.junkText)
+                    .font(UmuveTypography.h2Font)
+                    .foregroundColor(.umuveText)
                     .multilineTextAlignment(.center)
                 
                 Text(subtitle)
-                    .font(JunkTypography.bodyFont)
-                    .foregroundColor(.junkTextMuted)
+                    .font(UmuveTypography.bodyFont)
+                    .foregroundColor(.umuveTextMuted)
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, JunkSpacing.xlarge)
+                    .padding(.horizontal, UmuveSpacing.xlarge)
             }
             
             // Reason card
-            JunkCard {
-                HStack(spacing: JunkSpacing.medium) {
+            UmuveCard {
+                HStack(spacing: UmuveSpacing.medium) {
                     Image(systemName: "info.circle.fill")
-                        .foregroundColor(.junkPrimary)
+                        .foregroundColor(.umuvePrimary)
                         .font(.system(size: 24))
                     
                     Text(reason)
-                        .font(JunkTypography.bodySmallFont)
-                        .foregroundColor(.junkText)
+                        .font(UmuveTypography.bodySmallFont)
+                        .foregroundColor(.umuveText)
                         .multilineTextAlignment(.leading)
                 }
-                .padding(JunkSpacing.normal)
+                .padding(UmuveSpacing.normal)
             }
-            .padding(.horizontal, JunkSpacing.large)
+            .padding(.horizontal, UmuveSpacing.large)
             
             Spacer()
             
             // Actions
-            VStack(spacing: JunkSpacing.medium) {
+            VStack(spacing: UmuveSpacing.medium) {
                 Button(action: allowAction) {
                     Text("Allow")
                 }
-                .buttonStyle(JunkPrimaryButtonStyle())
+                .buttonStyle(UmuvePrimaryButtonStyle())
                 .accessibilityLabel("Allow \(title.lowercased())")
                 
                 Button(action: denyAction) {
                     Text("Not Now")
                 }
-                .buttonStyle(JunkSecondaryButtonStyle())
+                .buttonStyle(UmuveSecondaryButtonStyle())
                 .accessibilityLabel("Deny \(title.lowercased())")
             }
-            .padding(.horizontal, JunkSpacing.large)
-            .padding(.bottom, JunkSpacing.xlarge)
+            .padding(.horizontal, UmuveSpacing.large)
+            .padding(.bottom, UmuveSpacing.xlarge)
         }
-        .background(Color.junkBackground.ignoresSafeArea())
+        .background(Color.umuveBackground.ignoresSafeArea())
     }
 }
 

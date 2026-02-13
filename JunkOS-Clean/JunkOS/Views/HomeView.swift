@@ -1,6 +1,6 @@
 //
 //  HomeView.swift
-//  JunkOS
+//  Umuve
 //
 //  Home screen with service category cards.
 //
@@ -13,7 +13,7 @@ struct HomeView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: JunkSpacing.xlarge) {
+            VStack(spacing: UmuveSpacing.xlarge) {
                 // Header
                 headerSection
 
@@ -29,10 +29,10 @@ struct HomeView: View {
                 // How it works
                 howItWorksSection
             }
-            .padding(.horizontal, JunkSpacing.large)
-            .padding(.bottom, JunkSpacing.xxlarge)
+            .padding(.horizontal, UmuveSpacing.large)
+            .padding(.bottom, UmuveSpacing.xxlarge)
         }
-        .background(Color.junkBackground.ignoresSafeArea())
+        .background(Color.umuveBackground.ignoresSafeArea())
         .navigationBarHidden(true)
     }
 
@@ -40,13 +40,13 @@ struct HomeView: View {
     private var headerSection: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
-                Text("JunkOS")
-                    .font(JunkTypography.h1Font)
-                    .foregroundColor(.junkText)
+                Text("Umuve")
+                    .font(UmuveTypography.h1Font)
+                    .foregroundColor(.umuveText)
 
                 Text("Professional junk removal")
-                    .font(JunkTypography.bodyFont)
-                    .foregroundColor(.junkTextMuted)
+                    .font(UmuveTypography.bodyFont)
+                    .foregroundColor(.umuveTextMuted)
             }
 
             Spacer()
@@ -55,7 +55,7 @@ struct HomeView: View {
                 Circle()
                     .fill(
                         LinearGradient(
-                            colors: [Color.junkPrimary, Color.junkPrimaryDark],
+                            colors: [Color.umuvePrimary, Color.umuvePrimaryDark],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
@@ -67,28 +67,28 @@ struct HomeView: View {
                     .foregroundColor(.white)
             }
         }
-        .padding(.top, JunkSpacing.normal)
+        .padding(.top, UmuveSpacing.normal)
     }
 
     // MARK: - Search Bar
     private var searchBar: some View {
-        HStack(spacing: JunkSpacing.small) {
+        HStack(spacing: UmuveSpacing.small) {
             Image(systemName: "magnifyingglass")
-                .foregroundColor(.junkTextMuted)
+                .foregroundColor(.umuveTextMuted)
 
             TextField("What do you need removed?", text: $searchText)
-                .font(JunkTypography.bodyFont)
-                .foregroundColor(.junkText)
+                .font(UmuveTypography.bodyFont)
+                .foregroundColor(.umuveText)
         }
-        .padding(JunkSpacing.normal)
+        .padding(UmuveSpacing.normal)
         .background(Color.white)
-        .clipShape(RoundedRectangle(cornerRadius: JunkRadius.md))
+        .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.md))
         .shadow(color: .black.opacity(0.06), radius: 4, x: 0, y: 2)
     }
 
     // MARK: - Service Categories
     private var serviceCategoriesSection: some View {
-        VStack(spacing: JunkSpacing.medium) {
+        VStack(spacing: UmuveSpacing.medium) {
             ForEach(ServiceCategory.all, id: \.id) { category in
                 NavigationLink {
                     MapAddressPickerView()
@@ -103,31 +103,31 @@ struct HomeView: View {
 
     // MARK: - Trust Badges
     private var trustBadgesSection: some View {
-        HStack(spacing: JunkSpacing.large) {
+        HStack(spacing: UmuveSpacing.large) {
             TrustBadge(icon: "star.fill", text: "4.9/5", color: .categoryYellow)
-            TrustBadge(icon: "checkmark.circle.fill", text: "2,500+ Jobs", color: .junkPrimary)
+            TrustBadge(icon: "checkmark.circle.fill", text: "2,500+ Jobs", color: .umuvePrimary)
             TrustBadge(icon: "shield.fill", text: "Insured", color: .categoryBlue)
         }
-        .padding(.vertical, JunkSpacing.normal)
+        .padding(.vertical, UmuveSpacing.normal)
     }
 
     // MARK: - How It Works
     private var howItWorksSection: some View {
-        VStack(alignment: .leading, spacing: JunkSpacing.normal) {
+        VStack(alignment: .leading, spacing: UmuveSpacing.normal) {
             Text("How it works")
-                .font(JunkTypography.h2Font)
-                .foregroundColor(.junkText)
+                .font(UmuveTypography.h2Font)
+                .foregroundColor(.umuveText)
 
-            VStack(spacing: JunkSpacing.medium) {
+            VStack(spacing: UmuveSpacing.medium) {
                 HowItWorksStep(number: 1, title: "Choose Service", description: "Select what you need removed")
                 HowItWorksStep(number: 2, title: "Set Location", description: "Tell us where to pick up")
                 HowItWorksStep(number: 3, title: "Get Quote", description: "Instant pricing based on photos")
                 HowItWorksStep(number: 4, title: "We Haul It", description: "Sit back, we handle the rest")
             }
         }
-        .padding(JunkSpacing.normal)
+        .padding(UmuveSpacing.normal)
         .background(Color.white)
-        .clipShape(RoundedRectangle(cornerRadius: JunkRadius.lg))
+        .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.lg))
         .shadow(color: .black.opacity(0.06), radius: 4, x: 0, y: 2)
     }
 }
@@ -153,10 +153,10 @@ struct ServiceCategoryCard: View {
     let category: ServiceCategory
 
     var body: some View {
-        HStack(spacing: JunkSpacing.normal) {
+        HStack(spacing: UmuveSpacing.normal) {
             // Icon
             ZStack {
-                RoundedRectangle(cornerRadius: JunkRadius.md)
+                RoundedRectangle(cornerRadius: UmuveRadius.md)
                     .fill(category.color.opacity(0.15))
                     .frame(width: 64, height: 64)
 
@@ -168,12 +168,12 @@ struct ServiceCategoryCard: View {
             // Content
             VStack(alignment: .leading, spacing: 4) {
                 Text(category.title)
-                    .font(JunkTypography.h3Font)
-                    .foregroundColor(.junkText)
+                    .font(UmuveTypography.h3Font)
+                    .foregroundColor(.umuveText)
 
                 Text(category.description)
-                    .font(JunkTypography.bodySmallFont)
-                    .foregroundColor(.junkTextMuted)
+                    .font(UmuveTypography.bodySmallFont)
+                    .foregroundColor(.umuveTextMuted)
                     .lineLimit(2)
             }
 
@@ -181,11 +181,11 @@ struct ServiceCategoryCard: View {
 
             Image(systemName: "chevron.right")
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(.junkTextTertiary)
+                .foregroundColor(.umuveTextTertiary)
         }
-        .padding(JunkSpacing.normal)
+        .padding(UmuveSpacing.normal)
         .background(Color.white)
-        .clipShape(RoundedRectangle(cornerRadius: JunkRadius.lg))
+        .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.lg))
         .shadow(color: .black.opacity(0.06), radius: 6, x: 0, y: 3)
     }
 }
@@ -197,25 +197,25 @@ struct HowItWorksStep: View {
     let description: String
 
     var body: some View {
-        HStack(spacing: JunkSpacing.normal) {
+        HStack(spacing: UmuveSpacing.normal) {
             ZStack {
                 Circle()
-                    .fill(Color.junkPrimary.opacity(0.15))
+                    .fill(Color.umuvePrimary.opacity(0.15))
                     .frame(width: 36, height: 36)
 
                 Text("\(number)")
-                    .font(JunkTypography.h3Font)
-                    .foregroundColor(.junkPrimary)
+                    .font(UmuveTypography.h3Font)
+                    .foregroundColor(.umuvePrimary)
             }
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(JunkTypography.bodyFont.weight(.semibold))
-                    .foregroundColor(.junkText)
+                    .font(UmuveTypography.bodyFont.weight(.semibold))
+                    .foregroundColor(.umuveText)
 
                 Text(description)
-                    .font(JunkTypography.bodySmallFont)
-                    .foregroundColor(.junkTextMuted)
+                    .font(UmuveTypography.bodySmallFont)
+                    .foregroundColor(.umuveTextMuted)
             }
 
             Spacer()

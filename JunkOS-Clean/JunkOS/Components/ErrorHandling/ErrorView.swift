@@ -1,6 +1,6 @@
 //
 //  ErrorView.swift
-//  JunkOS
+//  Umuve
 //
 //  Error handling components with animations and retry actions
 //
@@ -113,8 +113,8 @@ struct ErrorView: View {
     }
     
     var body: some View {
-        JunkCard {
-            VStack(spacing: JunkSpacing.large) {
+        UmuveCard {
+            VStack(spacing: UmuveSpacing.large) {
                 // Error icon
                 ZStack {
                     Circle()
@@ -126,15 +126,15 @@ struct ErrorView: View {
                         .foregroundColor(.red)
                 }
                 
-                VStack(spacing: JunkSpacing.small) {
+                VStack(spacing: UmuveSpacing.small) {
                     Text(error.title)
-                        .font(JunkTypography.h3Font)
-                        .foregroundColor(.junkText)
+                        .font(UmuveTypography.h3Font)
+                        .foregroundColor(.umuveText)
                         .multilineTextAlignment(.center)
                     
                     Text(error.message)
-                        .font(JunkTypography.bodySmallFont)
-                        .foregroundColor(.junkTextMuted)
+                        .font(UmuveTypography.bodySmallFont)
+                        .foregroundColor(.umuveTextMuted)
                         .multilineTextAlignment(.center)
                 }
                 
@@ -145,12 +145,12 @@ struct ErrorView: View {
                             Text("Try Again")
                         }
                     }
-                    .buttonStyle(JunkPrimaryButtonStyle())
+                    .buttonStyle(UmuvePrimaryButtonStyle())
                     .accessibilityLabel("Try again")
                     .accessibilityHint("Double tap to retry")
                 }
             }
-            .padding(JunkSpacing.xlarge)
+            .padding(UmuveSpacing.xlarge)
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Error: \(error.title). \(error.message)")
@@ -163,17 +163,17 @@ struct InlineError: View {
     let isValid: Bool
     
     var body: some View {
-        HStack(spacing: JunkSpacing.small) {
+        HStack(spacing: UmuveSpacing.small) {
             Image(systemName: isValid ? "checkmark.circle.fill" : "xmark.circle.fill")
-                .foregroundColor(isValid ? .junkCTA : .red)
+                .foregroundColor(isValid ? .umuveCTA : .red)
             
             Text(message)
-                .font(JunkTypography.bodySmallFont)
-                .foregroundColor(isValid ? .junkCTA : .red)
+                .font(UmuveTypography.bodySmallFont)
+                .foregroundColor(isValid ? .umuveCTA : .red)
         }
-        .padding(.horizontal, JunkSpacing.medium)
-        .padding(.vertical, JunkSpacing.small)
-        .background(isValid ? Color.junkCTA.opacity(0.1) : Color.red.opacity(0.1))
+        .padding(.horizontal, UmuveSpacing.medium)
+        .padding(.vertical, UmuveSpacing.small)
+        .background(isValid ? Color.umuveCTA.opacity(0.1) : Color.red.opacity(0.1))
         .cornerRadius(8)
         .accessibilityLabel(isValid ? "Valid: \(message)" : "Error: \(message)")
     }
@@ -187,7 +187,7 @@ struct ValidationIcon: View {
     var body: some View {
         if show {
             Image(systemName: isValid ? "checkmark.circle.fill" : "xmark.circle.fill")
-                .foregroundColor(isValid ? .junkCTA : .red)
+                .foregroundColor(isValid ? .umuveCTA : .red)
                 .font(.system(size: 20))
                 .transition(.scale.combined(with: .opacity))
                 .accessibilityLabel(isValid ? "Valid input" : "Invalid input")
@@ -200,17 +200,17 @@ struct NetworkErrorBanner: View {
     let retryAction: () -> Void
     
     var body: some View {
-        HStack(spacing: JunkSpacing.medium) {
+        HStack(spacing: UmuveSpacing.medium) {
             Image(systemName: "wifi.slash")
                 .foregroundColor(.white)
             
             VStack(alignment: .leading, spacing: 4) {
                 Text("No Internet Connection")
-                    .font(JunkTypography.captionFont)
+                    .font(UmuveTypography.captionFont)
                     .foregroundColor(.white)
                 
                 Text("Check your connection")
-                    .font(JunkTypography.smallFont)
+                    .font(UmuveTypography.smallFont)
                     .foregroundColor(.white.opacity(0.8))
             }
             
@@ -218,7 +218,7 @@ struct NetworkErrorBanner: View {
             
             Button(action: retryAction) {
                 Text("Retry")
-                    .font(JunkTypography.captionFont)
+                    .font(UmuveTypography.captionFont)
                     .foregroundColor(.white)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
@@ -227,7 +227,7 @@ struct NetworkErrorBanner: View {
             }
             .accessibilityLabel("Retry connection")
         }
-        .padding(JunkSpacing.normal)
+        .padding(UmuveSpacing.normal)
         .background(Color.red)
         .cornerRadius(12)
         .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 2)
@@ -248,12 +248,12 @@ struct ErrorView_Previews: PreviewProvider {
             // Shake demo
             Text("Shake me!")
                 .padding()
-                .background(Color.junkPrimary)
+                .background(Color.umuvePrimary)
                 .foregroundColor(.white)
                 .cornerRadius(8)
                 .shake(trigger: 1)
         }
         .padding()
-        .background(Color.junkBackground)
+        .background(Color.umuveBackground)
     }
 }

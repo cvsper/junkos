@@ -1,4 +1,4 @@
-# JunkOS App Store Assets - Deliverables Summary
+# Umuve App Store Assets - Deliverables Summary
 
 Created: February 7, 2026  
 Status: ✅ **READY FOR GENERATION & CAPTURE**
@@ -20,13 +20,13 @@ open ~/Documents/programs/webapps/junkos/assets/icon/generate-icon.html
 ```
 
 **What You'll Get:**
-- `junkos-icon-1024.png` - App Store icon (1024×1024)
-- `junkos-icon-180.png` - iPhone 60pt @3x
-- `junkos-icon-120.png` - iPhone 60pt @2x  
-- `junkos-icon-60.png` - Settings 20pt @3x
+- `umuve-icon-1024.png` - App Store icon (1024×1024)
+- `umuve-icon-180.png` - iPhone 60pt @3x
+- `umuve-icon-120.png` - iPhone 60pt @2x  
+- `umuve-icon-60.png` - Settings 20pt @3x
 
 **Design Details:**
-- ✅ Brand colors: Primary #6366F1 (indigo), CTA #10B981 (emerald)
+- ✅ Brand colors: Primary #6366F1 (indigo), CTA #DC2626 (emerald)
 - ✅ Simple geometric truck design
 - ✅ SF Symbols-inspired aesthetic
 - ✅ Works at small sizes (60×60, 40×40, 29×29)
@@ -56,14 +56,14 @@ open ~/Documents/programs/webapps/junkos/assets/launch-screen/generate-launch.ht
 ```
 
 **What You'll Get:**
-- `junkos-launch-16pro.png` - iPhone 16 Pro (1290×2796)
-- `junkos-launch-15pro.png` - iPhone 15 Pro (1179×2556)
-- `junkos-launch-se.png` - iPhone SE (750×1334)
+- `umuve-launch-16pro.png` - iPhone 16 Pro (1290×2796)
+- `umuve-launch-15pro.png` - iPhone 15 Pro (1179×2556)
+- `umuve-launch-se.png` - iPhone SE (750×1334)
 
 **Design Details:**
 - ✅ Simple branded splash screen
 - ✅ Centered logo in circle (gradient indigo background)
-- ✅ App name: "JunkOS" (bold, dark indigo)
+- ✅ App name: "Umuve" (bold, dark indigo)
 - ✅ Tagline: "Book junk removal in 3 taps" (indigo)
 - ✅ Subtle bottom text: "Tampa Bay's Premium Junk Removal"
 - ✅ Light gradient background (#F5F3FF to white)
@@ -139,7 +139,7 @@ cd ~/Documents/programs/webapps/junkos/assets/screenshots
 **What's Included:**
 
 ### App Name
-**JunkOS**
+**Umuve**
 
 ### Subtitle (30 characters max)
 **Instant Junk Removal Quotes** _(29 characters)_
@@ -161,7 +161,7 @@ _(99 characters - optimized for ASO)_
 - Opening hook: "Clear Your Space in Minutes with AI-Powered Junk Removal"
 - Feature sections with emojis (📸, ⚡, 💰, ♻️, 🚚)
 - "Perfect For" use cases (homeowners, landlords, contractors, businesses)
-- "Why JunkOS?" benefits list (10 items)
+- "Why Umuve?" benefits list (10 items)
 - "How It Works" 5-step process
 - Closing call-to-action
 - Natural keyword integration
@@ -174,12 +174,12 @@ _(99 characters - optimized for ASO)_
 **✅ Launch announcement text** with feature bullets
 
 ### Additional Metadata
-- Privacy Policy URL: `https://junkos.app/privacy`
-- Support URL: `https://junkos.app/support`
-- Marketing URL: `https://junkos.app`
+- Privacy Policy URL: `https://goumuve.com/privacy`
+- Support URL: `https://goumuve.com/support`
+- Marketing URL: `https://goumuve.com`
 - Categories: Lifestyle (primary), Productivity (secondary)
 - Age Rating: 4+
-- Copyright: © 2026 JunkOS, LLC
+- Copyright: © 2026 Umuve, LLC
 
 ---
 
@@ -265,7 +265,7 @@ Once all assets are generated and ready:
 ```
 Primary:    #6366F1  (Indigo 500)
 Secondary:  #818CF8  (Indigo 400)
-CTA:        #10B981  (Emerald 500)
+CTA:        #DC2626  (Emerald 500)
 Background: #F5F3FF  (Lavender)
 Text:       #1E1B4B  (Indigo 950)
 White:      #FFFFFF
@@ -333,6 +333,6 @@ All documentation is self-contained in this assets folder:
 
 **🚛 Brand:** Premium, trustworthy, modern, efficient junk removal  
 **🎨 Style:** iOS-native, clean, simple, don't overthink it  
-**🎯 Goal:** Professional App Store presence for JunkOS
+**🎯 Goal:** Professional App Store presence for Umuve
 
 **All assets follow the brand guidelines and are ready for production!**

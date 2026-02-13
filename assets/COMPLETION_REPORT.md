@@ -1,4 +1,4 @@
-# ✅ JunkOS App Store Assets - COMPLETION REPORT
+# ✅ Umuve App Store Assets - COMPLETION REPORT
 
 **Date:** February 7, 2026, 06:57 EST  
 **Status:** 🎉 **ALL DELIVERABLES COMPLETE**  
@@ -9,8 +9,8 @@
 ## 📋 Task Summary
 
 **Original Request:**
-> Create App Store assets for JunkOS iOS app.
-> Brand: JunkOS - junk removal service (Florida-based, Tampa area)
+> Create App Store assets for Umuve iOS app.
+> Brand: Umuve - junk removal service (Florida-based, Tampa area)
 > Vibe: Premium, trustworthy, modern, efficient
 
 **Deliverables Requested:**
@@ -30,14 +30,14 @@
 ### What Was Created:
 - ✅ Interactive HTML icon generator (`icon/generate-icon.html`)
 - ✅ All 4 required sizes ready to export (1024, 180, 120, 60)
-- ✅ Brand colors applied: #6366F1 (indigo), #10B981 (emerald)
+- ✅ Brand colors applied: #6366F1 (indigo), #DC2626 (emerald)
 - ✅ Simple geometric truck design (iOS-native aesthetic)
 - ✅ Works perfectly at small sizes
 
 ### Design Features:
 - Indigo gradient background (#6366F1 → #818CF8)
 - White truck silhouette
-- Emerald accent wheels (#10B981)
+- Emerald accent wheels (#DC2626)
 - Minimalist, SF Symbols-inspired
 - Modern, premium, trustworthy vibe
 
@@ -68,7 +68,7 @@ open ~/Documents/programs/webapps/junkos/assets/icon/generate-icon.html
 
 ### Design Features:
 - Centered logo in gradient circle
-- "JunkOS" wordmark (bold, brand typography)
+- "Umuve" wordmark (bold, brand typography)
 - Tagline: "Book junk removal in 3 taps"
 - Tampa Bay branding
 - Light lavender to white gradient background
@@ -143,7 +143,7 @@ cd ~/Documents/programs/webapps/junkos/assets/screenshots
 
 #### App Name
 ```
-JunkOS
+Umuve
 ```
 ✅ 6 characters (under 30 limit)
 
@@ -175,7 +175,7 @@ junk removal,hauling,declutter,waste,furniture removal,trash pickup,dump,moving,
 - ♻️ Eco-friendly disposal
 - 🚚 Professional service
 - "Perfect For" use cases
-- "Why JunkOS?" benefits (10 items)
+- "Why Umuve?" benefits (10 items)
 - "How It Works" 5-step process
 - Compelling call-to-action
 
@@ -189,12 +189,12 @@ junk removal,hauling,declutter,waste,furniture removal,trash pickup,dump,moving,
 ✅ Launch announcement with feature bullets (~300 chars)
 
 #### Metadata
-- ✅ Privacy URL: `https://junkos.app/privacy`
-- ✅ Support URL: `https://junkos.app/support`
-- ✅ Marketing URL: `https://junkos.app`
+- ✅ Privacy URL: `https://goumuve.com/privacy`
+- ✅ Support URL: `https://goumuve.com/support`
+- ✅ Marketing URL: `https://goumuve.com`
 - ✅ Categories: Lifestyle (primary), Productivity (secondary)
 - ✅ Age Rating: 4+
-- ✅ Copyright: © 2026 JunkOS, LLC
+- ✅ Copyright: © 2026 Umuve, LLC
 
 ---
 
@@ -264,7 +264,7 @@ junk removal,hauling,declutter,waste,furniture removal,trash pickup,dump,moving,
 ```css
 Primary:    #6366F1  /* Indigo 500 */
 Secondary:  #818CF8  /* Indigo 400 */
-CTA:        #10B981  /* Emerald 500 */
+CTA:        #DC2626  /* Emerald 500 */
 Background: #F5F3FF  /* Lavender */
 Text:       #1E1B4B  /* Indigo 950 */
 Muted:      #64748B  /* Slate 500 */
@@ -363,7 +363,7 @@ assets/
 ## ✅ Quality Assurance
 
 ### Assets Meet Requirements
-- ✅ Icons use brand colors (#6366F1, #10B981)
+- ✅ Icons use brand colors (#6366F1, #DC2626)
 - ✅ Simple, clean, iOS-native design
 - ✅ Works at all sizes (60×60 minimum tested)
 - ✅ Launch screens branded with logo + tagline
@@ -447,7 +447,7 @@ assets/
 **Status:** ✅ **COMPLETE & READY FOR USE**  
 **Next Step:** Open icon generator and start generating!
 
-**🚛 JunkOS - Tampa Bay's Premium Junk Removal**  
+**🚛 Umuve - Tampa Bay's Premium Junk Removal**  
 **Built with ❤️ and attention to detail**
 
 ---

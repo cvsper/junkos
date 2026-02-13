@@ -20,7 +20,7 @@ jobs:
       postgres:
         image: postgres:15
         env:
-          POSTGRES_DB: junkos_test
+          POSTGRES_DB: umuve_test
           POSTGRES_USER: test
           POSTGRES_PASSWORD: test
         options: >-
@@ -51,7 +51,7 @@ jobs:
       - name: Run pytest with coverage
         working-directory: backend
         env:
-          DATABASE_URL: postgresql://test:test@localhost:5432/junkos_test
+          DATABASE_URL: postgresql://test:test@localhost:5432/umuve_test
           FLASK_ENV: testing
           SECRET_KEY: test-secret-key
         run: |
@@ -298,13 +298,13 @@ jobs:
           context: ./${{ matrix.service }}
           file: ./${{ matrix.service }}/Dockerfile
           push: false
-          tags: junkos-${{ matrix.service }}:test
+          tags: umuve-${{ matrix.service }}:test
           cache-from: type=gha
           cache-to: type=gha,mode=max
       
       - name: Test image can start
         run: |
-          docker run --rm -d --name test-${{ matrix.service }} junkos-${{ matrix.service }}:test || echo "Service needs environment variables"
+          docker run --rm -d --name test-${{ matrix.service }} umuve-${{ matrix.service }}:test || echo "Service needs environment variables"
           sleep 5
           docker logs test-${{ matrix.service }} || true
           docker stop test-${{ matrix.service }} || true

@@ -1,4 +1,4 @@
-# 🎉 JunkOS Backend - Production Deployment Complete
+# 🎉 Umuve Backend - Production Deployment Complete
 
 **Status:** ✅ READY FOR DEPLOYMENT
 **Time Taken:** ~25 minutes
@@ -118,13 +118,13 @@ web: gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 60
 - **Pros:** Easiest, best Git integration, free 500 hours/month
 - **Setup:** 10 minutes
 - **PostgreSQL:** One-click addon
-- **URL:** `https://junkos-backend-production.up.railway.app`
+- **URL:** `https://umuve-backend-production.up.railway.app`
 
 ### Render
 - **Pros:** Free tier, excellent docs, PostgreSQL included
 - **Setup:** 15 minutes
 - **PostgreSQL:** Automatic via render.yaml
-- **URL:** `https://junkos-backend.onrender.com`
+- **URL:** `https://umuve-backend.onrender.com`
 
 ---
 
@@ -134,7 +134,7 @@ web: gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 60
 
 ```bash
 # Navigate to backend
-cd ~/Documents/programs/webapps/junkos/backend
+cd ~/Documents/programs/webapps/umuve/backend
 
 # Initialize Git (if not done)
 git init
@@ -142,7 +142,7 @@ git add .
 git commit -m "Production-ready backend with PostgreSQL support"
 
 # Push to GitHub
-git remote add origin https://github.com/YOUR_USERNAME/junkos-backend.git
+git remote add origin https://github.com/YOUR_USERNAME/umuve-backend.git
 git push -u origin main
 
 # Then deploy on Railway or Render (see DEPLOYMENT.md)
@@ -330,7 +330,7 @@ All endpoints require `X-API-Key` header (except health check).
 
 ## 🎉 Conclusion
 
-The JunkOS backend is **100% production-ready**:
+The Umuve backend is **100% production-ready**:
 
 ✅ All required files created
 ✅ PostgreSQL support implemented

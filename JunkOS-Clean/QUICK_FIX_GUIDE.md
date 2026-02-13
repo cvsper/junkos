@@ -20,9 +20,9 @@ open ~/Documents/programs/webapps/junkos/JunkOS-Clean/JunkOS.xcodeproj
 ```
 
 ### Step 2: Add Files to Project
-1. In Xcode, right-click on the **"JunkOS"** folder in the Project Navigator (left sidebar)
-2. Select **"Add Files to 'JunkOS'..."**
-3. Navigate to: `JunkOS/Components/`
+1. In Xcode, right-click on the **"Umuve"** folder in the Project Navigator (left sidebar)
+2. Select **"Add Files to 'Umuve'..."**
+3. Navigate to: `Umuve/Components/`
 4. Select **all folders**:
    - LoadingStates/
    - EmptyStates/
@@ -35,22 +35,22 @@ open ~/Documents/programs/webapps/junkos/JunkOS-Clean/JunkOS.xcodeproj
 5. **IMPORTANT Settings**:
    - ✅ **UNCHECK** "Copy items if needed"
    - ✅ **SELECT** "Create groups"  
-   - ✅ **CHECK** "JunkOS" target
-   - ✅ **CHECK** "Add to targets: JunkOS"
+   - ✅ **CHECK** "Umuve" target
+   - ✅ **CHECK** "Add to targets: Umuve"
 
 6. Click **"Add"**
 
 ### Step 3: Add AccessibilityHelpers.swift
-1. Right-click on **"JunkOS/Utilities"** folder
-2. Select **"Add Files to 'JunkOS'..."**
-3. Navigate to: `JunkOS/Utilities/`
+1. Right-click on **"Umuve/Utilities"** folder
+2. Select **"Add Files to 'Umuve'..."**
+3. Navigate to: `Umuve/Utilities/`
 4. Select **AccessibilityHelpers.swift**
 5. Same settings as above (uncheck copy, check target)
 6. Click **"Add"**
 
 ### Step 4: Verify Files Are Added
-1. Click on the **project name** (JunkOS) in Project Navigator
-2. Select **"JunkOS" target**
+1. Click on the **project name** (Umuve) in Project Navigator
+2. Select **"Umuve" target**
 3. Go to **"Build Phases"** tab
 4. Expand **"Compile Sources"**
 5. Verify these 8 files appear:
@@ -89,7 +89,7 @@ After following these steps:
 ### If build still fails:
 ```bash
 # Clean derived data
-rm -rf ~/Library/Developer/Xcode/DerivedData/JunkOS-*
+rm -rf ~/Library/Developer/Xcode/DerivedData/Umuve-*
 
 # Restart Xcode
 killall Xcode
@@ -106,14 +106,14 @@ open JunkOS.xcodeproj
 
 ### Required Files (8 total):
 ```
-JunkOS/Components/LoadingStates/SkeletonView.swift
-JunkOS/Components/EmptyStates/EmptyStateView.swift
-JunkOS/Components/ErrorHandling/ErrorView.swift
-JunkOS/Components/Animations/ConfettiView.swift
-JunkOS/Components/Onboarding/OnboardingView.swift
-JunkOS/Components/TrustComponents.swift
-JunkOS/Components/ProgressiveDisclosureComponents.swift
-JunkOS/Utilities/AccessibilityHelpers.swift
+Umuve/Components/LoadingStates/SkeletonView.swift
+Umuve/Components/EmptyStates/EmptyStateView.swift
+Umuve/Components/ErrorHandling/ErrorView.swift
+Umuve/Components/Animations/ConfettiView.swift
+Umuve/Components/Onboarding/OnboardingView.swift
+Umuve/Components/TrustComponents.swift
+Umuve/Components/ProgressiveDisclosureComponents.swift
+Umuve/Utilities/AccessibilityHelpers.swift
 ```
 
 ---

@@ -1,6 +1,6 @@
 //
 //  EarningsViewModel.swift
-//  JunkOS Driver
+//  Umuve Pro
 //
 //  Earnings history and totals.
 //

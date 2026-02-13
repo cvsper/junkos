@@ -1,6 +1,6 @@
 //
 //  JunkOSApp.swift
-//  JunkOS
+//  Umuve
 //
 //  Main app entry point
 //
@@ -11,7 +11,7 @@ import UserNotifications
 // MARK: - App Delegate
 
 class AppDelegate: NSObject, UIApplicationDelegate {
-    /// Shared notification manager, set by JunkOSApp on launch
+    /// Shared notification manager, set by UmuveApp on launch
     static var notificationManager: NotificationManager?
 
     func application(
@@ -32,7 +32,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
 // MARK: - App Entry Point
 
 @main
-struct JunkOSApp: App {
+struct UmuveApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @StateObject private var bookingData = BookingData()
     @StateObject private var authManager = AuthenticationManager()

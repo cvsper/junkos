@@ -1,4 +1,4 @@
-# JunkOS App Preview Screenshots
+# Umuve App Preview Screenshots
 **Recommended: 6-7 screenshots showcasing key user journey**
 
 ---
@@ -96,7 +96,7 @@ If creating a 15-30 second preview video:
 **:05-:10** - Problem: "Traditional junk removal is slow, expensive, and unpredictable"
 *Show person on phone waiting, confused by pricing*
 
-**:10-:15** - Solution: "Meet JunkOS—junk removal, simplified"
+**:10-:15** - Solution: "Meet Umuve—junk removal, simplified"
 *Show app logo, then user opening app*
 
 **:15-:20** - Demo: "Snap a photo. Get instant AI pricing. Book your pickup."
@@ -105,7 +105,7 @@ If creating a 15-30 second preview video:
 **:20-:25** - Result: "Your junk is gone—fast, fair, and hassle-free"
 *Show hauler loading items, user relaxing in clean space*
 
-**:25-:30** - CTA: "Download JunkOS today"
+**:25-:30** - CTA: "Download Umuve today"
 *App icon with download prompt*
 
 ---

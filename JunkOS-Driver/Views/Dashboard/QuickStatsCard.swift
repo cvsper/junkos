@@ -1,6 +1,6 @@
 //
 //  QuickStatsCard.swift
-//  JunkOS Driver
+//  Umuve Pro
 //
 //  Today's earnings, jobs count, and rating in a compact card.
 //

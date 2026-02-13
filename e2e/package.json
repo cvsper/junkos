@@ -1,7 +1,7 @@
 {
-  "name": "junkos-e2e-tests",
+  "name": "umuve-e2e-tests",
   "version": "1.0.0",
-  "description": "End-to-end tests for JunkOS",
+  "description": "End-to-end tests for Umuve",
   "scripts": {
     "test": "playwright test",
     "test:headed": "playwright test --headed",
@@ -14,8 +14,8 @@
     "report": "playwright show-report",
     "codegen": "playwright codegen http://localhost:5173"
   },
-  "keywords": ["e2e", "testing", "playwright", "junkos"],
-  "author": "JunkOS Team",
+  "keywords": ["e2e", "testing", "playwright", "umuve"],
+  "author": "Umuve Team",
   "license": "MIT",
   "devDependencies": {
     "@playwright/test": "^1.41.0"

@@ -1,4 +1,4 @@
-# JunkOS Operator Onboarding Video Script
+# Umuve Operator Onboarding Video Script
 
 **Duration**: ~5 minutes  
 **Target Audience**: New junk removal operators  
@@ -25,11 +25,11 @@
 ### INTRO (0:00 - 0:25)
 
 #### Visual
-- JunkOS logo animation
+- Umuve logo animation
 - Fade to operator dashboard with "Welcome" overlay
 
 #### Narration
-> "Welcome to JunkOS, the complete operating system for junk removal businesses. In just five minutes, I'll show you everything you need to start accepting bookings and managing jobs. Let's get started."
+> "Welcome to Umuve, the complete operating system for junk removal businesses. In just five minutes, I'll show you everything you need to start accepting bookings and managing jobs. Let's get started."
 
 #### Recording Notes
 - Use upbeat background music (fade under narration)
@@ -85,7 +85,7 @@
 - **1:50**: Show auto-calculated price ($179)
 
 #### Narration (Part 3)
-> "Pick a date and time window. JunkOS automatically calculates pricing based on volume. Assign a driver now or do it later. Click 'Create Job' and you're done!"
+> "Pick a date and time window. Umuve automatically calculates pricing based on volume. Assign a driver now or do it later. Click 'Create Job' and you're done!"
 
 #### Recording Notes
 - **1:55**: Click date picker, select tomorrow's date
@@ -202,14 +202,14 @@
 ### CLOSING (4:45 - 5:00)
 
 #### Visual
-- Fade from dashboard to JunkOS logo
+- Fade from dashboard to Umuve logo
 - Display support resources:
-  - help.junkos.app
-  - support@junkos.app
+  - help.goumuve.com
+  - support@goumuve.com
   - 1-800-JUNK-OS
 
 #### Narration
-> "And that's JunkOS! You're now ready to streamline your junk removal business. Check out our complete operator guide for advanced features, or reach out to our support team anytime. Welcome aboard!"
+> "And that's Umuve! You're now ready to streamline your junk removal business. Check out our complete operator guide for advanced features, or reach out to our support team anytime. Welcome aboard!"
 
 #### Recording Notes
 - **4:45**: Begin fade to logo
@@ -235,7 +235,7 @@
   - WebM (for web optimization)
 
 ### Text Overlays to Add
-- **0:00**: "JunkOS Operator Onboarding"
+- **0:00**: "Umuve Operator Onboarding"
 - **0:25**: "Your Dashboard"
 - **1:00**: "Creating a Job"
 - **2:10**: "Managing Jobs"
@@ -272,9 +272,9 @@ If you need a condensed version, use this structure:
 ## Distribution
 
 ### YouTube
-- **Title**: "JunkOS Operator Onboarding - Complete Walkthrough (5 Minutes)"
+- **Title**: "Umuve Operator Onboarding - Complete Walkthrough (5 Minutes)"
 - **Description**: Include timestamps for each section
-- **Tags**: junk removal software, business management, operator training, JunkOS
+- **Tags**: junk removal software, business management, operator training, Umuve
 - **Thumbnail**: Dashboard screenshot with "5-Minute Setup" overlay
 
 ### In-App
@@ -299,7 +299,7 @@ For international versions:
 
 ---
 
-**Production Contact**: video@junkos.app  
+**Production Contact**: video@goumuve.com  
 **Revision History**:
 - v1.0 - February 2026 - Initial script
 

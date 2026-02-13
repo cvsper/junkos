@@ -1,5 +1,5 @@
 """
-Recurring Booking API routes for JunkOS.
+Recurring Booking API routes for Umuve.
 Allows customers to set up recurring/scheduled junk removal pickups.
 """
 

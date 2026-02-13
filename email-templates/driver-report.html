@@ -13,7 +13,7 @@
                 <table role="presentation" style="width: 100%; max-width: 600px; border-collapse: collapse; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
                     <!-- Header -->
                     <tr>
-                        <td style="background: linear-gradient(135deg, #10B981 0%, #059669 100%); padding: 40px 30px; text-align: center; border-radius: 8px 8px 0 0;">
+                        <td style="background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%); padding: 40px 30px; text-align: center; border-radius: 8px 8px 0 0;">
                             <div style="font-size: 64px; margin-bottom: 10px;">📈</div>
                             <h1 style="margin: 0; font-family: 'Poppins', sans-serif; font-size: 28px; font-weight: 700; color: #ffffff;">Weekly Driver Report</h1>
                             <p style="margin: 10px 0 0; font-size: 16px; color: rgba(255, 255, 255, 0.9);">{{week_range}}</p>
@@ -56,7 +56,7 @@
                                 <h3 style="margin: 0 0 20px; font-family: 'Poppins', sans-serif; font-size: 18px; font-weight: 600; color: #1F2937; text-align: center;">🏆 Driver Leaderboard</h3>
                                 
                                 {{#each drivers}}
-                                <div style="background-color: {{#if this.top_performer}}#ECFDF5{{else}}#F9FAFB{{/if}}; border-left: 4px solid {{#if this.top_performer}}#10B981{{else}}#E5E7EB{{/if}}; border-radius: 8px; padding: 20px; margin: 15px 0;">
+                                <div style="background-color: {{#if this.top_performer}}#FEF2F2{{else}}#F9FAFB{{/if}}; border-left: 4px solid {{#if this.top_performer}}#DC2626{{else}}#E5E7EB{{/if}}; border-radius: 8px; padding: 20px; margin: 15px 0;">
                                     <table role="presentation" style="width: 100%;">
                                         <tr>
                                             <td style="width: 60px; vertical-align: top;">
@@ -76,7 +76,7 @@
                                                             Jobs
                                                         </td>
                                                         <td style="padding: 5px 0; font-size: 13px; color: #6B7280; width: 25%;">
-                                                            <strong style="color: #10B981; font-size: 16px;">${{this.revenue}}</strong><br>
+                                                            <strong style="color: #DC2626; font-size: 16px;">${{this.revenue}}</strong><br>
                                                             Revenue
                                                         </td>
                                                         <td style="padding: 5px 0; font-size: 13px; color: #6B7280; width: 25%;">
@@ -173,7 +173,7 @@
                     <!-- Footer -->
                     <tr>
                         <td style="background-color: #F9FAFB; padding: 30px; text-align: center; border-radius: 0 0 8px 8px; border-top: 1px solid #E5E7EB;">
-                            <p style="margin: 0 0 10px; font-size: 14px; color: #6B7280;">Weekly Report from JunkOS</p>
+                            <p style="margin: 0 0 10px; font-size: 14px; color: #6B7280;">Weekly Report from Umuve</p>
                             <p style="margin: 0; font-size: 12px; color: #9CA3AF;">
                                 <a href="{{notification_settings_url}}" style="color: #6B7280; text-decoration: none;">Notification Settings</a>
                             </p>

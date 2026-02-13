@@ -1,4 +1,4 @@
-# JunkOS Backend - Production Deployment Guide
+# Umuve Backend - Production Deployment Guide
 
 ## 📋 Prerequisites
 
@@ -13,7 +13,7 @@ Railway is the easiest option with excellent Git integration and PostgreSQL supp
 ### Step 1: Initialize Git Repository
 
 ```bash
-cd ~/Documents/programs/webapps/junkos/backend
+cd ~/Documents/programs/webapps/umuve/backend
 
 # Initialize git if not already done
 git init
@@ -29,10 +29,10 @@ git commit -m "Initial commit - production ready"
 
 ```bash
 # Create a new repository on GitHub (https://github.com/new)
-# Name it: junkos-backend
+# Name it: umuve-backend
 
 # Add remote
-git remote add origin https://github.com/YOUR_USERNAME/junkos-backend.git
+git remote add origin https://github.com/YOUR_USERNAME/umuve-backend.git
 
 # Push
 git branch -M main
@@ -43,7 +43,7 @@ git push -u origin main
 
 1. Go to [railway.app](https://railway.app) and sign in with GitHub
 2. Click **"New Project"** → **"Deploy from GitHub repo"**
-3. Select your `junkos-backend` repository
+3. Select your `umuve-backend` repository
 4. Railway will automatically:
    - Detect Python
    - Install dependencies from `requirements.txt`
@@ -89,7 +89,7 @@ python3 migrate_to_postgres.py
 
 ### Step 7: Get Your Production URL
 
-Railway will provide a URL like: `https://junkos-backend-production.up.railway.app`
+Railway will provide a URL like: `https://umuve-backend-production.up.railway.app`
 
 Test it:
 ```bash
@@ -98,7 +98,7 @@ curl https://your-app.railway.app/api/health
 
 Expected response:
 ```json
-{"status": "healthy", "service": "JunkOS API"}
+{"status": "healthy", "service": "Umuve API"}
 ```
 
 ---
@@ -111,7 +111,7 @@ Expected response:
 
 1. Go to [render.com](https://render.com) and sign in with GitHub
 2. Click **"New +"** → **"Web Service"**
-3. Connect your `junkos-backend` repository
+3. Connect your `umuve-backend` repository
 4. Render will detect the `render.yaml` configuration
 
 ### Step 4: Render Auto-Configuration
@@ -132,7 +132,7 @@ API_KEY=<your-api-key-for-ios-app>
 
 ### Step 6: Get Your Production URL
 
-Render provides a URL like: `https://junkos-backend.onrender.com`
+Render provides a URL like: `https://umuve-backend.onrender.com`
 
 ---
 
@@ -143,10 +143,10 @@ Update `Config.swift` in your iOS app:
 ```swift
 enum Config {
     // Production API
-    static let baseURL = "https://junkos-backend-production.up.railway.app"
+    static let baseURL = "https://umuve-backend-production.up.railway.app"
     
     // Or for Render:
-    // static let baseURL = "https://junkos-backend.onrender.com"
+    // static let baseURL = "https://umuve-backend.onrender.com"
     
     static let apiKey = "your-api-key-here"  // Match backend API_KEY
 }
@@ -249,7 +249,7 @@ curl -X POST \
 After making code changes:
 
 ```bash
-cd ~/Documents/programs/webapps/junkos/backend
+cd ~/Documents/programs/webapps/umuve/backend
 
 git add .
 git commit -m "Your update message"
@@ -296,4 +296,4 @@ Both Railway and Render support:
 
 ---
 
-**🎉 Your JunkOS backend is now live in production!**
+**🎉 Your Umuve backend is now live in production!**

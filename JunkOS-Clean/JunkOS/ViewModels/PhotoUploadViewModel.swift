@@ -1,6 +1,6 @@
 //
 //  PhotoUploadViewModel.swift
-//  JunkOS
+//  Umuve
 //
 //  ViewModel for PhotoUploadView
 //

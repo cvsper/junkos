@@ -1,6 +1,6 @@
 //
 //  PhoneSignUpView.swift
-//  JunkOS
+//  Umuve
 //
 //  Phone number sign up with country code selection
 //
@@ -17,31 +17,31 @@ struct PhoneSignUpView: View {
     
     var body: some View {
         ScrollView {
-            VStack(spacing: JunkSpacing.xxlarge) {
+            VStack(spacing: UmuveSpacing.xxlarge) {
                 // Close button
                 HStack {
                     Spacer()
                     Button(action: { dismiss() }) {
                         Image(systemName: "xmark")
                             .font(.title3)
-                            .foregroundColor(.junkText)
+                            .foregroundColor(.umuveText)
                             .padding()
                     }
                 }
                 
                 // Header
-                VStack(spacing: JunkSpacing.normal) {
+                VStack(spacing: UmuveSpacing.normal) {
                     Text("Sign up with your phone")
                         .font(.system(size: 28, weight: .bold))
-                        .foregroundColor(.junkText)
+                        .foregroundColor(.umuveText)
                         .multilineTextAlignment(.center)
-                        .padding(.horizontal, JunkSpacing.large)
+                        .padding(.horizontal, UmuveSpacing.large)
                 }
                 .frame(maxWidth: .infinity)
-                .padding(.top, JunkSpacing.xlarge)
+                .padding(.top, UmuveSpacing.xlarge)
                 
                 // Phone input
-                HStack(spacing: JunkSpacing.normal) {
+                HStack(spacing: UmuveSpacing.normal) {
                     // Country code picker
                     Menu {
                         ForEach(Country.popular) { country in
@@ -61,61 +61,61 @@ struct PhoneSignUpView: View {
                             Text(selectedCountry.flag)
                                 .font(.title2)
                             Text(selectedCountry.dialCode)
-                                .font(JunkTypography.bodyFont)
-                                .foregroundColor(.junkText)
+                                .font(UmuveTypography.bodyFont)
+                                .foregroundColor(.umuveText)
                             Image(systemName: "chevron.down")
                                 .font(.caption)
-                                .foregroundColor(.junkTextMuted)
+                                .foregroundColor(.umuveTextMuted)
                         }
-                        .padding(.vertical, JunkSpacing.normal)
-                        .padding(.horizontal, JunkSpacing.normal)
+                        .padding(.vertical, UmuveSpacing.normal)
+                        .padding(.horizontal, UmuveSpacing.normal)
                     }
                     
                     // Phone number input
                     TextField("phone number", text: $phoneNumber)
-                        .font(JunkTypography.bodyFont)
+                        .font(UmuveTypography.bodyFont)
                         .keyboardType(.phonePad)
                         .autocapitalization(.none)
-                        .padding(.vertical, JunkSpacing.normal)
-                        .padding(.horizontal, JunkSpacing.normal)
+                        .padding(.vertical, UmuveSpacing.normal)
+                        .padding(.horizontal, UmuveSpacing.normal)
                 }
                 .overlay(
                     Rectangle()
                         .frame(height: 1)
-                        .foregroundColor(.junkBorder),
+                        .foregroundColor(.umuveBorder),
                     alignment: .bottom
                 )
-                .padding(.horizontal, JunkSpacing.xlarge)
+                .padding(.horizontal, UmuveSpacing.xlarge)
                 
                 Spacer()
                 
                 // Terms and privacy
-                VStack(spacing: JunkSpacing.small) {
+                VStack(spacing: UmuveSpacing.small) {
                     HStack(spacing: 4) {
                         Text("By creating an account you are agreeing to our")
-                            .foregroundColor(.junkTextMuted)
+                            .foregroundColor(.umuveTextMuted)
                         Button("terms of use") {
                             // Open terms
                         }
-                        .foregroundColor(.junkPrimary)
+                        .foregroundColor(.umuvePrimary)
                     }
                     
                     HStack(spacing: 4) {
                         Text("and")
-                            .foregroundColor(.junkTextMuted)
+                            .foregroundColor(.umuveTextMuted)
                         Button("privacy policy.") {
                             // Open privacy policy
                         }
-                        .foregroundColor(.junkPrimary)
+                        .foregroundColor(.umuvePrimary)
                     }
                 }
-                .font(JunkTypography.bodySmallFont)
+                .font(UmuveTypography.bodySmallFont)
                 .multilineTextAlignment(.center)
-                .padding(.horizontal, JunkSpacing.xlarge)
+                .padding(.horizontal, UmuveSpacing.xlarge)
                 
                 Text("We will send a verification code to your phone.")
-                    .font(JunkTypography.bodySmallFont)
-                    .foregroundColor(.junkTextMuted)
+                    .font(UmuveTypography.bodySmallFont)
+                    .foregroundColor(.umuveTextMuted)
                     .multilineTextAlignment(.center)
                 
                 // Continue button
@@ -125,20 +125,20 @@ struct PhoneSignUpView: View {
                             .progressViewStyle(CircularProgressViewStyle(tint: .white))
                     } else {
                         Text("Next")
-                            .font(JunkTypography.h3Font)
+                            .font(UmuveTypography.h3Font)
                             .foregroundColor(.white)
                     }
                 }
                 .frame(maxWidth: .infinity)
                 .frame(height: 56)
-                .background(isValidPhoneNumber ? Color.junkPrimary : Color.junkTextMuted)
+                .background(isValidPhoneNumber ? Color.umuvePrimary : Color.umuveTextMuted)
                 .cornerRadius(28)
                 .disabled(!isValidPhoneNumber || isLoading)
-                .padding(.horizontal, JunkSpacing.xlarge)
-                .padding(.bottom, JunkSpacing.xlarge)
+                .padding(.horizontal, UmuveSpacing.xlarge)
+                .padding(.bottom, UmuveSpacing.xlarge)
             }
         }
-        .background(Color.junkBackground.ignoresSafeArea())
+        .background(Color.umuveBackground.ignoresSafeArea())
         .fullScreenCover(isPresented: $showVerification) {
             NavigationView {
                 VerificationCodeView(phoneNumber: fullPhoneNumber)

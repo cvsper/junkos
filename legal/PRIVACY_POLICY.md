@@ -1,4 +1,4 @@
-# Privacy Policy for JunkOS
+# Privacy Policy for Umuve
 
 **Effective Date:** February 7, 2026  
 **Last Updated:** February 7, 2026
@@ -7,11 +7,11 @@
 
 ## Introduction
 
-Welcome to JunkOS! We're Gymbuddy (operated by Shamar Donaldson), and we provide on-demand junk removal services in the Tampa, Florida area. We take your privacy seriously and want you to understand exactly how we collect, use, and protect your information.
+Welcome to Umuve! We're Gymbuddy (operated by Shamar Donaldson), and we provide on-demand junk removal services in the Tampa, Florida area. We take your privacy seriously and want you to understand exactly how we collect, use, and protect your information.
 
-This Privacy Policy explains what data we collect when you use the JunkOS mobile app, why we collect it, how we use it, and your rights regarding your personal information.
+This Privacy Policy explains what data we collect when you use the Umuve mobile app, why we collect it, how we use it, and your rights regarding your personal information.
 
-**By using JunkOS, you agree to the practices described in this Privacy Policy.**
+**By using Umuve, you agree to the practices described in this Privacy Policy.**
 
 ---
 
@@ -19,7 +19,7 @@ This Privacy Policy explains what data we collect when you use the JunkOS mobile
 
 ### 1.1 Information You Provide to Us
 
-When you create an account and use JunkOS, we collect:
+When you create an account and use Umuve, we collect:
 
 - **Contact Information:** Your name, phone number, and email address
 - **Address Information:** Service addresses where you need junk removed
@@ -177,13 +177,13 @@ If you're in the European Union or EEA (though we primarily serve Florida), you 
 
 ## 7. Children's Privacy
 
-JunkOS is not intended for children under 13. We do not knowingly collect information from children. If you believe a child has provided us with personal information, please contact us immediately, and we'll delete it.
+Umuve is not intended for children under 13. We do not knowingly collect information from children. If you believe a child has provided us with personal information, please contact us immediately, and we'll delete it.
 
 ---
 
 ## 8. Location Services & Permissions
 
-JunkOS requires location access to function properly:
+Umuve requires location access to function properly:
 
 - **Why:** To verify service area and determine pickup location
 - **When:** Only when you're actively using the app (not in the background)
@@ -195,7 +195,7 @@ We also request camera access to take photos of items for removal. You can decli
 
 ## 9. Third-Party Links
 
-JunkOS may contain links to third-party websites (e.g., our website or social media). This Privacy Policy only applies to JunkOS—we're not responsible for the privacy practices of other sites. Please review their privacy policies before providing any information.
+Umuve may contain links to third-party websites (e.g., our website or social media). This Privacy Policy only applies to Umuve—we're not responsible for the privacy practices of other sites. Please review their privacy policies before providing any information.
 
 ---
 
@@ -205,7 +205,7 @@ We may update this Privacy Policy from time to time to reflect changes in our pr
 
 - We'll update the "Last Updated" date at the top
 - For significant changes, we'll notify you via email or in-app notification
-- Your continued use of JunkOS after changes means you accept the updated policy
+- Your continued use of Umuve after changes means you accept the updated policy
 
 We encourage you to review this policy periodically.
 
@@ -213,15 +213,15 @@ We encourage you to review this policy periodically.
 
 ## 11. International Users
 
-JunkOS is based in Florida, USA, and our servers are located in the United States. If you use JunkOS from outside the U.S., your information will be transferred to and processed in the U.S., which may have different data protection laws than your country.
+Umuve is based in Florida, USA, and our servers are located in the United States. If you use Umuve from outside the U.S., your information will be transferred to and processed in the U.S., which may have different data protection laws than your country.
 
-By using JunkOS, you consent to this transfer.
+By using Umuve, you consent to this transfer.
 
 ---
 
 ## 12. Do Not Track Signals
 
-Some browsers have "Do Not Track" (DNT) features. JunkOS does not currently respond to DNT signals because there's no industry standard for how to interpret them. We don't track you across websites anyway!
+Some browsers have "Do Not Track" (DNT) features. Umuve does not currently respond to DNT signals because there's no industry standard for how to interpret them. We don't track you across websites anyway!
 
 ---
 
@@ -240,8 +240,8 @@ If you have questions, concerns, or requests regarding your privacy or this Priv
 
 ## 14. Your Consent
 
-By using JunkOS, you acknowledge that you have read and understood this Privacy Policy and agree to its terms.
+By using Umuve, you acknowledge that you have read and understood this Privacy Policy and agree to its terms.
 
 ---
 
-**Thank you for trusting JunkOS with your junk removal needs!** 🗑️✨
+**Thank you for trusting Umuve with your junk removal needs!** 🗑️✨

@@ -1,6 +1,6 @@
 # TestFlight Quick Start - TL;DR
 
-**Get JunkOS on TestFlight in 30 minutes (once Apple Dev account is approved)**
+**Get Umuve on TestFlight in 30 minutes (once Apple Dev account is approved)**
 
 ---
 
@@ -8,7 +8,7 @@
 
 - ✅ Apple Developer Program membership ($99/year) - [Sign up](https://developer.apple.com/programs/enroll/)
 - ✅ Xcode installed
-- ✅ JunkOS project builds successfully
+- ✅ Umuve project builds successfully
 
 ---
 
@@ -22,11 +22,11 @@ open ~/Documents/programs/webapps/junkos/JunkOS-Clean/JunkOS.xcodeproj
 ```
 
 **In Xcode:**
-1. Select project (blue icon) → Target "JunkOS"
+1. Select project (blue icon) → Target "Umuve"
 2. Go to **"Signing & Capabilities"** tab
 3. ✅ Check **"Automatically manage signing"**
 4. Select your **Team** from dropdown
-5. Verify **Bundle ID:** `com.junkos.JunkOS`
+5. Verify **Bundle ID:** `com.goumuve.app`
 6. Should show green checkmark ✅
 
 ---
@@ -38,9 +38,9 @@ open ~/Documents/programs/webapps/junkos/JunkOS-Clean/JunkOS.xcodeproj
 1. **My Apps** → **+ button** → **New App**
 2. Fill in:
    - **Platform:** iOS
-   - **Name:** JunkOS
+   - **Name:** Umuve
    - **Primary Language:** English (U.S.)
-   - **Bundle ID:** `com.junkos.JunkOS`
+   - **Bundle ID:** `com.goumuve.app`
    - **SKU:** `junkos-ios-app`
 3. **Click "Create"**
 
@@ -51,7 +51,7 @@ open ~/Documents/programs/webapps/junkos/JunkOS-Clean/JunkOS.xcodeproj
 **In your new app:**
 
 1. **App Information** tab:
-   - **Privacy Policy URL:** `https://junkos.app/privacy` (create this page first!)
+   - **Privacy Policy URL:** `https://goumuve.com/privacy` (create this page first!)
    - **Subtitle:** "Junk Removal Made Easy"
    - **Category:** Lifestyle
    - **Age Rating:** 4+
@@ -137,7 +137,7 @@ open ~/Documents/programs/webapps/junkos/JunkOS-Clean/JunkOS.xcodeproj
 **Testers receive an email with:**
 
 1. Link to install **TestFlight app** (if they don't have it)
-2. Invitation to test **JunkOS**
+2. Invitation to test **Umuve**
 3. **Redeem Code** (or direct link)
 
 **Installation steps:**
@@ -228,7 +228,7 @@ open JunkOS.xcodeproj
 agvtool next-version -all
 
 # Clean build
-xcodebuild clean -project JunkOS.xcodeproj -scheme JunkOS
+xcodebuild clean -project JunkOS.xcodeproj -scheme Umuve
 
 # Check configuration
 xcodebuild -project JunkOS.xcodeproj -showBuildSettings | grep -E "PRODUCT_BUNDLE_IDENTIFIER|MARKETING_VERSION|CURRENT_PROJECT_VERSION"
@@ -298,4 +298,4 @@ See [CODE_SIGNING_GUIDE.md](./CODE_SIGNING_GUIDE.md) for deep dive on certificat
 
 **Status:** ✅ Ready to ship!
 
-**Questions?** Check the full guide or email: support@junkos.app
+**Questions?** Check the full guide or email: support@goumuve.com

@@ -1,4 +1,4 @@
-# 🎉 JunkOS Backend - Production Deployment Status
+# 🎉 Umuve Backend - Production Deployment Status
 
 ## ✅ COMPLETE - Ready for Deployment
 
@@ -70,9 +70,9 @@
 
 1. **Push to GitHub** (2 min)
    ```bash
-   cd ~/Documents/programs/webapps/junkos/backend
+   cd ~/Documents/programs/webapps/umuve/backend
    git init && git add . && git commit -m "Production ready"
-   git remote add origin https://github.com/USERNAME/junkos-backend.git
+   git remote add origin https://github.com/USERNAME/umuve-backend.git
    git push -u origin main
    ```
 
@@ -113,13 +113,13 @@
 ## ✅ Verification
 
 ```bash
-cd ~/Documents/programs/webapps/junkos/backend
+cd ~/Documents/programs/webapps/umuve/backend
 python3 -c "from database import Database; db = Database(); print(f'✅ {db.db_type}: {len(db.get_services())} services')"
 ```
 
 **Result:**
 ```
-Using SQLite database: junkos.db
+Using SQLite database: umuve.db
 ✅ sqlite: 10 services
 ```
 

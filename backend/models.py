@@ -1,5 +1,5 @@
 """
-JunkOS SQLAlchemy Models
+Umuve SQLAlchemy Models
 All database entities for the on-demand junk removal marketplace.
 """
 

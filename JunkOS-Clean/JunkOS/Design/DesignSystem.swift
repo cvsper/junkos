@@ -1,54 +1,54 @@
 //
 //  DesignSystem.swift
-//  JunkOS
+//  Umuve
 //
-//  Unified emerald green design system.
+//  Unified red design system.
 //
 
 import SwiftUI
 
 // MARK: - Colors
 extension Color {
-    // Primary — emerald green
-    static let junkPrimary = Color(hex: "10B981")
-    static let junkPrimaryLight = Color(hex: "34D399")
-    static let junkPrimaryDark = Color(hex: "059669")
-    static let junkSecondary = Color(hex: "34D399")
-    static let junkCTA = Color(hex: "10B981")
+    // Primary — red
+    static let umuvePrimary = Color(hex: "DC2626")
+    static let umuvePrimaryLight = Color(hex: "EF4444")
+    static let umuvePrimaryDark = Color(hex: "B91C1C")
+    static let umuveSecondary = Color(hex: "EF4444")
+    static let umuveCTA = Color(hex: "DC2626")
 
     // Backgrounds
-    static let junkBackground = Color(hex: "F0FDF4")
-    static let junkSurface = Color.white
-    static let junkSurfaceElevated = Color(hex: "ECFDF5")
+    static let umuveBackground = Color(hex: "FEF2F2")
+    static let umuveSurface = Color.white
+    static let umuveSurfaceElevated = Color(hex: "FEE2E2")
 
     // Aliases for legacy references
-    static let loadUpGreen = Color(hex: "10B981")
-    static let loadUpGreenLight = Color(hex: "34D399")
-    static let loadUpGreenDark = Color(hex: "059669")
+    static let loadUpGreen = Color(hex: "DC2626")
+    static let loadUpGreenLight = Color(hex: "EF4444")
+    static let loadUpGreenDark = Color(hex: "B91C1C")
 
     // Category card colors
     static let categoryBlue = Color(hex: "3B82F6")
     static let categoryYellow = Color(hex: "FBBF24")
     static let categoryPink = Color(hex: "EC4899")
-    static let categoryGreen = Color(hex: "10B981")
+    static let categoryGreen = Color(hex: "DC2626")
     static let categoryPurple = Color(hex: "8B5CF6")
     static let categoryOrange = Color(hex: "F97316")
 
     // Text colors
-    static let junkText = Color(hex: "0F172A")
-    static let junkTextMuted = Color(hex: "64748B")
-    static let junkTextTertiary = Color(hex: "94A3B8")
+    static let umuveText = Color(hex: "0F172A")
+    static let umuveTextMuted = Color(hex: "64748B")
+    static let umuveTextTertiary = Color(hex: "94A3B8")
 
     // Semantic
-    static let junkSuccess = Color(hex: "22C55E")
-    static let junkWarning = Color(hex: "F59E0B")
-    static let junkError = Color(hex: "EF4444")
-    static let junkInfo = Color(hex: "3B82F6")
+    static let umuveSuccess = Color(hex: "22C55E")
+    static let umuveWarning = Color(hex: "F59E0B")
+    static let umuveError = Color(hex: "EF4444")
+    static let umuveInfo = Color(hex: "3B82F6")
 
     // UI colors
-    static let junkBorder = Color(hex: "E2E8F0")
-    static let junkDivider = Color(hex: "F1F5F9")
-    static let junkWhite = Color.white
+    static let umuveBorder = Color(hex: "E2E8F0")
+    static let umuveDivider = Color(hex: "F1F5F9")
+    static let umuveWhite = Color.white
 
     // Helper for hex colors
     init(hex: String) {
@@ -77,7 +77,7 @@ extension Color {
 }
 
 // MARK: - Typography
-struct JunkTypography {
+struct UmuveTypography {
     static let displayFont = Font.system(size: 34, weight: .bold, design: .rounded)
     static let h1Font = Font.system(size: 28, weight: .bold, design: .rounded)
     static let h2Font = Font.system(size: 22, weight: .semibold, design: .rounded)
@@ -90,7 +90,7 @@ struct JunkTypography {
 }
 
 // MARK: - Spacing
-struct JunkSpacing {
+struct UmuveSpacing {
     static let tiny: CGFloat = 4
     static let small: CGFloat = 8
     static let medium: CGFloat = 12
@@ -102,7 +102,7 @@ struct JunkSpacing {
 }
 
 // MARK: - Corner Radius
-struct JunkRadius {
+struct UmuveRadius {
     static let sm: CGFloat = 8
     static let md: CGFloat = 12
     static let lg: CGFloat = 16
@@ -113,18 +113,18 @@ struct JunkRadius {
 // MARK: - Reusable Components
 
 // Primary button style
-struct JunkPrimaryButtonStyle: ButtonStyle {
+struct UmuvePrimaryButtonStyle: ButtonStyle {
     var isEnabled: Bool = true
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(JunkTypography.bodyFont.weight(.semibold))
+            .font(UmuveTypography.bodyFont.weight(.semibold))
             .foregroundColor(.white)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 16)
             .background(
-                RoundedRectangle(cornerRadius: JunkRadius.md)
-                    .fill(isEnabled ? Color.junkPrimary : Color.junkPrimary.opacity(0.4))
+                RoundedRectangle(cornerRadius: UmuveRadius.md)
+                    .fill(isEnabled ? Color.umuvePrimary : Color.umuvePrimary.opacity(0.4))
             )
             .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
             .animation(.easeInOut(duration: 0.15), value: configuration.isPressed)
@@ -132,18 +132,18 @@ struct JunkPrimaryButtonStyle: ButtonStyle {
 }
 
 // Secondary button style
-struct JunkSecondaryButtonStyle: ButtonStyle {
+struct UmuveSecondaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(JunkTypography.bodyFont.weight(.medium))
-            .foregroundColor(.junkPrimary)
+            .font(UmuveTypography.bodyFont.weight(.medium))
+            .foregroundColor(.umuvePrimary)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 16)
-            .background(Color.junkWhite)
-            .cornerRadius(JunkRadius.md)
+            .background(Color.umuveWhite)
+            .cornerRadius(UmuveRadius.md)
             .overlay(
-                RoundedRectangle(cornerRadius: JunkRadius.md)
-                    .stroke(Color.junkPrimary, lineWidth: 1.5)
+                RoundedRectangle(cornerRadius: UmuveRadius.md)
+                    .stroke(Color.umuvePrimary, lineWidth: 1.5)
             )
             .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
             .animation(.easeInOut(duration: 0.15), value: configuration.isPressed)
@@ -151,7 +151,7 @@ struct JunkSecondaryButtonStyle: ButtonStyle {
 }
 
 // Card container
-struct JunkCard<Content: View>: View {
+struct UmuveCard<Content: View>: View {
     let content: Content
 
     init(@ViewBuilder content: () -> Content) {
@@ -160,9 +160,9 @@ struct JunkCard<Content: View>: View {
 
     var body: some View {
         content
-            .padding(JunkSpacing.normal)
-            .background(Color.junkWhite)
-            .clipShape(RoundedRectangle(cornerRadius: JunkRadius.lg))
+            .padding(UmuveSpacing.normal)
+            .background(Color.umuveWhite)
+            .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.lg))
             .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
     }
 }
@@ -180,20 +180,20 @@ struct ScreenHeader: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: JunkSpacing.medium) {
+        VStack(alignment: .leading, spacing: UmuveSpacing.medium) {
             if let progress = progress {
                 ProgressDots(current: Int(progress * 5), total: 5)
-                    .padding(.bottom, JunkSpacing.small)
+                    .padding(.bottom, UmuveSpacing.small)
             }
 
             Text(title)
-                .font(JunkTypography.h1Font)
-                .foregroundColor(.junkText)
+                .font(UmuveTypography.h1Font)
+                .foregroundColor(.umuveText)
 
             if let subtitle = subtitle {
                 Text(subtitle)
-                    .font(JunkTypography.bodyFont)
-                    .foregroundColor(.junkTextMuted)
+                    .font(UmuveTypography.bodyFont)
+                    .foregroundColor(.umuveTextMuted)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -209,7 +209,7 @@ struct ProgressDots: View {
         HStack(spacing: 8) {
             ForEach(0..<total, id: \.self) { index in
                 Circle()
-                    .fill(index < current ? Color.junkPrimary : Color.junkBorder)
+                    .fill(index < current ? Color.umuvePrimary : Color.umuveBorder)
                     .frame(width: 8, height: 8)
                     .animation(.easeInOut, value: current)
             }

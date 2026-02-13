@@ -1,6 +1,6 @@
 //
 //  JobDetailView.swift
-//  JunkOS Driver
+//  Umuve Pro
 //
 //  Full job info with Accept button and map preview.
 //

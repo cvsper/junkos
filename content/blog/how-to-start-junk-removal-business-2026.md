@@ -293,7 +293,7 @@ As your junk removal business grows, spreadsheets and manual processes become bo
 - **Track jobs**: Know profitability per job, not just monthly revenue
 - **Manage customers**: Remember details, send follow-ups, request reviews
 
-[JunkOS](https://junkos.com) was built specifically for junk removal and hauling companies, offering real-time dispatch, AI-powered pricing, and an all-in-one platform that grows with your business—without the enterprise pricing of larger competitors.
+[Umuve](https://goumuve.com) was built specifically for junk removal and hauling companies, offering real-time dispatch, AI-powered pricing, and an all-in-one platform that grows with your business—without the enterprise pricing of larger competitors.
 
 Whether you start with basic tools or dedicated software, the key is having systems that let you focus on service quality and growth instead of administrative chaos.
 
@@ -355,7 +355,7 @@ Begin with one truck, validate demand in your market, and scale methodically. Wh
 
 The best time to start was yesterday. The second best time is today.
 
-**Ready to streamline your junk removal operations from day one?** [Learn how JunkOS software](https://junkos.com) helps new and growing hauling companies automate scheduling, dispatch, and payments—so you can focus on growing your business instead of managing chaos.
+**Ready to streamline your junk removal operations from day one?** [Learn how Umuve software](https://goumuve.com) helps new and growing hauling companies automate scheduling, dispatch, and payments—so you can focus on growing your business instead of managing chaos.
 
 ---
 

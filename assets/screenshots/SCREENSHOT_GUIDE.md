@@ -1,7 +1,7 @@
 # App Store Screenshots Guide
 
 ## Overview
-Capture 6 key screens from the JunkOS mobile app showcasing the complete user journey.
+Capture 6 key screens from the Umuve mobile app showcasing the complete user journey.
 
 **Device:** iPhone 16 Pro Max  
 **Resolution:** 1290×2796 pixels (6.7" display)  
@@ -15,7 +15,7 @@ Capture 6 key screens from the JunkOS mobile app showcasing the complete user jo
 **Filename:** `01-welcome.png`
 
 **Content:**
-- JunkOS logo and branding
+- Umuve logo and branding
 - Hero tagline: "Book junk removal in 3 taps"
 - Social proof badges (5-star rating, jobs completed)
 - CTA button: "Get Started"

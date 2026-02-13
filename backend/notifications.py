@@ -1,5 +1,5 @@
 """
-Notification services for JunkOS.
+Notification services for Umuve.
 
 Email: Resend (preferred) or SendGrid (legacy fallback).
 SMS: Twilio.
@@ -79,7 +79,7 @@ def send_sms(to_number, body):
 def send_verification_sms(phone_number, code):
     """Send a verification code via SMS. Never raises."""
     try:
-        body = "Your JunkOS verification code is: {}. It expires in 10 minutes.".format(code)
+        body = "Your Umuve verification code is: {}. It expires in 10 minutes.".format(code)
         return send_sms(phone_number, body)
     except Exception:
         logger.exception("Failed in send_verification_sms for %s", phone_number)
@@ -91,7 +91,7 @@ def send_booking_sms(phone_number, booking_id, scheduled_date, address):
     try:
         short_id = str(booking_id)[:8] if booking_id else "N/A"
         body = (
-            "JunkOS Booking Confirmed!\n"
+            "Umuve Booking Confirmed!\n"
             "Booking: #{}\n"
             "Date: {}\n"
             "Address: {}\n\n"
@@ -109,9 +109,9 @@ def send_booking_sms(phone_number, booking_id, scheduled_date, address):
 RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "")
 SENDGRID_API_KEY = os.environ.get("SENDGRID_API_KEY", "")
 EMAIL_FROM = os.environ.get("EMAIL_FROM",
-                            os.environ.get("SENDGRID_FROM_EMAIL", "bookings@junkos.com"))
+                            os.environ.get("SENDGRID_FROM_EMAIL", "bookings@goumuve.com"))
 EMAIL_FROM_NAME = os.environ.get("EMAIL_FROM_NAME",
-                                 os.environ.get("SENDGRID_FROM_NAME", "JunkOS"))
+                                 os.environ.get("SENDGRID_FROM_NAME", "Umuve"))
 
 
 def _send_email_sync(to_email, subject, html_content):
@@ -214,7 +214,7 @@ def send_booking_confirmation_email(to_email, customer_name, booking_id, address
     """Send a booking confirmation email. Never raises."""
     try:
         short_id = str(booking_id)[:8] if booking_id else "N/A"
-        subject = "Your JunkOS Booking is Confirmed! #{}".format(short_id)
+        subject = "Your Umuve Booking is Confirmed! #{}".format(short_id)
 
         html = booking_confirmation_html(
             customer_name=customer_name,
@@ -242,7 +242,7 @@ def send_driver_assigned_email(to_email, customer_name, driver_name, address,
     callers; ``truck_type`` and ``eta`` are optional enhancements.
     """
     try:
-        subject = "Your JunkOS Driver Has Been Assigned"
+        subject = "Your Umuve Driver Has Been Assigned"
 
         html = booking_assigned_html(
             customer_name=customer_name,
@@ -260,7 +260,7 @@ def send_driver_assigned_email(to_email, customer_name, driver_name, address,
 def send_driver_assigned_sms(to_number, driver_name, address):
     """SMS customer that a driver has been assigned. Never raises."""
     try:
-        body = "JunkOS: Driver {} assigned to your pickup at {}".format(
+        body = "Umuve: Driver {} assigned to your pickup at {}".format(
             driver_name or "your driver", address or "your location"
         )
         return send_sms(to_number, body)
@@ -280,7 +280,7 @@ def send_driver_en_route_email(to_email, customer_name, driver_name, address,
     callers; ``eta_minutes`` is an optional enhancement.
     """
     try:
-        subject = "Your JunkOS Driver Is On The Way!"
+        subject = "Your Umuve Driver Is On The Way!"
 
         html = driver_en_route_html(
             customer_name=customer_name,
@@ -301,7 +301,7 @@ send_en_route_email = send_driver_en_route_email
 def send_driver_en_route_sms(to_number, driver_name, address):
     """SMS customer that driver is en route. Never raises."""
     try:
-        body = "JunkOS: Driver {} is en route to {}".format(
+        body = "Umuve: Driver {} is en route to {}".format(
             driver_name or "your driver", address or "your location"
         )
         return send_sms(to_number, body)
@@ -322,7 +322,7 @@ def send_job_completed_email(to_email, customer_name, job_id, address,
     """
     try:
         short_id = str(job_id)[:8] if job_id else "N/A"
-        subject = "Your JunkOS Pickup Is Complete! #{}".format(short_id)
+        subject = "Your Umuve Pickup Is Complete! #{}".format(short_id)
 
         html = job_completed_html(
             customer_name=customer_name,
@@ -350,7 +350,7 @@ def send_payment_receipt_email(to_email, customer_name, job_id, address, amount,
     """
     try:
         short_id = str(job_id)[:8] if job_id else "N/A"
-        subject = "JunkOS Payment Receipt #{}".format(short_id)
+        subject = "Umuve Payment Receipt #{}".format(short_id)
 
         html = payment_receipt_html(
             customer_name=customer_name,
@@ -372,7 +372,7 @@ def send_payment_receipt_email(to_email, customer_name, job_id, address, amount,
 def send_welcome_email(to_email, user_name):
     """Send a welcome email to a newly registered user. Never raises."""
     try:
-        subject = "Welcome to JunkOS!"
+        subject = "Welcome to Umuve!"
 
         html = welcome_html(name=user_name)
 
@@ -393,11 +393,11 @@ def send_password_reset_email(to_email, reset_token, customer_name=None):
     URL the template builds one automatically.  ``customer_name`` is optional.
     """
     try:
-        subject = "Reset Your JunkOS Password"
+        subject = "Reset Your Umuve Password"
 
         # Build a reset URL if the caller passed a bare token
         if reset_token and not str(reset_token).startswith("http"):
-            base = os.environ.get("FRONTEND_URL", "https://junkos.com")
+            base = os.environ.get("FRONTEND_URL", "https://goumuve.com")
             reset_url = "{}/reset-password?token={}".format(base.rstrip("/"), reset_token)
         else:
             reset_url = str(reset_token) if reset_token else ""

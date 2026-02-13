@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-JunkOS Database Migration Tool
+Umuve Database Migration Tool
 ================================
 Run database migrations with proper error handling and rollback support.
 
@@ -23,7 +23,7 @@ import re
 
 # Configuration
 MIGRATIONS_DIR = Path(__file__).parent / "migrations"
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres@localhost/junkos")
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres@localhost/umuve")
 
 
 class MigrationManager:
@@ -262,7 +262,7 @@ COMMIT;
 
 def main():
     parser = argparse.ArgumentParser(
-        description="JunkOS Database Migration Tool",
+        description="Umuve Database Migration Tool",
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
     

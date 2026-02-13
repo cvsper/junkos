@@ -1,12 +1,12 @@
-# JunkOS Backend - Build Summary
+# Umuve Backend - Build Summary
 
 ## ✅ Completed
 
 ### Backend API (Flask + SQLite)
-Successfully built a fully functional MVP backend for the JunkOS junk removal booking service.
+Successfully built a fully functional MVP backend for the Umuve junk removal booking service.
 
 ### Location
-`~/Documents/programs/webapps/junkos/backend/`
+`~/Documents/programs/webapps/umuve/backend/`
 
 ---
 
@@ -60,7 +60,7 @@ All endpoints tested and verified:
 ## 🚀 How to Run
 
 ```bash
-cd ~/Documents/programs/webapps/junkos/backend
+cd ~/Documents/programs/webapps/umuve/backend
 ./run.sh
 ```
 
@@ -85,7 +85,7 @@ Server will start on `http://localhost:8080`
 
 ## 🔑 API Key
 
-Default API key: `junkos-api-key-12345`
+Default API key: `umuve-api-key-12345`
 
 **Change this in production!** Edit `.env`:
 ```
@@ -99,7 +99,7 @@ API_KEY=your-secure-api-key-here
 ### Get a quote
 ```bash
 curl -X POST \
-  -H "X-API-Key: junkos-api-key-12345" \
+  -H "X-API-Key: umuve-api-key-12345" \
   -H "Content-Type: application/json" \
   -d '{"services": [1, 7], "zip_code": "10001"}' \
   http://localhost:8080/api/quote
@@ -113,7 +113,7 @@ Returns:
 ### Create a booking
 ```bash
 curl -X POST \
-  -H "X-API-Key: junkos-api-key-12345" \
+  -H "X-API-Key: umuve-api-key-12345" \
   -H "Content-Type: application/json" \
   -d '{
     "address": "123 Main St, New York, NY 10001",
@@ -152,7 +152,7 @@ backend/
 ├── .gitignore         # Python, DB, and env exclusions
 ├── README.md          # Full API documentation
 ├── SUMMARY.md         # This file
-└── junkos.db          # SQLite database (auto-created)
+└── umuve.db          # SQLite database (auto-created)
 ```
 
 ---

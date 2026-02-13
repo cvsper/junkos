@@ -20,13 +20,13 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const COLORS = {
   primary: '#6366F1',
   secondary: '#818CF8',
-  cta: '#10B981',
+  cta: '#DC2626',
   background: '#F5F3FF',
   text: '#1E1B4B',
   muted: '#64748B',
   border: '#E2E8F0',
   white: '#FFFFFF',
-  success: '#10B981',
+  success: '#16A34A',
   error: '#EF4444',
 };
 
@@ -88,10 +88,10 @@ function WelcomeScreen({ onNext }: { onNext: () => void }) {
             <Text style={styles.logoText}>🚛</Text>
           </View>
           
-          <Text style={styles.welcomeTitle}>JunkOS</Text>
+          <Text style={styles.welcomeTitle}>Umuve</Text>
           
           <View style={styles.gradientBadge}>
-            <Text style={styles.tagline}>Book junk removal in 3 taps</Text>
+            <Text style={styles.tagline}>Hauling made simple.</Text>
           </View>
 
           {/* Social Proof */}
@@ -1590,11 +1590,11 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
   nextStepsCard: {
-    backgroundColor: '#ECFDF5',
+    backgroundColor: '#FEF2F2',
     padding: 20,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#A7F3D0',
+    borderColor: '#FECACA',
   },
   nextStepsTitle: {
     fontSize: 16,

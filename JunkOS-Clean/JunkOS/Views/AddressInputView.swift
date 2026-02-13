@@ -1,6 +1,6 @@
 //
 //  AddressInputView.swift
-//  JunkOS
+//  Umuve
 //
 //  Address input screen with map preview
 //  Enhanced with smooth transitions and button haptics
@@ -18,7 +18,7 @@ struct AddressInputView: View {
     
     var body: some View {
         ScrollView {
-            VStack(spacing: JunkSpacing.xxlarge) {
+            VStack(spacing: UmuveSpacing.xxlarge) {
                 // Header
                 ScreenHeader(
                     title: "Your Location",
@@ -37,9 +37,9 @@ struct AddressInputView: View {
                 
                 Spacer()
             }
-            .padding(JunkSpacing.large)
+            .padding(UmuveSpacing.large)
         }
-        .background(Color.junkBackground.ignoresSafeArea())
+        .background(Color.umuveBackground.ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
         .safeAreaInset(edge: .bottom) {
             continueButton
@@ -51,7 +51,7 @@ struct AddressInputView: View {
     
     // MARK: - Map Preview
     private var mapPreview: some View {
-        JunkCard {
+        UmuveCard {
             VStack(spacing: 0) {
                 Map(coordinateRegion: $viewModel.region)
                     .frame(height: 200)
@@ -60,19 +60,19 @@ struct AddressInputView: View {
                 
                 HStack {
                     Image(systemName: "mappin.circle.fill")
-                        .foregroundColor(.junkPrimary)
+                        .foregroundColor(.umuvePrimary)
                     Text("Map Preview")
-                        .font(JunkTypography.bodySmallFont)
-                        .foregroundColor(.junkTextMuted)
+                        .font(UmuveTypography.bodySmallFont)
+                        .foregroundColor(.umuveTextMuted)
                 }
-                .padding(JunkSpacing.small)
+                .padding(UmuveSpacing.small)
             }
         }
     }
     
     // MARK: - Address Form
     private var addressForm: some View {
-        VStack(spacing: JunkSpacing.normal) {
+        VStack(spacing: UmuveSpacing.normal) {
             // SF Symbol: house.fill for street address
             InputField(
                 icon: "house.fill",
@@ -87,7 +87,7 @@ struct AddressInputView: View {
                 text: $bookingData.address.unit
             )
             
-            HStack(spacing: JunkSpacing.normal) {
+            HStack(spacing: UmuveSpacing.normal) {
                 // SF Symbol: building.2.crop.circle.fill for city
                 InputField(
                     icon: "building.2.crop.circle.fill",
@@ -108,7 +108,7 @@ struct AddressInputView: View {
     
     // MARK: - Auto Detect Button (with haptic)
     private var autoDetectButton: some View {
-        VStack(spacing: JunkSpacing.small) {
+        VStack(spacing: UmuveSpacing.small) {
             Button(action: {
                 detectLocation()
             }) {
@@ -123,7 +123,7 @@ struct AddressInputView: View {
                     Text(viewModel.isLoadingLocation ? "Detecting..." : "Use Current Location")
                 }
             }
-            .buttonStyle(JunkSecondaryButtonStyle())
+            .buttonStyle(UmuveSecondaryButtonStyle())
             .disabled(viewModel.isLoadingLocation)
             
             // Error message
@@ -132,10 +132,10 @@ struct AddressInputView: View {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .foregroundColor(.red)
                     Text(error)
-                        .font(JunkTypography.bodySmallFont)
+                        .font(UmuveTypography.bodySmallFont)
                         .foregroundColor(.red)
                 }
-                .padding(JunkSpacing.small)
+                .padding(UmuveSpacing.small)
                 .background(Color.red.opacity(0.1))
                 .cornerRadius(8)
                 .transition(.scale.combined(with: .opacity))
@@ -166,9 +166,9 @@ struct AddressInputView: View {
                 Text("Continue →")
             }
         )
-        .buttonStyle(JunkPrimaryButtonStyle())
-        .padding(JunkSpacing.large)
-        .background(Color.junkBackground)
+        .buttonStyle(UmuvePrimaryButtonStyle())
+        .padding(UmuveSpacing.large)
+        .background(Color.umuveBackground)
         .disabled(!bookingData.isAddressValid)
         .opacity(bookingData.isAddressValid ? 1 : 0.5)
     }
@@ -186,18 +186,18 @@ struct InputField: View {
             // https://developer.apple.com/design/human-interface-guidelines/sf-symbols
             Image(systemName: icon)
                 .font(.system(size: 20))
-                .foregroundColor(.junkPrimary)
+                .foregroundColor(.umuvePrimary)
             
             TextField(placeholder, text: $text)
-                .font(JunkTypography.bodyFont)
+                .font(UmuveTypography.bodyFont)
                 .autocapitalization(.words)
         }
-        .padding(JunkSpacing.normal)
-        .background(Color.junkWhite)
+        .padding(UmuveSpacing.normal)
+        .background(Color.umuveWhite)
         .cornerRadius(12)
         .overlay(
             RoundedRectangle(cornerRadius: 12)
-                .stroke(Color.junkBorder, lineWidth: 2)
+                .stroke(Color.umuveBorder, lineWidth: 2)
         )
     }
 }

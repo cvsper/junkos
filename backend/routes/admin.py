@@ -1,5 +1,5 @@
 """
-Admin API routes for JunkOS.
+Admin API routes for Umuve.
 Protected by role-based access (admin only).
 """
 

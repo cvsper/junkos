@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Terms of Service - JunkOS",
+  title: "Terms of Service - Umuve",
   description:
-    "Terms of Service for JunkOS junk removal platform. Read our terms governing the use of our on-demand junk removal services in South Florida.",
+    "Terms of Service for Umuve junk removal platform. Read our terms governing the use of our on-demand junk removal services in South Florida.",
 };
 
 const LAST_UPDATED = "February 9, 2026";
@@ -34,8 +34,8 @@ export default function TermsOfServicePage() {
           Last updated: {LAST_UPDATED}
         </p>
         <p className="text-base text-muted-foreground leading-relaxed">
-          Welcome to JunkOS. These Terms of Service (&quot;Terms&quot;) govern
-          your access to and use of the JunkOS platform, website, and
+          Welcome to Umuve. These Terms of Service (&quot;Terms&quot;) govern
+          your access to and use of the Umuve platform, website, and
           on-demand junk removal services (collectively, the
           &quot;Service&quot;). By using our Service, you agree to be bound by
           these Terms.
@@ -70,7 +70,7 @@ export default function TermsOfServicePage() {
           </h2>
           <div className="space-y-3 text-muted-foreground leading-relaxed">
             <p>
-              By accessing or using JunkOS, you confirm that you are at least 18
+              By accessing or using Umuve, you confirm that you are at least 18
               years of age, have the legal capacity to enter into a binding
               agreement, and agree to comply with these Terms.
             </p>
@@ -94,7 +94,7 @@ export default function TermsOfServicePage() {
           </h2>
           <div className="space-y-3 text-muted-foreground leading-relaxed">
             <p>
-              JunkOS is an on-demand junk removal marketplace that connects
+              Umuve is an on-demand junk removal marketplace that connects
               customers in South Florida with independent junk removal
               contractors (&quot;Haulers&quot;). Through our platform, you can:
             </p>
@@ -119,7 +119,7 @@ export default function TermsOfServicePage() {
               </li>
             </ul>
             <p>
-              JunkOS acts as an intermediary platform and does not itself
+              Umuve acts as an intermediary platform and does not itself
               perform junk removal services. The actual removal is carried out
               by independent Haulers who use our platform to connect with
               customers.
@@ -176,7 +176,7 @@ export default function TermsOfServicePage() {
               Booking
             </h3>
             <p>
-              When you submit a booking through JunkOS, you are making a request
+              When you submit a booking through Umuve, you are making a request
               for junk removal services. Your booking is confirmed once payment
               is processed and you receive a booking confirmation with a unique
               Booking ID.
@@ -220,7 +220,7 @@ export default function TermsOfServicePage() {
               </li>
             </ul>
             <p>
-              JunkOS reserves the right to cancel bookings due to safety
+              Umuve reserves the right to cancel bookings due to safety
               concerns, extreme weather, or other circumstances beyond our
               control. In such cases, you will receive a full refund.
             </p>
@@ -236,7 +236,7 @@ export default function TermsOfServicePage() {
             <p>
               All payments are processed securely through Stripe, our
               third-party payment processor. By providing your payment
-              information, you authorize JunkOS and Stripe to charge the
+              information, you authorize Umuve and Stripe to charge the
               applicable amount to your chosen payment method.
             </p>
             <ul className="list-disc pl-6 space-y-2">
@@ -249,7 +249,7 @@ export default function TermsOfServicePage() {
                 reservation
               </li>
               <li>
-                JunkOS does not store your credit card information; all payment
+                Umuve does not store your credit card information; all payment
                 data is handled by Stripe in accordance with PCI DSS standards
               </li>
               <li>
@@ -276,12 +276,12 @@ export default function TermsOfServicePage() {
           </h2>
           <div className="space-y-3 text-muted-foreground leading-relaxed">
             <p>
-              Haulers who perform junk removal services through JunkOS are
-              independent contractors, not employees of JunkOS. This means:
+              Haulers who perform junk removal services through Umuve are
+              independent contractors, not employees of Umuve. This means:
             </p>
             <ul className="list-disc pl-6 space-y-2">
               <li>
-                JunkOS does not control the manner or method by which Haulers
+                Umuve does not control the manner or method by which Haulers
                 perform their services
               </li>
               <li>
@@ -289,7 +289,7 @@ export default function TermsOfServicePage() {
                 compliance with applicable laws and regulations
               </li>
               <li>
-                JunkOS screens and vets Haulers but does not guarantee their
+                Umuve screens and vets Haulers but does not guarantee their
                 performance
               </li>
               <li>
@@ -298,7 +298,7 @@ export default function TermsOfServicePage() {
               </li>
             </ul>
             <p>
-              JunkOS facilitates the connection between customers and Haulers
+              Umuve facilitates the connection between customers and Haulers
               and provides a platform for scheduling, payment, and
               communication. Any disputes regarding the quality of service
               should be reported through our platform for resolution.
@@ -317,22 +317,22 @@ export default function TermsOfServicePage() {
             </p>
             <ul className="list-disc pl-6 space-y-2">
               <li>
-                JunkOS provides the Service on an &quot;as is&quot; and
+                Umuve provides the Service on an &quot;as is&quot; and
                 &quot;as available&quot; basis without warranties of any kind,
                 whether express or implied
               </li>
               <li>
-                JunkOS shall not be liable for any indirect, incidental,
+                Umuve shall not be liable for any indirect, incidental,
                 special, consequential, or punitive damages arising from your
                 use of or inability to use the Service
               </li>
               <li>
-                JunkOS&apos;s total aggregate liability for any claims arising
+                Umuve&apos;s total aggregate liability for any claims arising
                 from or related to the Service shall not exceed the amount you
                 paid for the specific booking giving rise to the claim
               </li>
               <li>
-                JunkOS is not responsible for any damage to property that may
+                Umuve is not responsible for any damage to property that may
                 occur during junk removal, except as required by law. Claims
                 for property damage should be directed to the Hauler&apos;s
                 insurance
@@ -362,10 +362,10 @@ export default function TermsOfServicePage() {
                 <strong className="text-foreground">Contact Us First:</strong>{" "}
                 Reach out to our support team at{" "}
                 <a
-                  href="mailto:support@junkos.com"
+                  href="mailto:support@goumuve.com"
                   className="text-primary hover:underline"
                 >
-                  support@junkos.com
+                  support@goumuve.com
                 </a>
                 . We will make a good-faith effort to resolve the issue within
                 30 days.
@@ -404,7 +404,7 @@ export default function TermsOfServicePage() {
           </h2>
           <div className="space-y-3 text-muted-foreground leading-relaxed">
             <p>
-              JunkOS reserves the right to modify or replace these Terms at any
+              Umuve reserves the right to modify or replace these Terms at any
               time. When we make material changes, we will:
             </p>
             <ul className="list-disc pl-6 space-y-2">
@@ -440,24 +440,24 @@ export default function TermsOfServicePage() {
             </p>
             <div className="rounded-lg border border-border bg-muted/30 p-6 space-y-2">
               <p className="font-display font-semibold text-foreground">
-                JunkOS
+                Umuve
               </p>
               <p>
                 Email:{" "}
                 <a
-                  href="mailto:legal@junkos.com"
+                  href="mailto:legal@goumuve.com"
                   className="text-primary hover:underline"
                 >
-                  legal@junkos.com
+                  legal@goumuve.com
                 </a>
               </p>
               <p>
                 Support:{" "}
                 <a
-                  href="mailto:support@junkos.com"
+                  href="mailto:support@goumuve.com"
                   className="text-primary hover:underline"
                 >
-                  support@junkos.com
+                  support@goumuve.com
                 </a>
               </p>
               <p>South Florida, United States</p>

@@ -1,6 +1,6 @@
 //
 //  JobStatusStepperView.swift
-//  JunkOS Driver
+//  Umuve Pro
 //
 //  Visual 5-step progress bar for job lifecycle.
 //

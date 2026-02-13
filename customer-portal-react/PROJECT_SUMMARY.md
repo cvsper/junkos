@@ -1,4 +1,4 @@
-# JunkOS Frontend - Project Summary
+# Umuve Frontend - Project Summary
 
 ## 📋 Overview
 

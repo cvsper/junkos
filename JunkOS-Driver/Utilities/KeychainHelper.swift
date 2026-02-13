@@ -1,6 +1,6 @@
 //
 //  KeychainHelper.swift
-//  JunkOS Driver
+//  Umuve Pro
 //
 //  Secure storage for JWT tokens via the system Keychain.
 //
@@ -9,7 +9,8 @@ import Foundation
 import Security
 
 enum KeychainHelper {
-    private static let service = "com.junkos.driver"
+    private static let service = "com.goumuve.pro"
+    private static let legacyService = "com.junkos.driver"
 
     static func save(_ data: Data, forKey key: String) {
         let query: [String: Any] = [
@@ -41,8 +42,34 @@ enum KeychainHelper {
         ]
         var result: AnyObject?
         let status = SecItemCopyMatching(query as CFDictionary, &result)
-        guard status == errSecSuccess else { return nil }
-        return result as? Data
+        if status == errSecSuccess, let data = result as? Data {
+            return data
+        }
+
+        // Migration: try reading from old keychain key
+        let legacyQuery: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: legacyService,
+            kSecAttrAccount as String: key,
+            kSecReturnData as String: true,
+            kSecMatchLimit as String: kSecMatchLimitOne,
+        ]
+        var legacyResult: AnyObject?
+        let legacyStatus = SecItemCopyMatching(legacyQuery as CFDictionary, &legacyResult)
+        if legacyStatus == errSecSuccess, let oldData = legacyResult as? Data {
+            // Migrate to new service key
+            save(oldData, forKey: key)
+            // Delete old entry
+            let deleteQuery: [String: Any] = [
+                kSecClass as String: kSecClassGenericPassword,
+                kSecAttrService as String: legacyService,
+                kSecAttrAccount as String: key,
+            ]
+            SecItemDelete(deleteQuery as CFDictionary)
+            return oldData
+        }
+
+        return nil
     }
 
     static func loadString(forKey key: String) -> String? {
@@ -57,5 +84,13 @@ enum KeychainHelper {
             kSecAttrAccount as String: key,
         ]
         SecItemDelete(query as CFDictionary)
+
+        // Also clean up legacy key if it exists
+        let legacyQuery: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: legacyService,
+            kSecAttrAccount as String: key,
+        ]
+        SecItemDelete(legacyQuery as CFDictionary)
     }
 }

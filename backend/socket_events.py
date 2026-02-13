@@ -1,5 +1,5 @@
 """
-Socket.IO event handlers for JunkOS real-time features.
+Socket.IO event handlers for Umuve real-time features.
 - Driver GPS location streaming
 - Job status broadcasts
 - New-job alerts to nearby drivers

@@ -1,6 +1,6 @@
 //
 //  ServiceSelectionRedesignView.swift
-//  JunkOS
+//  Umuve
 //
 //  Redesigned service selection (LoadUp-inspired)
 //
@@ -13,28 +13,28 @@ struct ServiceSelectionRedesignView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: JunkSpacing.large) {
+            VStack(spacing: UmuveSpacing.large) {
                 // Address display (editable)
                 addressHeader
 
                 // Service category cards
                 serviceCategoryCards
             }
-            .padding(JunkSpacing.large)
+            .padding(UmuveSpacing.large)
         }
-        .background(Color.junkBackground.ignoresSafeArea())
+        .background(Color.umuveBackground.ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(true)
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
                 Button(action: { dismiss() }) {
                     Image(systemName: "chevron.left")
-                        .foregroundColor(.junkText)
+                        .foregroundColor(.umuveText)
                 }
             }
             ToolbarItem(placement: .principal) {
                 Text("Select Service")
-                    .font(JunkTypography.h3Font)
+                    .font(UmuveTypography.h3Font)
             }
         }
     }
@@ -44,16 +44,16 @@ struct ServiceSelectionRedesignView: View {
         HStack {
             Image(systemName: "mappin.circle.fill")
                 .font(.system(size: 24))
-                .foregroundColor(.junkPrimary)
+                .foregroundColor(.umuvePrimary)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text("Service Location")
-                    .font(JunkTypography.captionFont)
-                    .foregroundColor(.junkTextMuted)
+                    .font(UmuveTypography.captionFont)
+                    .foregroundColor(.umuveTextMuted)
 
                 Text(bookingData.address.fullAddress.isEmpty ? "No address set" : bookingData.address.fullAddress)
-                    .font(JunkTypography.bodyFont.weight(.semibold))
-                    .foregroundColor(.junkText)
+                    .font(UmuveTypography.bodyFont.weight(.semibold))
+                    .foregroundColor(.umuveText)
                     .lineLimit(1)
             }
 
@@ -61,19 +61,19 @@ struct ServiceSelectionRedesignView: View {
 
             Button(action: { dismiss() }) {
                 Text("Edit")
-                    .font(JunkTypography.bodySmallFont.weight(.semibold))
-                    .foregroundColor(.junkPrimary)
+                    .font(UmuveTypography.bodySmallFont.weight(.semibold))
+                    .foregroundColor(.umuvePrimary)
             }
         }
-        .padding(JunkSpacing.normal)
+        .padding(UmuveSpacing.normal)
         .background(Color.white)
-        .clipShape(RoundedRectangle(cornerRadius: JunkRadius.md))
+        .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.md))
         .shadow(color: .black.opacity(0.06), radius: 4, x: 0, y: 2)
     }
 
     // MARK: - Service Category Cards
     private var serviceCategoryCards: some View {
-        VStack(spacing: JunkSpacing.normal) {
+        VStack(spacing: UmuveSpacing.normal) {
             ServiceDetailCard(
                 title: "Junk Removal",
                 description: "Furniture, appliances, and general junk",
@@ -119,11 +119,11 @@ struct ServiceDetailCard: View {
     @EnvironmentObject var bookingData: BookingData
 
     var body: some View {
-        VStack(alignment: .leading, spacing: JunkSpacing.normal) {
+        VStack(alignment: .leading, spacing: UmuveSpacing.normal) {
             // Header with icon
-            HStack(spacing: JunkSpacing.normal) {
+            HStack(spacing: UmuveSpacing.normal) {
                 ZStack {
-                    RoundedRectangle(cornerRadius: JunkRadius.md)
+                    RoundedRectangle(cornerRadius: UmuveRadius.md)
                         .fill(color.opacity(0.2))
                         .frame(width: 60, height: 60)
 
@@ -134,12 +134,12 @@ struct ServiceDetailCard: View {
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(title)
-                        .font(JunkTypography.h3Font)
-                        .foregroundColor(.junkText)
+                        .font(UmuveTypography.h3Font)
+                        .foregroundColor(.umuveText)
 
                     Text(description)
-                        .font(JunkTypography.bodySmallFont)
-                        .foregroundColor(.junkTextMuted)
+                        .font(UmuveTypography.bodySmallFont)
+                        .foregroundColor(.umuveTextMuted)
                         .lineLimit(2)
                 }
 
@@ -147,26 +147,26 @@ struct ServiceDetailCard: View {
             }
 
             // Sub-items list
-            VStack(alignment: .leading, spacing: JunkSpacing.small) {
+            VStack(alignment: .leading, spacing: UmuveSpacing.small) {
                 ForEach(subItems, id: \.self) { item in
-                    HStack(spacing: JunkSpacing.small) {
+                    HStack(spacing: UmuveSpacing.small) {
                         Image(systemName: "checkmark.circle.fill")
                             .font(.system(size: 14))
                             .foregroundColor(color)
 
                         Text(item)
-                            .font(JunkTypography.bodySmallFont)
-                            .foregroundColor(.junkTextMuted)
+                            .font(UmuveTypography.bodySmallFont)
+                            .foregroundColor(.umuveTextMuted)
                     }
                 }
             }
-            .padding(.horizontal, JunkSpacing.small)
+            .padding(.horizontal, UmuveSpacing.small)
 
             // Book Now button
             NavigationLink(destination: PhotoUploadView().environmentObject(bookingData)) {
                 HStack {
                     Text("Book Now")
-                        .font(JunkTypography.bodyFont.weight(.semibold))
+                        .font(UmuveTypography.bodyFont.weight(.semibold))
                         .foregroundColor(.white)
 
                     Image(systemName: "arrow.right")
@@ -182,13 +182,13 @@ struct ServiceDetailCard: View {
                         endPoint: .trailing
                     )
                 )
-                .clipShape(RoundedRectangle(cornerRadius: JunkRadius.md))
+                .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.md))
                 .shadow(color: color.opacity(0.3), radius: 6, x: 0, y: 4)
             }
         }
-        .padding(JunkSpacing.normal)
+        .padding(UmuveSpacing.normal)
         .background(Color.white)
-        .clipShape(RoundedRectangle(cornerRadius: JunkRadius.lg))
+        .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.lg))
         .shadow(color: .black.opacity(0.08), radius: 8, x: 0, y: 4)
     }
 }

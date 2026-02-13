@@ -1,13 +1,13 @@
 //
 //  AddressInputViewModelTests.swift
-//  JunkOSTests
+//  UmuveTests
 //
 //  Unit tests for AddressInputViewModel
 //
 
 import XCTest
 import CoreLocation
-@testable import JunkOS
+@testable import Umuve
 
 @MainActor
 final class AddressInputViewModelTests: XCTestCase {

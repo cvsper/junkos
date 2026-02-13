@@ -1,6 +1,6 @@
 //
 //  ActiveJobMapOverlay.swift
-//  JunkOS Driver
+//  Umuve Pro
 //
 //  Bottom sheet for accepted job: address, ETA, status actions, navigate button.
 //

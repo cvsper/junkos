@@ -1,6 +1,6 @@
 //
 //  DriverSignupView.swift
-//  JunkOS Driver
+//  Umuve Pro
 //
 //  Create account form.
 //
@@ -24,7 +24,7 @@ struct DriverSignupView: View {
                             .font(DriverTypography.title)
                             .foregroundStyle(Color.driverText)
 
-                        Text("Start earning with JunkOS")
+                        Text("Start earning with Umuve")
                             .font(DriverTypography.body)
                             .foregroundStyle(Color.driverTextSecondary)
                     }

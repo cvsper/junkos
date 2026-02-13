@@ -1,7 +1,7 @@
-# JunkOS — App Store Listing
+# Umuve — App Store Listing
 
 ## App Name
-JunkOS
+Umuve
 
 ## Subtitle (30 chars max)
 Junk Removal Made Easy
@@ -17,7 +17,7 @@ junk removal,hauling,trash pickup,furniture removal,appliance disposal,cleanout,
 
 Book professional junk removal in South Florida — fast, affordable, and eco-friendly.
 
-JunkOS connects you with trusted haulers who handle everything from single-item pickups to full property cleanouts. Snap photos of what needs to go, pick a time that works, and we'll take care of the rest.
+Umuve connects you with trusted haulers who handle everything from single-item pickups to full property cleanouts. Snap photos of what needs to go, pick a time that works, and we'll take care of the rest.
 
 KEY FEATURES
 
@@ -60,13 +60,13 @@ Book junk removal in minutes. Photo-based quoting, flexible scheduling, eco-frie
 - Commercial and property cleanout support
 
 ## Support URL
-https://junkos.app/support
+https://goumuve.com/support
 
 ## Marketing URL
-https://junkos.app
+https://goumuve.com
 
 ## Privacy Policy URL
-https://junkos.app/privacy
+https://goumuve.com/privacy
 
 ## Age Rating
 4+ (No objectionable content)

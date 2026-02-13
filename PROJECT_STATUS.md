@@ -1,4 +1,4 @@
-# JunkOS - Project Status
+# Umuve - Project Status
 
 **Last Updated:** 2026-02-06 14:53 EST  
 **Project:** Junk Removal SaaS Platform  
@@ -80,7 +80,7 @@
 ## 📁 Project Structure
 
 ```
-junkos/
+umuve/
 ├── backend/                 # Flask API (in progress)
 │   ├── app/
 │   ├── models/
@@ -160,7 +160,7 @@ junkos/
 
 **Brand Colors:**
 - Primary: #6366F1 (Indigo)
-- CTA: #10B981 (Emerald)
+- CTA: #DC2626 (Emerald)
 - Background: #F5F3FF (Light Purple)
 
 **Typography:**

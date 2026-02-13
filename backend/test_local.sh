@@ -1,7 +1,7 @@
 #!/bin/bash
 # Quick local test script for production-ready backend
 
-echo "🧪 Testing JunkOS Backend Locally"
+echo "🧪 Testing Umuve Backend Locally"
 echo "=================================="
 echo ""
 
@@ -29,8 +29,8 @@ if [ ! -f ".env" ]; then
     echo "⚠️  No .env file found. Creating from example..."
     cat > .env << EOF
 SECRET_KEY=dev-secret-key-for-testing
-API_KEY=junkos-api-key-12345
-DATABASE_PATH=junkos.db
+API_KEY=umuve-api-key-12345
+DATABASE_PATH=umuve.db
 FLASK_ENV=development
 PORT=8080
 CORS_ORIGINS=*

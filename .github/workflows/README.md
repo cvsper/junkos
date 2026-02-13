@@ -1,6 +1,6 @@
-# JunkOS CI/CD Pipeline Documentation
+# Umuve CI/CD Pipeline Documentation
 
-This directory contains the complete CI/CD pipeline for JunkOS, including automated testing, security scanning, and deployment workflows.
+This directory contains the complete CI/CD pipeline for Umuve, including automated testing, security scanning, and deployment workflows.
 
 ## 📋 Table of Contents
 
@@ -49,9 +49,9 @@ Add these secrets in your repository settings (`Settings > Secrets and variables
 - `SLACK_WEBHOOK` - Slack incoming webhook URL
 
 #### Environment URLs
-- `STAGING_URL` - Staging environment URL (e.g., `https://staging.junkos.app`)
+- `STAGING_URL` - Staging environment URL (e.g., `https://staging.goumuve.com`)
 - `BLUE_INTERNAL_URL` - Blue environment URL for blue-green deployments
-- `PRODUCTION_URL` - Production URL (e.g., `https://junkos.app`)
+- `PRODUCTION_URL` - Production URL (e.g., `https://goumuve.com`)
 - `PRODUCTION_DATABASE_URL` - Production database connection string
 
 #### Load Balancer (for blue-green deployment)
@@ -343,7 +343,7 @@ Create `.env` files in each service directory:
 
 **backend/.env:**
 ```bash
-DATABASE_URL=postgresql://user:pass@localhost:5432/junkos
+DATABASE_URL=postgresql://user:pass@localhost:5432/umuve
 SECRET_KEY=your-secret-key
 STRIPE_SECRET_KEY=sk_test_...
 ```
@@ -528,7 +528,7 @@ USER appuser
 ```bash
 docker run --rm \
   -v /var/run/docker.sock:/var/run/docker.sock \
-  aquasec/trivy image junkos-backend:latest
+  aquasec/trivy image umuve-backend:latest
 ```
 
 ---
@@ -581,18 +581,18 @@ railway variables
 ```bash
 # Check ECS service events
 aws ecs describe-services \
-  --cluster junkos-staging \
+  --cluster umuve-staging \
   --services backend
 
 # View CloudWatch logs
-aws logs tail /ecs/junkos-backend --follow
+aws logs tail /ecs/umuve-backend --follow
 ```
 
 #### Smoke Tests Fail
 ```bash
 # Run smoke tests locally
 cd e2e
-BASE_URL=https://staging.junkos.app npx playwright test smoke
+BASE_URL=https://staging.goumuve.com npx playwright test smoke
 
 # Debug with UI
 npx playwright test --ui
@@ -765,5 +765,5 @@ View in Actions tab:
 ---
 
 **Last Updated:** 2024-02-06  
-**Maintained By:** JunkOS DevOps Team  
+**Maintained By:** Umuve DevOps Team  
 **Version:** 1.0.0

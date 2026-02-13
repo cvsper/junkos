@@ -1,6 +1,6 @@
 //
 //  NavigationUITests.swift
-//  JunkOSUITests
+//  UmuveUITests
 //
 //  UI tests for navigation between screens
 //
@@ -47,7 +47,7 @@ final class NavigationUITests: XCTestCase {
     
     func testForwardNavigationFromWelcome() throws {
         // Given - on welcome screen
-        XCTAssertTrue(app.staticTexts["JunkOS"].exists)
+        XCTAssertTrue(app.staticTexts["Umuve"].exists)
         
         // When - tap get started
         app.buttons.matching(identifier: "getStartedButton").firstMatch.tap()
@@ -141,7 +141,7 @@ final class NavigationUITests: XCTestCase {
             backButton.tap()
             
             // Then - should be on welcome
-            XCTAssertTrue(app.staticTexts["JunkOS"].waitForExistence(timeout: 2))
+            XCTAssertTrue(app.staticTexts["Umuve"].waitForExistence(timeout: 2))
         }
     }
     
@@ -197,7 +197,7 @@ final class NavigationUITests: XCTestCase {
                 // Back from address to welcome
                 if backButton.exists {
                     backButton.tap()
-                    XCTAssertTrue(app.staticTexts["JunkOS"].waitForExistence(timeout: 2))
+                    XCTAssertTrue(app.staticTexts["Umuve"].waitForExistence(timeout: 2))
                 }
             }
         }
@@ -270,7 +270,7 @@ final class NavigationUITests: XCTestCase {
     
     func testCannotNavigateBackFromWelcome() throws {
         // Given - on welcome screen
-        XCTAssertTrue(app.staticTexts["JunkOS"].exists)
+        XCTAssertTrue(app.staticTexts["Umuve"].exists)
         
         // When - try to find back button
         let backButtons = app.navigationBars.buttons
@@ -282,7 +282,7 @@ final class NavigationUITests: XCTestCase {
                 firstButton.tap()
                 
                 // Should still be on welcome
-                XCTAssertTrue(app.staticTexts["JunkOS"].exists)
+                XCTAssertTrue(app.staticTexts["Umuve"].exists)
             }
         }
     }
@@ -292,7 +292,7 @@ final class NavigationUITests: XCTestCase {
         var screenCount = 0
         
         // Welcome
-        XCTAssertTrue(app.staticTexts["JunkOS"].exists)
+        XCTAssertTrue(app.staticTexts["Umuve"].exists)
         screenCount += 1
         
         // Address
@@ -343,7 +343,7 @@ final class NavigationUITests: XCTestCase {
         let backButton = app.navigationBars.buttons.element(boundBy: 0)
         if backButton.exists {
             backButton.tap()
-            XCTAssertTrue(app.staticTexts["JunkOS"].waitForExistence(timeout: 2))
+            XCTAssertTrue(app.staticTexts["Umuve"].waitForExistence(timeout: 2))
             
             // Forward again
             app.buttons.matching(identifier: "getStartedButton").firstMatch.tap()

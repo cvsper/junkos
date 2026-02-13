@@ -1,5 +1,5 @@
 """
-Booking API routes for JunkOS.
+Booking API routes for Umuve.
 Customer booking flow: estimate, create job, and check status.
 
 Pricing engine v2 -- tiered item categories with size variants, volume

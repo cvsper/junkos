@@ -1,6 +1,6 @@
 //
 //  ProfileSettingsView.swift
-//  JunkOS Driver
+//  Umuve Pro
 //
 //  Profile settings: truck info, documents, schedule, logout.
 //
@@ -325,7 +325,7 @@ struct ProfileSettingsView: View {
                         .padding(.horizontal, DriverSpacing.xl)
 
                         // Version
-                        Text("JunkOS Driver v1.0.0")
+                        Text("Umuve Pro v1.0.0")
                             .font(DriverTypography.caption2)
                             .foregroundStyle(Color.driverTextTertiary)
                     }

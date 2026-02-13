@@ -1,6 +1,6 @@
 //
 //  AuthViewModel.swift
-//  JunkOS Driver
+//  Umuve Pro
 //
 //  Login/signup form logic.
 //

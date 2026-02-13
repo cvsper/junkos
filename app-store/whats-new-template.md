@@ -1,13 +1,13 @@
-# JunkOS "What's New" Template
+# Umuve "What's New" Template
 **Character limit: 4000**
 
 ---
 
 ## Version 1.0.0 (Initial Launch)
 
-**Welcome to JunkOS—Junk Removal, Simplified!**
+**Welcome to Umuve—Junk Removal, Simplified!**
 
-We're thrilled to introduce JunkOS, the easiest way to book professional junk removal. Clear your space in minutes with AI-powered estimates and real-time booking.
+We're thrilled to introduce Umuve, the easiest way to book professional junk removal. Clear your space in minutes with AI-powered estimates and real-time booking.
 
 **What's Included in v1.0:**
 
@@ -29,9 +29,9 @@ We prioritize donation and recycling. See where your items go and feel good abou
 ⭐ **Rate & Review**
 Share your experience and help us maintain high standards across our network of professional haulers.
 
-**Download JunkOS today and experience junk removal done right!**
+**Download Umuve today and experience junk removal done right!**
 
-Have feedback? Reach us at support@junkos.app
+Have feedback? Reach us at support@goumuve.com
 
 ---
 
@@ -63,9 +63,9 @@ We've been listening to your feedback and are excited to bring you [major featur
 [Optional: Tease 1-2 upcoming features to build anticipation]
 
 **We Love Your Feedback!**
-Your reviews and suggestions help us build the best junk removal experience. If you're enjoying JunkOS, please leave us a rating—it means the world to our team!
+Your reviews and suggestions help us build the best junk removal experience. If you're enjoying Umuve, please leave us a rating—it means the world to our team!
 
-Questions or issues? Contact us at support@junkos.app
+Questions or issues? Contact us at support@goumuve.com
 
 ---
 
@@ -92,12 +92,12 @@ Book pickups up to 30 days in advance (up from 14 days). Planning a renovation o
 • Smoother animations and transitions throughout the app
 
 **Coming Soon:**
-We're working on bundle pricing for multi-room cleanouts and a referral program so you can earn credits by sharing JunkOS with friends!
+We're working on bundle pricing for multi-room cleanouts and a referral program so you can earn credits by sharing Umuve with friends!
 
 **We Love Your Feedback!**
-Enjoying JunkOS? Please take a moment to rate us—your support helps us grow and improve!
+Enjoying Umuve? Please take a moment to rate us—your support helps us grow and improve!
 
-Questions? Reach us at support@junkos.app
+Questions? Reach us at support@goumuve.com
 
 ---
 

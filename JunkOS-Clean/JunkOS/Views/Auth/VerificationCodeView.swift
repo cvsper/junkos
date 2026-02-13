@@ -1,6 +1,6 @@
 //
 //  VerificationCodeView.swift
-//  JunkOS
+//  Umuve
 //
 //  6-digit SMS verification code entry
 //
@@ -20,30 +20,30 @@ struct VerificationCodeView: View {
     
     var body: some View {
         ScrollView {
-            VStack(spacing: JunkSpacing.xxlarge) {
+            VStack(spacing: UmuveSpacing.xxlarge) {
                 // Close button
                 HStack {
                     Spacer()
                     Button(action: { dismiss() }) {
                         Image(systemName: "xmark")
                             .font(.title3)
-                            .foregroundColor(.junkText)
+                            .foregroundColor(.umuveText)
                             .padding()
                     }
                 }
                 
                 // Header
-                VStack(spacing: JunkSpacing.normal) {
+                VStack(spacing: UmuveSpacing.normal) {
                     Text("Please enter the\nverification code")
                         .font(.system(size: 28, weight: .bold))
-                        .foregroundColor(.junkText)
+                        .foregroundColor(.umuveText)
                         .multilineTextAlignment(.center)
                         .lineLimit(2)
                         .fixedSize(horizontal: false, vertical: true)
-                        .padding(.horizontal, JunkSpacing.xlarge)
+                        .padding(.horizontal, UmuveSpacing.xlarge)
                 }
                 .frame(maxWidth: .infinity)
-                .padding(.top, JunkSpacing.xlarge)
+                .padding(.top, UmuveSpacing.xlarge)
                 
                 // Code input boxes
                 HStack(spacing: 12) {
@@ -58,25 +58,25 @@ struct VerificationCodeView: View {
                         .focused($focusedField, equals: index)
                     }
                 }
-                .padding(.horizontal, JunkSpacing.large)
+                .padding(.horizontal, UmuveSpacing.large)
                 
                 // Phone number display
-                VStack(spacing: JunkSpacing.small) {
+                VStack(spacing: UmuveSpacing.small) {
                     VStack(spacing: 4) {
                         Text("We've just sent a code to")
-                            .foregroundColor(.junkTextMuted)
+                            .foregroundColor(.umuveTextMuted)
                         Text(phoneNumber)
-                            .foregroundColor(.junkText)
+                            .foregroundColor(.umuveText)
                             .fontWeight(.semibold)
                     }
-                    .font(JunkTypography.bodyFont)
+                    .font(UmuveTypography.bodyFont)
                     .multilineTextAlignment(.center)
                     
                     Button("Change my number") {
                         dismiss()
                     }
-                    .font(JunkTypography.bodyFont)
-                    .foregroundColor(.junkPrimary)
+                    .font(UmuveTypography.bodyFont)
+                    .foregroundColor(.umuvePrimary)
                 }
                 .frame(maxWidth: .infinity)
                 
@@ -86,43 +86,43 @@ struct VerificationCodeView: View {
                         Image(systemName: "exclamationmark.triangle.fill")
                             .foregroundColor(.red)
                         Text(error)
-                            .font(JunkTypography.bodySmallFont)
+                            .font(UmuveTypography.bodySmallFont)
                             .foregroundColor(.red)
                     }
-                    .padding(JunkSpacing.small)
+                    .padding(UmuveSpacing.small)
                     .background(Color.red.opacity(0.1))
                     .cornerRadius(8)
                     .transition(.scale.combined(with: .opacity))
                 }
                 
                 // Resend section
-                VStack(spacing: JunkSpacing.normal) {
+                VStack(spacing: UmuveSpacing.normal) {
                     Text("Didn't receive a code?")
-                        .font(JunkTypography.bodyFont)
+                        .font(UmuveTypography.bodyFont)
                         .fontWeight(.semibold)
-                        .foregroundColor(.junkText)
+                        .foregroundColor(.umuveText)
                     
                     Text("Check the phone number above is correct")
-                        .font(JunkTypography.bodySmallFont)
-                        .foregroundColor(.junkTextMuted)
+                        .font(UmuveTypography.bodySmallFont)
+                        .foregroundColor(.umuveTextMuted)
                         .multilineTextAlignment(.center)
                     
                     if resendCountdown > 0 {
                         Text("Please Resend (\(resendCountdown)s)")
-                            .font(JunkTypography.bodyFont)
-                            .foregroundColor(.junkTextMuted)
+                            .font(UmuveTypography.bodyFont)
+                            .foregroundColor(.umuveTextMuted)
                     } else {
                         Button("Please Resend") {
                             resendCode()
                         }
-                        .font(JunkTypography.bodyFont)
+                        .font(UmuveTypography.bodyFont)
                         .fontWeight(.semibold)
-                        .foregroundColor(.junkPrimary)
+                        .foregroundColor(.umuvePrimary)
                     }
                 }
                 .frame(maxWidth: .infinity)
                 .multilineTextAlignment(.center)
-                .padding(.horizontal, JunkSpacing.large)
+                .padding(.horizontal, UmuveSpacing.large)
                 
                 Spacer()
                 
@@ -133,20 +133,20 @@ struct VerificationCodeView: View {
                             .progressViewStyle(CircularProgressViewStyle(tint: .white))
                     } else {
                         Text("Next")
-                            .font(JunkTypography.h3Font)
+                            .font(UmuveTypography.h3Font)
                             .foregroundColor(.white)
                     }
                 }
                 .frame(maxWidth: .infinity)
                 .frame(height: 56)
-                .background(isCodeComplete ? Color.junkPrimary : Color.junkTextMuted)
+                .background(isCodeComplete ? Color.umuvePrimary : Color.umuveTextMuted)
                 .cornerRadius(28)
                 .disabled(!isCodeComplete || isLoading)
-                .padding(.horizontal, JunkSpacing.xlarge)
-                .padding(.bottom, JunkSpacing.xlarge)
+                .padding(.horizontal, UmuveSpacing.xlarge)
+                .padding(.bottom, UmuveSpacing.xlarge)
             }
         }
-        .background(Color.junkBackground.ignoresSafeArea())
+        .background(Color.umuveBackground.ignoresSafeArea())
         .onAppear {
             focusedField = 0
             startResendTimer()
@@ -244,7 +244,7 @@ struct CodeDigitField: View {
             set: { onTextChange($0) }
         ))
         .font(.system(size: 32, weight: .medium))
-        .foregroundColor(.junkText)
+        .foregroundColor(.umuveText)
         .multilineTextAlignment(.center)
         .keyboardType(.numberPad)
         .frame(width: 48, height: 64)
@@ -253,7 +253,7 @@ struct CodeDigitField: View {
         .overlay(
             RoundedRectangle(cornerRadius: 12)
                 .stroke(
-                    isFocused ? Color.junkPrimary : Color.junkBorder,
+                    isFocused ? Color.umuvePrimary : Color.umuveBorder,
                     lineWidth: isFocused ? 2 : 1
                 )
         )

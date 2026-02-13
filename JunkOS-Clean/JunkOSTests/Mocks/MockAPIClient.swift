@@ -1,13 +1,13 @@
 //
 //  MockAPIClient.swift
-//  JunkOSTests
+//  UmuveTests
 //
 //  Mock API client for future backend integration testing
 //
 
 import Foundation
 import Combine
-@testable import JunkOS
+@testable import Umuve
 
 // MARK: - API Client Protocol
 protocol APIClientProtocol {

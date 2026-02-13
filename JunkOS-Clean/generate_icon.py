@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Generate JunkOS app icon with green truck on white background."""
+"""Generate Umuve app icon with red truck on white background."""
 
 from PIL import Image, ImageDraw
 import os
 
 # Brand colors
-EMERALD = (5, 150, 105)         # #059669 emerald-600
-EMERALD_DARK = (4, 120, 87)     # #047857 emerald-700
+RED = (220, 38, 38)             # #DC2626 red-600
+RED_DARK = (185, 28, 28)        # #B91C1C red-700
 WHITE = (255, 255, 255)
 
 # Icon sizes needed
@@ -38,7 +38,7 @@ def create_white_background(size):
     return img, draw
 
 def draw_truck(draw, size):
-    """Draw a green truck silhouette."""
+    """Draw a red truck silhouette."""
     # Scale factor for truck elements
     s = size / 100
 
@@ -50,7 +50,7 @@ def draw_truck(draw, size):
     draw.rounded_rectangle(
         [body_left, body_top, body_right, body_bottom],
         radius=3 * s,
-        fill=EMERALD
+        fill=RED
     )
 
     # Truck cab (front rectangle)
@@ -61,7 +61,7 @@ def draw_truck(draw, size):
     draw.rounded_rectangle(
         [cab_left, cab_top, cab_right, cab_bottom],
         radius=3 * s,
-        fill=EMERALD
+        fill=RED
     )
 
     # Front wheel
@@ -70,7 +70,7 @@ def draw_truck(draw, size):
     draw.ellipse(
         [wheel1_center[0] - wheel1_radius, wheel1_center[1] - wheel1_radius,
          wheel1_center[0] + wheel1_radius, wheel1_center[1] + wheel1_radius],
-        fill=EMERALD_DARK
+        fill=RED_DARK
     )
 
     # Rear wheel
@@ -79,7 +79,7 @@ def draw_truck(draw, size):
     draw.ellipse(
         [wheel2_center[0] - wheel2_radius, wheel2_center[1] - wheel2_radius,
          wheel2_center[0] + wheel2_radius, wheel2_center[1] + wheel2_radius],
-        fill=EMERALD_DARK
+        fill=RED_DARK
     )
 
     # Window on cab

@@ -1,4 +1,4 @@
-# JunkOS App Store Assets - Quick Start
+# Umuve App Store Assets - Quick Start
 
 **Goal:** Generate all App Store assets in under 30 minutes
 
@@ -80,7 +80,7 @@ See `screenshots/SCREENSHOT_GUIDE.md` for detailed overlay text and design specs
 All text is ready in: `assets/marketing-copy/app-store-listing.md`
 
 ### What to Copy
-- **App Name:** JunkOS
+- **App Name:** Umuve
 - **Subtitle:** Instant Junk Removal Quotes (29 chars)
 - **Keywords:** Copy entire 99-char string
 - **Description:** Copy full description (3,485 chars)
@@ -176,7 +176,7 @@ Copy these exactly as shown:
 
 ```
 Primary:    #6366F1  (Indigo)
-CTA:        #10B981  (Emerald)
+CTA:        #DC2626  (Emerald)
 Background: #F5F3FF  (Lavender)
 Text:       #1E1B4B  (Dark Indigo)
 ```

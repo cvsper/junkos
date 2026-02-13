@@ -28,23 +28,23 @@
                             <p style="margin: 0 0 30px; font-size: 16px; line-height: 1.6; color: #374151;">Here's your daily performance summary. Great work today! 🎉</p>
                             
                             <!-- Key Metrics -->
-                            <div style="background: linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%); border-radius: 12px; padding: 30px; margin: 25px 0;">
-                                <h2 style="margin: 0 0 25px; font-family: 'Poppins', sans-serif; font-size: 20px; font-weight: 600; color: #065F46; text-align: center;">Today's Performance</h2>
+                            <div style="background: linear-gradient(135deg, #FEF2F2 0%, #FEE2E2 100%); border-radius: 12px; padding: 30px; margin: 25px 0;">
+                                <h2 style="margin: 0 0 25px; font-family: 'Poppins', sans-serif; font-size: 20px; font-weight: 600; color: #7F1D1D; text-align: center;">Today's Performance</h2>
                                 
                                 <table role="presentation" style="width: 100%; margin-bottom: 20px;">
                                     <tr>
                                         <td style="text-align: center; padding: 15px; background-color: rgba(255, 255, 255, 0.7); border-radius: 8px; width: 50%;">
-                                            <p style="margin: 0; font-size: 14px; color: #065F46; font-weight: 600;">Total Revenue</p>
-                                            <p style="margin: 10px 0 0; font-family: 'Poppins', sans-serif; font-size: 36px; font-weight: 700; color: #10B981;">${{total_revenue}}</p>
-                                            <p style="margin: 5px 0 0; font-size: 12px; color: #047857;">
+                                            <p style="margin: 0; font-size: 14px; color: #7F1D1D; font-weight: 600;">Total Revenue</p>
+                                            <p style="margin: 10px 0 0; font-family: 'Poppins', sans-serif; font-size: 36px; font-weight: 700; color: #DC2626;">${{total_revenue}}</p>
+                                            <p style="margin: 5px 0 0; font-size: 12px; color: #991B1B;">
                                                 {{#if revenue_change_positive}}↗{{else}}↘{{/if}} {{revenue_change_percent}}% vs yesterday
                                             </p>
                                         </td>
                                         <td style="width: 20px;"></td>
                                         <td style="text-align: center; padding: 15px; background-color: rgba(255, 255, 255, 0.7); border-radius: 8px; width: 50%;">
-                                            <p style="margin: 0; font-size: 14px; color: #065F46; font-weight: 600;">Jobs Completed</p>
-                                            <p style="margin: 10px 0 0; font-family: 'Poppins', sans-serif; font-size: 36px; font-weight: 700; color: #10B981;">{{jobs_completed}}</p>
-                                            <p style="margin: 5px 0 0; font-size: 12px; color: #047857;">
+                                            <p style="margin: 0; font-size: 14px; color: #7F1D1D; font-weight: 600;">Jobs Completed</p>
+                                            <p style="margin: 10px 0 0; font-family: 'Poppins', sans-serif; font-size: 36px; font-weight: 700; color: #DC2626;">{{jobs_completed}}</p>
+                                            <p style="margin: 5px 0 0; font-size: 12px; color: #991B1B;">
                                                 {{#if jobs_change_positive}}↗{{else}}↘{{/if}} {{jobs_change_percent}}% vs yesterday
                                             </p>
                                         </td>
@@ -55,17 +55,17 @@
                                 <div style="background-color: rgba(255, 255, 255, 0.7); border-radius: 8px; padding: 20px; margin-top: 20px;">
                                     <table role="presentation" style="width: 100%;">
                                         <tr>
-                                            <td style="padding: 10px; text-align: center; border-right: 1px solid #D1FAE5;">
-                                                <p style="margin: 0; font-size: 24px; font-weight: 700; color: #10B981;">{{new_bookings}}</p>
-                                                <p style="margin: 5px 0 0; font-size: 12px; color: #065F46;">New Bookings</p>
+                                            <td style="padding: 10px; text-align: center; border-right: 1px solid #FEE2E2;">
+                                                <p style="margin: 0; font-size: 24px; font-weight: 700; color: #DC2626;">{{new_bookings}}</p>
+                                                <p style="margin: 5px 0 0; font-size: 12px; color: #7F1D1D;">New Bookings</p>
                                             </td>
-                                            <td style="padding: 10px; text-align: center; border-right: 1px solid #D1FAE5;">
-                                                <p style="margin: 0; font-size: 24px; font-weight: 700; color: #10B981;">{{avg_ticket}}</p>
-                                                <p style="margin: 5px 0 0; font-size: 12px; color: #065F46;">Avg Ticket</p>
+                                            <td style="padding: 10px; text-align: center; border-right: 1px solid #FEE2E2;">
+                                                <p style="margin: 0; font-size: 24px; font-weight: 700; color: #DC2626;">{{avg_ticket}}</p>
+                                                <p style="margin: 5px 0 0; font-size: 12px; color: #7F1D1D;">Avg Ticket</p>
                                             </td>
                                             <td style="padding: 10px; text-align: center;">
-                                                <p style="margin: 0; font-size: 24px; font-weight: 700; color: #10B981;">{{customer_rating}}</p>
-                                                <p style="margin: 5px 0 0; font-size: 12px; color: #065F46;">Avg Rating</p>
+                                                <p style="margin: 0; font-size: 24px; font-weight: 700; color: #DC2626;">{{customer_rating}}</p>
+                                                <p style="margin: 5px 0 0; font-size: 12px; color: #7F1D1D;">Avg Rating</p>
                                             </td>
                                         </tr>
                                     </table>
@@ -163,7 +163,7 @@
                     <!-- Footer -->
                     <tr>
                         <td style="background-color: #F9FAFB; padding: 30px; text-align: center; border-radius: 0 0 8px 8px; border-top: 1px solid #E5E7EB;">
-                            <p style="margin: 0 0 10px; font-size: 14px; color: #6B7280;">Daily Summary Report from JunkOS</p>
+                            <p style="margin: 0 0 10px; font-size: 14px; color: #6B7280;">Daily Summary Report from Umuve</p>
                             <p style="margin: 0; font-size: 12px; color: #9CA3AF;">
                                 <a href="{{notification_settings_url}}" style="color: #6B7280; text-decoration: none;">Notification Settings</a>
                             </p>

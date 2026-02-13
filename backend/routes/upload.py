@@ -1,5 +1,5 @@
 """
-File Upload API routes for JunkOS.
+File Upload API routes for Umuve.
 Handles photo uploads for job documentation.
 """
 

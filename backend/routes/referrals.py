@@ -1,5 +1,5 @@
 """
-Referral API routes for JunkOS.
+Referral API routes for Umuve.
 Allows customers to share referral codes and track referral rewards.
 """
 
@@ -92,7 +92,7 @@ def validate_referral_code(code):
         return jsonify({"error": "Referral code not found"}), 404
 
     # Mask the name for privacy (show first name + last initial)
-    display_name = referrer.name or "A JunkOS user"
+    display_name = referrer.name or "An Umuve user"
     parts = display_name.strip().split()
     if len(parts) >= 2:
         display_name = "{} {}.".format(parts[0], parts[-1][0])

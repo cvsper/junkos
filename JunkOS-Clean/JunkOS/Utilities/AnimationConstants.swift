@@ -1,6 +1,6 @@
 //
 //  AnimationConstants.swift
-//  JunkOS
+//  Umuve
 //
 //  Centralized animation timing and spring parameters
 //  Reference: https://developer.apple.com/documentation/swiftui/animation

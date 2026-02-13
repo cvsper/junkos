@@ -1,6 +1,6 @@
 # App Store Deployment Checklist
 
-Complete guide to deploying JunkOS Booking app to TestFlight and the App Store.
+Complete guide to deploying Umuve Booking app to TestFlight and the App Store.
 
 ## Prerequisites
 
@@ -46,8 +46,8 @@ Complete guide to deploying JunkOS Booking app to TestFlight and the App Store.
 ```json
 {
   "expo": {
-    "name": "JunkOS Booking",
-    "slug": "junkos-booking",
+    "name": "Umuve Booking",
+    "slug": "umuve-booking",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -59,11 +59,11 @@ Complete guide to deploying JunkOS Booking app to TestFlight and the App Store.
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.junkos.booking",
+      "bundleIdentifier": "com.goumuve.app",
       "buildNumber": "1",
       "infoPlist": {
-        "NSCameraUsageDescription": "JunkOS needs camera access to take photos of items for junk removal.",
-        "NSPhotoLibraryUsageDescription": "JunkOS needs photo library access to select existing photos.",
+        "NSCameraUsageDescription": "Umuve needs camera access to take photos of items for junk removal.",
+        "NSPhotoLibraryUsageDescription": "Umuve needs photo library access to select existing photos.",
         "NSLocationWhenInUseUsageDescription": "We use your location to improve service quality."
       }
     },
@@ -139,14 +139,14 @@ eas build --platform ios --profile production --auto-submit
 npx expo prebuild
 
 # Open in Xcode
-open ios/junkos-booking.xcworkspace
+open ios/umuve-booking.xcworkspace
 
 # Configure signing in Xcode:
 # 1. Select project
 # 2. Select target
 # 3. Signing & Capabilities
 # 4. Team: Select your Apple Developer account
-# 5. Bundle Identifier: com.junkos.booking
+# 5. Bundle Identifier: com.goumuve.app
 
 # Archive and upload
 # Product > Archive > Distribute App > App Store Connect
@@ -178,14 +178,14 @@ eas submit --platform ios
 Send testers:
 1. Install TestFlight from App Store
 2. Use invitation link or redeem code
-3. Open TestFlight and install JunkOS Booking
+3. Open TestFlight and install Umuve Booking
 4. Provide feedback through TestFlight
 
 ## Phase 5: App Store Connect
 
 ### Create App Listing
 - [ ] **App Information**
-  - Name: JunkOS Booking
+  - Name: Umuve Booking
   - Subtitle: Fast & Reliable Junk Removal
   - Category: Lifestyle or Productivity
   - Content Rights: Own or licensed
@@ -194,12 +194,12 @@ Send testers:
   - Free (in-app payments handled by backend)
 
 - [ ] **Privacy Policy**
-  - Required URL: https://junkos.com/privacy
+  - Required URL: https://goumuve.com/privacy
   - Data collection disclosure
 
 - [ ] **App Description**
   ```
-  JunkOS makes junk removal simple and stress-free. Book professional junk removal service in minutes.
+  Umuve makes junk removal simple and stress-free. Book professional junk removal service in minutes.
 
   FEATURES:
   • Quick booking process
@@ -237,16 +237,16 @@ Send testers:
 
 - [ ] **Demo Account** (for Apple reviewers)
   ```
-  Username: reviewer@junkos.com
+  Username: reviewer@goumuve.com
   Password: AppleReview2024!
   ```
 
 - [ ] **Notes for Reviewer**
   ```
-  Thank you for reviewing JunkOS Booking.
+  Thank you for reviewing Umuve Booking.
 
   TEST ACCOUNT:
-  Email: reviewer@junkos.com
+  Email: reviewer@goumuve.com
   Password: AppleReview2024!
 
   TESTING:
@@ -256,7 +256,7 @@ Send testers:
   4. Schedule test appointment
 
   NOTE: Payment processing happens on backend - no real charges in app.
-  Backend API is hosted at: https://api.junkos.com
+  Backend API is hosted at: https://api.goumuve.com
   ```
 
 ## Phase 6: App Review

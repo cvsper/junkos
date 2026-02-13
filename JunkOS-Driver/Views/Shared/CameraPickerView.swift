@@ -1,6 +1,6 @@
 //
 //  CameraPickerView.swift
-//  JunkOS Driver
+//  Umuve Pro
 //
 //  UIImagePickerController wrapper for camera/photo library.
 //

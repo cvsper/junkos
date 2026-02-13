@@ -1,6 +1,6 @@
 //
 //  AfterPhotosView.swift
-//  JunkOS Driver
+//  Umuve Pro
 //
 //  Camera capture for "after" photos + Mark Complete button.
 //

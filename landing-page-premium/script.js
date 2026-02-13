@@ -1,5 +1,5 @@
 /**
- * JunkOS Landing Page
+ * Umuve Landing Page
  * Clean, refined interactions
  */
 

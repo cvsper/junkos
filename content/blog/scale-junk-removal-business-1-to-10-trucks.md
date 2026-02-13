@@ -211,7 +211,7 @@ At 10 trucks, manual processes don't just slow you down—they make growth impos
 
 Without this, you'll spend 12+ hours per day manually coordinating, and mistakes (double bookings, missed jobs, forgotten invoices) become frequent.
 
-[Dedicated junk removal software](https://junkos.com) is purpose-built for this exact challenge—managing multi-truck operations without the chaos.
+[Dedicated junk removal software](https://goumuve.com) is purpose-built for this exact challenge—managing multi-truck operations without the chaos.
 
 ### Hiring and Retention
 
@@ -367,7 +367,7 @@ If you're in the messy middle right now—2-5 trucks, overwhelmed, fighting fire
 
 The short-term slowdown creates long-term success.
 
-**Ready to streamline operations and scale without the chaos?** [See how JunkOS software](https://junkos.com) helps growing junk removal companies manage multi-truck dispatch, automate customer communication, and maintain profitability as they scale from 1 to 10+ trucks.
+**Ready to streamline operations and scale without the chaos?** [See how Umuve software](https://goumuve.com) helps growing junk removal companies manage multi-truck dispatch, automate customer communication, and maintain profitability as they scale from 1 to 10+ trucks.
 
 ---
 

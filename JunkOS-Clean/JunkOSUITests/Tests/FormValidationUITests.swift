@@ -1,6 +1,6 @@
 //
 //  FormValidationUITests.swift
-//  JunkOSUITests
+//  UmuveUITests
 //
 //  UI tests for form validation
 //

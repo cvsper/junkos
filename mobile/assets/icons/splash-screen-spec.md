@@ -1,6 +1,6 @@
-# JunkOS Splash Screen Specification
+# Umuve Splash Screen Specification
 
-iOS launch screen requirements and design specifications for JunkOS app.
+iOS launch screen requirements and design specifications for Umuve app.
 
 ---
 
@@ -40,13 +40,13 @@ The splash screen (launch screen) is the first thing users see when opening your
 
 ---
 
-## JunkOS Launch Screen Design
+## Umuve Launch Screen Design
 
 ### Design Concept
 
 **Simplified Icon + Brand Name**
 
-A centered, slightly larger version of the app icon with "JunkOS" wordmark below.
+A centered, slightly larger version of the app icon with "Umuve" wordmark below.
 
 ### Layout Structure
 
@@ -55,7 +55,7 @@ A centered, slightly larger version of the app icon with "JunkOS" wordmark below
 │                             │
 │                             │
 │         [App Icon]          │  ← 160x160pt centered icon
-│           JunkOS            │  ← Wordmark below
+│           Umuve            │  ← Wordmark below
 │                             │
 │                             │
 └─────────────────────────────┘
@@ -71,7 +71,7 @@ A centered, slightly larger version of the app icon with "JunkOS" wordmark below
   - Size: 160pt x 160pt
   - Centered vertically and horizontally
 
-- **Wordmark**: "JunkOS"
+- **Wordmark**: "Umuve"
   - Font: SF Pro Display Bold (iOS system font)
   - Size: 32pt
   - Color: White (#FFFFFF)
@@ -88,7 +88,7 @@ Create `LaunchScreen.storyboard` with:
 
 1. **View Controller** with gradient background
 2. **Image View** (160x160pt) - app icon
-3. **Label** - "JunkOS" text
+3. **Label** - "Umuve" text
 
 **Constraints**:
 - Image View: Center X, Center Y - 40pt
@@ -125,7 +125,7 @@ struct LaunchScreenView: View {
                     .cornerRadius(35.6) // iOS app icon radius at 160pt
                 
                 // App name
-                Text("JunkOS")
+                Text("Umuve")
                     .font(.system(size: 32, weight: .bold, design: .default))
                     .foregroundColor(.white)
                     .kerning(1.0)
@@ -169,7 +169,7 @@ For iOS 13+, use `LaunchImage.imageset` in Assets.xcassets:
 1. **File → New → File**
 2. Select **Launch Screen** (under iOS → User Interface)
 3. Name: `LaunchScreen.storyboard`
-4. Add to target: ✓ JunkOS
+4. Add to target: ✓ Umuve
 
 ### Step 2: Design Launch Screen
 
@@ -195,7 +195,7 @@ For iOS 13+, use `LaunchImage.imageset` in Assets.xcassets:
 
 5. **Add App Name Label**:
    - Drag **Label** onto view
-   - Text: "JunkOS"
+   - Text: "Umuve"
    - Font: System Bold, 32pt
    - Color: White
    - Alignment: Center
@@ -240,7 +240,7 @@ Create 1px × 1024px gradient image in design tool, export as `launch-bg.png`, s
 ### Step 4: Configure Project Settings
 
 1. **Select project** in navigator
-2. **Select target** (JunkOS)
+2. **Select target** (Umuve)
 3. **General tab**
 4. **App Icons and Launch Images**:
    - Launch Screen File: `LaunchScreen`
@@ -494,7 +494,7 @@ Before submitting to App Store:
 1. ✅ Use Storyboard method (easiest)
 2. ✅ Gradient background (brand color)
 3. ✅ Centered app icon (160pt)
-4. ✅ "JunkOS" wordmark below
+4. ✅ "Umuve" wordmark below
 5. ✅ Auto Layout for all devices
 
 **Time to implement**: 20-40 minutes

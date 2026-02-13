@@ -1,6 +1,6 @@
 //
 //  PhotoUploadView.swift
-//  JunkOS
+//  Umuve
 //
 //  Photo upload screen with gallery
 //  Enhanced with photo entrance animations and deletion haptics
@@ -18,7 +18,7 @@ struct PhotoUploadView: View {
     
     var body: some View {
         ScrollView {
-            VStack(spacing: JunkSpacing.xxlarge) {
+            VStack(spacing: UmuveSpacing.xxlarge) {
                 // Header
                 ScreenHeader(
                     title: "Take Photos",
@@ -41,9 +41,9 @@ struct PhotoUploadView: View {
                 
                 Spacer()
             }
-            .padding(JunkSpacing.large)
+            .padding(UmuveSpacing.large)
         }
-        .background(Color.junkBackground.ignoresSafeArea())
+        .background(Color.umuveBackground.ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showCamera) {
             CameraPicker { photoData in
@@ -70,10 +70,10 @@ struct PhotoUploadView: View {
     // MARK: - Photo Grid
     private var photoGrid: some View {
         LazyVGrid(columns: [
-            GridItem(.flexible(), spacing: JunkSpacing.medium),
-            GridItem(.flexible(), spacing: JunkSpacing.medium),
-            GridItem(.flexible(), spacing: JunkSpacing.medium)
-        ], spacing: JunkSpacing.medium) {
+            GridItem(.flexible(), spacing: UmuveSpacing.medium),
+            GridItem(.flexible(), spacing: UmuveSpacing.medium),
+            GridItem(.flexible(), spacing: UmuveSpacing.medium)
+        ], spacing: UmuveSpacing.medium) {
             ForEach(Array(bookingData.photos.enumerated()), id: \.offset) { index, photoData in
                 ZStack(alignment: .topTrailing) {
                     if let uiImage = UIImage(data: photoData) {
@@ -102,7 +102,7 @@ struct PhotoUploadView: View {
     
     // MARK: - Action Buttons
     private var actionButtons: some View {
-        HStack(spacing: JunkSpacing.normal) {
+        HStack(spacing: UmuveSpacing.normal) {
             // SF Symbol: photo.on.rectangle for photo gallery
             PhotosPicker(
                 selection: $viewModel.selectedItems,
@@ -114,7 +114,7 @@ struct PhotoUploadView: View {
                     Text("Gallery")
                 }
             }
-            .buttonStyle(JunkSecondaryButtonStyle())
+            .buttonStyle(UmuveSecondaryButtonStyle())
             .onChange(of: viewModel.selectedItems) { items in
                 loadPhotos(items)
             }
@@ -128,33 +128,33 @@ struct PhotoUploadView: View {
                     Text("Camera")
                 }
             }
-            .buttonStyle(JunkSecondaryButtonStyle())
+            .buttonStyle(UmuveSecondaryButtonStyle())
         }
     }
     
     // MARK: - Tip Box
     private var tipBox: some View {
-        HStack(alignment: .top, spacing: JunkSpacing.medium) {
+        HStack(alignment: .top, spacing: UmuveSpacing.medium) {
             // SF Symbol: lightbulb.fill for tips/ideas
             // https://developer.apple.com/design/human-interface-guidelines/sf-symbols
             Image(systemName: "lightbulb.fill")
                 .font(.system(size: 24))
-                .foregroundColor(.junkCTA)
+                .foregroundColor(.umuveCTA)
             
             VStack(alignment: .leading, spacing: 4) {
                 Text("Tip")
-                    .font(JunkTypography.bodyFont.weight(.semibold))
-                    .foregroundColor(.junkText)
+                    .font(UmuveTypography.bodyFont.weight(.semibold))
+                    .foregroundColor(.umuveText)
                 
                 Text("More photos = more accurate quotes")
-                    .font(JunkTypography.bodySmallFont)
-                    .foregroundColor(.junkTextMuted)
+                    .font(UmuveTypography.bodySmallFont)
+                    .foregroundColor(.umuveTextMuted)
             }
             
             Spacer()
         }
-        .padding(JunkSpacing.normal)
-        .background(Color.junkPrimary.opacity(0.1))
+        .padding(UmuveSpacing.normal)
+        .background(Color.umuvePrimary.opacity(0.1))
         .cornerRadius(12)
     }
     
@@ -166,9 +166,9 @@ struct PhotoUploadView: View {
                 Text(viewModel.continueButtonText(photoCount: bookingData.photos.count))
             }
         )
-        .buttonStyle(JunkPrimaryButtonStyle())
-        .padding(JunkSpacing.large)
-        .background(Color.junkBackground)
+        .buttonStyle(UmuvePrimaryButtonStyle())
+        .padding(UmuveSpacing.large)
+        .background(Color.umuveBackground)
     }
     
     // MARK: - Load Photos

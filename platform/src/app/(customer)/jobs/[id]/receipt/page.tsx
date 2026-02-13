@@ -308,11 +308,11 @@ export default function ReceiptPage() {
                 <div className="flex items-center gap-2 mb-2">
                   <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
                     <span className="text-primary-foreground font-display font-bold text-sm">
-                      J
+                      U
                     </span>
                   </div>
                   <span className="font-display font-bold text-xl tracking-tight">
-                    JunkOS
+                    Umuve
                   </span>
                 </div>
                 <p className="text-sm text-muted-foreground print-subtle">
@@ -535,10 +535,10 @@ export default function ReceiptPage() {
             {/* Footer */}
             <div className="mt-8 pt-6 border-t border-border text-center">
               <p className="text-xs text-muted-foreground print-subtle">
-                Thank you for choosing JunkOS for your junk removal needs.
+                Thank you for choosing Umuve for your junk removal needs.
               </p>
               <p className="text-xs text-muted-foreground print-subtle mt-1">
-                Questions? Contact us at support@junkos.com
+                Questions? Contact us at support@goumuve.com
               </p>
             </div>
           </CardContent>

@@ -1,6 +1,6 @@
 //
 //  SkeletonView.swift
-//  JunkOS
+//  Umuve
 //
 //  Skeleton loading components with shimmer effect
 //
@@ -63,7 +63,7 @@ struct SkeletonCard: View {
     
     var body: some View {
         RoundedRectangle(cornerRadius: cornerRadius)
-            .fill(Color.junkBorder.opacity(0.3))
+            .fill(Color.umuveBorder.opacity(0.3))
             .frame(height: height)
             .shimmer()
             .accessibilityLabel("Loading content")
@@ -83,7 +83,7 @@ struct SkeletonText: View {
     
     var body: some View {
         RoundedRectangle(cornerRadius: 4)
-            .fill(Color.junkBorder.opacity(0.3))
+            .fill(Color.umuveBorder.opacity(0.3))
             .frame(width: width, height: height)
             .shimmer()
             .accessibilityHidden(true)
@@ -93,10 +93,10 @@ struct SkeletonText: View {
 // MARK: - Skeleton Service Card
 struct SkeletonServiceCard: View {
     var body: some View {
-        VStack(spacing: JunkSpacing.medium) {
+        VStack(spacing: UmuveSpacing.medium) {
             // Icon placeholder
             Circle()
-                .fill(Color.junkBorder.opacity(0.3))
+                .fill(Color.umuveBorder.opacity(0.3))
                 .frame(width: 50, height: 50)
             
             // Title placeholder
@@ -106,12 +106,12 @@ struct SkeletonServiceCard: View {
             SkeletonText(width: 60, height: 12)
         }
         .frame(maxWidth: .infinity)
-        .padding(JunkSpacing.normal)
-        .background(Color.junkWhite)
+        .padding(UmuveSpacing.normal)
+        .background(Color.umuveWhite)
         .cornerRadius(16)
         .overlay(
             RoundedRectangle(cornerRadius: 16)
-                .stroke(Color.junkBorder, lineWidth: 2)
+                .stroke(Color.umuveBorder, lineWidth: 2)
         )
         .shimmer()
         .accessibilityLabel("Loading service option")
@@ -126,14 +126,14 @@ struct JunkLoadingSpinner: View {
     var body: some View {
         ZStack {
             Circle()
-                .stroke(Color.junkBorder, lineWidth: 4)
+                .stroke(Color.umuveBorder, lineWidth: 4)
                 .frame(width: 50, height: 50)
             
             Circle()
                 .trim(from: 0, to: 0.7)
                 .stroke(
                     LinearGradient(
-                        colors: [Color.junkPrimary, Color.junkSecondary],
+                        colors: [Color.umuvePrimary, Color.umuveSecondary],
                         startPoint: .leading,
                         endPoint: .trailing
                     ),
@@ -166,15 +166,15 @@ struct LoadingView: View {
     }
     
     var body: some View {
-        VStack(spacing: JunkSpacing.large) {
+        VStack(spacing: UmuveSpacing.large) {
             JunkLoadingSpinner()
             
             Text(message)
-                .font(JunkTypography.bodyFont)
-                .foregroundColor(.junkTextMuted)
+                .font(UmuveTypography.bodyFont)
+                .foregroundColor(.umuveTextMuted)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.junkBackground)
+        .background(Color.umuveBackground)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(message)")
     }

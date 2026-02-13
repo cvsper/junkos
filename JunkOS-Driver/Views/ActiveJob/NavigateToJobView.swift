@@ -1,6 +1,6 @@
 //
 //  NavigateToJobView.swift
-//  JunkOS Driver
+//  Umuve Pro
 //
 //  Shows address and opens Maps. Buttons: Navigate, Mark En Route, Mark Arrived.
 //

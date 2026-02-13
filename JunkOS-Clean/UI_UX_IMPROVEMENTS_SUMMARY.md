@@ -1,14 +1,14 @@
-# JunkOS UI/UX Improvements - Implementation Summary
+# Umuve UI/UX Improvements - Implementation Summary
 
 ## ✅ Implementation Complete
 
-All comprehensive UI/UX improvements have been implemented for the JunkOS iOS app.
+All comprehensive UI/UX improvements have been implemented for the Umuve iOS app.
 
 ---
 
 ## 📁 New Component Files Created
 
-### Loading States (`JunkOS/Components/LoadingStates/`)
+### Loading States (`Umuve/Components/LoadingStates/`)
 - **SkeletonView.swift** - Complete skeleton loading system
   - `ShimmerEffect` - Animated shimmer for loading states
   - `SkeletonCard` - Card placeholder with shimmer
@@ -17,14 +17,14 @@ All comprehensive UI/UX improvements have been implemented for the JunkOS iOS ap
   - `JunkLoadingSpinner` - Branded circular loading spinner
   - `LoadingView` - Full-screen loading overlay
 
-### Empty States (`JunkOS/Components/EmptyStates/`)
+### Empty States (`Umuve/Components/EmptyStates/`)
 - **EmptyStateView.swift** - Reusable empty state components
   - `EmptyStateView` - Generic empty state with icon, title, subtitle, action
   - `PhotoUploadEmptyState` - Photo-specific empty state
   - `ServiceSelectionEmptyState` - Service selection empty state
   - `DateTimeEmptyState` - Date/time picker empty state
 
-### Error Handling (`JunkOS/Components/ErrorHandling/`)
+### Error Handling (`Umuve/Components/ErrorHandling/`)
 - **ErrorView.swift** - Comprehensive error handling
   - `ShakeEffect` & `ShakeAnimation` - Shake animation for errors
   - `JunkError` - Error type enum (network, validation, server, timeout)
@@ -33,21 +33,21 @@ All comprehensive UI/UX improvements have been implemented for the JunkOS iOS ap
   - `ValidationIcon` - ✓/✗ icons for input validation
   - `NetworkErrorBanner` - Network error banner with retry
 
-### Animations (`JunkOS/Components/Animations/`)
+### Animations (`Umuve/Components/Animations/`)
 - **ConfettiView.swift** - Celebration animations
   - `ConfettiView` - Confetti particle animation
   - `SuccessCheckmark` - Success checkmark with scale animation
   - `PulseAnimation` - Pulse animation modifier
   - `BounceAnimation` - Bounce animation modifier
 
-### Onboarding (`JunkOS/Components/Onboarding/`)
+### Onboarding (`Umuve/Components/Onboarding/`)
 - **OnboardingView.swift** - Complete onboarding flow
   - `OnboardingManager` - Tracks first-launch completion
   - `OnboardingView` - 3-screen onboarding with page indicators
   - `OnboardingPageView` - Individual onboarding page
   - `PermissionPrePromptView` - Permission pre-prompts
 
-### Trust & Social Proof (`JunkOS/Components/`)
+### Trust & Social Proof (`Umuve/Components/`)
 - **TrustComponents.swift** - Social proof elements
   - `CustomerReview` - Review data model (4 sample reviews)
   - `ReviewCard` - Individual review card
@@ -56,7 +56,7 @@ All comprehensive UI/UX improvements have been implemented for the JunkOS iOS ap
   - `TrustBadgesBar` - Scrollable trust badges
   - `LiveBookingsCounter` - Animated live booking counter
 
-### Progressive Disclosure (`JunkOS/Components/`)
+### Progressive Disclosure (`Umuve/Components/`)
 - **ProgressiveDisclosureComponents.swift** - Progressive info reveal
   - `PriceCalculator` - Dynamic price calculation
   - `LivePriceEstimate` - Expandable live price banner
@@ -64,7 +64,7 @@ All comprehensive UI/UX improvements have been implemented for the JunkOS iOS ap
   - `BookingSummaryPreview` - Complete booking summary
   - `SummaryRow` - Summary detail row
 
-### Utilities (`JunkOS/Utilities/`)
+### Utilities (`Umuve/Utilities/`)
 - **AccessibilityHelpers.swift** - Accessibility enhancements
   - `HapticFeedbackModifier` - Enhanced haptic feedback
   - `StaggeredEntranceModifier` - Staggered entrance animations
@@ -137,7 +137,7 @@ All comprehensive UI/UX improvements have been implemented for the JunkOS iOS ap
 - [x] Skeleton card components with shimmer
 - [x] Skeleton text components
 - [x] Progressive loading animations
-- [x] Branded JunkOS loading spinner with gradient
+- [x] Branded Umuve loading spinner with gradient
 - [x] Shimmer effect for all loading content
 
 ### 3. ✅ Error Handling
@@ -198,7 +198,7 @@ All comprehensive UI/UX improvements have been implemented for the JunkOS iOS ap
 
 ### Design System
 - Uses existing `DesignSystem.swift`
-- JunkOS color palette (indigo primary, emerald CTA)
+- Umuve color palette (indigo primary, emerald CTA)
 - Consistent spacing with `JunkSpacing`
 - Typography with `JunkTypography`
 - Standard button styles preserved
@@ -216,14 +216,14 @@ All comprehensive UI/UX improvements have been implemented for the JunkOS iOS ap
 All 8 new Swift files have been added to the Xcode project:
 
 ```
-✅ JunkOS/Components/LoadingStates/SkeletonView.swift
-✅ JunkOS/Components/EmptyStates/EmptyStateView.swift
-✅ JunkOS/Components/ErrorHandling/ErrorView.swift
-✅ JunkOS/Components/Animations/ConfettiView.swift
-✅ JunkOS/Components/Onboarding/OnboardingView.swift
-✅ JunkOS/Components/TrustComponents.swift
-✅ JunkOS/Components/ProgressiveDisclosureComponents.swift
-✅ JunkOS/Utilities/AccessibilityHelpers.swift
+✅ Umuve/Components/LoadingStates/SkeletonView.swift
+✅ Umuve/Components/EmptyStates/EmptyStateView.swift
+✅ Umuve/Components/ErrorHandling/ErrorView.swift
+✅ Umuve/Components/Animations/ConfettiView.swift
+✅ Umuve/Components/Onboarding/OnboardingView.swift
+✅ Umuve/Components/TrustComponents.swift
+✅ Umuve/Components/ProgressiveDisclosureComponents.swift
+✅ Umuve/Utilities/AccessibilityHelpers.swift
 ```
 
 ---

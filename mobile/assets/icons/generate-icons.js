@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * JunkOS Icon Generator (Node.js)
+ * Umuve Icon Generator (Node.js)
  * Generates all required iOS app icon sizes from SVG template
  * 
  * Requirements: npm install sharp
@@ -41,7 +41,7 @@ const colors = {
   red: '\x1b[31m'
 };
 
-console.log(`${colors.blue}JunkOS Icon Generator${colors.reset}`);
+console.log(`${colors.blue}Umuve Icon Generator${colors.reset}`);
 console.log('==========================\n');
 
 // Check if sharp is installed

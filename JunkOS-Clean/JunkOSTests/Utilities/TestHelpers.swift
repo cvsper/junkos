@@ -1,12 +1,12 @@
 //
 //  TestHelpers.swift
-//  JunkOSTests
+//  UmuveTests
 //
 //  Helper functions and custom assertions for testing
 //
 
 import XCTest
-@testable import JunkOS
+@testable import Umuve
 
 // MARK: - Custom Assertions
 

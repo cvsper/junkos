@@ -1,6 +1,6 @@
 //
 //  ConfirmationViewModel.swift
-//  JunkOS
+//  Umuve
 //
 //  ViewModel for ConfirmationView
 //

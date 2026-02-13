@@ -1,4 +1,4 @@
-# 🚛 JunkOS App Store Assets - Complete Package
+# 🚛 Umuve App Store Assets - Complete Package
 
 **Created:** February 7, 2026  
 **Status:** ✅ **ALL DELIVERABLES COMPLETE**
@@ -21,7 +21,7 @@ This assets package contains **everything** needed for App Store submission:
 
 **Design:**
 - Simple geometric truck silhouette
-- Brand colors: Indigo gradient (#6366F1) with emerald accents (#10B981)
+- Brand colors: Indigo gradient (#6366F1) with emerald accents (#DC2626)
 - White truck icon with emerald wheels
 - iOS-native modern aesthetic
 - Works perfectly at small sizes
@@ -37,7 +37,7 @@ This assets package contains **everything** needed for App Store submission:
 
 **Design:**
 - Centered logo with gradient circle
-- "JunkOS" wordmark in brand typography
+- "Umuve" wordmark in brand typography
 - Tagline: "Book junk removal in 3 taps"
 - Clean lavender to white gradient background
 - Tampa Bay branding
@@ -65,7 +65,7 @@ This assets package contains **everything** needed for App Store submission:
 - ✅ **All text optimized and character-counted**
 
 **Contents:**
-- App Name: "JunkOS"
+- App Name: "Umuve"
 - Subtitle: "Instant Junk Removal Quotes" (29 chars)
 - Keywords: 99 characters, ASO-optimized
 - Description: 3,485 characters with features, benefits, how-it-works
@@ -122,7 +122,7 @@ This assets package contains **everything** needed for App Store submission:
 ```css
 Primary:    #6366F1  /* Indigo 500 - Main brand color */
 Secondary:  #818CF8  /* Indigo 400 - Lighter accent */
-CTA:        #10B981  /* Emerald 500 - Call-to-action */
+CTA:        #DC2626  /* Emerald 500 - Call-to-action */
 Background: #F5F3FF  /* Lavender - App background */
 Text:       #1E1B4B  /* Indigo 950 - Dark text */
 Muted:      #64748B  /* Slate 500 - Secondary text */
@@ -235,7 +235,7 @@ cd ~/Documents/programs/webapps/junkos/assets/screenshots
 
 ### Icons
 - [x] Modern, clean iOS-native design
-- [x] Brand colors properly applied (#6366F1, #10B981)
+- [x] Brand colors properly applied (#6366F1, #DC2626)
 - [x] Works at all sizes (60×60 minimum)
 - [x] No alpha channel in 1024×1024 version
 - [x] Rounded corners (handled by iOS)
@@ -301,8 +301,8 @@ cd ~/Documents/programs/webapps/junkos/assets/screenshots
 ```json
 {
   "expo": {
-    "name": "JunkOS Booking",
-    "slug": "junkos-booking",
+    "name": "Umuve Booking",
+    "slug": "umuve-booking",
     "version": "1.0.0",
     "icon": "./assets/icon.png",           // ← Will be replaced
     "splash": {
@@ -314,8 +314,8 @@ cd ~/Documents/programs/webapps/junkos/assets/screenshots
 ```
 
 ### After Setup Script Runs
-- `mobile/assets/icon.png` → New JunkOS icon (1024×1024)
-- `mobile/assets/splash.png` → New JunkOS launch screen
+- `mobile/assets/icon.png` → New Umuve icon (1024×1024)
+- `mobile/assets/splash.png` → New Umuve launch screen
 - `app.json` → Background color updated to #F5F3FF
 
 ---
@@ -333,7 +333,7 @@ This package is **production-ready** and includes:
 
 **Brand:** Premium, trustworthy, modern, efficient  
 **Style:** iOS-native, clean, simple, professional  
-**Goal:** Successful App Store submission for JunkOS
+**Goal:** Successful App Store submission for Umuve
 
 ---
 
@@ -361,7 +361,7 @@ Everything you need is documented in this package:
 
 ---
 
-**🚛 JunkOS - Tampa Bay's Premium Junk Removal**  
+**🚛 Umuve - Tampa Bay's Premium Junk Removal**  
 **Built with ❤️ for a seamless App Store experience**
 
 **All assets created February 7, 2026**  

@@ -1,5 +1,5 @@
 """
-JunkOS API Route Blueprints
+Umuve API Route Blueprints
 """
 from .drivers import drivers_bp
 from .pricing import pricing_bp

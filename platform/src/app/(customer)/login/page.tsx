@@ -57,11 +57,11 @@ export default function CustomerLoginPage() {
         <div className="text-center mb-8">
           <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center mx-auto mb-4">
             <span className="text-primary-foreground font-display font-bold text-xl">
-              J
+              U
             </span>
           </div>
           <h1 className="font-display text-2xl font-bold tracking-tight">
-            JunkOS
+            Umuve
           </h1>
           <p className="text-muted-foreground text-sm mt-1">
             Sign in to your account

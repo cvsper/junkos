@@ -1,6 +1,6 @@
 # TestFlight Deployment Guide
 
-Complete guide for deploying JunkOS iOS app to TestFlight for beta testing.
+Complete guide for deploying Umuve iOS app to TestFlight for beta testing.
 
 ## 📋 Prerequisites
 
@@ -23,8 +23,8 @@ Before you begin, ensure you have:
 3. Click **Identifiers** → **+** (Add new)
 4. Select **App IDs** → **App**
 5. Enter:
-   - **Description**: JunkOS Mobile
-   - **Bundle ID**: `com.junkos.mobile` (must match `app.json`)
+   - **Description**: Umuve Mobile
+   - **Bundle ID**: `com.goumuve.mobile` (must match `app.json`)
 6. **Capabilities** - Enable:
    - Push Notifications
    - Apple Pay (if using)
@@ -35,10 +35,10 @@ Before you begin, ensure you have:
 1. In Developer Portal, go to **Profiles**
 2. Click **+** (Add new)
 3. Select **iOS App Development** → **Continue**
-4. Choose **App ID**: `com.junkos.mobile`
+4. Choose **App ID**: `com.goumuve.mobile`
 5. Select **Certificates** (your development certificate)
 6. Select **Devices** (register test devices)
-7. Name: `JunkOS Development`
+7. Name: `Umuve Development`
 8. Click **Generate** → **Download**
 
 ## 🔨 Step 2: EAS Build Configuration
@@ -99,11 +99,11 @@ Ensure your `app.json` has:
 ```json
 {
   "expo": {
-    "name": "JunkOS",
-    "slug": "junkos-mobile",
+    "name": "Umuve",
+    "slug": "umuve-mobile",
     "version": "1.0.0",
     "ios": {
-      "bundleIdentifier": "com.junkos.mobile",
+      "bundleIdentifier": "com.goumuve.mobile",
       "buildNumber": "1",
       "supportsTablet": false
     },
@@ -151,7 +151,7 @@ View build status:
 eas build:list
 ```
 
-Or check [expo.dev/builds](https://expo.dev/accounts/[your-account]/projects/junkos-mobile/builds).
+Or check [expo.dev/builds](https://expo.dev/accounts/[your-account]/projects/umuve-mobile/builds).
 
 ### 3.3 Download Build (Optional)
 
@@ -168,10 +168,10 @@ eas build:download --build-id <build-id>
 2. Click **My Apps** → **+** → **New App**
 3. Enter:
    - **Platform**: iOS
-   - **Name**: JunkOS
+   - **Name**: Umuve
    - **Primary Language**: English (U.S.)
-   - **Bundle ID**: `com.junkos.mobile`
-   - **SKU**: `junkos-mobile-001` (unique identifier)
+   - **Bundle ID**: `com.goumuve.mobile`
+   - **SKU**: `umuve-mobile-001` (unique identifier)
    - **User Access**: Full Access
 4. Click **Create**
 
@@ -182,8 +182,8 @@ Navigate to your app → **App Information**:
 - **Category**: Productivity or Business
 - **Content Rights**: Check if applicable
 - **Age Rating**: Complete questionnaire
-- **Privacy Policy URL**: `https://junkos.com/privacy`
-- **Support URL**: `https://junkos.com/support`
+- **Privacy Policy URL**: `https://goumuve.com/privacy`
+- **Support URL**: `https://goumuve.com/support`
 
 ## 🚀 Step 5: Submit to TestFlight
 
@@ -212,7 +212,7 @@ In App Store Connect → **TestFlight** → **Test Information**:
 
 1. **Beta App Description**:
    ```
-   JunkOS makes junk removal simple. Book a pickup in minutes:
+   Umuve makes junk removal simple. Book a pickup in minutes:
    • Take photos of your items
    • Choose your pickup time
    • Pay securely
@@ -222,11 +222,11 @@ In App Store Connect → **TestFlight** → **Test Information**:
 2. **Beta App Review Information**:
    - **First Name**: Your first name
    - **Last Name**: Your last name
-   - **Email**: your-email@junkos.com
+   - **Email**: your-email@goumuve.com
    - **Phone**: Your phone number
 
 3. **Test Credentials** (for reviewer):
-   - **Username**: test@junkos.com
+   - **Username**: test@goumuve.com
    - **Password**: TestPassword123!
    - **Notes**: "Use test Stripe card 4242 4242 4242 4242"
 
@@ -356,7 +356,7 @@ App Store Connect → **TestFlight** → **Builds**:
 
 ### Expo Dashboard
 
-[expo.dev/accounts/[your-account]/projects/junkos-mobile](https://expo.dev):
+[expo.dev/accounts/[your-account]/projects/umuve-mobile](https://expo.dev):
 - Build history
 - Submit logs
 - Project settings

@@ -1,6 +1,6 @@
-# JunkOS Database
+# Umuve Database
 
-Complete database initialization and migration framework for the JunkOS multi-tenant junk removal SaaS platform.
+Complete database initialization and migration framework for the Umuve multi-tenant junk removal SaaS platform.
 
 ## 📁 Structure
 
@@ -49,28 +49,28 @@ Run the initialization scripts in order:
 psql -U postgres -f 01_create_database.sql
 
 # 2. Create all tables and indexes
-psql -U postgres -d junkos -f 02_schema.sql
+psql -U postgres -d umuve -f 02_schema.sql
 
 # 3. Load sample data (optional - for testing)
-psql -U postgres -d junkos -f 03_seed_data.sql
+psql -U postgres -d umuve -f 03_seed_data.sql
 
 # 4. Create useful views
-psql -U postgres -d junkos -f 04_views.sql
+psql -U postgres -d umuve -f 04_views.sql
 ```
 
 **Or run all at once:**
 ```bash
 psql -U postgres -f 01_create_database.sql && \
-psql -U postgres -d junkos -f 02_schema.sql && \
-psql -U postgres -d junkos -f 03_seed_data.sql && \
-psql -U postgres -d junkos -f 04_views.sql
+psql -U postgres -d umuve -f 02_schema.sql && \
+psql -U postgres -d umuve -f 03_seed_data.sql && \
+psql -U postgres -d umuve -f 04_views.sql
 ```
 
 ### 3. Verify Setup
 
 ```bash
 # Connect to database
-psql -U postgres -d junkos
+psql -U postgres -d umuve
 
 # List tables
 \dt
@@ -144,43 +144,43 @@ python rollback.py --list
 **Full database backup:**
 ```bash
 # Plain SQL format (human-readable)
-pg_dump -U postgres -d junkos -F p -f junkos_backup_$(date +%Y%m%d_%H%M%S).sql
+pg_dump -U postgres -d umuve -F p -f umuve_backup_$(date +%Y%m%d_%H%M%S).sql
 
 # Custom format (compressed, supports parallel restore)
-pg_dump -U postgres -d junkos -F c -f junkos_backup_$(date +%Y%m%d_%H%M%S).dump
+pg_dump -U postgres -d umuve -F c -f umuve_backup_$(date +%Y%m%d_%H%M%S).dump
 ```
 
 **Schema only (no data):**
 ```bash
-pg_dump -U postgres -d junkos --schema-only -f junkos_schema.sql
+pg_dump -U postgres -d umuve --schema-only -f umuve_schema.sql
 ```
 
 **Data only:**
 ```bash
-pg_dump -U postgres -d junkos --data-only -f junkos_data.sql
+pg_dump -U postgres -d umuve --data-only -f umuve_data.sql
 ```
 
 **Specific tables:**
 ```bash
-pg_dump -U postgres -d junkos -t jobs -t customers -f junkos_jobs_customers.sql
+pg_dump -U postgres -d umuve -t jobs -t customers -f umuve_jobs_customers.sql
 ```
 
 ### Restore Backup
 
 **From SQL file:**
 ```bash
-psql -U postgres -d junkos -f junkos_backup_20240206_120000.sql
+psql -U postgres -d umuve -f umuve_backup_20240206_120000.sql
 ```
 
 **From custom format:**
 ```bash
-pg_restore -U postgres -d junkos junkos_backup_20240206_120000.dump
+pg_restore -U postgres -d umuve umuve_backup_20240206_120000.dump
 ```
 
 **Create new database from backup:**
 ```bash
-createdb -U postgres junkos_restored
-psql -U postgres -d junkos_restored -f junkos_backup.sql
+createdb -U postgres umuve_restored
+psql -U postgres -d umuve_restored -f umuve_backup.sql
 ```
 
 ### Automated Backup Script
@@ -188,23 +188,23 @@ psql -U postgres -d junkos_restored -f junkos_backup.sql
 Create `backup.sh`:
 ```bash
 #!/bin/bash
-BACKUP_DIR="/var/backups/junkos"
+BACKUP_DIR="/var/backups/umuve"
 DATE=$(date +%Y%m%d_%H%M%S)
 mkdir -p $BACKUP_DIR
 
 # Create backup
-pg_dump -U postgres -d junkos -F c -f $BACKUP_DIR/junkos_$DATE.dump
+pg_dump -U postgres -d umuve -F c -f $BACKUP_DIR/umuve_$DATE.dump
 
 # Keep only last 30 days
-find $BACKUP_DIR -name "junkos_*.dump" -mtime +30 -delete
+find $BACKUP_DIR -name "umuve_*.dump" -mtime +30 -delete
 
-echo "Backup completed: junkos_$DATE.dump"
+echo "Backup completed: umuve_$DATE.dump"
 ```
 
 **Schedule with cron:**
 ```bash
 # Run daily at 2 AM
-0 2 * * * /path/to/backup.sh >> /var/log/junkos_backup.log 2>&1
+0 2 * * * /path/to/backup.sh >> /var/log/umuve_backup.log 2>&1
 ```
 
 ## 🗃️ Database Views
@@ -292,7 +292,7 @@ LIMIT 10;
 **Vacuum and analyze:**
 ```bash
 # Manual vacuum
-vacuumdb -U postgres -d junkos --analyze
+vacuumdb -U postgres -d umuve --analyze
 
 # Enable autovacuum (postgresql.conf)
 autovacuum = on
@@ -327,7 +327,7 @@ SELECT
     pg_database.datname,
     pg_size_pretty(pg_database_size(pg_database.datname)) AS size
 FROM pg_database
-WHERE datname = 'junkos';
+WHERE datname = 'umuve';
 ```
 
 **Monitor table sizes:**
@@ -347,7 +347,7 @@ SELECT
     count(*) as connections,
     state
 FROM pg_stat_activity
-WHERE datname = 'junkos'
+WHERE datname = 'umuve'
 GROUP BY state;
 ```
 
@@ -358,14 +358,14 @@ GROUP BY state;
 ```bash
 # WARNING: This deletes all data!
 psql -U postgres << EOF
-DROP DATABASE IF EXISTS junkos;
+DROP DATABASE IF EXISTS umuve;
 EOF
 
 # Then re-run initialization
 psql -U postgres -f 01_create_database.sql
-psql -U postgres -d junkos -f 02_schema.sql
-psql -U postgres -d junkos -f 03_seed_data.sql
-psql -U postgres -d junkos -f 04_views.sql
+psql -U postgres -d umuve -f 02_schema.sql
+psql -U postgres -d umuve -f 03_seed_data.sql
+psql -U postgres -d umuve -f 04_views.sql
 ```
 
 ### Sample Queries for Testing
@@ -408,7 +408,7 @@ sudo systemctl start postgresql
 **Permission denied:**
 ```bash
 # Grant permissions to user
-psql -U postgres -c "GRANT ALL PRIVILEGES ON DATABASE junkos TO your_user;"
+psql -U postgres -c "GRANT ALL PRIVILEGES ON DATABASE umuve TO your_user;"
 ```
 
 **Migration table doesn't exist:**
@@ -461,7 +461,7 @@ When adding new migrations:
 
 ## 📝 License
 
-Part of the JunkOS project.
+Part of the Umuve project.
 
 ---
 

@@ -1,4 +1,4 @@
-# ✅ JunkOS iOS App Icon Assets - TASK COMPLETE
+# ✅ Umuve iOS App Icon Assets - TASK COMPLETE
 
 **Date**: February 6, 2026  
 **Status**: ✅ All deliverables created  
@@ -432,7 +432,7 @@ All requested deliverables have been created and saved to:
 
 **Status**: ✅ **READY FOR USE**
 
-You now have everything needed to generate professional iOS app icons for JunkOS and integrate them into your Xcode project.
+You now have everything needed to generate professional iOS app icons for Umuve and integrate them into your Xcode project.
 
 **Start generating**: Run `./generate-icons.sh` or see `README.md` for quick start! 🚀
 

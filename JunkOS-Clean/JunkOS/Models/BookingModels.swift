@@ -1,6 +1,6 @@
 //
 //  BookingModels.swift
-//  JunkOS
+//  Umuve
 //
 //  Data models for the booking flow
 //

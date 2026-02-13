@@ -108,8 +108,8 @@ export default function ReferralsPage() {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: "Get $10 off your first JunkOS pickup!",
-          text: `Use my referral code ${referralCode} to get $10 off your first junk removal pickup with JunkOS!`,
+          title: "Get $10 off your first Umuve pickup!",
+          text: `Use my referral code ${referralCode} to get $10 off your first junk removal pickup with Umuve!`,
           url: shareUrl,
         });
       } catch {

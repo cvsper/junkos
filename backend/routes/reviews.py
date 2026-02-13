@@ -1,5 +1,5 @@
 """
-Customer Reviews API routes for JunkOS.
+Customer Reviews API routes for Umuve.
 Allows customers to rate and review completed jobs.
 """
 

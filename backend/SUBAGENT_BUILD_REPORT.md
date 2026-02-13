@@ -1,11 +1,11 @@
-# JunkOS Backend - Build Report
+# Umuve Backend - Build Report
 **Built by:** Subagent (backend-api-mvp)  
 **Date:** February 6, 2025  
 **Status:** ✅ Complete
 
 ## What Was Built
 
-A complete Flask REST API backend for JunkOS with all requested MVP features.
+A complete Flask REST API backend for Umuve with all requested MVP features.
 
 ### Core Files Created
 
@@ -105,7 +105,7 @@ backend/
 
 ```bash
 # 1. Setup
-cd ~/Documents/programs/webapps/junkos/backend/
+cd ~/Documents/programs/webapps/umuve/backend/
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
@@ -115,8 +115,8 @@ cp .env.example .env
 # Edit .env with your DATABASE_URL and secrets
 
 # 3. Database
-createdb junkos_dev
-psql junkos_dev < ../junk_removal_schema.sql
+createdb umuve_dev
+psql umuve_dev < ../junk_removal_schema.sql
 
 # 4. Run
 python run.py

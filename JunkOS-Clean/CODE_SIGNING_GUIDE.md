@@ -1,6 +1,6 @@
 # Code Signing Guide - Complete Reference
 
-**App:** JunkOS  
+**App:** Umuve  
 **Last Updated:** February 7, 2026
 
 ---
@@ -33,7 +33,7 @@ Code signing is Apple's way of ensuring:
 
 ```
 ┌─────────────────────────────────────┐
-│         YOUR APP (JunkOS)           │
+│         YOUR APP (Umuve)           │
 └─────────────────────────────────────┘
                  │
                  ├─ Signed with ─┐
@@ -118,7 +118,7 @@ Code signing is Apple's way of ensuring:
 | **Apple Development** | Universal dev cert (Xcode 11+) | 1 year | All platforms |
 | **Apple Distribution** | Universal dist cert (Xcode 11+) | 1 year | All platforms |
 
-**For JunkOS TestFlight, you need:**
+**For Umuve TestFlight, you need:**
 - ✅ **Apple Distribution** certificate (or **iOS Distribution**)
 
 ### What's Inside a Certificate?
@@ -149,11 +149,11 @@ An **App ID** uniquely identifies your app to Apple's systems.
 
 **Format:** `TEAM_ID.BUNDLE_ID`
 
-**Example for JunkOS:**
+**Example for Umuve:**
 ```
 TEAM_ID: ABC123XYZ (Apple assigns this)
-BUNDLE_ID: com.junkos.JunkOS
-APP_ID: ABC123XYZ.com.junkos.JunkOS
+BUNDLE_ID: com.goumuve.app
+APP_ID: ABC123XYZ.com.goumuve.app
 ```
 
 ### Bundle ID Naming Conventions
@@ -162,13 +162,13 @@ APP_ID: ABC123XYZ.com.junkos.JunkOS
 
 ✅ **Good:**
 - `com.yourcompany.appname` (reverse domain)
-- `com.junkos.JunkOS`
+- `com.goumuve.app`
 - `app.junkos.ios`
 
 ❌ **Bad:**
 - `myapp` (too generic)
-- `com.junkos.app.ios.production` (too long)
-- `JunkOS` (not reverse domain)
+- `com.goumuve.com.ios.production` (too long)
+- `Umuve` (not reverse domain)
 
 **Rules:**
 - Alphanumeric + dot + hyphen only
@@ -191,9 +191,9 @@ When you enable automatic signing, Xcode creates the App ID automatically.
 4. **Select:** App IDs → Continue
 5. **Select Type:** App → Continue
 6. **Fill in:**
-   - **Description:** "JunkOS iOS App"
-   - **Bundle ID:** Explicit → `com.junkos.JunkOS`
-   - **Capabilities:** (none needed for JunkOS MVP)
+   - **Description:** "Umuve iOS App"
+   - **Bundle ID:** Explicit → `com.goumuve.app`
+   - **Capabilities:** (none needed for Umuve MVP)
 7. **Click:** Continue → Register
 
 ---
@@ -217,17 +217,17 @@ A provisioning profile is a **permissions bundle** that:
 | **App Store** | TestFlight & App Store distribution | Any device | 1 year |
 | **Enterprise** | In-house distribution | Any device | 1 year |
 
-**For JunkOS TestFlight:**
+**For Umuve TestFlight:**
 - ✅ **App Store** provisioning profile
 
 ### Profile Contents
 
 ```
 Provisioning Profile (.mobileprovision)
-├── App ID: com.junkos.JunkOS
+├── App ID: com.goumuve.app
 ├── Certificates: [Apple Distribution Certificate]
 ├── Devices: [ALL] (for App Store profiles)
-├── Entitlements: [None for JunkOS MVP]
+├── Entitlements: [None for Umuve MVP]
 ├── Team ID: ABC123XYZ
 ├── Expiration: 2027-02-07
 └── Apple's Signature
@@ -271,13 +271,13 @@ open ~/Documents/programs/webapps/junkos/JunkOS-Clean/JunkOS.xcodeproj
 #### 3. Enable Automatic Signing in Project
 
 1. **Close Preferences**
-2. **Select project** in Navigator (blue JunkOS icon at top)
-3. **Select "JunkOS" target** (under TARGETS)
+2. **Select project** in Navigator (blue Umuve icon at top)
+3. **Select "Umuve" target** (under TARGETS)
 4. **Go to "Signing & Capabilities" tab**
 5. **Check ✅ "Automatically manage signing"**
 6. **Select Team:** Your Apple Developer account from dropdown
    - If multiple teams, select the one with "Agent" or "Admin" role
-7. **Verify Bundle Identifier:** `com.junkos.JunkOS`
+7. **Verify Bundle Identifier:** `com.goumuve.app`
 
 **Expected result:**
 
@@ -352,7 +352,7 @@ Switch to "Release" configuration (in scheme editor) and Xcode will automaticall
      - **Request:** Saved to disk
      - **Let me specify key pair information:** ✅
    - Click **Continue**
-   - Save as: `JunkOSDistribution.certSigningRequest`
+   - Save as: `UmuveDistribution.certSigningRequest`
    - **Key Size:** 2048 bits
    - **Algorithm:** RSA
    - Click **Continue**
@@ -377,7 +377,7 @@ Switch to "Release" configuration (in scheme editor) and Xcode will automaticall
 ```bash
 # Export certificate + private key from Keychain
 # Right-click certificate → Export
-# Save as: JunkOS_Distribution.p12
+# Save as: Umuve_Distribution.p12
 # Set a strong password
 # Store securely (1Password, encrypted drive)
 ```
@@ -388,15 +388,15 @@ Switch to "Release" configuration (in scheme editor) and Xcode will automaticall
 
 1. **Go to:** https://developer.apple.com/account
 2. **Identifiers** → **App IDs**
-3. **Search for:** `com.junkos.JunkOS`
+3. **Search for:** `com.goumuve.app`
 
 **If not found, create it:**
 
 1. **Click "+"**
 2. **Select:** App IDs → Continue
 3. **Type:** App → Continue
-4. **Description:** JunkOS iOS App
-5. **Bundle ID:** Explicit → `com.junkos.JunkOS`
+4. **Description:** Umuve iOS App
+5. **Bundle ID:** Explicit → `com.goumuve.app`
 6. **Capabilities:** 
    - Photo Library Usage (auto-detected from Info.plist)
    - Nothing else needed for MVP
@@ -408,13 +408,13 @@ Switch to "Release" configuration (in scheme editor) and Xcode will automaticall
 2. **Profiles** → **Click "+"**
 3. **Select:** App Store (under Distribution)
 4. **Click "Continue"**
-5. **Select App ID:** `com.junkos.JunkOS`
+5. **Select App ID:** `com.goumuve.app`
 6. **Click "Continue"**
 7. **Select Certificate:** Choose your Apple Distribution certificate
 8. **Click "Continue"**
-9. **Profile Name:** `JunkOS App Store`
+9. **Profile Name:** `Umuve App Store`
 10. **Click "Generate"**
-11. **Download profile:** `JunkOS_App_Store.mobileprovision`
+11. **Download profile:** `Umuve_App_Store.mobileprovision`
 
 ### Step 4: Install Provisioning Profile
 
@@ -424,7 +424,7 @@ Switch to "Release" configuration (in scheme editor) and Xcode will automaticall
 
 ```bash
 # Copy to Xcode profiles directory
-cp ~/Downloads/JunkOS_App_Store.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/
+cp ~/Downloads/Umuve_App_Store.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/
 ```
 
 **Option C: Xcode will find it automatically** when you select manual signing
@@ -432,7 +432,7 @@ cp ~/Downloads/JunkOS_App_Store.mobileprovision ~/Library/MobileDevice/Provision
 ### Step 5: Configure Manual Signing in Xcode
 
 1. **Open project in Xcode**
-2. **Select project → Target "JunkOS"**
+2. **Select project → Target "Umuve"**
 3. **Go to "Signing & Capabilities" tab**
 4. **UNcheck ❌ "Automatically manage signing"**
 
@@ -443,7 +443,7 @@ cp ~/Downloads/JunkOS_App_Store.mobileprovision ~/Library/MobileDevice/Provision
 
 **For Release configuration:**
 8. **Click "Signing (Release)" dropdown**
-9. **Provisioning Profile:** Select "JunkOS App Store" from dropdown
+9. **Provisioning Profile:** Select "Umuve App Store" from dropdown
 10. **Signing Certificate:** Apple Distribution
 
 **Expected result:**
@@ -454,7 +454,7 @@ Debug:
 
 Release:
 ✅ Signing Certificate: Apple Distribution
-✅ Provisioning Profile: JunkOS App Store
+✅ Provisioning Profile: Umuve App Store
 ```
 
 ### Step 6: Verify Manual Signing
@@ -464,13 +464,13 @@ cd ~/Documents/programs/webapps/junkos/JunkOS-Clean
 
 # Build for Release (archive)
 xcodebuild -project JunkOS.xcodeproj \
-  -scheme JunkOS \
+  -scheme Umuve \
   -configuration Release \
-  -archivePath ~/Desktop/JunkOS.xcarchive \
+  -archivePath ~/Desktop/Umuve.xcarchive \
   archive
 
 # Check signing
-codesign -vv -d ~/Desktop/JunkOS.xcarchive/Products/Applications/JunkOS.app
+codesign -vv -d ~/Desktop/Umuve.xcarchive/Products/Applications/Umuve.app
 
 # Should show:
 # Authority=Apple Distribution: Your Name (TEAM_ID)
@@ -500,7 +500,7 @@ codesign -vv -d ~/Desktop/JunkOS.xcarchive/Products/Applications/JunkOS.app
 4. **Fill in:**
    - First Name, Last Name, Email
    - Role: Developer (for most team members)
-   - Apps: Select "JunkOS" or "All Apps"
+   - Apps: Select "Umuve" or "All Apps"
 5. **Click "Invite"**
 6. They receive email invitation
 
@@ -515,7 +515,7 @@ codesign -vv -d ~/Desktop/JunkOS.xcarchive/Products/Applications/JunkOS.app
    # Open Keychain Access
    # Find: Apple Distribution: Your Name
    # Right-click → Export
-   # Save as: JunkOS_Signing.p12
+   # Save as: Umuve_Signing.p12
    # Set strong password
    ```
 
@@ -567,7 +567,7 @@ fastlane match init
 
 ```bash
 # Generate and store App Store signing assets
-fastlane match appstore --app_identifier com.junkos.JunkOS
+fastlane match appstore --app_identifier com.goumuve.app
 
 # Prompts for:
 # - Git repo password (to encrypt certificates)
@@ -633,7 +633,7 @@ lane :beta do
   
   # Build app
   build_app(
-    scheme: "JunkOS",
+    scheme: "Umuve",
     export_method: "app-store"
   )
   
@@ -727,7 +727,7 @@ Review code for:
 - Swizzling Apple methods
 - Accessing undocumented frameworks
 
-**For JunkOS:** Should not apply (using only public APIs).
+**For Umuve:** Should not apply (using only public APIs).
 
 ---
 
@@ -757,7 +757,7 @@ cd ~/Documents/programs/webapps/junkos/JunkOS-Clean
 
 # Show build settings
 xcodebuild -project JunkOS.xcodeproj \
-  -scheme JunkOS \
+  -scheme Umuve \
   -showBuildSettings | grep -E "CODE_SIGN|PROVISIONING"
 
 # Look for:
@@ -865,4 +865,4 @@ xcode-select -p
 ---
 
 **Last Updated:** February 7, 2026  
-**Questions?** support@junkos.app
+**Questions?** support@goumuve.com

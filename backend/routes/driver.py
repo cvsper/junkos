@@ -1,5 +1,5 @@
 """
-Driver API routes for JunkOS.
+Driver API routes for Umuve.
 Provides earnings, payouts, profile, and stats for authenticated drivers.
 """
 

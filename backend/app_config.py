@@ -4,6 +4,11 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# Database rename fallback: migrate junkos.db -> umuve.db seamlessly
+_DB_NAME = 'umuve.db'
+if not os.path.exists(_DB_NAME) and os.path.exists('junkos.db'):
+    os.rename('junkos.db', _DB_NAME)
+
 
 def _require_in_production(var_name, default):
     """Return env var value. In production, warn loudly if still using default."""
@@ -42,7 +47,7 @@ class Config:
     ADMIN_SEED_SECRET = os.environ.get('ADMIN_SEED_SECRET', '')
 
     # Database
-    DATABASE_PATH = os.environ.get('DATABASE_PATH', 'junkos.db')
+    DATABASE_PATH = os.environ.get('DATABASE_PATH', 'umuve.db')
 
     # CORS - Allow iOS app origin
     CORS_ORIGINS = os.environ.get('CORS_ORIGINS', '*')
@@ -62,8 +67,8 @@ class Config:
     # Email: Resend (preferred) or SendGrid (legacy)
     RESEND_API_KEY = os.environ.get('RESEND_API_KEY', '')
     SENDGRID_API_KEY = os.environ.get('SENDGRID_API_KEY', '')
-    EMAIL_FROM = os.environ.get('EMAIL_FROM', 'bookings@junkos.com')
-    EMAIL_FROM_NAME = os.environ.get('EMAIL_FROM_NAME', 'JunkOS')
+    EMAIL_FROM = os.environ.get('EMAIL_FROM', 'bookings@goumuve.com')
+    EMAIL_FROM_NAME = os.environ.get('EMAIL_FROM_NAME', 'Umuve')
 
     # Server
     PORT = int(os.environ.get('PORT', '8080'))

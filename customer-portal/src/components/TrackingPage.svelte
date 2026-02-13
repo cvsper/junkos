@@ -136,9 +136,9 @@
         icon: {
           path: window.google.maps.SymbolPath.CIRCLE,
           scale: 10,
-          fillColor: '#059669',
+          fillColor: '#DC2626',
           fillOpacity: 1,
-          strokeColor: '#047857',
+          strokeColor: '#B91C1C',
           strokeWeight: 2,
         },
       });
@@ -162,9 +162,9 @@
         icon: {
           path: 'M 0,-8 L 6,8 L 0,4 L -6,8 Z',
           scale: 2,
-          fillColor: '#059669',
+          fillColor: '#DC2626',
           fillOpacity: 1,
-          strokeColor: '#047857',
+          strokeColor: '#B91C1C',
           strokeWeight: 1,
           rotation: 0,
         },

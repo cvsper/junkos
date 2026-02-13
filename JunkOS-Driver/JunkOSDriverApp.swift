@@ -1,6 +1,6 @@
 //
 //  JunkOSDriverApp.swift
-//  JunkOS Driver
+//  Umuve Pro
 //
 //  Entry point: Splash -> Auth -> Registration -> Main tabs.
 //  Includes AppDelegate for push notification token handling.
@@ -30,7 +30,7 @@ class DriverAppDelegate: NSObject, UIApplicationDelegate {
 // MARK: - App Entry Point
 
 @main
-struct JunkOSDriverApp: App {
+struct UmuveProApp: App {
     @UIApplicationDelegateAdaptor(DriverAppDelegate.self) private var appDelegate
     @State private var appState = AppState()
     @State private var showingSplash = true

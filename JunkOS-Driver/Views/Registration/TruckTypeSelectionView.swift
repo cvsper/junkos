@@ -1,6 +1,6 @@
 //
 //  TruckTypeSelectionView.swift
-//  JunkOS Driver
+//  Umuve Pro
 //
 //  Grid of truck types for contractor registration.
 //

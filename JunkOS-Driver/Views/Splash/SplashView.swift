@@ -1,8 +1,8 @@
 //
 //  SplashView.swift
-//  JunkOS Driver
+//  Umuve Pro
 //
-//  "Drive with JunkOS" brand intro with animated emerald logo.
+//  "Drive with Umuve" brand intro with animated red logo.
 //
 
 import SwiftUI
@@ -25,18 +25,18 @@ struct SplashView: View {
                     .opacity(logoOpacity)
 
                 VStack(spacing: DriverSpacing.xs) {
-                    Text("JunkOS")
+                    Text("Umuve")
                         .font(.system(size: 40, weight: .bold, design: .rounded))
                         .foregroundStyle(.white)
 
-                    Text("DRIVER")
+                    Text("PRO")
                         .font(.system(size: 16, weight: .semibold, design: .rounded))
                         .foregroundStyle(.white.opacity(0.8))
                         .tracking(6)
                 }
                 .opacity(logoOpacity)
 
-                Text("Drive with JunkOS")
+                Text("Drive with Umuve")
                     .font(DriverTypography.headline)
                     .foregroundStyle(.white.opacity(0.7))
                     .opacity(taglineOpacity)

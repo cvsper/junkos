@@ -2,7 +2,7 @@
 
 # Default target
 help:
-	@echo "JunkOS Docker Management"
+	@echo "Umuve Docker Management"
 	@echo "========================"
 	@echo ""
 	@echo "Available commands:"
@@ -32,7 +32,7 @@ build:
 
 # Start services in production mode
 up prod:
-	@echo "Starting JunkOS services (production)..."
+	@echo "Starting Umuve services (production)..."
 	docker-compose up -d
 	@echo "Services started!"
 	@echo "Frontend: http://localhost"
@@ -41,7 +41,7 @@ up prod:
 
 # Start services in development mode
 dev:
-	@echo "Starting JunkOS services (development)..."
+	@echo "Starting Umuve services (development)..."
 	docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
 	@echo "Services started!"
 	@echo "Frontend: http://localhost:3000"
@@ -50,12 +50,12 @@ dev:
 
 # Stop all services
 down:
-	@echo "Stopping JunkOS services..."
+	@echo "Stopping Umuve services..."
 	docker-compose down
 
 # Restart all services
 restart:
-	@echo "Restarting JunkOS services..."
+	@echo "Restarting Umuve services..."
 	docker-compose restart
 
 # View logs from all services
@@ -109,7 +109,7 @@ shell-backend:
 
 # Enter postgres shell
 shell-db:
-	docker-compose exec postgres psql -U junkos -d junkos
+	docker-compose exec postgres psql -U umuve -d umuve
 
 # Show container status
 status:
@@ -118,7 +118,7 @@ status:
 	@echo ""
 	@echo "Resource Usage:"
 	@docker stats --no-stream --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}" \
-		junkos-backend junkos-frontend junkos-dashboard junkos-nginx junkos-postgres junkos-redis 2>/dev/null || true
+		umuve-backend umuve-frontend umuve-dashboard umuve-nginx umuve-postgres umuve-redis 2>/dev/null || true
 
 # Create .env file from example if it doesn't exist
 init:

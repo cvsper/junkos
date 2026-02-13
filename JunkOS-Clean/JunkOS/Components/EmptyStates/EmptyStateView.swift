@@ -1,6 +1,6 @@
 //
 //  EmptyStateView.swift
-//  JunkOS
+//  Umuve
 //
 //  Reusable empty state components with SF Symbols
 //
@@ -33,16 +33,16 @@ struct EmptyStateView: View {
     }
     
     var body: some View {
-        JunkCard {
-            VStack(spacing: JunkSpacing.large) {
+        UmuveCard {
+            VStack(spacing: UmuveSpacing.large) {
                 // Icon with gradient background
                 ZStack {
                     Circle()
                         .fill(
                             LinearGradient(
                                 colors: [
-                                    Color.junkPrimary.opacity(0.1),
-                                    Color.junkSecondary.opacity(0.1)
+                                    Color.umuvePrimary.opacity(0.1),
+                                    Color.umuveSecondary.opacity(0.1)
                                 ],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
@@ -52,19 +52,19 @@ struct EmptyStateView: View {
                     
                     Image(systemName: icon)
                         .font(.system(size: 60))
-                        .foregroundColor(.junkPrimary)
+                        .foregroundColor(.umuvePrimary)
                 }
-                .padding(.top, JunkSpacing.normal)
+                .padding(.top, UmuveSpacing.normal)
                 
-                VStack(spacing: JunkSpacing.small) {
+                VStack(spacing: UmuveSpacing.small) {
                     Text(title)
-                        .font(JunkTypography.h2Font)
-                        .foregroundColor(.junkText)
+                        .font(UmuveTypography.h2Font)
+                        .foregroundColor(.umuveText)
                         .multilineTextAlignment(.center)
                     
                     Text(subtitle)
-                        .font(JunkTypography.bodyFont)
-                        .foregroundColor(.junkTextMuted)
+                        .font(UmuveTypography.bodyFont)
+                        .foregroundColor(.umuveTextMuted)
                         .multilineTextAlignment(.center)
                 }
                 
@@ -75,14 +75,14 @@ struct EmptyStateView: View {
                             Image(systemName: "arrow.right")
                         }
                     }
-                    .buttonStyle(JunkPrimaryButtonStyle())
-                    .padding(.horizontal, JunkSpacing.large)
+                    .buttonStyle(UmuvePrimaryButtonStyle())
+                    .padding(.horizontal, UmuveSpacing.large)
                     .accessibilityLabel(actionTitle)
                     .accessibilityHint("Double tap to \(actionTitle.lowercased())")
                 }
             }
             .frame(maxWidth: .infinity)
-            .padding(JunkSpacing.xlarge)
+            .padding(UmuveSpacing.xlarge)
         }
         .accessibilityElement(children: .combine)
     }
@@ -147,6 +147,6 @@ struct EmptyStateView_Previews: PreviewProvider {
             DateTimeEmptyState()
         }
         .padding()
-        .background(Color.junkBackground)
+        .background(Color.umuveBackground)
     }
 }

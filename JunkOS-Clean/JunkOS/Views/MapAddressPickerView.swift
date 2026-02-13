@@ -1,6 +1,6 @@
 //
 //  MapAddressPickerView.swift
-//  JunkOS
+//  Umuve
 //
 //  Map-based address picker — full screen, hides tab bar.
 //
@@ -33,7 +33,7 @@ struct MapAddressPickerView: View {
                 Spacer()
                 Image(systemName: "mappin.circle.fill")
                     .font(.system(size: 50))
-                    .foregroundColor(.junkPrimary)
+                    .foregroundColor(.umuvePrimary)
                     .shadow(color: .black.opacity(0.3), radius: 4, x: 0, y: 2)
                 Spacer()
                     .frame(height: 200)
@@ -70,8 +70,8 @@ struct MapAddressPickerView: View {
             Button(action: { dismiss() }) {
                 Image(systemName: "chevron.left")
                     .font(.system(size: 18, weight: .semibold))
-                    .foregroundColor(.junkText)
-                    .padding(JunkSpacing.medium)
+                    .foregroundColor(.umuveText)
+                    .padding(UmuveSpacing.medium)
                     .background(.ultraThinMaterial)
                     .clipShape(Circle())
                     .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
@@ -79,44 +79,44 @@ struct MapAddressPickerView: View {
 
             Spacer()
         }
-        .padding(JunkSpacing.normal)
+        .padding(UmuveSpacing.normal)
     }
 
     // MARK: - Bottom Sheet
     private var bottomSheet: some View {
-        VStack(spacing: JunkSpacing.normal) {
+        VStack(spacing: UmuveSpacing.normal) {
             // Handle
             Capsule()
-                .fill(Color.junkBorder)
+                .fill(Color.umuveBorder)
                 .frame(width: 36, height: 5)
-                .padding(.top, JunkSpacing.small)
+                .padding(.top, UmuveSpacing.small)
 
             // Address display
-            VStack(alignment: .leading, spacing: JunkSpacing.small) {
+            VStack(alignment: .leading, spacing: UmuveSpacing.small) {
                 HStack {
                     Image(systemName: "mappin.and.ellipse")
-                        .foregroundColor(.junkPrimary)
+                        .foregroundColor(.umuvePrimary)
                         .font(.system(size: 20))
 
                     Text("Service Location")
-                        .font(JunkTypography.h3Font)
-                        .foregroundColor(.junkText)
+                        .font(UmuveTypography.h3Font)
+                        .foregroundColor(.umuveText)
 
                     Spacer()
                 }
 
                 Text(selectedAddress.isEmpty ? "Move map to select location" : selectedAddress)
-                    .font(JunkTypography.bodyFont)
-                    .foregroundColor(selectedAddress.isEmpty ? .junkTextMuted : .junkText)
+                    .font(UmuveTypography.bodyFont)
+                    .foregroundColor(selectedAddress.isEmpty ? .umuveTextMuted : .umuveText)
                     .lineLimit(2)
 
                 Text("You can always modify address later")
-                    .font(JunkTypography.captionFont)
-                    .foregroundColor(.junkTextMuted)
+                    .font(UmuveTypography.captionFont)
+                    .foregroundColor(.umuveTextMuted)
             }
-            .padding(JunkSpacing.normal)
-            .background(Color.junkBackground)
-            .clipShape(RoundedRectangle(cornerRadius: JunkRadius.md))
+            .padding(UmuveSpacing.normal)
+            .background(Color.umuveBackground)
+            .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.md))
 
             // Locate Me button
             Button(action: {
@@ -126,14 +126,14 @@ struct MapAddressPickerView: View {
                 HStack {
                     if isLocating {
                         ProgressView()
-                            .tint(.junkPrimary)
+                            .tint(.umuvePrimary)
                     } else {
                         Image(systemName: "location.fill")
                     }
                     Text(isLocating ? "Locating..." : "Locate Me")
                 }
             }
-            .buttonStyle(JunkSecondaryButtonStyle())
+            .buttonStyle(UmuveSecondaryButtonStyle())
             .disabled(isLocating)
 
             // Confirm button
@@ -142,10 +142,10 @@ struct MapAddressPickerView: View {
             ) {
                 Text("Confirm Address")
             }
-            .buttonStyle(JunkPrimaryButtonStyle(isEnabled: !selectedAddress.isEmpty))
+            .buttonStyle(UmuvePrimaryButtonStyle(isEnabled: !selectedAddress.isEmpty))
             .disabled(selectedAddress.isEmpty)
         }
-        .padding(JunkSpacing.large)
+        .padding(UmuveSpacing.large)
         .background(
             RoundedRectangle(cornerRadius: 24, style: .continuous)
                 .fill(Color.white)

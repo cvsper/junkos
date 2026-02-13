@@ -1,7 +1,7 @@
 {
-  "name": "junkos-icon-generator",
+  "name": "umuve-icon-generator",
   "version": "1.0.0",
-  "description": "Icon asset generator for JunkOS iOS app",
+  "description": "Icon asset generator for Umuve iOS app",
   "main": "generate-icons.js",
   "scripts": {
     "generate": "node generate-icons.js",
@@ -13,7 +13,7 @@
     "ios",
     "icons",
     "app-icon",
-    "junkos"
+    "umuve"
   ],
   "author": "",
   "license": "MIT",

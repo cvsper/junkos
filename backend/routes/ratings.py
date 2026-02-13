@@ -1,5 +1,5 @@
 """
-Rating API routes for JunkOS.
+Rating API routes for Umuve.
 """
 
 from flask import Blueprint, request, jsonify

@@ -1,6 +1,6 @@
 //
 //  ConnectionStatusBanner.swift
-//  JunkOS Driver
+//  Umuve Pro
 //
 //  Banner showing socket connection state.
 //

@@ -1,6 +1,6 @@
 //
 //  EarningsView.swift
-//  JunkOS Driver
+//  Umuve Pro
 //
 //  Earnings history with period filter and summary.
 //

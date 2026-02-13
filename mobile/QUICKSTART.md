@@ -1,6 +1,6 @@
 # Quick Start Guide
 
-Get the JunkOS Booking app running in under 5 minutes.
+Get the Umuve Booking app running in under 5 minutes.
 
 ## Prerequisites Check
 
@@ -55,7 +55,7 @@ Or install **Expo Go** from Google Play and scan QR code.
 Use these test credentials (configure in your Flask backend):
 
 ```
-Email: test@junkos.com
+Email: test@goumuve.com
 Password: password123
 ```
 
@@ -182,7 +182,7 @@ components/
 
 ## Success!
 
-If you see the login screen with "JunkOS" title, you're all set! 🎉
+If you see the login screen with "Umuve" title, you're all set! 🎉
 
 Now try:
 1. Logging in with test credentials

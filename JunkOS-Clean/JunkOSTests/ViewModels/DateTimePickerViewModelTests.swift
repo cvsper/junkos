@@ -1,12 +1,12 @@
 //
 //  DateTimePickerViewModelTests.swift
-//  JunkOSTests
+//  UmuveTests
 //
 //  Unit tests for DateTimePickerViewModel
 //
 
 import XCTest
-@testable import JunkOS
+@testable import Umuve
 
 @MainActor
 final class DateTimePickerViewModelTests: XCTestCase {

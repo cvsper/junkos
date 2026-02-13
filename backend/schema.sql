@@ -1,8 +1,8 @@
 -- ============================================================================
--- JunkOS -- PostgreSQL Schema
+-- Umuve -- PostgreSQL Schema
 -- On-demand junk removal marketplace
 -- ============================================================================
--- Run with: psql -U <user> -d junkos -f schema.sql
+-- Run with: psql -U <user> -d umuve -f schema.sql
 -- ============================================================================
 
 BEGIN;

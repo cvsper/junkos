@@ -1,6 +1,6 @@
-# Fastlane Automation for JunkOS
+# Fastlane Automation for Umuve
 
-This directory contains Fastlane configuration for automating JunkOS iOS deployment.
+This directory contains Fastlane configuration for automating Umuve iOS deployment.
 
 ## Installation
 
@@ -75,7 +75,7 @@ This will:
 fastlane build_only
 ```
 
-Output: `./build/JunkOS.ipa`
+Output: `./build/Umuve.ipa`
 
 ---
 
@@ -425,8 +425,8 @@ fastlane add_plugin versioning
 - GitHub: https://github.com/fastlane/fastlane/issues
 - Slack: https://fastlane.tools/slack
 
-**JunkOS Specific:**
-- Email: support@junkos.app
+**Umuve Specific:**
+- Email: support@goumuve.com
 - See: [TROUBLESHOOTING.md](../TROUBLESHOOTING.md)
 
 ---

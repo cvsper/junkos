@@ -557,10 +557,10 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_GENERATION_MODE = GeneratedFile;
 				INFOPLIST_KEY_CFBundleIconName = AppIcon;
-				INFOPLIST_KEY_NSCameraUsageDescription = "JunkOS Driver needs camera access to take before and after photos of job sites.";
-				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "JunkOS Driver needs continuous location access to track your position during active jobs.";
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "JunkOS Driver needs your location to show you nearby jobs and share your position with customers.";
-				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "JunkOS Driver needs photo library access to upload job site photos.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Umuve Pro needs camera access to take before and after photos of job sites.";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Umuve Pro needs continuous location access to track your position during active jobs.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Umuve Pro needs your location to show you nearby jobs and share your position with customers.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Umuve Pro needs photo library access to upload job site photos.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UIBackgroundModes = location;
@@ -571,7 +571,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.junkos.drivers;
+				PRODUCT_BUNDLE_IDENTIFIER = com.goumuve.pro;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -587,10 +587,10 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_GENERATION_MODE = GeneratedFile;
 				INFOPLIST_KEY_CFBundleIconName = AppIcon;
-				INFOPLIST_KEY_NSCameraUsageDescription = "JunkOS Driver needs camera access to take before and after photos of job sites.";
-				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "JunkOS Driver needs continuous location access to track your position during active jobs.";
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "JunkOS Driver needs your location to show you nearby jobs and share your position with customers.";
-				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "JunkOS Driver needs photo library access to upload job site photos.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Umuve Pro needs camera access to take before and after photos of job sites.";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Umuve Pro needs continuous location access to track your position during active jobs.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Umuve Pro needs your location to show you nearby jobs and share your position with customers.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Umuve Pro needs photo library access to upload job site photos.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UIBackgroundModes = location;
@@ -601,7 +601,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.junkos.drivers;
+				PRODUCT_BUNDLE_IDENTIFIER = com.goumuve.pro;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};

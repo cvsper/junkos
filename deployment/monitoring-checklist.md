@@ -1,4 +1,4 @@
-# JunkOS Backend - Production Monitoring Checklist
+# Umuve Backend - Production Monitoring Checklist
 
 Complete checklist for setting up monitoring, logging, and alerting for your production backend.
 
@@ -87,7 +87,7 @@ const Tracing = require('@sentry/tracing');
 Sentry.init({
   dsn: process.env.SENTRY_DSN,
   environment: process.env.NODE_ENV,
-  release: `junkos-backend@${process.env.APP_VERSION || 'unknown'}`,
+  release: `umuve-backend@${process.env.APP_VERSION || 'unknown'}`,
   
   // Performance monitoring (10% of transactions)
   tracesSampleRate: 0.1,
@@ -147,7 +147,7 @@ Track which version caused errors:
 ```bash
 # In CI/CD pipeline
 export SENTRY_ORG=your-org
-export SENTRY_PROJECT=junkos-backend
+export SENTRY_PROJECT=umuve-backend
 export VERSION=$(git rev-parse --short HEAD)
 
 # Create release
@@ -170,8 +170,8 @@ sentry-cli releases deploys "$VERSION" new -e production
 1. Sign up at [uptimerobot.com](https://uptimerobot.com)
 2. **Add New Monitor:**
    - Monitor Type: HTTP(s)
-   - Friendly Name: JunkOS Backend API
-   - URL: `https://api.junkos.com/health`
+   - Friendly Name: Umuve Backend API
+   - URL: `https://api.goumuve.com/health`
    - Monitoring Interval: 5 minutes
    - Monitor Timeout: 30 seconds
 3. **Add Alert Contacts:**
@@ -246,7 +246,7 @@ router.get('/health', async (req, res) => {
 Automatic backups enabled by default:
 ```bash
 aws rds modify-db-instance \
-  --db-instance-identifier junkos-prod-db \
+  --db-instance-identifier umuve-prod-db \
   --backup-retention-period 7 \
   --preferred-backup-window "03:00-04:00"
 ```
@@ -260,8 +260,8 @@ set -e
 
 DATE=$(date +%Y%m%d_%H%M%S)
 BACKUP_DIR="./backups"
-BACKUP_FILE="$BACKUP_DIR/junkos_backup_$DATE.sql.gz"
-S3_BUCKET="s3://junkos-backups/database/"
+BACKUP_FILE="$BACKUP_DIR/umuve_backup_$DATE.sql.gz"
+S3_BUCKET="s3://umuve-backups/database/"
 
 echo "Starting backup at $(date)"
 
@@ -278,7 +278,7 @@ if command -v aws &> /dev/null; then
 fi
 
 # Keep only last 30 days locally
-find $BACKUP_DIR -name "junkos_backup_*.sql.gz" -mtime +30 -delete
+find $BACKUP_DIR -name "umuve_backup_*.sql.gz" -mtime +30 -delete
 
 echo "Backup completed: $BACKUP_FILE"
 echo "Size: $(du -h $BACKUP_FILE | cut -f1)"
@@ -290,7 +290,7 @@ echo "Size: $(du -h $BACKUP_FILE | cut -f1)"
 crontab -e
 
 # Add daily backup at 2 AM
-0 2 * * * /path/to/backup-db.sh >> /var/log/junkos-backup.log 2>&1
+0 2 * * * /path/to/backup-db.sh >> /var/log/umuve-backup.log 2>&1
 ```
 
 ### Backup Testing
@@ -299,15 +299,15 @@ crontab -e
 
 ```bash
 # Restore to test database
-createdb junkos_test
-gunzip -c backup_20260206_020000.sql.gz | psql junkos_test
+createdb umuve_test
+gunzip -c backup_20260206_020000.sql.gz | psql umuve_test
 
 # Verify data integrity
-psql junkos_test -c "SELECT COUNT(*) FROM users;"
-psql junkos_test -c "SELECT COUNT(*) FROM orders;"
+psql umuve_test -c "SELECT COUNT(*) FROM users;"
+psql umuve_test -c "SELECT COUNT(*) FROM orders;"
 
 # Cleanup
-dropdb junkos_test
+dropdb umuve_test
 ```
 
 **Document in runbook:**
@@ -443,7 +443,7 @@ app.get('/metrics', async (req, res) => {
 ```bash
 # High CPU
 aws cloudwatch put-metric-alarm \
-  --alarm-name junkos-db-high-cpu \
+  --alarm-name umuve-db-high-cpu \
   --alarm-description "Database CPU > 80%" \
   --metric-name CPUUtilization \
   --namespace AWS/RDS \
@@ -455,7 +455,7 @@ aws cloudwatch put-metric-alarm \
 
 # Low storage
 aws cloudwatch put-metric-alarm \
-  --alarm-name junkos-db-low-storage \
+  --alarm-name umuve-db-low-storage \
   --metric-name FreeStorageSpace \
   --namespace AWS/RDS \
   --statistic Average \
@@ -537,7 +537,7 @@ Sentry provides built-in dashboards:
 
 ```bash
 aws cloudwatch put-dashboard \
-  --dashboard-name junkos-prod \
+  --dashboard-name umuve-prod \
   --dashboard-body file://dashboard.json
 ```
 

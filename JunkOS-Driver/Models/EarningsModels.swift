@@ -1,6 +1,6 @@
 //
 //  EarningsModels.swift
-//  JunkOS Driver
+//  Umuve Pro
 //
 //  Earnings and payout-related data models.
 //

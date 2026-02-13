@@ -1,5 +1,5 @@
 """
-Payment API routes for JunkOS.
+Payment API routes for Umuve.
 Stripe Connect: customer pays -> platform takes commission -> contractor gets payout.
 """
 

@@ -60,8 +60,8 @@ interface NotificationTemplate {
 // ---------------------------------------------------------------------------
 
 const DEFAULT_GENERAL: GeneralSettings = {
-  businessName: "JunkOS",
-  supportEmail: "support@junkos.app",
+  businessName: "Umuve",
+  supportEmail: "support@goumuve.com",
   supportPhone: "(561) 555-0100",
 };
 
@@ -110,8 +110,8 @@ const NOTIFICATION_TEMPLATES: NotificationTemplate[] = [
 // localStorage keys
 // ---------------------------------------------------------------------------
 
-const LS_KEY_GENERAL = "junkos_settings_general";
-const LS_KEY_SCHEDULE = "junkos_settings_schedule";
+const LS_KEY_GENERAL = "umuve_settings_general";
+const LS_KEY_SCHEDULE = "umuve_settings_schedule";
 
 function loadFromStorage<T>(key: string, fallback: T): T {
   if (typeof window === "undefined") return fallback;

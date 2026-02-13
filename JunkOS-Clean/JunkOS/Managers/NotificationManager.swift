@@ -1,6 +1,6 @@
 //
 //  NotificationManager.swift
-//  JunkOS
+//  Umuve
 //
 //  Manages push notification setup, permissions, and handling
 //

@@ -1,6 +1,6 @@
 //
 //  CameraPickerView.swift
-//  JunkOS
+//  Umuve
 //
 //  UIImagePickerController wrapper for SwiftUI camera capture.
 //

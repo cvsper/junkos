@@ -1,5 +1,5 @@
 """
-JunkOS SMS Service
+Umuve SMS Service
 
 Centralised SMS sending via Twilio with:
 - Phone number formatting (ensures +1 prefix for US numbers)
@@ -147,12 +147,12 @@ def send_sms_async(to_phone, message):
 def sms_booking_confirmed(to_phone, job_id, date, time):
     """Booking confirmed -> SMS to customer.
 
-    Message: "Your JunkOS pickup is confirmed for {date} at {time}. Job #{job_id}"
+    Message: "Your Umuve pickup is confirmed for {date} at {time}. Job #{job_id}"
     """
     try:
         short_id = str(job_id)[:8] if job_id else "N/A"
         body = (
-            "Your JunkOS pickup is confirmed for {} at {}. "
+            "Your Umuve pickup is confirmed for {} at {}. "
             "Job #{}"
         ).format(date or "TBD", time or "TBD", short_id)
         return send_sms_async(to_phone, body)
@@ -201,11 +201,11 @@ def sms_job_completed(to_phone, amount):
     """
     try:
         if amount is not None:
-            body = "Pickup complete! Total: ${:.2f}. Thank you for using JunkOS!".format(
+            body = "Pickup complete! Total: ${:.2f}. Thank you for using Umuve!".format(
                 float(amount)
             )
         else:
-            body = "Pickup complete! Thank you for using JunkOS!"
+            body = "Pickup complete! Thank you for using Umuve!"
         return send_sms_async(to_phone, body)
     except Exception:
         logger.exception("sms_job_completed failed for %s", to_phone)
@@ -216,12 +216,12 @@ def sms_pickup_reminder(to_phone, job_id, date, time, address):
     """24-hour pickup reminder -> SMS to customer.
 
     Intended to be called by a scheduler (not wired up here).
-    Message: "Reminder: Your JunkOS pickup is tomorrow at {time}. Job #{job_id}"
+    Message: "Reminder: Your Umuve pickup is tomorrow at {time}. Job #{job_id}"
     """
     try:
         short_id = str(job_id)[:8] if job_id else "N/A"
         body = (
-            "Reminder: Your JunkOS pickup is tomorrow at {} at {}. "
+            "Reminder: Your Umuve pickup is tomorrow at {} at {}. "
             "Job #{}\n"
             "Address: {}"
         ).format(date or "your scheduled date", time or "the scheduled time",

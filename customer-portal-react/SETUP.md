@@ -1,4 +1,4 @@
-# JunkOS Frontend - Quick Setup Guide
+# Umuve Frontend - Quick Setup Guide
 
 ## 🚀 Quick Start (5 minutes)
 

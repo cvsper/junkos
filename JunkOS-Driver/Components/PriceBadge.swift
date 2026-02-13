@@ -1,6 +1,6 @@
 //
 //  PriceBadge.swift
-//  JunkOS Driver
+//  Umuve Pro
 //
 //  "$145" price badge.
 //

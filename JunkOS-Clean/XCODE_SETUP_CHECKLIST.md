@@ -1,9 +1,9 @@
-# JunkOS - Xcode Setup Checklist for TestFlight
+# Umuve - Xcode Setup Checklist for TestFlight
 
 **Last Updated:** February 7, 2026  
 **Project Ready:** ✅ All automated configuration complete
 
-This checklist covers the **user-performed steps** needed to archive and submit JunkOS to TestFlight.
+This checklist covers the **user-performed steps** needed to archive and submit Umuve to TestFlight.
 
 ---
 
@@ -20,7 +20,7 @@ This checklist covers the **user-performed steps** needed to archive and submit 
 2. **Add Icons to Project:**
    ```bash
    # Navigate to the AppIcon folder
-   cd ~/Documents/programs/webapps/junkos/JunkOS-Clean/JunkOS/Assets.xcassets/AppIcon.appiconset/
+   cd ~/Documents/programs/webapps/junkos/JunkOS-Clean/Umuve/Assets.xcassets/AppIcon.appiconset/
    
    # Place your generated icon files here
    # Files must match names in Contents.json:
@@ -32,7 +32,7 @@ This checklist covers the **user-performed steps** needed to archive and submit 
 
 3. **Verify in Xcode:**
    - Open project in Xcode
-   - Navigate to: `JunkOS` target → `General` tab
+   - Navigate to: `Umuve` target → `General` tab
    - Scroll to `App Icons and Launch Screen`
    - **All icon slots should be filled** (no missing icon warnings)
 
@@ -48,8 +48,8 @@ This checklist covers the **user-performed steps** needed to archive and submit 
    ```
 
 2. **Select Your Team:**
-   - Click on `JunkOS` project in the Navigator (top of file list)
-   - Select `JunkOS` target under `TARGETS`
+   - Click on `Umuve` project in the Navigator (top of file list)
+   - Select `Umuve` target under `TARGETS`
    - Go to `Signing & Capabilities` tab
    - Under **Team**: Select your Apple Developer team from dropdown
    - Xcode should automatically manage provisioning profiles
@@ -68,7 +68,7 @@ This checklist covers the **user-performed steps** needed to archive and submit 
    - If Bundle ID conflicts exist:
      - Go to [Apple Developer Portal](https://developer.apple.com/account)
      - Check `Certificates, Identifiers & Profiles` → `Identifiers`
-     - Verify `com.junkos.app` is available or registered to your team
+     - Verify `com.goumuve.com` is available or registered to your team
 
 ---
 
@@ -94,7 +94,7 @@ This checklist covers the **user-performed steps** needed to archive and submit 
 ### Step 4: Create Archive
 
 1. **Select Build Scheme:**
-   - Ensure `JunkOS` scheme is selected in toolbar
+   - Ensure `Umuve` scheme is selected in toolbar
    - Select `Any iOS Device (arm64)` as destination
 
 2. **Archive the App:**
@@ -129,7 +129,7 @@ This checklist covers the **user-performed steps** needed to archive and submit 
 **Common Issues:**
 - **Missing Export Compliance:** You may need to declare if app uses encryption
 - **Missing Icons:** Go back to Step 1
-- **Invalid Bundle ID:** Check that `com.junkos.app` is registered
+- **Invalid Bundle ID:** Check that `com.goumuve.com` is registered
 
 ---
 
@@ -171,7 +171,7 @@ This checklist covers the **user-performed steps** needed to archive and submit 
 
 2. **Find Your App:**
    - Click `My Apps`
-   - Find `JunkOS` (or create new app if first time)
+   - Find `Umuve` (or create new app if first time)
 
 3. **Wait for Build Processing:**
    - Your uploaded build will appear under `TestFlight` → `Builds`

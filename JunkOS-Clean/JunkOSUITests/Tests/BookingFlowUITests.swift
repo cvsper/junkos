@@ -1,6 +1,6 @@
 //
 //  BookingFlowUITests.swift
-//  JunkOSUITests
+//  UmuveUITests
 //
 //  End-to-end UI tests for the booking flow
 //
@@ -25,7 +25,7 @@ final class BookingFlowUITests: XCTestCase {
     
     func testCompleteBookingFlow() throws {
         // Step 1: Welcome Screen
-        XCTAssertTrue(app.staticTexts["JunkOS"].waitForExistence(timeout: 2))
+        XCTAssertTrue(app.staticTexts["Umuve"].waitForExistence(timeout: 2))
         
         let getStartedButton = app.buttons.matching(identifier: "getStartedButton").firstMatch
         XCTAssertTrue(getStartedButton.waitForExistence(timeout: 2))
@@ -150,7 +150,7 @@ final class BookingFlowUITests: XCTestCase {
             backButton.tap()
             
             // Should be back on welcome screen
-            XCTAssertTrue(app.staticTexts["JunkOS"].exists)
+            XCTAssertTrue(app.staticTexts["Umuve"].exists)
         }
     }
     
@@ -258,13 +258,13 @@ final class BookingFlowUITests: XCTestCase {
         app.terminate()
         app.launch()
         
-        XCTAssertTrue(app.staticTexts["JunkOS"].waitForExistence(timeout: 2))
+        XCTAssertTrue(app.staticTexts["Umuve"].waitForExistence(timeout: 2))
         
         // Second launch
         app.terminate()
         app.launch()
         
-        XCTAssertTrue(app.staticTexts["JunkOS"].waitForExistence(timeout: 2))
+        XCTAssertTrue(app.staticTexts["Umuve"].waitForExistence(timeout: 2))
     }
     
     func testLongAddressInput() throws {

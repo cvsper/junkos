@@ -1,4 +1,4 @@
-# JunkOS App Store Description
+# Umuve App Store Description
 **Character limit: 4000 | Current count: ~3,950**
 
 ---
@@ -7,7 +7,7 @@
 
 **Clear Your Space in Minutes with AI-Powered Junk Removal**
 
-Say goodbye to endless phone calls, vague quotes, and scheduling headaches. JunkOS transforms junk removal into a seamless, instant experience powered by cutting-edge AI technology.
+Say goodbye to endless phone calls, vague quotes, and scheduling headaches. Umuve transforms junk removal into a seamless, instant experience powered by cutting-edge AI technology.
 
 **📸 Snap a Photo. Get Instant Pricing.**
 
@@ -27,7 +27,7 @@ We prioritize responsible disposal. Items are sorted for donation, recycling, an
 
 **🚚 Professional, Reliable Service**
 
-All haulers on the JunkOS platform are vetted, insured professionals. Track your driver in real-time, get notifications when they're on the way, and rate your experience when complete. We hold our partners to the highest standards so you can have peace of mind.
+All haulers on the Umuve platform are vetted, insured professionals. Track your driver in real-time, get notifications when they're on the way, and rate your experience when complete. We hold our partners to the highest standards so you can have peace of mind.
 
 **Perfect For:**
 • Homeowners decluttering, renovating, or moving
@@ -36,7 +36,7 @@ All haulers on the JunkOS platform are vetted, insured professionals. Track your
 • Businesses disposing of office furniture and equipment
 • Anyone tired of cluttered garages, basements, or storage spaces
 
-**Why JunkOS?**
+**Why Umuve?**
 ✓ Instant AI photo estimates—no waiting for callbacks
 ✓ Real-time booking with flexible scheduling
 ✓ Transparent, all-inclusive pricing
@@ -57,9 +57,9 @@ All haulers on the JunkOS platform are vetted, insured professionals. Track your
 
 **From Clutter to Clear in Minutes**
 
-Whether you're tackling a spring cleaning project, renovating your home, moving to a new place, or just need that old couch gone, JunkOS makes it effortless. No more spending hours coordinating pickups or wondering if you're getting a fair price.
+Whether you're tackling a spring cleaning project, renovating your home, moving to a new place, or just need that old couch gone, Umuve makes it effortless. No more spending hours coordinating pickups or wondering if you're getting a fair price.
 
-Download JunkOS today and experience the future of junk removal—fast, fair, and frustration-free.
+Download Umuve today and experience the future of junk removal—fast, fair, and frustration-free.
 
 ---
 

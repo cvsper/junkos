@@ -1,5 +1,5 @@
 #!/bin/bash
-# JunkOS Asset Setup Script
+# Umuve Asset Setup Script
 # Integrates generated assets into mobile app
 
 set -e
@@ -8,7 +8,7 @@ ASSETS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 MOBILE_DIR="$ASSETS_DIR/../mobile"
 IOS_NATIVE_DIR="$ASSETS_DIR/../ios-native"
 
-echo "🚛 JunkOS Asset Setup"
+echo "🚛 Umuve Asset Setup"
 echo "====================="
 echo ""
 
@@ -22,8 +22,8 @@ fi
 setup_mobile_icon() {
     echo "📱 Setting up mobile app icon..."
     
-    if [ -f "$ASSETS_DIR/icon/junkos-icon-1024.png" ]; then
-        cp "$ASSETS_DIR/icon/junkos-icon-1024.png" "$MOBILE_DIR/assets/icon.png"
+    if [ -f "$ASSETS_DIR/icon/umuve-icon-1024.png" ]; then
+        cp "$ASSETS_DIR/icon/umuve-icon-1024.png" "$MOBILE_DIR/assets/icon.png"
         echo "✅ Icon copied to mobile/assets/icon.png"
     else
         echo "⚠️  Icon not found. Generate it first by opening:"
@@ -35,8 +35,8 @@ setup_mobile_icon() {
 setup_mobile_splash() {
     echo "🎨 Setting up launch screen..."
     
-    if [ -f "$ASSETS_DIR/launch-screen/junkos-launch-16pro.png" ]; then
-        cp "$ASSETS_DIR/launch-screen/junkos-launch-16pro.png" "$MOBILE_DIR/assets/splash.png"
+    if [ -f "$ASSETS_DIR/launch-screen/umuve-launch-16pro.png" ]; then
+        cp "$ASSETS_DIR/launch-screen/umuve-launch-16pro.png" "$MOBILE_DIR/assets/splash.png"
         echo "✅ Launch screen copied to mobile/assets/splash.png"
     else
         echo "⚠️  Launch screen not found. Generate it first by opening:"
@@ -70,14 +70,14 @@ setup_ios_native() {
     
     if [ -d "$IOS_NATIVE_DIR" ]; then
         echo "📋 To add icons to Xcode:"
-        echo "   1. Open $IOS_NATIVE_DIR/JunkOS.xcodeproj"
+        echo "   1. Open $IOS_NATIVE_DIR/Umuve.xcodeproj"
         echo "   2. Select Assets.xcassets → AppIcon"
         echo "   3. Drag icons from $ASSETS_DIR/icon/"
         echo "   4. Place:"
-        echo "      - junkos-icon-1024.png → App Store"
-        echo "      - junkos-icon-180.png → iPhone 60pt @3x"
-        echo "      - junkos-icon-120.png → iPhone 60pt @2x"
-        echo "      - junkos-icon-60.png → iPhone 20pt @3x"
+        echo "      - umuve-icon-1024.png → App Store"
+        echo "      - umuve-icon-180.png → iPhone 60pt @3x"
+        echo "      - umuve-icon-120.png → iPhone 60pt @2x"
+        echo "      - umuve-icon-60.png → iPhone 20pt @3x"
     else
         echo "ℹ️  iOS native project not found (optional)"
     fi

@@ -1,7 +1,7 @@
 #!/bin/bash
-# JunkOS Backend Verification Script
+# Umuve Backend Verification Script
 
-echo "🔍 JunkOS Backend Structure Verification"
+echo "🔍 Umuve Backend Structure Verification"
 echo "========================================="
 echo ""
 
@@ -76,6 +76,6 @@ echo "  1. Create virtual environment: python3 -m venv venv"
 echo "  2. Activate: source venv/bin/activate"
 echo "  3. Install deps: pip install -r requirements.txt"
 echo "  4. Configure .env: cp .env.example .env"
-echo "  5. Setup database: createdb junkos_dev"
+echo "  5. Setup database: createdb umuve_dev"
 echo "  6. Seed data: flask seed-db"
 echo "  7. Run: python run.py"

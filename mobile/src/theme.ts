@@ -3,10 +3,10 @@ import { MD3LightTheme as DefaultTheme } from 'react-native-paper';
 export const colors = {
   primary: '#6366F1',      // Indigo
   secondary: '#818CF8',    // Light Indigo
-  cta: '#10B981',          // Emerald
+  cta: '#DC2626',          // Red
   background: '#F5F3FF',   // Light Purple
   text: '#1E1B4B',         // Dark Indigo
-  success: '#10B981',
+  success: '#16A34A',
   warning: '#F59E0B',
   error: '#EF4444',
   info: '#3B82F6',

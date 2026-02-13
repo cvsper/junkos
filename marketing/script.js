@@ -1,5 +1,5 @@
 /**
- * JunkOS Marketing Landing Page - Interactive Features
+ * Umuve Marketing Landing Page - Interactive Features
  * - Smooth scroll navigation
  * - Mobile menu toggle
  * - FAQ accordion
@@ -391,7 +391,7 @@ fontPreload.crossOrigin = 'anonymous';
 
 // ========== CONSOLE WELCOME MESSAGE ==========
 console.log(
-    '%c🚛 JunkOS Marketing Site',
+    '%c🚛 Umuve Marketing Site',
     'font-size: 20px; font-weight: bold; color: #6366F1;'
 );
 console.log(

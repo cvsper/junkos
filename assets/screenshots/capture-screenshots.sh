@@ -1,5 +1,5 @@
 #!/bin/bash
-# Automated screenshot capture for JunkOS iOS app
+# Automated screenshot capture for Umuve iOS app
 # Captures screenshots from running iOS simulator
 
 set -e
@@ -8,7 +8,7 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 RAW_DIR="$SCRIPT_DIR/raw"
 DEVICE="iPhone 16 Pro Max"
 
-echo "📸 JunkOS Screenshot Capture"
+echo "📸 Umuve Screenshot Capture"
 echo "============================"
 echo ""
 

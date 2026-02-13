@@ -127,21 +127,21 @@ jobs:
         run: |
           # Backend service
           aws ecs update-service \
-            --cluster junkos-staging \
+            --cluster umuve-staging \
             --service backend \
             --force-new-deployment \
             --region ${{ secrets.AWS_REGION || 'us-east-1' }}
           
           # Frontend service
           aws ecs update-service \
-            --cluster junkos-staging \
+            --cluster umuve-staging \
             --service frontend \
             --force-new-deployment \
             --region ${{ secrets.AWS_REGION || 'us-east-1' }}
           
           # Dashboard service
           aws ecs update-service \
-            --cluster junkos-staging \
+            --cluster umuve-staging \
             --service dashboard \
             --force-new-deployment \
             --region ${{ secrets.AWS_REGION || 'us-east-1' }}
@@ -149,7 +149,7 @@ jobs:
       - name: Wait for services to stabilize
         run: |
           aws ecs wait services-stable \
-            --cluster junkos-staging \
+            --cluster umuve-staging \
             --services backend frontend dashboard \
             --region ${{ secrets.AWS_REGION || 'us-east-1' }}
 
@@ -177,7 +177,7 @@ jobs:
       
       - name: Run smoke tests
         env:
-          BASE_URL: ${{ secrets.STAGING_URL || 'https://staging.junkos.app' }}
+          BASE_URL: ${{ secrets.STAGING_URL || 'https://staging.goumuve.com' }}
         run: |
           cd e2e
           npx playwright test smoke --project=chromium
@@ -193,7 +193,7 @@ jobs:
       
       - name: Check health endpoints
         env:
-          STAGING_URL: ${{ secrets.STAGING_URL || 'https://staging.junkos.app' }}
+          STAGING_URL: ${{ secrets.STAGING_URL || 'https://staging.goumuve.com' }}
         run: |
           echo "🔍 Checking health endpoints..."
           
@@ -324,7 +324,7 @@ jobs:
                         "type": "plain_text",
                         "text": "View Staging"
                       },
-                      "url": "${{ secrets.STAGING_URL || 'https://staging.junkos.app' }}"
+                      "url": "${{ secrets.STAGING_URL || 'https://staging.goumuve.com' }}"
                     }
                   ]
                 }
@@ -357,7 +357,7 @@ jobs:
           - **Smoke Tests:** ${{ needs.smoke-tests.result == 'success' && '✅ Passed' || needs.smoke-tests.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }}
           
           ## Environment
-          - **URL:** ${{ secrets.STAGING_URL || 'https://staging.junkos.app' }}
+          - **URL:** ${{ secrets.STAGING_URL || 'https://staging.goumuve.com' }}
           - **Commit:** `${{ github.sha }}`
           - **Branch:** `${{ github.ref_name }}`
           

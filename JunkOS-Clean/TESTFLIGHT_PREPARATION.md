@@ -1,6 +1,6 @@
 # TestFlight Preparation Guide
 
-**App:** JunkOS  
+**App:** Umuve  
 **Version:** 1.0.0 (Build 1)  
 **Date:** February 7, 2026  
 **Status:** ✅ Ready for TestFlight
@@ -16,7 +16,7 @@
 - [x] No analyzer warnings
 - [x] Release build successful
 - [x] Code signing configured
-- [x] Bundle identifier set: `com.junkos.app`
+- [x] Bundle identifier set: `com.goumuve.com`
 - [x] Version number: 1.0.0
 - [x] Build number: 1
 - [x] Deployment target: iOS 17.0+
@@ -33,13 +33,13 @@
 
 ### ✅ Content & Metadata
 
-- [x] App name: "JunkOS"
+- [x] App name: "Umuve"
 - [x] Subtitle: "Junk Removal Made Easy"
 - [x] Keywords defined
 - [x] Description written
 - [x] Screenshots prepared (see below)
-- [x] Privacy policy URL: https://junkos.app/privacy
-- [x] Support URL: https://junkos.app/support
+- [x] Privacy policy URL: https://goumuve.com/privacy
+- [x] Support URL: https://goumuve.com/support
 
 ### ✅ Testing & Quality
 
@@ -68,10 +68,10 @@
 
 ### App Information
 ```
-Bundle ID: com.junkos.app
+Bundle ID: com.goumuve.com
 Version: 1.0.0
 Build: 1
-Display Name: JunkOS
+Display Name: Umuve
 Minimum OS: iOS 17.0
 ```
 
@@ -100,13 +100,13 @@ Architectures: arm64 (iPhone), x86_64 (Simulator)
 
 ### App Information
 
-**Name:** JunkOS  
+**Name:** Umuve  
 **Subtitle:** Junk Removal Made Easy  
 **Category:** Primary: Lifestyle, Secondary: Business
 
 **Description:**
 ```
-JunkOS is the easiest way to book junk removal in Tampa Bay. 
+Umuve is the easiest way to book junk removal in Tampa Bay. 
 
 WHAT WE REMOVE:
 • Furniture & Appliances
@@ -155,9 +155,9 @@ dumpster alternative, haul away, trash removal, debris removal,
 cleanout service, estate cleanout, foreclosure cleanout
 ```
 
-**Support URL:** https://junkos.app/support  
-**Marketing URL:** https://junkos.app  
-**Privacy Policy URL:** https://junkos.app/privacy
+**Support URL:** https://goumuve.com/support  
+**Marketing URL:** https://goumuve.com  
+**Privacy Policy URL:** https://goumuve.com/privacy
 
 ### Age Rating
 
@@ -180,7 +180,7 @@ cleanout service, estate cleanout, foreclosure cleanout
 
 **Review Notes:**
 ```
-Thank you for reviewing JunkOS!
+Thank you for reviewing Umuve!
 
 IMPORTANT: This is our MVP version. The app currently uses mock data 
 and does not connect to a live backend. Bookings are simulated.
@@ -301,7 +301,7 @@ let welcome = app.screenshot()
 ```
 🎉 Initial TestFlight Release!
 
-Welcome to the first beta of JunkOS! This is our MVP (Minimum Viable Product) 
+Welcome to the first beta of Umuve! This is our MVP (Minimum Viable Product) 
 to validate the concept and gather your feedback.
 
 ✨ WHAT'S WORKING:
@@ -343,11 +343,11 @@ to validate the concept and gather your feedback.
 
 📧 CONTACT:
 • TestFlight feedback (preferred)
-• Email: beta@junkos.app
+• Email: beta@goumuve.com
 • Include: device, iOS version, screenshots
 
 Thank you for being an early tester! Your feedback will shape the future 
-of JunkOS. 🙏
+of Umuve. 🙏
 ```
 
 ---
@@ -395,7 +395,7 @@ of JunkOS. 🙏
 ```
 Hi [Name]!
 
-You're invited to beta test JunkOS - a new junk removal booking app for 
+You're invited to beta test Umuve - a new junk removal booking app for 
 Tampa Bay!
 
 WHAT IS IT?
@@ -516,12 +516,12 @@ Thanks!
 ## Contact & Support
 
 ### For Testers
-- **Email:** beta@junkos.app
+- **Email:** beta@goumuve.com
 - **TestFlight Feedback:** Use in-app feedback
 - **Issues:** Include device, iOS version, screenshots
 
 ### For Reviewers
-- **Email:** support@junkos.app
+- **Email:** support@goumuve.com
 - **Demo:** App works without login
 - **Questions:** Available 9am-5pm EST
 
@@ -538,7 +538,7 @@ git push origin v1.0.0-beta.1
 ### Archive Location
 ```
 ~/Library/Developer/Xcode/Archives/
-Archive name: JunkOS 1.0.0 (1)
+Archive name: Umuve 1.0.0 (1)
 ```
 
 ### Backup

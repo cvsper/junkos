@@ -1,4 +1,4 @@
-# JunkOS Database Setup - Summary
+# Umuve Database Setup - Summary
 
 ## ✅ What Was Created
 
@@ -67,7 +67,7 @@
 ### Option 1: Automated Setup (Recommended)
 ```bash
 # Navigate to database directory
-cd ~/Documents/programs/webapps/junkos/database
+cd ~/Documents/programs/webapps/umuve/database
 
 # Install Python dependencies
 pip3 install -r requirements.txt
@@ -85,13 +85,13 @@ pip3 install -r requirements.txt
 psql -U postgres -f 01_create_database.sql
 
 # 2. Create schema
-psql -U postgres -d junkos -f 02_schema.sql
+psql -U postgres -d umuve -f 02_schema.sql
 
 # 3. Load sample data (optional)
-psql -U postgres -d junkos -f 03_seed_data.sql
+psql -U postgres -d umuve -f 03_seed_data.sql
 
 # 4. Create views
-psql -U postgres -d junkos -f 04_views.sql
+psql -U postgres -d umuve -f 04_views.sql
 ```
 
 ### Migration Commands
@@ -136,7 +136,7 @@ After setup, verify everything is working:
 
 ```sql
 -- Connect to database
-psql -U postgres -d junkos
+psql -U postgres -d umuve
 
 -- Check table count (should be 17)
 \dt
@@ -163,7 +163,7 @@ cp .env.example .env
 
 2. **Edit with your credentials:**
 ```bash
-DATABASE_URL=postgresql://postgres:your_password@localhost:5432/junkos
+DATABASE_URL=postgresql://postgres:your_password@localhost:5432/umuve
 ```
 
 ## 🛡️ Security Features
@@ -178,7 +178,7 @@ DATABASE_URL=postgresql://postgres:your_password@localhost:5432/junkos
 
 1. **Test the Database:**
    ```bash
-   psql -U postgres -d junkos
+   psql -U postgres -d umuve
    SELECT * FROM v_tenant_dashboard;
    ```
 
@@ -189,7 +189,7 @@ DATABASE_URL=postgresql://postgres:your_password@localhost:5432/junkos
 
 3. **Set Up Backups:**
    ```bash
-   pg_dump -U postgres -d junkos -F c -f backup_$(date +%Y%m%d).dump
+   pg_dump -U postgres -d umuve -F c -f backup_$(date +%Y%m%d).dump
    ```
 
 4. **Integrate with Application:**
@@ -206,19 +206,19 @@ DATABASE_URL=postgresql://postgres:your_password@localhost:5432/junkos
 
 ```bash
 # Create backup
-pg_dump -U postgres -d junkos -F c -f backup.dump
+pg_dump -U postgres -d umuve -F c -f backup.dump
 
 # Restore backup
-pg_restore -U postgres -d junkos backup.dump
+pg_restore -U postgres -d umuve backup.dump
 
 # Vacuum database
-vacuumdb -U postgres -d junkos --analyze
+vacuumdb -U postgres -d umuve --analyze
 
 # Check database size
-psql -U postgres -d junkos -c "\l+ junkos"
+psql -U postgres -d umuve -c "\l+ umuve"
 
 # Monitor connections
-psql -U postgres -d junkos -c "SELECT count(*), state FROM pg_stat_activity WHERE datname='junkos' GROUP BY state;"
+psql -U postgres -d umuve -c "SELECT count(*), state FROM pg_stat_activity WHERE datname='umuve' GROUP BY state;"
 ```
 
 ## 📚 File Reference

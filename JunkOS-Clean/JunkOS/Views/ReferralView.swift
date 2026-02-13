@@ -1,6 +1,6 @@
 //
 //  ReferralView.swift
-//  JunkOS
+//  Umuve
 //
 //  "Refer a Friend" screen: shows the user's referral code,
 //  copy-to-clipboard button, and share via UIActivityViewController.
@@ -20,13 +20,13 @@ struct ReferralView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: JunkSpacing.xlarge) {
+            VStack(spacing: UmuveSpacing.xlarge) {
                 // Header illustration
                 headerSection
 
                 if isLoading {
                     ProgressView()
-                        .padding(.vertical, JunkSpacing.huge)
+                        .padding(.vertical, UmuveSpacing.huge)
                 } else if let error = errorMessage {
                     errorSection(error)
                 } else {
@@ -40,11 +40,11 @@ struct ReferralView: View {
                     howItWorksSection
                 }
             }
-            .padding(.horizontal, JunkSpacing.large)
-            .padding(.bottom, JunkSpacing.xxlarge)
+            .padding(.horizontal, UmuveSpacing.large)
+            .padding(.bottom, UmuveSpacing.xxlarge)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.junkBackground.ignoresSafeArea())
+        .background(Color.umuveBackground.ignoresSafeArea())
         .navigationTitle("Refer a Friend")
         .navigationBarTitleDisplayMode(.large)
         .task {
@@ -58,12 +58,12 @@ struct ReferralView: View {
     // MARK: - Header
 
     private var headerSection: some View {
-        VStack(spacing: JunkSpacing.normal) {
+        VStack(spacing: UmuveSpacing.normal) {
             ZStack {
                 Circle()
                     .fill(
                         LinearGradient(
-                            colors: [Color.junkPrimary.opacity(0.2), Color.junkPrimaryLight.opacity(0.1)],
+                            colors: [Color.umuvePrimary.opacity(0.2), Color.umuvePrimaryLight.opacity(0.1)],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
@@ -72,13 +72,13 @@ struct ReferralView: View {
 
                 Image(systemName: "gift.fill")
                     .font(.system(size: 44))
-                    .foregroundColor(.junkPrimary)
+                    .foregroundColor(.umuvePrimary)
             }
-            .padding(.top, JunkSpacing.large)
+            .padding(.top, UmuveSpacing.large)
 
             Text("Share the love, earn rewards")
-                .font(JunkTypography.bodyFont)
-                .foregroundColor(.junkTextMuted)
+                .font(UmuveTypography.bodyFont)
+                .foregroundColor(.umuveTextMuted)
                 .multilineTextAlignment(.center)
         }
     }
@@ -86,62 +86,62 @@ struct ReferralView: View {
     // MARK: - Code Card
 
     private var codeCard: some View {
-        VStack(spacing: JunkSpacing.normal) {
+        VStack(spacing: UmuveSpacing.normal) {
             Text("Your Referral Code")
-                .font(JunkTypography.captionFont)
-                .foregroundColor(.junkTextMuted)
+                .font(UmuveTypography.captionFont)
+                .foregroundColor(.umuveTextMuted)
 
             Text(referralCode)
                 .font(.system(size: 32, weight: .bold, design: .monospaced))
-                .foregroundColor(.junkPrimary)
+                .foregroundColor(.umuvePrimary)
                 .kerning(4)
-                .padding(.vertical, JunkSpacing.medium)
+                .padding(.vertical, UmuveSpacing.medium)
 
-            HStack(spacing: JunkSpacing.medium) {
+            HStack(spacing: UmuveSpacing.medium) {
                 // Copy button
                 Button(action: copyCode) {
-                    HStack(spacing: JunkSpacing.small) {
+                    HStack(spacing: UmuveSpacing.small) {
                         Image(systemName: copied ? "checkmark" : "doc.on.doc")
                             .font(.system(size: 14, weight: .semibold))
                         Text(copied ? "Copied!" : "Copy Code")
-                            .font(JunkTypography.captionFont.weight(.semibold))
+                            .font(UmuveTypography.captionFont.weight(.semibold))
                     }
-                    .foregroundColor(copied ? .junkSuccess : .junkPrimary)
-                    .padding(.horizontal, JunkSpacing.large)
-                    .padding(.vertical, JunkSpacing.medium)
+                    .foregroundColor(copied ? .umuveSuccess : .umuvePrimary)
+                    .padding(.horizontal, UmuveSpacing.large)
+                    .padding(.vertical, UmuveSpacing.medium)
                     .background(
-                        (copied ? Color.junkSuccess : Color.junkPrimary).opacity(0.1)
+                        (copied ? Color.umuveSuccess : Color.umuvePrimary).opacity(0.1)
                     )
                     .clipShape(Capsule())
                 }
 
                 // Share button
                 Button(action: { showShareSheet = true }) {
-                    HStack(spacing: JunkSpacing.small) {
+                    HStack(spacing: UmuveSpacing.small) {
                         Image(systemName: "square.and.arrow.up")
                             .font(.system(size: 14, weight: .semibold))
                         Text("Share")
-                            .font(JunkTypography.captionFont.weight(.semibold))
+                            .font(UmuveTypography.captionFont.weight(.semibold))
                     }
                     .foregroundColor(.white)
-                    .padding(.horizontal, JunkSpacing.large)
-                    .padding(.vertical, JunkSpacing.medium)
-                    .background(Color.junkPrimary)
+                    .padding(.horizontal, UmuveSpacing.large)
+                    .padding(.vertical, UmuveSpacing.medium)
+                    .background(Color.umuvePrimary)
                     .clipShape(Capsule())
                 }
             }
         }
         .frame(maxWidth: .infinity)
-        .padding(JunkSpacing.xlarge)
+        .padding(UmuveSpacing.xlarge)
         .background(Color.white)
-        .clipShape(RoundedRectangle(cornerRadius: JunkRadius.lg))
+        .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.lg))
         .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
     }
 
     // MARK: - Stats
 
     private var statsSection: some View {
-        HStack(spacing: JunkSpacing.normal) {
+        HStack(spacing: UmuveSpacing.normal) {
             StatCard(title: "Referrals", value: "\(totalReferrals)", icon: "person.2.fill")
             StatCard(title: "Credits Earned", value: String(format: "$%.0f", creditsEarned), icon: "dollarsign.circle.fill")
         }
@@ -150,35 +150,35 @@ struct ReferralView: View {
     // MARK: - How It Works
 
     private var howItWorksSection: some View {
-        VStack(alignment: .leading, spacing: JunkSpacing.normal) {
+        VStack(alignment: .leading, spacing: UmuveSpacing.normal) {
             Text("How It Works")
-                .font(JunkTypography.h2Font)
-                .foregroundColor(.junkText)
+                .font(UmuveTypography.h2Font)
+                .foregroundColor(.umuveText)
 
-            VStack(spacing: JunkSpacing.medium) {
+            VStack(spacing: UmuveSpacing.medium) {
                 ReferralStep(number: 1, text: "Share your code with friends and family")
                 ReferralStep(number: 2, text: "They get a discount on their first booking")
                 ReferralStep(number: 3, text: "You earn credit toward your next pickup")
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(JunkSpacing.large)
+        .padding(UmuveSpacing.large)
         .background(Color.white)
-        .clipShape(RoundedRectangle(cornerRadius: JunkRadius.lg))
+        .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.lg))
         .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
     }
 
     // MARK: - Error Section
 
     private func errorSection(_ message: String) -> some View {
-        VStack(spacing: JunkSpacing.normal) {
+        VStack(spacing: UmuveSpacing.normal) {
             Image(systemName: "exclamationmark.triangle")
                 .font(.system(size: 40))
-                .foregroundColor(.junkWarning)
+                .foregroundColor(.umuveWarning)
 
             Text(message)
-                .font(JunkTypography.bodyFont)
-                .foregroundColor(.junkTextMuted)
+                .font(UmuveTypography.bodyFont)
+                .foregroundColor(.umuveTextMuted)
                 .multilineTextAlignment(.center)
 
             Button(action: {
@@ -186,16 +186,16 @@ struct ReferralView: View {
             }) {
                 Text("Try Again")
             }
-            .buttonStyle(JunkSecondaryButtonStyle())
+            .buttonStyle(UmuveSecondaryButtonStyle())
             .frame(width: 160)
         }
-        .padding(.vertical, JunkSpacing.huge)
+        .padding(.vertical, UmuveSpacing.huge)
     }
 
     // MARK: - Helpers
 
     private var shareMessage: String {
-        "Get junk removed the easy way! Use my referral code \(referralCode) on JunkOS for a discount on your first pickup."
+        "Get junk removed the easy way! Use my referral code \(referralCode) on Umuve for a discount on your first pickup."
     }
 
     private func copyCode() {
@@ -235,23 +235,23 @@ private struct StatCard: View {
     let icon: String
 
     var body: some View {
-        VStack(spacing: JunkSpacing.small) {
+        VStack(spacing: UmuveSpacing.small) {
             Image(systemName: icon)
                 .font(.system(size: 24))
-                .foregroundColor(.junkPrimary)
+                .foregroundColor(.umuvePrimary)
 
             Text(value)
-                .font(JunkTypography.h2Font)
-                .foregroundColor(.junkText)
+                .font(UmuveTypography.h2Font)
+                .foregroundColor(.umuveText)
 
             Text(title)
-                .font(JunkTypography.captionFont)
-                .foregroundColor(.junkTextMuted)
+                .font(UmuveTypography.captionFont)
+                .foregroundColor(.umuveTextMuted)
         }
         .frame(maxWidth: .infinity)
-        .padding(JunkSpacing.large)
+        .padding(UmuveSpacing.large)
         .background(Color.white)
-        .clipShape(RoundedRectangle(cornerRadius: JunkRadius.lg))
+        .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.lg))
         .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
     }
 }
@@ -261,20 +261,20 @@ private struct ReferralStep: View {
     let text: String
 
     var body: some View {
-        HStack(spacing: JunkSpacing.medium) {
+        HStack(spacing: UmuveSpacing.medium) {
             ZStack {
                 Circle()
-                    .fill(Color.junkPrimary.opacity(0.1))
+                    .fill(Color.umuvePrimary.opacity(0.1))
                     .frame(width: 32, height: 32)
 
                 Text("\(number)")
-                    .font(JunkTypography.bodyFont.weight(.bold))
-                    .foregroundColor(.junkPrimary)
+                    .font(UmuveTypography.bodyFont.weight(.bold))
+                    .foregroundColor(.umuvePrimary)
             }
 
             Text(text)
-                .font(JunkTypography.bodyFont)
-                .foregroundColor(.junkText)
+                .font(UmuveTypography.bodyFont)
+                .foregroundColor(.umuveText)
 
             Spacer()
         }

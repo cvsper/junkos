@@ -1,6 +1,6 @@
 //
 //  AnimationConstants.swift
-//  JunkOS Driver
+//  Umuve Pro
 //
 //  Centralized animation timing and spring parameters.
 //

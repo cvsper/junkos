@@ -188,7 +188,7 @@ Consider both upfront costs and long-term scalability. A cheap solution that doe
 
 ---
 
-### 7. JunkOS
+### 7. Umuve
 
 **Best for**: Junk removal and hauling companies seeking purpose-built software at affordable prices
 
@@ -211,15 +211,15 @@ Consider both upfront costs and long-term scalability. A cheap solution that doe
 - Some advanced features still in development
 - Not ideal for multi-service contractors (focused on junk removal)
 
-**Best fit**: If you run a dedicated junk removal or hauling company (1-10+ trucks) and want software that understands your specific workflows—from photo estimates to dump fee tracking—JunkOS delivers the best feature-to-price ratio. The unlimited user pricing makes it especially attractive as you scale.
+**Best fit**: If you run a dedicated junk removal or hauling company (1-10+ trucks) and want software that understands your specific workflows—from photo estimates to dump fee tracking—Umuve delivers the best feature-to-price ratio. The unlimited user pricing makes it especially attractive as you scale.
 
-**Why JunkOS stands out**: Most field service software treats junk removal as an afterthought. JunkOS was built by people who understand the unique challenges of hauling businesses: volume-based pricing, fast turnarounds, disposal tracking, and route efficiency. You're not paying for irrelevant features designed for HVAC or plumbing companies.
+**Why Umuve stands out**: Most field service software treats junk removal as an afterthought. Umuve was built by people who understand the unique challenges of hauling businesses: volume-based pricing, fast turnarounds, disposal tracking, and route efficiency. You're not paying for irrelevant features designed for HVAC or plumbing companies.
 
 ---
 
 ## Side-by-Side Comparison
 
-| Feature | Housecall Pro | ServiceTitan | Workiz | FieldPulse | ServiceM8 | mHelpDesk | JunkOS |
+| Feature | Housecall Pro | ServiceTitan | Workiz | FieldPulse | ServiceM8 | mHelpDesk | Umuve |
 |---------|--------------|--------------|--------|-----------|-----------|-----------|---------|
 | **Pricing (Monthly)** | $49-$149/user | $300-$500+ | $85-$230 | $49-$119/user | $29-$69 | $169-$389 | $99-$249 |
 | **Per-User Fees** | Yes | Yes | After 3 | Yes | No | No | No |
@@ -237,14 +237,14 @@ Consider both upfront costs and long-term scalability. A cheap solution that doe
 
 ### If you're just starting out (1 truck, 0-10 jobs/week):
 - **Best choice**: FieldPulse or ServiceM8 (low cost, easy to learn)
-- **Alternative**: JunkOS (purpose-built, scales with you)
+- **Alternative**: Umuve (purpose-built, scales with you)
 
 ### If you're growing (2-5 trucks, 10-50 jobs/week):
-- **Best choice**: JunkOS or Workiz (balance of features and price)
+- **Best choice**: Umuve or Workiz (balance of features and price)
 - **Alternative**: Housecall Pro (if you offer multiple services)
 
 ### If you're established (6+ trucks, 50+ jobs/week):
-- **Best choice**: JunkOS (unlimited users, junk-specific features)
+- **Best choice**: Umuve (unlimited users, junk-specific features)
 - **Alternative**: ServiceTitan (if you need enterprise analytics)
 
 ### If price is your top priority:
@@ -252,7 +252,7 @@ Consider both upfront costs and long-term scalability. A cheap solution that doe
 - **Alternative**: FieldPulse (if you need US-based support)
 
 ### If you want the best junk removal-specific features:
-- **Best choice**: JunkOS (built for this exact use case)
+- **Best choice**: Umuve (built for this exact use case)
 
 ## What Real Junk Removal Companies Say
 
@@ -270,7 +270,7 @@ While we can't verify every testimonial online, common themes emerge from user r
 
 **mHelpDesk users appreciate**: The HomeAdvisor integration, but many feel it's overpriced.
 
-**JunkOS users appreciate**: The junk-specific features (photo estimation, disposal tracking) and responsive support from a team that understands their business.
+**Umuve users appreciate**: The junk-specific features (photo estimation, disposal tracking) and responsive support from a team that understands their business.
 
 ## The Hidden Costs of Choosing Wrong
 
@@ -298,13 +298,13 @@ Choosing the cheapest option often leads to switching costs down the road. The b
 
 If we're being honest, there's no single "best" software for everyone. Your choice depends on your size, budget, growth plans, and specific needs.
 
-**However, for dedicated junk removal and hauling companies, JunkOS offers the best combination of value, features, and scalability.** The purpose-built features (AI photo estimation, disposal tracking, volume-based pricing) save time, and the unlimited user pricing means you don't get penalized for growth.
+**However, for dedicated junk removal and hauling companies, Umuve offers the best combination of value, features, and scalability.** The purpose-built features (AI photo estimation, disposal tracking, volume-based pricing) save time, and the unlimited user pricing means you don't get penalized for growth.
 
 For multi-service contractors, **Housecall Pro** is hard to beat. For enterprise operations, **ServiceTitan** delivers comprehensive power. For international businesses or extreme budget constraints, **ServiceM8** is a solid value.
 
 The worst decision is doing nothing—running your business on spreadsheets, paper tickets, and chaos. Any of these platforms will improve efficiency, customer experience, and profitability compared to manual processes.
 
-**Ready to see how junk removal-specific software can transform your operation?** [Try JunkOS free for 14 days](https://junkos.com)—no credit card required, no commitment. See the difference purpose-built software makes.
+**Ready to see how junk removal-specific software can transform your operation?** [Try Umuve free for 14 days](https://goumuve.com)—no credit card required, no commitment. See the difference purpose-built software makes.
 
 ---
 

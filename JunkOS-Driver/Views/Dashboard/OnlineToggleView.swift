@@ -1,6 +1,6 @@
 //
 //  OnlineToggleView.swift
-//  JunkOS Driver
+//  Umuve Pro
 //
 //  Hero toggle with glow animation for going online/offline.
 //

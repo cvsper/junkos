@@ -1,4 +1,4 @@
-# JunkOS Frontend - Quick Reference
+# Umuve Frontend - Quick Reference
 
 ## 🚀 Get Started (Copy & Paste)
 

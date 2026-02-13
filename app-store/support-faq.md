@@ -1,4 +1,4 @@
-# JunkOS Support & FAQ
+# Umuve Support & FAQ
 
 **For: Website Support Page & App Store Listing**
 
@@ -6,10 +6,10 @@
 
 ## Contact Information
 
-**Email:** support@junkos.app  
+**Email:** support@goumuve.com  
 **Phone:** 1-800-JUNK-OS1 (1-800-586-5671)  
 **Hours:** Monday-Friday 8:00 AM - 8:00 PM EST, Saturday-Sunday 9:00 AM - 6:00 PM EST  
-**Website:** https://www.junkos.app/support  
+**Website:** https://www.goumuve.com/support  
 **In-App Support:** Settings → Help & Support → Contact Us
 
 **Emergency/Same-Day Support:** For urgent booking issues on the day of your scheduled pickup, call our priority line at 1-800-586-5671 and press 1.
@@ -20,8 +20,8 @@
 
 ### Getting Started
 
-**Q: How does JunkOS work?**  
-A: JunkOS makes junk removal simple: (1) Take photos of your items, (2) Get an instant AI-powered price estimate, (3) Choose your pickup time, (4) Our vetted hauler shows up and handles everything. Payment is processed securely through the app after completion.
+**Q: How does Umuve work?**  
+A: Umuve makes junk removal simple: (1) Take photos of your items, (2) Get an instant AI-powered price estimate, (3) Choose your pickup time, (4) Our vetted hauler shows up and handles everything. Payment is processed securely through the app after completion.
 
 **Q: What items can I get hauled away?**  
 A: We accept furniture, appliances, electronics, mattresses, yard waste, construction debris, general household junk, and more. We cannot accept hazardous materials (paint, chemicals, asbestos), medical waste, or items requiring special permits.
@@ -46,7 +46,7 @@ A: You can reschedule or cancel up to 4 hours before your pickup time at no char
 A: As long as the items are accessible (garage, driveway, curb), we can complete the pickup without you present. Mark your booking as "Unattended Pickup" and provide access instructions in the notes.
 
 **Q: Do you service my area?**  
-A: JunkOS currently serves [list major metropolitan areas]. Enter your ZIP code in the app to check availability. We're expanding rapidly—sign up for notifications if we're not in your area yet!
+A: Umuve currently serves [list major metropolitan areas]. Enter your ZIP code in the app to check availability. We're expanding rapidly—sign up for notifications if we're not in your area yet!
 
 ---
 
@@ -69,7 +69,7 @@ A: Yes! First-time users receive $25 off their first haul. We also offer discoun
 ### Service & Safety
 
 **Q: Are your haulers licensed and insured?**  
-A: Absolutely. All haulers on the JunkOS platform are vetted, licensed, and carry liability insurance. We perform background checks and verify credentials before approving any service provider.
+A: Absolutely. All haulers on the Umuve platform are vetted, licensed, and carry liability insurance. We perform background checks and verify credentials before approving any service provider.
 
 **Q: Can I track my hauler?**  
 A: Yes! You'll receive real-time tracking once your hauler is on the way. See their location, estimated arrival time, and driver information in the app.
@@ -88,10 +88,10 @@ A: We prioritize eco-friendly disposal. Usable items are donated to local charit
 A: Try these steps: (1) Ensure photos are clear and well-lit, (2) Take photos from multiple angles showing all items, (3) Check your internet connection, (4) Update to the latest app version. If issues persist, contact support with your photos and we'll provide a manual estimate within 2 hours.
 
 **Q: I didn't receive a notification/confirmation.**  
-A: Check that notifications are enabled: Settings → Notifications → JunkOS → Allow Notifications. Also verify your email address in Profile settings. Contact support if you still don't receive confirmations.
+A: Check that notifications are enabled: Settings → Notifications → Umuve → Allow Notifications. Also verify your email address in Profile settings. Contact support if you still don't receive confirmations.
 
 **Q: The app crashes when I try to take photos.**  
-A: Update the app to the latest version and ensure JunkOS has camera permissions (Settings → Privacy → Camera → JunkOS). If the issue continues, try restarting your phone or contact support.
+A: Update the app to the latest version and ensure Umuve has camera permissions (Settings → Privacy → Camera → Umuve). If the issue continues, try restarting your phone or contact support.
 
 **Q: How do I delete my account?**  
 A: Go to Settings → Account → Delete Account. Note: this permanently removes your data, booking history, and saved payment methods. Contact support if you need assistance.
@@ -157,7 +157,7 @@ A: Go to Settings → Account → Delete Account. Note: this permanently removes
 
 ## Still Need Help?
 
-**Email us:** support@junkos.app  
+**Email us:** support@goumuve.com  
 **Call us:** 1-800-JUNK-OS1 (1-800-586-5671)  
 **In-app chat:** Settings → Help & Support → Chat with Support (Mon-Fri 8 AM - 8 PM EST)
 
@@ -172,7 +172,7 @@ For urgent issues on the day of your pickup, call our priority hotline and press
 
 ## Report a Safety Concern
 
-If you experienced unsafe behavior from a hauler or have a safety concern about a service provider, please contact us immediately at safety@junkos.app or call 1-800-586-5671 and press 2. We take safety reports very seriously and investigate all claims within 24 hours.
+If you experienced unsafe behavior from a hauler or have a safety concern about a service provider, please contact us immediately at safety@goumuve.com or call 1-800-586-5671 and press 2. We take safety reports very seriously and investigate all claims within 24 hours.
 
 ---
 
@@ -180,7 +180,7 @@ If you experienced unsafe behavior from a hauler or have a safety concern about 
 
 We're always improving! Share your suggestions:
 - **In-app:** Settings → Send Feedback
-- **Email:** feedback@junkos.app
-- **App Store Review:** We read every review and use your input to make JunkOS better
+- **Email:** feedback@goumuve.com
+- **App Store Review:** We read every review and use your input to make Umuve better
 
-Thank you for choosing JunkOS! 🚀
+Thank you for choosing Umuve! 🚀

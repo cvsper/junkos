@@ -1,6 +1,6 @@
 //
 //  EnhancedWelcomeView.swift
-//  JunkOS
+//  Umuve
 //
 //  Enhanced welcome/splash screen (LoadUp-inspired)
 //
@@ -26,7 +26,7 @@ struct EnhancedWelcomeView: View {
             )
             .ignoresSafeArea()
             
-            VStack(spacing: JunkSpacing.xxlarge) {
+            VStack(spacing: UmuveSpacing.xxlarge) {
                 Spacer()
                 
                 // Logo
@@ -43,7 +43,7 @@ struct EnhancedWelcomeView: View {
                 // Get Started button
                 getStartedButton
             }
-            .padding(JunkSpacing.large)
+            .padding(UmuveSpacing.large)
         }
         .onAppear {
             withAnimation(.easeInOut(duration: 0.8)) {
@@ -62,7 +62,7 @@ struct EnhancedWelcomeView: View {
     
     // MARK: - Logo Section
     private var logoSection: some View {
-        VStack(spacing: JunkSpacing.normal) {
+        VStack(spacing: UmuveSpacing.normal) {
             ZStack {
                 Circle()
                     .fill(Color.white)
@@ -76,13 +76,13 @@ struct EnhancedWelcomeView: View {
             .scaleEffect(isAnimating ? 1.0 : 0.8)
             .opacity(isAnimating ? 1.0 : 0)
             
-            Text("JunkOS")
+            Text("Umuve")
                 .font(.system(size: 48, weight: .bold))
                 .foregroundColor(.white)
                 .opacity(isAnimating ? 1.0 : 0)
             
             Text("Professional Junk Removal")
-                .font(JunkTypography.h3Font)
+                .font(UmuveTypography.h3Font)
                 .foregroundColor(.white.opacity(0.9))
                 .opacity(isAnimating ? 1.0 : 0)
         }
@@ -90,46 +90,46 @@ struct EnhancedWelcomeView: View {
     
     // MARK: - Trust Badges Row
     private var trustBadgesRow: some View {
-        HStack(spacing: JunkSpacing.xlarge) {
-            VStack(spacing: JunkSpacing.small) {
+        HStack(spacing: UmuveSpacing.xlarge) {
+            VStack(spacing: UmuveSpacing.small) {
                 Image(systemName: "star.fill")
                     .font(.system(size: 28))
                     .foregroundColor(.categoryYellow)
                 
                 Text("4.9/5")
-                    .font(JunkTypography.bodyFont.weight(.bold))
+                    .font(UmuveTypography.bodyFont.weight(.bold))
                     .foregroundColor(.white)
                 
                 Text("Rating")
-                    .font(JunkTypography.captionFont)
+                    .font(UmuveTypography.captionFont)
                     .foregroundColor(.white.opacity(0.8))
             }
             
-            VStack(spacing: JunkSpacing.small) {
+            VStack(spacing: UmuveSpacing.small) {
                 Image(systemName: "checkmark.circle.fill")
                     .font(.system(size: 28))
                     .foregroundColor(.white)
                 
                 Text("2,500+")
-                    .font(JunkTypography.bodyFont.weight(.bold))
+                    .font(UmuveTypography.bodyFont.weight(.bold))
                     .foregroundColor(.white)
                 
                 Text("Jobs Done")
-                    .font(JunkTypography.captionFont)
+                    .font(UmuveTypography.captionFont)
                     .foregroundColor(.white.opacity(0.8))
             }
             
-            VStack(spacing: JunkSpacing.small) {
+            VStack(spacing: UmuveSpacing.small) {
                 Image(systemName: "shield.fill")
                     .font(.system(size: 28))
                     .foregroundColor(.categoryBlue)
                 
                 Text("Insured")
-                    .font(JunkTypography.bodyFont.weight(.bold))
+                    .font(UmuveTypography.bodyFont.weight(.bold))
                     .foregroundColor(.white)
                 
                 Text("& Licensed")
-                    .font(JunkTypography.captionFont)
+                    .font(UmuveTypography.captionFont)
                     .foregroundColor(.white.opacity(0.8))
             }
         }
@@ -140,20 +140,20 @@ struct EnhancedWelcomeView: View {
     
     // MARK: - How It Works Section
     private var howItWorksSection: some View {
-        VStack(alignment: .leading, spacing: JunkSpacing.normal) {
+        VStack(alignment: .leading, spacing: UmuveSpacing.normal) {
             Text("How it works")
-                .font(JunkTypography.h2Font)
+                .font(UmuveTypography.h2Font)
                 .foregroundColor(.white)
                 .frame(maxWidth: .infinity, alignment: .leading)
             
-            VStack(spacing: JunkSpacing.medium) {
+            VStack(spacing: UmuveSpacing.medium) {
                 WelcomeStep(number: 1, text: "Choose your service")
                 WelcomeStep(number: 2, text: "Set pickup location")
                 WelcomeStep(number: 3, text: "Get instant quote")
                 WelcomeStep(number: 4, text: "We haul it away")
             }
         }
-        .padding(JunkSpacing.large)
+        .padding(UmuveSpacing.large)
         .background(
             RoundedRectangle(cornerRadius: 20)
                 .fill(Color.white.opacity(0.2))
@@ -177,7 +177,7 @@ struct EnhancedWelcomeView: View {
         }) {
             HStack {
                 Text("Get Started")
-                    .font(JunkTypography.h3Font)
+                    .font(UmuveTypography.h3Font)
                     .foregroundColor(.loadUpGreen)
                 
                 Image(systemName: "arrow.right")
@@ -202,19 +202,19 @@ struct WelcomeStep: View {
     let text: String
     
     var body: some View {
-        HStack(spacing: JunkSpacing.normal) {
+        HStack(spacing: UmuveSpacing.normal) {
             ZStack {
                 Circle()
                     .fill(Color.white)
                     .frame(width: 36, height: 36)
                 
                 Text("\(number)")
-                    .font(JunkTypography.bodyFont.weight(.bold))
+                    .font(UmuveTypography.bodyFont.weight(.bold))
                     .foregroundColor(.loadUpGreen)
             }
             
             Text(text)
-                .font(JunkTypography.bodyFont)
+                .font(UmuveTypography.bodyFont)
                 .foregroundColor(.white)
             
             Spacer()

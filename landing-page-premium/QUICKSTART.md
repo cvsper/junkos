@@ -1,4 +1,4 @@
-# ⚡ Quick Start - JunkOS Premium Landing Page
+# ⚡ Quick Start - Umuve Premium Landing Page
 
 **Get your award-winning landing page live in 5 minutes.**
 
@@ -73,7 +73,7 @@ Before deploying:
 ### Change Colors
 Edit `styles.css` line 16-20:
 ```css
---color-accent: #10b981;        /* Your brand color */
+--color-accent: #DC2626;        /* Umuve red */
 --color-secondary: #a855f7;     /* Secondary accent */
 ```
 
@@ -140,7 +140,7 @@ After deploying:
 1. Go to Vercel dashboard
 2. Select your project
 3. Settings → Domains
-4. Add your domain (e.g., `junkos.com`)
+4. Add your domain (e.g., `goumuve.com`)
 5. Update your DNS:
    - **A Record**: Point to Vercel IP
    - **CNAME**: Point www to `cname.vercel-dns.com`

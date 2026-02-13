@@ -1,5 +1,5 @@
 # =============================================================================
-# JunkOS Backend CI
+# Umuve Backend CI
 # =============================================================================
 # Required GitHub Secrets:
 #   (none required for CI -- tests run against local SQLite/Postgres service)
@@ -47,7 +47,7 @@ jobs:
           flake8 . \
             --max-line-length=120 \
             --ignore=E501,W503 \
-            --exclude=venv,__pycache__,migrations,junkos.db,uploads
+            --exclude=venv,__pycache__,migrations,umuve.db,uploads
 
   import-check:
     name: Import Check
@@ -143,7 +143,7 @@ jobs:
       postgres:
         image: postgres:15
         env:
-          POSTGRES_DB: junkos_test
+          POSTGRES_DB: umuve_test
           POSTGRES_USER: test
           POSTGRES_PASSWORD: test
         options: >-
@@ -174,7 +174,7 @@ jobs:
       - name: Run pytest
         working-directory: backend
         env:
-          DATABASE_URL: postgresql://test:test@localhost:5432/junkos_test
+          DATABASE_URL: postgresql://test:test@localhost:5432/umuve_test
           FLASK_ENV: testing
           SECRET_KEY: ci-test-secret-key
         run: |

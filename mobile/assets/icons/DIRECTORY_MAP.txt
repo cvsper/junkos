@@ -1,4 +1,4 @@
-JunkOS iOS App Icon Assets
+Umuve iOS App Icon Assets
 Location: ~/Documents/programs/webapps/junkos/mobile/assets/icons/
 
 icons/

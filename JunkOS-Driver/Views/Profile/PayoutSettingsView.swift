@@ -1,6 +1,6 @@
 //
 //  PayoutSettingsView.swift
-//  JunkOS Driver
+//  Umuve Pro
 //
 //  Payout method management — bank account details for driver payouts.
 //

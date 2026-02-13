@@ -1,6 +1,6 @@
 //
 //  NotificationManager.swift
-//  JunkOS Driver
+//  Umuve Pro
 //
 //  Push notification setup, permissions, token registration, and local alerts.
 //

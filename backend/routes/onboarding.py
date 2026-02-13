@@ -1,5 +1,5 @@
 """
-Driver Onboarding API routes for JunkOS.
+Driver Onboarding API routes for Umuve.
 Handles the driver onboarding pipeline: document upload, submission, and admin review.
 """
 

@@ -41,7 +41,7 @@ unless unit_test_target
   
   # Set bundle identifier
   unit_test_target.build_configurations.each do |config|
-    config.build_settings['PRODUCT_BUNDLE_IDENTIFIER'] = 'com.junkos.app.tests'
+    config.build_settings['PRODUCT_BUNDLE_IDENTIFIER'] = 'com.goumuve.app.tests'
     config.build_settings['CODE_SIGN_STYLE'] = 'Automatic'
     config.build_settings['INFOPLIST_FILE'] = 'JunkOSTests/Info.plist'
     config.build_settings['SWIFT_VERSION'] = '5.0'
@@ -67,7 +67,7 @@ unless ui_test_target
   
   # Set bundle identifier
   ui_test_target.build_configurations.each do |config|
-    config.build_settings['PRODUCT_BUNDLE_IDENTIFIER'] = 'com.junkos.app.uitests'
+    config.build_settings['PRODUCT_BUNDLE_IDENTIFIER'] = 'com.goumuve.app.uitests'
     config.build_settings['CODE_SIGN_STYLE'] = 'Automatic'
     config.build_settings['INFOPLIST_FILE'] = 'JunkOSUITests/Info.plist'
     config.build_settings['SWIFT_VERSION'] = '5.0'

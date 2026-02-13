@@ -1,6 +1,6 @@
 //
 //  ServiceSelectionView.swift
-//  JunkOS
+//  Umuve
 //
 //  Service selection screen with grid layout
 //  SF Symbols Reference: https://developer.apple.com/sf-symbols/
@@ -22,7 +22,7 @@ struct ServiceSelectionView: View {
     
     var body: some View {
         ScrollView {
-            LazyVStack(spacing: JunkSpacing.xxlarge) {
+            LazyVStack(spacing: UmuveSpacing.xxlarge) {
                 // Header
                 ScreenHeader(
                     title: "Select Services",
@@ -58,7 +58,7 @@ struct ServiceSelectionView: View {
                         services: viewModel.selectedServices,
                         photoCount: bookingData.photos.count
                     )
-                    .padding(.top, JunkSpacing.normal)
+                    .padding(.top, UmuveSpacing.normal)
                 }
                 
                 // LoadUp Feature #6: Items We Don't Take
@@ -69,9 +69,9 @@ struct ServiceSelectionView: View {
                 
                 Spacer()
             }
-            .padding(JunkSpacing.large)
+            .padding(UmuveSpacing.large)
         }
-        .background(Color.junkBackground.ignoresSafeArea())
+        .background(Color.umuveBackground.ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
         .refreshable {
             await refreshServices()
@@ -106,12 +106,12 @@ struct ServiceSelectionView: View {
     
     // MARK: - LoadUp Feature #1: Pricing Tier Selector
     private var pricingTierSelector: some View {
-        VStack(alignment: .leading, spacing: JunkSpacing.normal) {
+        VStack(alignment: .leading, spacing: UmuveSpacing.normal) {
             Text("Service Type")
-                .font(JunkTypography.h3Font)
-                .foregroundColor(.junkText)
+                .font(UmuveTypography.h3Font)
+                .foregroundColor(.umuveText)
             
-            VStack(spacing: JunkSpacing.small) {
+            VStack(spacing: UmuveSpacing.small) {
                 ForEach(ServiceTier.allCases, id: \.self) { tier in
                     Button(action: {
                         withAnimation(.easeInOut(duration: 0.2)) {
@@ -121,12 +121,12 @@ struct ServiceSelectionView: View {
                         HStack {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(tier.rawValue)
-                                    .font(JunkTypography.bodyFont.weight(.semibold))
-                                    .foregroundColor(.junkText)
+                                    .font(UmuveTypography.bodyFont.weight(.semibold))
+                                    .foregroundColor(.umuveText)
                                 
                                 Text(tier.description)
-                                    .font(JunkTypography.bodySmallFont)
-                                    .foregroundColor(.junkTextMuted)
+                                    .font(UmuveTypography.bodySmallFont)
+                                    .foregroundColor(.umuveTextMuted)
                             }
                             
                             Spacer()
@@ -134,19 +134,19 @@ struct ServiceSelectionView: View {
                             if bookingData.serviceTier == tier {
                                 Image(systemName: "checkmark.circle.fill")
                                     .font(.system(size: 24))
-                                    .foregroundColor(.junkPrimary)
+                                    .foregroundColor(.umuvePrimary)
                             } else {
                                 Image(systemName: "circle")
                                     .font(.system(size: 24))
-                                    .foregroundColor(.junkBorder)
+                                    .foregroundColor(.umuveBorder)
                             }
                         }
-                        .padding(JunkSpacing.normal)
-                        .background(Color.junkWhite)
+                        .padding(UmuveSpacing.normal)
+                        .background(Color.umuveWhite)
                         .cornerRadius(12)
                         .overlay(
                             RoundedRectangle(cornerRadius: 12)
-                                .stroke(bookingData.serviceTier == tier ? Color.junkPrimary : Color.junkBorder, lineWidth: 2)
+                                .stroke(bookingData.serviceTier == tier ? Color.umuvePrimary : Color.umuveBorder, lineWidth: 2)
                         )
                     }
                     .buttonStyle(PlainButtonStyle())
@@ -158,9 +158,9 @@ struct ServiceSelectionView: View {
     // MARK: - Service Grid
     private var serviceGrid: some View {
         LazyVGrid(columns: [
-            GridItem(.flexible(), spacing: JunkSpacing.normal),
-            GridItem(.flexible(), spacing: JunkSpacing.normal)
-        ], spacing: JunkSpacing.normal) {
+            GridItem(.flexible(), spacing: UmuveSpacing.normal),
+            GridItem(.flexible(), spacing: UmuveSpacing.normal)
+        ], spacing: UmuveSpacing.normal) {
             ForEach(viewModel.availableServices) { service in
                 ServiceCard(
                     service: service,
@@ -175,39 +175,39 @@ struct ServiceSelectionView: View {
     
     // MARK: - LoadUp Feature #5: Property Cleanout Section
     private var propertyCleanoutSection: some View {
-        VStack(alignment: .leading, spacing: JunkSpacing.normal) {
+        VStack(alignment: .leading, spacing: UmuveSpacing.normal) {
             Text("Property Cleanout Details")
-                .font(JunkTypography.h2Font)
-                .foregroundColor(.junkText)
+                .font(UmuveTypography.h2Font)
+                .foregroundColor(.umuveText)
             
             // Cleanout Type
-            VStack(alignment: .leading, spacing: JunkSpacing.small) {
+            VStack(alignment: .leading, spacing: UmuveSpacing.small) {
                 Text("Cleanout Type")
-                    .font(JunkTypography.h3Font)
-                    .foregroundColor(.junkText)
+                    .font(UmuveTypography.h3Font)
+                    .foregroundColor(.umuveText)
                 
                 ScrollView(.horizontal, showsIndicators: false) {
-                    LazyHStack(spacing: JunkSpacing.small) {
+                    LazyHStack(spacing: UmuveSpacing.small) {
                         ForEach(CleanoutType.allCases, id: \.self) { type in
                             Button(action: {
                                 bookingData.cleanoutType = type
                             }) {
-                                VStack(spacing: JunkSpacing.small) {
+                                VStack(spacing: UmuveSpacing.small) {
                                     Image(systemName: type.icon)
                                         .font(.system(size: 24))
-                                        .foregroundColor(bookingData.cleanoutType == type ? .white : .junkPrimary)
+                                        .foregroundColor(bookingData.cleanoutType == type ? .white : .umuvePrimary)
                                     
                                     Text(type.rawValue)
-                                        .font(JunkTypography.captionFont)
-                                        .foregroundColor(bookingData.cleanoutType == type ? .white : .junkText)
+                                        .font(UmuveTypography.captionFont)
+                                        .foregroundColor(bookingData.cleanoutType == type ? .white : .umuveText)
                                 }
                                 .frame(width: 100)
-                                .padding(JunkSpacing.small)
-                                .background(bookingData.cleanoutType == type ? Color.junkPrimary : Color.junkWhite)
+                                .padding(UmuveSpacing.small)
+                                .background(bookingData.cleanoutType == type ? Color.umuvePrimary : Color.umuveWhite)
                                 .cornerRadius(12)
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 12)
-                                        .stroke(bookingData.cleanoutType == type ? Color.junkPrimary : Color.junkBorder, lineWidth: 2)
+                                        .stroke(bookingData.cleanoutType == type ? Color.umuvePrimary : Color.umuveBorder, lineWidth: 2)
                                 )
                             }
                             .buttonStyle(PlainButtonStyle())
@@ -217,16 +217,16 @@ struct ServiceSelectionView: View {
             }
             
             // Room Selector
-            VStack(alignment: .leading, spacing: JunkSpacing.small) {
+            VStack(alignment: .leading, spacing: UmuveSpacing.small) {
                 Text("Select Rooms")
-                    .font(JunkTypography.h3Font)
-                    .foregroundColor(.junkText)
+                    .font(UmuveTypography.h3Font)
+                    .foregroundColor(.umuveText)
                 
                 LazyVGrid(columns: [
-                    GridItem(.flexible(), spacing: JunkSpacing.small),
-                    GridItem(.flexible(), spacing: JunkSpacing.small),
-                    GridItem(.flexible(), spacing: JunkSpacing.small)
-                ], spacing: JunkSpacing.small) {
+                    GridItem(.flexible(), spacing: UmuveSpacing.small),
+                    GridItem(.flexible(), spacing: UmuveSpacing.small),
+                    GridItem(.flexible(), spacing: UmuveSpacing.small)
+                ], spacing: UmuveSpacing.small) {
                     ForEach(RoomOption.all) { room in
                         Button(action: {
                             if bookingData.selectedRooms.contains(room.id) {
@@ -238,19 +238,19 @@ struct ServiceSelectionView: View {
                             VStack(spacing: 4) {
                                 Image(systemName: room.icon)
                                     .font(.system(size: 20))
-                                    .foregroundColor(bookingData.selectedRooms.contains(room.id) ? .white : .junkPrimary)
+                                    .foregroundColor(bookingData.selectedRooms.contains(room.id) ? .white : .umuvePrimary)
                                 
                                 Text(room.name)
-                                    .font(JunkTypography.smallFont)
-                                    .foregroundColor(bookingData.selectedRooms.contains(room.id) ? .white : .junkText)
+                                    .font(UmuveTypography.smallFont)
+                                    .foregroundColor(bookingData.selectedRooms.contains(room.id) ? .white : .umuveText)
                             }
                             .frame(maxWidth: .infinity)
-                            .padding(JunkSpacing.small)
-                            .background(bookingData.selectedRooms.contains(room.id) ? Color.junkPrimary : Color.junkWhite)
+                            .padding(UmuveSpacing.small)
+                            .background(bookingData.selectedRooms.contains(room.id) ? Color.umuvePrimary : Color.umuveWhite)
                             .cornerRadius(8)
                             .overlay(
                                 RoundedRectangle(cornerRadius: 8)
-                                    .stroke(bookingData.selectedRooms.contains(room.id) ? Color.junkPrimary : Color.junkBorder, lineWidth: 1)
+                                    .stroke(bookingData.selectedRooms.contains(room.id) ? Color.umuvePrimary : Color.umuveBorder, lineWidth: 1)
                             )
                         }
                         .buttonStyle(PlainButtonStyle())
@@ -258,20 +258,20 @@ struct ServiceSelectionView: View {
                 }
             }
         }
-        .padding(JunkSpacing.normal)
-        .background(Color.junkWhite)
+        .padding(UmuveSpacing.normal)
+        .background(Color.umuveWhite)
         .cornerRadius(16)
     }
     
     // MARK: - LoadUp Feature #6: Item Selector
     private var itemSelectorSection: some View {
-        VStack(alignment: .leading, spacing: JunkSpacing.normal) {
+        VStack(alignment: .leading, spacing: UmuveSpacing.normal) {
             Text("Specific Items (Optional)")
-                .font(JunkTypography.h3Font)
-                .foregroundColor(.junkText)
+                .font(UmuveTypography.h3Font)
+                .foregroundColor(.umuveText)
             
             ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(spacing: JunkSpacing.small) {
+                LazyHStack(spacing: UmuveSpacing.small) {
                     ForEach(ItemOption.all) { item in
                         Button(action: {
                             if bookingData.selectedItems.contains(item.id) {
@@ -283,23 +283,23 @@ struct ServiceSelectionView: View {
                             VStack(spacing: 4) {
                                 Image(systemName: item.icon)
                                     .font(.system(size: 24))
-                                    .foregroundColor(bookingData.selectedItems.contains(item.id) ? .white : .junkPrimary)
+                                    .foregroundColor(bookingData.selectedItems.contains(item.id) ? .white : .umuvePrimary)
                                 
                                 Text(item.name)
-                                    .font(JunkTypography.captionFont)
-                                    .foregroundColor(bookingData.selectedItems.contains(item.id) ? .white : .junkText)
+                                    .font(UmuveTypography.captionFont)
+                                    .foregroundColor(bookingData.selectedItems.contains(item.id) ? .white : .umuveText)
                                 
                                 Text(item.estimatedWeight)
-                                    .font(JunkTypography.smallFont)
-                                    .foregroundColor(bookingData.selectedItems.contains(item.id) ? .white.opacity(0.8) : .junkTextMuted)
+                                    .font(UmuveTypography.smallFont)
+                                    .foregroundColor(bookingData.selectedItems.contains(item.id) ? .white.opacity(0.8) : .umuveTextMuted)
                             }
                             .frame(width: 100)
-                            .padding(JunkSpacing.small)
-                            .background(bookingData.selectedItems.contains(item.id) ? Color.junkPrimary : Color.junkWhite)
+                            .padding(UmuveSpacing.small)
+                            .background(bookingData.selectedItems.contains(item.id) ? Color.umuvePrimary : Color.umuveWhite)
                             .cornerRadius(12)
                             .overlay(
                                 RoundedRectangle(cornerRadius: 12)
-                                    .stroke(bookingData.selectedItems.contains(item.id) ? Color.junkPrimary : Color.junkBorder, lineWidth: 2)
+                                    .stroke(bookingData.selectedItems.contains(item.id) ? Color.umuvePrimary : Color.umuveBorder, lineWidth: 2)
                             )
                         }
                         .buttonStyle(PlainButtonStyle())
@@ -311,12 +311,12 @@ struct ServiceSelectionView: View {
     
     // MARK: - LoadUp Feature #6: Weight Estimator
     private var weightEstimatorSection: some View {
-        VStack(alignment: .leading, spacing: JunkSpacing.normal) {
+        VStack(alignment: .leading, spacing: UmuveSpacing.normal) {
             Text("Estimated Weight")
-                .font(JunkTypography.h3Font)
-                .foregroundColor(.junkText)
+                .font(UmuveTypography.h3Font)
+                .foregroundColor(.umuveText)
             
-            HStack(spacing: JunkSpacing.small) {
+            HStack(spacing: UmuveSpacing.small) {
                 ForEach(WeightCategory.allCases, id: \.self) { category in
                     Button(action: {
                         bookingData.estimatedWeight = category
@@ -324,20 +324,20 @@ struct ServiceSelectionView: View {
                         VStack(spacing: 4) {
                             Image(systemName: category.icon)
                                 .font(.system(size: 20))
-                                .foregroundColor(bookingData.estimatedWeight == category ? .white : .junkPrimary)
+                                .foregroundColor(bookingData.estimatedWeight == category ? .white : .umuvePrimary)
                             
                             Text(category.rawValue)
-                                .font(JunkTypography.smallFont)
-                                .foregroundColor(bookingData.estimatedWeight == category ? .white : .junkText)
+                                .font(UmuveTypography.smallFont)
+                                .foregroundColor(bookingData.estimatedWeight == category ? .white : .umuveText)
                                 .multilineTextAlignment(.center)
                         }
                         .frame(maxWidth: .infinity)
-                        .padding(JunkSpacing.small)
-                        .background(bookingData.estimatedWeight == category ? Color.junkPrimary : Color.junkWhite)
+                        .padding(UmuveSpacing.small)
+                        .background(bookingData.estimatedWeight == category ? Color.umuvePrimary : Color.umuveWhite)
                         .cornerRadius(8)
                         .overlay(
                             RoundedRectangle(cornerRadius: 8)
-                                .stroke(bookingData.estimatedWeight == category ? Color.junkPrimary : Color.junkBorder, lineWidth: 1)
+                                .stroke(bookingData.estimatedWeight == category ? Color.umuvePrimary : Color.umuveBorder, lineWidth: 1)
                         )
                     }
                     .buttonStyle(PlainButtonStyle())
@@ -348,44 +348,44 @@ struct ServiceSelectionView: View {
     
     // MARK: - LoadUp Feature #6: Items We Don't Take
     private var itemsWeDoNotTakeSection: some View {
-        JunkCard {
-            VStack(alignment: .leading, spacing: JunkSpacing.small) {
+        UmuveCard {
+            VStack(alignment: .leading, spacing: UmuveSpacing.small) {
                 HStack {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .foregroundColor(.orange)
                     
                     Text("Items We Don't Take")
-                        .font(JunkTypography.h3Font)
-                        .foregroundColor(.junkText)
+                        .font(UmuveTypography.h3Font)
+                        .foregroundColor(.umuveText)
                 }
                 
                 Text("• Hazardous materials (paint, chemicals, asbestos)\n• Medical waste\n• Dead animals\n• Firearms or ammunition\n• Human waste")
-                    .font(JunkTypography.bodySmallFont)
-                    .foregroundColor(.junkTextMuted)
-                    .padding(.top, JunkSpacing.small)
+                    .font(UmuveTypography.bodySmallFont)
+                    .foregroundColor(.umuveTextMuted)
+                    .padding(.top, UmuveSpacing.small)
             }
-            .padding(JunkSpacing.normal)
+            .padding(UmuveSpacing.normal)
         }
         .background(Color.orange.opacity(0.05))
     }
     
     // MARK: - Details Section
     private var detailsSection: some View {
-        VStack(alignment: .leading, spacing: JunkSpacing.medium) {
+        VStack(alignment: .leading, spacing: UmuveSpacing.medium) {
             Text("Additional Details (Optional)")
-                .font(JunkTypography.h3Font)
-                .foregroundColor(.junkText)
+                .font(UmuveTypography.h3Font)
+                .foregroundColor(.umuveText)
             
             TextEditor(text: $viewModel.serviceDetails)
-                .font(JunkTypography.bodyFont)
-                .foregroundColor(.junkText)
+                .font(UmuveTypography.bodyFont)
+                .foregroundColor(.umuveText)
                 .frame(height: 100)
-                .padding(JunkSpacing.small)
-                .background(Color.junkWhite)
+                .padding(UmuveSpacing.small)
+                .background(Color.umuveWhite)
                 .cornerRadius(12)
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color.junkBorder, lineWidth: 2)
+                        .stroke(Color.umuveBorder, lineWidth: 2)
                 )
         }
     }
@@ -398,9 +398,9 @@ struct ServiceSelectionView: View {
                 Text("Continue →")
             }
         )
-        .buttonStyle(JunkPrimaryButtonStyle())
-        .padding(JunkSpacing.large)
-        .background(Color.junkBackground)
+        .buttonStyle(UmuvePrimaryButtonStyle())
+        .padding(UmuveSpacing.large)
+        .background(Color.umuveBackground)
         .disabled(!viewModel.hasSelectedServices)
         .opacity(viewModel.hasSelectedServices ? 1 : 0.5)
     }
@@ -415,17 +415,17 @@ struct ServiceCard: View {
     
     var body: some View {
         Button(action: onTap) {
-            VStack(spacing: JunkSpacing.medium) {
+            VStack(spacing: UmuveSpacing.medium) {
                 // Popular badge
                 if service.isPopular {
                     HStack {
                         Spacer()
                         Text("POPULAR")
-                            .font(JunkTypography.smallFont)
+                            .font(UmuveTypography.smallFont)
                             .foregroundColor(.white)
                             .padding(.horizontal, 8)
                             .padding(.vertical, 4)
-                            .background(Color.junkCTA)
+                            .background(Color.umuveCTA)
                             .cornerRadius(8)
                     }
                 } else {
@@ -436,36 +436,36 @@ struct ServiceCard: View {
                 // https://developer.apple.com/design/human-interface-guidelines/sf-symbols
                 Image(systemName: service.icon)
                     .font(.system(size: 40))
-                    .foregroundColor(.junkPrimary)
+                    .foregroundColor(.umuvePrimary)
                 
                 // Name
                 Text(service.name)
-                    .font(JunkTypography.bodyFont.weight(.semibold))
-                    .foregroundColor(.junkText)
+                    .font(UmuveTypography.bodyFont.weight(.semibold))
+                    .foregroundColor(.umuveText)
                     .multilineTextAlignment(.center)
                     .lineLimit(2)
                 
                 // Price
                 Text("from \(service.price)")
-                    .font(JunkTypography.captionFont)
-                    .foregroundColor(.junkTextMuted)
+                    .font(UmuveTypography.captionFont)
+                    .foregroundColor(.umuveTextMuted)
                 
                 // Checkmark
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.system(size: 24))
-                        .foregroundColor(.junkPrimary)
+                        .foregroundColor(.umuvePrimary)
                 } else {
                     Spacer().frame(height: 24)
                 }
             }
             .frame(maxWidth: .infinity)
-            .padding(JunkSpacing.normal)
-            .background(Color.junkWhite)
+            .padding(UmuveSpacing.normal)
+            .background(Color.umuveWhite)
             .cornerRadius(16)
             .overlay(
                 RoundedRectangle(cornerRadius: 16)
-                    .stroke(isSelected ? Color.junkPrimary : Color.junkBorder, lineWidth: 2)
+                    .stroke(isSelected ? Color.umuvePrimary : Color.umuveBorder, lineWidth: 2)
             )
             // OPTIMIZATION: Only apply shadow when not scrolling
             .shadow(color: isScrolling ? .clear : .black.opacity(isSelected ? 0.1 : 0.06), radius: 4, x: 0, y: 2)

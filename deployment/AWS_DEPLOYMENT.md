@@ -1,6 +1,6 @@
-# JunkOS Backend - Enterprise AWS Deployment
+# Umuve Backend - Enterprise AWS Deployment
 
-Complete guide for deploying JunkOS backend on AWS with ECS/Fargate, RDS, and full production infrastructure.
+Complete guide for deploying Umuve backend on AWS with ECS/Fargate, RDS, and full production infrastructure.
 
 ## Overview
 
@@ -112,7 +112,7 @@ aws configure
 # Create VPC
 aws ec2 create-vpc \
   --cidr-block 10.0.0.0/16 \
-  --tag-specifications 'ResourceType=vpc,Tags=[{Key=Name,Value=junkos-vpc}]'
+  --tag-specifications 'ResourceType=vpc,Tags=[{Key=Name,Value=umuve-vpc}]'
 
 # Enable DNS
 aws ec2 modify-vpc-attribute \
@@ -128,49 +128,49 @@ aws ec2 create-subnet \
   --vpc-id vpc-xxxxx \
   --cidr-block 10.0.1.0/24 \
   --availability-zone us-east-1a \
-  --tag-specifications 'ResourceType=subnet,Tags=[{Key=Name,Value=junkos-public-1a}]'
+  --tag-specifications 'ResourceType=subnet,Tags=[{Key=Name,Value=umuve-public-1a}]'
 
 # Public Subnet 2 (us-east-1b)
 aws ec2 create-subnet \
   --vpc-id vpc-xxxxx \
   --cidr-block 10.0.2.0/24 \
   --availability-zone us-east-1b \
-  --tag-specifications 'ResourceType=subnet,Tags=[{Key=Name,Value=junkos-public-1b}]'
+  --tag-specifications 'ResourceType=subnet,Tags=[{Key=Name,Value=umuve-public-1b}]'
 
 # Private Subnet 1 (us-east-1a) - for ECS tasks
 aws ec2 create-subnet \
   --vpc-id vpc-xxxxx \
   --cidr-block 10.0.10.0/24 \
   --availability-zone us-east-1a \
-  --tag-specifications 'ResourceType=subnet,Tags=[{Key=Name,Value=junkos-private-1a}]'
+  --tag-specifications 'ResourceType=subnet,Tags=[{Key=Name,Value=umuve-private-1a}]'
 
 # Private Subnet 2 (us-east-1b) - for ECS tasks
 aws ec2 create-subnet \
   --vpc-id vpc-xxxxx \
   --cidr-block 10.0.11.0/24 \
   --availability-zone us-east-1b \
-  --tag-specifications 'ResourceType=subnet,Tags=[{Key=Name,Value=junkos-private-1b}]'
+  --tag-specifications 'ResourceType=subnet,Tags=[{Key=Name,Value=umuve-private-1b}]'
 
 # Database Subnet 1 (us-east-1a)
 aws ec2 create-subnet \
   --vpc-id vpc-xxxxx \
   --cidr-block 10.0.20.0/24 \
   --availability-zone us-east-1a \
-  --tag-specifications 'ResourceType=subnet,Tags=[{Key=Name,Value=junkos-db-1a}]'
+  --tag-specifications 'ResourceType=subnet,Tags=[{Key=Name,Value=umuve-db-1a}]'
 
 # Database Subnet 2 (us-east-1b)
 aws ec2 create-subnet \
   --vpc-id vpc-xxxxx \
   --cidr-block 10.0.21.0/24 \
   --availability-zone us-east-1b \
-  --tag-specifications 'ResourceType=subnet,Tags=[{Key=Name,Value=junkos-db-1b}]'
+  --tag-specifications 'ResourceType=subnet,Tags=[{Key=Name,Value=umuve-db-1b}]'
 ```
 
 #### Create Internet Gateway
 
 ```bash
 aws ec2 create-internet-gateway \
-  --tag-specifications 'ResourceType=internet-gateway,Tags=[{Key=Name,Value=junkos-igw}]'
+  --tag-specifications 'ResourceType=internet-gateway,Tags=[{Key=Name,Value=umuve-igw}]'
 
 aws ec2 attach-internet-gateway \
   --vpc-id vpc-xxxxx \
@@ -183,7 +183,7 @@ aws ec2 attach-internet-gateway \
 # Create public route table
 aws ec2 create-route-table \
   --vpc-id vpc-xxxxx \
-  --tag-specifications 'ResourceType=route-table,Tags=[{Key=Name,Value=junkos-public-rt}]'
+  --tag-specifications 'ResourceType=route-table,Tags=[{Key=Name,Value=umuve-public-rt}]'
 
 # Add route to internet gateway
 aws ec2 create-route \
@@ -206,12 +206,12 @@ aws ec2 allocate-address --domain vpc
 aws ec2 create-nat-gateway \
   --subnet-id subnet-public1 \
   --allocation-id eipalloc-xxxxx \
-  --tag-specifications 'ResourceType=nat-gateway,Tags=[{Key=Name,Value=junkos-nat}]'
+  --tag-specifications 'ResourceType=nat-gateway,Tags=[{Key=Name,Value=umuve-nat}]'
 
 # Create private route table with NAT
 aws ec2 create-route-table \
   --vpc-id vpc-xxxxx \
-  --tag-specifications 'ResourceType=route-table,Tags=[{Key=Name,Value=junkos-private-rt}]'
+  --tag-specifications 'ResourceType=route-table,Tags=[{Key=Name,Value=umuve-private-rt}]'
 
 aws ec2 create-route \
   --route-table-id rtb-private \
@@ -231,18 +231,18 @@ aws ec2 associate-route-table --subnet-id subnet-private2 --route-table-id rtb-p
 
 ```bash
 aws rds create-db-subnet-group \
-  --db-subnet-group-name junkos-db-subnet-group \
-  --db-subnet-group-description "JunkOS database subnet group" \
+  --db-subnet-group-name umuve-db-subnet-group \
+  --db-subnet-group-description "Umuve database subnet group" \
   --subnet-ids subnet-db1 subnet-db2 \
-  --tags Key=Name,Value=junkos-db-subnet-group
+  --tags Key=Name,Value=umuve-db-subnet-group
 ```
 
 #### Create Security Group for RDS
 
 ```bash
 aws ec2 create-security-group \
-  --group-name junkos-db-sg \
-  --description "Security group for JunkOS RDS database" \
+  --group-name umuve-db-sg \
+  --description "Security group for Umuve RDS database" \
   --vpc-id vpc-xxxxx
 
 # Allow PostgreSQL from ECS security group (create ECS SG first, then update)
@@ -262,16 +262,16 @@ echo "Save this password: $DB_PASSWORD"
 
 # Create RDS instance
 aws rds create-db-instance \
-  --db-instance-identifier junkos-prod-db \
+  --db-instance-identifier umuve-prod-db \
   --db-instance-class db.t3.micro \
   --engine postgres \
   --engine-version 15.4 \
-  --master-username junkosadmin \
+  --master-username umuveadmin \
   --master-user-password "$DB_PASSWORD" \
   --allocated-storage 20 \
   --storage-type gp3 \
   --storage-encrypted \
-  --db-subnet-group-name junkos-db-subnet-group \
+  --db-subnet-group-name umuve-db-subnet-group \
   --vpc-security-group-ids sg-db-xxxxx \
   --backup-retention-period 7 \
   --preferred-backup-window "03:00-04:00" \
@@ -279,21 +279,21 @@ aws rds create-db-instance \
   --multi-az \
   --publicly-accessible false \
   --enable-cloudwatch-logs-exports '["postgresql"]' \
-  --tags Key=Name,Value=junkos-prod-db Key=Environment,Value=production
+  --tags Key=Name,Value=umuve-prod-db Key=Environment,Value=production
 ```
 
 **Wait for database to be available (~10 minutes):**
 ```bash
-aws rds wait db-instance-available --db-instance-identifier junkos-prod-db
+aws rds wait db-instance-available --db-instance-identifier umuve-prod-db
 ```
 
 #### Store Database Credentials in Secrets Manager
 
 ```bash
 aws secretsmanager create-secret \
-  --name junkos/production/database \
-  --description "JunkOS production database credentials" \
-  --secret-string "{\"username\":\"junkosadmin\",\"password\":\"$DB_PASSWORD\",\"host\":\"junkos-prod-db.xxxxx.us-east-1.rds.amazonaws.com\",\"port\":5432,\"database\":\"postgres\"}"
+  --name umuve/production/database \
+  --description "Umuve production database credentials" \
+  --secret-string "{\"username\":\"umuveadmin\",\"password\":\"$DB_PASSWORD\",\"host\":\"umuve-prod-db.xxxxx.us-east-1.rds.amazonaws.com\",\"port\":5432,\"database\":\"postgres\"}"
 ```
 
 ---
@@ -303,14 +303,14 @@ aws secretsmanager create-secret \
 ```bash
 # Create ECR repository for Docker images
 aws ecr create-repository \
-  --repository-name junkos/backend \
+  --repository-name umuve/backend \
   --image-scanning-configuration scanOnPush=true \
   --encryption-configuration encryptionType=AES256 \
-  --tags Key=Name,Value=junkos-backend
+  --tags Key=Name,Value=umuve-backend
 
 # Get repository URI
-aws ecr describe-repositories --repository-names junkos/backend
-# Output: 123456789012.dkr.ecr.us-east-1.amazonaws.com/junkos/backend
+aws ecr describe-repositories --repository-names umuve/backend
+# Output: 123456789012.dkr.ecr.us-east-1.amazonaws.com/umuve/backend
 ```
 
 #### Build and Push Docker Image
@@ -321,13 +321,13 @@ aws ecr get-login-password --region us-east-1 | \
   docker login --username AWS --password-stdin 123456789012.dkr.ecr.us-east-1.amazonaws.com
 
 # Build image
-docker build -t junkos/backend:latest .
+docker build -t umuve/backend:latest .
 
 # Tag for ECR
-docker tag junkos/backend:latest 123456789012.dkr.ecr.us-east-1.amazonaws.com/junkos/backend:latest
+docker tag umuve/backend:latest 123456789012.dkr.ecr.us-east-1.amazonaws.com/umuve/backend:latest
 
 # Push to ECR
-docker push 123456789012.dkr.ecr.us-east-1.amazonaws.com/junkos/backend:latest
+docker push 123456789012.dkr.ecr.us-east-1.amazonaws.com/umuve/backend:latest
 ```
 
 **Dockerfile example:**
@@ -354,10 +354,10 @@ CMD ["node", "server.js"]
 
 ```bash
 aws ecs create-cluster \
-  --cluster-name junkos-prod \
+  --cluster-name umuve-prod \
   --capacity-providers FARGATE FARGATE_SPOT \
   --default-capacity-provider-strategy capacityProvider=FARGATE,weight=1 \
-  --tags key=Name,value=junkos-prod key=Environment,value=production
+  --tags key=Name,value=umuve-prod key=Environment,value=production
 ```
 
 #### Create IAM Roles
@@ -381,11 +381,11 @@ cat > ecs-task-execution-trust-policy.json <<EOF
 EOF
 
 aws iam create-role \
-  --role-name junkosEcsTaskExecutionRole \
+  --role-name umuveEcsTaskExecutionRole \
   --assume-role-policy-document file://ecs-task-execution-trust-policy.json
 
 aws iam attach-role-policy \
-  --role-name junkosEcsTaskExecutionRole \
+  --role-name umuveEcsTaskExecutionRole \
   --policy-arn arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
 
 # Add Secrets Manager access
@@ -405,7 +405,7 @@ cat > secrets-policy.json <<EOF
 EOF
 
 aws iam put-role-policy \
-  --role-name junkosEcsTaskExecutionRole \
+  --role-name umuveEcsTaskExecutionRole \
   --policy-name SecretsManagerAccess \
   --policy-document file://secrets-policy.json
 ```
@@ -413,7 +413,7 @@ aws iam put-role-policy \
 **ECS Task Role (for application permissions):**
 ```bash
 aws iam create-role \
-  --role-name junkosEcsTaskRole \
+  --role-name umuveEcsTaskRole \
   --assume-role-policy-document file://ecs-task-execution-trust-policy.json
 
 # Add policies as needed (S3, SES, etc.)
@@ -422,8 +422,8 @@ aws iam create-role \
 #### Create CloudWatch Log Group
 
 ```bash
-aws logs create-log-group --log-group-name /ecs/junkos-backend
-aws logs put-retention-policy --log-group-name /ecs/junkos-backend --retention-in-days 30
+aws logs create-log-group --log-group-name /ecs/umuve-backend
+aws logs put-retention-policy --log-group-name /ecs/umuve-backend --retention-in-days 30
 ```
 
 #### Create ECS Task Definition
@@ -431,17 +431,17 @@ aws logs put-retention-policy --log-group-name /ecs/junkos-backend --retention-i
 ```bash
 cat > task-definition.json <<EOF
 {
-  "family": "junkos-backend",
+  "family": "umuve-backend",
   "networkMode": "awsvpc",
   "requiresCompatibilities": ["FARGATE"],
   "cpu": "512",
   "memory": "1024",
-  "executionRoleArn": "arn:aws:iam::123456789012:role/junkosEcsTaskExecutionRole",
-  "taskRoleArn": "arn:aws:iam::123456789012:role/junkosEcsTaskRole",
+  "executionRoleArn": "arn:aws:iam::123456789012:role/umuveEcsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::123456789012:role/umuveEcsTaskRole",
   "containerDefinitions": [
     {
-      "name": "junkos-backend",
-      "image": "123456789012.dkr.ecr.us-east-1.amazonaws.com/junkos/backend:latest",
+      "name": "umuve-backend",
+      "image": "123456789012.dkr.ecr.us-east-1.amazonaws.com/umuve/backend:latest",
       "portMappings": [
         {
           "containerPort": 8080,
@@ -462,21 +462,21 @@ cat > task-definition.json <<EOF
       "secrets": [
         {
           "name": "DATABASE_URL",
-          "valueFrom": "arn:aws:secretsmanager:us-east-1:123456789012:secret:junkos/production/database:DATABASE_URL::"
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:123456789012:secret:umuve/production/database:DATABASE_URL::"
         },
         {
           "name": "JWT_SECRET",
-          "valueFrom": "arn:aws:secretsmanager:us-east-1:123456789012:secret:junkos/production/app:JWT_SECRET::"
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:123456789012:secret:umuve/production/app:JWT_SECRET::"
         },
         {
           "name": "STRIPE_SECRET_KEY",
-          "valueFrom": "arn:aws:secretsmanager:us-east-1:123456789012:secret:junkos/production/stripe:SECRET_KEY::"
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:123456789012:secret:umuve/production/stripe:SECRET_KEY::"
         }
       ],
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {
-          "awslogs-group": "/ecs/junkos-backend",
+          "awslogs-group": "/ecs/umuve-backend",
           "awslogs-region": "us-east-1",
           "awslogs-stream-prefix": "ecs"
         }
@@ -501,8 +501,8 @@ aws ecs register-task-definition --cli-input-json file://task-definition.json
 ```bash
 # ALB Security Group
 aws ec2 create-security-group \
-  --group-name junkos-alb-sg \
-  --description "Security group for JunkOS ALB" \
+  --group-name umuve-alb-sg \
+  --description "Security group for Umuve ALB" \
   --vpc-id vpc-xxxxx
 
 aws ec2 authorize-security-group-ingress \
@@ -516,7 +516,7 @@ aws ec2 authorize-security-group-ingress \
 # ECS Security Group
 aws ec2 create-security-group \
   --group-name junkos-ecs-sg \
-  --description "Security group for JunkOS ECS tasks" \
+  --description "Security group for Umuve ECS tasks" \
   --vpc-id vpc-xxxxx
 
 aws ec2 authorize-security-group-ingress \
@@ -532,20 +532,20 @@ aws ec2 authorize-security-group-ingress \
 
 ```bash
 aws elbv2 create-load-balancer \
-  --name junkos-alb \
+  --name umuve-alb \
   --subnets subnet-public1 subnet-public2 \
   --security-groups sg-alb-xxxxx \
   --scheme internet-facing \
   --type application \
   --ip-address-type ipv4 \
-  --tags Key=Name,Value=junkos-alb
+  --tags Key=Name,Value=umuve-alb
 ```
 
 #### Create Target Group
 
 ```bash
 aws elbv2 create-target-group \
-  --name junkos-backend-tg \
+  --name umuve-backend-tg \
   --protocol HTTP \
   --port 8080 \
   --vpc-id vpc-xxxxx \
@@ -563,9 +563,9 @@ aws elbv2 create-target-group \
 
 ```bash
 aws acm request-certificate \
-  --domain-name api.junkos.com \
+  --domain-name api.goumuve.com \
   --validation-method DNS \
-  --subject-alternative-names api.junkos.com \
+  --subject-alternative-names api.goumuve.com \
   --tags Key=Name,Value=junkos-api-cert
 ```
 
@@ -578,18 +578,18 @@ aws acm request-certificate \
 
 ```bash
 aws elbv2 create-listener \
-  --load-balancer-arn arn:aws:elasticloadbalancing:us-east-1:123456789012:loadbalancer/app/junkos-alb/xxxxx \
+  --load-balancer-arn arn:aws:elasticloadbalancing:us-east-1:123456789012:loadbalancer/app/umuve-alb/xxxxx \
   --protocol HTTPS \
   --port 443 \
   --certificates CertificateArn=arn:aws:acm:us-east-1:123456789012:certificate/xxxxx \
-  --default-actions Type=forward,TargetGroupArn=arn:aws:elasticloadbalancing:us-east-1:123456789012:targetgroup/junkos-backend-tg/xxxxx
+  --default-actions Type=forward,TargetGroupArn=arn:aws:elasticloadbalancing:us-east-1:123456789012:targetgroup/umuve-backend-tg/xxxxx
 ```
 
 #### Create HTTP → HTTPS Redirect
 
 ```bash
 aws elbv2 create-listener \
-  --load-balancer-arn arn:aws:elasticloadbalancing:us-east-1:123456789012:loadbalancer/app/junkos-alb/xxxxx \
+  --load-balancer-arn arn:aws:elasticloadbalancing:us-east-1:123456789012:loadbalancer/app/umuve-alb/xxxxx \
   --protocol HTTP \
   --port 80 \
   --default-actions Type=redirect,RedirectConfig="{Protocol=HTTPS,Port=443,StatusCode=HTTP_301}"
@@ -601,17 +601,17 @@ aws elbv2 create-listener \
 
 ```bash
 aws ecs create-service \
-  --cluster junkos-prod \
-  --service-name junkos-backend \
-  --task-definition junkos-backend:1 \
+  --cluster umuve-prod \
+  --service-name umuve-backend \
+  --task-definition umuve-backend:1 \
   --desired-count 2 \
   --launch-type FARGATE \
   --platform-version LATEST \
   --network-configuration "awsvpcConfiguration={subnets=[subnet-private1,subnet-private2],securityGroups=[sg-ecs-xxxxx],assignPublicIp=DISABLED}" \
-  --load-balancers targetGroupArn=arn:aws:elasticloadbalancing:us-east-1:123456789012:targetgroup/junkos-backend-tg/xxxxx,containerName=junkos-backend,containerPort=8080 \
+  --load-balancers targetGroupArn=arn:aws:elasticloadbalancing:us-east-1:123456789012:targetgroup/umuve-backend-tg/xxxxx,containerName=umuve-backend,containerPort=8080 \
   --health-check-grace-period-seconds 60 \
   --enable-execute-command \
-  --tags key=Name,value=junkos-backend key=Environment,value=production
+  --tags key=Name,value=umuve-backend key=Environment,value=production
 ```
 
 ---
@@ -620,10 +620,10 @@ aws ecs create-service \
 
 ```bash
 # Get ALB DNS name
-aws elbv2 describe-load-balancers --names junkos-alb --query 'LoadBalancers[0].DNSName'
+aws elbv2 describe-load-balancers --names umuve-alb --query 'LoadBalancers[0].DNSName'
 
 # Create hosted zone (if not exists)
-aws route53 create-hosted-zone --name junkos.com --caller-reference $(date +%s)
+aws route53 create-hosted-zone --name goumuve.com --caller-reference $(date +%s)
 
 # Create A record (alias to ALB)
 cat > change-batch.json <<EOF
@@ -632,11 +632,11 @@ cat > change-batch.json <<EOF
     {
       "Action": "CREATE",
       "ResourceRecordSet": {
-        "Name": "api.junkos.com",
+        "Name": "api.goumuve.com",
         "Type": "A",
         "AliasTarget": {
           "HostedZoneId": "Z35SXDOTRQ7X7K",
-          "DNSName": "junkos-alb-123456.us-east-1.elb.amazonaws.com",
+          "DNSName": "umuve-alb-123456.us-east-1.elb.amazonaws.com",
           "EvaluateTargetHealth": true
         }
       }
@@ -675,7 +675,7 @@ provider "aws" {
 module "vpc" {
   source = "terraform-aws-modules/vpc/aws"
   
-  name = "junkos-vpc"
+  name = "umuve-vpc"
   cidr = "10.0.0.0/16"
   
   azs             = ["us-east-1a", "us-east-1b"]
@@ -693,7 +693,7 @@ module "vpc" {
 module "rds" {
   source = "terraform-aws-modules/rds/aws"
   
-  identifier = "junkos-prod-db"
+  identifier = "umuve-prod-db"
   
   engine            = "postgres"
   engine_version    = "15.4"
@@ -702,7 +702,7 @@ module "rds" {
   storage_encrypted = true
   
   db_name  = "junkos"
-  username = "junkosadmin"
+  username = "umuveadmin"
   password = var.db_password
   
   multi_az = true
@@ -712,13 +712,13 @@ module "rds" {
   
   backup_retention_period = 7
   skip_final_snapshot     = false
-  final_snapshot_identifier = "junkos-final-snapshot"
+  final_snapshot_identifier = "umuve-final-snapshot"
 }
 
 module "ecs" {
   source = "terraform-aws-modules/ecs/aws"
   
-  cluster_name = "junkos-prod"
+  cluster_name = "umuve-prod"
   
   fargate_capacity_providers = {
     FARGATE = {
@@ -755,10 +755,10 @@ on:
 
 env:
   AWS_REGION: us-east-1
-  ECR_REPOSITORY: junkos/backend
-  ECS_SERVICE: junkos-backend
-  ECS_CLUSTER: junkos-prod
-  CONTAINER_NAME: junkos-backend
+  ECR_REPOSITORY: umuve/backend
+  ECS_SERVICE: umuve-backend
+  ECS_CLUSTER: umuve-prod
+  CONTAINER_NAME: umuve-backend
 
 jobs:
   deploy:
@@ -792,7 +792,7 @@ jobs:
       - name: Download task definition
         run: |
           aws ecs describe-task-definition \
-            --task-definition junkos-backend \
+            --task-definition umuve-backend \
             --query taskDefinition > task-definition.json
       
       - name: Update task definition with new image
@@ -821,7 +821,7 @@ jobs:
 ```bash
 # Create custom dashboard
 aws cloudwatch put-dashboard \
-  --dashboard-name junkos-prod \
+  --dashboard-name umuve-prod \
   --dashboard-body file://dashboard.json
 ```
 
@@ -864,7 +864,7 @@ aws cloudwatch put-dashboard \
 ```bash
 # High CPU alarm
 aws cloudwatch put-metric-alarm \
-  --alarm-name junkos-high-cpu \
+  --alarm-name umuve-high-cpu \
   --alarm-description "Alert when CPU exceeds 80%" \
   --metric-name CPUUtilization \
   --namespace AWS/ECS \
@@ -873,11 +873,11 @@ aws cloudwatch put-metric-alarm \
   --threshold 80 \
   --comparison-operator GreaterThanThreshold \
   --evaluation-periods 2 \
-  --alarm-actions arn:aws:sns:us-east-1:123456789012:junkos-alerts
+  --alarm-actions arn:aws:sns:us-east-1:123456789012:umuve-alerts
 
 # High error rate alarm
 aws cloudwatch put-metric-alarm \
-  --alarm-name junkos-high-5xx \
+  --alarm-name umuve-high-5xx \
   --metric-name HTTPCode_Target_5XX_Count \
   --namespace AWS/ApplicationELB \
   --statistic Sum \
@@ -885,7 +885,7 @@ aws cloudwatch put-metric-alarm \
   --threshold 10 \
   --comparison-operator GreaterThanThreshold \
   --evaluation-periods 2 \
-  --alarm-actions arn:aws:sns:us-east-1:123456789012:junkos-alerts
+  --alarm-actions arn:aws:sns:us-east-1:123456789012:umuve-alerts
 ```
 
 ### X-Ray Tracing (Optional)
@@ -1007,7 +1007,7 @@ aws budgets create-budget \
 ```bash
 # Check task status
 aws ecs describe-tasks \
-  --cluster junkos-prod \
+  --cluster umuve-prod \
   --tasks task-arn
 
 # Common issues:
@@ -1021,14 +1021,14 @@ aws ecs describe-tasks \
 ```bash
 # Test connectivity from ECS task
 aws ecs execute-command \
-  --cluster junkos-prod \
+  --cluster umuve-prod \
   --task task-arn \
-  --container junkos-backend \
+  --container umuve-backend \
   --interactive \
   --command "/bin/sh"
 
 # Inside container:
-nc -zv junkos-prod-db.xxxxx.rds.amazonaws.com 5432
+nc -zv umuve-prod-db.xxxxx.rds.amazonaws.com 5432
 ```
 
 ### High Latency

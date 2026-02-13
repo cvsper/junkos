@@ -1,6 +1,6 @@
 # 🎨 Design Comparison: Basic → Premium
 
-Side-by-side analysis of the JunkOS landing page transformation.
+Side-by-side analysis of the Umuve landing page transformation.
 
 ---
 
@@ -28,7 +28,7 @@ Side-by-side analysis of the JunkOS landing page transformation.
 ```css
 /* Light background with blue/green gradients */
 --color-primary: #3b82f6;      /* Blue */
---color-accent: #10b981;       /* Green */
+--color-accent: #DC2626;       /* Green */
 --background: #ffffff;         /* White */
 --text: #1f2937;               /* Dark gray */
 ```
@@ -38,7 +38,7 @@ Side-by-side analysis of the JunkOS landing page transformation.
 /* Dark mode first with neon accents */
 --color-void: #000000;         /* Pure black */
 --color-bg: #050505;           /* Near black */
---color-accent: #10b981;       /* Neon emerald */
+--color-accent: #DC2626;       /* Umuve red */
 --color-secondary: #a855f7;    /* Electric purple */
 --color-text: #ffffff;         /* Pure white */
 ```
@@ -197,8 +197,8 @@ Background:
 
 .bento-card:hover {
   transform: translateY(-4px);
-  border-color: #10b981;
-  box-shadow: 0 0 30px rgba(16, 185, 129, 0.5);
+  border-color: #DC2626;
+  box-shadow: 0 0 30px rgba(220, 38, 38, 0.5);
 }
 ```
 
@@ -226,17 +226,17 @@ Background:
 #### New
 ```css
 .btn-primary {
-  background: #10b981;
+  background: #DC2626;
   color: #000;
   padding: 16px 32px;
   border-radius: 9999px;
-  box-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
+  box-shadow: 0 0 20px rgba(220, 38, 38, 0.5);
   position: relative;
   overflow: hidden;
 }
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 0 30px rgba(16, 185, 129, 0.5);
+  box-shadow: 0 0 30px rgba(220, 38, 38, 0.5);
 }
 /* Plus: shimmer animation, ripple click effect */
 ```
@@ -332,7 +332,7 @@ Secondary CTA: "Call Now" (white button)
 
 #### New
 ```
-Primary CTA: "💬 Text for Instant Quote" (neon emerald, shimmer)
+Primary CTA: "💬 Text for Instant Quote" (Umuve red, shimmer)
 Secondary CTA: "📞 Call (561) 888-3427" (glass button, subtle)
 ```
 

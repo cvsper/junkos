@@ -1,4 +1,4 @@
-# JunkOS Mobile App - Build Summary
+# Umuve Mobile App - Build Summary
 
 ✅ **Complete React Native booking app built with Expo**
 
@@ -77,7 +77,7 @@
 
 ### 📋 Configuration Files
 
-- `app.json` - Expo config with bundle ID `com.junkos.booking`
+- `app.json` - Expo config with bundle ID `com.goumuve.app`
 - `package.json` - All dependencies configured
 - `tsconfig.json` - TypeScript setup
 - `tailwind.config.js` - iOS-native colors
@@ -134,7 +134,7 @@
 **Navigation:** Expo Router (file-based)
 **Styling:** NativeWind (Tailwind CSS)
 **State:** React Hooks + AsyncStorage
-**Bundle ID:** com.junkos.booking
+**Bundle ID:** com.goumuve.app
 
 ## File Count
 

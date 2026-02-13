@@ -1,9 +1,9 @@
 //
 //  DriverDesignSystem.swift
-//  JunkOS Driver
+//  Umuve Pro
 //
-//  Emerald-themed design system for the contractor app.
-//  Differentiated from customer app (indigo) with a professional green palette.
+//  Red-themed design system for the contractor app.
+//  Differentiated from customer app (indigo) with a professional red palette.
 //
 
 import SwiftUI
@@ -11,22 +11,22 @@ import SwiftUI
 // MARK: - Colors
 
 extension Color {
-    // Primary brand — emerald green
-    static let driverPrimary = Color(hex: "059669")
-    static let driverPrimaryLight = Color(hex: "34D399")
-    static let driverPrimaryDark = Color(hex: "047857")
+    // Primary brand — red
+    static let driverPrimary = Color(hex: "DC2626")
+    static let driverPrimaryLight = Color(hex: "EF4444")
+    static let driverPrimaryDark = Color(hex: "B91C1C")
 
     // Secondary accent
-    static let driverAccent = Color(hex: "10B981")
-    static let driverAccentLight = Color(hex: "6EE7B7")
+    static let driverAccent = Color(hex: "EF4444")
+    static let driverAccentLight = Color(hex: "FCA5A5")
 
     // Backgrounds
-    static let driverBackground = Color(hex: "F0FDF4")
+    static let driverBackground = Color(hex: "FEF2F2")
     static let driverSurface = Color.white
-    static let driverSurfaceElevated = Color(hex: "ECFDF5")
+    static let driverSurfaceElevated = Color(hex: "FEE2E2")
 
     // Text
-    static let driverText = Color(hex: "022C22")
+    static let driverText = Color(hex: "1C1917")
     static let driverTextSecondary = Color(hex: "64748B")
     static let driverTextTertiary = Color(hex: "94A3B8")
 

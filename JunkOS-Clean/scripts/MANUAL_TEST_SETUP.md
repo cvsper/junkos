@@ -1,4 +1,4 @@
-# Manual Test Target Setup for JunkOS
+# Manual Test Target Setup for Umuve
 
 Since automatic project modification requires additional dependencies, here's the manual setup guide.
 
@@ -16,25 +16,25 @@ open JunkOS.xcodeproj
 2. Choose **iOS > Unit Testing Bundle**
 3. Click **Next**
 4. Configure:
-   - **Product Name:** `JunkOSTests`
+   - **Product Name:** `UmuveTests`
    - **Team:** Your development team
-   - **Target to be Tested:** `JunkOS`
+   - **Target to be Tested:** `Umuve`
    - **Language:** Swift
 5. Click **Finish**
-6. When asked "Would you like to add JunkOSTests to the JunkOS scheme?", click **Add**
+6. When asked "Would you like to add UmuveTests to the Umuve scheme?", click **Add**
 
 ### Step 3: Configure Unit Test Target
 
-1. Select **JunkOSTests** target in Project Navigator
+1. Select **UmuveTests** target in Project Navigator
 2. Go to **Build Settings**
-3. Search for "Info.plist" and set **Info.plist File** to: `JunkOSTests/Info.plist`
-4. Search for "Bundle Identifier" and set to: `com.junkos.app.tests`
+3. Search for "Info.plist" and set **Info.plist File** to: `UmuveTests/Info.plist`
+4. Search for "Bundle Identifier" and set to: `com.goumuve.com.tests`
 5. Go to **Build Phases** tab
 6. Expand **Compile Sources**
 7. Click **+** and add all `.swift` files from:
-   - `JunkOSTests/Mocks/`
-   - `JunkOSTests/Utilities/`
-   - `JunkOSTests/ViewModels/`
+   - `UmuveTests/Mocks/`
+   - `UmuveTests/Utilities/`
+   - `UmuveTests/ViewModels/`
 
 ### Step 4: Create UI Test Target
 
@@ -42,23 +42,23 @@ open JunkOS.xcodeproj
 2. Choose **iOS > UI Testing Bundle**
 3. Click **Next**
 4. Configure:
-   - **Product Name:** `JunkOSUITests`
+   - **Product Name:** `UmuveUITests`
    - **Team:** Your development team
-   - **Target to be Tested:** `JunkOS`
+   - **Target to be Tested:** `Umuve`
    - **Language:** Swift
 5. Click **Finish**
 6. Click **Add** to add to scheme
 
 ### Step 5: Configure UI Test Target
 
-1. Select **JunkOSUITests** target in Project Navigator
+1. Select **UmuveUITests** target in Project Navigator
 2. Go to **Build Settings**
-3. Set **Info.plist File** to: `JunkOSUITests/Info.plist`
-4. Set **Bundle Identifier** to: `com.junkos.app.uitests`
+3. Set **Info.plist File** to: `UmuveUITests/Info.plist`
+4. Set **Bundle Identifier** to: `com.goumuve.com.uitests`
 5. Go to **Build Phases** tab
 6. Expand **Compile Sources**
 7. Click **+** and add all `.swift` files from:
-   - `JunkOSUITests/Tests/`
+   - `UmuveUITests/Tests/`
 
 ### Step 6: Enable Code Coverage
 
@@ -72,13 +72,13 @@ open JunkOS.xcodeproj
 
 ```bash
 # Build the project
-xcodebuild -scheme JunkOS -destination 'platform=iOS Simulator,name=iPhone 15' build
+xcodebuild -scheme Umuve -destination 'platform=iOS Simulator,name=iPhone 15' build
 
 # Run unit tests
-xcodebuild test -scheme JunkOS -destination 'platform=iOS Simulator,name=iPhone 15' -only-testing:JunkOSTests
+xcodebuild test -scheme Umuve -destination 'platform=iOS Simulator,name=iPhone 15' -only-testing:UmuveTests
 
 # Run UI tests
-xcodebuild test -scheme JunkOS -destination 'platform=iOS Simulator,name=iPhone 15' -only-testing:JunkOSUITests
+xcodebuild test -scheme Umuve -destination 'platform=iOS Simulator,name=iPhone 15' -only-testing:UmuveUITests
 ```
 
 ## Alternative: Script-Based Setup
@@ -106,23 +106,23 @@ xcodebuild -list
 
 # Build with tests
 xcodebuild build-for-testing \
-  -scheme JunkOS \
+  -scheme Umuve \
   -destination 'platform=iOS Simulator,name=iPhone 15'
 
 # Run all tests
 xcodebuild test \
-  -scheme JunkOS \
+  -scheme Umuve \
   -destination 'platform=iOS Simulator,name=iPhone 15'
 ```
 
 Expected output should show:
-- JunkOSTests target building successfully
-- JunkOSUITests target building successfully
+- UmuveTests target building successfully
+- UmuveUITests target building successfully
 - Tests running (some may be pending implementation)
 
 ## Troubleshooting
 
-### "No such module 'JunkOS'"
+### "No such module 'Umuve'"
 - Make sure the main app target builds successfully first
 - Check that test targets have the main target as a dependency
 
@@ -132,7 +132,7 @@ Expected output should show:
 
 ### Files not compiling
 - Verify all `.swift` files are added to **Compile Sources** in Build Phases
-- Check that `@testable import JunkOS` is present in test files
+- Check that `@testable import Umuve` is present in test files
 
 ### Tests not discoverable
 - Make sure test classes inherit from `XCTestCase`
@@ -143,17 +143,17 @@ Expected output should show:
 
 ```bash
 # Run a specific test class
-xcodebuild test -scheme JunkOS \
+xcodebuild test -scheme Umuve \
   -destination 'platform=iOS Simulator,name=iPhone 15' \
-  -only-testing:JunkOSTests/AddressInputViewModelTests
+  -only-testing:UmuveTests/AddressInputViewModelTests
 
 # Run a specific test method
-xcodebuild test -scheme JunkOS \
+xcodebuild test -scheme Umuve \
   -destination 'platform=iOS Simulator,name=iPhone 15' \
-  -only-testing:JunkOSTests/AddressInputViewModelTests/testInitialization
+  -only-testing:UmuveTests/AddressInputViewModelTests/testInitialization
 
 # Generate code coverage report
-xcodebuild test -scheme JunkOS \
+xcodebuild test -scheme Umuve \
   -destination 'platform=iOS Simulator,name=iPhone 15' \
   -enableCodeCoverage YES \
   -resultBundlePath ./test-results

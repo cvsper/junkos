@@ -5,7 +5,7 @@ import Script from "next/script";
  *
  * Supports two providers:
  * - Google Analytics: set NEXT_PUBLIC_GA_ID (e.g., "G-XXXXXXXXXX")
- * - Plausible Analytics: set NEXT_PUBLIC_PLAUSIBLE_DOMAIN (e.g., "junkos.app")
+ * - Plausible Analytics: set NEXT_PUBLIC_PLAUSIBLE_DOMAIN (e.g., "goumuve.com")
  *
  * If neither env var is set, this component renders nothing (safe for dev).
  */

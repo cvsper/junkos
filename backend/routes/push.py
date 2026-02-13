@@ -116,7 +116,7 @@ def test_push(user_id):
 
     count = send_push_notification(
         user_id=user_id,
-        title="JunkOS Test",
+        title="Umuve Test",
         body="If you see this, push notifications are working!",
         data={"type": "test"},
     )

@@ -1,6 +1,6 @@
 //
 //  JobAlertOverlay.swift
-//  JunkOS Driver
+//  Umuve Pro
 //
 //  Accept/decline card that slides up when a new job arrives.
 //  Shows countdown ring, address, price, distance.

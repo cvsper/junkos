@@ -1,5 +1,5 @@
 // ============================================
-// JunkOS Platform TypeScript Types
+// Umuve Platform TypeScript Types
 // ============================================
 
 export type UserRole = "customer" | "driver" | "admin" | "operator";

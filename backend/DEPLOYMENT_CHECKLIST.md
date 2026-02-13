@@ -1,4 +1,4 @@
-# 📋 JunkOS Backend Deployment Checklist
+# 📋 Umuve Backend Deployment Checklist
 
 Use this checklist to deploy your backend step by step.
 
@@ -26,15 +26,15 @@ Use this checklist to deploy your backend step by step.
 
 ### 1. Git & GitHub Setup
 ```bash
-cd ~/Documents/programs/webapps/junkos/backend
+cd ~/Documents/programs/webapps/umuve/backend
 ```
 
 - [ ] Run: `git init`
 - [ ] Run: `git add .`
 - [ ] Run: `git commit -m "Production-ready backend"`
 - [ ] Create GitHub repo: https://github.com/new
-- [ ] Name it: `junkos-backend`
-- [ ] Run: `git remote add origin https://github.com/YOUR_USERNAME/junkos-backend.git`
+- [ ] Name it: `umuve-backend`
+- [ ] Run: `git remote add origin https://github.com/YOUR_USERNAME/umuve-backend.git`
 - [ ] Run: `git push -u origin main`
 
 ---
@@ -62,7 +62,7 @@ python3 -c "import secrets; print('API_KEY=junkos-' + secrets.token_hex(16))"
 - [ ] Sign in with GitHub
 - [ ] Click **"New Project"**
 - [ ] Click **"Deploy from GitHub repo"**
-- [ ] Select `junkos-backend`
+- [ ] Select `umuve-backend`
 - [ ] Wait for initial deployment (~2 min)
 
 ---
@@ -93,7 +93,7 @@ Click **"Deploy"** after adding variables.
 ### 6. Get Production URL
 
 - [ ] Copy your Railway URL: `_________________________________`
-  - Should look like: `https://junkos-backend-production.up.railway.app`
+  - Should look like: `https://umuve-backend-production.up.railway.app`
 
 ---
 
@@ -104,7 +104,7 @@ Click **"Deploy"** after adding variables.
 curl https://YOUR_URL/api/health
 ```
 
-- [ ] Health check returns: `{"status":"healthy","service":"JunkOS API"}`
+- [ ] Health check returns: `{"status":"healthy","service":"Umuve API"}`
 
 ```bash
 # Replace YOUR_URL and YOUR_API_KEY
@@ -118,11 +118,11 @@ curl -H "X-API-Key: YOUR_API_KEY" https://YOUR_URL/api/services
 
 ### 8. Update iOS App
 
-Edit: `~/Documents/programs/webapps/junkos/JunkOS-Clean/JunkOS/Services/Config.swift`
+Edit: `~/Documents/programs/webapps/junkos/Umuve-Clean/Umuve/Services/Config.swift`
 
 Replace line 16 with your actual URL:
 ```swift
-return "https://junkos-backend-production.up.railway.app"
+return "https://umuve-backend-production.up.railway.app"
 ```
 
 - [ ] Updated `Config.swift` with production URL

@@ -1,16 +1,16 @@
 """
-Professional HTML email templates for JunkOS.
+Professional HTML email templates for Umuve.
 
 Every public function returns a complete HTML string ready for sending via
 the ``send_email`` helper in ``notifications.py``.
 
 Design tokens:
-  - Primary accent: #2d8a6e (emerald)
+  - Primary accent: #DC2626 (red)
   - Background:     #fafaf8 (warm off-white)
   - Card:           #ffffff
   - Text dark:      #111827
   - Text muted:     #4b5563 / #6b7280
-  - Font stack:     Inter, Segoe UI, Arial, sans-serif
+  - Font stack:     Outfit, DM Sans, Arial, sans-serif
 
 All styles are inlined for maximum email-client compatibility.  No external
 resources (fonts, images, scripts) are referenced.
@@ -24,22 +24,22 @@ from html import escape as _esc
 # ---------------------------------------------------------------------------
 
 def _header():
-    """JunkOS branded header block."""
+    """Umuve branded header block."""
     return (
         '<div style="text-align:center;margin-bottom:30px;">'
-        '<h1 style="color:#2d8a6e;font-size:28px;margin:0;font-family:\'Space Grotesk\',\'Inter\',\'Segoe UI\',Arial,sans-serif;font-weight:700;letter-spacing:-0.5px;">JunkOS</h1>'
+        '<h1 style="color:#DC2626;font-size:28px;margin:0;font-family:\'Outfit\',\'DM Sans\',Arial,sans-serif;font-weight:700;letter-spacing:-0.5px;">Umuve</h1>'
         '<p style="color:#6b7280;margin:5px 0 0;font-size:14px;">Premium Junk Removal</p>'
         '</div>'
     )
 
 
 def _footer():
-    """JunkOS footer with company address."""
+    """Umuve footer with company address."""
     return (
         '<div style="text-align:center;margin-top:30px;padding-top:20px;border-top:1px solid #e5e7eb;color:#9ca3af;font-size:12px;line-height:1.6;">'
-        '<p style="margin:0 0 4px;">JunkOS &mdash; South Florida\'s Premium Junk Removal</p>'
+        '<p style="margin:0 0 4px;">Umuve &mdash; South Florida\'s Premium Junk Removal</p>'
         '<p style="margin:0 0 4px;">Palm Beach &amp; Broward County, FL</p>'
-        '<p style="margin:0;">(561) 888-3427 &middot; support@junkos.com</p>'
+        '<p style="margin:0;">(561) 888-3427 &middot; support@goumuve.com</p>'
         '</div>'
     )
 
@@ -50,9 +50,9 @@ def _wrap(body_html):
         '<!DOCTYPE html>'
         '<html lang="en"><head><meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width,initial-scale=1.0">'
-        '<title>JunkOS</title></head>'
+        '<title>Umuve</title></head>'
         '<body style="margin:0;padding:0;background-color:#f3f4f6;-webkit-text-size-adjust:100%;">'
-        '<div style="font-family:\'Inter\',\'Segoe UI\',Arial,sans-serif;max-width:600px;margin:0 auto;background:#fafaf8;padding:40px 20px;">'
+        '<div style="font-family:\'Outfit\',\'DM Sans\',Arial,sans-serif;max-width:600px;margin:0 auto;background:#fafaf8;padding:40px 20px;">'
         + _header()
         + '<div style="background:#ffffff;border-radius:12px;padding:30px;box-shadow:0 1px 3px rgba(0,0,0,0.1);">'
         + body_html
@@ -64,9 +64,9 @@ def _wrap(body_html):
 
 def _detail_row(label, value, is_last=False):
     """Single key-value row for detail tables."""
-    border = 'border-top:1px solid #d1fae5;' if is_last else ''
+    border = 'border-top:1px solid #FECACA;' if is_last else ''
     pad_top = '12px' if is_last else '8px'
-    val_color = '#2d8a6e' if is_last else '#111827'
+    val_color = '#DC2626' if is_last else '#111827'
     val_size = '20px' if is_last else '14px'
     val_weight = '700' if is_last else '600'
     return (
@@ -79,12 +79,12 @@ def _detail_row(label, value, is_last=False):
 
 
 def _detail_table(rows):
-    """Green-tinted detail box.  *rows* is a list of (label, value) tuples."""
+    """Red-tinted detail box.  *rows* is a list of (label, value) tuples."""
     inner = ''
     for i, (label, value) in enumerate(rows):
         inner += _detail_row(label, value, is_last=(i == len(rows) - 1))
     return (
-        '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:20px;margin:20px 0;">'
+        '<div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;padding:20px;margin:20px 0;">'
         '<table style="width:100%;border-collapse:collapse;">'
         + inner
         + '</table></div>'
@@ -95,7 +95,7 @@ def _button(url, label):
     """Call-to-action button."""
     return (
         '<div style="text-align:center;margin:28px 0 12px;">'
-        '<a href="{url}" style="display:inline-block;background:#2d8a6e;color:#ffffff;'
+        '<a href="{url}" style="display:inline-block;background:#DC2626;color:#ffffff;'
         'text-decoration:none;padding:14px 36px;border-radius:8px;font-size:16px;'
         'font-weight:600;line-height:1;">'.format(url=_esc(str(url)))
         + _esc(str(label))
@@ -194,10 +194,10 @@ def driver_en_route_html(customer_name, driver_name, eta_minutes):
     ).format(name=name, driver=driver, eta=_esc(eta_text))
 
     body += (
-        '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;'
+        '<div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;'
         'padding:24px;margin:20px 0;text-align:center;">'
         '<p style="color:#6b7280;font-size:13px;margin:0 0 6px;text-transform:uppercase;letter-spacing:0.5px;">Estimated Arrival</p>'
-        '<p style="color:#2d8a6e;font-size:36px;font-weight:700;margin:0;">{eta}</p>'
+        '<p style="color:#DC2626;font-size:36px;font-weight:700;margin:0;">{eta}</p>'
         '</div>'
     ).format(eta=_esc(eta_text))
 
@@ -245,7 +245,7 @@ def job_completed_html(customer_name, booking_id, total, rating_url):
 
     body += (
         '<p style="color:#6b7280;font-size:13px;line-height:1.6;text-align:center;">'
-        'Thank you for choosing JunkOS!</p>'
+        'Thank you for choosing Umuve!</p>'
     )
 
     return _wrap(body)
@@ -270,7 +270,7 @@ def payment_receipt_html(customer_name, booking_id, amount, payment_method_last4
         '<h2 style="color:#111827;margin:0 0 12px;font-size:22px;">Payment Receipt</h2>'
         '<p style="color:#4b5563;line-height:1.6;">Hi {name},</p>'
         '<p style="color:#4b5563;line-height:1.6;">'
-        'Here\'s the receipt for your recent JunkOS service.</p>'
+        'Here\'s the receipt for your recent Umuve service.</p>'
     ).format(name=name)
 
     body += _detail_table([
@@ -298,7 +298,7 @@ def welcome_html(name):
     display_name = _esc(str(name)) if name else 'there'
 
     body = (
-        '<h2 style="color:#111827;margin:0 0 12px;font-size:22px;">Welcome to JunkOS!</h2>'
+        '<h2 style="color:#111827;margin:0 0 12px;font-size:22px;">Welcome to Umuve!</h2>'
         '<p style="color:#4b5563;line-height:1.6;">Hi {name},</p>'
         '<p style="color:#4b5563;line-height:1.6;">'
         'Thanks for signing up! We\'re South Florida\'s premium junk removal service, '
@@ -306,7 +306,7 @@ def welcome_html(name):
     ).format(name=display_name)
 
     body += (
-        '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;'
+        '<div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;'
         'padding:24px;margin:20px 0;">'
         '<h3 style="color:#111827;margin:0 0 12px;font-size:16px;">Here\'s what you can do:</h3>'
         '<ul style="color:#4b5563;padding-left:20px;margin:0;line-height:2;">'
@@ -317,7 +317,7 @@ def welcome_html(name):
         '</ul></div>'
     )
 
-    body += _button('https://junkos.com/book', 'Book Your First Pickup')
+    body += _button('https://goumuve.com/book', 'Book Your First Pickup')
 
     body += (
         '<p style="color:#6b7280;font-size:13px;line-height:1.6;text-align:center;">'
@@ -468,7 +468,7 @@ def password_reset_html(name, reset_url):
         '<h2 style="color:#111827;margin:0 0 12px;font-size:22px;">Reset Your Password</h2>'
         '<p style="color:#4b5563;line-height:1.6;">Hi {name},</p>'
         '<p style="color:#4b5563;line-height:1.6;">'
-        'We received a request to reset your JunkOS password. '
+        'We received a request to reset your Umuve password. '
         'Click the button below to choose a new one:</p>'
     ).format(name=display_name)
 
@@ -483,7 +483,7 @@ def password_reset_html(name, reset_url):
     body += (
         '<p style="color:#9ca3af;font-size:12px;line-height:1.6;word-break:break-all;">'
         'If the button doesn\'t work, copy and paste this URL into your browser:<br>'
-        '<a href="{url}" style="color:#2d8a6e;">{url}</a></p>'
+        '<a href="{url}" style="color:#DC2626;">{url}</a></p>'
     ).format(url=_esc(str(reset_url or '')))
 
     return _wrap(body)

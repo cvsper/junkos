@@ -36,7 +36,7 @@ jobs:
       - name: Check if staging is healthy
         id: staging_health
         run: |
-          STAGING_URL="${{ secrets.STAGING_URL || 'https://staging.junkos.app' }}"
+          STAGING_URL="${{ secrets.STAGING_URL || 'https://staging.goumuve.com' }}"
           STATUS=$(curl -s -o /dev/null -w "%{http_code}" $STAGING_URL/api/health || echo "000")
           
           if [[ "$STATUS" == "200" ]]; then
@@ -97,7 +97,7 @@ jobs:
     if: github.event.inputs.skip_approval != 'true'
     environment:
       name: production
-      url: ${{ secrets.PRODUCTION_URL || 'https://junkos.app' }}
+      url: ${{ secrets.PRODUCTION_URL || 'https://goumuve.com' }}
     
     steps:
       - name: Wait for approval
@@ -236,19 +236,19 @@ jobs:
           
           # Update ECS task definition with new image
           aws ecs update-service \
-            --cluster junkos-production \
+            --cluster umuve-production \
             --service backend-blue \
             --force-new-deployment \
             --region ${{ secrets.AWS_REGION || 'us-east-1' }}
           
           aws ecs update-service \
-            --cluster junkos-production \
+            --cluster umuve-production \
             --service frontend-blue \
             --force-new-deployment \
             --region ${{ secrets.AWS_REGION || 'us-east-1' }}
           
           aws ecs update-service \
-            --cluster junkos-production \
+            --cluster umuve-production \
             --service dashboard-blue \
             --force-new-deployment \
             --region ${{ secrets.AWS_REGION || 'us-east-1' }}
@@ -257,14 +257,14 @@ jobs:
         run: |
           echo "⏳ Waiting for Blue environment to stabilize..."
           aws ecs wait services-stable \
-            --cluster junkos-production \
+            --cluster umuve-production \
             --services backend-blue frontend-blue dashboard-blue \
             --region ${{ secrets.AWS_REGION || 'us-east-1' }}
       
       - name: Health check Blue environment
         id: blue_health
         run: |
-          BLUE_URL="${{ secrets.BLUE_INTERNAL_URL || 'https://blue.junkos.app' }}"
+          BLUE_URL="${{ secrets.BLUE_INTERNAL_URL || 'https://blue.goumuve.com' }}"
           
           echo "🏥 Running health checks on Blue environment..."
           sleep 30  # Give services time to fully start
@@ -301,7 +301,7 @@ jobs:
       
       - name: Run smoke tests on Blue
         env:
-          BASE_URL: ${{ secrets.BLUE_INTERNAL_URL || 'https://blue.junkos.app' }}
+          BASE_URL: ${{ secrets.BLUE_INTERNAL_URL || 'https://blue.goumuve.com' }}
         run: |
           cd e2e
           npm ci || npm install playwright @playwright/test
@@ -340,7 +340,7 @@ jobs:
           sleep 120
           
           # Check error rates
-          PROD_URL="${{ secrets.PRODUCTION_URL || 'https://junkos.app' }}"
+          PROD_URL="${{ secrets.PRODUCTION_URL || 'https://goumuve.com' }}"
           STATUS=$(curl -s -o /dev/null -w "%{http_code}" $PROD_URL/api/health || echo "000")
           
           if [[ "$STATUS" != "200" ]]; then
@@ -360,7 +360,7 @@ jobs:
       
       - name: Run production verification tests
         env:
-          BASE_URL: ${{ secrets.PRODUCTION_URL || 'https://junkos.app' }}
+          BASE_URL: ${{ secrets.PRODUCTION_URL || 'https://goumuve.com' }}
         run: |
           cd e2e
           npm ci || npm install playwright @playwright/test
@@ -371,7 +371,7 @@ jobs:
         run: |
           echo "📊 Monitoring production for 5 minutes..."
           
-          PROD_URL="${{ secrets.PRODUCTION_URL || 'https://junkos.app' }}"
+          PROD_URL="${{ secrets.PRODUCTION_URL || 'https://goumuve.com' }}"
           ERRORS=0
           
           for i in {1..30}; do
@@ -423,7 +423,7 @@ jobs:
       
       - name: Verify rollback successful
         run: |
-          PROD_URL="${{ secrets.PRODUCTION_URL || 'https://junkos.app' }}"
+          PROD_URL="${{ secrets.PRODUCTION_URL || 'https://goumuve.com' }}"
           
           sleep 30
           STATUS=$(curl -s -o /dev/null -w "%{http_code}" $PROD_URL/api/health || echo "000")
@@ -448,19 +448,19 @@ jobs:
           
           # Deploy new version to Green (which is now idle)
           aws ecs update-service \
-            --cluster junkos-production \
+            --cluster umuve-production \
             --service backend-green \
             --force-new-deployment \
             --region ${{ secrets.AWS_REGION || 'us-east-1' }}
           
           aws ecs update-service \
-            --cluster junkos-production \
+            --cluster umuve-production \
             --service frontend-green \
             --force-new-deployment \
             --region ${{ secrets.AWS_REGION || 'us-east-1' }}
           
           aws ecs update-service \
-            --cluster junkos-production \
+            --cluster umuve-production \
             --service dashboard-green \
             --force-new-deployment \
             --region ${{ secrets.AWS_REGION || 'us-east-1' }}
@@ -569,7 +569,7 @@ jobs:
           - **Cleanup:** ${{ needs.cleanup-green.result == 'success' && '✅' || '⏭️ Skipped' }}
           
           ## Environment Details
-          - **Production URL:** ${{ secrets.PRODUCTION_URL || 'https://junkos.app' }}
+          - **Production URL:** ${{ secrets.PRODUCTION_URL || 'https://goumuve.com' }}
           - **Deployment Method:** Blue-Green
           - **Version:** `prod-${{ github.run_number }}`
           - **Commit:** `${{ github.sha }}`

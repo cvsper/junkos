@@ -1,6 +1,6 @@
 //
 //  PaymentView.swift
-//  JunkOS
+//  Umuve
 //
 //  Payment screen shown after booking confirmation.
 //  Supports Apple Pay via PassKit and manual card entry.
@@ -28,7 +28,7 @@ struct PaymentView: View {
     var body: some View {
         ZStack {
             ScrollView {
-                VStack(spacing: JunkSpacing.xxlarge) {
+                VStack(spacing: UmuveSpacing.xxlarge) {
                     // Header
                     ScreenHeader(
                         title: "Payment",
@@ -70,9 +70,9 @@ struct PaymentView: View {
                     // Bottom spacing for the pay button
                     Spacer().frame(height: 80)
                 }
-                .padding(JunkSpacing.large)
+                .padding(UmuveSpacing.large)
             }
-            .background(Color.junkBackground.ignoresSafeArea())
+            .background(Color.umuveBackground.ignoresSafeArea())
             .navigationBarTitleDisplayMode(.inline)
             .safeAreaInset(edge: .bottom) {
                 payButton
@@ -124,15 +124,15 @@ struct PaymentView: View {
     // MARK: - Order Total Card
 
     private var orderTotalCard: some View {
-        JunkCard {
-            VStack(spacing: JunkSpacing.normal) {
+        UmuveCard {
+            VStack(spacing: UmuveSpacing.normal) {
                 HStack {
                     Image(systemName: "cart.fill")
                         .font(.system(size: 20))
-                        .foregroundColor(.junkPrimary)
+                        .foregroundColor(.umuvePrimary)
                     Text("Order Summary")
-                        .font(JunkTypography.h3Font)
-                        .foregroundColor(.junkText)
+                        .font(UmuveTypography.h3Font)
+                        .foregroundColor(.umuveText)
                     Spacer()
                 }
 
@@ -140,55 +140,55 @@ struct PaymentView: View {
 
                 HStack {
                     Text("Base Service")
-                        .font(JunkTypography.bodyFont)
-                        .foregroundColor(.junkTextMuted)
+                        .font(UmuveTypography.bodyFont)
+                        .foregroundColor(.umuveTextMuted)
                     Spacer()
                     Text("$\(formatPrice(priceBreakdown.basePrice))")
-                        .font(JunkTypography.bodyFont)
-                        .foregroundColor(.junkText)
+                        .font(UmuveTypography.bodyFont)
+                        .foregroundColor(.umuveText)
                 }
 
                 HStack {
                     Text("Items Charge")
-                        .font(JunkTypography.bodyFont)
-                        .foregroundColor(.junkTextMuted)
+                        .font(UmuveTypography.bodyFont)
+                        .foregroundColor(.umuveTextMuted)
                     Spacer()
                     Text("$\(formatPrice(priceBreakdown.itemsCharge))")
-                        .font(JunkTypography.bodyFont)
-                        .foregroundColor(.junkText)
+                        .font(UmuveTypography.bodyFont)
+                        .foregroundColor(.umuveText)
                 }
 
                 HStack {
                     Text("Disposal Fee")
-                        .font(JunkTypography.bodyFont)
-                        .foregroundColor(.junkTextMuted)
+                        .font(UmuveTypography.bodyFont)
+                        .foregroundColor(.umuveTextMuted)
                     Spacer()
                     Text("$\(formatPrice(priceBreakdown.disposalFee))")
-                        .font(JunkTypography.bodyFont)
-                        .foregroundColor(.junkText)
+                        .font(UmuveTypography.bodyFont)
+                        .foregroundColor(.umuveText)
                 }
 
                 if priceBreakdown.tierDiscount > 0 {
                     HStack {
                         Text("\(priceBreakdown.serviceTier.rawValue) Discount")
-                            .font(JunkTypography.bodyFont)
-                            .foregroundColor(.junkSuccess)
+                            .font(UmuveTypography.bodyFont)
+                            .foregroundColor(.umuveSuccess)
                         Spacer()
                         Text("-$\(formatPrice(priceBreakdown.tierDiscount))")
-                            .font(JunkTypography.bodyFont)
-                            .foregroundColor(.junkSuccess)
+                            .font(UmuveTypography.bodyFont)
+                            .foregroundColor(.umuveSuccess)
                     }
                 }
 
                 if priceBreakdown.commercialDiscount > 0 {
                     HStack {
                         Text("Commercial Discount")
-                            .font(JunkTypography.bodyFont)
-                            .foregroundColor(.junkSuccess)
+                            .font(UmuveTypography.bodyFont)
+                            .foregroundColor(.umuveSuccess)
                         Spacer()
                         Text("-$\(formatPrice(priceBreakdown.commercialDiscount))")
-                            .font(JunkTypography.bodyFont)
-                            .foregroundColor(.junkSuccess)
+                            .font(UmuveTypography.bodyFont)
+                            .foregroundColor(.umuveSuccess)
                     }
                 }
 
@@ -196,61 +196,61 @@ struct PaymentView: View {
 
                 HStack {
                     Text("Total")
-                        .font(JunkTypography.h2Font)
-                        .foregroundColor(.junkText)
+                        .font(UmuveTypography.h2Font)
+                        .foregroundColor(.umuveText)
                     Spacer()
                     Text("$\(formatPrice(priceBreakdown.total))")
-                        .font(JunkTypography.priceFont)
-                        .foregroundColor(.junkCTA)
+                        .font(UmuveTypography.priceFont)
+                        .foregroundColor(.umuveCTA)
                 }
             }
-            .padding(JunkSpacing.large)
+            .padding(UmuveSpacing.large)
         }
     }
 
     // MARK: - Apple Pay Section
 
     private var applePaySection: some View {
-        VStack(spacing: JunkSpacing.medium) {
+        VStack(spacing: UmuveSpacing.medium) {
             Button {
                 HapticManager.shared.mediumTap()
                 viewModel.initiateApplePay()
             } label: {
-                HStack(spacing: JunkSpacing.small) {
+                HStack(spacing: UmuveSpacing.small) {
                     Image(systemName: "apple.logo")
                         .font(.system(size: 18, weight: .semibold))
                     Text("Pay")
-                        .font(JunkTypography.bodyFont.weight(.semibold))
+                        .font(UmuveTypography.bodyFont.weight(.semibold))
                 }
                 .foregroundColor(.white)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 16)
                 .background(
-                    RoundedRectangle(cornerRadius: JunkRadius.md)
+                    RoundedRectangle(cornerRadius: UmuveRadius.md)
                         .fill(Color.black)
                 )
             }
             .disabled(viewModel.isProcessing)
 
             Text("Quick and secure checkout")
-                .font(JunkTypography.captionFont)
-                .foregroundColor(.junkTextMuted)
+                .font(UmuveTypography.captionFont)
+                .foregroundColor(.umuveTextMuted)
         }
     }
 
     // MARK: - Or Divider
 
     private var orDivider: some View {
-        HStack(spacing: JunkSpacing.normal) {
+        HStack(spacing: UmuveSpacing.normal) {
             Rectangle()
-                .fill(Color.junkBorder)
+                .fill(Color.umuveBorder)
                 .frame(height: 1)
             Text("or pay with card")
-                .font(JunkTypography.captionFont)
-                .foregroundColor(.junkTextMuted)
+                .font(UmuveTypography.captionFont)
+                .foregroundColor(.umuveTextMuted)
                 .layoutPriority(1)
             Rectangle()
-                .fill(Color.junkBorder)
+                .fill(Color.umuveBorder)
                 .frame(height: 1)
         }
     }
@@ -258,15 +258,15 @@ struct PaymentView: View {
     // MARK: - Card Payment Section
 
     private var cardPaymentSection: some View {
-        JunkCard {
-            VStack(alignment: .leading, spacing: JunkSpacing.normal) {
+        UmuveCard {
+            VStack(alignment: .leading, spacing: UmuveSpacing.normal) {
                 HStack {
                     Image(systemName: "creditcard.fill")
                         .font(.system(size: 20))
-                        .foregroundColor(.junkPrimary)
+                        .foregroundColor(.umuvePrimary)
                     Text("Card Details")
-                        .font(JunkTypography.h3Font)
-                        .foregroundColor(.junkText)
+                        .font(UmuveTypography.h3Font)
+                        .foregroundColor(.umuveText)
                     Spacer()
 
                     // Card brand icons
@@ -278,87 +278,87 @@ struct PaymentView: View {
                 }
 
                 // Card Number
-                VStack(alignment: .leading, spacing: JunkSpacing.tiny) {
+                VStack(alignment: .leading, spacing: UmuveSpacing.tiny) {
                     Text("Card Number")
-                        .font(JunkTypography.captionFont)
-                        .foregroundColor(.junkTextMuted)
+                        .font(UmuveTypography.captionFont)
+                        .foregroundColor(.umuveTextMuted)
                     HStack {
                         Image(systemName: "creditcard")
-                            .foregroundColor(.junkTextTertiary)
+                            .foregroundColor(.umuveTextTertiary)
                             .frame(width: 24)
                         TextField("1234 5678 9012 3456", text: $viewModel.cardNumber)
-                            .font(JunkTypography.bodyFont)
+                            .font(UmuveTypography.bodyFont)
                             .keyboardType(.numberPad)
                             .textContentType(.creditCardNumber)
                             .onChange(of: viewModel.cardNumber) { newValue in
                                 viewModel.cardNumber = formatCardNumber(newValue)
                             }
                     }
-                    .padding(JunkSpacing.medium)
-                    .background(Color.junkBackground)
-                    .clipShape(RoundedRectangle(cornerRadius: JunkRadius.sm))
+                    .padding(UmuveSpacing.medium)
+                    .background(Color.umuveBackground)
+                    .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.sm))
                     .overlay(
-                        RoundedRectangle(cornerRadius: JunkRadius.sm)
+                        RoundedRectangle(cornerRadius: UmuveRadius.sm)
                             .stroke(
-                                viewModel.cardNumberError != nil ? Color.junkError : Color.clear,
+                                viewModel.cardNumberError != nil ? Color.umuveError : Color.clear,
                                 lineWidth: 1
                             )
                     )
 
                     if let error = viewModel.cardNumberError {
                         Text(error)
-                            .font(JunkTypography.smallFont)
-                            .foregroundColor(.junkError)
+                            .font(UmuveTypography.smallFont)
+                            .foregroundColor(.umuveError)
                     }
                 }
 
                 // Expiry and CVC side by side
-                HStack(spacing: JunkSpacing.medium) {
+                HStack(spacing: UmuveSpacing.medium) {
                     // Expiry
-                    VStack(alignment: .leading, spacing: JunkSpacing.tiny) {
+                    VStack(alignment: .leading, spacing: UmuveSpacing.tiny) {
                         Text("Expiry")
-                            .font(JunkTypography.captionFont)
-                            .foregroundColor(.junkTextMuted)
+                            .font(UmuveTypography.captionFont)
+                            .foregroundColor(.umuveTextMuted)
                         HStack {
                             Image(systemName: "calendar")
-                                .foregroundColor(.junkTextTertiary)
+                                .foregroundColor(.umuveTextTertiary)
                                 .frame(width: 24)
                             TextField("MM/YY", text: $viewModel.expiryDate)
-                                .font(JunkTypography.bodyFont)
+                                .font(UmuveTypography.bodyFont)
                                 .keyboardType(.numberPad)
                                 .onChange(of: viewModel.expiryDate) { newValue in
                                     viewModel.expiryDate = formatExpiryDate(newValue)
                                 }
                         }
-                        .padding(JunkSpacing.medium)
-                        .background(Color.junkBackground)
-                        .clipShape(RoundedRectangle(cornerRadius: JunkRadius.sm))
+                        .padding(UmuveSpacing.medium)
+                        .background(Color.umuveBackground)
+                        .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.sm))
                         .overlay(
-                            RoundedRectangle(cornerRadius: JunkRadius.sm)
+                            RoundedRectangle(cornerRadius: UmuveRadius.sm)
                                 .stroke(
-                                    viewModel.expiryError != nil ? Color.junkError : Color.clear,
+                                    viewModel.expiryError != nil ? Color.umuveError : Color.clear,
                                     lineWidth: 1
                                 )
                         )
 
                         if let error = viewModel.expiryError {
                             Text(error)
-                                .font(JunkTypography.smallFont)
-                                .foregroundColor(.junkError)
+                                .font(UmuveTypography.smallFont)
+                                .foregroundColor(.umuveError)
                         }
                     }
 
                     // CVC
-                    VStack(alignment: .leading, spacing: JunkSpacing.tiny) {
+                    VStack(alignment: .leading, spacing: UmuveSpacing.tiny) {
                         Text("CVC")
-                            .font(JunkTypography.captionFont)
-                            .foregroundColor(.junkTextMuted)
+                            .font(UmuveTypography.captionFont)
+                            .foregroundColor(.umuveTextMuted)
                         HStack {
                             Image(systemName: "lock.fill")
-                                .foregroundColor(.junkTextTertiary)
+                                .foregroundColor(.umuveTextTertiary)
                                 .frame(width: 24)
                             SecureField("123", text: $viewModel.cvc)
-                                .font(JunkTypography.bodyFont)
+                                .font(UmuveTypography.bodyFont)
                                 .keyboardType(.numberPad)
                                 .onChange(of: viewModel.cvc) { newValue in
                                     // Limit to 4 digits (Amex has 4)
@@ -370,41 +370,41 @@ struct PaymentView: View {
                                     }
                                 }
                         }
-                        .padding(JunkSpacing.medium)
-                        .background(Color.junkBackground)
-                        .clipShape(RoundedRectangle(cornerRadius: JunkRadius.sm))
+                        .padding(UmuveSpacing.medium)
+                        .background(Color.umuveBackground)
+                        .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.sm))
                         .overlay(
-                            RoundedRectangle(cornerRadius: JunkRadius.sm)
+                            RoundedRectangle(cornerRadius: UmuveRadius.sm)
                                 .stroke(
-                                    viewModel.cvcError != nil ? Color.junkError : Color.clear,
+                                    viewModel.cvcError != nil ? Color.umuveError : Color.clear,
                                     lineWidth: 1
                                 )
                         )
 
                         if let error = viewModel.cvcError {
                             Text(error)
-                                .font(JunkTypography.smallFont)
-                                .foregroundColor(.junkError)
+                                .font(UmuveTypography.smallFont)
+                                .foregroundColor(.umuveError)
                         }
                     }
                 }
             }
-            .padding(JunkSpacing.large)
+            .padding(UmuveSpacing.large)
         }
     }
 
     // MARK: - Security Note
 
     private var securityNote: some View {
-        HStack(spacing: JunkSpacing.small) {
+        HStack(spacing: UmuveSpacing.small) {
             Image(systemName: "lock.shield.fill")
                 .font(.system(size: 16))
-                .foregroundColor(.junkTextTertiary)
+                .foregroundColor(.umuveTextTertiary)
             Text("Your payment info is encrypted and secure. We never store your card details.")
-                .font(JunkTypography.bodySmallFont)
-                .foregroundColor(.junkTextMuted)
+                .font(UmuveTypography.bodySmallFont)
+                .foregroundColor(.umuveTextMuted)
         }
-        .padding(JunkSpacing.normal)
+        .padding(UmuveSpacing.normal)
     }
 
     // MARK: - Pay Button
@@ -418,15 +418,15 @@ struct PaymentView: View {
                 if viewModel.isProcessing {
                     ProgressView()
                         .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                        .padding(.trailing, JunkSpacing.small)
+                        .padding(.trailing, UmuveSpacing.small)
                 }
                 Text(viewModel.isProcessing ? "Processing..." : "Pay $\(formatPrice(priceBreakdown.total))")
             }
         }
-        .buttonStyle(JunkPrimaryButtonStyle(isEnabled: viewModel.isCardFormValid && !viewModel.isProcessing))
+        .buttonStyle(UmuvePrimaryButtonStyle(isEnabled: viewModel.isCardFormValid && !viewModel.isProcessing))
         .disabled(!viewModel.isCardFormValid || viewModel.isProcessing)
-        .padding(JunkSpacing.large)
-        .background(Color.junkBackground)
+        .padding(UmuveSpacing.large)
+        .background(Color.umuveBackground)
     }
 
     // MARK: - Processing Overlay
@@ -436,18 +436,18 @@ struct PaymentView: View {
             Color.black.opacity(0.4)
                 .ignoresSafeArea()
 
-            VStack(spacing: JunkSpacing.large) {
+            VStack(spacing: UmuveSpacing.large) {
                 ProgressView()
-                    .progressViewStyle(CircularProgressViewStyle(tint: .junkPrimary))
+                    .progressViewStyle(CircularProgressViewStyle(tint: .umuvePrimary))
                     .scaleEffect(1.5)
 
                 Text("Processing payment...")
-                    .font(JunkTypography.bodyFont.weight(.medium))
+                    .font(UmuveTypography.bodyFont.weight(.medium))
                     .foregroundColor(.white)
             }
-            .padding(JunkSpacing.xxlarge)
+            .padding(UmuveSpacing.xxlarge)
             .background(
-                RoundedRectangle(cornerRadius: JunkRadius.lg)
+                RoundedRectangle(cornerRadius: UmuveRadius.lg)
                     .fill(Color(.systemBackground))
             )
             .shadow(color: .black.opacity(0.15), radius: 20, x: 0, y: 10)
@@ -525,12 +525,12 @@ struct PaymentView: View {
     private func cardBrandIcon(_ brand: String) -> some View {
         Text(brand.uppercased())
             .font(.system(size: 8, weight: .bold))
-            .foregroundColor(.junkTextTertiary)
+            .foregroundColor(.umuveTextTertiary)
             .padding(.horizontal, 4)
             .padding(.vertical, 2)
             .background(
                 RoundedRectangle(cornerRadius: 2)
-                    .stroke(Color.junkBorder, lineWidth: 1)
+                    .stroke(Color.umuveBorder, lineWidth: 1)
             )
     }
 }

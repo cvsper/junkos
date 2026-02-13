@@ -1,7 +1,7 @@
 # MVVM Architecture Implementation
 
 ## Summary
-Successfully implemented MVVM architecture for the JunkOS iOS app, separating business logic from views into dedicated ViewModels.
+Successfully implemented MVVM architecture for the Umuve iOS app, separating business logic from views into dedicated ViewModels.
 
 ## ViewModels Created
 
@@ -88,7 +88,7 @@ All 6 views have been updated to:
 ## Project Structure
 
 ```
-JunkOS/
+Umuve/
 ├── ViewModels/
 │   ├── WelcomeViewModel.swift
 │   ├── AddressInputViewModel.swift
@@ -141,7 +141,7 @@ All files have been added to the Xcode project and are ready for compilation.
 To verify:
 ```bash
 cd ~/Documents/programs/webapps/junkos/JunkOS-Clean
-xcodebuild -project JunkOS.xcodeproj -scheme JunkOS -destination 'platform=iOS Simulator,name=iPhone 15 Pro' clean build
+xcodebuild -project JunkOS.xcodeproj -scheme Umuve -destination 'platform=iOS Simulator,name=iPhone 15 Pro' clean build
 ```
 
 ## Notes

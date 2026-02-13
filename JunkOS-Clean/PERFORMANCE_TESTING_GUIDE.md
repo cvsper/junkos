@@ -166,7 +166,7 @@ cd ~/Documents/programs/webapps/junkos/JunkOS-Clean
 
 # Build for simulator
 xcodebuild -project JunkOS.xcodeproj \
-  -scheme JunkOS \
+  -scheme Umuve \
   -sdk iphonesimulator \
   -destination 'platform=iOS Simulator,name=iPhone 16' \
   build
@@ -258,12 +258,12 @@ If performance is worse or bugs are introduced:
 cd ~/Documents/programs/webapps/junkos/JunkOS-Clean
 
 # Revert changes
-git checkout HEAD~1 -- JunkOS/Views/ServiceSelectionView.swift
-git checkout HEAD~1 -- JunkOS/Views/DateTimePickerView.swift
-git checkout HEAD~1 -- JunkOS/Views/OrdersView.swift
+git checkout HEAD~1 -- Umuve/Views/ServiceSelectionView.swift
+git checkout HEAD~1 -- Umuve/Views/DateTimePickerView.swift
+git checkout HEAD~1 -- Umuve/Views/OrdersView.swift
 
 # Rebuild
-xcodebuild -project JunkOS.xcodeproj -scheme JunkOS build
+xcodebuild -project JunkOS.xcodeproj -scheme Umuve build
 ```
 
 ---
@@ -280,7 +280,7 @@ If you encounter any issues during testing:
 
 2. **Check logs:**
    - Open Console.app
-   - Filter for "JunkOS"
+   - Filter for "Umuve"
    - Look for performance warnings
 
 3. **Profile with Instruments:**

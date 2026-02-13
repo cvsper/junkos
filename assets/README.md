@@ -1,4 +1,4 @@
-# JunkOS App Store Assets
+# Umuve App Store Assets
 
 This directory contains all assets needed for App Store submission and iOS app integration.
 
@@ -31,7 +31,7 @@ assets/
 open assets/icon/generate-icon.html
 ```
 - Download all icon sizes (1024, 180, 120, 60)
-- Icons use brand colors: Primary #6366F1, CTA #10B981
+- Icons use brand colors: Primary #6366F1, CTA #DC2626
 - Simple truck design, iOS-native aesthetic
 
 ### 2. Generate Launch Screens
@@ -50,7 +50,7 @@ Follow `screenshots/SCREENSHOT_GUIDE.md`:
 
 ### 4. Use Marketing Copy
 All App Store text is in `marketing-copy/app-store-listing.md`:
-- App name: **JunkOS**
+- App name: **Umuve**
 - Subtitle: **Instant Junk Removal Quotes** (29 chars)
 - Keywords: 99 characters optimized for ASO
 - Description: ~3,485 characters with features & benefits
@@ -67,17 +67,17 @@ All App Store text is in `marketing-copy/app-store-listing.md`:
 cd ~/Documents/programs/webapps/junkos/mobile
 
 # Replace default icon
-cp ../assets/icon/junkos-icon-1024.png ./assets/icon.png
+cp ../assets/icon/umuve-icon-1024.png ./assets/icon.png
 
 # Update app.json
 ```
 
 #### For Native iOS project:
 ```bash
-cd ~/Documents/programs/webapps/junkos/ios-native/JunkOS
+cd ~/Documents/programs/webapps/junkos/ios-native/Umuve
 
 # Open in Xcode
-open ../JunkOS.xcodeproj
+open ../Umuve.xcodeproj
 
 # In Xcode:
 # 1. Select Assets.xcassets in Project Navigator
@@ -98,7 +98,7 @@ open ../JunkOS.xcodeproj
 {
   "expo": {
     "splash": {
-      "image": "./assets/launch-screen/junkos-launch-16pro.png",
+      "image": "./assets/launch-screen/umuve-launch-16pro.png",
       "resizeMode": "contain",
       "backgroundColor": "#F5F3FF"
     }
@@ -120,7 +120,7 @@ open ../JunkOS.xcodeproj
 ```
 Primary:    #6366F1 (Indigo 500)
 Secondary:  #818CF8 (Indigo 400)
-CTA:        #10B981 (Emerald 500)
+CTA:        #DC2626 (Emerald 500)
 Background: #F5F3FF (Lavender)
 Text:       #1E1B4B (Indigo 950)
 Muted:      #64748B (Slate 500)
@@ -135,7 +135,7 @@ Muted:      #64748B (Slate 500)
 ### Icon Design
 - **Style:** Minimalist, geometric
 - **Symbol:** Simplified truck silhouette
-- **Wheels:** Emerald accent (#10B981)
+- **Wheels:** Emerald accent (#DC2626)
 - **Background:** Indigo gradient (#6366F1 → #818CF8)
 - **Works at:** 29×29, 40×40, 60×60, and larger
 
@@ -147,12 +147,12 @@ Muted:      #64748B (Slate 500)
 - [ ] All icon sizes generated and added to Assets.xcassets
 - [ ] Launch screen configured in Xcode/app.json
 - [ ] 6 screenshots captured with text overlays (1290×2796)
-- [ ] App name: "JunkOS" (verified available on App Store)
+- [ ] App name: "Umuve" (verified available on App Store)
 - [ ] Subtitle: "Instant Junk Removal Quotes"
 - [ ] Keywords optimized (99 chars)
 - [ ] Description polished (~3,485 chars)
-- [ ] Privacy Policy URL: https://junkos.app/privacy
-- [ ] Support URL: https://junkos.app/support
+- [ ] Privacy Policy URL: https://goumuve.com/privacy
+- [ ] Support URL: https://goumuve.com/support
 - [ ] App category: Lifestyle (primary), Productivity (secondary)
 - [ ] Age rating: 4+
 - [ ] Test build uploaded to TestFlight
@@ -163,10 +163,10 @@ Muted:      #64748B (Slate 500)
 2. Select "My Apps" → "+" → "New App"
 3. Fill in app information:
    - Platform: iOS
-   - Name: JunkOS
+   - Name: Umuve
    - Primary Language: English (U.S.)
    - Bundle ID: (from Xcode)
-   - SKU: JUNKOS-001
+   - SKU: UMUVE-001
 4. Upload screenshots (6 images, 1290×2796)
 5. Upload app icon (1024×1024, no alpha channel)
 6. Paste description, keywords, subtitle
@@ -226,4 +226,4 @@ Muted:      #64748B (Slate 500)
 
 **Need help?** Review the individual README files in each subdirectory for detailed instructions.
 
-**Brand consistency:** All assets use the JunkOS design system. Keep the premium, trustworthy, modern vibe throughout.
+**Brand consistency:** All assets use the Umuve design system. Keep the premium, trustworthy, modern vibe throughout.

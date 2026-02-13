@@ -273,7 +273,7 @@ You don't *need* dispatch software yet, but it saves time:
 - **Benefit:** Digital job records (no paper tickets)
 - **ROI:** Marginal—but sets foundation for growth
 
-**Recommendation:** Start with simple scheduling software (Workiz, ServiceM8, or JunkOS).
+**Recommendation:** Start with simple scheduling software (Workiz, ServiceM8, or Umuve).
 
 ### 3-5 Trucks: Dispatch Software Becomes Valuable
 
@@ -303,7 +303,7 @@ You need advanced features:
 - API integrations (accounting, CRM, etc.)
 - Dedicated account manager/support
 
-**Recommendation:** JunkOS, ServiceTitan, or custom enterprise solutions.
+**Recommendation:** Umuve, ServiceTitan, or custom enterprise solutions.
 
 ## Choosing the Right Real-Time Dispatch Software
 
@@ -332,12 +332,12 @@ You need advanced features:
 - Workiz, FieldPulse, ServiceM8
 
 **For growing operations (3-10 trucks):**
-- [JunkOS](https://junkos.com), Housecall Pro, mHelpDesk
+- [Umuve](https://goumuve.com), Housecall Pro, mHelpDesk
 
 **For large operations (10+ trucks):**
-- JunkOS (unlimited users), ServiceTitan
+- Umuve (unlimited users), ServiceTitan
 
-**JunkOS stands out** for junk removal because it's purpose-built: volume-based pricing support, disposal tracking, photo estimation, and unlimited users (no per-seat fees).
+**Umuve stands out** for junk removal because it's purpose-built: volume-based pricing support, disposal tracking, photo estimation, and unlimited users (no per-seat fees).
 
 ## Implementation Tips: Getting Your Team Onboard
 
@@ -406,7 +406,7 @@ Customers book online, selecting available time slots.
 
 **Benefit:** Reduces phone calls, improves conversion rates (instant booking = less drop-off).
 
-**JunkOS includes:** AI-powered dispatch recommendations, customer self-scheduling, and route optimization—features typically reserved for enterprise software, at a fraction of the cost.
+**Umuve includes:** AI-powered dispatch recommendations, customer self-scheduling, and route optimization—features typically reserved for enterprise software, at a fraction of the cost.
 
 ## ROI Example: 5-Truck Operation
 
@@ -472,7 +472,7 @@ The benefits compound:
 
 Manual dispatch works fine when you're small. But to scale profitably, you need systems that adapt to reality in real-time.
 
-**Ready to upgrade from chaos to control?** [See how JunkOS real-time dispatch](https://junkos.com) helps hauling companies manage multi-truck operations efficiently—with GPS tracking, route optimization, and automated customer updates built in. Try it free for 14 days.
+**Ready to upgrade from chaos to control?** [See how Umuve real-time dispatch](https://goumuve.com) helps hauling companies manage multi-truck operations efficiently—with GPS tracking, route optimization, and automated customer updates built in. Try it free for 14 days.
 
 ---
 

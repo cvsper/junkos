@@ -1,4 +1,4 @@
-# JunkOS iOS API Integration Setup
+# Umuve iOS API Integration Setup
 
 ## ✅ Completed Tasks
 
@@ -38,9 +38,9 @@ The files have been created but need to be added to the Xcode project:
    ```
 
 2. **Add Services folder:**
-   - Right-click on `JunkOS` folder in project navigator
-   - Select "Add Files to JunkOS..."
-   - Navigate to `JunkOS/Services`
+   - Right-click on `Umuve` folder in project navigator
+   - Select "Add Files to Umuve..."
+   - Navigate to `Umuve/Services`
    - Select both files:
      - `APIClient.swift`
      - `Config.swift`
@@ -48,9 +48,9 @@ The files have been created but need to be added to the Xcode project:
    - Click "Add"
 
 3. **Add API Models:**
-   - Right-click on `JunkOS/Models` folder
-   - Select "Add Files to JunkOS..."
-   - Navigate to `JunkOS/Models`
+   - Right-click on `Umuve/Models` folder
+   - Select "Add Files to Umuve..."
+   - Navigate to `Umuve/Models`
    - Select `APIModels.swift`
    - Click "Add"
 
@@ -92,7 +92,7 @@ ifconfig | grep "inet " | grep -v 127.0.0.1
 ### Step 4: Build and Test
 
 1. **Build the project in Xcode:**
-   - Select target: `JunkOS`
+   - Select target: `Umuve`
    - Select simulator: iPhone 15 Pro (or any device)
    - Press `Cmd+B` to build
 
@@ -113,7 +113,7 @@ ifconfig | grep "inet " | grep -v 127.0.0.1
 ```bash
 curl -H "X-API-Key: junkos-api-key-12345" http://localhost:8080/api/health
 ```
-Expected: `{"status": "healthy", "service": "JunkOS API"}`
+Expected: `{"status": "healthy", "service": "Umuve API"}`
 
 ### Services Endpoint
 ```bash
@@ -182,7 +182,7 @@ Expected: Booking confirmation with ID
 
 ```
 JunkOS-Clean/
-├── JunkOS/
+├── Umuve/
 │   ├── Services/          # NEW
 │   │   ├── APIClient.swift      # Main API client
 │   │   └── Config.swift         # Environment configuration

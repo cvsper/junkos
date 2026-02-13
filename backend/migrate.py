@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-JunkOS Database Migration Script
+Umuve Database Migration Script
 
 Handles column additions to existing tables and creation of new tables
 that db.create_all() won't add to already-existing tables.
@@ -29,7 +29,7 @@ def _resolve_database_url():
         if url.startswith("postgres://"):
             url = url.replace("postgres://", "postgresql://", 1)
         return url
-    return "sqlite:///junkos.db"
+    return "sqlite:///umuve.db"
 
 
 def _is_sqlite(url):
@@ -422,11 +422,11 @@ def run_migrations(database_url=None):
     if is_sqlite:
         import sqlite3
         # Extract the file path from the URL
-        # "sqlite:///junkos.db" -> "junkos.db"
+        # "sqlite:///umuve.db" -> "umuve.db"
         # "sqlite:////absolute/path/db" -> "/absolute/path/db"
         db_path = database_url.replace("sqlite:///", "", 1)
         if not db_path:
-            db_path = "junkos.db"
+            db_path = "umuve.db"
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
 
@@ -502,7 +502,7 @@ def run_migrations(database_url=None):
 
 def main():
     print("=" * 60)
-    print("JunkOS Database Migration")
+    print("Umuve Database Migration")
     print("=" * 60)
 
     url = _resolve_database_url()

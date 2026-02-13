@@ -59,7 +59,7 @@ export default function AdminLayout({
       <div className="h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center mx-auto mb-3">
-            <span className="text-primary-foreground font-display font-bold text-sm">J</span>
+            <span className="text-primary-foreground font-display font-bold text-sm">U</span>
           </div>
           <p className="text-sm text-muted-foreground">Loading...</p>
         </div>
@@ -93,11 +93,11 @@ export default function AdminLayout({
           <Link href="/admin" className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
               <span className="text-primary-foreground font-display font-bold text-sm">
-                J
+                U
               </span>
             </div>
             <span className="font-display font-bold text-lg tracking-tight">
-              JunkOS
+              Umuve
             </span>
             <span className="text-xs font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
               Admin

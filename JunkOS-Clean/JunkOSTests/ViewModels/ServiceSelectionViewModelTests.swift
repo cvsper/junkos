@@ -1,12 +1,12 @@
 //
 //  ServiceSelectionViewModelTests.swift
-//  JunkOSTests
+//  UmuveTests
 //
 //  Unit tests for ServiceSelectionViewModel
 //
 
 import XCTest
-@testable import JunkOS
+@testable import Umuve
 
 @MainActor
 final class ServiceSelectionViewModelTests: XCTestCase {

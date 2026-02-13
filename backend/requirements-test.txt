@@ -1,4 +1,4 @@
-# Testing Dependencies for JunkOS Backend
+# Testing Dependencies for Umuve Backend
 
 # Core testing framework
 pytest==8.0.0

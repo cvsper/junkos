@@ -1,6 +1,6 @@
 //
 //  WelcomeView.swift
-//  JunkOS
+//  Umuve
 //
 //  Welcome screen with hero section and social proof
 //  SF Symbols Reference: https://developer.apple.com/sf-symbols/
@@ -16,7 +16,7 @@ struct WelcomeView: View {
     
     var body: some View {
         ScrollView {
-            VStack(spacing: JunkSpacing.xxlarge) {
+            VStack(spacing: UmuveSpacing.xxlarge) {
                 // Logo placeholder
                 logoSection
                 
@@ -35,7 +35,7 @@ struct WelcomeView: View {
                     LiveBookingsCounter()
                     Spacer()
                 }
-                .padding(.vertical, JunkSpacing.small)
+                .padding(.vertical, UmuveSpacing.small)
                 .accessibilityElement(children: .contain)
                 
                 // Social proof
@@ -43,7 +43,7 @@ struct WelcomeView: View {
                 
                 // Trust badges
                 TrustBadgesBar()
-                    .padding(.vertical, JunkSpacing.small)
+                    .padding(.vertical, UmuveSpacing.small)
                 
                 // LoadUp Feature #7: Enhanced Trust & Coverage
                 trustAndCoverageBadges
@@ -53,14 +53,14 @@ struct WelcomeView: View {
                 
                 // Customer reviews
                 ReviewsSection()
-                    .padding(.top, JunkSpacing.normal)
+                    .padding(.top, UmuveSpacing.normal)
                 
                 // CTA button
                 ctaButton
             }
-            .padding(JunkSpacing.large)
+            .padding(UmuveSpacing.large)
         }
-        .background(Color.junkBackground.ignoresSafeArea())
+        .background(Color.umuveBackground.ignoresSafeArea())
         .navigationBarHidden(true)
         .onAppear {
             viewModel.startAnimations()
@@ -75,10 +75,10 @@ struct WelcomeView: View {
     
     // MARK: - Logo Section
     private var logoSection: some View {
-        VStack(spacing: JunkSpacing.medium) {
+        VStack(spacing: UmuveSpacing.medium) {
             ZStack {
                 RoundedRectangle(cornerRadius: 20)
-                    .fill(Color.junkWhite)
+                    .fill(Color.umuveWhite)
                     .frame(width: 100, height: 100)
                     .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
                 
@@ -86,21 +86,21 @@ struct WelcomeView: View {
                 // https://developer.apple.com/design/human-interface-guidelines/sf-symbols
                 Image(systemName: "wrench.and.screwdriver")
                     .font(.system(size: 50))
-                    .foregroundColor(.junkPrimary)
+                    .foregroundColor(.umuvePrimary)
             }
             
-            Text("JunkOS")
-                .font(JunkTypography.h1Font)
-                .foregroundColor(.junkPrimary)
+            Text("Umuve")
+                .font(UmuveTypography.h1Font)
+                .foregroundColor(.umuvePrimary)
         }
         .opacity(viewModel.isAnimating ? 1 : 0)
         .offset(y: viewModel.isAnimating ? 0 : -20)
-        .padding(.top, JunkSpacing.xlarge)
+        .padding(.top, UmuveSpacing.xlarge)
     }
     
     // MARK: - Hero Section
     private var heroSection: some View {
-        VStack(spacing: JunkSpacing.normal) {
+        VStack(spacing: UmuveSpacing.normal) {
             // Badge - SF Symbol: sparkles for special/featured content
             HStack {
                 HStack(spacing: 4) {
@@ -108,13 +108,13 @@ struct WelcomeView: View {
                         .font(.system(size: 12))
                     Text("INSTANT BOOKING")
                 }
-                .font(JunkTypography.smallFont)
+                .font(UmuveTypography.smallFont)
                 .foregroundColor(.white)
-                .padding(.horizontal, JunkSpacing.medium)
-                .padding(.vertical, JunkSpacing.small)
+                .padding(.horizontal, UmuveSpacing.medium)
+                .padding(.vertical, UmuveSpacing.small)
                 .background(
                     LinearGradient(
-                        colors: [Color.junkPrimary, Color.junkSecondary],
+                        colors: [Color.umuvePrimary, Color.umuveSecondary],
                         startPoint: .leading,
                         endPoint: .trailing
                     )
@@ -124,14 +124,14 @@ struct WelcomeView: View {
             
             // Title
             Text("Book junk removal in 3 taps")
-                .font(JunkTypography.displayFont)
-                .foregroundColor(.junkText)
+                .font(UmuveTypography.displayFont)
+                .foregroundColor(.umuveText)
                 .multilineTextAlignment(.center)
             
             // Subtitle
             Text("Same-day service • Eco-friendly disposal • Licensed & insured")
-                .font(JunkTypography.bodyFont)
-                .foregroundColor(.junkTextMuted)
+                .font(UmuveTypography.bodyFont)
+                .foregroundColor(.umuveTextMuted)
                 .multilineTextAlignment(.center)
         }
         .opacity(viewModel.isAnimating ? 1 : 0)
@@ -141,7 +141,7 @@ struct WelcomeView: View {
     
     // MARK: - Social Proof
     private var socialProofBar: some View {
-        HStack(spacing: JunkSpacing.large) {
+        HStack(spacing: UmuveSpacing.large) {
             // SF Symbol: star.fill for ratings
             ProofBadge(icon: "star.fill", text: "4.9/5")
             // SF Symbol: checkmark.circle.fill for completion/verification
@@ -149,14 +149,14 @@ struct WelcomeView: View {
             // SF Symbol: shield.fill for protection/insurance
             ProofBadge(icon: "shield.fill", text: "Insured")
         }
-        .padding(.vertical, JunkSpacing.normal)
+        .padding(.vertical, UmuveSpacing.normal)
         .opacity(viewModel.isAnimating ? 1 : 0)
         .animation(.easeInOut(duration: 0.6).delay(0.4), value: viewModel.isAnimating)
     }
     
     // MARK: - Feature Cards
     private var featureCardsSection: some View {
-        VStack(spacing: JunkSpacing.normal) {
+        VStack(spacing: UmuveSpacing.normal) {
             FeatureCard(step: 1, title: "Take Photos", description: "Snap pics of items to remove")
             FeatureCard(step: 2, title: "Get Quote", description: "Instant pricing based on volume")
             FeatureCard(step: 3, title: "Book Pickup", description: "Choose your time slot")
@@ -168,24 +168,24 @@ struct WelcomeView: View {
     
     // MARK: - LoadUp Feature #3: Eco-Friendly Badge
     private var ecoFriendlyBadge: some View {
-        HStack(spacing: JunkSpacing.normal) {
+        HStack(spacing: UmuveSpacing.normal) {
             Image(systemName: "leaf.fill")
                 .font(.system(size: 30))
                 .foregroundColor(.green)
             
             VStack(alignment: .leading, spacing: 4) {
                 Text("We Recycle & Donate")
-                    .font(JunkTypography.h3Font)
-                    .foregroundColor(.junkText)
+                    .font(UmuveTypography.h3Font)
+                    .foregroundColor(.umuveText)
                 
                 Text("Eco-friendly disposal of your items")
-                    .font(JunkTypography.bodySmallFont)
-                    .foregroundColor(.junkTextMuted)
+                    .font(UmuveTypography.bodySmallFont)
+                    .foregroundColor(.umuveTextMuted)
             }
             
             Spacer()
         }
-        .padding(JunkSpacing.normal)
+        .padding(UmuveSpacing.normal)
         .background(Color.green.opacity(0.1))
         .cornerRadius(12)
         .opacity(viewModel.isAnimating ? 1 : 0)
@@ -194,16 +194,16 @@ struct WelcomeView: View {
     
     // MARK: - LoadUp Feature #4: Commercial Toggle
     private var commercialToggle: some View {
-        JunkCard {
+        UmuveCard {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Business Account")
-                        .font(JunkTypography.h3Font)
-                        .foregroundColor(.junkText)
+                        .font(UmuveTypography.h3Font)
+                        .foregroundColor(.umuveText)
                     
                     Text("Bulk discounts & recurring pickups available")
-                        .font(JunkTypography.bodySmallFont)
-                        .foregroundColor(.junkTextMuted)
+                        .font(UmuveTypography.bodySmallFont)
+                        .foregroundColor(.umuveTextMuted)
                 }
                 
                 Spacer()
@@ -211,7 +211,7 @@ struct WelcomeView: View {
                 Toggle("", isOn: $bookingData.isCommercialBooking)
                     .labelsHidden()
             }
-            .padding(JunkSpacing.normal)
+            .padding(UmuveSpacing.normal)
         }
         .opacity(viewModel.isAnimating ? 1 : 0)
         .animation(.easeInOut(duration: 0.6).delay(0.35), value: viewModel.isAnimating)
@@ -219,8 +219,8 @@ struct WelcomeView: View {
     
     // MARK: - LoadUp Feature #7: Trust & Coverage Badges
     private var trustAndCoverageBadges: some View {
-        VStack(spacing: JunkSpacing.normal) {
-            HStack(spacing: JunkSpacing.normal) {
+        VStack(spacing: UmuveSpacing.normal) {
+            HStack(spacing: UmuveSpacing.normal) {
                 EnhancedTrustBadge(
                     icon: "checkmark.shield.fill",
                     title: "Background Checked",
@@ -234,7 +234,7 @@ struct WelcomeView: View {
                 )
             }
             
-            HStack(spacing: JunkSpacing.normal) {
+            HStack(spacing: UmuveSpacing.normal) {
                 EnhancedTrustBadge(
                     icon: "doc.text.fill",
                     title: "Licensed",
@@ -248,7 +248,7 @@ struct WelcomeView: View {
                 )
             }
         }
-        .padding(.vertical, JunkSpacing.small)
+        .padding(.vertical, UmuveSpacing.small)
         .opacity(viewModel.isAnimating ? 1 : 0)
         .animation(.easeInOut(duration: 0.6).delay(0.5), value: viewModel.isAnimating)
     }
@@ -258,8 +258,8 @@ struct WelcomeView: View {
         NavigationLink(destination: AddressInputView().environmentObject(bookingData)) {
             Text("Get Started →")
         }
-        .buttonStyle(JunkPrimaryButtonStyle())
-        .padding(.top, JunkSpacing.normal)
+        .buttonStyle(UmuvePrimaryButtonStyle())
+        .padding(.top, UmuveSpacing.normal)
         .opacity(viewModel.isAnimating ? 1 : 0)
         .animation(.easeInOut(duration: 0.6).delay(0.8), value: viewModel.isAnimating)
     }
@@ -272,13 +272,13 @@ struct ProofBadge: View {
     let text: String
     
     var body: some View {
-        HStack(spacing: JunkSpacing.small) {
+        HStack(spacing: UmuveSpacing.small) {
             Image(systemName: icon)
                 .font(.system(size: 16))
-                .foregroundColor(.junkPrimary)
+                .foregroundColor(.umuvePrimary)
             Text(text)
-                .font(JunkTypography.captionFont)
-                .foregroundColor(.junkText)
+                .font(UmuveTypography.captionFont)
+                .foregroundColor(.umuveText)
         }
     }
 }
@@ -289,33 +289,33 @@ struct FeatureCard: View {
     let description: String
     
     var body: some View {
-        JunkCard {
-            HStack(spacing: JunkSpacing.normal) {
+        UmuveCard {
+            HStack(spacing: UmuveSpacing.normal) {
                 // Step badge
                 ZStack {
                     Circle()
-                        .fill(Color.junkPrimary.opacity(0.1))
+                        .fill(Color.umuvePrimary.opacity(0.1))
                         .frame(width: 50, height: 50)
                     
                     Text("\(step)")
-                        .font(JunkTypography.h2Font)
-                        .foregroundColor(.junkPrimary)
+                        .font(UmuveTypography.h2Font)
+                        .foregroundColor(.umuvePrimary)
                 }
                 
                 // Content
                 VStack(alignment: .leading, spacing: 4) {
                     Text(title)
-                        .font(JunkTypography.h3Font)
-                        .foregroundColor(.junkText)
+                        .font(UmuveTypography.h3Font)
+                        .foregroundColor(.umuveText)
                     
                     Text(description)
-                        .font(JunkTypography.bodySmallFont)
-                        .foregroundColor(.junkTextMuted)
+                        .font(UmuveTypography.bodySmallFont)
+                        .foregroundColor(.umuveTextMuted)
                 }
                 
                 Spacer()
             }
-            .padding(JunkSpacing.normal)
+            .padding(UmuveSpacing.normal)
         }
     }
 }
@@ -326,24 +326,24 @@ struct EnhancedTrustBadge: View {
     let subtitle: String
     
     var body: some View {
-        JunkCard {
-            VStack(spacing: JunkSpacing.small) {
+        UmuveCard {
+            VStack(spacing: UmuveSpacing.small) {
                 Image(systemName: icon)
                     .font(.system(size: 24))
-                    .foregroundColor(.junkPrimary)
+                    .foregroundColor(.umuvePrimary)
                 
                 Text(title)
-                    .font(JunkTypography.bodyFont.weight(.semibold))
-                    .foregroundColor(.junkText)
+                    .font(UmuveTypography.bodyFont.weight(.semibold))
+                    .foregroundColor(.umuveText)
                     .multilineTextAlignment(.center)
                 
                 Text(subtitle)
-                    .font(JunkTypography.captionFont)
-                    .foregroundColor(.junkTextMuted)
+                    .font(UmuveTypography.captionFont)
+                    .foregroundColor(.umuveTextMuted)
                     .multilineTextAlignment(.center)
             }
             .frame(maxWidth: .infinity)
-            .padding(JunkSpacing.normal)
+            .padding(UmuveSpacing.normal)
         }
     }
 }

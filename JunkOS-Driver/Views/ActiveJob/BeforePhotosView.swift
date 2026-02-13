@@ -1,6 +1,6 @@
 //
 //  BeforePhotosView.swift
-//  JunkOS Driver
+//  Umuve Pro
 //
 //  Camera capture for "before" photos + Mark Started button.
 //

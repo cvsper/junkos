@@ -1,6 +1,6 @@
 //
 //  EmailLoginView.swift
-//  JunkOS
+//  Umuve
 //
 //  Email and password login form
 //
@@ -23,25 +23,25 @@ struct EmailLoginView: View {
     
     var body: some View {
         ScrollView {
-            VStack(spacing: JunkSpacing.xxlarge) {
+            VStack(spacing: UmuveSpacing.xxlarge) {
                 // Close button
                 HStack {
                     Spacer()
                     Button(action: { dismiss() }) {
                         Image(systemName: "xmark")
                             .font(.title3)
-                            .foregroundColor(.junkText)
+                            .foregroundColor(.umuveText)
                             .padding()
                     }
                 }
                 
                 // Header
-                VStack(spacing: JunkSpacing.large) {
+                VStack(spacing: UmuveSpacing.large) {
                     Image(systemName: "envelope.circle.fill")
                         .font(.system(size: 80))
                         .foregroundStyle(
                             LinearGradient(
-                                colors: [Color.junkPrimary, Color.junkCTA],
+                                colors: [Color.umuvePrimary, Color.umuveCTA],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             )
@@ -49,72 +49,72 @@ struct EmailLoginView: View {
                     
                     Text("Log in with Email")
                         .font(.system(size: 32, weight: .bold))
-                        .foregroundColor(.junkText)
+                        .foregroundColor(.umuveText)
                         .multilineTextAlignment(.center)
                 }
                 .frame(maxWidth: .infinity)
-                .padding(.top, JunkSpacing.xlarge)
+                .padding(.top, UmuveSpacing.xlarge)
                 
                 // Form
-                VStack(spacing: JunkSpacing.large) {
+                VStack(spacing: UmuveSpacing.large) {
                     // Email field
-                    VStack(alignment: .leading, spacing: JunkSpacing.small) {
+                    VStack(alignment: .leading, spacing: UmuveSpacing.small) {
                         Text("Email Address")
-                            .font(JunkTypography.bodySmallFont)
-                            .foregroundColor(.junkTextMuted)
+                            .font(UmuveTypography.bodySmallFont)
+                            .foregroundColor(.umuveTextMuted)
                         
                         HStack {
                             Image(systemName: "envelope.fill")
-                                .foregroundColor(.junkTextMuted)
+                                .foregroundColor(.umuveTextMuted)
                             
                             TextField("your@email.com", text: $email)
-                                .font(JunkTypography.bodyFont)
+                                .font(UmuveTypography.bodyFont)
                                 .keyboardType(.emailAddress)
                                 .autocapitalization(.none)
                                 .autocorrectionDisabled()
                         }
-                        .padding(JunkSpacing.normal)
+                        .padding(UmuveSpacing.normal)
                         .background(Color.white)
                         .cornerRadius(12)
                         .overlay(
                             RoundedRectangle(cornerRadius: 12)
-                                .stroke(Color.junkBorder, lineWidth: 1)
+                                .stroke(Color.umuveBorder, lineWidth: 1)
                         )
                     }
                     
                     // Password field
-                    VStack(alignment: .leading, spacing: JunkSpacing.small) {
+                    VStack(alignment: .leading, spacing: UmuveSpacing.small) {
                         Text("Password")
-                            .font(JunkTypography.bodySmallFont)
-                            .foregroundColor(.junkTextMuted)
+                            .font(UmuveTypography.bodySmallFont)
+                            .foregroundColor(.umuveTextMuted)
                         
                         HStack {
                             Image(systemName: "lock.fill")
-                                .foregroundColor(.junkTextMuted)
+                                .foregroundColor(.umuveTextMuted)
                             
                             if showPassword {
                                 TextField("", text: $password)
-                                    .font(JunkTypography.bodyFont)
+                                    .font(UmuveTypography.bodyFont)
                                     .autocapitalization(.none)
                                     .autocorrectionDisabled()
                             } else {
                                 SecureField("", text: $password)
-                                    .font(JunkTypography.bodyFont)
+                                    .font(UmuveTypography.bodyFont)
                                     .autocapitalization(.none)
                                     .autocorrectionDisabled()
                             }
                             
                             Button(action: { showPassword.toggle() }) {
                                 Image(systemName: showPassword ? "eye.slash.fill" : "eye.fill")
-                                    .foregroundColor(.junkTextMuted)
+                                    .foregroundColor(.umuveTextMuted)
                             }
                         }
-                        .padding(JunkSpacing.normal)
+                        .padding(UmuveSpacing.normal)
                         .background(Color.white)
                         .cornerRadius(12)
                         .overlay(
                             RoundedRectangle(cornerRadius: 12)
-                                .stroke(Color.junkBorder, lineWidth: 1)
+                                .stroke(Color.umuveBorder, lineWidth: 1)
                         )
                     }
                     
@@ -125,11 +125,11 @@ struct EmailLoginView: View {
                             forgotEmail = email
                             showForgotPassword = true
                         }
-                        .font(JunkTypography.bodySmallFont)
-                        .foregroundColor(.junkPrimary)
+                        .font(UmuveTypography.bodySmallFont)
+                        .foregroundColor(.umuvePrimary)
                     }
                 }
-                .padding(.horizontal, JunkSpacing.xlarge)
+                .padding(.horizontal, UmuveSpacing.xlarge)
                 
                 // Error message
                 if let error = errorMessage {
@@ -137,13 +137,13 @@ struct EmailLoginView: View {
                         Image(systemName: "exclamationmark.triangle.fill")
                             .foregroundColor(.red)
                         Text(error)
-                            .font(JunkTypography.bodySmallFont)
+                            .font(UmuveTypography.bodySmallFont)
                             .foregroundColor(.red)
                     }
-                    .padding(JunkSpacing.small)
+                    .padding(UmuveSpacing.small)
                     .background(Color.red.opacity(0.1))
                     .cornerRadius(8)
-                    .padding(.horizontal, JunkSpacing.xlarge)
+                    .padding(.horizontal, UmuveSpacing.xlarge)
                     .transition(.scale.combined(with: .opacity))
                 }
                 
@@ -156,20 +156,20 @@ struct EmailLoginView: View {
                             .progressViewStyle(CircularProgressViewStyle(tint: .white))
                     } else {
                         Text("Log In")
-                            .font(JunkTypography.h3Font)
+                            .font(UmuveTypography.h3Font)
                             .foregroundColor(.white)
                     }
                 }
                 .frame(maxWidth: .infinity)
                 .frame(height: 56)
-                .background(isFormValid ? Color.junkPrimary : Color.junkTextMuted)
+                .background(isFormValid ? Color.umuvePrimary : Color.umuveTextMuted)
                 .cornerRadius(28)
                 .disabled(!isFormValid || isLoading)
-                .padding(.horizontal, JunkSpacing.xlarge)
-                .padding(.bottom, JunkSpacing.xlarge)
+                .padding(.horizontal, UmuveSpacing.xlarge)
+                .padding(.bottom, UmuveSpacing.xlarge)
             }
         }
-        .background(Color.junkBackground.ignoresSafeArea())
+        .background(Color.umuveBackground.ignoresSafeArea())
         .sheet(isPresented: $showForgotPassword) {
             forgotPasswordSheet
         }
@@ -178,66 +178,66 @@ struct EmailLoginView: View {
     // MARK: - Forgot Password Sheet
     private var forgotPasswordSheet: some View {
         NavigationView {
-            VStack(spacing: JunkSpacing.xxlarge) {
+            VStack(spacing: UmuveSpacing.xxlarge) {
                 // Icon
                 Image(systemName: "lock.rotation")
                     .font(.system(size: 60))
-                    .foregroundColor(.junkPrimary)
-                    .padding(.top, JunkSpacing.xxlarge)
+                    .foregroundColor(.umuvePrimary)
+                    .padding(.top, UmuveSpacing.xxlarge)
 
                 // Title
-                VStack(spacing: JunkSpacing.small) {
+                VStack(spacing: UmuveSpacing.small) {
                     Text("Reset Password")
                         .font(.system(size: 24, weight: .bold))
-                        .foregroundColor(.junkText)
+                        .foregroundColor(.umuveText)
 
                     Text("Enter your email and we'll send you a reset link")
-                        .font(JunkTypography.bodyFont)
-                        .foregroundColor(.junkTextMuted)
+                        .font(UmuveTypography.bodyFont)
+                        .foregroundColor(.umuveTextMuted)
                         .multilineTextAlignment(.center)
-                        .padding(.horizontal, JunkSpacing.xlarge)
+                        .padding(.horizontal, UmuveSpacing.xlarge)
                 }
 
                 if forgotPasswordSent {
                     // Success state
-                    HStack(spacing: JunkSpacing.small) {
+                    HStack(spacing: UmuveSpacing.small) {
                         Image(systemName: "checkmark.circle.fill")
-                            .foregroundColor(.junkSuccess)
+                            .foregroundColor(.umuveSuccess)
                         Text("Reset link sent! Check your email.")
-                            .font(JunkTypography.bodyFont)
-                            .foregroundColor(.junkSuccess)
+                            .font(UmuveTypography.bodyFont)
+                            .foregroundColor(.umuveSuccess)
                     }
-                    .padding(JunkSpacing.normal)
-                    .background(Color.junkSuccess.opacity(0.1))
-                    .clipShape(RoundedRectangle(cornerRadius: JunkRadius.sm))
-                    .padding(.horizontal, JunkSpacing.xlarge)
+                    .padding(UmuveSpacing.normal)
+                    .background(Color.umuveSuccess.opacity(0.1))
+                    .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.sm))
+                    .padding(.horizontal, UmuveSpacing.xlarge)
                 } else {
                     // Email field
-                    VStack(alignment: .leading, spacing: JunkSpacing.small) {
+                    VStack(alignment: .leading, spacing: UmuveSpacing.small) {
                         HStack {
                             Image(systemName: "envelope.fill")
-                                .foregroundColor(.junkTextMuted)
+                                .foregroundColor(.umuveTextMuted)
                             TextField("your@email.com", text: $forgotEmail)
-                                .font(JunkTypography.bodyFont)
+                                .font(UmuveTypography.bodyFont)
                                 .keyboardType(.emailAddress)
                                 .autocapitalization(.none)
                                 .autocorrectionDisabled()
                         }
-                        .padding(JunkSpacing.normal)
+                        .padding(UmuveSpacing.normal)
                         .background(Color.white)
                         .cornerRadius(12)
                         .overlay(
                             RoundedRectangle(cornerRadius: 12)
-                                .stroke(Color.junkBorder, lineWidth: 1)
+                                .stroke(Color.umuveBorder, lineWidth: 1)
                         )
                     }
-                    .padding(.horizontal, JunkSpacing.xlarge)
+                    .padding(.horizontal, UmuveSpacing.xlarge)
 
                     if let error = forgotPasswordError {
                         Text(error)
-                            .font(JunkTypography.bodySmallFont)
+                            .font(UmuveTypography.bodySmallFont)
                             .foregroundColor(.red)
-                            .padding(.horizontal, JunkSpacing.xlarge)
+                            .padding(.horizontal, UmuveSpacing.xlarge)
                     }
 
                     // Send button
@@ -247,23 +247,23 @@ struct EmailLoginView: View {
                                 .progressViewStyle(CircularProgressViewStyle(tint: .white))
                         } else {
                             Text("Send Reset Link")
-                                .font(JunkTypography.h3Font)
+                                .font(UmuveTypography.h3Font)
                                 .foregroundColor(.white)
                         }
                     }
                     .frame(maxWidth: .infinity)
                     .frame(height: 56)
                     .background(
-                        forgotEmail.contains("@") ? Color.junkPrimary : Color.junkTextMuted
+                        forgotEmail.contains("@") ? Color.umuvePrimary : Color.umuveTextMuted
                     )
                     .cornerRadius(28)
                     .disabled(!forgotEmail.contains("@") || forgotPasswordLoading)
-                    .padding(.horizontal, JunkSpacing.xlarge)
+                    .padding(.horizontal, UmuveSpacing.xlarge)
                 }
 
                 Spacer()
             }
-            .background(Color.junkBackground.ignoresSafeArea())
+            .background(Color.umuveBackground.ignoresSafeArea())
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") {
@@ -271,7 +271,7 @@ struct EmailLoginView: View {
                         forgotPasswordSent = false
                         forgotPasswordError = nil
                     }
-                    .foregroundColor(.junkPrimary)
+                    .foregroundColor(.umuvePrimary)
                 }
             }
         }

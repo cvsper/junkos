@@ -1,6 +1,6 @@
 //
 //  AppRouter.swift
-//  JunkOS Driver
+//  Umuve Pro
 //
 //  Navigation path enum for NavigationStack-based routing.
 //

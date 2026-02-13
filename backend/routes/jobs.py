@@ -1,5 +1,5 @@
 """
-Customer-facing Job API routes for JunkOS.
+Customer-facing Job API routes for Umuve.
 """
 
 from flask import Blueprint, request, jsonify

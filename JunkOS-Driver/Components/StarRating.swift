@@ -1,6 +1,6 @@
 //
 //  StarRating.swift
-//  JunkOS Driver
+//  Umuve Pro
 //
 //  5-star display component.
 //

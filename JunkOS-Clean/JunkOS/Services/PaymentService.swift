@@ -1,6 +1,6 @@
 //
 //  PaymentService.swift
-//  JunkOS
+//  Umuve
 //
 //  Payment service for creating payment intents and confirming payments
 //  via the backend Stripe API. Does NOT use the Stripe SDK directly.
@@ -273,11 +273,11 @@ class PaymentService: ObservableObject {
     /// Creates a PKPaymentRequest for Apple Pay authorization
     /// - Parameters:
     ///   - amount: The total amount in dollars
-    ///   - label: Description shown on the payment sheet (e.g., "JunkOS Pickup")
+    ///   - label: Description shown on the payment sheet (e.g., "Umuve Pickup")
     /// - Returns: A configured PKPaymentRequest
-    func createApplePayRequest(amount: Double, label: String = "JunkOS Pickup") -> PKPaymentRequest {
+    func createApplePayRequest(amount: Double, label: String = "Umuve Pickup") -> PKPaymentRequest {
         let request = PKPaymentRequest()
-        request.merchantIdentifier = "merchant.com.junkos.app"
+        request.merchantIdentifier = "merchant.com.goumuve.app"
         request.supportedNetworks = supportedPaymentNetworks
         request.merchantCapabilities = .capability3DS
         request.countryCode = "US"

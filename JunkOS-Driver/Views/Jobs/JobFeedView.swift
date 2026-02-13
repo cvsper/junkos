@@ -1,6 +1,6 @@
 //
 //  JobFeedView.swift
-//  JunkOS Driver
+//  Umuve Pro
 //
 //  Available jobs list with pull-to-refresh.
 //

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-JunkOS Cold Email Outreach Automation Script
+Umuve Cold Email Outreach Automation Script
 Supports Mailgun and SendGrid with personalization, scheduling, and tracking
 """
 
@@ -30,9 +30,9 @@ CONFIG = {
     'sendgrid_api_key': os.getenv('SENDGRID_API_KEY', 'your-sendgrid-api-key'),
     
     # Sender Info
-    'from_email': 'sales@junkos.com',
-    'from_name': 'Alex from JunkOS',
-    'reply_to': 'alex@junkos.com',
+    'from_email': 'sales@goumuve.com',
+    'from_name': 'Alex from Umuve',
+    'reply_to': 'alex@goumuve.com',
     
     # Timing (days between emails)
     'email_delays': [0, 2, 5],  # Email 1: immediate, Email 2: +2 days, Email 3: +5 days after #2
@@ -59,7 +59,7 @@ Quick question for {{company}} — how often do you lose jobs because someone el
 
 Most haulers in {{city}} tell us they're typing the same info into spreadsheets 10+ times per day. The winner isn't always the best operator — just the fastest quote.
 
-JunkOS generates quotes in 30 seconds. Live pricing, instant PDF, done.
+Umuve generates quotes in 30 seconds. Live pricing, instant PDF, done.
 
 Worth a 10-minute look?
 
@@ -74,7 +74,7 @@ Saw you didn't get a chance to respond — no worries.
 
 I wanted to share something relevant: A hauler in {{city}} was losing $3K/month to no-shows and last-minute cancellations.
 
-They started using JunkOS's automated reminders (SMS + email). No-shows dropped 40% in the first 60 days. Now their {{truck_count}}-truck operation runs tighter than ever.
+They started using Umuve's automated reminders (SMS + email). No-shows dropped 40% in the first 60 days. Now their {{truck_count}}-truck operation runs tighter than ever.
 
 Figured {{company}} might face similar challenges.
 
@@ -107,7 +107,7 @@ Mike at DFW Hauling started with 3 trucks in {{city}}, same as {{company}}.
 
 18 months later? 10 trucks and booked solid 6 days a week.
 
-His secret wasn't marketing — it was operations. JunkOS automated his quotes, dispatch, and invoicing. He went from firefighting admin work to actually growing his business.
+His secret wasn't marketing — it was operations. Umuve automated his quotes, dispatch, and invoicing. He went from firefighting admin work to actually growing his business.
 
 Think {{company}} could use that extra time?
 
@@ -117,17 +117,17 @@ Best,
 {{sender_name}}'''
         },
         {
-            'subject': '2-minute JunkOS demo',
+            'subject': '2-minute Umuve demo',
             'body': '''Hi {{name}},
 
 Following up on my last email about scaling operations.
 
-Instead of a long pitch, I recorded a 2-minute screen share showing exactly how JunkOS handles:
+Instead of a long pitch, I recorded a 2-minute screen share showing exactly how Umuve handles:
 • 30-second quotes
 • GPS dispatch for {{truck_count}} trucks
 • Auto-invoicing after job completion
 
-Watch it here: https://junkos.com/demo
+Watch it here: https://goumuve.com/demo
 
 If it clicks, we can chat. If not, no hard feelings.
 
@@ -157,11 +157,11 @@ Reply "let's try it" and I'll get you started Monday.
             'subject': 'Why 500+ haulers switched',
             'body': '''Hi {{name}},
 
-Over 500 junk removal and hauling companies have switched to JunkOS in the past year. Most from {{city}} and similar markets.
+Over 500 junk removal and hauling companies have switched to Umuve in the past year. Most from {{city}} and similar markets.
 
 The #1 reason? They were tired of losing jobs to competitors with faster quotes and tighter operations.
 
-JunkOS isn't fancy — it just handles quotes, dispatch, and invoicing so you can focus on the actual work.
+Umuve isn't fancy — it just handles quotes, dispatch, and invoicing so you can focus on the actual work.
 
 Want to see why companies like {{company}} are making the switch?
 
@@ -174,7 +174,7 @@ Best,
 
 Wanted to share a local example:
 
-A {{city}}-based hauler (similar size to {{company}} — {{truck_count}} trucks) implemented JunkOS last fall. In Q4 alone:
+A {{city}}-based hauler (similar size to {{company}} — {{truck_count}} trucks) implemented Umuve last fall. In Q4 alone:
 • Revenue up 23%
 • Quote-to-booking rate improved from 34% → 51%
 • Admin time cut in half
@@ -195,7 +195,7 @@ You're probably busy (running {{truck_count}} trucks isn't easy), so I'll make t
 
 **5-minute screen share. Your schedule. Zero pressure.**
 
-I'll show you exactly how companies in {{city}} are using JunkOS to close more jobs and cut admin chaos. If it's not a fit, we'll part as friends.
+I'll show you exactly how companies in {{city}} are using Umuve to close more jobs and cut admin chaos. If it's not a fit, we'll part as friends.
 
 Reply with a day/time and I'll send a Zoom link.
 
@@ -333,7 +333,7 @@ def run_campaign(csv_path: str, sequence_name: str = 'A'):
     """Execute email campaign for all prospects"""
     
     print(f"\n{'='*60}")
-    print(f"JunkOS Cold Email Campaign - Sequence {sequence_name}")
+    print(f"Umuve Cold Email Campaign - Sequence {sequence_name}")
     print(f"{'='*60}\n")
     
     if CONFIG['dry_run']:
@@ -423,7 +423,7 @@ def track_responses():
 if __name__ == '__main__':
     import argparse
     
-    parser = argparse.ArgumentParser(description='JunkOS Cold Email Outreach')
+    parser = argparse.ArgumentParser(description='Umuve Cold Email Outreach')
     parser.add_argument('--csv', default='prospect-list-template.csv', help='Path to prospect CSV')
     parser.add_argument('--sequence', choices=['A', 'B', 'C'], default='A', help='Email sequence to use')
     parser.add_argument('--live', action='store_true', help='Send real emails (disable dry-run)')

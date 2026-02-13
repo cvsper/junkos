@@ -1,8 +1,8 @@
-# JunkOS Operator Guide
+# Umuve Operator Guide
 
 **Complete Manual for Junk Removal Operators**
 
-Welcome to the comprehensive JunkOS Operator Guide. This manual covers everything you need to know to run your junk removal business efficiently using JunkOS.
+Welcome to the comprehensive Umuve Operator Guide. This manual covers everything you need to know to run your junk removal business efficiently using Umuve.
 
 ---
 
@@ -21,7 +21,7 @@ Welcome to the comprehensive JunkOS Operator Guide. This manual covers everythin
 
 ## Dashboard Overview
 
-The JunkOS dashboard is your command center for managing all aspects of your junk removal operation.
+The Umuve dashboard is your command center for managing all aspects of your junk removal operation.
 
 **[SCREENSHOT: Full dashboard overview]**
 
@@ -157,7 +157,7 @@ Jobs are the core of your operation. This section covers the complete job lifecy
 6. **Assign Driver** (optional):
    - Select driver immediately or assign later
    - View driver availability
-   - JunkOS suggests best match based on location and schedule
+   - Umuve suggests best match based on location and schedule
 
 **[SCREENSHOT: Driver assignment dropdown]**
 
@@ -659,7 +659,7 @@ Each invoice shows:
 
 #### Payment Methods
 
-JunkOS supports multiple payment methods through Stripe:
+Umuve supports multiple payment methods through Stripe:
 
 ##### Online Payments
 Customers can pay via invoice link:
@@ -681,7 +681,7 @@ Drivers can collect payment on-site using mobile app:
 **[SCREENSHOT: Mobile payment in driver app]**
 
 ##### Offline Payment Recording
-Record payments made outside JunkOS:
+Record payments made outside Umuve:
 1. Open invoice
 2. Click **"Record Payment"**
 3. Select method: Cash, check, wire transfer, other
@@ -925,7 +925,7 @@ Export all data for backup or migration:
 
 ## Settings & Configuration
 
-Customize JunkOS to fit your business.
+Customize Umuve to fit your business.
 
 ### Company Settings
 
@@ -1149,7 +1149,7 @@ After 5 failed login attempts, account locks for 15 minutes.
 #### Email Not Received
 - Check spam/junk folder
 - Verify email address is correct in account settings
-- Add noreply@junkos.app to contacts
+- Add noreply@goumuve.com to contacts
 - Try resending verification email
 
 ### Booking Issues
@@ -1242,7 +1242,7 @@ You'll receive email notification with decline reason.
    - Chrome: Cmd/Ctrl + Shift + Delete
 3. Close unnecessary browser tabs
 4. Try different browser
-5. Check JunkOS status page: status.junkos.app
+5. Check Umuve status page: status.goumuve.com
 
 #### Mobile App Crashing
 1. Ensure app is updated to latest version
@@ -1259,22 +1259,22 @@ You'll receive email notification with decline reason.
 
 ##### Help Center
 Search articles and guides:
-- Visit help.junkos.app
+- Visit help.goumuve.com
 - Search by keyword or browse categories
 
 ##### Video Tutorials
 Watch how-to videos:
-- YouTube: youtube.com/junkos
+- YouTube: youtube.com/umuve
 - In-app video library
 
 ##### Community Forum
 Ask questions and share tips:
-- community.junkos.app
+- community.goumuve.com
 - Connect with other operators
 
 ##### Email Support
 For specific issues:
-- Email: support@junkos.app
+- Email: support@goumuve.com
 - Include:
   - Account email
   - Description of issue
@@ -1358,6 +1358,6 @@ Speed up your workflow with shortcuts:
 
 ---
 
-**Questions?** Contact us at support@junkos.app
+**Questions?** Contact us at support@goumuve.com
 
 *Last updated: February 2026*

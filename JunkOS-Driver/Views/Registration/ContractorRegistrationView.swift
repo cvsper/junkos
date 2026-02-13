@@ -1,6 +1,6 @@
 //
 //  ContractorRegistrationView.swift
-//  JunkOS Driver
+//  Umuve Pro
 //
 //  Multi-step contractor registration: Truck Type → License → Insurance.
 //

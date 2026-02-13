@@ -1,6 +1,6 @@
 # Quick Setup Guide
 
-Get JunkOS mobile app running in 10 minutes.
+Get Umuve mobile app running in 10 minutes.
 
 ## ⚡ Prerequisites
 

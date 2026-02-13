@@ -1,6 +1,6 @@
 //
 //  LocationManager.swift
-//  JunkOS Driver
+//  Umuve Pro
 //
 //  Continuous GPS location updates for background tracking.
 //  Streams location to the backend via Socket.IO and REST.

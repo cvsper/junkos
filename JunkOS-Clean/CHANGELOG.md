@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to the JunkOS iOS app will be documented in this file.
+All notable changes to the Umuve iOS app will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### 🎉 Initial Release
 
-First TestFlight beta release of JunkOS - the easiest way to book junk removal in Tampa Bay!
+First TestFlight beta release of Umuve - the easiest way to book junk removal in Tampa Bay!
 
 ### ✨ Features
 
@@ -112,7 +112,7 @@ First TestFlight beta release of JunkOS - the easiest way to book junk removal i
 
 **How to Report Issues:**
 - Use TestFlight feedback
-- Email: feedback@junkos.app
+- Email: feedback@goumuve.com
 - Include: device model, iOS version, screenshots if possible
 
 ### 🎯 Next Up (v1.1)
@@ -138,13 +138,13 @@ Planned for next release:
 
 ### 🙏 Credits
 
-**Design & Development:** JunkOS Team  
+**Design & Development:** Umuve Team  
 **Testing:** Community Beta Testers  
 **Inspiration:** LoadUp, 1-800-GOT-JUNK?, local junk removal needs
 
 ### 📄 License
 
-Proprietary - © 2026 JunkOS. All rights reserved.
+Proprietary - © 2026 Umuve. All rights reserved.
 
 ---
 

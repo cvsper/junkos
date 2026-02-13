@@ -1,5 +1,5 @@
 # =============================================================================
-# JunkOS Deploy
+# Umuve Deploy
 # =============================================================================
 # Required GitHub Secrets:
 #   VERCEL_TOKEN        - Vercel API token for platform deployment
@@ -102,7 +102,7 @@ jobs:
 
       - name: Health-check backend
         run: |
-          BACKEND_URL="${{ secrets.BACKEND_URL || 'https://junkos-backend.onrender.com' }}"
+          BACKEND_URL="${{ secrets.BACKEND_URL || 'https://umuve-backend.onrender.com' }}"
           echo "Checking $BACKEND_URL/api/health ..."
 
           for i in 1 2 3 4 5; do
@@ -185,7 +185,7 @@ jobs:
         with:
           payload: |
             {
-              "text": "JunkOS Deploy: Platform=${{ needs.deploy-platform.result }}, Backend=${{ needs.check-backend.result }} (commit ${{ github.sha }})"
+              "text": "Umuve Deploy: Platform=${{ needs.deploy-platform.result }}, Backend=${{ needs.check-backend.result }} (commit ${{ github.sha }})"
             }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}

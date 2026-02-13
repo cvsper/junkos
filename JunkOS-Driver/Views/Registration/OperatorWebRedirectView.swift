@@ -1,6 +1,6 @@
 //
 //  OperatorWebRedirectView.swift
-//  JunkOS Driver
+//  Umuve Pro
 //
 //  Shown after an operator registers. Directs them to the web dashboard.
 //

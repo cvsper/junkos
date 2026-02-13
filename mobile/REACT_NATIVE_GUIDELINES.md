@@ -1,4 +1,4 @@
-# React Native Best Practices for JunkOS
+# React Native Best Practices for Umuve
 
 Source: https://github.com/secondsky/claude-skills/blob/fa10bf37ebdfdfb263fe1dbf382474a3e8777b26/plugins/react-native-skills/skills/react-native-skills/SKILL.md
 
@@ -55,7 +55,7 @@ Source: https://github.com/secondsky/claude-skills/blob/fa10bf37ebdfdfb263fe1dbf
 
 ---
 
-## JunkOS Mobile App Implementation
+## Umuve Mobile App Implementation
 
 Apply these rules to the booking app:
 

@@ -1,8 +1,8 @@
 #!/bin/bash
 # ============================================================================
-# JunkOS Database Setup Script
+# Umuve Database Setup Script
 # ============================================================================
-# Quick setup script for initializing the JunkOS database
+# Quick setup script for initializing the Umuve database
 # Usage: ./setup.sh [options]
 # ============================================================================
 
@@ -16,7 +16,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Configuration
-DB_NAME="junkos"
+DB_NAME="umuve"
 DB_USER="${DB_USER:-postgres}"
 INCLUDE_SEED_DATA=false
 RESET_DATABASE=false
@@ -187,7 +187,7 @@ show_next_steps() {
 }
 
 show_usage() {
-    echo "JunkOS Database Setup Script"
+    echo "Umuve Database Setup Script"
     echo ""
     echo "Usage: $0 [OPTIONS]"
     echo ""
@@ -233,7 +233,7 @@ done
 
 # Main execution
 main() {
-    print_header "JunkOS Database Setup"
+    print_header "Umuve Database Setup"
     
     check_dependencies
     setup_environment

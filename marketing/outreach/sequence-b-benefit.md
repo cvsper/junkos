@@ -10,7 +10,7 @@ Mike at DFW Hauling started with 3 trucks in {{city}}, same as {{company}}.
 
 18 months later? 10 trucks and booked solid 6 days a week.
 
-His secret wasn't marketing — it was operations. JunkOS automated his quotes, dispatch, and invoicing. He went from firefighting admin work to actually growing his business.
+His secret wasn't marketing — it was operations. Umuve automated his quotes, dispatch, and invoicing. He went from firefighting admin work to actually growing his business.
 
 Think {{company}} could use that extra time?
 
@@ -21,15 +21,15 @@ Best,
 
 ---
 
-## Email 2: "See JunkOS in action (2-min video)"
+## Email 2: "See Umuve in action (2-min video)"
 
-**Subject:** 2-minute JunkOS demo
+**Subject:** 2-minute Umuve demo
 
 Hi {{name}},
 
 Following up on my last email about scaling operations.
 
-Instead of a long pitch, I recorded a 2-minute screen share showing exactly how JunkOS handles:
+Instead of a long pitch, I recorded a 2-minute screen share showing exactly how Umuve handles:
 - 30-second quotes
 - GPS dispatch for {{truck_count}} trucks
 - Auto-invoicing after job completion

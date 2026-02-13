@@ -1,11 +1,11 @@
-# JunkOS Backend - Quick Start Guide
+# Umuve Backend - Quick Start Guide
 
 ## 🚀 Get Started in 5 Minutes
 
 ### 1. Install Dependencies
 
 ```bash
-cd ~/Documents/programs/webapps/junkos/backend
+cd ~/Documents/programs/webapps/umuve/backend
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
@@ -21,7 +21,7 @@ nano .env
 
 Minimum required configuration:
 ```env
-DATABASE_URL=postgresql://username:password@localhost:5432/junkos_dev
+DATABASE_URL=postgresql://username:password@localhost:5432/umuve_dev
 SECRET_KEY=your-secret-key-here
 ```
 
@@ -29,10 +29,10 @@ SECRET_KEY=your-secret-key-here
 
 ```bash
 # Create database
-createdb junkos_dev
+createdb umuve_dev
 
 # Run schema
-psql -U postgres -d junkos_dev -f ../junk_removal_schema.sql
+psql -U postgres -d umuve_dev -f ../junk_removal_schema.sql
 
 # OR use Flask-Migrate
 flask db upgrade

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Invoice from JunkOS</title>
+    <title>Invoice from Umuve</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
 </head>
 <body style="margin: 0; padding: 0; font-family: 'Open Sans', Arial, sans-serif; background-color: #f3f4f6;">
@@ -21,7 +21,7 @@
                                         <p style="margin: 5px 0 0; font-size: 14px; color: #6B7280;">#{{invoice_number}}</p>
                                     </td>
                                     <td style="width: 50%; text-align: right;">
-                                        <h2 style="margin: 0; font-family: 'Poppins', sans-serif; font-size: 24px; font-weight: 700; color: #1F2937;">JunkOS</h2>
+                                        <h2 style="margin: 0; font-family: 'Poppins', sans-serif; font-size: 24px; font-weight: 700; color: #1F2937;">Umuve</h2>
                                         <p style="margin: 5px 0 0; font-size: 13px; color: #6B7280; line-height: 1.5;">
                                             {{company_address}}<br>
                                             {{company_phone}}<br>
@@ -97,8 +97,8 @@
                                 </tr>
                                 {{#if discount}}
                                 <tr>
-                                    <td style="padding: 8px 12px; font-size: 15px; color: #10B981; text-align: right;">Discount:</td>
-                                    <td style="padding: 8px 12px; font-size: 15px; color: #10B981; font-weight: 600; text-align: right;">-${{discount}}</td>
+                                    <td style="padding: 8px 12px; font-size: 15px; color: #DC2626; text-align: right;">Discount:</td>
+                                    <td style="padding: 8px 12px; font-size: 15px; color: #DC2626; font-weight: 600; text-align: right;">-${{discount}}</td>
                                 </tr>
                                 {{/if}}
                                 <tr>
@@ -112,11 +112,11 @@
                             </table>
                             
                             <!-- Payment Status -->
-                            <div style="background-color: {{#if paid}}#ECFDF5{{else}}#FEF3C7{{/if}}; border-left: 4px solid {{#if paid}}#10B981{{else}}#F59E0B{{/if}}; padding: 20px; margin: 30px 0; border-radius: 4px;">
-                                <h3 style="margin: 0 0 10px; font-family: 'Poppins', sans-serif; font-size: 16px; font-weight: 600; color: {{#if paid}}#065F46{{else}}#92400E{{/if}};">
+                            <div style="background-color: {{#if paid}}#FEF2F2{{else}}#FEF3C7{{/if}}; border-left: 4px solid {{#if paid}}#DC2626{{else}}#F59E0B{{/if}}; padding: 20px; margin: 30px 0; border-radius: 4px;">
+                                <h3 style="margin: 0 0 10px; font-family: 'Poppins', sans-serif; font-size: 16px; font-weight: 600; color: {{#if paid}}#7F1D1D{{else}}#92400E{{/if}};">
                                     {{#if paid}}✓ Payment Received{{else}}⚠️ Payment Due{{/if}}
                                 </h3>
-                                <p style="margin: 0; font-size: 14px; line-height: 1.6; color: {{#if paid}}#047857{{else}}#78350F{{/if}};">
+                                <p style="margin: 0; font-size: 14px; line-height: 1.6; color: {{#if paid}}#991B1B{{else}}#78350F{{/if}};">
                                     {{#if paid}}
                                     Thank you! Your payment was received on {{payment_date}}.
                                     {{else}}
@@ -130,7 +130,7 @@
                             <table role="presentation" style="width: 100%; margin: 30px 0;">
                                 <tr>
                                     <td align="center">
-                                        <a href="{{payment_url}}" style="display: inline-block; background: linear-gradient(135deg, #10B981 0%, #059669 100%); color: #ffffff; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 18px; text-decoration: none; padding: 16px 48px; border-radius: 6px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">Pay Now - ${{total}}</a>
+                                        <a href="{{payment_url}}" style="display: inline-block; background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%); color: #ffffff; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 18px; text-decoration: none; padding: 16px 48px; border-radius: 6px; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);">Pay Now - ${{total}}</a>
                                     </td>
                                 </tr>
                             </table>
@@ -157,8 +157,8 @@
                     <!-- Footer -->
                     <tr>
                         <td style="background-color: #F9FAFB; padding: 30px; text-align: center; border-radius: 0 0 8px 8px; border-top: 1px solid #E5E7EB;">
-                            <p style="margin: 0 0 10px; font-size: 14px; color: #6B7280;">Questions about this invoice? Contact us at <a href="mailto:billing@junkos.com" style="color: #4F46E5; text-decoration: none;">billing@junkos.com</a></p>
-                            <p style="margin: 0; font-size: 12px; color: #9CA3AF;">© 2024 JunkOS. All rights reserved.</p>
+                            <p style="margin: 0 0 10px; font-size: 14px; color: #6B7280;">Questions about this invoice? Contact us at <a href="mailto:billing@goumuve.com" style="color: #4F46E5; text-decoration: none;">billing@goumuve.com</a></p>
+                            <p style="margin: 0; font-size: 12px; color: #9CA3AF;">© 2024 Umuve. All rights reserved.</p>
                         </td>
                     </tr>
                 </table>

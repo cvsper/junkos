@@ -1,4 +1,4 @@
-# Fastfile for JunkOS iOS App
+# Fastfile for Umuve iOS App
 # Documentation: https://docs.fastlane.tools
 
 default_platform(:ios)
@@ -10,9 +10,9 @@ platform :ios do
   ###############################################################################
   
   # App configuration
-  APP_IDENTIFIER = "com.junkos.JunkOS"
-  SCHEME = "JunkOS"
-  WORKSPACE = "JunkOS.xcodeproj"
+  APP_IDENTIFIER = "com.goumuve.app"
+  SCHEME = "JunkOS"  # Xcode scheme name matches project directory
+  WORKSPACE = "JunkOS.xcodeproj"  # Project file path unchanged
   
   ###############################################################################
   # Before All
@@ -39,14 +39,14 @@ platform :ios do
     version = get_version_number(target: SCHEME)
     build = get_build_number
     
-    puts "📦 Building JunkOS v#{version} (#{build})"
+    puts "📦 Building Umuve v#{version} (#{build})"
     
     # Build app
     build_app(
       scheme: SCHEME,
       export_method: "app-store",
       output_directory: "./build",
-      output_name: "JunkOS.ipa",
+      output_name: "Umuve.ipa",
       clean: true,
       include_bitcode: false,
       include_symbols: true
@@ -89,12 +89,12 @@ platform :ios do
       scheme: SCHEME,
       export_method: "app-store",
       output_directory: "./build",
-      output_name: "JunkOS.ipa",
+      output_name: "Umuve.ipa",
       clean: true,
       skip_package_ipa: false
     )
     
-    puts "✅ Build complete! IPA location: ./build/JunkOS.ipa"
+    puts "✅ Build complete! IPA location: ./build/Umuve.ipa"
   end
   
   ###
@@ -210,7 +210,7 @@ platform :ios do
       args: [
         "--validate-app",
         "--type", "ios",
-        "--file", "./build/JunkOS.ipa"
+        "--file", "./build/Umuve.ipa"
       ],
       require_return_success: true
     )
@@ -227,7 +227,7 @@ platform :ios do
     version = get_version_number(target: SCHEME)
     build = get_build_number
     
-    puts "🚀 Submitting JunkOS v#{version} (#{build}) for App Store review"
+    puts "🚀 Submitting Umuve v#{version} (#{build}) for App Store review"
     
     # Upload metadata and submit
     deliver(
@@ -251,12 +251,12 @@ platform :ios do
   ###
   desc "Initial setup"
   lane :setup do
-    puts "🔧 Setting up JunkOS project..."
+    puts "🔧 Setting up Umuve project..."
     
     # Check Xcode version
     xcversion(version: "~> 15.0")
     
-    # Install pods if using CocoaPods (JunkOS doesn't use them, but useful for future)
+    # Install pods if using CocoaPods (Umuve doesn't use them, but useful for future)
     # cocoapods
     
     # Check certificates
@@ -281,7 +281,7 @@ platform :ios do
     
     # Optional: Send notification (Slack, Discord, email)
     # slack(
-    #   message: "JunkOS build failed in #{lane}",
+    #   message: "Umuve build failed in #{lane}",
     #   success: false
     # )
   end

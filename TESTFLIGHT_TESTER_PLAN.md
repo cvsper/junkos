@@ -1,4 +1,4 @@
-# JunkOS TestFlight Tester Plan
+# Umuve TestFlight Tester Plan
 
 ## 🎯 Testing Goals
 
@@ -69,7 +69,7 @@ Send this to each tester:
 ```
 Hi [Name],
 
-Thanks for testing JunkOS! Please try the complete booking flow and let me know:
+Thanks for testing Umuve! Please try the complete booking flow and let me know:
 
 1. Did anything feel confusing or unclear?
 2. Did you encounter any bugs or crashes?
@@ -120,13 +120,13 @@ Before submitting to App Store:
 ### 2. Send Invitation
 Apple will automatically email:
 - TestFlight app download link
-- JunkOS app invitation
+- Umuve app invitation
 
 ### 3. Testers Install
 1. Download TestFlight app from App Store
 2. Open invitation email
 3. Tap "View in TestFlight"
-4. Install JunkOS
+4. Install Umuve
 5. Test!
 
 ### 4. Monitor Feedback
@@ -164,11 +164,11 @@ Check App Store Connect daily:
 ## 📧 Tester Invitation Email Template
 
 ```
-Subject: Help Test JunkOS - Junk Removal Booking App
+Subject: Help Test Umuve - Junk Removal Booking App
 
 Hi [Name],
 
-I'm launching JunkOS, an iOS app that makes junk removal booking as easy as ordering an Uber. Would you help test it before the App Store launch?
+I'm launching Umuve, an iOS app that makes junk removal booking as easy as ordering an Uber. Would you help test it before the App Store launch?
 
 What I need:
 - Download TestFlight (Apple's testing app)
@@ -235,7 +235,7 @@ Before hitting "Submit for Review":
 - [ ] Positive feedback from majority of testers
 - [ ] App icon + screenshots ready
 - [ ] Privacy policy published
-- [ ] Support email set up (support@junkos.com)
+- [ ] Support email set up (support@goumuve.com)
 - [ ] App Store description written
 - [ ] Pricing confirmed
 - [ ] Backend production environment ready

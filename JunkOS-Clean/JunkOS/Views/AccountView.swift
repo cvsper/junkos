@@ -1,6 +1,6 @@
 //
 //  AccountView.swift
-//  JunkOS
+//  Umuve
 //
 //  User account, settings, and profile.
 //
@@ -16,7 +16,7 @@ struct AccountView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: JunkSpacing.xlarge) {
+            VStack(spacing: UmuveSpacing.xlarge) {
                 // Profile Section
                 profileSection
 
@@ -33,15 +33,15 @@ struct AccountView: View {
 
                 // App Version
                 Text("Version 1.0.0")
-                    .font(JunkTypography.captionFont)
-                    .foregroundColor(.junkTextTertiary)
-                    .padding(.bottom, JunkSpacing.large)
+                    .font(UmuveTypography.captionFont)
+                    .foregroundColor(.umuveTextTertiary)
+                    .padding(.bottom, UmuveSpacing.large)
             }
-            .padding(.horizontal, JunkSpacing.large)
-            .padding(.bottom, JunkSpacing.xxlarge)
+            .padding(.horizontal, UmuveSpacing.large)
+            .padding(.bottom, UmuveSpacing.xxlarge)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.junkBackground.ignoresSafeArea())
+        .background(Color.umuveBackground.ignoresSafeArea())
         .navigationTitle("Account")
         .navigationBarTitleDisplayMode(.large)
         .sheet(isPresented: $showEditProfile) {
@@ -57,7 +57,7 @@ struct AccountView: View {
                     .toolbar {
                         ToolbarItem(placement: .topBarLeading) {
                             Button("Done") { showReferral = false }
-                                .foregroundColor(.junkPrimary)
+                                .foregroundColor(.umuvePrimary)
                         }
                     }
             }
@@ -84,13 +84,13 @@ struct AccountView: View {
     // MARK: - Profile Section
 
     private var profileSection: some View {
-        VStack(spacing: JunkSpacing.normal) {
+        VStack(spacing: UmuveSpacing.normal) {
             // Avatar
             ZStack(alignment: .bottomTrailing) {
                 Circle()
                     .fill(
                         LinearGradient(
-                            colors: [Color.junkPrimary, Color.junkPrimaryDark],
+                            colors: [Color.umuvePrimary, Color.umuvePrimaryDark],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
@@ -108,64 +108,64 @@ struct AccountView: View {
                         .foregroundColor(.white)
                         .padding(.horizontal, 6)
                         .padding(.vertical, 3)
-                        .background(Capsule().fill(Color.junkWarning))
+                        .background(Capsule().fill(Color.umuveWarning))
                 }
             }
 
             // Name and contact
-            VStack(spacing: JunkSpacing.tiny) {
+            VStack(spacing: UmuveSpacing.tiny) {
                 if let name = authManager.currentUser?.name {
                     Text(name)
-                        .font(JunkTypography.h2Font)
-                        .foregroundColor(.junkText)
+                        .font(UmuveTypography.h2Font)
+                        .foregroundColor(.umuveText)
                 }
 
                 if let email = authManager.currentUser?.email {
-                    HStack(spacing: JunkSpacing.tiny) {
+                    HStack(spacing: UmuveSpacing.tiny) {
                         Image(systemName: "envelope.fill")
                             .font(.system(size: 12))
-                            .foregroundColor(.junkTextMuted)
+                            .foregroundColor(.umuveTextMuted)
                         Text(email)
-                            .font(JunkTypography.bodySmallFont)
-                            .foregroundColor(.junkTextMuted)
+                            .font(UmuveTypography.bodySmallFont)
+                            .foregroundColor(.umuveTextMuted)
                     }
                 }
 
                 if let phone = authManager.currentUser?.phoneNumber {
-                    HStack(spacing: JunkSpacing.tiny) {
+                    HStack(spacing: UmuveSpacing.tiny) {
                         Image(systemName: "phone.fill")
                             .font(.system(size: 12))
-                            .foregroundColor(.junkTextMuted)
+                            .foregroundColor(.umuveTextMuted)
                         Text(phone)
-                            .font(JunkTypography.bodySmallFont)
-                            .foregroundColor(.junkTextMuted)
+                            .font(UmuveTypography.bodySmallFont)
+                            .foregroundColor(.umuveTextMuted)
                     }
                 }
             }
         }
         .frame(maxWidth: .infinity)
-        .padding(JunkSpacing.xlarge)
+        .padding(UmuveSpacing.xlarge)
         .background(Color.white)
-        .clipShape(RoundedRectangle(cornerRadius: JunkRadius.lg))
+        .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.lg))
         .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
-        .padding(.top, JunkSpacing.normal)
+        .padding(.top, UmuveSpacing.normal)
     }
 
     // MARK: - Guest Callout
 
     private var guestCallout: some View {
-        VStack(spacing: JunkSpacing.medium) {
+        VStack(spacing: UmuveSpacing.medium) {
             HStack {
                 Image(systemName: "info.circle.fill")
-                    .foregroundColor(.junkPrimary)
+                    .foregroundColor(.umuvePrimary)
                 Text("You're browsing as a guest")
-                    .font(JunkTypography.bodyFont.weight(.semibold))
-                    .foregroundColor(.junkText)
+                    .font(UmuveTypography.bodyFont.weight(.semibold))
+                    .foregroundColor(.umuveText)
             }
 
             Text("Create an account to save your bookings and access them from any device")
-                .font(JunkTypography.bodySmallFont)
-                .foregroundColor(.junkTextMuted)
+                .font(UmuveTypography.bodySmallFont)
+                .foregroundColor(.umuveTextMuted)
                 .multilineTextAlignment(.center)
 
             Button(action: {
@@ -173,18 +173,18 @@ struct AccountView: View {
             }) {
                 Text("Create Account")
             }
-            .buttonStyle(JunkPrimaryButtonStyle())
+            .buttonStyle(UmuvePrimaryButtonStyle())
         }
-        .padding(JunkSpacing.large)
-        .background(Color.junkPrimary.opacity(0.08))
-        .clipShape(RoundedRectangle(cornerRadius: JunkRadius.lg))
+        .padding(UmuveSpacing.large)
+        .background(Color.umuvePrimary.opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.lg))
     }
 
     // MARK: - Menu Section
 
     private var menuSection: some View {
         VStack(spacing: 0) {
-            AccountMenuItem(icon: "person.fill", title: "Edit Profile", color: .junkPrimary) {
+            AccountMenuItem(icon: "person.fill", title: "Edit Profile", color: .umuvePrimary) {
                 showEditProfile = true
             }
             Divider().padding(.leading, 56)
@@ -208,14 +208,14 @@ struct AccountView: View {
                 }
             }
             Divider().padding(.leading, 56)
-            AccountMenuItem(icon: "questionmark.circle.fill", title: "Help & Support", color: .junkInfo) {
-                if let url = URL(string: "mailto:support@junkos.com") {
+            AccountMenuItem(icon: "questionmark.circle.fill", title: "Help & Support", color: .umuveInfo) {
+                if let url = URL(string: "mailto:support@goumuve.com") {
                     UIApplication.shared.open(url)
                 }
             }
         }
         .background(Color.white)
-        .clipShape(RoundedRectangle(cornerRadius: JunkRadius.lg))
+        .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.lg))
         .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
     }
 
@@ -223,16 +223,16 @@ struct AccountView: View {
 
     private var logoutButton: some View {
         Button(action: { showLogoutAlert = true }) {
-            HStack(spacing: JunkSpacing.small) {
+            HStack(spacing: UmuveSpacing.small) {
                 Image(systemName: "rectangle.portrait.and.arrow.right")
                 Text(authManager.currentUser?.id == "guest" ? "Exit Guest Mode" : "Log Out")
-                    .font(JunkTypography.bodyFont.weight(.semibold))
+                    .font(UmuveTypography.bodyFont.weight(.semibold))
             }
-            .foregroundColor(.junkError)
+            .foregroundColor(.umuveError)
             .frame(maxWidth: .infinity)
-            .padding(.vertical, JunkSpacing.normal)
-            .background(Color.junkError.opacity(0.08))
-            .clipShape(RoundedRectangle(cornerRadius: JunkRadius.md))
+            .padding(.vertical, UmuveSpacing.normal)
+            .background(Color.umuveError.opacity(0.08))
+            .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.md))
         }
     }
 
@@ -253,12 +253,12 @@ struct AccountView: View {
 struct AccountMenuItem: View {
     let icon: String
     let title: String
-    var color: Color = .junkPrimary
+    var color: Color = .umuvePrimary
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: JunkSpacing.normal) {
+            HStack(spacing: UmuveSpacing.normal) {
                 ZStack {
                     Circle()
                         .fill(color.opacity(0.15))
@@ -270,17 +270,17 @@ struct AccountMenuItem: View {
                 }
 
                 Text(title)
-                    .font(JunkTypography.bodyFont)
-                    .foregroundColor(.junkText)
+                    .font(UmuveTypography.bodyFont)
+                    .foregroundColor(.umuveText)
 
                 Spacer()
 
                 Image(systemName: "chevron.right")
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(.junkTextTertiary)
+                    .foregroundColor(.umuveTextTertiary)
             }
-            .padding(.horizontal, JunkSpacing.normal)
-            .padding(.vertical, JunkSpacing.medium)
+            .padding(.horizontal, UmuveSpacing.normal)
+            .padding(.vertical, UmuveSpacing.medium)
         }
         .buttonStyle(.plain)
     }
@@ -298,13 +298,13 @@ struct EditProfileSheet: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: JunkSpacing.large) {
+                VStack(spacing: UmuveSpacing.large) {
                     // Avatar
                     ZStack {
                         Circle()
                             .fill(
                                 LinearGradient(
-                                    colors: [Color.junkPrimary, Color.junkPrimaryDark],
+                                    colors: [Color.umuvePrimary, Color.umuvePrimaryDark],
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 )
@@ -315,54 +315,54 @@ struct EditProfileSheet: View {
                             .font(.system(size: 28))
                             .foregroundColor(.white)
                     }
-                    .padding(.top, JunkSpacing.xlarge)
+                    .padding(.top, UmuveSpacing.xlarge)
 
-                    VStack(spacing: JunkSpacing.normal) {
-                        VStack(alignment: .leading, spacing: JunkSpacing.tiny) {
+                    VStack(spacing: UmuveSpacing.normal) {
+                        VStack(alignment: .leading, spacing: UmuveSpacing.tiny) {
                             Text("Name")
-                                .font(JunkTypography.captionFont)
-                                .foregroundColor(.junkTextMuted)
+                                .font(UmuveTypography.captionFont)
+                                .foregroundColor(.umuveTextMuted)
                             TextField("Your name", text: $name)
-                                .font(JunkTypography.bodyFont)
-                                .padding(JunkSpacing.normal)
-                                .background(Color.junkBackground)
-                                .clipShape(RoundedRectangle(cornerRadius: JunkRadius.md))
+                                .font(UmuveTypography.bodyFont)
+                                .padding(UmuveSpacing.normal)
+                                .background(Color.umuveBackground)
+                                .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.md))
                         }
 
-                        VStack(alignment: .leading, spacing: JunkSpacing.tiny) {
+                        VStack(alignment: .leading, spacing: UmuveSpacing.tiny) {
                             Text("Email")
-                                .font(JunkTypography.captionFont)
-                                .foregroundColor(.junkTextMuted)
+                                .font(UmuveTypography.captionFont)
+                                .foregroundColor(.umuveTextMuted)
                             TextField("Email address", text: $email)
-                                .font(JunkTypography.bodyFont)
+                                .font(UmuveTypography.bodyFont)
                                 .keyboardType(.emailAddress)
                                 .textContentType(.emailAddress)
                                 .autocapitalization(.none)
-                                .padding(JunkSpacing.normal)
-                                .background(Color.junkBackground)
-                                .clipShape(RoundedRectangle(cornerRadius: JunkRadius.md))
+                                .padding(UmuveSpacing.normal)
+                                .background(Color.umuveBackground)
+                                .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.md))
                         }
 
-                        VStack(alignment: .leading, spacing: JunkSpacing.tiny) {
+                        VStack(alignment: .leading, spacing: UmuveSpacing.tiny) {
                             Text("Phone")
-                                .font(JunkTypography.captionFont)
-                                .foregroundColor(.junkTextMuted)
+                                .font(UmuveTypography.captionFont)
+                                .foregroundColor(.umuveTextMuted)
                             TextField("Phone number", text: $phone)
-                                .font(JunkTypography.bodyFont)
+                                .font(UmuveTypography.bodyFont)
                                 .keyboardType(.phonePad)
                                 .textContentType(.telephoneNumber)
-                                .padding(JunkSpacing.normal)
-                                .background(Color.junkBackground)
-                                .clipShape(RoundedRectangle(cornerRadius: JunkRadius.md))
+                                .padding(UmuveSpacing.normal)
+                                .background(Color.umuveBackground)
+                                .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.md))
                         }
                     }
-                    .padding(.horizontal, JunkSpacing.large)
+                    .padding(.horizontal, UmuveSpacing.large)
 
                     Button(action: { dismiss() }) {
                         Text("Save Changes")
                     }
-                    .buttonStyle(JunkPrimaryButtonStyle())
-                    .padding(.horizontal, JunkSpacing.large)
+                    .buttonStyle(UmuvePrimaryButtonStyle())
+                    .padding(.horizontal, UmuveSpacing.large)
                 }
             }
             .background(Color.white.ignoresSafeArea())
@@ -371,7 +371,7 @@ struct EditProfileSheet: View {
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Cancel") { dismiss() }
-                        .foregroundColor(.junkPrimary)
+                        .foregroundColor(.umuvePrimary)
                 }
             }
         }
@@ -390,39 +390,39 @@ struct PaymentMethodsSheet: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: JunkSpacing.xlarge) {
+            VStack(spacing: UmuveSpacing.xlarge) {
                 Spacer()
 
                 ZStack {
                     Circle()
-                        .fill(Color.junkPrimary.opacity(0.1))
+                        .fill(Color.umuvePrimary.opacity(0.1))
                         .frame(width: 100, height: 100)
 
                     Image(systemName: "creditcard.fill")
                         .font(.system(size: 40))
-                        .foregroundColor(.junkPrimary)
+                        .foregroundColor(.umuvePrimary)
                 }
 
                 Text("No payment methods")
-                    .font(JunkTypography.h2Font)
-                    .foregroundColor(.junkText)
+                    .font(UmuveTypography.h2Font)
+                    .foregroundColor(.umuveText)
 
                 Text("Payment methods will be added during your first booking.")
-                    .font(JunkTypography.bodyFont)
-                    .foregroundColor(.junkTextMuted)
+                    .font(UmuveTypography.bodyFont)
+                    .foregroundColor(.umuveTextMuted)
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, JunkSpacing.huge)
+                    .padding(.horizontal, UmuveSpacing.huge)
 
                 Spacer()
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color.junkBackground.ignoresSafeArea())
+            .background(Color.umuveBackground.ignoresSafeArea())
             .navigationTitle("Payment Methods")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Done") { dismiss() }
-                        .foregroundColor(.junkPrimary)
+                        .foregroundColor(.umuvePrimary)
                 }
             }
         }

@@ -1,4 +1,4 @@
-# JunkOS App Store Assets - Reference Card
+# Umuve App Store Assets - Reference Card
 
 **Keep this open while working** 📌
 
@@ -9,7 +9,7 @@
 ```
 Primary:    #6366F1
 Secondary:  #818CF8
-CTA:        #10B981
+CTA:        #DC2626
 Background: #F5F3FF
 Text:       #1E1B4B
 Muted:      #64748B
@@ -68,7 +68,7 @@ Know exactly when we'll arrive
 
 ### App Name
 ```
-JunkOS
+Umuve
 ```
 
 ### Subtitle (29 chars)
@@ -83,9 +83,9 @@ junk removal,hauling,declutter,waste,furniture removal,trash pickup,dump,moving,
 
 ### URLs
 ```
-Privacy: https://junkos.app/privacy
-Support: https://junkos.app/support
-Marketing: https://junkos.app
+Privacy: https://goumuve.com/privacy
+Support: https://goumuve.com/support
+Marketing: https://goumuve.com
 ```
 
 ### Categories
@@ -306,4 +306,4 @@ Complete checklist:    assets/DELIVERABLES.md
 
 **Print this page or keep it open while working!** 📌
 
-**🚛 JunkOS - Let's ship it!**
+**🚛 Umuve - Let's ship it!**

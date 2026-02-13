@@ -1,8 +1,8 @@
-# JunkOS Operator Quick Start Guide
+# Umuve Operator Quick Start Guide
 
 **Get up and running in 15 minutes** 🚀
 
-This guide will walk you through the essential steps to set up your junk removal business on JunkOS and accept your first booking.
+This guide will walk you through the essential steps to set up your junk removal business on Umuve and accept your first booking.
 
 ---
 
@@ -19,7 +19,7 @@ This guide will walk you through the essential steps to set up your junk removal
 
 ### 1.1 Sign Up
 
-1. Navigate to **https://junkos.app/signup**
+1. Navigate to **https://goumuve.com/signup**
 2. Click **"Sign Up as Operator"**
 3. Enter your details:
    - Email address
@@ -31,7 +31,7 @@ This guide will walk you through the essential steps to set up your junk removal
 
 ### 1.2 Verify Your Email
 
-1. Check your inbox for a verification email from JunkOS
+1. Check your inbox for a verification email from Umuve
 2. Click the **"Verify Email"** link
 3. You'll be redirected to the login page
 
@@ -117,7 +117,7 @@ Your driver will receive an email with:
 ### 4.2 Add or Edit Services
 
 #### Option 1: Use Default Templates
-JunkOS provides common service templates:
+Umuve provides common service templates:
 - **Full-Service Junk Removal** (labor + disposal)
 - **Curbside Pickup** (disposal only)
 - **Furniture Removal**
@@ -247,7 +247,7 @@ This typically takes 3-5 minutes.
 
 ### 6.4 Verify Connection
 
-1. After completing Stripe setup, you'll be redirected back to JunkOS
+1. After completing Stripe setup, you'll be redirected back to Umuve
 2. You should see **"✓ Stripe Connected"** status
 3. Set your **payout schedule**:
    - Daily (available next business day)
@@ -260,12 +260,12 @@ This typically takes 3-5 minutes.
 
 ## 🎉 You're Ready to Go!
 
-Congratulations! Your JunkOS account is now set up and ready to accept real bookings.
+Congratulations! Your Umuve account is now set up and ready to accept real bookings.
 
 ### Next Steps
 
 1. **Go Live**: Enable your booking widget on your website
-2. **Share Your Link**: Give customers your JunkOS booking URL
+2. **Share Your Link**: Give customers your Umuve booking URL
 3. **Test Mobile App**: Have your driver log in and test the mobile experience
 4. **Explore Features**: Check out the full Operator Guide for advanced features
 
@@ -282,12 +282,12 @@ Congratulations! Your JunkOS account is now set up and ready to accept real book
 ## Need Help?
 
 - **📚 Full Guide**: Read the complete [Operator Guide](./OPERATOR_GUIDE.md)
-- **💬 Support**: Email support@junkos.app
+- **💬 Support**: Email support@goumuve.com
 - **📞 Phone**: 1-800-JUNK-OS (1-800-586-5667)
-- **💡 Community**: Join our [Operator Forum](https://community.junkos.app)
+- **💡 Community**: Join our [Operator Forum](https://community.goumuve.com)
 
 ---
 
-**Welcome to JunkOS!** 🚛
+**Welcome to Umuve!** 🚛
 
 *Last updated: February 2026*

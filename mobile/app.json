@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "JunkOS Booking",
-    "slug": "junkos-booking",
+    "name": "Umuve",
+    "slug": "umuve",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -13,10 +13,10 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.junkos.booking",
+      "bundleIdentifier": "com.goumuve.app",
       "infoPlist": {
-        "NSCameraUsageDescription": "JunkOS needs camera access to take photos of items for junk removal.",
-        "NSPhotoLibraryUsageDescription": "JunkOS needs photo library access to select existing photos."
+        "NSCameraUsageDescription": "Umuve needs camera access to take photos of items for pickup.",
+        "NSPhotoLibraryUsageDescription": "Umuve needs photo library access to select existing photos."
       }
     },
     "android": {
@@ -24,11 +24,11 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.junkos.booking"
+      "package": "com.goumuve.app"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "scheme": "junkos"
+    "scheme": "umuve"
   }
 }

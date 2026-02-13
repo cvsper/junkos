@@ -1,6 +1,6 @@
-# JunkOS Backend API
+# Umuve Backend API
 
-Flask-based REST API for JunkOS junk removal booking service.
+Flask-based REST API for Umuve junk removal booking service.
 
 ## Quick Start
 
@@ -32,7 +32,7 @@ Server runs on `http://localhost:8080`
 All API endpoints (except `/api/health`) require an API key in the request header:
 
 ```
-X-API-Key: junkos-api-key-12345
+X-API-Key: umuve-api-key-12345
 ```
 
 Change this in `.env` for production!
@@ -48,7 +48,7 @@ GET /api/health
 ```json
 {
   "status": "healthy",
-  "service": "JunkOS API"
+  "service": "Umuve API"
 }
 ```
 
@@ -233,14 +233,14 @@ X-API-Key: your-api-key
 
 ### Get services:
 ```bash
-curl -H "X-API-Key: junkos-api-key-12345" \
+curl -H "X-API-Key: umuve-api-key-12345" \
   http://localhost:8080/api/services
 ```
 
 ### Get quote:
 ```bash
 curl -X POST \
-  -H "X-API-Key: junkos-api-key-12345" \
+  -H "X-API-Key: umuve-api-key-12345" \
   -H "Content-Type: application/json" \
   -d '{"services": [1, 2], "zip_code": "10001"}' \
   http://localhost:8080/api/quote
@@ -249,7 +249,7 @@ curl -X POST \
 ### Create booking:
 ```bash
 curl -X POST \
-  -H "X-API-Key: junkos-api-key-12345" \
+  -H "X-API-Key: umuve-api-key-12345" \
   -H "Content-Type: application/json" \
   -d '{
     "address": "123 Main St, New York, NY 10001",
@@ -267,7 +267,7 @@ curl -X POST \
 
 ### Get booking:
 ```bash
-curl -H "X-API-Key: junkos-api-key-12345" \
+curl -H "X-API-Key: umuve-api-key-12345" \
   http://localhost:8080/api/bookings/1
 ```
 
@@ -307,6 +307,6 @@ backend/
 ├── run.sh             # Quick start script
 ├── .env               # Environment variables (not in git)
 ├── .env.example       # Environment template
-├── junkos.db          # SQLite database (auto-created)
+├── umuve.db          # SQLite database (auto-created)
 └── README.md          # This file
 ```

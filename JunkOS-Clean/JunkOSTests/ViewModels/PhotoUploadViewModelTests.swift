@@ -1,13 +1,13 @@
 //
 //  PhotoUploadViewModelTests.swift
-//  JunkOSTests
+//  UmuveTests
 //
 //  Unit tests for PhotoUploadViewModel
 //
 
 import XCTest
 import PhotosUI
-@testable import JunkOS
+@testable import Umuve
 
 @MainActor
 final class PhotoUploadViewModelTests: XCTestCase {

@@ -1,4 +1,4 @@
-# JunkOS Test Infrastructure - Setup Complete ✅
+# Umuve Test Infrastructure - Setup Complete ✅
 
 **Date:** February 7, 2026  
 **Status:** Infrastructure Complete - Ready for Xcode Integration  
@@ -12,7 +12,7 @@
 
 ```
 JunkOS-Clean/
-├── JunkOSTests/                          # Unit test target
+├── UmuveTests/                          # Unit test target
 │   ├── Info.plist                        # Test bundle configuration
 │   ├── Mocks/                            # Mock services
 │   │   ├── MockLocationManager.swift     # ✅ Complete mock with tracking
@@ -27,7 +27,7 @@ JunkOS-Clean/
 │       ├── PhotoUploadViewModelTests.swift         # 📝 Template ready
 │       └── ConfirmationViewModelTests.swift        # 📝 Template ready
 │
-├── JunkOSUITests/                        # UI test target
+├── UmuveUITests/                        # UI test target
 │   ├── Info.plist                        # UI test bundle configuration
 │   └── Tests/
 │       ├── BookingFlowUITests.swift      # ✅ End-to-end flow tests
@@ -143,14 +143,14 @@ JunkOS-Clean/
 2. **Build and verify**
    ```bash
    cd ~/Documents/programs/webapps/junkos/JunkOS-Clean
-   xcodebuild -scheme JunkOS -destination 'platform=iOS Simulator,name=iPhone 15' build
+   xcodebuild -scheme Umuve -destination 'platform=iOS Simulator,name=iPhone 15' build
    ```
 
 3. **Run existing tests**
    ```bash
-   xcodebuild test -scheme JunkOS \
+   xcodebuild test -scheme Umuve \
      -destination 'platform=iOS Simulator,name=iPhone 15' \
-     -only-testing:JunkOSTests/AddressInputViewModelTests
+     -only-testing:UmuveTests/AddressInputViewModelTests
    ```
 
 ### After MVVM Refactor Completes
@@ -181,22 +181,22 @@ JunkOS-Clean/
 ### Command Line
 ```bash
 # Run all unit tests
-xcodebuild test -scheme JunkOS \
+xcodebuild test -scheme Umuve \
   -destination 'platform=iOS Simulator,name=iPhone 15' \
-  -only-testing:JunkOSTests
+  -only-testing:UmuveTests
 
 # Run all UI tests
-xcodebuild test -scheme JunkOS \
+xcodebuild test -scheme Umuve \
   -destination 'platform=iOS Simulator,name=iPhone 15' \
-  -only-testing:JunkOSUITests
+  -only-testing:UmuveUITests
 
 # Run specific test
-xcodebuild test -scheme JunkOS \
+xcodebuild test -scheme Umuve \
   -destination 'platform=iOS Simulator,name=iPhone 15' \
-  -only-testing:JunkOSTests/AddressInputViewModelTests/testInitialization
+  -only-testing:UmuveTests/AddressInputViewModelTests/testInitialization
 
 # Run with code coverage
-xcodebuild test -scheme JunkOS \
+xcodebuild test -scheme Umuve \
   -destination 'platform=iOS Simulator,name=iPhone 15' \
   -enableCodeCoverage YES
 ```
@@ -226,8 +226,8 @@ xcodebuild test -scheme JunkOS \
 - ✅ FormValidationUITests.swift (5,086 bytes)
 
 ### Configuration Files (2 files)
-- ✅ JunkOSTests/Info.plist
-- ✅ JunkOSUITests/Info.plist
+- ✅ UmuveTests/Info.plist
+- ✅ UmuveUITests/Info.plist
 
 ### Documentation Files (3 files)
 - ✅ TESTING.md (6,592 bytes) - Complete testing guide
@@ -308,10 +308,10 @@ For issues or questions:
 
 ## 🏁 Summary for Main Agent
 
-**Task Completed:** JunkOS iOS testing infrastructure is fully set up.
+**Task Completed:** Umuve iOS testing infrastructure is fully set up.
 
 **Deliverables:**
-- 2 test targets created (JunkOSTests, JunkOSUITests)
+- 2 test targets created (UmuveTests, UmuveUITests)
 - 12 test files with 39 test templates
 - 2 mock services (LocationManager, APIClient)
 - Complete test utilities and fixtures

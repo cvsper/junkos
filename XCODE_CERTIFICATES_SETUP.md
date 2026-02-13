@@ -1,7 +1,7 @@
-# Xcode Certificates Setup for JunkOS
+# Xcode Certificates Setup for Umuve
 
 ## 🎯 Goal
-Generate Apple Developer certificates so you can build and deploy JunkOS to TestFlight and App Store.
+Generate Apple Developer certificates so you can build and deploy Umuve to TestFlight and App Store.
 
 **Time Required:** 10 minutes (Xcode does most of the work automatically)
 
@@ -11,7 +11,7 @@ Generate Apple Developer certificates so you can build and deploy JunkOS to Test
 
 ✅ Apple Developer account active  
 ✅ Xcode installed (latest version recommended)  
-✅ Bundle ID registered: `com.junkos.booking`  
+✅ Bundle ID registered: `com.goumuve.app`  
 
 ---
 
@@ -120,7 +120,7 @@ npx eas build:configure
 
 **Follow the prompts:**
 - Platform: iOS
-- Bundle identifier: com.junkos.booking
+- Bundle identifier: com.goumuve.app
 - Apple Team ID: (Xcode will auto-fill)
 
 **Expected:** Configuration completes without errors
@@ -195,7 +195,7 @@ Before building for TestFlight:
 - [ ] Apple ID added to Xcode Accounts
 - [ ] "Apple Distribution" certificate created
 - [ ] Certificate visible at developer.apple.com
-- [ ] Bundle ID registered: com.junkos.booking
+- [ ] Bundle ID registered: com.goumuve.app
 - [ ] Xcode recognizes your team
 
 **All checked? → You're ready to build! ✅**

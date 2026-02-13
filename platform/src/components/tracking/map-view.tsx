@@ -229,7 +229,7 @@ export default function MapView({
 
 function createPickupMarkerElement(): HTMLDivElement {
   const el = document.createElement("div");
-  el.className = "junkos-marker-pickup";
+  el.className = "umuve-marker-pickup";
   el.style.cssText = `
     width: 32px;
     height: 32px;
@@ -258,7 +258,7 @@ function createPickupMarkerElement(): HTMLDivElement {
 
 function createContractorMarkerElement(): HTMLDivElement {
   const el = document.createElement("div");
-  el.className = "junkos-marker-contractor";
+  el.className = "umuve-marker-contractor";
   el.style.cssText = `
     width: 24px;
     height: 24px;

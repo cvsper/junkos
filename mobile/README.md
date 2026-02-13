@@ -1,6 +1,6 @@
-# JunkOS Mobile - React Native Booking App
+# Umuve Mobile - React Native Booking App
 
-A production-ready React Native booking app for JunkOS junk removal service, built with Expo.
+A production-ready React Native booking app for Umuve junk removal service, built with Expo.
 
 ## Features
 
@@ -126,7 +126,7 @@ Set in `app.json`:
 {
   "expo": {
     "ios": {
-      "bundleIdentifier": "com.junkos.booking"
+      "bundleIdentifier": "com.goumuve.app"
     }
   }
 }
@@ -148,7 +148,7 @@ const API_URL = 'http://192.168.1.100:5000';
 ### Testing Authentication
 Use test credentials (configure in your Flask backend):
 ```
-Email: test@junkos.com
+Email: test@goumuve.com
 Password: password123
 ```
 
@@ -202,7 +202,7 @@ For production, use Expo's environment variables:
 
 ```bash
 # .env.production
-API_URL=https://api.junkos.com
+API_URL=https://api.goumuve.com
 ```
 
 Access in code:
@@ -213,7 +213,7 @@ const API_URL = Constants.expoConfig?.extra?.apiUrl || 'http://localhost:5000';
 
 ## License
 
-Proprietary - JunkOS
+Proprietary - Umuve
 
 ## Support
 

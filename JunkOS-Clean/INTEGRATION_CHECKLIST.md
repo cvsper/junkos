@@ -7,22 +7,22 @@ Quick checklist to verify all UI/UX improvements are properly integrated.
 ## ✅ Files Added
 
 ### New Component Files
-- [ ] `JunkOS/Components/LoadingStates/SkeletonView.swift`
-- [ ] `JunkOS/Components/EmptyStates/EmptyStateView.swift`
-- [ ] `JunkOS/Components/ErrorHandling/ErrorView.swift`
-- [ ] `JunkOS/Components/Animations/ConfettiView.swift`
-- [ ] `JunkOS/Components/Onboarding/OnboardingView.swift`
-- [ ] `JunkOS/Components/TrustComponents.swift`
-- [ ] `JunkOS/Components/ProgressiveDisclosureComponents.swift`
-- [ ] `JunkOS/Utilities/AccessibilityHelpers.swift`
+- [ ] `Umuve/Components/LoadingStates/SkeletonView.swift`
+- [ ] `Umuve/Components/EmptyStates/EmptyStateView.swift`
+- [ ] `Umuve/Components/ErrorHandling/ErrorView.swift`
+- [ ] `Umuve/Components/Animations/ConfettiView.swift`
+- [ ] `Umuve/Components/Onboarding/OnboardingView.swift`
+- [ ] `Umuve/Components/TrustComponents.swift`
+- [ ] `Umuve/Components/ProgressiveDisclosureComponents.swift`
+- [ ] `Umuve/Utilities/AccessibilityHelpers.swift`
 
 ### Updated Existing Files
-- [ ] `JunkOS/Views/WelcomeView.swift` - Added onboarding, reviews, trust badges
-- [ ] `JunkOS/Views/ServiceSelectionView.swift` - Added empty state, live price, pull-to-refresh
-- [ ] `JunkOS/Views/PhotoUploadView.swift` - Added empty state
-- [ ] `JunkOS/Views/DateTimePickerView.swift` - Added empty state, booking summary
-- [ ] `JunkOS/Views/ConfirmationView.swift` - Added confetti, success animations
-- [ ] `JunkOS/Models/BookingModels.swift` - Updated service icons to SF Symbols
+- [ ] `Umuve/Views/WelcomeView.swift` - Added onboarding, reviews, trust badges
+- [ ] `Umuve/Views/ServiceSelectionView.swift` - Added empty state, live price, pull-to-refresh
+- [ ] `Umuve/Views/PhotoUploadView.swift` - Added empty state
+- [ ] `Umuve/Views/DateTimePickerView.swift` - Added empty state, booking summary
+- [ ] `Umuve/Views/ConfirmationView.swift` - Added confetti, success animations
+- [ ] `Umuve/Models/BookingModels.swift` - Updated service icons to SF Symbols
 
 ---
 
@@ -32,7 +32,7 @@ Quick checklist to verify all UI/UX improvements are properly integrated.
 Open Xcode and check:
 - [ ] All 8 new files appear in Project Navigator
 - [ ] Files are in correct groups (Components/LoadingStates, etc.)
-- [ ] Files show target membership (JunkOS target)
+- [ ] Files show target membership (Umuve target)
 
 ### 2. If Files Not Showing
 Run script:
@@ -42,14 +42,14 @@ python3 add_files_to_xcode.py
 ```
 
 ### 3. Manual Add (if script fails)
-1. Right-click JunkOS folder in Xcode
-2. Select "Add Files to 'JunkOS'..."
-3. Navigate to `JunkOS/Components/`
+1. Right-click Umuve folder in Xcode
+2. Select "Add Files to 'Umuve'..."
+3. Navigate to `Umuve/Components/`
 4. Select all new folders/files
 5. Ensure:
    - [ ] "Copy items if needed" is UNCHECKED
    - [ ] "Create groups" is selected
-   - [ ] "JunkOS" target is checked
+   - [ ] "Umuve" target is checked
 6. Click "Add"
 
 ---
@@ -59,13 +59,13 @@ python3 add_files_to_xcode.py
 ### 1. Clean Build
 ```bash
 cd ~/Documents/programs/webapps/junkos/JunkOS-Clean
-xcodebuild clean -project JunkOS.xcodeproj -scheme JunkOS
+xcodebuild clean -project JunkOS.xcodeproj -scheme Umuve
 ```
 
 ### 2. Build for Simulator
 ```bash
 xcodebuild -project JunkOS.xcodeproj \
-  -scheme JunkOS \
+  -scheme Umuve \
   -destination 'platform=iOS Simulator,name=iPhone 15' \
   build
 ```
@@ -216,7 +216,7 @@ throw JunkError.network
 ### Linting
 ```bash
 # Run SwiftLint if installed
-swiftlint lint JunkOS/Components/
+swiftlint lint Umuve/Components/
 ```
 
 ### Code Review Checklist

@@ -70,7 +70,7 @@
       country: 'US',
       currency: 'usd',
       total: {
-        label: 'JunkOS Junk Removal',
+        label: 'Umuve Hauling',
         amount: Math.round(total * 100),
       },
       requestPayerName: true,
@@ -279,7 +279,7 @@
       </div>
     </div>
 
-    <div class="info-box-emerald mb-6 text-left">
+    <div class="info-box-brand mb-6 text-left">
       <Truck class="w-4 h-4 text-primary-600 mt-0.5 flex-shrink-0" />
       <div>
         <p class="font-semibold text-sm mb-1">What happens next</p>

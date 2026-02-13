@@ -1,4 +1,4 @@
-# JunkOS Web MVP Testing Guide
+# Umuve Web MVP Testing Guide
 
 ## 🎯 Goal
 Verify the complete web stack works end-to-end before mobile deployment.
@@ -72,7 +72,7 @@ docker ps
 # Should see 6 containers running:
 # - junkos-postgres
 # - junkos-redis
-# - junkos-backend
+# - umuve-backend
 # - junkos-frontend
 # - junkos-dashboard
 # - junkos-nginx
@@ -105,7 +105,7 @@ make logs-backend  # Check backend logs
 ## 👤 Step 4: Test Customer Portal
 
 1. **Open browser:** http://localhost:3000
-2. **Expected:** JunkOS customer booking page loads
+2. **Expected:** Umuve customer booking page loads
 3. **Try the booking flow:**
    - Click "Start Booking" or "Get Started"
    - Enter address
@@ -124,7 +124,7 @@ make logs-frontend
 ## 🎛️ Step 5: Test Operator Dashboard
 
 1. **Open browser:** http://localhost:3001
-2. **Expected:** JunkOS dashboard login page
+2. **Expected:** Umuve dashboard login page
 3. **Create test account:**
    - Register new operator account
    - Email: admin@test.com

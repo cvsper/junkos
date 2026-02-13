@@ -1,6 +1,6 @@
 //
 //  AvailabilityScheduleView.swift
-//  JunkOS Driver
+//  Umuve Pro
 //
 //  Weekly availability schedule editor.
 //

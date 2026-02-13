@@ -1,4 +1,4 @@
-JunkOS Mobile - Complete File Structure
+Umuve Mobile - Complete File Structure
 ========================================
 
 junkos/mobile/
@@ -25,7 +25,7 @@ junkos/mobile/
 │       └── storage.ts               ← AsyncStorage helpers
 │
 ├── ⚙️ CONFIGURATION
-│   ├── app.json                     ← Expo config (Bundle ID: com.junkos.booking)
+│   ├── app.json                     ← Expo config (Bundle ID: com.goumuve.booking)
 │   ├── package.json                 ← Dependencies & scripts
 │   ├── tsconfig.json                ← TypeScript config
 │   ├── tailwind.config.js           ← NativeWind (iOS colors)
@@ -80,7 +80,7 @@ KEY FEATURES
 
 BUNDLE IDENTIFIER
 =================
-com.junkos.booking
+com.goumuve.booking
 
 TECH STACK
 ==========

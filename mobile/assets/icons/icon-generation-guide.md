@@ -1,4 +1,4 @@
-# JunkOS Icon Generation Guide
+# Umuve Icon Generation Guide
 
 Complete guide for creating, exporting, and integrating iOS app icons from the provided SVG template.
 
@@ -25,7 +25,7 @@ Complete guide for creating, exporting, and integrating iOS app icons from the p
 2. **Set up export frame**:
    - Select all elements
    - Frame selection: Cmd/Ctrl + Alt + G
-   - Name frame: "JunkOS-Icon"
+   - Name frame: "Umuve-Icon"
    - Ensure frame is exactly 1024x1024px
 
 3. **Configure exports**:
@@ -56,7 +56,7 @@ iOS App Icon Sizes:
 4. **Export**:
    - Format: PNG
    - Color profile: sRGB
-   - Click "Export JunkOS-Icon"
+   - Click "Export Umuve-Icon"
 
 5. **Naming**:
    - Rename files to: `icon-{size}.png`

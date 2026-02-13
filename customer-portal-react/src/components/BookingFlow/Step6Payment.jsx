@@ -54,7 +54,7 @@ const PaymentForm = ({ formData, updateCustomerInfo, prevStep, setError, resetFo
       country: 'US',
       currency: 'usd',
       total: {
-        label: 'JunkOS Junk Removal',
+        label: 'Umuve Hauling',
         amount: Math.round(formData.estimate.total * 100),
       },
       requestPayerName: true,

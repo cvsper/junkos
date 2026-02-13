@@ -1,4 +1,4 @@
-# Quick Start: Testing in JunkOS
+# Quick Start: Testing in Umuve
 
 ## 🚀 5-Minute Setup
 
@@ -16,14 +16,14 @@ Follow the detailed guide in `scripts/MANUAL_TEST_SETUP.md`
 
 ### 2. Build the Project
 ```bash
-xcodebuild -scheme JunkOS -destination 'platform=iOS Simulator,name=iPhone 15' build
+xcodebuild -scheme Umuve -destination 'platform=iOS Simulator,name=iPhone 15' build
 ```
 
 ### 3. Run Your First Test
 ```bash
-xcodebuild test -scheme JunkOS \
+xcodebuild test -scheme Umuve \
   -destination 'platform=iOS Simulator,name=iPhone 15' \
-  -only-testing:JunkOSTests/AddressInputViewModelTests
+  -only-testing:UmuveTests/AddressInputViewModelTests
 ```
 
 Expected: ✅ 18 tests pass
@@ -35,7 +35,7 @@ Expected: ✅ 18 tests pass
 ### Unit Test Example
 ```swift
 import XCTest
-@testable import JunkOS
+@testable import Umuve
 
 @MainActor
 final class MyViewModelTests: XCTestCase {
@@ -95,21 +95,21 @@ final class MyUITests: XCTestCase {
 
 ```bash
 # Run all unit tests
-xcodebuild test -scheme JunkOS -destination 'platform=iOS Simulator,name=iPhone 15' -only-testing:JunkOSTests
+xcodebuild test -scheme Umuve -destination 'platform=iOS Simulator,name=iPhone 15' -only-testing:UmuveTests
 
 # Run all UI tests
-xcodebuild test -scheme JunkOS -destination 'platform=iOS Simulator,name=iPhone 15' -only-testing:JunkOSUITests
+xcodebuild test -scheme Umuve -destination 'platform=iOS Simulator,name=iPhone 15' -only-testing:UmuveUITests
 
 # Run specific test class
-xcodebuild test -scheme JunkOS -destination 'platform=iOS Simulator,name=iPhone 15' \
-  -only-testing:JunkOSTests/AddressInputViewModelTests
+xcodebuild test -scheme Umuve -destination 'platform=iOS Simulator,name=iPhone 15' \
+  -only-testing:UmuveTests/AddressInputViewModelTests
 
 # Run with coverage
-xcodebuild test -scheme JunkOS -destination 'platform=iOS Simulator,name=iPhone 15' \
+xcodebuild test -scheme Umuve -destination 'platform=iOS Simulator,name=iPhone 15' \
   -enableCodeCoverage YES
 
 # Build for testing
-xcodebuild build-for-testing -scheme JunkOS -destination 'platform=iOS Simulator,name=iPhone 15'
+xcodebuild build-for-testing -scheme Umuve -destination 'platform=iOS Simulator,name=iPhone 15'
 ```
 
 ---

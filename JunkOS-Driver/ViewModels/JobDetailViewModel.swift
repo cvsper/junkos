@@ -1,6 +1,6 @@
 //
 //  JobDetailViewModel.swift
-//  JunkOS Driver
+//  Umuve Pro
 //
 //  Single job detail and accept logic.
 //

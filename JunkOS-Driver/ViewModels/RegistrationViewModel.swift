@@ -1,6 +1,6 @@
 //
 //  RegistrationViewModel.swift
-//  JunkOS Driver
+//  Umuve Pro
 //
 //  Multi-step contractor registration flow.
 //

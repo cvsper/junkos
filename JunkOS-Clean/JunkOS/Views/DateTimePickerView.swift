@@ -1,6 +1,6 @@
 //
 //  DateTimePickerView.swift
-//  JunkOS
+//  Umuve
 //
 //  Date and time selection screen
 //  SF Symbols Reference: https://developer.apple.com/sf-symbols/
@@ -34,7 +34,7 @@ struct DateTimePickerView: View {
     
     var body: some View {
         ScrollView {
-            LazyVStack(spacing: JunkSpacing.xxlarge) {
+            LazyVStack(spacing: UmuveSpacing.xxlarge) {
                 // Header
                 ScreenHeader(
                     title: "Choose Date & Time",
@@ -73,9 +73,9 @@ struct DateTimePickerView: View {
                 
                 Spacer()
             }
-            .padding(JunkSpacing.large)
+            .padding(UmuveSpacing.large)
         }
-        .background(Color.junkBackground.ignoresSafeArea())
+        .background(Color.umuveBackground.ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
         .safeAreaInset(edge: .bottom) {
             continueButton
@@ -101,13 +101,13 @@ struct DateTimePickerView: View {
     
     // MARK: - Date Selector
     private var dateSelector: some View {
-        VStack(alignment: .leading, spacing: JunkSpacing.medium) {
+        VStack(alignment: .leading, spacing: UmuveSpacing.medium) {
             Text("Select Date")
-                .font(JunkTypography.h3Font)
-                .foregroundColor(.junkText)
+                .font(UmuveTypography.h3Font)
+                .foregroundColor(.umuveText)
             
             ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(spacing: JunkSpacing.medium) {
+                LazyHStack(spacing: UmuveSpacing.medium) {
                     ForEach(viewModel.getAvailableDates(), id: \.self) { date in
                         DateCard(
                             date: date,
@@ -125,12 +125,12 @@ struct DateTimePickerView: View {
     
     // MARK: - Time Slot Section
     private var timeSlotSection: some View {
-        VStack(alignment: .leading, spacing: JunkSpacing.medium) {
+        VStack(alignment: .leading, spacing: UmuveSpacing.medium) {
             Text("Select Time")
-                .font(JunkTypography.h3Font)
-                .foregroundColor(.junkText)
+                .font(UmuveTypography.h3Font)
+                .foregroundColor(.umuveText)
             
-            LazyVStack(spacing: JunkSpacing.medium) {
+            LazyVStack(spacing: UmuveSpacing.medium) {
                 ForEach(viewModel.availableTimeSlots) { slot in
                     TimeSlotCard(
                         slot: slot,
@@ -147,27 +147,27 @@ struct DateTimePickerView: View {
     
     // MARK: - Help Tip
     private var helpTip: some View {
-        HStack(alignment: .top, spacing: JunkSpacing.medium) {
+        HStack(alignment: .top, spacing: UmuveSpacing.medium) {
             // SF Symbol: clock.fill for time
             // https://developer.apple.com/design/human-interface-guidelines/sf-symbols
             Image(systemName: "clock.fill")
                 .font(.system(size: 24))
-                .foregroundColor(.junkCTA)
+                .foregroundColor(.umuveCTA)
             
             VStack(alignment: .leading, spacing: 4) {
                 Text("Pick a time slot")
-                    .font(JunkTypography.bodyFont.weight(.semibold))
-                    .foregroundColor(.junkText)
+                    .font(UmuveTypography.bodyFont.weight(.semibold))
+                    .foregroundColor(.umuveText)
                 
                 Text("Morning slots are most popular")
-                    .font(JunkTypography.bodySmallFont)
-                    .foregroundColor(.junkTextMuted)
+                    .font(UmuveTypography.bodySmallFont)
+                    .foregroundColor(.umuveTextMuted)
             }
             
             Spacer()
         }
-        .padding(JunkSpacing.normal)
-        .background(Color.junkCTA.opacity(0.1))
+        .padding(UmuveSpacing.normal)
+        .background(Color.umuveCTA.opacity(0.1))
         .cornerRadius(12)
     }
     
@@ -179,9 +179,9 @@ struct DateTimePickerView: View {
                 Text("Continue →")
             }
         )
-        .buttonStyle(JunkPrimaryButtonStyle())
-        .padding(JunkSpacing.large)
-        .background(Color.junkBackground)
+        .buttonStyle(UmuvePrimaryButtonStyle())
+        .padding(UmuveSpacing.large)
+        .background(Color.umuveBackground)
         .disabled(!viewModel.hasSelectedDateTime)
         .opacity(viewModel.hasSelectedDateTime ? 1 : 0.5)
     }
@@ -195,21 +195,21 @@ struct DateCard: View {
     
     var body: some View {
         Button(action: onTap) {
-            VStack(spacing: JunkSpacing.small) {
+            VStack(spacing: UmuveSpacing.small) {
                 Text(dayFormatter.string(from: date))
-                    .font(JunkTypography.bodySmallFont)
-                    .foregroundColor(isSelected ? .white : .junkTextMuted)
+                    .font(UmuveTypography.bodySmallFont)
+                    .foregroundColor(isSelected ? .white : .umuveTextMuted)
                 
                 Text(dateFormatter.string(from: date))
-                    .font(JunkTypography.h2Font)
-                    .foregroundColor(isSelected ? .white : .junkText)
+                    .font(UmuveTypography.h2Font)
+                    .foregroundColor(isSelected ? .white : .umuveText)
             }
             .frame(width: 70, height: 80)
-            .background(isSelected ? Color.junkPrimary : Color.junkWhite)
+            .background(isSelected ? Color.umuvePrimary : Color.umuveWhite)
             .cornerRadius(12)
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
-                    .stroke(isSelected ? Color.junkPrimary : Color.junkBorder, lineWidth: 2)
+                    .stroke(isSelected ? Color.umuvePrimary : Color.umuveBorder, lineWidth: 2)
             )
             // OPTIMIZATION: Animation only on selection, not during scroll
             .scaleEffect(isSelected ? 1.02 : 1.0)
@@ -234,24 +234,24 @@ struct TimeSlotCard: View {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
                         Text(slot.time)
-                            .font(JunkTypography.bodyFont.weight(.semibold))
-                            .foregroundColor(slot.isAvailable ? .junkText : .junkTextMuted)
+                            .font(UmuveTypography.bodyFont.weight(.semibold))
+                            .foregroundColor(slot.isAvailable ? .umuveText : .umuveTextMuted)
                         
                         if slot.isRecommended && slot.isAvailable {
                             Text("RECOMMENDED")
-                                .font(JunkTypography.smallFont)
+                                .font(UmuveTypography.smallFont)
                                 .foregroundColor(.white)
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 4)
-                                .background(Color.junkCTA)
+                                .background(Color.umuveCTA)
                                 .cornerRadius(8)
                         }
                     }
                     
                     if !slot.isAvailable {
                         Text("Not available")
-                            .font(JunkTypography.bodySmallFont)
-                            .foregroundColor(.junkTextMuted)
+                            .font(UmuveTypography.bodySmallFont)
+                            .foregroundColor(.umuveTextMuted)
                     }
                 }
                 
@@ -260,15 +260,15 @@ struct TimeSlotCard: View {
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.system(size: 24))
-                        .foregroundColor(.junkPrimary)
+                        .foregroundColor(.umuvePrimary)
                 }
             }
-            .padding(JunkSpacing.normal)
-            .background(slot.isAvailable ? Color.junkWhite : Color.junkWhite.opacity(0.5))
+            .padding(UmuveSpacing.normal)
+            .background(slot.isAvailable ? Color.umuveWhite : Color.umuveWhite.opacity(0.5))
             .cornerRadius(12)
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
-                    .stroke(isSelected ? Color.junkPrimary : Color.junkBorder, lineWidth: 2)
+                    .stroke(isSelected ? Color.umuvePrimary : Color.umuveBorder, lineWidth: 2)
             )
             // OPTIMIZATION: Simple scale animation only on selection
             .scaleEffect(isSelected ? 1.02 : 1.0)

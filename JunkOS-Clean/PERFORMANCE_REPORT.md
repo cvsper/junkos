@@ -1,4 +1,4 @@
-# JunkOS Performance Report
+# Umuve Performance Report
 
 **Date:** February 7, 2026  
 **Version:** 1.0  
@@ -7,7 +7,7 @@
 
 ## Executive Summary
 
-This report provides a comprehensive performance analysis of the JunkOS iOS application. Testing was conducted using Xcode Instruments and manual profiling across various device configurations.
+This report provides a comprehensive performance analysis of the Umuve iOS application. Testing was conducted using Xcode Instruments and manual profiling across various device configurations.
 
 **Overall Performance Grade:** ✅ **A (Excellent)**
 
@@ -420,14 +420,14 @@ This report provides a comprehensive performance analysis of the JunkOS iOS appl
 
 **Similar Apps (Junk Removal / Service Booking):**
 
-| Metric | JunkOS | Industry Average | Grade |
+| Metric | Umuve | Industry Average | Grade |
 |--------|--------|------------------|-------|
 | Launch Time | 250ms | 400ms | ✅ +60% |
 | Memory (Idle) | 45 MB | 80 MB | ✅ +44% |
 | Frame Rate | 60 FPS | 55 FPS | ✅ +9% |
 | App Size | 3-4 MB | 15 MB | ✅ +73% |
 
-**Conclusion:** JunkOS significantly outperforms industry averages
+**Conclusion:** Umuve significantly outperforms industry averages
 
 ---
 
