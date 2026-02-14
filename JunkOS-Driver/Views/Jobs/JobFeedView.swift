@@ -61,6 +61,20 @@ struct JobFeedView: View {
                     EmptyView()
                 }
             }
+            .onReceive(NotificationCenter.default.publisher(for: .jobWasAccepted)) { notification in
+                if let jobId = notification.userInfo?["job_id"] as? String {
+                    withAnimation(.easeOut(duration: 0.3)) {
+                        viewModel.removeJob(id: jobId)
+                    }
+                }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .newJobAvailable)) { notification in
+                if let job = notification.userInfo?["job"] as? DriverJob {
+                    withAnimation(.spring(response: 0.4)) {
+                        viewModel.addJobIfNew(job)
+                    }
+                }
+            }
         }
     }
 }

@@ -30,4 +30,13 @@ final class JobFeedViewModel {
     func refresh() async {
         await loadJobs()
     }
+
+    func removeJob(id: String) {
+        jobs.removeAll { $0.id == id }
+    }
+
+    func addJobIfNew(_ job: DriverJob) {
+        guard !jobs.contains(where: { $0.id == job.id }) else { return }
+        jobs.insert(job, at: 0)
+    }
 }

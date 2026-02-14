@@ -9,6 +9,11 @@
 import Foundation
 import SocketIO
 
+extension Notification.Name {
+    static let jobWasAccepted = Notification.Name("jobWasAccepted")
+    static let newJobAvailable = Notification.Name("newJobAvailable")
+}
+
 @Observable
 final class SocketIOManager {
     static let shared = SocketIOManager()
@@ -48,6 +53,14 @@ final class SocketIOManager {
                   let jsonData = try? JSONSerialization.data(withJSONObject: dict),
                   let job = try? JSONDecoder().decode(DriverJob.self, from: jsonData) else { return }
             self?.newJobAlert = job
+            // Also post to NotificationCenter for JobFeedView
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(
+                    name: .newJobAvailable,
+                    object: nil,
+                    userInfo: ["job": job]
+                )
+            }
         }
 
         // Listen for direct job assignments (auto-assigned or admin-assigned)
@@ -55,6 +68,19 @@ final class SocketIOManager {
             guard let dict = data.first as? [String: Any],
                   let jobId = dict["job_id"] as? String else { return }
             self?.assignedJobId = jobId
+        }
+
+        // Listen for job acceptance by other drivers (remove from feed)
+        socket?.on("job:accepted") { [weak self] data, _ in
+            guard let dict = data.first as? [String: Any],
+                  let jobId = dict["job_id"] as? String else { return }
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(
+                    name: .jobWasAccepted,
+                    object: nil,
+                    userInfo: ["job_id": jobId]
+                )
+            }
         }
 
         socket?.connect()
