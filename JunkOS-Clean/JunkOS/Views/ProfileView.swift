@@ -8,8 +8,10 @@
 import SwiftUI
 
 struct ProfileView: View {
+    @EnvironmentObject var authManager: AuthenticationManager
     @State private var userName = "Guest User"
     @State private var userEmail = "guest@goumuve.com"
+    @State private var showSignOutConfirmation = false
 
     var body: some View {
         ScrollView {
@@ -18,6 +20,7 @@ struct ProfileView: View {
                 settingsSection
                 reviewSection
                 aboutLegalSection
+                signOutSection
             }
             .padding(.horizontal, UmuveSpacing.large)
             .padding(.bottom, UmuveSpacing.xxlarge)
@@ -26,6 +29,16 @@ struct ProfileView: View {
         .background(Color.umuveBackground.ignoresSafeArea())
         .navigationTitle("Profile")
         .navigationBarTitleDisplayMode(.large)
+        .alert("Sign Out", isPresented: $showSignOutConfirmation) {
+            Button("Cancel", role: .cancel) { }
+            Button("Sign Out", role: .destructive) {
+                Task {
+                    await authManager.logout()
+                }
+            }
+        } message: {
+            Text("Are you sure you want to sign out?")
+        }
     }
 
     // MARK: - User Info Section
@@ -133,6 +146,21 @@ struct ProfileView: View {
             .background(Color.white)
             .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.lg))
             .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
+        }
+    }
+
+    // MARK: - Sign Out Section
+    private var signOutSection: some View {
+        Button(action: {
+            showSignOutConfirmation = true
+        }) {
+            Text("Sign Out")
+                .font(UmuveTypography.bodyFont.weight(.semibold))
+                .foregroundColor(.umuveError)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 16)
+                .background(Color.umuveError.opacity(0.1))
+                .cornerRadius(UmuveRadius.md)
         }
     }
 }

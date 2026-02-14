@@ -2,7 +2,8 @@
 //  EnhancedWelcomeView.swift
 //  Umuve
 //
-//  Enhanced welcome/splash screen (LoadUp-inspired)
+//  DEPRECATED: Replaced by OnboardingView.swift in Phase 1
+//  This file is preserved to avoid breaking Xcode project references.
 //
 
 import SwiftUI

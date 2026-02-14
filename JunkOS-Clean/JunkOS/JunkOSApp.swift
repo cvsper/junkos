@@ -7,6 +7,7 @@
 
 import SwiftUI
 import UserNotifications
+import Network
 
 // MARK: - App Delegate
 
@@ -37,17 +38,20 @@ struct UmuveApp: App {
     @StateObject private var bookingData = BookingData()
     @StateObject private var authManager = AuthenticationManager()
     @ObservedObject private var notificationManager = NotificationManager.shared
-    @State private var showingSplash = true
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @State private var didSetupNotifications = false
+    @State private var isOffline = false
+
+    private let networkMonitor = NWPathMonitor()
+    private let networkQueue = DispatchQueue(label: "NetworkMonitor")
 
     var body: some Scene {
         WindowGroup {
             Group {
-                if showingSplash {
-                    EnhancedWelcomeView(showingSplash: $showingSplash)
+                if !hasCompletedOnboarding {
+                    OnboardingView()
                         .environmentObject(bookingData)
                         .environmentObject(authManager)
-                        .environmentObject(notificationManager)
                 } else if !authManager.isAuthenticated {
                     WelcomeAuthView()
                         .environmentObject(authManager)
@@ -57,8 +61,31 @@ struct UmuveApp: App {
                         .environmentObject(bookingData)
                         .environmentObject(authManager)
                         .environmentObject(notificationManager)
+                        .overlay(
+                            Group {
+                                if isOffline {
+                                    VStack {
+                                        HStack {
+                                            Image(systemName: "wifi.slash")
+                                                .font(.system(size: 12))
+                                            Text("You're offline")
+                                                .font(UmuveTypography.captionFont)
+                                        }
+                                        .foregroundColor(.white)
+                                        .padding(.horizontal, UmuveSpacing.normal)
+                                        .padding(.vertical, UmuveSpacing.small)
+                                        .background(Color.umuveTextMuted.opacity(0.9))
+                                        .cornerRadius(UmuveRadius.md)
+                                        .padding(.top, UmuveSpacing.normal)
+                                        Spacer()
+                                    }
+                                    .transition(.move(edge: .top).combined(with: .opacity))
+                                }
+                            }
+                        )
                         .onAppear {
                             notificationManager.requestPermission()
+                            Task { await authManager.refreshTokenIfNeeded() }
                         }
                 }
             }
@@ -69,6 +96,16 @@ struct UmuveApp: App {
                     UNUserNotificationCenter.current().delegate = notificationManager
                     AppDelegate.notificationManager = notificationManager
                 }
+
+                // Start network monitoring
+                networkMonitor.pathUpdateHandler = { path in
+                    DispatchQueue.main.async {
+                        withAnimation {
+                            isOffline = (path.status != .satisfied)
+                        }
+                    }
+                }
+                networkMonitor.start(queue: networkQueue)
             }
         }
     }
