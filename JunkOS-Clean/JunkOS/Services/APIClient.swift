@@ -216,39 +216,124 @@ class APIClient {
     func uploadPhotos(_ photos: [Data]) async throws -> [String] {
         // Create multipart form data request
         let boundary = UUID().uuidString
-        
-        guard let url = URL(string: config.baseURL + "/api/photos") else {
+
+        guard let url = URL(string: config.baseURL + "/api/upload/photos") else {
             throw APIClientError.invalidURL
         }
-        
+
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
         request.setValue(config.apiKey, forHTTPHeaderField: "X-API-Key")
-        
+
+        // Automatically inject JWT auth header from Keychain
+        if let token = KeychainHelper.loadString(forKey: "authToken") {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+
         var body = Data()
-        
+
         for (index, photoData) in photos.enumerated() {
             // Add boundary
             body.append("--\(boundary)\r\n".data(using: .utf8)!)
-            
-            // Add content disposition
-            body.append("Content-Disposition: form-data; name=\"photo_\(index)\"; filename=\"photo_\(index).jpg\"\r\n".data(using: .utf8)!)
+
+            // Add content disposition - field name "files" matches backend expectation
+            body.append("Content-Disposition: form-data; name=\"files\"; filename=\"photo\(index).jpg\"\r\n".data(using: .utf8)!)
             body.append("Content-Type: image/jpeg\r\n\r\n".data(using: .utf8)!)
-            
+
             // Add photo data
             body.append(photoData)
             body.append("\r\n".data(using: .utf8)!)
         }
-        
+
         // Add closing boundary
         body.append("--\(boundary)--\r\n".data(using: .utf8)!)
-        
+
         request.httpBody = body
-        
-        // For now, return empty array as the backend endpoint doesn't exist yet
-        // This is a placeholder for future photo upload endpoint
-        return []
+
+        // Send request and decode response
+        let (data, response) = try await session.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIClientError.invalidResponse
+        }
+
+        guard httpResponse.statusCode == 200 else {
+            throw APIClientError.serverError("Photo upload failed: \(httpResponse.statusCode)")
+        }
+
+        // Decode response: { "success": true, "urls": [...] }
+        struct UploadResponse: Codable {
+            let success: Bool
+            let urls: [String]
+        }
+
+        let uploadResponse = try JSONDecoder().decode(UploadResponse.self, from: data)
+        return uploadResponse.urls
+    }
+
+    /// Create a new job/booking
+    func createJob(
+        serviceType: String,
+        address: String,
+        lat: Double,
+        lng: Double,
+        dropoffAddress: String?,
+        dropoffLat: Double?,
+        dropoffLng: Double?,
+        photoUrls: [String],
+        scheduledDate: String,
+        scheduledTime: String,
+        estimatedPrice: Double,
+        volumeTier: String?,
+        vehicleInfo: [String: String]?,
+        distance: Double?
+    ) async throws -> JobCreationResponse {
+        var requestBody: [String: Any] = [
+            "service_type": serviceType,
+            "address": address,
+            "lat": lat,
+            "lng": lng,
+            "photo_urls": photoUrls,
+            "scheduled_date": scheduledDate,
+            "scheduled_time": scheduledTime,
+            "estimated_price": estimatedPrice
+        ]
+
+        // Add optional fields
+        if let dropoffAddress = dropoffAddress {
+            requestBody["dropoff_address"] = dropoffAddress
+        }
+
+        if let dropoffLat = dropoffLat {
+            requestBody["dropoff_lat"] = dropoffLat
+        }
+
+        if let dropoffLng = dropoffLng {
+            requestBody["dropoff_lng"] = dropoffLng
+        }
+
+        if let volumeTier = volumeTier {
+            requestBody["volume_tier"] = volumeTier
+        }
+
+        if let vehicleInfo = vehicleInfo {
+            requestBody["vehicle_info"] = vehicleInfo
+        }
+
+        if let distance = distance {
+            requestBody["distance"] = distance
+        }
+
+        let body = try JSONSerialization.data(withJSONObject: requestBody)
+
+        let request = try createRequest(
+            endpoint: "/api/jobs",
+            method: "POST",
+            body: body
+        )
+
+        return try await performRequest(request)
     }
     
     /// Get customer's bookings

@@ -301,3 +301,16 @@ struct ValidateTokenResponse: Codable {
     let success: Bool
     let user: User
 }
+
+// MARK: - Job Creation Response
+struct JobCreationResponse: Codable {
+    let success: Bool
+    let jobId: String?
+    let message: String?
+
+    enum CodingKeys: String, CodingKey {
+        case success
+        case jobId = "job_id"
+        case message
+    }
+}
