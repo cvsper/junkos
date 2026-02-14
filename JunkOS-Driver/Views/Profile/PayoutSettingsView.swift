@@ -2,37 +2,16 @@
 //  PayoutSettingsView.swift
 //  Umuve Pro
 //
-//  Payout method management — bank account details for driver payouts.
+//  Stripe Connect payout status and onboarding access.
+//  Shows Connect status badge and action buttons for setup/management.
 //
 
 import SwiftUI
+import SafariServices
 
 struct PayoutSettingsView: View {
     @Bindable var appState: AppState
-    @State private var accountHolderName = ""
-    @State private var routingNumber = ""
-    @State private var accountNumber = ""
-    @State private var confirmAccountNumber = ""
-    @State private var accountType: AccountType = .checking
-    @State private var isSaving = false
-    @State private var showSuccess = false
-    @State private var errorMessage: String?
-
-    private var hasExistingPayout: Bool {
-        appState.contractorProfile?.stripeConnectId != nil
-    }
-
-    private var isFormValid: Bool {
-        !accountHolderName.isEmpty &&
-        routingNumber.count == 9 &&
-        accountNumber.count >= 4 &&
-        accountNumber == confirmAccountNumber
-    }
-
-    enum AccountType: String, CaseIterable {
-        case checking = "Checking"
-        case savings = "Savings"
-    }
+    @State private var viewModel = StripeConnectViewModel()
 
     var body: some View {
         ZStack {
@@ -40,117 +19,17 @@ struct PayoutSettingsView: View {
 
             ScrollView {
                 VStack(spacing: DriverSpacing.lg) {
-                    // Current payout status
-                    PayoutStatusCard(isSetUp: hasExistingPayout)
+                    // Status card
+                    statusCard
                         .padding(.horizontal, DriverSpacing.xl)
 
-                    // Bank account form
-                    VStack(alignment: .leading, spacing: DriverSpacing.md) {
-                        Text(hasExistingPayout ? "Update Bank Account" : "Add Bank Account")
-                            .font(DriverTypography.title3)
-                            .foregroundStyle(Color.driverText)
+                    // Action section
+                    actionSection
+                        .padding(.horizontal, DriverSpacing.xl)
 
-                        Text("Your earnings will be deposited directly into this account.")
-                            .font(DriverTypography.footnote)
-                            .foregroundStyle(Color.driverTextSecondary)
-
-                        // Account holder name
-                        VStack(alignment: .leading, spacing: DriverSpacing.xxs) {
-                            Text("Account Holder Name")
-                                .font(DriverTypography.caption)
-                                .foregroundStyle(Color.driverTextSecondary)
-
-                            TextField("Full legal name", text: $accountHolderName)
-                                .textFieldStyle(DriverTextFieldStyle())
-                                .textContentType(.name)
-                        }
-
-                        // Account type
-                        VStack(alignment: .leading, spacing: DriverSpacing.xxs) {
-                            Text("Account Type")
-                                .font(DriverTypography.caption)
-                                .foregroundStyle(Color.driverTextSecondary)
-
-                            Picker("Account Type", selection: $accountType) {
-                                ForEach(AccountType.allCases, id: \.self) { type in
-                                    Text(type.rawValue).tag(type)
-                                }
-                            }
-                            .pickerStyle(.segmented)
-                        }
-
-                        // Routing number
-                        VStack(alignment: .leading, spacing: DriverSpacing.xxs) {
-                            Text("Routing Number")
-                                .font(DriverTypography.caption)
-                                .foregroundStyle(Color.driverTextSecondary)
-
-                            TextField("9-digit routing number", text: $routingNumber)
-                                .textFieldStyle(DriverTextFieldStyle())
-                                .keyboardType(.numberPad)
-                                .onChange(of: routingNumber) { _, newValue in
-                                    routingNumber = String(newValue.prefix(9).filter(\.isNumber))
-                                }
-
-                            if !routingNumber.isEmpty && routingNumber.count != 9 {
-                                Text("Must be 9 digits")
-                                    .font(DriverTypography.caption2)
-                                    .foregroundStyle(Color.driverError)
-                            }
-                        }
-
-                        // Account number
-                        VStack(alignment: .leading, spacing: DriverSpacing.xxs) {
-                            Text("Account Number")
-                                .font(DriverTypography.caption)
-                                .foregroundStyle(Color.driverTextSecondary)
-
-                            SecureField("Account number", text: $accountNumber)
-                                .textFieldStyle(DriverTextFieldStyle())
-                                .keyboardType(.numberPad)
-                        }
-
-                        // Confirm account number
-                        VStack(alignment: .leading, spacing: DriverSpacing.xxs) {
-                            Text("Confirm Account Number")
-                                .font(DriverTypography.caption)
-                                .foregroundStyle(Color.driverTextSecondary)
-
-                            SecureField("Re-enter account number", text: $confirmAccountNumber)
-                                .textFieldStyle(DriverTextFieldStyle())
-                                .keyboardType(.numberPad)
-
-                            if !confirmAccountNumber.isEmpty && accountNumber != confirmAccountNumber {
-                                Text("Account numbers don't match")
-                                    .font(DriverTypography.caption2)
-                                    .foregroundStyle(Color.driverError)
-                            }
-                        }
-                    }
-                    .driverCard()
-                    .padding(.horizontal, DriverSpacing.xl)
-
-                    // Error
-                    if let error = errorMessage {
-                        Text(error)
-                            .font(DriverTypography.footnote)
-                            .foregroundStyle(Color.driverError)
-                            .padding(.horizontal, DriverSpacing.xl)
-                    }
-
-                    // Save button
-                    Button {
-                        savePayout()
-                    } label: {
-                        if isSaving {
-                            ProgressView().tint(.white)
-                        } else {
-                            Text(hasExistingPayout ? "Update Payout Method" : "Save Payout Method")
-                        }
-                    }
-                    .buttonStyle(DriverPrimaryButtonStyle(isEnabled: isFormValid))
-                    .disabled(!isFormValid || isSaving)
-                    .padding(.horizontal, DriverSpacing.xl)
+                    // Info section
+                    infoSection
+                        .padding(.horizontal, DriverSpacing.xl)
 
                     // Security note
                     HStack(spacing: DriverSpacing.xs) {
@@ -158,7 +37,7 @@ struct PayoutSettingsView: View {
                             .font(.system(size: 14))
                             .foregroundStyle(Color.driverPrimary)
 
-                        Text("Your banking information is encrypted and securely transmitted via Stripe.")
+                        Text("Your banking information is encrypted and securely handled by Stripe.")
                             .font(DriverTypography.caption2)
                             .foregroundStyle(Color.driverTextTertiary)
                     }
@@ -170,52 +49,36 @@ struct PayoutSettingsView: View {
         }
         .navigationTitle("Payout Method")
         .navigationBarTitleDisplayMode(.inline)
-        .alert("Payout Method Saved", isPresented: $showSuccess) {
-            Button("OK") {}
-        } message: {
-            Text("Your bank account has been saved. Earnings will be deposited after each completed job.")
+        .task {
+            await viewModel.checkStatus()
         }
-    }
-
-    private func savePayout() {
-        isSaving = true
-        errorMessage = nil
-
-        // In production this would call Stripe Connect onboarding API
-        // For now, simulate success
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-            isSaving = false
-            showSuccess = true
-            HapticManager.shared.success()
-        }
-    }
-}
-
-// MARK: - Payout Status Card
-
-private struct PayoutStatusCard: View {
-    let isSetUp: Bool
-
-    var body: some View {
-        HStack(spacing: DriverSpacing.md) {
-            ZStack {
-                Circle()
-                    .fill(isSetUp ? Color.driverSuccess.opacity(0.15) : Color.driverWarning.opacity(0.15))
-                    .frame(width: 48, height: 48)
-
-                Image(systemName: isSetUp ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
-                    .font(.system(size: 22))
-                    .foregroundStyle(isSetUp ? Color.driverSuccess : Color.driverWarning)
+        .sheet(isPresented: $viewModel.showSafari) {
+            if let url = viewModel.accountLinkURL {
+                SafariView(url: url)
+                    .onDisappear {
+                        Task {
+                            await viewModel.onSafariDismissed()
+                            // Reload profile to update Connect status
+                            await appState.loadContractorProfile()
+                        }
+                    }
             }
+        }
+    }
+
+    // MARK: - Status Card
+
+    @ViewBuilder
+    private var statusCard: some View {
+        HStack(spacing: DriverSpacing.md) {
+            statusIcon
 
             VStack(alignment: .leading, spacing: DriverSpacing.xxxs) {
-                Text(isSetUp ? "Payout Active" : "Payout Not Set Up")
+                Text(statusTitle)
                     .font(DriverTypography.headline)
                     .foregroundStyle(Color.driverText)
 
-                Text(isSetUp
-                     ? "Your earnings are deposited automatically."
-                     : "Add a bank account to receive your earnings.")
+                Text(statusDescription)
                     .font(DriverTypography.caption)
                     .foregroundStyle(Color.driverTextSecondary)
             }
@@ -223,5 +86,227 @@ private struct PayoutStatusCard: View {
             Spacer()
         }
         .driverCard()
+    }
+
+    @ViewBuilder
+    private var statusIcon: some View {
+        switch viewModel.onboardingStatus {
+        case .loading:
+            ZStack {
+                Circle()
+                    .fill(Color.gray.opacity(0.15))
+                    .frame(width: 48, height: 48)
+
+                ProgressView()
+                    .tint(Color.gray)
+            }
+
+        case .notSetUp:
+            ZStack {
+                Circle()
+                    .fill(Color.driverWarning.opacity(0.15))
+                    .frame(width: 48, height: 48)
+
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.system(size: 22))
+                    .foregroundStyle(Color.driverWarning)
+            }
+
+        case .pendingVerification:
+            ZStack {
+                Circle()
+                    .fill(Color.orange.opacity(0.15))
+                    .frame(width: 48, height: 48)
+
+                Image(systemName: "clock.fill")
+                    .font(.system(size: 22))
+                    .foregroundStyle(Color.orange)
+            }
+
+        case .active:
+            ZStack {
+                Circle()
+                    .fill(Color.driverSuccess.opacity(0.15))
+                    .frame(width: 48, height: 48)
+
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 22))
+                    .foregroundStyle(Color.driverSuccess)
+            }
+
+        case .failed:
+            ZStack {
+                Circle()
+                    .fill(Color.driverError.opacity(0.15))
+                    .frame(width: 48, height: 48)
+
+                Image(systemName: "xmark.circle.fill")
+                    .font(.system(size: 22))
+                    .foregroundStyle(Color.driverError)
+            }
+        }
+    }
+
+    private var statusTitle: String {
+        switch viewModel.onboardingStatus {
+        case .loading:
+            return "Checking Status..."
+        case .notSetUp:
+            return "Not Set Up"
+        case .pendingVerification:
+            return "Pending Verification"
+        case .active:
+            return "Active"
+        case .failed:
+            return "Failed"
+        }
+    }
+
+    private var statusDescription: String {
+        switch viewModel.onboardingStatus {
+        case .loading:
+            return "Loading your payout status..."
+        case .notSetUp:
+            return "Add a bank account to receive your earnings."
+        case .pendingVerification:
+            return "Verification is in progress."
+        case .active:
+            return "Your earnings are deposited automatically."
+        case .failed(let error):
+            return error
+        }
+    }
+
+    // MARK: - Action Section
+
+    @ViewBuilder
+    private var actionSection: some View {
+        VStack(alignment: .leading, spacing: DriverSpacing.md) {
+            switch viewModel.onboardingStatus {
+            case .loading:
+                EmptyView()
+
+            case .notSetUp:
+                Button {
+                    Task {
+                        await viewModel.startOnboarding()
+                    }
+                } label: {
+                    if viewModel.isCreatingAccount {
+                        ProgressView().tint(.white)
+                    } else {
+                        Text("Set Up Stripe Connect")
+                    }
+                }
+                .buttonStyle(DriverPrimaryButtonStyle(isEnabled: !viewModel.isCreatingAccount))
+                .disabled(viewModel.isCreatingAccount)
+
+            case .pendingVerification:
+                VStack(spacing: DriverSpacing.sm) {
+                    Text("Verification is in progress. You can complete any remaining steps.")
+                        .font(DriverTypography.footnote)
+                        .foregroundStyle(Color.driverTextSecondary)
+                        .multilineTextAlignment(.leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+
+                    Button {
+                        Task {
+                            await viewModel.startOnboarding()
+                        }
+                    } label: {
+                        if viewModel.isCreatingAccount {
+                            ProgressView().tint(.white)
+                        } else {
+                            Text("Complete Setup")
+                        }
+                    }
+                    .buttonStyle(DriverPrimaryButtonStyle(isEnabled: !viewModel.isCreatingAccount))
+                    .disabled(viewModel.isCreatingAccount)
+                }
+
+            case .active:
+                VStack(spacing: DriverSpacing.sm) {
+                    Text("Connected")
+                        .font(DriverTypography.footnote)
+                        .foregroundStyle(Color.driverSuccess)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+
+                    Button {
+                        Task {
+                            await viewModel.startOnboarding()
+                        }
+                    } label: {
+                        if viewModel.isCreatingAccount {
+                            ProgressView().tint(.white)
+                        } else {
+                            Text("Manage Payout Account")
+                        }
+                    }
+                    .buttonStyle(DriverPrimaryButtonStyle(isEnabled: !viewModel.isCreatingAccount))
+                    .disabled(viewModel.isCreatingAccount)
+                }
+
+            case .failed:
+                Button {
+                    Task {
+                        await viewModel.checkStatus()
+                    }
+                } label: {
+                    Text("Retry")
+                }
+                .buttonStyle(DriverPrimaryButtonStyle(isEnabled: true))
+            }
+        }
+    }
+
+    // MARK: - Info Section
+
+    @ViewBuilder
+    private var infoSection: some View {
+        VStack(alignment: .leading, spacing: DriverSpacing.md) {
+            Text("How payouts work")
+                .font(DriverTypography.title3)
+                .foregroundStyle(Color.driverText)
+
+            VStack(alignment: .leading, spacing: DriverSpacing.sm) {
+                InfoRow(
+                    icon: "dollarsign.circle.fill",
+                    text: "You earn 80% of each completed job"
+                )
+
+                InfoRow(
+                    icon: "calendar.circle.fill",
+                    text: "Payouts are sent after each job is marked complete"
+                )
+
+                InfoRow(
+                    icon: "clock.circle.fill",
+                    text: "Funds typically arrive in 1-2 business days"
+                )
+            }
+        }
+        .driverCard()
+    }
+}
+
+// MARK: - Info Row
+
+private struct InfoRow: View {
+    let icon: String
+    let text: String
+
+    var body: some View {
+        HStack(spacing: DriverSpacing.sm) {
+            Image(systemName: icon)
+                .font(.system(size: 16))
+                .foregroundStyle(Color.driverPrimary)
+                .frame(width: 20)
+
+            Text(text)
+                .font(DriverTypography.footnote)
+                .foregroundStyle(Color.driverTextSecondary)
+
+            Spacer()
+        }
     }
 }
