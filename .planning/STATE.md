@@ -51,6 +51,7 @@ Progress: [████████░░] 64%
 - 01-03: 5 minutes (2 tasks, onboarding + Apple-only sign-in UI)
 
 *Updated after each plan completion*
+| Phase 05 P03 | 3.01 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -128,6 +129,9 @@ Recent decisions affecting current work:
 - [Phase 05-02]: Decimal keyboard with input filtering (digits and single decimal point, max 1 decimal place)
 - [Phase 05-02]: NotificationCenter bridge pattern for Socket.IO volume events (consistent with Phase 4 job feed pattern)
 - [Phase 05-02]: Overlay-based status UI for waiting/approved/declined states (full-screen feedback with blocked interaction)
+- [Phase 05-03]: Approve/Decline actions use .foreground option to open app on tap for context
+- [Phase 05-03]: Volume adjustment banner embedded inline with booking card for contextual relevance
+- [Phase 05-03]: NotificationCenter bridge pattern for foreground volume adjustment push refresh (cleaner than property watching)
 
 ### Pending Todos
 
