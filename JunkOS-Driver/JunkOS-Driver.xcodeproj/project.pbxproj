@@ -9,6 +9,8 @@
 /* Begin PBXBuildFile section */
 		07D3D958F6EC6B2561F6FEAA /* DistanceBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = F412C09E80A444B74B8D3414 /* DistanceBadge.swift */; };
 		07FA90FCA1373A44089255FA /* ActiveJobView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3CEB980FB0B2AE4E5E91426 /* ActiveJobView.swift */; };
+		13B745AA6E216ABF4F0DF1C9 /* VolumeAdjustmentViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44DF0D5DCEAA8A365BEFD684 /* VolumeAdjustmentViewModel.swift */; };
+		67A7E9BA84D0A56CBFF504CF /* VolumeAdjustmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EE28BE56B2BB0D6D1470047 /* VolumeAdjustmentView.swift */; };
 		14790A1C6E4BF7984B5FF3E4 /* DriverAnnotationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17D1EDD45EA760AA572801D2 /* DriverAnnotationView.swift */; };
 		1571465FB7BA821EBF25A926 /* LiveMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D29936281490BE9C931F899 /* LiveMapView.swift */; };
 		16B71C5163B965FBDF945A5C /* ImageUploadService.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE6A30F12DD65BEE0708A3A6 /* ImageUploadService.swift */; };
@@ -120,6 +122,8 @@
 		9DEA402F6CECE2DD4CC76A0F /* AuthenticationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthenticationManager.swift; sourceTree = "<group>"; };
 		9F5425951FF88727F63532BA /* JobFeedViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobFeedViewModel.swift; sourceTree = "<group>"; };
 		A445038901808240328233C0 /* ActiveJobViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveJobViewModel.swift; sourceTree = "<group>"; };
+		44DF0D5DCEAA8A365BEFD684 /* VolumeAdjustmentViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VolumeAdjustmentViewModel.swift; sourceTree = "<group>"; };
+		3EE28BE56B2BB0D6D1470047 /* VolumeAdjustmentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VolumeAdjustmentView.swift; sourceTree = "<group>"; };
 		ABD336317A641FD03A7F918D /* StatusBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBadge.swift; sourceTree = "<group>"; };
 		B085FF75904906904989D302 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		B2EEE2DA4D07D3F191694A55 /* JobCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobCardView.swift; sourceTree = "<group>"; };
@@ -169,6 +173,7 @@
 				9708A071501064F0B43DB279 /* JobCompletionView.swift */,
 				54200844DD474F229259E177 /* JobStatusStepperView.swift */,
 				E269A5BD9F9CDD622483E10C /* NavigateToJobView.swift */,
+				3EE28BE56B2BB0D6D1470047 /* VolumeAdjustmentView.swift */,
 			);
 			path = ActiveJob;
 			sourceTree = "<group>";
@@ -198,6 +203,7 @@
 				F14A16027C1CA38C7BD4E4F7 /* LiveMapViewModel.swift */,
 				B38475343119CF6E9F5585E9 /* ProfileViewModel.swift */,
 				3E4022AADB725ED1A37514F9 /* RegistrationViewModel.swift */,
+				44DF0D5DCEAA8A365BEFD684 /* VolumeAdjustmentViewModel.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -545,6 +551,8 @@
 				2A3FF2C1D2D3EEB79385B548 /* StarRating.swift in Sources */,
 				9E123249BC3A8E7EA11DF942 /* StatusBadge.swift in Sources */,
 				39DEA556224982280DB9CC88 /* TruckTypeSelectionView.swift in Sources */,
+				13B745AA6E216ABF4F0DF1C9 /* VolumeAdjustmentViewModel.swift in Sources */,
+				67A7E9BA84D0A56CBFF504CF /* VolumeAdjustmentView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
