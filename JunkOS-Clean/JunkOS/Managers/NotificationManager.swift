@@ -150,8 +150,8 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
         request.addValue(apiKey, forHTTPHeaderField: "X-API-Key")
 
-        // Attach auth token if available
-        if let authToken = UserDefaults.standard.string(forKey: "authToken") {
+        // Attach auth token if available (from Keychain)
+        if let authToken = KeychainHelper.loadString(forKey: "authToken") {
             request.addValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
         }
 

@@ -145,7 +145,7 @@ class PaymentService: ObservableObject {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue(config.apiKey, forHTTPHeaderField: "X-API-Key")
-        if let authToken = UserDefaults.standard.string(forKey: "authToken") {
+        if let authToken = KeychainHelper.loadString(forKey: "authToken") {
             request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
         }
         request.httpBody = body
@@ -224,7 +224,7 @@ class PaymentService: ObservableObject {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue(config.apiKey, forHTTPHeaderField: "X-API-Key")
-        if let authToken = UserDefaults.standard.string(forKey: "authToken") {
+        if let authToken = KeychainHelper.loadString(forKey: "authToken") {
             request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
         }
         request.httpBody = body
