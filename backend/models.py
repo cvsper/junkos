@@ -144,6 +144,7 @@ class Contractor(db.Model):
             "truck_photos": self.truck_photos or [],
             "truck_type": self.truck_type,
             "truck_capacity": self.truck_capacity,
+            "stripe_connect_id": self.stripe_connect_id,
             "is_online": self.is_online,
             "current_lat": self.current_lat,
             "current_lng": self.current_lng,
