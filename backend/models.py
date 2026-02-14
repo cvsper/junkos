@@ -258,6 +258,10 @@ class Job(db.Model):
     cancellation_fee = Column(Float, default=0.0)
     rescheduled_count = Column(Integer, default=0)
 
+    volume_adjustment_proposed = Column(Boolean, default=False)
+    adjusted_volume = Column(Float, nullable=True)
+    adjusted_price = Column(Float, nullable=True)
+
     created_at = Column(DateTime, default=utcnow)
     updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
 
@@ -306,6 +310,9 @@ class Job(db.Model):
             "cancelled_at": self.cancelled_at.isoformat() if self.cancelled_at else None,
             "cancellation_fee": self.cancellation_fee or 0.0,
             "rescheduled_count": self.rescheduled_count or 0,
+            "volume_adjustment_proposed": self.volume_adjustment_proposed,
+            "adjusted_volume": self.adjusted_volume,
+            "adjusted_price": self.adjusted_price,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }

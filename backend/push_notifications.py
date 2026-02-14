@@ -113,6 +113,7 @@ def send_push_to_token(
     data: dict | None = None,
     badge: int | None = None,
     sound: str = "default",
+    category: str | None = None,
 ) -> bool:
     """Send a push notification to a single APNs device token.
 
@@ -139,6 +140,8 @@ def send_push_to_token(
         }
         if badge is not None:
             aps_payload["badge"] = badge
+        if category:
+            aps_payload["category"] = category
 
         payload: dict = {"aps": aps_payload}
         if data:
@@ -198,6 +201,7 @@ def send_push_notification(
     body: str,
     data: dict | None = None,
     badge: int | None = None,
+    category: str | None = None,
 ) -> int:
     """Send a push notification to all registered devices for a user.
 
@@ -222,7 +226,7 @@ def send_push_notification(
 
         success_count = 0
         for dt in tokens:
-            if send_push_to_token(dt.token, title, body, data=data, badge=badge):
+            if send_push_to_token(dt.token, title, body, data=data, badge=badge, category=category):
                 success_count += 1
 
         logger.info(
