@@ -10,27 +10,28 @@ See: .planning/PROJECT.md (updated 2026-02-13)
 ## Current Position
 
 Phase: 2 of 7 (Pricing & Booking)
-Plan: 2 of 5
+Plan: 3 of 5
 Status: In progress
-Last activity: 2026-02-14 — Plan 02-02 complete (service type selection with volume/vehicle options)
+Last activity: 2026-02-14 — Plan 02-03 complete (MapKit autocomplete address input)
 
 Progress: [██░░░░░░░░] 18%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 5
-- Average duration: 14 minutes
-- Total execution time: ~69 minutes
+- Total plans completed: 6
+- Average duration: 12.5 minutes
+- Total execution time: ~75 minutes
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1 | 3 | ~40 min | ~13 min |
-| 2 | 2 | ~29 min | ~14.5 min |
+| 2 | 3 | ~35 min | ~11.7 min |
 
 **Recent Trend:**
+- 02-03: 6 minutes (2 tasks, MapKit autocomplete address input)
 - 02-02: 5 minutes (2 tasks, service type selection + wizard integration)
 - 02-01: 24 minutes (2 tasks, data model refactor + wizard foundation + HomeView)
 - 01-03: 5 minutes (2 tasks, onboarding + Apple-only sign-in UI)
@@ -69,6 +70,9 @@ Recent decisions affecting current work:
 - Running price estimate bar sticky at bottom with expandable line-item breakdown
 - Temporary legacy properties in BookingData for backward compatibility during incremental refactor
 - Each wizard step manages its own ScrollView to avoid nesting conflicts
+- Single MKLocalSearchCompleter with searchMode enum for pickup/dropoff (simpler than two completers)
+- 300ms debounce for autocomplete search to balance responsiveness and API efficiency
+- Max 5 autocomplete suggestions to avoid overwhelming UI on mobile
 - Horizontal bar blocks for truck fill visualization (simpler than custom illustrations)
 - Pricing estimation triggered on service type + volume/vehicle selection (async with stub)
 
@@ -83,5 +87,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-14
-Stopped at: Completed 02-02-PLAN.md (service type selection with volume/vehicle options)
+Stopped at: Completed 02-03-PLAN.md (MapKit autocomplete address input)
 Resume file: None
