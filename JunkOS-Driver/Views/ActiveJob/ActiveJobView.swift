@@ -40,7 +40,23 @@ struct ActiveJobView: View {
                         case .enRoute:
                             NavigateToJobView(job: job, viewModel: viewModel)
                         case .arrived:
-                            BeforePhotosView(viewModel: viewModel)
+                            VStack(spacing: DriverSpacing.md) {
+                                BeforePhotosView(viewModel: viewModel)
+
+                                NavigationLink(destination: VolumeAdjustmentView(
+                                    jobId: job.id,
+                                    originalEstimate: job.volumeEstimate
+                                )) {
+                                    Label("Adjust Volume", systemImage: "arrow.up.arrow.down.circle")
+                                        .font(DriverTypography.body)
+                                        .foregroundStyle(Color.driverPrimary)
+                                        .frame(maxWidth: .infinity)
+                                        .padding(DriverSpacing.md)
+                                        .background(Color.driverPrimary.opacity(0.1))
+                                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                                }
+                                .padding(.horizontal, DriverSpacing.xl)
+                            }
                         case .started:
                             AfterPhotosView(viewModel: viewModel)
                         case .completed:
