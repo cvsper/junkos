@@ -9,21 +9,20 @@ import Foundation
 
 // MARK: - Request Models
 
-struct LoginRequest: Codable {
-    let email: String
-    let password: String
-}
-
-struct SignupRequest: Codable {
-    let email: String
-    let password: String
-    let name: String?
-}
-
 struct AppleSignInRequest: Codable {
+    let identityToken: String?
+    let nonce: String?
     let userIdentifier: String
     let email: String?
     let name: String?
+
+    enum CodingKeys: String, CodingKey {
+        case identityToken = "identity_token"
+        case nonce
+        case userIdentifier
+        case email
+        case name
+    }
 }
 
 // MARK: - Response Models
@@ -32,6 +31,11 @@ struct AuthResponse: Codable {
     let success: Bool
     let token: String
     let user: DriverUser
+}
+
+struct AuthRefreshResponse: Codable {
+    let success: Bool
+    let token: String
 }
 
 struct DriverUser: Codable, Identifiable {

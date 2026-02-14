@@ -80,6 +80,19 @@ actor DriverAPIClient {
         case 200...299:
             break
         case 401:
+            // Attempt silent token refresh on 401
+            if authenticated {
+                do {
+                    let refreshResponse: AuthRefreshResponse = try await refreshToken()
+                    if refreshResponse.success {
+                        KeychainHelper.save(refreshResponse.token, forKey: "authToken")
+                        // Retry original request once with new token
+                        return try await request(endpoint, method: method, body: body, authenticated: authenticated)
+                    }
+                } catch {
+                    // Refresh failed, throw unauthorized
+                }
+            }
             if let se = try? JSONDecoder().decode(ServerError.self, from: data) {
                 throw APIError.server(se.error)
             }
@@ -105,22 +118,29 @@ actor DriverAPIClient {
 
     // MARK: - Auth
 
-    func login(email: String, password: String) async throws -> AuthResponse {
-        try await request("/api/auth/login", method: "POST",
-                          body: LoginRequest(email: email, password: password),
-                          authenticated: false)
+    func appleSignIn(
+        identityToken: String,
+        nonce: String?,
+        userIdentifier: String,
+        email: String?,
+        name: String?
+    ) async throws -> AuthResponse {
+        try await request(
+            "/api/auth/apple",
+            method: "POST",
+            body: AppleSignInRequest(
+                identityToken: identityToken,
+                nonce: nonce,
+                userIdentifier: userIdentifier,
+                email: email,
+                name: name
+            ),
+            authenticated: false
+        )
     }
 
-    func signup(email: String, password: String, name: String?) async throws -> AuthResponse {
-        try await request("/api/auth/signup", method: "POST",
-                          body: SignupRequest(email: email, password: password, name: name),
-                          authenticated: false)
-    }
-
-    func appleSignIn(userIdentifier: String, email: String?, name: String?) async throws -> AuthResponse {
-        try await request("/api/auth/apple", method: "POST",
-                          body: AppleSignInRequest(userIdentifier: userIdentifier, email: email, name: name),
-                          authenticated: false)
+    func refreshToken() async throws -> AuthRefreshResponse {
+        try await request("/api/auth/refresh", method: "POST", authenticated: true)
     }
 
     // MARK: - Contractor Registration
