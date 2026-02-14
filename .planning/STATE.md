@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-13)
 
 **Core value:** A customer can book a junk hauling or auto transport job from their iPhone and a driver can accept and complete it — end-to-end, with real payments.
-**Current focus:** Phase 4 - Dispatch System
+**Current focus:** Phase 5 - Volume Adjustment
 
 ## Current Position
 
-Phase: 4 of 7 (Dispatch System)
-Plan: 4 of 4
-Status: Complete
-Last activity: 2026-02-14 — Phase 4 complete (dispatch system end-to-end verification)
+Phase: 5 of 7 (Volume Adjustment)
+Plan: 0 of TBD
+Status: Not started
+Last activity: 2026-02-14 — Phase 4 verified and complete
 
-Progress: [██████████] 100% (Phase 4 complete)
+Progress: [████████░░] 57%
 
 ## Performance Metrics
 
@@ -127,5 +127,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-14
-Stopped at: Phase 4 complete — All dispatch system plans verified (4/4)
+Stopped at: Phase 4 complete and verified — ready for Phase 5 planning
 Resume file: None
