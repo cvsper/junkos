@@ -127,55 +127,57 @@ struct BookingWizardView: View {
 
     @ViewBuilder
     private var stepContent: some View {
-        ScrollView {
-            Group {
-                switch wizardVM.currentStep {
-                case 0:
-                    // Service Selection - will be implemented in Plan 02
-                    placeholderStep(
-                        icon: "truck.box.fill",
-                        title: "Service Selection",
-                        description: "Choose between Junk Removal or Auto Transport"
-                    )
+        Group {
+            switch wizardVM.currentStep {
+            case 0:
+                // Service Selection
+                ServiceTypeSelectionView()
+                    .environmentObject(bookingData)
+                    .environmentObject(wizardVM)
 
-                case 1:
-                    // Address Input - will be refactored in Plan 03
-                    placeholderStep(
-                        icon: "mappin.circle.fill",
-                        title: "Address Entry",
-                        description: "Enter pickup location (and dropoff for auto transport)"
-                    )
+            case 1:
+                // Address Input - completed in Plan 03
+                AddressInputView()
 
-                case 2:
-                    // Photo Upload - will be cleaned up in Plan 04
+            case 2:
+                // Photo Upload - will be cleaned up in Plan 04
+                ScrollView {
                     placeholderStep(
                         icon: "camera.fill",
                         title: "Photos",
                         description: "Upload photos of items to be hauled"
                     )
+                    .padding(.horizontal, UmuveSpacing.large)
+                    .padding(.vertical, UmuveSpacing.normal)
+                }
 
-                case 3:
-                    // Schedule - will be cleaned up in Plan 04
+            case 3:
+                // Schedule - will be cleaned up in Plan 04
+                ScrollView {
                     placeholderStep(
                         icon: "calendar",
                         title: "Schedule",
                         description: "Pick your preferred date and time"
                     )
+                    .padding(.horizontal, UmuveSpacing.large)
+                    .padding(.vertical, UmuveSpacing.normal)
+                }
 
-                case 4:
-                    // Review - will be created in Plan 05
+            case 4:
+                // Review - will be created in Plan 05
+                ScrollView {
                     placeholderStep(
                         icon: "checkmark.circle.fill",
                         title: "Review & Confirm",
                         description: "Review your booking details before confirming"
                     )
-
-                default:
-                    EmptyView()
+                    .padding(.horizontal, UmuveSpacing.large)
+                    .padding(.vertical, UmuveSpacing.normal)
                 }
+
+            default:
+                EmptyView()
             }
-            .padding(.horizontal, UmuveSpacing.large)
-            .padding(.vertical, UmuveSpacing.normal)
         }
     }
 
