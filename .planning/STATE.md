@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-02-13)
 ## Current Position
 
 Phase: 5 of 7 (Volume Adjustment)
-Plan: 0 of TBD
-Status: Not started
-Last activity: 2026-02-14 — Phase 4 verified and complete
+Plan: 1 of TBD
+Status: In progress
+Last activity: 2026-02-14 — Completed 05-01: Volume adjustment workflow endpoints
 
-Progress: [████████░░] 57%
+Progress: [████████░░] 60%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 16
-- Average duration: 7.7 minutes
-- Total execution time: ~123 minutes
+- Total plans completed: 17
+- Average duration: 7.4 minutes
+- Total execution time: ~126 minutes
 
 **By Phase:**
 
@@ -31,8 +31,10 @@ Progress: [████████░░] 57%
 | 2 | 5 | ~54 min | ~10.8 min |
 | 3 | 4 | ~6.8 min | ~1.7 min |
 | 4 | 4 | ~21.5 min | ~5.4 min |
+| 5 | 1 | ~3.15 min | ~3.15 min |
 
 **Recent Trend:**
+- 05-01: 3.15 minutes (2 tasks, volume adjustment workflow endpoints + APNs category support)
 - 04-04: 3 minutes (1 task, end-to-end dispatch system verification)
 - 04-02: 11.5 minutes (1 task, driver real-time job feed updates + Phase 3 build fixes)
 - 04-03: 5 minutes (1 task, customer driver assignment notifications and status display)
@@ -116,6 +118,13 @@ Recent decisions affecting current work:
 - [Phase 04-04]: Human verification checkpoints for integration-heavy phases before phase completion
 - [Phase 04-04]: End-to-end verification traces data flow across all 3 subsystems (backend, driver app, customer app)
 
+**From Phase 5 (in progress):**
+- [Phase 05-01]: Auto-approve price decreases without customer interaction (better UX, no negative surprise)
+- [Phase 05-01]: $50 flat trip fee on customer decline after driver arrives (compensates driver for wasted time)
+- [Phase 05-01]: APNs category "VOLUME_ADJUSTMENT" for actionable notification with approve/decline buttons
+- [Phase 05-01]: Socket.IO events to driver room only for volume workflow (customer gets push, driver gets socket)
+- [Phase 05-01]: Graceful Stripe failure handling with try/except (log warning but don't fail endpoint in dev mode)
+
 ### Pending Todos
 
 None yet.
@@ -127,5 +136,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-14
-Stopped at: Phase 4 complete and verified — ready for Phase 5 planning
+Stopped at: Completed 05-01-PLAN.md (volume adjustment workflow endpoints)
 Resume file: None
