@@ -399,7 +399,23 @@ def update_job_status(user_id, job_id):
                 send_push_notification(
                     customer.id, "Your Driver Is On The Way!",
                     "Your driver is on the way!",
-                    {"job_id": job.id, "status": "en_route"},
+                    {"job_id": job.id, "status": "en_route", "category": "job_en_route"},
+                )
+
+        elif new_status == "arrived":
+            if customer:
+                send_push_notification(
+                    customer.id, "Driver Has Arrived",
+                    "Your driver has arrived at the location.",
+                    {"job_id": job.id, "status": "arrived", "category": "job_arrived"},
+                )
+
+        elif new_status == "started":
+            if customer:
+                send_push_notification(
+                    customer.id, "Job In Progress",
+                    "Your driver has started the job.",
+                    {"job_id": job.id, "status": "started", "category": "job_started"},
                 )
 
         elif new_status == "completed":
@@ -410,7 +426,7 @@ def update_job_status(user_id, job_id):
                 send_push_notification(
                     customer.id, "Pickup Complete!",
                     "Pickup complete! Rate your experience",
-                    {"job_id": job.id, "status": "completed"},
+                    {"job_id": job.id, "status": "completed", "category": "job_completed"},
                 )
             # Push to operator if job was delegated
             if job.operator_id:
