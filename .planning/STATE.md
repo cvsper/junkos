@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-02-13)
 ## Current Position
 
 Phase: 3 of 7 (Payments Integration)
-Plan: 0 of TBD
-Status: Not started
-Last activity: 2026-02-14 — Phase 2 verified and complete
+Plan: 1 of 4
+Status: In progress
+Last activity: 2026-02-14 — Completed plan 03-02 (Backend Stripe Connect endpoints)
 
-Progress: [████░░░░░░] 28%
+Progress: [█████░░░░░] 32%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 8
-- Average duration: 11.8 minutes
-- Total execution time: ~94 minutes
+- Total plans completed: 9
+- Average duration: 10.8 minutes
+- Total execution time: ~96 minutes
 
 **By Phase:**
 
@@ -29,8 +29,10 @@ Progress: [████░░░░░░] 28%
 |-------|-------|-------|----------|
 | 1 | 3 | ~40 min | ~13 min |
 | 2 | 5 | ~54 min | ~10.8 min |
+| 3 | 1 | ~2 min | ~2 min |
 
 **Recent Trend:**
+- 03-02: 2 minutes (2 tasks, Stripe Connect endpoints + earnings history API)
 - 02-05: 5 minutes (2 tasks, review screen + job creation API)
 - 02-04: 14 minutes (2 tasks, photos + schedule + pricing API integration)
 - 02-03: 6 minutes (2 tasks, MapKit autocomplete address input)
@@ -38,7 +40,6 @@ Progress: [████░░░░░░] 28%
 - 02-01: 24 minutes (2 tasks, data model refactor + wizard foundation + HomeView)
 - 01-03: 5 minutes (2 tasks, onboarding + Apple-only sign-in UI)
 - 01-02: 15 minutes (2 tasks, driver auth + onboarding)
-- 01-01: 20 minutes (2 tasks, customer auth + Keychain migration + nonce validation)
 
 *Updated after each plan completion*
 
@@ -85,6 +86,11 @@ Recent decisions affecting current work:
 - Mini-maps (MapKit) in review cards for visual address confirmation
 - Wizard dismisses and resets on booking completion
 
+**From Phase 3 (in progress):**
+- Earnings history shows driver_payout_amount only (80% take), not full job price — drivers see their earnings, not customer price
+- Account links generated fresh every request, never cached — links expire in 5 minutes
+- Connect status derived from Stripe API, not stored in DB — Stripe is source of truth for onboarding state
+
 ### Pending Todos
 
 None yet.
@@ -96,5 +102,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-14
-Stopped at: Phase 2 complete and verified — ready for Phase 3 planning
+Stopped at: Completed 03-02-PLAN.md — Backend Stripe Connect endpoints ready
 Resume file: None
