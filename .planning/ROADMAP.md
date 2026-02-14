@@ -48,10 +48,14 @@ Plans:
   3. Customer enters address via MapKit autocomplete with distance calculation
   4. Customer sees price breakdown (Base Fee + Distance + Service Multiplier) before booking
   5. Backend creates job with calculated price after customer confirms
-**Plans**: TBD
+**Plans**: 5 plans
 
 Plans:
-- TBD (pending phase planning)
+- [ ] 02-01-PLAN.md — Data model refactoring + booking wizard container with progress indicator
+- [ ] 02-02-PLAN.md — Service type selection (Junk Removal / Auto Transport) with truck fill selector and vehicle info
+- [ ] 02-03-PLAN.md — Address entry with MapKit autocomplete, mini-map preview, and distance calculation
+- [ ] 02-04-PLAN.md — Photo upload + schedule adaptation for wizard, pricing API integration, running price bar
+- [ ] 02-05-PLAN.md — Review & confirmation screen, photo upload to backend, job creation API
 
 ### Phase 3: Payments Integration
 **Goal**: Customer pays upfront via Stripe (held in escrow), driver receives 80% payout on completion
@@ -133,7 +137,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation & Authentication | 3/3 | Complete | 2026-02-14 |
-| 2. Pricing & Booking | 0/TBD | Not started | - |
+| 2. Pricing & Booking | 0/5 | Planning complete | - |
 | 3. Payments Integration | 0/TBD | Not started | - |
 | 4. Dispatch System | 0/TBD | Not started | - |
 | 5. Volume Adjustment | 0/TBD | Not started | - |
@@ -142,4 +146,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 
 ---
 *Roadmap created: 2026-02-13*
-*Last updated: 2026-02-14*
+*Last updated: 2026-02-13*
