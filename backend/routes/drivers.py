@@ -492,3 +492,126 @@ def submit_job_proof(user_id, job_id):
     logger.info("Proof photos submitted for job %s by contractor %s", job.id, contractor.id)
 
     return jsonify({"success": True, "job": job.to_dict()}), 200
+
+
+@drivers_bp.route("/jobs/<job_id>/volume", methods=["POST"])
+@require_auth
+def propose_volume_adjustment(user_id, job_id):
+    """Driver proposes a volume adjustment after arriving on-site."""
+    from routes.booking import calculate_estimate
+    from notifications import send_push_notification
+    from socket_events import socketio
+    import stripe
+
+    contractor = Contractor.query.filter_by(user_id=user_id).first()
+    if not contractor:
+        return jsonify({"error": "Contractor not found"}), 404
+
+    job = db.session.get(Job, job_id)
+    if not job:
+        return jsonify({"error": "Job not found"}), 404
+
+    if job.status != "arrived":
+        return jsonify({"error": "Job must be in 'arrived' status to propose volume adjustment"}), 400
+
+    if job.driver_id != contractor.id:
+        return jsonify({"error": "Only the assigned driver can propose volume adjustment"}), 403
+
+    data = request.get_json() or {}
+    actual_volume = data.get("actual_volume")
+
+    if not actual_volume or not isinstance(actual_volume, (int, float)):
+        return jsonify({"error": "actual_volume (number) is required"}), 400
+
+    # Map volume to item quantity using Phase 2 tier mapping
+    if actual_volume <= 4:
+        quantity = 2  # quarter
+    elif actual_volume <= 8:
+        quantity = 5  # half
+    elif actual_volume <= 12:
+        quantity = 10  # threeQuarter
+    else:
+        quantity = 16  # full
+
+    # Calculate new price
+    try:
+        items = [{"category": "general", "quantity": quantity}]
+        result = calculate_estimate(items, scheduled_date=None, lat=None, lng=None)
+        new_price = result["grand_total"]
+    except Exception as e:
+        logger.exception("Failed to calculate new price for volume adjustment")
+        return jsonify({"error": "Failed to calculate new price"}), 500
+
+    # Auto-approve if price decreased or stayed the same
+    if new_price <= job.total_price:
+        job.total_price = new_price
+        job.volume_estimate = actual_volume
+        job.updated_at = utcnow()
+
+        # Update Stripe PaymentIntent if it exists
+        try:
+            if job.payment and job.payment.stripe_payment_intent_id:
+                stripe.PaymentIntent.modify(
+                    job.payment.stripe_payment_intent_id,
+                    amount=int(new_price * 100)
+                )
+                job.payment.amount = new_price
+                job.payment.commission = new_price * 0.20
+                job.payment.driver_payout_amount = new_price * 0.80
+        except Exception as e:
+            logger.warning("Failed to update Stripe PaymentIntent for auto-approved volume adjustment: %s", e)
+
+        db.session.commit()
+
+        # Emit socket event
+        try:
+            socketio.emit("volume:approved", {"job_id": job_id}, room=f"driver:{contractor.id}")
+        except Exception as e:
+            logger.warning("Failed to emit volume:approved socket event: %s", e)
+
+        logger.info("Volume adjustment auto-approved for job %s (price decreased: $%.2f -> $%.2f)",
+                   job_id, job.total_price, new_price)
+
+        return jsonify({
+            "success": True,
+            "auto_approved": True,
+            "new_price": new_price
+        }), 200
+
+    # Price increased - require customer approval
+    job.volume_adjustment_proposed = True
+    job.adjusted_volume = actual_volume
+    job.adjusted_price = new_price
+    job.updated_at = utcnow()
+    db.session.commit()
+
+    # Send push notification with category for actionable notification
+    try:
+        send_push_notification(
+            job.customer_id,
+            "Price Adjustment Required",
+            f"Volume increased. New price: ${new_price:.2f} (was ${job.total_price:.2f})",
+            data={
+                "job_id": job_id,
+                "new_price": str(new_price),
+                "original_price": str(job.total_price),
+                "type": "volume_adjustment"
+            },
+            category="VOLUME_ADJUSTMENT"
+        )
+    except Exception as e:
+        logger.warning("Failed to send volume adjustment push notification: %s", e)
+
+    # Emit socket event
+    try:
+        socketio.emit("volume:proposed", {"job_id": job_id, "new_price": new_price}, room=f"driver:{contractor.id}")
+    except Exception as e:
+        logger.warning("Failed to emit volume:proposed socket event: %s", e)
+
+    logger.info("Volume adjustment proposed for job %s: $%.2f -> $%.2f", job_id, job.total_price, new_price)
+
+    return jsonify({
+        "success": True,
+        "new_price": new_price,
+        "original_price": job.total_price
+    }), 200

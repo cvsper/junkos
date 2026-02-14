@@ -617,3 +617,112 @@ def upload_after_photos(user_id, job_id):
         response["errors"] = errors
 
     return jsonify(response), 201
+
+
+@jobs_bp.route("/<job_id>/volume/approve", methods=["POST"])
+@require_auth
+def approve_volume_adjustment(user_id, job_id):
+    """Customer approves the driver's proposed volume adjustment."""
+    import stripe
+    from socket_events import socketio
+    import logging
+
+    logger = logging.getLogger(__name__)
+
+    job = db.session.get(Job, job_id)
+    if not job:
+        return jsonify({"error": "Job not found"}), 404
+
+    if job.customer_id != user_id:
+        return jsonify({"error": "Only the customer can approve volume adjustments"}), 403
+
+    if not job.volume_adjustment_proposed:
+        return jsonify({"error": "No volume adjustment is pending"}), 409
+
+    # Update Stripe PaymentIntent to new price
+    try:
+        if job.payment and job.payment.stripe_payment_intent_id:
+            stripe.PaymentIntent.modify(
+                job.payment.stripe_payment_intent_id,
+                amount=int(job.adjusted_price * 100)
+            )
+            # Update payment record
+            job.payment.amount = job.adjusted_price
+            job.payment.commission = job.adjusted_price * 0.20
+            job.payment.driver_payout_amount = job.adjusted_price * 0.80
+    except Exception as e:
+        logger.warning("Failed to update Stripe PaymentIntent for approved volume adjustment: %s", e)
+
+    # Update job with approved values
+    job.total_price = job.adjusted_price
+    job.volume_estimate = job.adjusted_volume
+    job.volume_adjustment_proposed = False
+    job.updated_at = utcnow()
+
+    db.session.commit()
+
+    # Emit socket event to driver
+    try:
+        socketio.emit("volume:approved", {"job_id": job_id}, room=f"driver:{job.driver_id}")
+    except Exception as e:
+        logger.warning("Failed to emit volume:approved socket event: %s", e)
+
+    logger.info("Volume adjustment approved for job %s by customer %s", job_id, user_id)
+
+    return jsonify({"success": True}), 200
+
+
+@jobs_bp.route("/<job_id>/volume/decline", methods=["POST"])
+@require_auth
+def decline_volume_adjustment(user_id, job_id):
+    """Customer declines the driver's proposed volume adjustment - charges trip fee and cancels job."""
+    import stripe
+    from socket_events import socketio
+    import logging
+
+    logger = logging.getLogger(__name__)
+
+    TRIP_FEE = 50.0
+
+    job = db.session.get(Job, job_id)
+    if not job:
+        return jsonify({"error": "Job not found"}), 404
+
+    if job.customer_id != user_id:
+        return jsonify({"error": "Only the customer can decline volume adjustments"}), 403
+
+    if not job.volume_adjustment_proposed:
+        return jsonify({"error": "No volume adjustment is pending"}), 409
+
+    # Update Stripe PaymentIntent to trip fee
+    try:
+        if job.payment and job.payment.stripe_payment_intent_id:
+            stripe.PaymentIntent.modify(
+                job.payment.stripe_payment_intent_id,
+                amount=int(TRIP_FEE * 100)
+            )
+            # Update payment record
+            job.payment.amount = TRIP_FEE
+            job.payment.commission = TRIP_FEE * 0.20
+            job.payment.driver_payout_amount = TRIP_FEE * 0.80
+    except Exception as e:
+        logger.warning("Failed to update Stripe PaymentIntent for declined volume adjustment: %s", e)
+
+    # Cancel job with trip fee
+    job.status = "cancelled"
+    job.cancelled_at = utcnow()
+    job.cancellation_fee = TRIP_FEE
+    job.volume_adjustment_proposed = False
+    job.updated_at = utcnow()
+
+    db.session.commit()
+
+    # Emit socket event to driver
+    try:
+        socketio.emit("volume:declined", {"job_id": job_id, "trip_fee": TRIP_FEE}, room=f"driver:{job.driver_id}")
+    except Exception as e:
+        logger.warning("Failed to emit volume:declined socket event: %s", e)
+
+    logger.info("Volume adjustment declined for job %s by customer %s - charging $%.2f trip fee", job_id, user_id, TRIP_FEE)
+
+    return jsonify({"success": True, "trip_fee": TRIP_FEE}), 200
