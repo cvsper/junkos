@@ -10,29 +10,29 @@ See: .planning/PROJECT.md (updated 2026-02-13)
 ## Current Position
 
 Phase: 1 of 7 (Foundation & Authentication)
-Plan: 3 of TBD
+Plan: 4 of TBD
 Status: In progress
-Last activity: 2026-02-14 — Completed plan 01-01 (customer auth infrastructure with Keychain + nonce validation)
+Last activity: 2026-02-14 — Completed plan 01-03 (customer onboarding + Apple-only sign-in UI)
 
 Progress: [███░░░░░░░] 30%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 3
-- Average duration: 17 minutes
-- Total execution time: 0.83 hours
+- Total plans completed: 4
+- Average duration: 14 minutes
+- Total execution time: 0.92 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 1 | 3 | 50 min | 17 min |
+| 1 | 4 | 55 min | 14 min |
 
 **Recent Trend:**
+- 01-03: 5 minutes (2 tasks, onboarding + Apple-only sign-in UI)
 - 01-01: 20 minutes (2 tasks, customer auth + Keychain migration + nonce validation)
 - 01-02: 15 minutes (2 tasks, driver auth + onboarding)
-- 01-01-previous: 15 minutes (customer auth hardening)
 
 *Updated after each plan completion*
 
@@ -49,6 +49,13 @@ Recent decisions affecting current work:
 - 20% platform commission with Stripe Connect — Standard marketplace take, handles split payments
 - Volume adjustment workflow with customer approval — Automated pricing with customer protection
 - Trip fee on customer decline after driver arrives — Compensates driver for wasted time
+
+**From 01-03:**
+- Use PageTabViewStyle for native iOS swipeable onboarding with dots indicator
+- Remove OnboardingManager class — use @AppStorage directly for simplicity
+- Deprecate EnhancedWelcomeView instead of deleting to preserve Xcode project references
+- Use NWPathMonitor for offline detection with animated banner overlay
+- Add sign-out confirmation alert to prevent accidental logouts
 
 **From 01-02:**
 - Remove email/password auth entirely from driver app (Apple Sign In only)
@@ -73,5 +80,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-14
-Stopped at: Completed 01-01-PLAN.md — customer auth infrastructure (Keychain, Apple Sign In nonce, token refresh, authenticated API)
+Stopped at: Completed 01-03-PLAN.md — customer onboarding + Apple-only sign-in UI
 Resume file: None
