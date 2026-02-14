@@ -10,26 +10,28 @@ See: .planning/PROJECT.md (updated 2026-02-13)
 ## Current Position
 
 Phase: 2 of 7 (Pricing & Booking)
-Plan: 0 of TBD
-Status: Not started
-Last activity: 2026-02-14 — Phase 1 verified and complete
+Plan: 1 of 5
+Status: In progress
+Last activity: 2026-02-14 — Plan 02-01 complete (booking data model + wizard foundation)
 
-Progress: [█░░░░░░░░░] 14%
+Progress: [██░░░░░░░░] 18%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 3
-- Average duration: 13 minutes
-- Total execution time: ~40 minutes
+- Total plans completed: 4
+- Average duration: 16 minutes
+- Total execution time: ~64 minutes
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1 | 3 | ~40 min | ~13 min |
+| 2 | 1 | ~24 min | ~24 min |
 
 **Recent Trend:**
+- 02-01: 24 minutes (2 tasks, data model refactor + wizard foundation + HomeView)
 - 01-03: 5 minutes (2 tasks, onboarding + Apple-only sign-in UI)
 - 01-02: 15 minutes (2 tasks, driver auth + onboarding)
 - 01-01: 20 minutes (2 tasks, customer auth + Keychain migration + nonce validation)
@@ -60,6 +62,12 @@ Recent decisions affecting current work:
 - Use NWPathMonitor for offline detection with animated banner overlay
 - Deprecate EnhancedWelcomeView instead of deleting to preserve Xcode project references
 
+**From Phase 2 (in progress):**
+- 5-step wizard flow: Service → Address → Photos → Schedule → Review (data dependency order)
+- Tappable progress dots enable free navigation to completed steps
+- Running price estimate bar sticky at bottom with expandable line-item breakdown
+- Temporary legacy properties in BookingData for backward compatibility during incremental refactor
+
 ### Pending Todos
 
 None yet.
@@ -71,5 +79,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-14
-Stopped at: Phase 1 complete and verified — ready for Phase 2 planning
+Stopped at: Completed 02-01-PLAN.md (booking data model + wizard foundation)
 Resume file: None
