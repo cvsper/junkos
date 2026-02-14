@@ -119,10 +119,12 @@ Plans:
   1. Customer app displays driver location on map when job status is en_route
   2. Customer receives push notifications for each job status transition
   3. Driver location streams to backend via Socket.IO during active jobs
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- TBD (pending phase planning)
+- [ ] 06-01-PLAN.md — Driver location streaming + backend push notifications for all status transitions
+- [ ] 06-02-PLAN.md — Customer Socket.IO manager + tracking map view + notification categories
+- [ ] 06-03-PLAN.md — Wire tracking into booking cards + end-to-end verification
 
 ### Phase 7: TestFlight Preparation
 **Goal**: Both apps compile, pass validation, and complete end-to-end testing on physical devices
