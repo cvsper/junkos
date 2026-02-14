@@ -112,6 +112,17 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
             ))
         }
 
+        // Add job status categories (for real-time tracking notifications)
+        let statusCategories = ["job_en_route", "job_arrived", "job_started", "job_completed"]
+        for categoryId in statusCategories {
+            categories.insert(UNNotificationCategory(
+                identifier: categoryId,
+                actions: [],
+                intentIdentifiers: [],
+                options: []
+            ))
+        }
+
         // Volume adjustment category with approve/decline actions
         let approveAction = UNNotificationAction(
             identifier: "APPROVE_VOLUME",
@@ -247,6 +258,19 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
             return
         }
 
+        // Handle job tracking categories (job_en_route, job_arrived, etc.)
+        if categoryIdentifier.hasPrefix("job_") {
+            if let jobId = userInfo["job_id"] as? String {
+                NotificationCenter.default.post(
+                    name: NSNotification.Name("openJobTracking"),
+                    object: nil,
+                    userInfo: ["job_id": jobId]
+                )
+            }
+            completionHandler()
+            return
+        }
+
         // Try category identifier first
         if let category = NotificationCategory(rawValue: categoryIdentifier) {
             handleNotificationAction(for: category, userInfo: userInfo)
@@ -254,7 +278,16 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
             // Fallback: map backend push data "type" field to a category
             switch type {
             case "job_update":
-                handleNotificationAction(for: .driverAssigned, userInfo: userInfo)
+                // Handle job updates - could navigate to tracking if job is in progress
+                if let jobId = userInfo["job_id"] as? String {
+                    NotificationCenter.default.post(
+                        name: NSNotification.Name("openJobTracking"),
+                        object: nil,
+                        userInfo: ["job_id": jobId]
+                    )
+                } else {
+                    handleNotificationAction(for: .driverAssigned, userInfo: userInfo)
+                }
             case "new_job":
                 handleNotificationAction(for: .bookingConfirmed, userInfo: userInfo)
             case "volume_adjustment":
