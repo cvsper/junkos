@@ -18,6 +18,7 @@ final class ActiveJobViewModel {
     var showCompletion = false
 
     private let api = DriverAPIClient.shared
+    private let locationManager = LocationManager()
 
     var currentStatus: JobStatus {
         job?.jobStatus ?? .accepted
@@ -71,6 +72,13 @@ final class ActiveJobViewModel {
             )
             job = response.job
             HapticManager.shared.success()
+
+            // Start/stop location streaming based on status
+            if status == "en_route", let contractorId = response.job.driverId {
+                locationManager.startActiveJobTracking(jobId: jobId, contractorId: contractorId)
+            } else if status == "completed" {
+                locationManager.stopActiveJobTracking()
+            }
         } catch {
             errorMessage = error.localizedDescription
             HapticManager.shared.error()

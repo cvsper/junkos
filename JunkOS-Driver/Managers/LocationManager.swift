@@ -20,10 +20,18 @@ final class LocationManager: NSObject, CLLocationManagerDelegate {
     /// Callback fired every time a new location arrives while tracking.
     var onLocationUpdate: ((CLLocation) -> Void)?
 
+    // MARK: - Active Job Streaming
+
+    var activeJobId: String?
+    var contractorId: String?
+    private var lastEmitTime: Date?
+    private let emitInterval: TimeInterval = 5.0
+
     override init() {
         super.init()
         clManager.delegate = self
-        clManager.desiredAccuracy = kCLLocationAccuracyBest
+        clManager.desiredAccuracy = kCLLocationAccuracyNearestTenMeters
+        clManager.distanceFilter = 20
         authorizationStatus = clManager.authorizationStatus
     }
 
@@ -63,6 +71,21 @@ final class LocationManager: NSObject, CLLocationManagerDelegate {
         isTracking = false
     }
 
+    /// Start tracking with active job context for Socket.IO streaming
+    func startActiveJobTracking(jobId: String, contractorId: String) {
+        self.activeJobId = jobId
+        self.contractorId = contractorId
+        startTracking()
+    }
+
+    /// Stop active job tracking and clear streaming context
+    func stopActiveJobTracking() {
+        self.activeJobId = nil
+        self.contractorId = nil
+        self.lastEmitTime = nil
+        stopTracking()
+    }
+
     // MARK: - One-shot
 
     func requestLocation() {
@@ -79,6 +102,22 @@ final class LocationManager: NSObject, CLLocationManagerDelegate {
         guard let loc = locations.last else { return }
         currentLocation = loc
         onLocationUpdate?(loc)
+
+        // Throttled Socket.IO emission during active jobs
+        if let activeJobId = activeJobId,
+           let contractorId = contractorId {
+            let now = Date()
+            let shouldEmit = lastEmitTime == nil || now.timeIntervalSince(lastEmitTime!) >= emitInterval
+            if shouldEmit {
+                SocketIOManager.shared.emitLocation(
+                    lat: loc.coordinate.latitude,
+                    lng: loc.coordinate.longitude,
+                    contractorId: contractorId,
+                    jobId: activeJobId
+                )
+                lastEmitTime = now
+            }
+        }
     }
 
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
