@@ -22,6 +22,15 @@ enum APIEnvironment {
         }
     }
 
+    var socketURL: String {
+        switch self {
+        case .development:
+            return "http://localhost:8080"
+        case .production:
+            return "https://junkos-backend.onrender.com"
+        }
+    }
+
     var apiKey: String {
         // In production, this should come from a secure source (keychain, env config, etc.)
         switch self {
@@ -59,6 +68,10 @@ class Config {
 
     var stripePublishableKey: String {
         environment.stripePublishableKey
+    }
+
+    var socketURL: String {
+        environment.socketURL
     }
 
     private init() {
