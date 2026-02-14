@@ -182,7 +182,7 @@ struct BookingReviewView: View {
                 HStack(spacing: UmuveSpacing.small) {
                     Image(systemName: "mappin.circle.fill")
                         .font(.system(size: 20))
-                        .foregroundColor(.umuveDark)
+                        .foregroundColor(.umuvePrimary)
 
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Dropoff")
@@ -229,7 +229,7 @@ struct BookingReviewView: View {
                 center: coordinate,
                 span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
             )
-        ), annotationItems: [MapAnnotation(coordinate: coordinate)]) { location in
+        ), annotationItems: [ReviewMapPin(coordinate: coordinate)]) { location in
             MapMarker(coordinate: location.coordinate, tint: .umuvePrimary)
         }
         .frame(height: 100)
@@ -517,7 +517,7 @@ struct BookingReviewView: View {
 
 // MARK: - Map Annotation Helper
 
-struct MapAnnotation: Identifiable {
+struct ReviewMapPin: Identifiable {
     let id = UUID()
     let coordinate: CLLocationCoordinate2D
 }

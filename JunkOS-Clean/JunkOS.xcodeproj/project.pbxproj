@@ -74,6 +74,8 @@
 		9C7FD09841C54C99A29DA7A5 /* BookingWizardViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19D768CA0F8C43A6BD9AC939 /* BookingWizardViewModel.swift */; };
 		B61D2F5F685941D8A9A1117E /* BookingWizardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF8FEDE3A12D4A61A3A53F6B /* BookingWizardView.swift */; };
 		E42A8F1C99DD45A3B1C2F789 /* ServiceTypeSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F35B7E9D88CC46B4A0D1E234 /* ServiceTypeSelectionView.swift */; };
+		E9EFC98AFA8643E28EACC354 /* BookingReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B62C6AE0CC2476CBA66EB5C /* BookingReviewView.swift */; };
+		5FF95075F663443EA6840FD2 /* BookingReviewViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C773B1D98EDF410CBD206EED /* BookingReviewViewModel.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -146,6 +148,8 @@
 		19D768CA0F8C43A6BD9AC939 /* BookingWizardViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookingWizardViewModel.swift; sourceTree = "<group>"; };
 		CF8FEDE3A12D4A61A3A53F6B /* BookingWizardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookingWizardView.swift; sourceTree = "<group>"; };
 		F35B7E9D88CC46B4A0D1E234 /* ServiceTypeSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceTypeSelectionView.swift; sourceTree = "<group>"; };
+		6B62C6AE0CC2476CBA66EB5C /* BookingReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookingReviewView.swift; sourceTree = "<group>"; };
+		C773B1D98EDF410CBD206EED /* BookingReviewViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookingReviewViewModel.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -185,6 +189,7 @@
 			isa = PBXGroup;
 			children = (
 				CF8FEDE3A12D4A61A3A53F6B /* BookingWizardView.swift */,
+				6B62C6AE0CC2476CBA66EB5C /* BookingReviewView.swift */,
 				F35B7E9D88CC46B4A0D1E234 /* ServiceTypeSelectionView.swift */,
 				CF7C17A42F37BC810083FF08 /* Auth */,
 				C56BF1A9F44848D087CD2F71 /* Booking */,
@@ -292,6 +297,7 @@
 			isa = PBXGroup;
 			children = (
 				19D768CA0F8C43A6BD9AC939 /* BookingWizardViewModel.swift */,
+				C773B1D98EDF410CBD206EED /* BookingReviewViewModel.swift */,
 				B0000010 /* WelcomeViewModel.swift */,
 				B0000011 /* ServiceSelectionViewModel.swift */,
 				B0000012 /* DateTimePickerViewModel.swift */,
@@ -450,6 +456,8 @@
 				B61D2F5F685941D8A9A1117E /* BookingWizardView.swift in Sources */,
 				E42A8F1C99DD45A3B1C2F789 /* ServiceTypeSelectionView.swift in Sources */,
 				9C7FD09841C54C99A29DA7A5 /* BookingWizardViewModel.swift in Sources */,
+				E9EFC98AFA8643E28EACC354 /* BookingReviewView.swift in Sources */,
+				5FF95075F663443EA6840FD2 /* BookingReviewViewModel.swift in Sources */,
 				978EAC332A244D5F8FEA2CBF /* NotificationManager.swift in Sources */,
 				D2D1D62684D24BC79EA47513 /* PaymentService.swift in Sources */,
 				5DC0864DB58C489DB7633A3B /* PaymentView.swift in Sources */,
