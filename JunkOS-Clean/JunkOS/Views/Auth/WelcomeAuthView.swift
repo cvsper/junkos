@@ -2,113 +2,83 @@
 //  WelcomeAuthView.swift
 //  Umuve
 //
-//  Initial welcome screen with login/signup options
+//  Apple Sign In only screen
 //
 
 import SwiftUI
+import AuthenticationServices
 
 struct WelcomeAuthView: View {
     @EnvironmentObject var authManager: AuthenticationManager
-    @State private var showPhoneSignUp = false
-    @State private var showLogin = false
-    
+
     var body: some View {
         ZStack {
-            // Background gradient
-            LinearGradient(
-                colors: [Color.umuvePrimary, Color.umuveCTA],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
-            
+            // Clean white background
+            Color.umuveBackground.ignoresSafeArea()
+
             VStack(spacing: UmuveSpacing.xxlarge) {
                 Spacer()
-                
+
                 // Logo and branding
                 VStack(spacing: UmuveSpacing.large) {
                     Image(systemName: "trash.circle.fill")
                         .font(.system(size: 120))
-                        .foregroundStyle(.white)
-                        .shadow(color: .black.opacity(0.2), radius: 20, x: 0, y: 10)
-                    
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [Color.umuvePrimary, Color.umuvePrimaryDark],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .shadow(color: Color.umuvePrimary.opacity(0.3), radius: 20, x: 0, y: 10)
+
                     VStack(spacing: UmuveSpacing.small) {
                         Text("Umuve")
                             .font(.system(size: 48, weight: .bold))
-                            .foregroundColor(.white)
-                        
-                        Text("Junk removal made simple")
+                            .foregroundColor(.umuvePrimary)
+
+                        Text("Hauling made simple.")
                             .font(UmuveTypography.bodyFont)
-                            .foregroundColor(.white.opacity(0.9))
+                            .foregroundColor(.umuveTextMuted)
                             .multilineTextAlignment(.center)
                     }
                 }
-                
+
                 Spacer()
-                
-                // Action buttons
+
+                // Sign in section
                 VStack(spacing: UmuveSpacing.normal) {
-                    // Create Account (Primary action)
-                    Button(action: {
-                        showPhoneSignUp = true
-                    }) {
-                        Text("Create an account")
-                            .font(UmuveTypography.h3Font)
-                            .foregroundColor(.umuvePrimary)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 56)
-                            .background(Color.white)
-                            .cornerRadius(28)
+                    // Apple Sign In button
+                    SignInWithAppleButton(.signIn) { request in
+                        authManager.handleAppleSignInRequest(request)
+                    } onCompletion: { result in
+                        authManager.handleAppleSignInCompletion(result)
                     }
-                    
-                    // Continue as Guest
-                    Button(action: {
-                        authManager.continueAsGuest()
-                        HapticManager.shared.lightTap()
-                    }) {
-                        Text("Continue as Guest")
-                            .font(UmuveTypography.h3Font)
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 56)
-                            .background(Color.white.opacity(0.2))
-                            .cornerRadius(28)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 28)
-                                    .stroke(Color.white.opacity(0.5), lineWidth: 2)
-                            )
+                    .signInWithAppleButtonStyle(.black)
+                    .frame(height: 52)
+                    .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.md))
+
+                    // Error message
+                    if let errorMessage = authManager.errorMessage {
+                        Text(errorMessage)
+                            .font(UmuveTypography.bodySmallFont)
+                            .foregroundColor(.umuveError)
+                            .multilineTextAlignment(.center)
+                            .padding(.top, UmuveSpacing.small)
                     }
-                    
-                    // Login (Secondary action)
-                    Button(action: {
-                        showLogin = true
-                    }) {
-                        VStack(spacing: 4) {
-                            Text("Already have an account?")
-                                .foregroundColor(.white.opacity(0.9))
-                            Text("Log In")
-                                .fontWeight(.bold)
-                                .foregroundColor(.white)
-                        }
-                        .font(UmuveTypography.bodyFont)
-                        .multilineTextAlignment(.center)
-                    }
-                    .frame(maxWidth: .infinity)
                 }
                 .padding(.horizontal, UmuveSpacing.xlarge)
                 .padding(.bottom, UmuveSpacing.xxlarge)
-            }
-        }
-        .fullScreenCover(isPresented: $showPhoneSignUp) {
-            NavigationView {
-                PhoneSignUpView()
-                    .environmentObject(authManager)
-            }
-        }
-        .fullScreenCover(isPresented: $showLogin) {
-            NavigationView {
-                LoginOptionsView()
-                    .environmentObject(authManager)
+                .overlay(
+                    Group {
+                        if authManager.isLoading {
+                            ProgressView()
+                                .scaleEffect(1.2)
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                .background(Color.umuveBackground.opacity(0.8))
+                        }
+                    }
+                )
             }
         }
     }

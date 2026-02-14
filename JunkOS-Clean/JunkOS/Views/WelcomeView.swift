@@ -11,7 +11,7 @@ import SwiftUI
 struct WelcomeView: View {
     @EnvironmentObject var bookingData: BookingData
     @StateObject private var viewModel = WelcomeViewModel()
-    @StateObject private var onboardingManager = OnboardingManager()
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @State private var showOnboarding = false
     
     var body: some View {
@@ -64,7 +64,7 @@ struct WelcomeView: View {
         .navigationBarHidden(true)
         .onAppear {
             viewModel.startAnimations()
-            if !onboardingManager.hasCompletedOnboarding {
+            if !hasCompletedOnboarding {
                 showOnboarding = true
             }
         }
