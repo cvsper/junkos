@@ -3,11 +3,12 @@
 //  Umuve
 //
 //  Payment service for creating payment intents and confirming payments
-//  via the backend Stripe API. Does NOT use the Stripe SDK directly.
+//  via the backend Stripe API. Includes Stripe Payment Sheet support.
 //
 
 import Foundation
 import PassKit
+import StripePaymentSheet
 
 // MARK: - Payment Models
 
@@ -86,11 +87,21 @@ class PaymentService: ObservableObject {
     private let session: URLSession
     private let config = Config.shared
 
+    /// Track current PaymentIntent ID for confirmation
+    var paymentIntentId: String?
+
     private init() {
         let configuration = URLSessionConfiguration.default
         configuration.timeoutIntervalForRequest = 30
         configuration.timeoutIntervalForResource = 60
         self.session = URLSession(configuration: configuration)
+    }
+
+    // MARK: - Stripe Configuration
+
+    /// Configure Stripe SDK with publishable key. Call once at app startup or lazily on first use.
+    static func configureStripe() {
+        STPAPIClient.shared.publishableKey = Config.shared.stripePublishableKey
     }
 
     // MARK: - Apple Pay Availability
@@ -105,6 +116,49 @@ class PaymentService: ObservableObject {
     /// Supported Apple Pay payment networks
     var supportedPaymentNetworks: [PKPaymentNetwork] {
         [.visa, .masterCard, .amex, .discover]
+    }
+
+    // MARK: - Payment Sheet Preparation
+
+    /// Prepares a Stripe Payment Sheet for customer payment.
+    /// Creates a PaymentIntent via backend and returns a configured PaymentSheet.
+    /// - Parameters:
+    ///   - amountInDollars: The total amount to charge in dollars
+    ///   - bookingDescription: Optional description for the payment
+    /// - Returns: Configured PaymentSheet ready for presentation
+    @MainActor
+    func preparePaymentSheet(
+        amountInDollars: Double,
+        bookingDescription: String = "Umuve Booking"
+    ) async throws -> PaymentSheet {
+        // Ensure Stripe is configured
+        PaymentService.configureStripe()
+
+        // Create PaymentIntent via backend
+        let response = try await createPaymentIntent(
+            amountInDollars: amountInDollars,
+            bookingId: nil,
+            customerEmail: nil
+        )
+
+        // Store the intent ID for later confirmation
+        self.paymentIntentId = response.paymentIntentId
+
+        // Configure Payment Sheet
+        var configuration = PaymentSheet.Configuration()
+        configuration.merchantDisplayName = "Umuve"
+        configuration.applePay = .init(
+            merchantId: "merchant.com.goumuve.app",
+            merchantCountryCode: "US"
+        )
+        configuration.returnURL = "umuve://payment-return"
+        configuration.allowsDelayedPaymentMethods = false
+
+        // Create and return Payment Sheet
+        return PaymentSheet(
+            paymentIntentClientSecret: response.clientSecret,
+            configuration: configuration
+        )
     }
 
     // MARK: - Create Payment Intent

@@ -10,7 +10,7 @@ import Foundation
 enum APIEnvironment {
     case development
     case production
-    
+
     var baseURL: String {
         switch self {
         case .development:
@@ -21,7 +21,7 @@ enum APIEnvironment {
             return "https://junkos-backend.onrender.com"
         }
     }
-    
+
     var apiKey: String {
         // In production, this should come from a secure source (keychain, env config, etc.)
         switch self {
@@ -31,22 +31,36 @@ enum APIEnvironment {
             return "umuve-api-key-12345"  // Should be different in production
         }
     }
+
+    var stripePublishableKey: String {
+        // User will replace PLACEHOLDER with real Stripe keys
+        switch self {
+        case .development:
+            return "pk_test_PLACEHOLDER"
+        case .production:
+            return "pk_live_PLACEHOLDER"
+        }
+    }
 }
 
 class Config {
     static let shared = Config()
-    
+
     // Default to development for now
     var environment: APIEnvironment = .development
-    
+
     var baseURL: String {
         environment.baseURL
     }
-    
+
     var apiKey: String {
         environment.apiKey
     }
-    
+
+    var stripePublishableKey: String {
+        environment.stripePublishableKey
+    }
+
     private init() {
         // Check for environment override
         #if DEBUG
