@@ -68,10 +68,13 @@ Plans:
   4. Driver receives 80% of job price when job is marked complete
   5. Driver can view earnings summary showing today, this week, and total earnings
   6. Driver payout settings screen displays Stripe Connect onboarding status
-**Plans**: TBD
+**Plans**: 4 plans
 
 Plans:
-- TBD (pending phase planning)
+- [ ] 03-01-PLAN.md — Stripe Payment Sheet integration in customer booking review (Apple Pay + card entry)
+- [ ] 03-02-PLAN.md — Backend Stripe Connect endpoints, earnings history API, webhook enhancements
+- [ ] 03-03-PLAN.md — Driver mandatory Stripe Connect onboarding + payout settings with status badge
+- [ ] 03-04-PLAN.md — Driver earnings dashboard with API integration, date filters, payout status badges
 
 ### Phase 4: Dispatch System
 **Goal**: Available drivers receive job notifications, can accept jobs, and job is removed from feed once claimed
@@ -138,7 +141,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 |-------|----------------|--------|-----------|
 | 1. Foundation & Authentication | 3/3 | Complete | 2026-02-14 |
 | 2. Pricing & Booking | 5/5 | Complete | 2026-02-14 |
-| 3. Payments Integration | 0/TBD | Not started | - |
+| 3. Payments Integration | 0/4 | Not started | - |
 | 4. Dispatch System | 0/TBD | Not started | - |
 | 5. Volume Adjustment | 0/TBD | Not started | - |
 | 6. Real-Time Tracking | 0/TBD | Not started | - |
