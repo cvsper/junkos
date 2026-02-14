@@ -403,6 +403,237 @@ def get_earnings(user_id):
 
 
 # ---------------------------------------------------------------------------
+# Stripe Connect
+# ---------------------------------------------------------------------------
+
+@payments_bp.route("/connect/create-account", methods=["POST"])
+@require_auth
+def create_connect_account(user_id):
+    """Create a Stripe Connect Express account for the authenticated driver."""
+    contractor = Contractor.query.filter_by(user_id=user_id).first()
+    if not contractor:
+        return jsonify({"error": "Contractor profile not found"}), 404
+
+    # Idempotent — return existing account if already created
+    if contractor.stripe_connect_id:
+        return jsonify({
+            "success": True,
+            "account_id": contractor.stripe_connect_id,
+        }), 200
+
+    stripe = _get_stripe()
+    stripe_key = os.environ.get("STRIPE_SECRET_KEY", "")
+    account_id = None
+
+    if stripe_key:
+        try:
+            account = stripe.Account.create(
+                type="express",
+                country="US",
+                capabilities={
+                    "card_payments": {"requested": True},
+                    "transfers": {"requested": True},
+                },
+            )
+            account_id = account.id
+        except Exception as e:
+            return jsonify({"error": "Stripe error: {}".format(str(e))}), 502
+    else:
+        # Dev mode — generate mock account ID
+        account_id = "acct_dev_{}".format(generate_uuid()[:8])
+
+    contractor.stripe_connect_id = account_id
+    db.session.commit()
+
+    return jsonify({
+        "success": True,
+        "account_id": account_id,
+    }), 201
+
+
+@payments_bp.route("/connect/account-link", methods=["POST"])
+@require_auth
+def create_account_link(user_id):
+    """Generate a fresh Stripe Connect account onboarding link (expires in 5 minutes)."""
+    contractor = Contractor.query.filter_by(user_id=user_id).first()
+    if not contractor:
+        return jsonify({"error": "Contractor profile not found"}), 404
+
+    if not contractor.stripe_connect_id:
+        return jsonify({"error": "No Stripe Connect account found. Call /connect/create-account first."}), 400
+
+    base_url = os.environ.get("APP_BASE_URL", "http://localhost:8080")
+    refresh_url = "{}/api/payments/connect/refresh".format(base_url)
+    return_url = "{}/api/payments/connect/return".format(base_url)
+
+    stripe = _get_stripe()
+    stripe_key = os.environ.get("STRIPE_SECRET_KEY", "")
+
+    if stripe_key:
+        try:
+            account_link = stripe.AccountLink.create(
+                account=contractor.stripe_connect_id,
+                refresh_url=refresh_url,
+                return_url=return_url,
+                type="account_onboarding",
+            )
+            return jsonify({
+                "success": True,
+                "url": account_link.url,
+                "expires_at": account_link.expires_at,
+            }), 200
+        except Exception as e:
+            return jsonify({"error": "Stripe error: {}".format(str(e))}), 502
+    else:
+        # Dev mode — return mock URL
+        return jsonify({
+            "success": True,
+            "url": "https://connect.stripe.com/setup/e/mock",
+            "expires_at": int((utcnow() + timedelta(minutes=5)).timestamp()),
+        }), 200
+
+
+@payments_bp.route("/connect/status", methods=["GET"])
+@require_auth
+def get_connect_status(user_id):
+    """Get the Stripe Connect onboarding status for the authenticated driver."""
+    contractor = Contractor.query.filter_by(user_id=user_id).first()
+    if not contractor:
+        return jsonify({"error": "Contractor profile not found"}), 404
+
+    if not contractor.stripe_connect_id:
+        return jsonify({
+            "success": True,
+            "status": "not_set_up",
+            "charges_enabled": False,
+            "payouts_enabled": False,
+            "details_submitted": False,
+        }), 200
+
+    stripe = _get_stripe()
+    stripe_key = os.environ.get("STRIPE_SECRET_KEY", "")
+
+    charges_enabled = False
+    payouts_enabled = False
+    details_submitted = False
+
+    if stripe_key:
+        try:
+            account = stripe.Account.retrieve(contractor.stripe_connect_id)
+            charges_enabled = account.get("charges_enabled", False)
+            payouts_enabled = account.get("payouts_enabled", False)
+            details_submitted = account.get("details_submitted", False)
+        except Exception:
+            pass  # Fall back to stored values or False
+
+    # Determine status
+    if charges_enabled and payouts_enabled:
+        status = "active"
+    elif contractor.stripe_connect_id:
+        status = "pending_verification"
+    else:
+        status = "not_set_up"
+
+    return jsonify({
+        "success": True,
+        "status": status,
+        "charges_enabled": charges_enabled,
+        "payouts_enabled": payouts_enabled,
+        "details_submitted": details_submitted,
+    }), 200
+
+
+@payments_bp.route("/connect/return", methods=["GET"])
+def connect_return():
+    """Stripe calls this URL after successful onboarding completion."""
+    return """
+    <html>
+    <head><title>Setup Complete</title></head>
+    <body style="font-family: sans-serif; text-align: center; padding: 50px;">
+        <h1>Setup complete!</h1>
+        <p>Return to the Umuve Pro app.</p>
+    </body>
+    </html>
+    """, 200
+
+
+@payments_bp.route("/connect/refresh", methods=["GET"])
+def connect_refresh():
+    """Stripe calls this URL if the onboarding link expires."""
+    return """
+    <html>
+    <head><title>Link Expired</title></head>
+    <body style="font-family: sans-serif; text-align: center; padding: 50px;">
+        <h1>Link expired</h1>
+        <p>Please return to the app and try again.</p>
+    </body>
+    </html>
+    """, 200
+
+
+@payments_bp.route("/earnings/history", methods=["GET"])
+@require_auth
+def get_earnings_history(user_id):
+    """Return detailed earnings history with per-job payout status (driver's 80% take only)."""
+    contractor = Contractor.query.filter_by(user_id=user_id).first()
+    if not contractor:
+        return jsonify({"error": "Contractor profile not found"}), 404
+
+    now = utcnow()
+    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    seven_days_ago = now - timedelta(days=7)
+    thirty_days_ago = now - timedelta(days=30)
+
+    # Query all succeeded payments for this driver
+    payments = (
+        Payment.query
+        .join(Job, Payment.job_id == Job.id)
+        .filter(Job.driver_id == contractor.id, Payment.payment_status == "succeeded")
+        .order_by(Payment.created_at.desc())
+        .all()
+    )
+
+    # Build entries
+    entries = []
+    for payment in payments:
+        job = db.session.get(Job, payment.job_id)
+        entries.append({
+            "id": payment.id,
+            "job_id": payment.job_id,
+            "address": job.address if job else None,
+            "amount": round(payment.driver_payout_amount, 2),
+            "date": payment.created_at.isoformat() if payment.created_at else None,
+            "payout_status": payment.payout_status,
+        })
+
+    # Compute summary
+    today_earnings = sum(
+        p.driver_payout_amount for p in payments
+        if p.created_at and p.created_at >= today_start
+    )
+    week_earnings = sum(
+        p.driver_payout_amount for p in payments
+        if p.created_at and p.created_at >= seven_days_ago
+    )
+    month_earnings = sum(
+        p.driver_payout_amount for p in payments
+        if p.created_at and p.created_at >= thirty_days_ago
+    )
+    all_time_earnings = sum(p.driver_payout_amount for p in payments)
+
+    return jsonify({
+        "success": True,
+        "entries": entries,
+        "summary": {
+            "today": round(today_earnings, 2),
+            "week": round(week_earnings, 2),
+            "month": round(month_earnings, 2),
+            "all_time": round(all_time_earnings, 2),
+        },
+    }), 200
+
+
+# ---------------------------------------------------------------------------
 # Stripe Webhook
 # ---------------------------------------------------------------------------
 webhook_bp = Blueprint("webhooks", __name__, url_prefix="/api/webhooks")
@@ -451,6 +682,9 @@ def stripe_webhook():
 
     elif event_type == "charge.dispute.created":
         _handle_dispute_created(data_object)
+
+    elif event_type == "account.updated":
+        _handle_account_updated(data_object)
 
     return jsonify({"received": True}), 200
 
@@ -692,4 +926,31 @@ def _handle_dispute_created(dispute):
 
     payment.payment_status = "disputed"
     payment.updated_at = utcnow()
+    db.session.commit()
+
+
+def _handle_account_updated(account):
+    """Handle Stripe Connect account.updated webhook event."""
+    import logging
+    logger = logging.getLogger(__name__)
+
+    account_id = account.get("id")
+    if not account_id:
+        return
+
+    contractor = Contractor.query.filter_by(stripe_connect_id=account_id).first()
+    if not contractor:
+        logger.info("account.updated webhook for unknown account: %s", account_id)
+        return
+
+    charges_enabled = account.get("charges_enabled", False)
+    payouts_enabled = account.get("payouts_enabled", False)
+
+    logger.info(
+        "Stripe Connect account updated: %s (contractor: %s, charges_enabled: %s, payouts_enabled: %s)",
+        account_id, contractor.id, charges_enabled, payouts_enabled
+    )
+
+    # Status is derived from Stripe API calls in /connect/status endpoint
+    # No model changes needed here — just log for debugging
     db.session.commit()
