@@ -10,27 +10,28 @@ See: .planning/PROJECT.md (updated 2026-02-13)
 ## Current Position
 
 Phase: 1 of 7 (Foundation & Authentication)
-Plan: 0 of TBD
-Status: Ready to plan
-Last activity: 2026-02-13 — Roadmap created with 7 phases covering all 32 v1 requirements
+Plan: 2 of TBD
+Status: In progress
+Last activity: 2026-02-14 — Completed plan 01-02 (driver auth hardening + onboarding)
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [██░░░░░░░░] 20%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 0
-- Average duration: N/A
-- Total execution time: 0.0 hours
+- Total plans completed: 2
+- Average duration: 15 minutes
+- Total execution time: 0.5 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| - | - | - | - |
+| 1 | 2 | 30 min | 15 min |
 
 **Recent Trend:**
-- No plans completed yet
+- 01-02: 15 minutes (2 tasks, driver auth + onboarding)
+- 01-01: 15 minutes (customer auth hardening)
 
 *Updated after each plan completion*
 
@@ -48,6 +49,12 @@ Recent decisions affecting current work:
 - Volume adjustment workflow with customer approval — Automated pricing with customer protection
 - Trip fee on customer decline after driver arrives — Compensates driver for wasted time
 
+**From 01-02:**
+- Remove email/password auth entirely from driver app (Apple Sign In only)
+- Show onboarding before auth screen on first launch
+- Retry Apple Sign In up to 3 times with 1-second delays
+- Refresh JWT when expiring within 24 hours
+
 ### Pending Todos
 
 None yet.
@@ -58,6 +65,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-13
-Stopped at: Roadmap creation complete, ready for Phase 1 planning
+Last session: 2026-02-14
+Stopped at: Completed 01-02-PLAN.md — driver auth hardening, onboarding, token refresh
 Resume file: None
