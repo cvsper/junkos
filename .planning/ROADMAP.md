@@ -135,10 +135,12 @@ Plans:
   2. Both apps successfully upload to App Store Connect and pass validation
   3. App Store screenshots, descriptions, and privacy details prepared
   4. Both apps tested end-to-end (customer books → driver accepts → completes → payment) using production backend URL
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- TBD (pending phase planning)
+- [ ] 07-01-PLAN.md — Build validation, entitlements fix, Release compilation
+- [ ] 07-02-PLAN.md — Privacy policy page and App Store Connect metadata
+- [ ] 07-03-PLAN.md — Production backend testing, physical device verification, App Store Connect upload
 
 ## Progress
 
@@ -153,7 +155,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | 4. Dispatch System | 4/4 | Complete | 2026-02-14 |
 | 5. Volume Adjustment | 4/4 | Complete | 2026-02-14 |
 | 6. Real-Time Tracking | 3/3 | Complete | 2026-02-14 |
-| 7. TestFlight Preparation | 0/TBD | Not started | - |
+| 7. TestFlight Preparation | 0/3 | Not started | - |
 
 ---
 *Roadmap created: 2026-02-13*
