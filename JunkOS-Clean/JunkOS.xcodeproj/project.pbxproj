@@ -35,6 +35,7 @@
 		A0000024 /* HapticManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000024 /* HapticManager.swift */; };
 		A0000025 /* LocationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000025 /* LocationManager.swift */; };
 		A0000026 /* AccessibilityHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000026 /* AccessibilityHelpers.swift */; };
+		KCH6273DDE75A8449FD9F693 /* KeychainHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = KCH1A95DDFA72D44911BFED2 /* KeychainHelper.swift */; };
 		A0000027 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B0000027 /* Assets.xcassets */; };
 		A0000028 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000029 /* MainTabView.swift */; };
 		A0000029 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000030 /* HomeView.swift */; };
@@ -103,6 +104,7 @@
 		B0000024 /* HapticManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticManager.swift; sourceTree = "<group>"; };
 		B0000025 /* LocationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationManager.swift; sourceTree = "<group>"; };
 		B0000026 /* AccessibilityHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityHelpers.swift; sourceTree = "<group>"; };
+		KCH1A95DDFA72D44911BFED2 /* KeychainHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainHelper.swift; sourceTree = "<group>"; };
 		B0000027 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B0000028 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		B0000029 /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
@@ -313,6 +315,7 @@
 				B0000024 /* HapticManager.swift */,
 				B0000025 /* LocationManager.swift */,
 				B0000026 /* AccessibilityHelpers.swift */,
+				KCH1A95DDFA72D44911BFED2 /* KeychainHelper.swift */,
 			);
 			path = Utilities;
 			sourceTree = "<group>";
@@ -489,6 +492,7 @@
 				A0000024 /* HapticManager.swift in Sources */,
 				A0000025 /* LocationManager.swift in Sources */,
 				A0000026 /* AccessibilityHelpers.swift in Sources */,
+				KCH6273DDE75A8449FD9F693 /* KeychainHelper.swift in Sources */,
 				A0000028 /* MainTabView.swift in Sources */,
 				A0000029 /* HomeView.swift in Sources */,
 				A0000030 /* MapAddressPickerView.swift in Sources */,

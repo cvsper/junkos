@@ -71,8 +71,10 @@ struct AccountView: View {
                 authManager.currentUser?.id == "guest" ? "Exit" : "Log Out",
                 role: .destructive
             ) {
-                authManager.logout()
-                HapticManager.shared.success()
+                Task {
+                    await authManager.logout()
+                    HapticManager.shared.success()
+                }
             }
         } message: {
             Text(authManager.currentUser?.id == "guest"
@@ -169,7 +171,9 @@ struct AccountView: View {
                 .multilineTextAlignment(.center)
 
             Button(action: {
-                authManager.logout()
+                Task {
+                    await authManager.logout()
+                }
             }) {
                 Text("Create Account")
             }
