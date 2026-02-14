@@ -10,27 +10,28 @@ See: .planning/PROJECT.md (updated 2026-02-13)
 ## Current Position
 
 Phase: 2 of 7 (Pricing & Booking)
-Plan: 3 of 5
+Plan: 4 of 5
 Status: In progress
-Last activity: 2026-02-14 — Plan 02-03 complete (MapKit autocomplete address input)
+Last activity: 2026-02-14 — Plan 02-04 complete (Photos + Schedule + Pricing API)
 
-Progress: [██░░░░░░░░] 18%
+Progress: [███░░░░░░░] 21%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 6
-- Average duration: 12.5 minutes
-- Total execution time: ~75 minutes
+- Total plans completed: 7
+- Average duration: 12.7 minutes
+- Total execution time: ~89 minutes
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1 | 3 | ~40 min | ~13 min |
-| 2 | 3 | ~35 min | ~11.7 min |
+| 2 | 4 | ~49 min | ~12.3 min |
 
 **Recent Trend:**
+- 02-04: 14 minutes (2 tasks, photos + schedule + pricing API integration)
 - 02-03: 6 minutes (2 tasks, MapKit autocomplete address input)
 - 02-02: 5 minutes (2 tasks, service type selection + wizard integration)
 - 02-01: 24 minutes (2 tasks, data model refactor + wizard foundation + HomeView)
@@ -74,7 +75,10 @@ Recent decisions affecting current work:
 - 300ms debounce for autocomplete search to balance responsiveness and API efficiency
 - Max 5 autocomplete suggestions to avoid overwhelming UI on mobile
 - Horizontal bar blocks for truck fill visualization (simpler than custom illustrations)
-- Pricing estimation triggered on service type + volume/vehicle selection (async with stub)
+- Photos are optional but encouraged (encouragement message shown when empty)
+- Volume tier maps to item quantity for backend pricing API (quarter→2, half→5, threeQuarter→10, full→16)
+- Pricing API calls are best-effort with silent failure (don't block user flow)
+- Price estimate refreshes automatically when wizard step changes
 
 ### Pending Todos
 
@@ -87,5 +91,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-14
-Stopped at: Completed 02-03-PLAN.md (MapKit autocomplete address input)
+Stopped at: Completed 02-04-PLAN.md (Photos + Schedule + Pricing API integration)
 Resume file: None
