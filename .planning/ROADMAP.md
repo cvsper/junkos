@@ -85,10 +85,13 @@ Plans:
   2. Driver can accept a job from notification or in-app feed (first-come-first-serve)
   3. Once a job is accepted, it disappears from other drivers' feeds
   4. Customer receives push notification when their job is assigned to a driver
-**Plans**: TBD
+**Plans**: 4 plans
 
 Plans:
-- TBD (pending phase planning)
+- [ ] 04-01-PLAN.md — Backend dispatch pipeline: APNs push + Socket.IO to drivers on job creation, customer push on acceptance, broadcast job removal to all drivers
+- [ ] 04-02-PLAN.md — Driver app real-time feed: Socket.IO job:accepted listener, feed removal, new job insertion
+- [ ] 04-03-PLAN.md — Customer app notifications: driver assignment push handling, booking status display
+- [ ] 04-04-PLAN.md — End-to-end verification checkpoint for all four DISP requirements
 
 ### Phase 5: Volume Adjustment
 **Goal**: Driver can recalculate price on-site if actual volume differs from estimate, customer approves or declines
@@ -142,7 +145,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | 1. Foundation & Authentication | 3/3 | Complete | 2026-02-14 |
 | 2. Pricing & Booking | 5/5 | Complete | 2026-02-14 |
 | 3. Payments Integration | 4/4 | Complete | 2026-02-14 |
-| 4. Dispatch System | 0/TBD | Not started | - |
+| 4. Dispatch System | 0/4 | Not started | - |
 | 5. Volume Adjustment | 0/TBD | Not started | - |
 | 6. Real-Time Tracking | 0/TBD | Not started | - |
 | 7. TestFlight Preparation | 0/TBD | Not started | - |
