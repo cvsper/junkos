@@ -67,6 +67,9 @@ struct OrdersView: View {
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
             loadBookings()
         }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("volumeAdjustmentReceived"))) { _ in
+            Task { loadBookings() }
+        }
     }
 
     // MARK: - Empty State
@@ -100,7 +103,7 @@ struct OrdersView: View {
     private var bookingsList: some View {
         VStack(spacing: UmuveSpacing.medium) {
             ForEach(bookings, id: \.bookingId) { booking in
-                BookingCard(booking: booking)
+                BookingCard(booking: booking, onRefresh: loadBookings)
             }
         }
     }
@@ -135,6 +138,7 @@ struct OrdersView: View {
 // MARK: - Booking Card
 struct BookingCard: View {
     let booking: BookingResponse
+    let onRefresh: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: UmuveSpacing.medium) {
@@ -187,6 +191,65 @@ struct BookingCard: View {
                 Text("$\(String(format: "%.2f", booking.estimatedPrice))")
                     .font(UmuveTypography.priceFont)
                     .foregroundColor(.umuvePrimary)
+            }
+
+            // Volume adjustment pending banner
+            if booking.volumeAdjustmentProposed == true {
+                VStack(spacing: 8) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.orange)
+                        Text("Price Adjustment Required")
+                            .font(.subheadline.weight(.semibold))
+                    }
+
+                    if let adjustedPrice = booking.adjustedPrice {
+                        Text("New price: $\(adjustedPrice, specifier: "%.2f")")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    HStack(spacing: 12) {
+                        Button {
+                            Task {
+                                try? await APIClient.shared.approveVolumeAdjustment(jobId: booking.bookingId)
+                                // Refresh bookings after action
+                                await MainActor.run {
+                                    onRefresh()
+                                }
+                            }
+                        } label: {
+                            Text("Approve")
+                                .font(.subheadline.weight(.medium))
+                                .foregroundStyle(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 10)
+                                .background(Color.green)
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                        }
+
+                        Button {
+                            Task {
+                                try? await APIClient.shared.declineVolumeAdjustment(jobId: booking.bookingId)
+                                // Refresh bookings after action
+                                await MainActor.run {
+                                    onRefresh()
+                                }
+                            }
+                        } label: {
+                            Text("Decline")
+                                .font(.subheadline.weight(.medium))
+                                .foregroundStyle(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 10)
+                                .background(Color.red)
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                        }
+                    }
+                }
+                .padding(12)
+                .background(Color.orange.opacity(0.1))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
             }
         }
         .padding(UmuveSpacing.normal)
@@ -294,4 +357,26 @@ struct BookingCard: View {
         OrdersView()
             .environmentObject(AuthenticationManager())
     }
+}
+
+#Preview("Booking Card") {
+    BookingCard(
+        booking: BookingResponse(
+            from: try! JSONDecoder().decode(
+                BookingResponse.self,
+                from: """
+                {
+                    "id": "test-123",
+                    "confirmation": "confirmed",
+                    "estimated_price": 150.0,
+                    "scheduled_datetime": "2026-02-20 14:00",
+                    "status": "pending",
+                    "services": []
+                }
+                """.data(using: .utf8)!
+            )
+        ),
+        onRefresh: {}
+    )
+    .padding()
 }
