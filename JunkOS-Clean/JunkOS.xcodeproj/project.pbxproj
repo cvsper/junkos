@@ -71,6 +71,8 @@
 		CDB687E6F7E84384879FDFAE /* CameraPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4FFB908C7184F8F99358601 /* CameraPickerView.swift */; };
 		CD34EF56AB12CD34EF56AB12 /* BookingSuccessView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB12CD34EF56AB12CD34EF56 /* BookingSuccessView.swift */; };
 		AAFF00112233445566778899 /* ReferralView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBFF00112233445566778899 /* ReferralView.swift */; };
+		9C7FD09841C54C99A29DA7A5 /* BookingWizardViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19D768CA0F8C43A6BD9AC939 /* BookingWizardViewModel.swift */; };
+		B61D2F5F685941D8A9A1117E /* BookingWizardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF8FEDE3A12D4A61A3A53F6B /* BookingWizardView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -140,6 +142,8 @@
 		D4FFB908C7184F8F99358601 /* CameraPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraPickerView.swift; sourceTree = "<group>"; };
 		AB12CD34EF56AB12CD34EF56 /* BookingSuccessView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookingSuccessView.swift; sourceTree = "<group>"; };
 		BBFF00112233445566778899 /* ReferralView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReferralView.swift; sourceTree = "<group>"; };
+		19D768CA0F8C43A6BD9AC939 /* BookingWizardViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookingWizardViewModel.swift; sourceTree = "<group>"; };
+		CF8FEDE3A12D4A61A3A53F6B /* BookingWizardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookingWizardView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -178,6 +182,7 @@
 		CF7C17B32F37BC810083FF08 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				CF8FEDE3A12D4A61A3A53F6B /* BookingWizardView.swift */,
 				CF7C17A42F37BC810083FF08 /* Auth */,
 				C56BF1A9F44848D087CD2F71 /* Booking */,
 				CF7C17A52F37BC810083FF08 /* AccountView.swift */,
@@ -283,6 +288,7 @@
 		D0000007 /* ViewModels */ = {
 			isa = PBXGroup;
 			children = (
+				19D768CA0F8C43A6BD9AC939 /* BookingWizardViewModel.swift */,
 				B0000010 /* WelcomeViewModel.swift */,
 				B0000011 /* ServiceSelectionViewModel.swift */,
 				B0000012 /* DateTimePickerViewModel.swift */,
@@ -438,6 +444,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B61D2F5F685941D8A9A1117E /* BookingWizardView.swift in Sources */,
+				9C7FD09841C54C99A29DA7A5 /* BookingWizardViewModel.swift in Sources */,
 				978EAC332A244D5F8FEA2CBF /* NotificationManager.swift in Sources */,
 				D2D1D62684D24BC79EA47513 /* PaymentService.swift in Sources */,
 				5DC0864DB58C489DB7633A3B /* PaymentView.swift in Sources */,

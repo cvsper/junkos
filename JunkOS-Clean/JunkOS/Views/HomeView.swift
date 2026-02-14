@@ -89,15 +89,25 @@ struct HomeView: View {
     // MARK: - Service Categories
     private var serviceCategoriesSection: some View {
         VStack(spacing: UmuveSpacing.medium) {
-            ForEach(ServiceCategory.all, id: \.id) { category in
-                NavigationLink {
-                    MapAddressPickerView()
-                        .environmentObject(bookingData)
-                } label: {
-                    ServiceCategoryCard(category: category)
-                }
-                .buttonStyle(.plain)
+            // Junk Removal Card
+            NavigationLink {
+                BookingWizardView()
+            } label: {
+                ServiceTypeCard(
+                    serviceType: .junkRemoval
+                )
             }
+            .buttonStyle(.plain)
+
+            // Auto Transport Card
+            NavigationLink {
+                BookingWizardView()
+            } label: {
+                ServiceTypeCard(
+                    serviceType: .autoTransport
+                )
+            }
+            .buttonStyle(.plain)
         }
     }
 
@@ -132,46 +142,30 @@ struct HomeView: View {
     }
 }
 
-// MARK: - Service Category Model
-struct ServiceCategory: Identifiable {
-    let id: String
-    let title: String
-    let description: String
-    let icon: String
-    let color: Color
-
-    static let all: [ServiceCategory] = [
-        ServiceCategory(id: "junk", title: "Junk Removal", description: "Furniture, appliances, general junk", icon: "trash.fill", color: .categoryBlue),
-        ServiceCategory(id: "donation", title: "Donation Pickups", description: "Gently used items for charity", icon: "heart.fill", color: .categoryPink),
-        ServiceCategory(id: "moving", title: "Moving Labor", description: "Heavy lifting & loading help", icon: "figure.strengthtraining.traditional", color: .categoryYellow),
-        ServiceCategory(id: "cleanout", title: "Property Cleanout", description: "Full property or estate cleanout", icon: "house.fill", color: .categoryGreen),
-    ]
-}
-
-// MARK: - Service Category Card
-struct ServiceCategoryCard: View {
-    let category: ServiceCategory
+// MARK: - Service Type Card
+struct ServiceTypeCard: View {
+    let serviceType: ServiceType
 
     var body: some View {
         HStack(spacing: UmuveSpacing.normal) {
             // Icon
             ZStack {
                 RoundedRectangle(cornerRadius: UmuveRadius.md)
-                    .fill(category.color.opacity(0.15))
+                    .fill(Color.umuvePrimary.opacity(0.15))
                     .frame(width: 64, height: 64)
 
-                Image(systemName: category.icon)
+                Image(systemName: serviceType.icon)
                     .font(.system(size: 26))
-                    .foregroundColor(category.color)
+                    .foregroundColor(.umuvePrimary)
             }
 
             // Content
             VStack(alignment: .leading, spacing: 4) {
-                Text(category.title)
+                Text(serviceType.rawValue)
                     .font(UmuveTypography.h3Font)
                     .foregroundColor(.umuveText)
 
-                Text(category.description)
+                Text(serviceType.description)
                     .font(UmuveTypography.bodySmallFont)
                     .foregroundColor(.umuveTextMuted)
                     .lineLimit(2)

@@ -128,11 +128,20 @@ class BookingData: ObservableObject {
     @Published var bookingCompleted = false
 
     // MARK: - Legacy Properties (TEMPORARY - Phase 2 refactor)
-    // TODO: Phase 2 refactor - Remove once WelcomeView and PaymentView are refactored
+    // TODO: Phase 2 refactor - Remove once old views (WelcomeView, PaymentView, ConfirmationView) are refactored
     @Published var isCommercialBooking: Bool = false
     @Published var customerEmail: String = ""
     @Published var customerName: String = ""
     @Published var customerPhone: String = ""
+    @Published var serviceTier: ServiceTier = .fullService
+    @Published var selectedServices: Set<String> = []
+    @Published var dontNeedToBeHome: Bool = false
+    @Published var outdoorPlacementInstructions: String = ""
+    @Published var loaderNotes: String = ""
+    @Published var businessName: String = ""
+    @Published var isRecurringPickup: Bool = false
+    @Published var recurringFrequency: RecurringFrequency = .weekly
+    @Published var referralCode: String = ""
 
     // MARK: - Computed Properties
 
@@ -254,4 +263,10 @@ struct Service: Identifiable, Hashable {
 enum ServiceTier: String, CaseIterable {
     case fullService = "Full-Service"
     case curbside = "Curbside Pickup"
+}
+
+enum RecurringFrequency: String, CaseIterable {
+    case weekly = "Weekly"
+    case biweekly = "Bi-weekly"
+    case monthly = "Monthly"
 }
