@@ -26,8 +26,8 @@ struct BookingWizardView: View {
             stepContent
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-            // Running price estimate bar
-            if bookingData.estimatedPrice != nil {
+            // Running price estimate bar (hide on review step)
+            if bookingData.estimatedPrice != nil && wizardVM.currentStep < 4 {
                 priceEstimateBar
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
@@ -69,6 +69,13 @@ struct BookingWizardView: View {
             // Refresh pricing when step changes
             Task {
                 await wizardVM.refreshPricing(bookingData: bookingData)
+            }
+        }
+        .onChange(of: bookingData.bookingCompleted) { completed in
+            if completed {
+                // Reset booking data and dismiss wizard
+                bookingData.reset()
+                dismiss()
             }
         }
     }
@@ -159,16 +166,10 @@ struct BookingWizardView: View {
                     .environmentObject(wizardVM)
 
             case 4:
-                // Review - will be created in Plan 05
-                ScrollView {
-                    placeholderStep(
-                        icon: "checkmark.circle.fill",
-                        title: "Review & Confirm",
-                        description: "Review your booking details before confirming"
-                    )
-                    .padding(.horizontal, UmuveSpacing.large)
-                    .padding(.vertical, UmuveSpacing.normal)
-                }
+                // Review & Confirm
+                BookingReviewView()
+                    .environmentObject(bookingData)
+                    .environmentObject(wizardVM)
 
             default:
                 EmptyView()
