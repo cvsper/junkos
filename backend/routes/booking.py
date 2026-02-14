@@ -631,7 +631,14 @@ def get_booking_status(job_id):
 # Internal helpers
 # ---------------------------------------------------------------------------
 def _notify_nearby_contractors(job):
-    """Create Notification records for nearby online contractors."""
+    """Create Notification records for nearby online contractors.
+
+    Also sends APNs push notifications and Socket.IO events to nearby drivers.
+    """
+    # Lazy imports to avoid circular dependencies
+    from socket_events import notify_nearby_drivers
+    from notifications import send_push_notification
+
     if job.lat is None or job.lng is None:
         # No location -- notify all online contractors
         contractors = Contractor.query.filter_by(
@@ -649,7 +656,11 @@ def _notify_nearby_contractors(job):
             <= NEARBY_CONTRACTOR_RADIUS_KM
         ]
 
+    # Broadcast Socket.IO event to all nearby drivers (once)
+    notify_nearby_drivers(job)
+
     for contractor in contractors:
+        # Create Notification DB record (in-app notification history)
         notification = Notification(
             id=generate_uuid(),
             user_id=contractor.user_id,
@@ -659,3 +670,18 @@ def _notify_nearby_contractors(job):
             data={"job_id": job.id, "address": job.address},
         )
         db.session.add(notification)
+
+        # Send APNs push notification
+        try:
+            send_push_notification(
+                contractor.user_id,
+                "New Job Nearby",
+                "{} - ${}".format(job.address, int(job.total_price) if job.total_price else 0),
+                {"job_id": job.id, "type": "new_job", "address": job.address}
+            )
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).exception(
+                "Failed to send push notification for job %s to contractor %s: %s",
+                job.id, contractor.id, e
+            )
