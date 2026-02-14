@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-13)
 
 **Core value:** A customer can book a junk hauling or auto transport job from their iPhone and a driver can accept and complete it — end-to-end, with real payments.
-**Current focus:** Phase 6 - Real-Time Tracking
+**Current focus:** Phase 7 - TestFlight Preparation
 
 ## Current Position
 
-Phase: 6 of 7 (Real-Time Tracking)
-Plan: 3 of 3
-Status: Complete
-Last activity: 2026-02-14 — Completed 06-03: Tracking view integration and end-to-end verification
+Phase: 7 of 7 (TestFlight Preparation)
+Plan: 2 of 3
+Status: In Progress
+Last activity: 2026-02-14 — Completed 07-02: Privacy policy and App Store metadata
 
-Progress: [█████████░] 77%
+Progress: [█████████░] 80%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 22
-- Average duration: 6.5 minutes
-- Total execution time: ~143.95 minutes
+- Total plans completed: 23
+- Average duration: 6.4 minutes
+- Total execution time: ~147.45 minutes
 
 **By Phase:**
 
@@ -33,8 +33,10 @@ Progress: [█████████░] 77%
 | 4 | 4 | ~21.5 min | ~5.4 min |
 | 5 | 4 | ~10.3 min | ~2.6 min |
 | 6 | 3 | ~13.96 min | ~4.65 min |
+| 7 | 1 | ~3.5 min | ~3.5 min |
 
 **Recent Trend:**
+- 07-02: 3.5 minutes (2 tasks, privacy policy and App Store metadata)
 - 06-03: 3.65 minutes (2 tasks, tracking view integration and end-to-end verification)
 - 06-02: 5.81 minutes (2 tasks, customer Socket.IO infrastructure and tracking map view)
 - 06-01: 4.5 minutes (2 tasks, driver GPS streaming and complete push notification coverage)
@@ -61,6 +63,7 @@ Progress: [█████████░] 77%
 | Phase 05 P04 | 1.42 | 1 tasks | 0 files |
 | Phase 06 P01 | 4.5 | 2 tasks | 3 files |
 | Phase 06 P03 | 3.65 | 2 tasks | 2 files |
+| Phase 07 P02 | 3.5 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -143,7 +146,7 @@ Recent decisions affecting current work:
 - [Phase 05-03]: NotificationCenter bridge pattern for foreground volume adjustment push refresh (cleaner than property watching)
 - [Phase 05-04]: End-to-end verification confirms all 5 VOL requirements fully implemented across backend, driver app, and customer app
 
-**From Phase 6 (in progress):**
+**From Phase 6 (complete):**
 - [Phase 06-01]: kCLLocationAccuracyNearestTenMeters for battery optimization (not Best accuracy)
 - [Phase 06-01]: 5-second throttle interval with 20m distance filter balances real-time tracking and battery life
 - [Phase 06-01]: Location streaming lifecycle tied to job status (en_route starts, completed stops)
@@ -157,6 +160,8 @@ Recent decisions affecting current work:
 - [Phase 06-03]: Status badges show explicit labels before generic fallback
 - [Phase 06-03]: Track Driver button only shown for trackable statuses (en_route, arrived, started)
 - [Phase 06-03]: Status badges show explicit labels before generic fallback
+- [Phase 07]: Privacy policy as standalone HTML page for clean URL and independent updates
+- [Phase 07]: Location data deletion policy - GPS tracking deleted after job completion
 
 ### Pending Todos
 
@@ -169,5 +174,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-14
-Stopped at: Completed 06-03: Tracking view integration and end-to-end verification
+Stopped at: Completed 07-02: Privacy policy and App Store metadata
 Resume file: None
