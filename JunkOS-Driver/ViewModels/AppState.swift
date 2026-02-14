@@ -26,6 +26,7 @@ final class AppState {
     var isRegistered: Bool { contractorProfile != nil }
     var isApproved: Bool { contractorProfile?.approval == .approved }
     var isOperator: Bool { contractorProfile?.isOperator == true }
+    var hasCompletedStripeConnect: Bool { contractorProfile?.stripeConnectId != nil }
 
     // Online status
     var isOnline = false

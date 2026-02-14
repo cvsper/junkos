@@ -61,6 +61,8 @@ struct UmuveProApp: App {
                     OperatorWebRedirectView(appState: appState)
                 } else if !appState.isRegistered {
                     ContractorRegistrationView(appState: appState)
+                } else if !appState.hasCompletedStripeConnect {
+                    StripeConnectOnboardingView(appState: appState)
                 } else {
                     DriverTabView(appState: appState)
                         .onAppear {

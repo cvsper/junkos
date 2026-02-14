@@ -205,6 +205,26 @@ actor DriverAPIClient {
             body: PushTokenRequest(token: token, platform: "ios", appType: "driver")
         )
     }
+
+    // MARK: - Stripe Connect
+
+    func createConnectAccount() async throws -> ConnectAccountResponse {
+        try await request("/api/payments/connect/create-account", method: "POST")
+    }
+
+    func createAccountLink() async throws -> ConnectAccountLinkResponse {
+        try await request("/api/payments/connect/account-link", method: "POST")
+    }
+
+    func getConnectStatus() async throws -> ConnectStatusResponse {
+        try await request("/api/payments/connect/status")
+    }
+
+    // MARK: - Payments & Earnings
+
+    func getEarningsHistory() async throws -> EarningsHistoryResponse {
+        try await request("/api/payments/earnings/history")
+    }
 }
 
 // MARK: - Push Token Models
@@ -223,4 +243,81 @@ struct PushTokenRequest: Codable {
 
 struct PushTokenResponse: Codable {
     let success: Bool
+}
+
+// MARK: - Stripe Connect Models
+
+struct ConnectAccountResponse: Codable {
+    let success: Bool
+    let accountId: String?
+    enum CodingKeys: String, CodingKey {
+        case success
+        case accountId = "account_id"
+    }
+}
+
+struct ConnectAccountLinkResponse: Codable {
+    let success: Bool
+    let url: String
+    let expiresAt: Int?
+    enum CodingKeys: String, CodingKey {
+        case success
+        case url
+        case expiresAt = "expires_at"
+    }
+}
+
+struct ConnectStatusResponse: Codable {
+    let success: Bool
+    let status: String
+    let chargesEnabled: Bool
+    let payoutsEnabled: Bool
+    let detailsSubmitted: Bool?
+    enum CodingKeys: String, CodingKey {
+        case success
+        case status
+        case chargesEnabled = "charges_enabled"
+        case payoutsEnabled = "payouts_enabled"
+        case detailsSubmitted = "details_submitted"
+    }
+}
+
+// MARK: - Earnings Models
+
+struct EarningsHistoryResponse: Codable {
+    let success: Bool
+    let entries: [EarningsEntryResponse]
+    let summary: EarningsSummaryResponse
+
+    struct EarningsEntryResponse: Codable {
+        let id: String
+        let jobId: String
+        let address: String
+        let amount: Double      // driver_payout_amount (80% take)
+        let date: String?       // ISO 8601 date string
+        let payoutStatus: String // "pending", "processing", "paid"
+
+        enum CodingKeys: String, CodingKey {
+            case id
+            case jobId = "job_id"
+            case address
+            case amount
+            case date
+            case payoutStatus = "payout_status"
+        }
+    }
+
+    struct EarningsSummaryResponse: Codable {
+        let today: Double
+        let week: Double
+        let month: Double
+        let allTime: Double
+
+        enum CodingKeys: String, CodingKey {
+            case today
+            case week
+            case month
+            case allTime = "all_time"
+        }
+    }
 }
