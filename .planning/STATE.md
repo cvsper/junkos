@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-13)
 
 **Core value:** A customer can book a junk hauling or auto transport job from their iPhone and a driver can accept and complete it — end-to-end, with real payments.
-**Current focus:** Phase 3 - Payments Integration
+**Current focus:** Phase 4 - Dispatch System
 
 ## Current Position
 
-Phase: 3 of 7 (Payments Integration)
-Plan: 4 of 4
-Status: In progress
-Last activity: 2026-02-14 — Completed plan 03-04 (Driver earnings dashboard API integration)
+Phase: 4 of 7 (Dispatch System)
+Plan: 0 of TBD
+Status: Not started
+Last activity: 2026-02-14 — Phase 3 verified and complete
 
-Progress: [██████░░░░] 38%
+Progress: [██████░░░░] 43%
 
 ## Performance Metrics
 
@@ -87,7 +87,7 @@ Recent decisions affecting current work:
 - Mini-maps (MapKit) in review cards for visual address confirmation
 - Wizard dismisses and resets on booking completion
 
-**From Phase 3 (in progress):**
+**From Phase 3 (complete):**
 - Earnings history shows driver_payout_amount only (80% take), not full job price — drivers see their earnings, not customer price
 - Account links generated fresh every request, never cached — links expire in 5 minutes
 - Connect status derived from Stripe API, not stored in DB — Stripe is source of truth for onboarding state
@@ -107,5 +107,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-14
-Stopped at: Completed 03-04-PLAN.md — Driver earnings dashboard connected to API
+Stopped at: Phase 3 complete and verified — ready for Phase 4 planning
 Resume file: None
