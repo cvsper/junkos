@@ -11,6 +11,7 @@ struct BookingWizardView: View {
     @StateObject private var bookingData = BookingData()
     @StateObject private var wizardVM = BookingWizardViewModel()
     @Environment(\.dismiss) private var dismiss
+    @State private var isPriceExpanded = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -64,6 +65,12 @@ struct BookingWizardView: View {
         }
         .environmentObject(bookingData)
         .environmentObject(wizardVM)
+        .onChange(of: wizardVM.currentStep) { _ in
+            // Refresh pricing when step changes
+            Task {
+                await wizardVM.refreshPricing(bookingData: bookingData)
+            }
+        }
     }
 
     // MARK: - Progress Indicator
@@ -140,28 +147,16 @@ struct BookingWizardView: View {
                 AddressInputView()
 
             case 2:
-                // Photo Upload - will be cleaned up in Plan 04
-                ScrollView {
-                    placeholderStep(
-                        icon: "camera.fill",
-                        title: "Photos",
-                        description: "Upload photos of items to be hauled"
-                    )
-                    .padding(.horizontal, UmuveSpacing.large)
-                    .padding(.vertical, UmuveSpacing.normal)
-                }
+                // Photo Upload
+                PhotoUploadView()
+                    .environmentObject(bookingData)
+                    .environmentObject(wizardVM)
 
             case 3:
-                // Schedule - will be cleaned up in Plan 04
-                ScrollView {
-                    placeholderStep(
-                        icon: "calendar",
-                        title: "Schedule",
-                        description: "Pick your preferred date and time"
-                    )
-                    .padding(.horizontal, UmuveSpacing.large)
-                    .padding(.vertical, UmuveSpacing.normal)
-                }
+                // Schedule
+                DateTimePickerView()
+                    .environmentObject(bookingData)
+                    .environmentObject(wizardVM)
 
             case 4:
                 // Review - will be created in Plan 05
@@ -190,6 +185,7 @@ struct BookingWizardView: View {
                 .fill(Color.umuveTextTertiary.opacity(0.2))
                 .frame(height: 1)
 
+            // Collapsed summary
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Estimated Total")
@@ -208,14 +204,16 @@ struct BookingWizardView: View {
                 // Expandable breakdown (tap to show details)
                 if bookingData.priceBreakdown != nil {
                     Button {
-                        // TODO: Show expandable price breakdown
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            isPriceExpanded.toggle()
+                        }
                     } label: {
                         HStack(spacing: 4) {
                             Text("Details")
                                 .font(UmuveTypography.bodySmallFont)
                                 .foregroundColor(.umuvePrimary)
 
-                            Image(systemName: "chevron.up")
+                            Image(systemName: isPriceExpanded ? "chevron.down" : "chevron.up")
                                 .font(.system(size: 10, weight: .semibold))
                                 .foregroundColor(.umuvePrimary)
                         }
@@ -228,9 +226,67 @@ struct BookingWizardView: View {
             }
             .padding(.horizontal, UmuveSpacing.large)
             .padding(.vertical, UmuveSpacing.normal)
+
+            // Expanded breakdown
+            if isPriceExpanded, let breakdown = bookingData.priceBreakdown {
+                VStack(spacing: UmuveSpacing.small) {
+                    Divider()
+
+                    priceLineItem("Subtotal", amount: breakdown.subtotal)
+                    priceLineItem("Service Fee", amount: breakdown.serviceFee)
+
+                    if breakdown.volumeDiscount < 0 {
+                        priceLineItem("Volume Discount", amount: breakdown.volumeDiscount, isDiscount: true)
+                    }
+
+                    if breakdown.timeSurge > 0 {
+                        priceLineItem("Time Surcharge", amount: breakdown.timeSurge)
+                    }
+
+                    if breakdown.zoneSurge > 0 {
+                        priceLineItem("Zone Surcharge", amount: breakdown.zoneSurge)
+                    }
+
+                    Divider()
+
+                    HStack {
+                        Text("Total")
+                            .font(UmuveTypography.bodyFont.weight(.bold))
+                            .foregroundColor(.umuveText)
+
+                        Spacer()
+
+                        Text("$\(String(format: "%.2f", breakdown.total))")
+                            .font(UmuveTypography.bodyFont.weight(.bold))
+                            .foregroundColor(.umuvePrimary)
+                    }
+
+                    Text("Est. duration: \(breakdown.estimatedDurationMinutes) min")
+                        .font(UmuveTypography.smallFont)
+                        .foregroundColor(.umuveTextMuted)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .padding(.horizontal, UmuveSpacing.large)
+                .padding(.bottom, UmuveSpacing.normal)
+                .transition(.opacity.combined(with: .move(edge: .top)))
+            }
         }
         .background(Color.umuveWhite)
         .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: -2)
+    }
+
+    private func priceLineItem(_ label: String, amount: Double, isDiscount: Bool = false) -> some View {
+        HStack {
+            Text(label)
+                .font(UmuveTypography.bodySmallFont)
+                .foregroundColor(.umuveTextMuted)
+
+            Spacer()
+
+            Text("\(isDiscount ? "" : "$")\(String(format: "%.2f", abs(amount)))")
+                .font(UmuveTypography.bodySmallFont)
+                .foregroundColor(isDiscount ? .green : .umuveText)
+        }
     }
 
     // MARK: - Placeholder Step

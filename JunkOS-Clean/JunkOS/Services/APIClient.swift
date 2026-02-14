@@ -270,6 +270,84 @@ class APIClient {
         return response["status"] == "healthy"
     }
 
+    /// Get pricing estimate
+    func getPricingEstimate(
+        serviceType: String,
+        volumeTier: String?,
+        vehicleInfo: [String: Any]?,
+        pickupLat: Double?,
+        pickupLng: Double?,
+        dropoffLat: Double?,
+        dropoffLng: Double?,
+        scheduledDate: String?
+    ) async throws -> PricingEstimate {
+        var requestBody: [String: Any] = ["service_type": serviceType]
+
+        // For Junk Removal: map volumeTier to items array approximation
+        if serviceType == "Junk Removal", let tier = volumeTier {
+            let quantity: Int
+            switch tier {
+            case "1/4 Truck": quantity = 2
+            case "1/2 Truck": quantity = 5
+            case "3/4 Truck": quantity = 10
+            case "Full Truck": quantity = 16
+            default: quantity = 5
+            }
+
+            requestBody["items"] = [["category": "general", "quantity": quantity, "size": "medium"]]
+        }
+
+        // For Auto Transport: include vehicle info
+        if serviceType == "Auto Transport", let vehicle = vehicleInfo {
+            requestBody["vehicle_info"] = vehicle
+        }
+
+        // Include address coordinates if available
+        if let lat = pickupLat, let lng = pickupLng {
+            requestBody["pickup_address"] = ["lat": lat, "lng": lng]
+        }
+
+        if let lat = dropoffLat, let lng = dropoffLng {
+            requestBody["dropoff_address"] = ["lat": lat, "lng": lng]
+        }
+
+        // Include scheduled date if available
+        if let date = scheduledDate {
+            requestBody["scheduled_date"] = date
+        }
+
+        let body = try JSONSerialization.data(withJSONObject: requestBody)
+
+        let request = try createRequest(
+            endpoint: "/api/pricing/estimate",
+            method: "POST",
+            body: body
+        )
+
+        // Decode response with snake_case to camelCase conversion
+        let (data, response) = try await session.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIClientError.invalidResponse
+        }
+
+        if httpResponse.statusCode != 200 {
+            throw APIClientError.serverError("Pricing estimate failed: \(httpResponse.statusCode)")
+        }
+
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+
+        // Decode the wrapper response
+        struct EstimateResponse: Codable {
+            let success: Bool
+            let estimate: PricingEstimate
+        }
+
+        let estimateResponse = try decoder.decode(EstimateResponse.self, from: data)
+        return estimateResponse.estimate
+    }
+
     // MARK: - Referrals
 
     /// Get the current user's referral code

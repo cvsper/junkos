@@ -64,4 +64,60 @@ class BookingWizardViewModel: ObservableObject {
     func isStepAccessible(_ step: Int) -> Bool {
         step <= currentStep || completedSteps.contains(step)
     }
+
+    // MARK: - Pricing
+
+    /// Refresh pricing estimate based on current booking data
+    @MainActor
+    func refreshPricing(bookingData: BookingData) async {
+        // Only call API if we have at least service type
+        guard let serviceType = bookingData.serviceType else { return }
+
+        do {
+            let serviceTypeString: String
+            switch serviceType {
+            case .junkRemoval:
+                serviceTypeString = "Junk Removal"
+            case .autoTransport:
+                serviceTypeString = "Auto Transport"
+            }
+
+            // Prepare vehicle info for auto transport
+            var vehicleInfo: [String: Any]?
+            if serviceType == .autoTransport {
+                vehicleInfo = [
+                    "make": bookingData.vehicleMake,
+                    "model": bookingData.vehicleModel,
+                    "year": bookingData.vehicleYear,
+                    "is_running": bookingData.isVehicleRunning,
+                    "needs_enclosed_trailer": bookingData.needsEnclosedTrailer
+                ]
+            }
+
+            // Format scheduled date if available
+            var scheduledDateString: String?
+            if let date = bookingData.selectedDate, let timeSlot = bookingData.selectedTimeSlot {
+                let dateFormatter = DateFormatter()
+                dateFormatter.dateFormat = "yyyy-MM-dd"
+                scheduledDateString = dateFormatter.string(from: date) + " " + timeSlot
+            }
+
+            let estimate = try await APIClient.shared.getPricingEstimate(
+                serviceType: serviceTypeString,
+                volumeTier: serviceType == .junkRemoval ? bookingData.volumeTier.rawValue : nil,
+                vehicleInfo: vehicleInfo,
+                pickupLat: bookingData.pickupCoordinate?.latitude,
+                pickupLng: bookingData.pickupCoordinate?.longitude,
+                dropoffLat: bookingData.dropoffCoordinate?.latitude,
+                dropoffLng: bookingData.dropoffCoordinate?.longitude,
+                scheduledDate: scheduledDateString
+            )
+
+            bookingData.estimatedPrice = estimate.total
+            bookingData.priceBreakdown = estimate
+        } catch {
+            print("[pricing] Error: \(error)")
+            // Don't show error to user — pricing updates are best-effort
+        }
+    }
 }
