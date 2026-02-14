@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-02-13)
 ## Current Position
 
 Phase: 3 of 7 (Payments Integration)
-Plan: 1 of 4
+Plan: 3 of 4
 Status: In progress
-Last activity: 2026-02-14 — Completed plan 03-02 (Backend Stripe Connect endpoints)
+Last activity: 2026-02-14 — Completed plan 03-03 (Driver Stripe Connect onboarding)
 
-Progress: [█████░░░░░] 32%
+Progress: [██████░░░░] 35%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 9
-- Average duration: 10.8 minutes
-- Total execution time: ~96 minutes
+- Total plans completed: 11
+- Average duration: 8.9 minutes
+- Total execution time: ~98 minutes
 
 **By Phase:**
 
@@ -29,9 +29,10 @@ Progress: [█████░░░░░] 32%
 |-------|-------|-------|----------|
 | 1 | 3 | ~40 min | ~13 min |
 | 2 | 5 | ~54 min | ~10.8 min |
-| 3 | 1 | ~2 min | ~2 min |
+| 3 | 3 | ~4 min | ~1.3 min |
 
 **Recent Trend:**
+- 03-03: 2.3 minutes (2 tasks, Stripe Connect onboarding + payout settings)
 - 03-02: 2 minutes (2 tasks, Stripe Connect endpoints + earnings history API)
 - 02-05: 5 minutes (2 tasks, review screen + job creation API)
 - 02-04: 14 minutes (2 tasks, photos + schedule + pricing API integration)
@@ -90,6 +91,8 @@ Recent decisions affecting current work:
 - Earnings history shows driver_payout_amount only (80% take), not full job price — drivers see their earnings, not customer price
 - Account links generated fresh every request, never cached — links expire in 5 minutes
 - Connect status derived from Stripe API, not stored in DB — Stripe is source of truth for onboarding state
+- Connect onboarding mandatory after registration, before main app access — drivers cannot reach job feed without payout method
+- Status polling on view appear and Safari dismissal — Stripe onboarding is async, need to check for completion
 
 ### Pending Todos
 
@@ -102,5 +105,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-14
-Stopped at: Completed 03-02-PLAN.md — Backend Stripe Connect endpoints ready
+Stopped at: Completed 03-03-PLAN.md — Driver Stripe Connect onboarding gate ready
 Resume file: None
