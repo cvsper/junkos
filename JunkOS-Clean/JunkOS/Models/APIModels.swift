@@ -135,6 +135,7 @@ struct BookingResponse: Codable {
 
     // Driver assignment
     let driverId: String?
+    let driverName: String?
 
     enum CodingKeys: String, CodingKey {
         // Legacy creation response keys
@@ -155,6 +156,7 @@ struct BookingResponse: Codable {
         case delegatedAt = "delegated_at"
         // Driver
         case driverId = "driver_id"
+        case driverName = "driver_name"
     }
 
     init(from decoder: Decoder) throws {
@@ -198,6 +200,7 @@ struct BookingResponse: Codable {
 
         // Driver
         driverId = try? container.decode(String.self, forKey: .driverId)
+        driverName = try? container.decode(String.self, forKey: .driverName)
     }
 
     func encode(to encoder: Encoder) throws {
@@ -212,6 +215,7 @@ struct BookingResponse: Codable {
         try container.encodeIfPresent(operatorName, forKey: .operatorName)
         try container.encodeIfPresent(delegatedAt, forKey: .delegatedAt)
         try container.encodeIfPresent(driverId, forKey: .driverId)
+        try container.encodeIfPresent(driverName, forKey: .driverName)
     }
 
     /// Whether this job was delegated to an operator
@@ -312,5 +316,29 @@ struct JobCreationResponse: Codable {
         case success
         case jobId = "job_id"
         case message
+    }
+}
+
+// MARK: - Job Status Response
+struct JobStatusResponse: Codable {
+    let success: Bool
+    let booking: BookingStatusDetail
+}
+
+struct BookingStatusDetail: Codable {
+    let id: String
+    let status: String
+    let address: String
+    let driverName: String?
+    let driverTruckType: String?
+    let totalPrice: Double
+    let scheduledAt: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id, status, address
+        case driverName = "driver_name"
+        case driverTruckType = "driver_truck_type"
+        case totalPrice = "total_price"
+        case scheduledAt = "scheduled_at"
     }
 }

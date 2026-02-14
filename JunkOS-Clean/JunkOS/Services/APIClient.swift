@@ -348,6 +348,12 @@ class APIClient {
         return response.bookings
     }
 
+    /// Get job/booking status by ID
+    func getJobStatus(jobId: String) async throws -> JobStatusResponse {
+        let request = try createRequest(endpoint: "/api/booking/\(jobId)")
+        return try await performRequest(request)
+    }
+
     /// Health check
     func healthCheck() async throws -> Bool {
         let request = try createRequest(endpoint: "/api/health")

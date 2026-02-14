@@ -14,6 +14,7 @@ import UIKit
 
 enum NotificationCategory: String, CaseIterable {
     case bookingConfirmed = "booking_confirmed"
+    case driverAssigned = "driver_assigned"
     case driverEnRoute = "driver_en_route"
     case jobCompleted = "job_completed"
 
@@ -21,6 +22,8 @@ enum NotificationCategory: String, CaseIterable {
         switch self {
         case .bookingConfirmed:
             return "Booking Confirmed"
+        case .driverAssigned:
+            return "Driver Assigned"
         case .driverEnRoute:
             return "Driver En Route"
         case .jobCompleted:
@@ -205,8 +208,19 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
         let categoryIdentifier = response.notification.request.content.categoryIdentifier
         let userInfo = response.notification.request.content.userInfo
 
+        // Try category identifier first
         if let category = NotificationCategory(rawValue: categoryIdentifier) {
             handleNotificationAction(for: category, userInfo: userInfo)
+        } else if let type = userInfo["type"] as? String {
+            // Fallback: map backend push data "type" field to a category
+            switch type {
+            case "job_update":
+                handleNotificationAction(for: .driverAssigned, userInfo: userInfo)
+            case "new_job":
+                handleNotificationAction(for: .bookingConfirmed, userInfo: userInfo)
+            default:
+                break
+            }
         }
 
         completionHandler()

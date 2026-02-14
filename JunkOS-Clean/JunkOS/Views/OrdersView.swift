@@ -64,6 +64,9 @@ struct OrdersView: View {
         .onAppear {
             loadBookings()
         }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
+            loadBookings()
+        }
     }
 
     // MARK: - Empty State
@@ -149,6 +152,18 @@ struct BookingCard: View {
                 operatorBadge
             }
 
+            // Driver info (when assigned)
+            if let driverName = booking.driverName, !driverName.isEmpty {
+                HStack(spacing: UmuveSpacing.small) {
+                    Image(systemName: "person.circle.fill")
+                        .font(.system(size: 14))
+                        .foregroundColor(.umuveSuccess)
+                    Text("Driver: \(driverName)")
+                        .font(UmuveTypography.bodySmallFont)
+                        .foregroundColor(.umuveText)
+                }
+            }
+
             // Service info
             if !booking.services.isEmpty {
                 Text(booking.services.map { $0.name }.joined(separator: ", "))
@@ -186,6 +201,7 @@ struct BookingCard: View {
         let (text, color): (String, Color) = {
             if resolvedStatus.contains("completed") { return ("Completed", Color.umuveSuccess) }
             if resolvedStatus.contains("in_progress") || resolvedStatus.contains("in progress") { return ("In Progress", Color.umuveInfo) }
+            if resolvedStatus.contains("accepted") { return ("Driver Assigned", Color.umuveSuccess) }
             if resolvedStatus.contains("assigned") { return ("Assigned", Color.categoryPurple) }
             if resolvedStatus.contains("delegating") { return ("Delegating", Color.categoryOrange) }
             if resolvedStatus.contains("confirmed") { return ("Confirmed", Color.umuvePrimary) }
