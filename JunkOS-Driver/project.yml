@@ -34,6 +34,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.goumuve.pro
         DEVELOPMENT_TEAM: 24GH82AX9R
         CODE_SIGN_STYLE: Automatic
+        CODE_SIGN_ENTITLEMENTS: JunkOS-Driver.entitlements
         GENERATE_INFOPLIST_FILE: true
         INFOPLIST_GENERATION_MODE: GeneratedFile
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: true
