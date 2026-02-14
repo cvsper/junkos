@@ -221,12 +221,21 @@ def accept_job(user_id, job_id):
     db.session.add(notification)
     db.session.commit()
 
+    # Send APNs push to customer
+    try:
+        from notifications import send_push_notification
+        send_push_notification(
+            job.customer_id,
+            "Driver Assigned",
+            "A driver has been assigned to your job!",
+            {"job_id": job.id, "type": "job_update", "status": "accepted"}
+        )
+    except Exception as e:
+        logger.exception("Failed to send push to customer for job %s: %s", job.id, e)
+
     # Broadcast via SocketIO
-    from socket_events import broadcast_job_status, socketio
-    broadcast_job_status(job.id, "accepted", {
-        "driver_id": contractor.id,
-        "driver_name": contractor.user.name if contractor.user else None,
-    })
+    from socket_events import broadcast_job_accepted, socketio
+    broadcast_job_accepted(job.id, contractor.id)
 
     # Also notify the customer's job room
     socketio.emit("job:driver-assigned", {

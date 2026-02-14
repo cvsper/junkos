@@ -148,6 +148,23 @@ def broadcast_job_status(job_id, status, extra=None):
     socketio.emit("admin:job-status", payload, room="admin")
 
 
+def broadcast_job_accepted(job_id, driver_id):
+    """
+    Broadcast job acceptance to ALL online approved contractors.
+    Unlike broadcast_job_status (which targets the job room),
+    this targets every driver room so they can remove the job from their feed.
+    """
+    contractors = Contractor.query.filter_by(
+        is_online=True, approval_status="approved", is_operator=False
+    ).all()
+    payload = {"job_id": job_id, "status": "accepted", "driver_id": driver_id}
+    for c in contractors:
+        # Emit to each driver's personal room
+        socketio.emit("job:accepted", payload, room=f"driver:{c.id}")
+    # Also notify admin room
+    socketio.emit("admin:job-status", payload, room="admin")
+
+
 @socketio.on("chat:send")
 def handle_chat_send(data):
     """
