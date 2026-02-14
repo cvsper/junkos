@@ -30,53 +30,49 @@ private let dateFormatter: DateFormatter = {
 
 struct DateTimePickerView: View {
     @EnvironmentObject var bookingData: BookingData
+    @EnvironmentObject var wizardVM: BookingWizardViewModel
     @StateObject private var viewModel = DateTimePickerViewModel()
-    
+
     var body: some View {
         ScrollView {
             LazyVStack(spacing: UmuveSpacing.xxlarge) {
-                // Header
-                ScreenHeader(
-                    title: "Choose Date & Time",
-                    subtitle: "When should we come?",
-                    progress: 0.8
-                )
-                
+                // Header (no progress bar - wizard handles that)
+                VStack(spacing: UmuveSpacing.small) {
+                    Text("Choose Date & Time")
+                        .font(UmuveTypography.h1Font)
+                        .foregroundColor(.umuveText)
+
+                    Text("When should we come?")
+                        .font(UmuveTypography.bodyFont)
+                        .foregroundColor(.umuveTextMuted)
+                        .multilineTextAlignment(.center)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.top, UmuveSpacing.normal)
+
                 // Empty state if nothing selected
                 if viewModel.selectedDate == nil {
                     DateTimeEmptyState()
                 }
-                
+
                 // Date picker
                 dateSelector
-                
+
                 // Time slots (only show after date is selected)
                 if viewModel.selectedDate != nil {
                     timeSlotSection
                 }
-                
+
                 // Help tip
                 if viewModel.selectedTimeSlot == nil && viewModel.selectedDate != nil {
                     helpTip
                 }
-                
-                // Booking summary preview (when date & time selected)
-                if viewModel.hasSelectedDateTime {
-                    BookingSummaryPreview(
-                        address: bookingData.address.fullAddress,
-                        services: bookingData.selectedServices,
-                        date: bookingData.selectedDate,
-                        timeSlot: bookingData.selectedTimeSlot,
-                        photoCount: bookingData.photos.count
-                    )
-                }
-                
+
                 Spacer()
             }
             .padding(UmuveSpacing.large)
         }
         .background(Color.umuveBackground.ignoresSafeArea())
-        .navigationBarTitleDisplayMode(.inline)
         .safeAreaInset(edge: .bottom) {
             continueButton
         }
@@ -173,12 +169,11 @@ struct DateTimePickerView: View {
     
     // MARK: - Continue Button
     private var continueButton: some View {
-        NavigationLink(
-            destination: ConfirmationView().environmentObject(bookingData),
-            label: {
-                Text("Continue →")
-            }
-        )
+        Button {
+            wizardVM.completeCurrentStep()
+        } label: {
+            Text("Continue →")
+        }
         .buttonStyle(UmuvePrimaryButtonStyle())
         .padding(UmuveSpacing.large)
         .background(Color.umuveBackground)

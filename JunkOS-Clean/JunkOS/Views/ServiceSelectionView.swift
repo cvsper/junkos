@@ -19,6 +19,7 @@ struct ServiceSelectionView: View {
     @StateObject private var viewModel = ServiceSelectionViewModel()
     @State private var isRefreshing = false
     @State private var isScrolling = false
+    @State private var serviceDetails: String = ""
     
     var body: some View {
         ScrollView {
@@ -34,7 +35,7 @@ struct ServiceSelectionView: View {
                 pricingTierSelector
                 
                 // Empty state if no services selected yet
-                if viewModel.selectedServices.isEmpty {
+                if bookingData.selectedServices.isEmpty {
                     ServiceSelectionEmptyState()
                 }
                 
@@ -47,18 +48,9 @@ struct ServiceSelectionView: View {
                 }
                 
                 // LoadUp Feature #6: Enhanced Service Details
-                if viewModel.hasSelectedServices {
+                if !bookingData.selectedServices.isEmpty {
                     itemSelectorSection
                     weightEstimatorSection
-                }
-                
-                // Live price estimate
-                if viewModel.hasSelectedServices {
-                    LivePriceEstimate(
-                        services: viewModel.selectedServices,
-                        photoCount: bookingData.photos.count
-                    )
-                    .padding(.top, UmuveSpacing.normal)
                 }
                 
                 // LoadUp Feature #6: Items We Don't Take
@@ -73,35 +65,13 @@ struct ServiceSelectionView: View {
         }
         .background(Color.umuveBackground.ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
-        .refreshable {
-            await refreshServices()
-        }
         .safeAreaInset(edge: .bottom) {
             continueButton
         }
         .onAppear {
-            // Sync with bookingData
-            viewModel.selectedServices = bookingData.selectedServices
-            viewModel.serviceDetails = bookingData.serviceDetails
+            // Legacy view - use bookingData directly
+            serviceDetails = bookingData.serviceDetails
         }
-        .onChange(of: viewModel.selectedServices) { newValue in
-            // Debounced update to prevent cascading renders
-            DispatchQueue.main.async {
-                bookingData.selectedServices = newValue
-            }
-        }
-        .onChange(of: viewModel.serviceDetails) { newValue in
-            // Debounced update
-            DispatchQueue.main.async {
-                bookingData.serviceDetails = newValue
-            }
-        }
-    }
-    
-    private func refreshServices() async {
-        isRefreshing = true
-        await viewModel.loadServices()
-        isRefreshing = false
     }
     
     // MARK: - LoadUp Feature #1: Pricing Tier Selector
@@ -161,13 +131,17 @@ struct ServiceSelectionView: View {
             GridItem(.flexible(), spacing: UmuveSpacing.normal),
             GridItem(.flexible(), spacing: UmuveSpacing.normal)
         ], spacing: UmuveSpacing.normal) {
-            ForEach(viewModel.availableServices) { service in
+            ForEach(Service.all) { service in
                 ServiceCard(
                     service: service,
-                    isSelected: viewModel.isSelected(service.id),
+                    isSelected: bookingData.selectedServices.contains(service.id),
                     isScrolling: isScrolling
                 ) {
-                    viewModel.toggleService(service.id)
+                    if bookingData.selectedServices.contains(service.id) {
+                        bookingData.selectedServices.remove(service.id)
+                    } else {
+                        bookingData.selectedServices.insert(service.id)
+                    }
                 }
             }
         }
@@ -376,7 +350,7 @@ struct ServiceSelectionView: View {
                 .font(UmuveTypography.h3Font)
                 .foregroundColor(.umuveText)
             
-            TextEditor(text: $viewModel.serviceDetails)
+            TextEditor(text: $serviceDetails)
                 .font(UmuveTypography.bodyFont)
                 .foregroundColor(.umuveText)
                 .frame(height: 100)
@@ -401,8 +375,8 @@ struct ServiceSelectionView: View {
         .buttonStyle(UmuvePrimaryButtonStyle())
         .padding(UmuveSpacing.large)
         .background(Color.umuveBackground)
-        .disabled(!viewModel.hasSelectedServices)
-        .opacity(viewModel.hasSelectedServices ? 1 : 0.5)
+        .disabled(bookingData.selectedServices.isEmpty)
+        .opacity(bookingData.selectedServices.isEmpty ? 0.5 : 1)
     }
 }
 

@@ -13,38 +13,50 @@ import UIKit
 
 struct PhotoUploadView: View {
     @EnvironmentObject var bookingData: BookingData
+    @EnvironmentObject var wizardVM: BookingWizardViewModel
     @StateObject private var viewModel = PhotoUploadViewModel()
     @State private var showCamera = false
-    
+
     var body: some View {
         ScrollView {
             VStack(spacing: UmuveSpacing.xxlarge) {
-                // Header
-                ScreenHeader(
-                    title: "Take Photos",
-                    subtitle: "Help us understand what needs to go",
-                    progress: 0.4
-                )
-                
+                // Header (no progress bar - wizard handles that)
+                VStack(spacing: UmuveSpacing.small) {
+                    Text("Take Photos")
+                        .font(UmuveTypography.h1Font)
+                        .foregroundColor(.umuveText)
+
+                    Text("Help us understand what needs to go")
+                        .font(UmuveTypography.bodyFont)
+                        .foregroundColor(.umuveTextMuted)
+                        .multilineTextAlignment(.center)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.top, UmuveSpacing.normal)
+
+                // Encouragement message when no photos
+                if bookingData.photos.isEmpty {
+                    encouragementMessage
+                }
+
                 // Photo grid or empty state
                 if bookingData.photos.isEmpty {
                     emptyState
                 } else {
                     photoGrid
                 }
-                
+
                 // Action buttons
                 actionButtons
-                
+
                 // Tip box
                 tipBox
-                
+
                 Spacer()
             }
             .padding(UmuveSpacing.large)
         }
         .background(Color.umuveBackground.ignoresSafeArea())
-        .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showCamera) {
             CameraPicker { photoData in
                 bookingData.photos.append(photoData)
@@ -59,6 +71,25 @@ struct PhotoUploadView: View {
         }
     }
     
+    // MARK: - Encouragement Message
+    private var encouragementMessage: some View {
+        HStack(alignment: .top, spacing: UmuveSpacing.medium) {
+            Image(systemName: "info.circle.fill")
+                .font(.system(size: 24))
+                .foregroundColor(.umuveCTA)
+
+            Text("Photos help us provide accurate pricing. You can skip this step, but we recommend at least 1 photo.")
+                .font(UmuveTypography.bodySmallFont)
+                .foregroundColor(.umuveTextMuted)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Spacer()
+        }
+        .padding(UmuveSpacing.normal)
+        .background(Color.umuveCTA.opacity(0.1))
+        .cornerRadius(12)
+    }
+
     // MARK: - Empty State
     private var emptyState: some View {
         PhotoUploadEmptyState {
@@ -160,12 +191,11 @@ struct PhotoUploadView: View {
     
     // MARK: - Continue Button
     private var continueButton: some View {
-        NavigationLink(
-            destination: DateTimePickerView().environmentObject(bookingData),
-            label: {
-                Text(viewModel.continueButtonText(photoCount: bookingData.photos.count))
-            }
-        )
+        Button {
+            wizardVM.completeCurrentStep()
+        } label: {
+            Text(viewModel.continueButtonText(photoCount: bookingData.photos.count))
+        }
         .buttonStyle(UmuvePrimaryButtonStyle())
         .padding(UmuveSpacing.large)
         .background(Color.umuveBackground)

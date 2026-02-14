@@ -142,6 +142,10 @@ class BookingData: ObservableObject {
     @Published var isRecurringPickup: Bool = false
     @Published var recurringFrequency: RecurringFrequency = .weekly
     @Published var referralCode: String = ""
+    @Published var cleanoutType: CleanoutType = .estate
+    @Published var selectedRooms: Set<String> = []
+    @Published var selectedItems: Set<String> = []
+    @Published var estimatedWeight: WeightCategory = .medium
 
     // MARK: - Computed Properties
 
@@ -263,10 +267,73 @@ struct Service: Identifiable, Hashable {
 enum ServiceTier: String, CaseIterable {
     case fullService = "Full-Service"
     case curbside = "Curbside Pickup"
+
+    var description: String {
+        switch self {
+        case .fullService:
+            return "We load everything for you"
+        case .curbside:
+            return "You place items curbside"
+        }
+    }
 }
 
 enum RecurringFrequency: String, CaseIterable {
     case weekly = "Weekly"
     case biweekly = "Bi-weekly"
     case monthly = "Monthly"
+}
+
+// MARK: - Legacy Types for ServiceSelectionView (deprecated, kept for compilation)
+enum CleanoutType: String, CaseIterable {
+    case estate = "Estate"
+    case foreclosure = "Foreclosure"
+    case hoarder = "Hoarder"
+
+    var icon: String {
+        switch self {
+        case .estate: return "house.fill"
+        case .foreclosure: return "building.2.fill"
+        case .hoarder: return "shippingbox.fill"
+        }
+    }
+}
+
+struct RoomOption: Identifiable {
+    let id: String
+    let name: String
+    let icon: String
+
+    static let all: [RoomOption] = [
+        RoomOption(id: "living", name: "Living", icon: "sofa.fill"),
+        RoomOption(id: "bedroom", name: "Bedroom", icon: "bed.double.fill"),
+        RoomOption(id: "kitchen", name: "Kitchen", icon: "fork.knife")
+    ]
+}
+
+struct ItemOption: Identifiable {
+    let id: String
+    let name: String
+    let icon: String
+    let estimatedWeight: String
+
+    static let all: [ItemOption] = [
+        ItemOption(id: "couch", name: "Couch", icon: "sofa.fill", estimatedWeight: "150 lbs"),
+        ItemOption(id: "fridge", name: "Fridge", icon: "refrigerator", estimatedWeight: "200 lbs"),
+        ItemOption(id: "mattress", name: "Mattress", icon: "bed.double.fill", estimatedWeight: "80 lbs")
+    ]
+}
+
+enum WeightCategory: String, CaseIterable {
+    case light = "Light\n< 500 lbs"
+    case medium = "Medium\n500-1500 lbs"
+    case heavy = "Heavy\n> 1500 lbs"
+
+    var icon: String {
+        switch self {
+        case .light: return "cube.fill"
+        case .medium: return "shippingbox.fill"
+        case .heavy: return "truck.box.fill"
+        }
+    }
 }
