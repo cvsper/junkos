@@ -10,28 +10,29 @@ See: .planning/PROJECT.md (updated 2026-02-13)
 ## Current Position
 
 Phase: 1 of 7 (Foundation & Authentication)
-Plan: 2 of TBD
+Plan: 3 of TBD
 Status: In progress
-Last activity: 2026-02-14 — Completed plan 01-02 (driver auth hardening + onboarding)
+Last activity: 2026-02-14 — Completed plan 01-01 (customer auth infrastructure with Keychain + nonce validation)
 
-Progress: [██░░░░░░░░] 20%
+Progress: [███░░░░░░░] 30%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 2
-- Average duration: 15 minutes
-- Total execution time: 0.5 hours
+- Total plans completed: 3
+- Average duration: 17 minutes
+- Total execution time: 0.83 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 1 | 2 | 30 min | 15 min |
+| 1 | 3 | 50 min | 17 min |
 
 **Recent Trend:**
+- 01-01: 20 minutes (2 tasks, customer auth + Keychain migration + nonce validation)
 - 01-02: 15 minutes (2 tasks, driver auth + onboarding)
-- 01-01: 15 minutes (customer auth hardening)
+- 01-01-previous: 15 minutes (customer auth hardening)
 
 *Updated after each plan completion*
 
@@ -55,6 +56,12 @@ Recent decisions affecting current work:
 - Retry Apple Sign In up to 3 times with 1-second delays
 - Refresh JWT when expiring within 24 hours
 
+**From 01-01:**
+- Use ObservableObject instead of @Observable for iOS 16 compatibility
+- Cache Apple public keys for 24 hours to reduce API calls
+- Support legacy userIdentifier flow for backward compatibility during transition
+- 7-day grace period for token refresh to handle offline scenarios
+
 ### Pending Todos
 
 None yet.
@@ -66,5 +73,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-14
-Stopped at: Completed 01-02-PLAN.md — driver auth hardening, onboarding, token refresh
+Stopped at: Completed 01-01-PLAN.md — customer auth infrastructure (Keychain, Apple Sign In nonce, token refresh, authenticated API)
 Resume file: None
