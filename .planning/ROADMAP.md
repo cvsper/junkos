@@ -13,7 +13,7 @@ This roadmap transforms two partially-built iOS apps (customer and driver) into 
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation & Authentication** - Secure auth and networking infrastructure
-- [ ] **Phase 2: Pricing & Booking** - Customer can see pricing and create bookings
+- [x] **Phase 2: Pricing & Booking** - Customer can see pricing and create bookings
 - [ ] **Phase 3: Payments Integration** - Stripe payments with escrow and driver payouts
 - [ ] **Phase 4: Dispatch System** - Driver assignment and job acceptance
 - [ ] **Phase 5: Volume Adjustment** - On-site price recalculation with customer approval
@@ -51,11 +51,11 @@ Plans:
 **Plans**: 5 plans
 
 Plans:
-- [ ] 02-01-PLAN.md — Data model refactoring + booking wizard container with progress indicator
-- [ ] 02-02-PLAN.md — Service type selection (Junk Removal / Auto Transport) with truck fill selector and vehicle info
-- [ ] 02-03-PLAN.md — Address entry with MapKit autocomplete, mini-map preview, and distance calculation
-- [ ] 02-04-PLAN.md — Photo upload + schedule adaptation for wizard, pricing API integration, running price bar
-- [ ] 02-05-PLAN.md — Review & confirmation screen, photo upload to backend, job creation API
+- [x] 02-01-PLAN.md — Data model refactoring + booking wizard container with progress indicator
+- [x] 02-02-PLAN.md — Service type selection (Junk Removal / Auto Transport) with truck fill selector and vehicle info
+- [x] 02-03-PLAN.md — Address entry with MapKit autocomplete, mini-map preview, and distance calculation
+- [x] 02-04-PLAN.md — Photo upload + schedule adaptation for wizard, pricing API integration, running price bar
+- [x] 02-05-PLAN.md — Review & confirmation screen, photo upload to backend, job creation API
 
 ### Phase 3: Payments Integration
 **Goal**: Customer pays upfront via Stripe (held in escrow), driver receives 80% payout on completion
@@ -137,7 +137,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation & Authentication | 3/3 | Complete | 2026-02-14 |
-| 2. Pricing & Booking | 0/5 | Planning complete | - |
+| 2. Pricing & Booking | 5/5 | Complete | 2026-02-14 |
 | 3. Payments Integration | 0/TBD | Not started | - |
 | 4. Dispatch System | 0/TBD | Not started | - |
 | 5. Volume Adjustment | 0/TBD | Not started | - |
