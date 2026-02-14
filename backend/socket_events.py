@@ -277,4 +277,4 @@ def notify_nearby_drivers(job):
             continue
         dist = _haversine(job.lat, job.lng, c.current_lat, c.current_lng)
         if dist <= DRIVER_BROADCAST_RADIUS_KM:
-            socketio.emit("job:new", job.to_dict(), room=c.id)
+            socketio.emit("job:new", job.to_dict(), room=f"driver:{c.id}")
