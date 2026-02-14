@@ -37,6 +37,7 @@
 		5C4180CB8AE424D51E75FF1F /* HapticManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FCB1498666015B9BBBC1DF1 /* HapticManager.swift */; };
 		5E9FA33210F489FBB5632E05 /* SocketIOManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF8D49E5C00DA1F5B18B2699 /* SocketIOManager.swift */; };
 		60FCA470DEE7BC6DF3C2D582 /* ContractorRegistrationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3650D5429433D4FB66AA8423 /* ContractorRegistrationView.swift */; };
+		869A9EC1D8254773B7E89FE0 /* StripeConnectOnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0500796C1744D8972D8D46 /* StripeConnectOnboardingView.swift */; };
 		D4C3B2A1F0E9D8C7B6A5F4E3 /* InviteCodeStepView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3D4E5F6A7B8C9D0E1F2A3B4 /* InviteCodeStepView.swift */; };
 		E3D2C1B0A9F8E7D6C5B4A3F2 /* OperatorWebRedirectView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F6A7B8C9D0E1F2A3 /* OperatorWebRedirectView.swift */; };
 		F2E1D0C9B8A7F6E5D4C3B2A1 /* RoleSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6A7B8C9D0E1F2 /* RoleSelectionView.swift */; };
@@ -45,6 +46,7 @@
 		82DEFA8055CC0754E1141F49 /* AfterPhotosView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AA0B3DB0C558CAF78DD76C4 /* AfterPhotosView.swift */; };
 		856766387D9F89422AAA08C5 /* JobCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2EEE2DA4D07D3F191694A55 /* JobCardView.swift */; };
 		8A8AA35036E08AF0A2BC5E83 /* EarningsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF238B4D85E70211F40A21F7 /* EarningsViewModel.swift */; };
+		3A710C0CC51B4B828CA0EF98 /* StripeConnectViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 519F3BD4A8ED422E884771BF /* StripeConnectViewModel.swift */; };
 		94E7D38BBA06FB012C11B228 /* JobDetailViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80AE8F889AD33D7F0E337978 /* JobDetailViewModel.swift */; };
 		96A96F5462782462AEBCEBB0 /* SplashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 228E7D7E7644F745D1DAAFED /* SplashView.swift */; };
 		9A935658ADCF82A0A67E6CC0 /* EarningsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED5DECECC5344F008D376847 /* EarningsView.swift */; };
@@ -88,6 +90,7 @@
 		24F8F8ADE1A72C73B582B02B /* PayoutSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PayoutSettingsView.swift; sourceTree = "<group>"; };
 		344C45FBFECAA97F6CB507F5 /* ActiveJobMapOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveJobMapOverlay.swift; sourceTree = "<group>"; };
 		3650D5429433D4FB66AA8423 /* ContractorRegistrationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContractorRegistrationView.swift; sourceTree = "<group>"; };
+		AA0500796C1744D8972D8D46 /* StripeConnectOnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StripeConnectOnboardingView.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F6A7B8C9D0E1F2 /* RoleSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoleSelectionView.swift; sourceTree = "<group>"; };
 		B2C3D4E5F6A7B8C9D0E1F2A3 /* OperatorWebRedirectView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OperatorWebRedirectView.swift; sourceTree = "<group>"; };
 		C3D4E5F6A7B8C9D0E1F2A3B4 /* InviteCodeStepView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InviteCodeStepView.swift; sourceTree = "<group>"; };
@@ -142,6 +145,7 @@
 		F3CEB980FB0B2AE4E5E91426 /* ActiveJobView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveJobView.swift; sourceTree = "<group>"; };
 		F412C09E80A444B74B8D3414 /* DistanceBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistanceBadge.swift; sourceTree = "<group>"; };
 		FF238B4D85E70211F40A21F7 /* EarningsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EarningsViewModel.swift; sourceTree = "<group>"; };
+		519F3BD4A8ED422E884771BF /* StripeConnectViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StripeConnectViewModel.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -188,6 +192,7 @@
 				54148D05F5465CFF5EB1F3CC /* AuthViewModel.swift */,
 				39B6653495EF4591ACD6E5C9 /* DashboardViewModel.swift */,
 				FF238B4D85E70211F40A21F7 /* EarningsViewModel.swift */,
+				519F3BD4A8ED422E884771BF /* StripeConnectViewModel.swift */,
 				80AE8F889AD33D7F0E337978 /* JobDetailViewModel.swift */,
 				9F5425951FF88727F63532BA /* JobFeedViewModel.swift */,
 				F14A16027C1CA38C7BD4E4F7 /* LiveMapViewModel.swift */,
@@ -378,6 +383,7 @@
 			isa = PBXGroup;
 			children = (
 				3650D5429433D4FB66AA8423 /* ContractorRegistrationView.swift */,
+				AA0500796C1744D8972D8D46 /* StripeConnectOnboardingView.swift */,
 				D6FA3831A39891771A43D22D /* DocumentUploadView.swift */,
 				C3D4E5F6A7B8C9D0E1F2A3B4 /* InviteCodeStepView.swift */,
 				B2C3D4E5F6A7B8C9D0E1F2A3 /* OperatorWebRedirectView.swift */,
@@ -490,6 +496,7 @@
 				AA3166875E6CBF7682E70C80 /* ConnectionStatusBanner.swift in Sources */,
 				E0CE3BA170E2D3C662B69492 /* ContractorModels.swift in Sources */,
 				60FCA470DEE7BC6DF3C2D582 /* ContractorRegistrationView.swift in Sources */,
+				869A9EC1D8254773B7E89FE0 /* StripeConnectOnboardingView.swift in Sources */,
 				D4C3B2A1F0E9D8C7B6A5F4E3 /* InviteCodeStepView.swift in Sources */,
 				E3D2C1B0A9F8E7D6C5B4A3F2 /* OperatorWebRedirectView.swift in Sources */,
 				F2E1D0C9B8A7F6E5D4C3B2A1 /* RoleSelectionView.swift in Sources */,
@@ -506,6 +513,7 @@
 				3D564E63BD08DA8886FDA8AF /* EarningsModels.swift in Sources */,
 				9A935658ADCF82A0A67E6CC0 /* EarningsView.swift in Sources */,
 				8A8AA35036E08AF0A2BC5E83 /* EarningsViewModel.swift in Sources */,
+				3A710C0CC51B4B828CA0EF98 /* StripeConnectViewModel.swift in Sources */,
 				29EE5336D11165A1FC0ABC1B /* EmptyStateView.swift in Sources */,
 				5C4180CB8AE424D51E75FF1F /* HapticManager.swift in Sources */,
 				16B71C5163B965FBDF945A5C /* ImageUploadService.swift in Sources */,

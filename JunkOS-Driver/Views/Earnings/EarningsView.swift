@@ -22,7 +22,7 @@ struct EarningsView: View {
                         if let errorMessage = viewModel.errorMessage {
                             HStack {
                                 Text(errorMessage)
-                                    .font(DriverTypography.caption1)
+                                    .font(DriverTypography.caption)
                                     .foregroundStyle(.white)
                                     .lineLimit(2)
 
@@ -31,7 +31,7 @@ struct EarningsView: View {
                                 Button("Retry") {
                                     Task { await viewModel.fetchEarnings() }
                                 }
-                                .font(DriverTypography.caption1)
+                                .font(DriverTypography.caption)
                                 .foregroundStyle(.white)
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 4)
@@ -83,7 +83,7 @@ struct EarningsView: View {
                                 ProgressView()
                                     .tint(Color.driverPrimary)
                                 Text("Loading earnings...")
-                                    .font(DriverTypography.caption1)
+                                    .font(DriverTypography.caption)
                                     .foregroundStyle(Color.driverTextSecondary)
                             }
                             .frame(height: 200)

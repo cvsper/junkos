@@ -59,7 +59,7 @@ final class EarningsViewModel {
         errorMessage = nil
 
         do {
-            let response = await DriverAPIClient.shared.getEarningsHistory()
+            let response = try await DriverAPIClient.shared.getEarningsHistory()
 
             // Map summary
             summary = EarningsSummary(
