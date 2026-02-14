@@ -57,35 +57,56 @@ class APIClient {
         guard let url = URL(string: config.baseURL + endpoint) else {
             throw APIClientError.invalidURL
         }
-        
+
         var request = URLRequest(url: url)
         request.httpMethod = method
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue(config.apiKey, forHTTPHeaderField: "X-API-Key")
-        
+
+        // Automatically inject JWT auth header from Keychain
+        if let token = KeychainHelper.loadString(forKey: "authToken") {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+
         if let body = body {
             request.httpBody = body
         }
-        
+
         return request
     }
     
     private func performRequest<T: Codable>(
-        _ request: URLRequest
+        _ request: URLRequest,
+        retryCount: Int = 0
     ) async throws -> T {
         do {
             let (data, response) = try await session.data(for: request)
-            
+
             guard let httpResponse = response as? HTTPURLResponse else {
                 throw APIClientError.invalidResponse
             }
-            
+
             // Handle different status codes
             switch httpResponse.statusCode {
             case 200...299:
                 // Success
                 break
             case 401:
+                // Try to refresh token and retry once
+                if retryCount == 0 {
+                    do {
+                        try await refreshToken()
+                        // Recreate request with new token
+                        var newRequest = request
+                        if let token = KeychainHelper.loadString(forKey: "authToken") {
+                            newRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+                        }
+                        return try await performRequest(newRequest, retryCount: 1)
+                    } catch {
+                        // Refresh failed, throw unauthorized
+                        throw APIClientError.unauthorized
+                    }
+                }
                 throw APIClientError.unauthorized
             case 400...499:
                 // Client error - try to decode error message
@@ -102,7 +123,7 @@ class APIClient {
             default:
                 throw APIClientError.invalidResponse
             }
-            
+
             // Decode response
             let decoder = JSONDecoder()
             do {
@@ -112,7 +133,7 @@ class APIClient {
                 print("Response data: \(String(data: data, encoding: .utf8) ?? "nil")")
                 throw APIClientError.decodingError(error)
             }
-            
+
         } catch let error as APIClientError {
             throw error
         } catch {
@@ -253,11 +274,24 @@ class APIClient {
 
     /// Get the current user's referral code
     func getReferralCode() async throws -> ReferralCodeResponse {
-        var request = try createRequest(endpoint: "/api/referrals/my-code")
-        // Attach auth token
-        if let authToken = UserDefaults.standard.string(forKey: "authToken") {
-            request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
-        }
+        let request = try createRequest(endpoint: "/api/referrals/my-code")
         return try await performRequest(request)
+    }
+
+    // MARK: - Authentication
+
+    /// Validate existing auth token
+    func validateToken() async throws -> User {
+        let request = try createRequest(endpoint: "/api/auth/validate", method: "POST")
+        let response: ValidateTokenResponse = try await performRequest(request)
+        return response.user
+    }
+
+    /// Refresh auth token
+    private func refreshToken() async throws {
+        let request = try createRequest(endpoint: "/api/auth/refresh", method: "POST")
+        let response: AuthRefreshResponse = try await performRequest(request)
+        // Save new token to Keychain
+        KeychainHelper.save(response.token, forKey: "authToken")
     }
 }

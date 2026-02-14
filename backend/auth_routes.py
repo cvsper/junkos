@@ -9,6 +9,8 @@ import hashlib
 import jwt
 import datetime
 from functools import wraps
+import requests
+from typing import Optional, Dict
 
 from models import db, User, Referral, generate_referral_code
 from extensions import limiter
@@ -32,7 +34,97 @@ if not JWT_SECRET:
     if os.environ.get('FLASK_ENV', 'development') != 'development':
         _auth_logger.warning("JWT_SECRET is not set! Using a random value that will not survive restarts.")
 
+# Apple public keys cache (expires after 24 hours)
+_apple_keys_cache = {
+    'keys': None,
+    'fetched_at': None
+}
+
 # MARK: - Helper Functions
+
+def get_apple_public_keys() -> Optional[Dict]:
+    """Fetch Apple's public keys for JWT verification (cached for 24 hours)"""
+    now = datetime.datetime.utcnow()
+
+    # Check cache
+    if _apple_keys_cache['keys'] and _apple_keys_cache['fetched_at']:
+        age = (now - _apple_keys_cache['fetched_at']).total_seconds()
+        if age < 86400:  # 24 hours
+            return _apple_keys_cache['keys']
+
+    # Fetch from Apple
+    try:
+        response = requests.get('https://appleid.apple.com/auth/keys', timeout=5)
+        if response.status_code == 200:
+            keys = response.json()
+            _apple_keys_cache['keys'] = keys
+            _apple_keys_cache['fetched_at'] = now
+            return keys
+    except Exception as e:
+        _auth_logger.error(f"Failed to fetch Apple public keys: {e}")
+
+    return None
+
+def validate_apple_identity_token(identity_token: str, nonce: str) -> Optional[Dict]:
+    """Validate Apple identity token JWT and nonce"""
+    try:
+        # Decode header to get kid
+        unverified_header = jwt.get_unverified_header(identity_token)
+        kid = unverified_header.get('kid')
+
+        if not kid:
+            _auth_logger.error("No kid in Apple identity token")
+            return None
+
+        # Get Apple's public keys
+        keys_response = get_apple_public_keys()
+        if not keys_response:
+            _auth_logger.error("Could not fetch Apple public keys")
+            return None
+
+        # Find matching key
+        public_key = None
+        for key in keys_response.get('keys', []):
+            if key.get('kid') == kid:
+                public_key = jwt.algorithms.RSAAlgorithm.from_jwk(key)
+                break
+
+        if not public_key:
+            _auth_logger.error(f"No matching Apple public key for kid: {kid}")
+            return None
+
+        # Verify JWT signature and claims
+        payload = jwt.decode(
+            identity_token,
+            public_key,
+            algorithms=['RS256'],
+            audience=['com.goumuve.app', 'com.goumuve.pro'],
+            issuer='https://appleid.apple.com'
+        )
+
+        # Verify nonce
+        token_nonce = payload.get('nonce')
+        if not token_nonce:
+            _auth_logger.error("No nonce in Apple identity token")
+            return None
+
+        # Hash the provided nonce and compare
+        expected_nonce = hashlib.sha256(nonce.encode()).hexdigest()
+        if token_nonce != expected_nonce:
+            _auth_logger.error("Nonce mismatch in Apple identity token")
+            return None
+
+        return payload
+
+    except jwt.ExpiredSignatureError:
+        _auth_logger.error("Apple identity token expired")
+        return None
+    except jwt.InvalidTokenError as e:
+        _auth_logger.error(f"Invalid Apple identity token: {e}")
+        return None
+    except Exception as e:
+        _auth_logger.error(f"Error validating Apple identity token: {e}")
+        return None
 
 def generate_verification_code():
     """Generate random 6-digit verification code"""
@@ -273,24 +365,40 @@ def login():
 def apple_signin():
     """Authenticate with Apple Sign In credential"""
     data = request.get_json()
+    identity_token = data.get('identity_token')
+    nonce = data.get('nonce')
     user_identifier = data.get('userIdentifier')
     email = data.get('email')
     name = data.get('name')
-    
-    if not user_identifier:
-        return jsonify({'error': 'Apple user identifier required'}), 400
-    
+
+    # New flow: validate identity_token and nonce
+    if identity_token and nonce:
+        payload = validate_apple_identity_token(identity_token, nonce)
+        if not payload:
+            return jsonify({'error': 'Invalid Apple Sign In token'}), 401
+
+        # Extract user identifier from verified token
+        user_identifier = payload.get('sub')
+        if not user_identifier:
+            return jsonify({'error': 'Invalid Apple token payload'}), 400
+
+    # Backward compatibility: fall back to userIdentifier-based flow
+    elif user_identifier:
+        _auth_logger.warning("Apple Sign In using legacy userIdentifier flow (no token validation)")
+    else:
+        return jsonify({'error': 'Apple user identifier or identity_token required'}), 400
+
     # Find or create user
     user = None
     user_id = None
-    
+
     # Search by Apple ID
     for uid, u in users_db.items():
         if u.get('apple_id') == user_identifier:
             user = u
             user_id = uid
             break
-    
+
     # Create new user if not found
     if not user:
         user_id = secrets.token_hex(16)
@@ -302,10 +410,10 @@ def apple_signin():
             'phoneNumber': None
         }
         user = users_db[user_id]
-    
+
     # Generate token
     token = generate_token(user_id)
-    
+
     return jsonify({
         'success': True,
         'token': token,
@@ -531,25 +639,76 @@ def bootstrap_admin():
 # MARK: - Token Validation
 
 @auth_bp.route('/validate', methods=['POST'])
-def validate_token():
+def validate_token_endpoint():
     """Validate existing auth token"""
     token = request.headers.get('Authorization', '').replace('Bearer ', '')
     user_id = verify_token(token)
-    
-    if not user_id or user_id not in users_db:
+
+    if not user_id:
         return jsonify({'error': 'Invalid token'}), 401
-    
-    user = users_db[user_id]
-    
-    return jsonify({
-        'success': True,
-        'user': {
-            'id': user['id'],
-            'name': user.get('name'),
-            'email': user.get('email'),
-            'phoneNumber': user.get('phoneNumber')
-        }
-    })
+
+    # Check in-memory store
+    if user_id in users_db:
+        user = users_db[user_id]
+        return jsonify({
+            'success': True,
+            'user': {
+                'id': user['id'],
+                'name': user.get('name'),
+                'email': user.get('email'),
+                'phoneNumber': user.get('phoneNumber'),
+                'role': 'customer'
+            }
+        })
+
+    # Check database
+    db_user = db.session.get(User, user_id)
+    if db_user:
+        return jsonify({
+            'success': True,
+            'user': db_user.to_dict()
+        })
+
+    return jsonify({'error': 'User not found'}), 404
+
+
+@auth_bp.route('/refresh', methods=['POST'])
+def refresh_token_endpoint():
+    """Refresh JWT token (allows refresh within 7 days of expiry)"""
+    token = request.headers.get('Authorization', '').replace('Bearer ', '')
+
+    try:
+        # Decode with grace period (verify_token already handles expired check)
+        # For refresh, we allow tokens expired up to 7 days
+        payload = jwt.decode(token, JWT_SECRET, algorithms=['HS256'], options={'verify_exp': False})
+        user_id = payload.get('user_id')
+        exp = payload.get('exp')
+
+        if not user_id or not exp:
+            return jsonify({'error': 'Invalid token'}), 401
+
+        # Check expiry with grace period
+        exp_date = datetime.datetime.utcfromtimestamp(exp)
+        now = datetime.datetime.utcnow()
+        grace_period = datetime.timedelta(days=7)
+
+        if now > exp_date + grace_period:
+            return jsonify({'error': 'Token expired beyond refresh period'}), 401
+
+        # Verify user still exists
+        if user_id not in users_db and not db.session.get(User, user_id):
+            return jsonify({'error': 'User not found'}), 404
+
+        # Issue new token
+        new_token = generate_token(user_id)
+
+        return jsonify({
+            'success': True,
+            'token': new_token
+        })
+
+    except jwt.InvalidTokenError:
+        return jsonify({'error': 'Invalid token'}), 401
 
 # MARK: - Helper Functions
 

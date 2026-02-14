@@ -263,3 +263,41 @@ struct APIResponse<T: Codable>: Codable {
     let data: T?
     let error: String?
 }
+
+// MARK: - User Model
+struct User: Codable {
+    let id: String
+    let name: String?
+    let email: String?
+    let phoneNumber: String?
+    let role: String?
+
+    var displayName: String {
+        if let name = name, !name.isEmpty {
+            return name
+        }
+        if let email = email {
+            return email
+        }
+        return "User"
+    }
+}
+
+// MARK: - Auth Response
+struct AuthResponse: Codable {
+    let success: Bool
+    let token: String
+    let user: User
+}
+
+// MARK: - Auth Refresh Response
+struct AuthRefreshResponse: Codable {
+    let success: Bool
+    let token: String
+}
+
+// MARK: - Validate Token Response
+struct ValidateTokenResponse: Codable {
+    let success: Bool
+    let user: User
+}

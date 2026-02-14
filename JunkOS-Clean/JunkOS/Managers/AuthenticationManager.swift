@@ -388,23 +388,3 @@ class AuthenticationManager: ObservableObject {
         return hashed.compactMap { String(format: "%02x", $0) }.joined()
     }
 }
-
-// MARK: - User Model
-
-struct User: Codable {
-    let id: String
-    let name: String?
-    let email: String?
-    let phoneNumber: String?
-    let role: String?
-
-    var displayName: String {
-        if let name = name, !name.isEmpty {
-            return name
-        }
-        if let email = email {
-            return email
-        }
-        return "User"
-    }
-}
