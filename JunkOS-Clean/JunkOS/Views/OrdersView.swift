@@ -70,6 +70,9 @@ struct OrdersView: View {
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("volumeAdjustmentReceived"))) { _ in
             Task { loadBookings() }
         }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("jobStatusUpdated"))) { _ in
+            loadBookings()
+        }
     }
 
     // MARK: - Empty State
@@ -139,6 +142,11 @@ struct OrdersView: View {
 struct BookingCard: View {
     let booking: BookingResponse
     let onRefresh: () -> Void
+
+    private var isTrackable: Bool {
+        let status = booking.status?.lowercased() ?? ""
+        return ["en_route", "arrived", "started"].contains(status)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: UmuveSpacing.medium) {
@@ -251,6 +259,26 @@ struct BookingCard: View {
                 .background(Color.orange.opacity(0.1))
                 .clipShape(RoundedRectangle(cornerRadius: 12))
             }
+
+            // Track Driver button
+            if isTrackable {
+                NavigationLink(destination: JobTrackingView(
+                    jobId: booking.bookingId,
+                    jobAddress: booking.address ?? "Pickup location",
+                    driverName: booking.driverName
+                )) {
+                    HStack {
+                        Image(systemName: "location.fill")
+                        Text("Track Driver")
+                    }
+                    .font(UmuveTypography.bodyFont.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, UmuveSpacing.medium)
+                    .background(Color.umuvePrimary)
+                    .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.md))
+                }
+            }
         }
         .padding(UmuveSpacing.normal)
         .background(Color.white)
@@ -263,6 +291,9 @@ struct BookingCard: View {
         let resolvedStatus = booking.status?.lowercased() ?? booking.confirmation.lowercased()
         let (text, color): (String, Color) = {
             if resolvedStatus.contains("completed") { return ("Completed", Color.umuveSuccess) }
+            if resolvedStatus.contains("en_route") { return ("En Route", Color.umuveInfo) }
+            if resolvedStatus.contains("arrived") { return ("Driver Arrived", Color.umuveSuccess) }
+            if resolvedStatus.contains("started") { return ("In Progress", Color.umuveInfo) }
             if resolvedStatus.contains("in_progress") || resolvedStatus.contains("in progress") { return ("In Progress", Color.umuveInfo) }
             if resolvedStatus.contains("accepted") { return ("Driver Assigned", Color.umuveSuccess) }
             if resolvedStatus.contains("assigned") { return ("Assigned", Color.categoryPurple) }

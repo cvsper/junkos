@@ -142,6 +142,9 @@ struct BookingResponse: Codable {
     let adjustedPrice: Double?
     let adjustedVolume: Double?
 
+    // Tracking
+    let address: String?
+
     enum CodingKeys: String, CodingKey {
         // Legacy creation response keys
         case bookingId = "booking_id"
@@ -166,6 +169,8 @@ struct BookingResponse: Codable {
         case volumeAdjustmentProposed = "volume_adjustment_proposed"
         case adjustedPrice = "adjusted_price"
         case adjustedVolume = "adjusted_volume"
+        // Tracking
+        case address
     }
 
     init(from decoder: Decoder) throws {
@@ -215,6 +220,9 @@ struct BookingResponse: Codable {
         volumeAdjustmentProposed = try? container.decode(Bool.self, forKey: .volumeAdjustmentProposed)
         adjustedPrice = try? container.decode(Double.self, forKey: .adjustedPrice)
         adjustedVolume = try? container.decode(Double.self, forKey: .adjustedVolume)
+
+        // Tracking
+        address = try? container.decode(String.self, forKey: .address)
     }
 
     func encode(to encoder: Encoder) throws {
@@ -233,6 +241,7 @@ struct BookingResponse: Codable {
         try container.encodeIfPresent(volumeAdjustmentProposed, forKey: .volumeAdjustmentProposed)
         try container.encodeIfPresent(adjustedPrice, forKey: .adjustedPrice)
         try container.encodeIfPresent(adjustedVolume, forKey: .adjustedVolume)
+        try container.encodeIfPresent(address, forKey: .address)
     }
 
     /// Whether this job was delegated to an operator
