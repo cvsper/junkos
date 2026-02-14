@@ -12,7 +12,7 @@ This roadmap transforms two partially-built iOS apps (customer and driver) into 
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Foundation & Authentication** - Secure auth and networking infrastructure
+- [x] **Phase 1: Foundation & Authentication** - Secure auth and networking infrastructure
 - [ ] **Phase 2: Pricing & Booking** - Customer can see pricing and create bookings
 - [ ] **Phase 3: Payments Integration** - Stripe payments with escrow and driver payouts
 - [ ] **Phase 4: Dispatch System** - Driver assignment and job acceptance
@@ -34,9 +34,9 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 3 plans
 
 Plans:
-- [ ] 01-01-PLAN.md — Customer app Keychain migration, AuthenticationManager rewrite, backend nonce validation
-- [ ] 01-02-PLAN.md — Driver app nonce handling, onboarding screens, Apple-only auth UI
-- [ ] 01-03-PLAN.md — Customer app onboarding screens, Apple-only sign-in, app entry point rewiring
+- [x] 01-01-PLAN.md — Customer app Keychain migration, AuthenticationManager rewrite, backend nonce validation
+- [x] 01-02-PLAN.md — Driver app nonce handling, onboarding screens, Apple-only auth UI
+- [x] 01-03-PLAN.md — Customer app onboarding screens, Apple-only sign-in, app entry point rewiring
 
 ### Phase 2: Pricing & Booking
 **Goal**: Customer can select service, see calculated pricing, and create a booking with photo upload
@@ -132,7 +132,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation & Authentication | 0/3 | Planning complete | - |
+| 1. Foundation & Authentication | 3/3 | Complete | 2026-02-14 |
 | 2. Pricing & Booking | 0/TBD | Not started | - |
 | 3. Payments Integration | 0/TBD | Not started | - |
 | 4. Dispatch System | 0/TBD | Not started | - |
@@ -142,4 +142,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 
 ---
 *Roadmap created: 2026-02-13*
-*Last updated: 2026-02-13*
+*Last updated: 2026-02-14*

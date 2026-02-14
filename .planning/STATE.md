@@ -5,34 +5,34 @@
 See: .planning/PROJECT.md (updated 2026-02-13)
 
 **Core value:** A customer can book a junk hauling or auto transport job from their iPhone and a driver can accept and complete it — end-to-end, with real payments.
-**Current focus:** Phase 1 - Foundation & Authentication
+**Current focus:** Phase 2 - Pricing & Booking
 
 ## Current Position
 
-Phase: 1 of 7 (Foundation & Authentication)
-Plan: 4 of TBD
-Status: In progress
-Last activity: 2026-02-14 — Completed plan 01-03 (customer onboarding + Apple-only sign-in UI)
+Phase: 2 of 7 (Pricing & Booking)
+Plan: 0 of TBD
+Status: Not started
+Last activity: 2026-02-14 — Phase 1 verified and complete
 
-Progress: [███░░░░░░░] 30%
+Progress: [█░░░░░░░░░] 14%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 4
-- Average duration: 14 minutes
-- Total execution time: 0.92 hours
+- Total plans completed: 3
+- Average duration: 13 minutes
+- Total execution time: ~40 minutes
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 1 | 4 | 55 min | 14 min |
+| 1 | 3 | ~40 min | ~13 min |
 
 **Recent Trend:**
 - 01-03: 5 minutes (2 tasks, onboarding + Apple-only sign-in UI)
-- 01-01: 20 minutes (2 tasks, customer auth + Keychain migration + nonce validation)
 - 01-02: 15 minutes (2 tasks, driver auth + onboarding)
+- 01-01: 20 minutes (2 tasks, customer auth + Keychain migration + nonce validation)
 
 *Updated after each plan completion*
 
@@ -50,24 +50,15 @@ Recent decisions affecting current work:
 - Volume adjustment workflow with customer approval — Automated pricing with customer protection
 - Trip fee on customer decline after driver arrives — Compensates driver for wasted time
 
-**From 01-03:**
-- Use PageTabViewStyle for native iOS swipeable onboarding with dots indicator
-- Remove OnboardingManager class — use @AppStorage directly for simplicity
-- Deprecate EnhancedWelcomeView instead of deleting to preserve Xcode project references
-- Use NWPathMonitor for offline detection with animated banner overlay
-- Add sign-out confirmation alert to prevent accidental logouts
-
-**From 01-02:**
-- Remove email/password auth entirely from driver app (Apple Sign In only)
-- Show onboarding before auth screen on first launch
-- Retry Apple Sign In up to 3 times with 1-second delays
-- Refresh JWT when expiring within 24 hours
-
-**From 01-01:**
+**From Phase 1 (complete):**
 - Use ObservableObject instead of @Observable for iOS 16 compatibility
 - Cache Apple public keys for 24 hours to reduce API calls
 - Support legacy userIdentifier flow for backward compatibility during transition
 - 7-day grace period for token refresh to handle offline scenarios
+- Use PageTabViewStyle for native iOS swipeable onboarding with dots indicator
+- Use @AppStorage directly for onboarding state (no manager class)
+- Use NWPathMonitor for offline detection with animated banner overlay
+- Deprecate EnhancedWelcomeView instead of deleting to preserve Xcode project references
 
 ### Pending Todos
 
@@ -80,5 +71,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-14
-Stopped at: Completed 01-03-PLAN.md — customer onboarding + Apple-only sign-in UI
+Stopped at: Phase 1 complete and verified — ready for Phase 2 planning
 Resume file: None
