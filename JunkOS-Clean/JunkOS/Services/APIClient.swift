@@ -463,4 +463,30 @@ class APIClient {
         // Save new token to Keychain
         KeychainHelper.save(response.token, forKey: "authToken")
     }
+
+    // MARK: - Volume Adjustment
+
+    func approveVolumeAdjustment(jobId: String) async throws -> [String: Any] {
+        let request = try createRequest(
+            endpoint: "/api/jobs/\(jobId)/volume/approve",
+            method: "POST"
+        )
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            throw APIClientError.serverError("Failed to approve volume adjustment")
+        }
+        return (try? JSONSerialization.jsonObject(with: data) as? [String: Any]) ?? [:]
+    }
+
+    func declineVolumeAdjustment(jobId: String) async throws -> [String: Any] {
+        let request = try createRequest(
+            endpoint: "/api/jobs/\(jobId)/volume/decline",
+            method: "POST"
+        )
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            throw APIClientError.serverError("Failed to decline volume adjustment")
+        }
+        return (try? JSONSerialization.jsonObject(with: data) as? [String: Any]) ?? [:]
+    }
 }

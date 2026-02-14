@@ -17,6 +17,7 @@ enum NotificationCategory: String, CaseIterable {
     case driverAssigned = "driver_assigned"
     case driverEnRoute = "driver_en_route"
     case jobCompleted = "job_completed"
+    case volumeAdjustment = "VOLUME_ADJUSTMENT"
 
     var title: String {
         switch self {
@@ -28,6 +29,8 @@ enum NotificationCategory: String, CaseIterable {
             return "Driver En Route"
         case .jobCompleted:
             return "Job Completed"
+        case .volumeAdjustment:
+            return "Volume Adjustment"
         }
     }
 }
@@ -98,17 +101,35 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
 
     /// Register notification categories with the system
     private func registerNotificationCategories() {
+        // Standard categories (no actions)
         var categories = Set<UNNotificationCategory>()
-
-        for category in NotificationCategory.allCases {
-            let notificationCategory = UNNotificationCategory(
+        for category in NotificationCategory.allCases where category != .volumeAdjustment {
+            categories.insert(UNNotificationCategory(
                 identifier: category.rawValue,
                 actions: [],
                 intentIdentifiers: [],
                 options: []
-            )
-            categories.insert(notificationCategory)
+            ))
         }
+
+        // Volume adjustment category with approve/decline actions
+        let approveAction = UNNotificationAction(
+            identifier: "APPROVE_VOLUME",
+            title: "Approve New Price",
+            options: [.foreground]
+        )
+        let declineAction = UNNotificationAction(
+            identifier: "DECLINE_VOLUME",
+            title: "Decline & Cancel",
+            options: [.destructive, .foreground]
+        )
+        let volumeCategory = UNNotificationCategory(
+            identifier: NotificationCategory.volumeAdjustment.rawValue,
+            actions: [approveAction, declineAction],
+            intentIdentifiers: [],
+            options: [.customDismissAction]
+        )
+        categories.insert(volumeCategory)
 
         UNUserNotificationCenter.current().setNotificationCategories(categories)
     }
@@ -205,8 +226,26 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
         didReceive response: UNNotificationResponse,
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
+        let actionIdentifier = response.actionIdentifier
         let categoryIdentifier = response.notification.request.content.categoryIdentifier
         let userInfo = response.notification.request.content.userInfo
+
+        // Handle volume adjustment actions
+        if actionIdentifier == "APPROVE_VOLUME" || actionIdentifier == "DECLINE_VOLUME" {
+            if let jobId = userInfo["job_id"] as? String {
+                if actionIdentifier == "APPROVE_VOLUME" {
+                    Task {
+                        try? await APIClient.shared.approveVolumeAdjustment(jobId: jobId)
+                    }
+                } else {
+                    Task {
+                        try? await APIClient.shared.declineVolumeAdjustment(jobId: jobId)
+                    }
+                }
+            }
+            completionHandler()
+            return
+        }
 
         // Try category identifier first
         if let category = NotificationCategory(rawValue: categoryIdentifier) {
@@ -218,6 +257,8 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
                 handleNotificationAction(for: .driverAssigned, userInfo: userInfo)
             case "new_job":
                 handleNotificationAction(for: .bookingConfirmed, userInfo: userInfo)
+            case "volume_adjustment":
+                handleNotificationAction(for: .volumeAdjustment, userInfo: userInfo)
             default:
                 break
             }
@@ -232,6 +273,11 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
     private func handleNotificationAction(for category: NotificationCategory, userInfo: [AnyHashable: Any]) {
         DispatchQueue.main.async {
             self.pendingDeepLink = category
+        }
+
+        // Post NotificationCenter event for volume adjustment (for foreground refresh)
+        if category == .volumeAdjustment {
+            NotificationCenter.default.post(name: NSNotification.Name("volumeAdjustmentReceived"), object: nil)
         }
     }
 }

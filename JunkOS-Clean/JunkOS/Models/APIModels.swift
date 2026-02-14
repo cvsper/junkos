@@ -137,6 +137,11 @@ struct BookingResponse: Codable {
     let driverId: String?
     let driverName: String?
 
+    // Volume adjustment
+    let volumeAdjustmentProposed: Bool?
+    let adjustedPrice: Double?
+    let adjustedVolume: Double?
+
     enum CodingKeys: String, CodingKey {
         // Legacy creation response keys
         case bookingId = "booking_id"
@@ -157,6 +162,10 @@ struct BookingResponse: Codable {
         // Driver
         case driverId = "driver_id"
         case driverName = "driver_name"
+        // Volume adjustment
+        case volumeAdjustmentProposed = "volume_adjustment_proposed"
+        case adjustedPrice = "adjusted_price"
+        case adjustedVolume = "adjusted_volume"
     }
 
     init(from decoder: Decoder) throws {
@@ -201,6 +210,11 @@ struct BookingResponse: Codable {
         // Driver
         driverId = try? container.decode(String.self, forKey: .driverId)
         driverName = try? container.decode(String.self, forKey: .driverName)
+
+        // Volume adjustment
+        volumeAdjustmentProposed = try? container.decode(Bool.self, forKey: .volumeAdjustmentProposed)
+        adjustedPrice = try? container.decode(Double.self, forKey: .adjustedPrice)
+        adjustedVolume = try? container.decode(Double.self, forKey: .adjustedVolume)
     }
 
     func encode(to encoder: Encoder) throws {
@@ -216,6 +230,9 @@ struct BookingResponse: Codable {
         try container.encodeIfPresent(delegatedAt, forKey: .delegatedAt)
         try container.encodeIfPresent(driverId, forKey: .driverId)
         try container.encodeIfPresent(driverName, forKey: .driverName)
+        try container.encodeIfPresent(volumeAdjustmentProposed, forKey: .volumeAdjustmentProposed)
+        try container.encodeIfPresent(adjustedPrice, forKey: .adjustedPrice)
+        try container.encodeIfPresent(adjustedVolume, forKey: .adjustedVolume)
     }
 
     /// Whether this job was delegated to an operator
