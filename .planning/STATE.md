@@ -10,27 +10,28 @@ See: .planning/PROJECT.md (updated 2026-02-13)
 ## Current Position
 
 Phase: 2 of 7 (Pricing & Booking)
-Plan: 1 of 5
+Plan: 2 of 5
 Status: In progress
-Last activity: 2026-02-14 — Plan 02-01 complete (booking data model + wizard foundation)
+Last activity: 2026-02-14 — Plan 02-02 complete (service type selection with volume/vehicle options)
 
 Progress: [██░░░░░░░░] 18%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 4
-- Average duration: 16 minutes
-- Total execution time: ~64 minutes
+- Total plans completed: 5
+- Average duration: 14 minutes
+- Total execution time: ~69 minutes
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1 | 3 | ~40 min | ~13 min |
-| 2 | 1 | ~24 min | ~24 min |
+| 2 | 2 | ~29 min | ~14.5 min |
 
 **Recent Trend:**
+- 02-02: 5 minutes (2 tasks, service type selection + wizard integration)
 - 02-01: 24 minutes (2 tasks, data model refactor + wizard foundation + HomeView)
 - 01-03: 5 minutes (2 tasks, onboarding + Apple-only sign-in UI)
 - 01-02: 15 minutes (2 tasks, driver auth + onboarding)
@@ -67,6 +68,9 @@ Recent decisions affecting current work:
 - Tappable progress dots enable free navigation to completed steps
 - Running price estimate bar sticky at bottom with expandable line-item breakdown
 - Temporary legacy properties in BookingData for backward compatibility during incremental refactor
+- Each wizard step manages its own ScrollView to avoid nesting conflicts
+- Horizontal bar blocks for truck fill visualization (simpler than custom illustrations)
+- Pricing estimation triggered on service type + volume/vehicle selection (async with stub)
 
 ### Pending Todos
 
@@ -79,5 +83,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-14
-Stopped at: Completed 02-01-PLAN.md (booking data model + wizard foundation)
+Stopped at: Completed 02-02-PLAN.md (service type selection with volume/vehicle options)
 Resume file: None
