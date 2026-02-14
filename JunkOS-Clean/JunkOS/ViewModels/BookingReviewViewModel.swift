@@ -7,15 +7,19 @@
 
 import Foundation
 import SwiftUI
+import StripePaymentSheet
 
 class BookingReviewViewModel: ObservableObject {
     @Published var isSubmitting = false
     @Published var showSuccess = false
     @Published var errorMessage: String?
     @Published var createdJobId: String?
+    @Published var paymentSheet: PaymentSheet?
+    @Published var isPreparingPayment = false
+    @Published var paymentIntentId: String?
 
     @MainActor
-    func confirmBooking(bookingData: BookingData) async {
+    func confirmAndPay(bookingData: BookingData) async {
         // Validate required fields
         guard let serviceType = bookingData.serviceType else {
             errorMessage = "Service type is required"
@@ -33,22 +37,86 @@ class BookingReviewViewModel: ObservableObject {
             return
         }
 
+        isPreparingPayment = true
+        errorMessage = nil
+
+        do {
+            // Prepare Payment Sheet with estimated price
+            let amount = bookingData.estimatedPrice ?? 0
+            let sheet = try await PaymentService.shared.preparePaymentSheet(
+                amountInDollars: amount,
+                bookingDescription: "Umuve \(serviceType.rawValue)"
+            )
+
+            // Store the PaymentSheet (this triggers presentation in the view)
+            self.paymentSheet = sheet
+            self.paymentIntentId = PaymentService.shared.paymentIntentId
+
+        } catch {
+            errorMessage = "Failed to prepare payment: \(error.localizedDescription)"
+
+            // Haptic feedback
+            let generator = UINotificationFeedbackGenerator()
+            generator.notificationOccurred(.error)
+        }
+
+        isPreparingPayment = false
+    }
+
+    @MainActor
+    func handlePaymentResult(_ result: PaymentSheetResult, bookingData: BookingData) async {
+        switch result {
+        case .completed:
+            // Payment succeeded — create the job
+            await createJobAfterPayment(bookingData: bookingData)
+
+        case .canceled:
+            // User dismissed the Payment Sheet — reset state, no error shown
+            paymentSheet = nil
+
+        case .failed(let error):
+            // Payment failed — show error and reset
+            errorMessage = "Payment failed: \(error.localizedDescription)"
+            paymentSheet = nil
+
+            // Haptic feedback
+            let generator = UINotificationFeedbackGenerator()
+            generator.notificationOccurred(.error)
+        }
+    }
+
+    private func createJobAfterPayment(bookingData: BookingData) async {
+        guard let serviceType = bookingData.serviceType,
+              let selectedDate = bookingData.selectedDate,
+              let selectedTimeSlot = bookingData.selectedTimeSlot else {
+            errorMessage = "Missing booking information"
+            return
+        }
+
         isSubmitting = true
         errorMessage = nil
 
         do {
-            // Step 1: Upload photos first (if any)
+            // Step 1: Confirm payment on backend
+            if let intentId = self.paymentIntentId {
+                _ = try await PaymentService.shared.confirmPayment(
+                    paymentIntentId: intentId,
+                    paymentMethodType: "card"
+                )
+            }
+
+            // Step 2: Upload photos first (if any)
             var photoUrls: [String] = []
             if !bookingData.photos.isEmpty {
                 photoUrls = try await APIClient.shared.uploadPhotos(bookingData.photos)
             }
 
-            // Step 2: Format date and time
+            // Step 3: Format date and time
             let dateFormatter = DateFormatter()
             dateFormatter.dateFormat = "yyyy-MM-dd"
             let scheduledDate = dateFormatter.string(from: selectedDate)
 
-            // Step 3: Create job with all booking data
+            // Step 4: Create job with all booking data
             let response = try await APIClient.shared.createJob(
                 serviceType: serviceType.rawValue,
                 address: bookingData.address.fullAddress,
@@ -66,7 +134,7 @@ class BookingReviewViewModel: ObservableObject {
                 distance: bookingData.estimatedDistance
             )
 
-            // Step 4: Handle success
+            // Step 5: Handle success
             if response.success, let jobId = response.jobId {
                 createdJobId = jobId
                 showSuccess = true

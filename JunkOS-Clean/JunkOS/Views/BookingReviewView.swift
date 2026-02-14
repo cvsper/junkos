@@ -7,6 +7,7 @@
 
 import SwiftUI
 import MapKit
+import StripePaymentSheet
 
 struct BookingReviewView: View {
     @EnvironmentObject var bookingData: BookingData
@@ -14,6 +15,7 @@ struct BookingReviewView: View {
     @StateObject private var viewModel = BookingReviewViewModel()
     @State private var isPriceExpanded = false
     @State private var showSuccessOverlay = false
+    @State private var showPaymentSheet = false
 
     var body: some View {
         ZStack {
@@ -93,6 +95,21 @@ struct BookingReviewView: View {
                 }
             }
         }
+        .onChange(of: viewModel.paymentSheet) { sheet in
+            showPaymentSheet = (sheet != nil)
+        }
+        .paymentSheet(
+            isPresented: $showPaymentSheet,
+            paymentSheet: viewModel.paymentSheet ?? PaymentSheet(
+                paymentIntentClientSecret: "",
+                configuration: PaymentSheet.Configuration()
+            ),
+            onCompletion: { result in
+                Task {
+                    await viewModel.handlePaymentResult(result, bookingData: bookingData)
+                }
+            }
+        )
     }
 
     // MARK: - Service Summary Card
@@ -430,25 +447,25 @@ struct BookingReviewView: View {
     private var confirmButton: some View {
         Button {
             Task {
-                await viewModel.confirmBooking(bookingData: bookingData)
+                await viewModel.confirmAndPay(bookingData: bookingData)
             }
         } label: {
             HStack {
-                if viewModel.isSubmitting {
+                if viewModel.isPreparingPayment || viewModel.isSubmitting {
                     ProgressView()
                         .progressViewStyle(CircularProgressViewStyle(tint: .white))
                 } else {
-                    Text("Confirm Booking")
+                    Text("Confirm & Pay")
                         .font(UmuveTypography.bodyFont.weight(.semibold))
                         .foregroundColor(.white)
                 }
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, UmuveSpacing.normal)
-            .background(viewModel.isSubmitting ? Color.umuveTextMuted : Color.umuvePrimary)
+            .background((viewModel.isPreparingPayment || viewModel.isSubmitting) ? Color.umuveTextMuted : Color.umuvePrimary)
             .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.md))
         }
-        .disabled(viewModel.isSubmitting)
+        .disabled(viewModel.isPreparingPayment || viewModel.isSubmitting)
     }
 
     // MARK: - Success Overlay
@@ -459,11 +476,31 @@ struct BookingReviewView: View {
                 .ignoresSafeArea()
 
             VStack(spacing: UmuveSpacing.large) {
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 72))
-                    .foregroundColor(.green)
+                // Success checkmark with payment badge
+                ZStack(alignment: .topTrailing) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 72))
+                        .foregroundColor(.green)
+
+                    // Payment confirmed badge
+                    Image(systemName: "creditcard.fill")
+                        .font(.system(size: 24))
+                        .foregroundColor(.white)
+                        .padding(8)
+                        .background(Circle().fill(Color.green))
+                        .overlay(
+                            Circle()
+                                .strokeBorder(Color.white, lineWidth: 2)
+                        )
+                        .offset(x: 8, y: -8)
+                }
 
                 VStack(spacing: UmuveSpacing.small) {
+                    // Payment confirmation
+                    Text("Payment confirmed")
+                        .font(UmuveTypography.bodyFont)
+                        .foregroundColor(.green)
+
                     Text("Booking Confirmed!")
                         .font(UmuveTypography.h1Font)
                         .foregroundColor(.umuveText)
