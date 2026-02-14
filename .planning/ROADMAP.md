@@ -103,10 +103,13 @@ Plans:
   3. Customer can approve new price (job continues at updated price)
   4. Customer can decline new price (job cancelled, customer charged trip fee)
   5. Backend recalculates price using driver's volume input
-**Plans**: TBD
+**Plans**: 4 plans
 
 Plans:
-- TBD (pending phase planning)
+- [ ] 05-01-PLAN.md — Backend volume adjustment endpoints, Job model fields, APNs category support, Stripe PaymentIntent updates
+- [ ] 05-02-PLAN.md — Driver app volume input UI, price preview, API integration, Socket.IO approval/decline listener
+- [ ] 05-03-PLAN.md — Customer app actionable push notification (approve/decline), in-app fallback banner, API methods
+- [ ] 05-04-PLAN.md — End-to-end verification of all 5 VOL requirements across backend + both iOS apps
 
 ### Phase 6: Real-Time Tracking
 **Goal**: Customer sees driver location on map when job is active, receives push notifications for status changes
@@ -146,7 +149,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | 2. Pricing & Booking | 5/5 | Complete | 2026-02-14 |
 | 3. Payments Integration | 4/4 | Complete | 2026-02-14 |
 | 4. Dispatch System | 4/4 | Complete | 2026-02-14 |
-| 5. Volume Adjustment | 0/TBD | Not started | - |
+| 5. Volume Adjustment | 0/4 | Not started | - |
 | 6. Real-Time Tracking | 0/TBD | Not started | - |
 | 7. TestFlight Preparation | 0/TBD | Not started | - |
 
