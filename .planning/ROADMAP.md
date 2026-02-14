@@ -31,10 +31,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. Both apps complete Apple Sign In flow with backend nonce validation
   3. User remains authenticated across app restarts without re-login
   4. Auth token securely attached to all API requests
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- TBD (pending phase planning)
+- [ ] 01-01-PLAN.md — Customer app Keychain migration, AuthenticationManager rewrite, backend nonce validation
+- [ ] 01-02-PLAN.md — Driver app nonce handling, onboarding screens, Apple-only auth UI
+- [ ] 01-03-PLAN.md — Customer app onboarding screens, Apple-only sign-in, app entry point rewiring
 
 ### Phase 2: Pricing & Booking
 **Goal**: Customer can select service, see calculated pricing, and create a booking with photo upload
@@ -130,7 +132,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation & Authentication | 0/TBD | Not started | - |
+| 1. Foundation & Authentication | 0/3 | Planning complete | - |
 | 2. Pricing & Booking | 0/TBD | Not started | - |
 | 3. Payments Integration | 0/TBD | Not started | - |
 | 4. Dispatch System | 0/TBD | Not started | - |
