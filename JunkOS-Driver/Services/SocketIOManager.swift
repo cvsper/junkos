@@ -83,6 +83,24 @@ final class SocketIOManager {
             }
         }
 
+        // Listen for volume adjustment approval
+        socket?.on("volume:approved") { data, _ in
+            NotificationCenter.default.post(
+                name: NSNotification.Name("socket:volume:approved"),
+                object: nil,
+                userInfo: data.first as? [String: Any]
+            )
+        }
+
+        // Listen for volume adjustment decline
+        socket?.on("volume:declined") { data, _ in
+            NotificationCenter.default.post(
+                name: NSNotification.Name("socket:volume:declined"),
+                object: nil,
+                userInfo: data.first as? [String: Any]
+            )
+        }
+
         socket?.connect()
     }
 

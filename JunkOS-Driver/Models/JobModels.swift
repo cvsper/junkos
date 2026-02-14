@@ -193,3 +193,19 @@ struct StatusUpdateRequest: Codable {
         case afterPhotos = "after_photos"
     }
 }
+
+// MARK: - Volume Adjustment
+
+struct VolumeProposalResponse: Codable {
+    let success: Bool
+    let newPrice: Double?
+    let originalPrice: Double?
+    let autoApproved: Bool?
+
+    enum CodingKeys: String, CodingKey {
+        case success
+        case newPrice = "new_price"
+        case originalPrice = "original_price"
+        case autoApproved = "auto_approved"
+    }
+}

@@ -225,6 +225,19 @@ actor DriverAPIClient {
     func getEarningsHistory() async throws -> EarningsHistoryResponse {
         try await request("/api/payments/earnings/history")
     }
+
+    // MARK: - Volume Adjustment
+
+    func proposeVolumeAdjustment(jobId: String, actualVolume: Double) async throws -> VolumeProposalResponse {
+        struct Body: Encodable {
+            let actual_volume: Double
+        }
+        return try await request(
+            "/api/drivers/jobs/\(jobId)/volume",
+            method: "POST",
+            body: Body(actual_volume: actualVolume)
+        )
+    }
 }
 
 // MARK: - Push Token Models
