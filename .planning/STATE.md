@@ -12,16 +12,16 @@ See: .planning/PROJECT.md (updated 2026-02-13)
 Phase: 4 of 7 (Dispatch System)
 Plan: 4 of 4
 Status: In progress
-Last activity: 2026-02-14 — Plan 04-03 complete (customer driver assignment notifications)
+Last activity: 2026-02-14 — Plan 04-02 complete (driver real-time job feed updates)
 
 Progress: [█████████░] 88%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 14
-- Average duration: 7.8 minutes
-- Total execution time: ~109 minutes
+- Total plans completed: 15
+- Average duration: 8.0 minutes
+- Total execution time: ~120 minutes
 
 **By Phase:**
 
@@ -30,9 +30,10 @@ Progress: [█████████░] 88%
 | 1 | 3 | ~40 min | ~13 min |
 | 2 | 5 | ~54 min | ~10.8 min |
 | 3 | 4 | ~6.8 min | ~1.7 min |
-| 4 | 3 | ~7 min | ~2.3 min |
+| 4 | 4 | ~18.5 min | ~4.6 min |
 
 **Recent Trend:**
+- 04-02: 11.5 minutes (1 task, driver real-time job feed updates + Phase 3 build fixes)
 - 04-03: 5 minutes (1 task, customer driver assignment notifications and status display)
 - 04-01: 2 minutes (2 tasks, backend dispatch notifications with APNs + Socket.IO)
 - 03-04: 2.5 minutes (2 tasks, driver earnings dashboard API integration)
@@ -105,6 +106,9 @@ Recent decisions affecting current work:
 - [Phase 04-01]: Broadcast to personal driver rooms (driver:{id}) instead of global rooms for targeted notifications
 - [Phase 04-01]: All push notifications wrapped in try/except to ensure non-blocking operation
 - [Phase 04-01]: Dual-channel notification system (APNs push for app alerts + Socket.IO for real-time feed updates)
+- [Phase 04-02]: NotificationCenter bridge pattern for Socket.IO events to SwiftUI views (cleaner than @Observable property watching)
+- [Phase 04-02]: Dual-channel notification: Socket.IO property (newJobAlert for LiveMapView) + NotificationCenter (feed updates)
+- [Phase 04-02]: Animated list updates with withAnimation on real-time data changes (easeOut for removal, spring for addition)
 - [Phase 04-03]: Push notification fallback handling - check categoryIdentifier first, then map userInfo["type"] to category
 - [Phase 04-03]: "Driver Assigned" badge for "accepted" status (distinct from "assigned" for operator delegation)
 - [Phase 04-03]: Foreground refresh pattern for booking list using NotificationCenter.default.publisher
@@ -120,5 +124,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-14
-Stopped at: Plan 04-03 complete — customer driver assignment notifications and status display
+Stopped at: Plan 04-02 complete — driver real-time job feed updates (backfilled after 04-03)
 Resume file: None
