@@ -34,6 +34,7 @@ struct UmuveProApp: App {
     @UIApplicationDelegateAdaptor(DriverAppDelegate.self) private var appDelegate
     @State private var appState = AppState()
     @State private var showingSplash = true
+    @AppStorage("hasCompletedDriverOnboarding") private var hasCompletedOnboarding = false
 
     var body: some Scene {
         WindowGroup {
@@ -47,6 +48,8 @@ struct UmuveProApp: App {
                                 }
                             }
                         }
+                } else if !hasCompletedOnboarding {
+                    DriverOnboardingView()
                 } else if !appState.auth.isAuthenticated {
                     DriverAuthView(appState: appState)
                 } else if !appState.isRegistered && appState.selectedRole == nil {

@@ -49,9 +49,8 @@
 		96A96F5462782462AEBCEBB0 /* SplashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 228E7D7E7644F745D1DAAFED /* SplashView.swift */; };
 		9A935658ADCF82A0A67E6CC0 /* EarningsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED5DECECC5344F008D376847 /* EarningsView.swift */; };
 		9E123249BC3A8E7EA11DF942 /* StatusBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABD336317A641FD03A7F918D /* StatusBadge.swift */; };
-		9FE3D022782A33B5C680D556 /* DriverSignupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C6AC34EE8E173E462E0B99C /* DriverSignupView.swift */; };
-		A1874D6EE60010B81564415A /* DriverLoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 699F209390E5D6ECE47043C0 /* DriverLoginView.swift */; };
 		A2D1189B766041112EFD97FD /* AuthenticationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DEA402F6CECE2DD4CC76A0F /* AuthenticationManager.swift */; };
+		ONBOARD001234567890ABCDEF /* DriverOnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ONBOARD987654321FEDCBA00 /* DriverOnboardingView.swift */; };
 		A79407865044DF4EEDFA2AB5 /* DocumentUploadView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6FA3831A39891771A43D22D /* DocumentUploadView.swift */; };
 		AA3166875E6CBF7682E70C80 /* ConnectionStatusBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9204A9DB1C56DBF056E2E5EC /* ConnectionStatusBanner.swift */; };
 		AD64C2EE3E8FBB459A20B22E /* SocketIO in Frameworks */ = {isa = PBXBuildFile; productRef = 9192FFB37533E324867AE5D6 /* SocketIO */; };
@@ -103,11 +102,10 @@
 		54148D05F5465CFF5EB1F3CC /* AuthViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthViewModel.swift; sourceTree = "<group>"; };
 		54200844DD474F229259E177 /* JobStatusStepperView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobStatusStepperView.swift; sourceTree = "<group>"; };
 		54CB44E65469A3687838FB24 /* JobFeedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobFeedView.swift; sourceTree = "<group>"; };
-		5C6AC34EE8E173E462E0B99C /* DriverSignupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriverSignupView.swift; sourceTree = "<group>"; };
 		63007B62EFC23A0A6757B294 /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
 		672F85AEE329F15A6CC0C716 /* AnimationConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnimationConstants.swift; sourceTree = "<group>"; };
-		699F209390E5D6ECE47043C0 /* DriverLoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriverLoginView.swift; sourceTree = "<group>"; };
 		7CF097D7D1B06883811BBF1A /* LocationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationManager.swift; sourceTree = "<group>"; };
+		ONBOARD987654321FEDCBA00 /* DriverOnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriverOnboardingView.swift; sourceTree = "<group>"; };
 		803F2EDEBF20C6218ADFA2CB /* DriverDesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriverDesignSystem.swift; sourceTree = "<group>"; };
 		80AE8F889AD33D7F0E337978 /* JobDetailViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobDetailViewModel.swift; sourceTree = "<group>"; };
 		831F50402DD302638AD4EF32 /* AppRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRouter.swift; sourceTree = "<group>"; };
@@ -323,8 +321,7 @@
 			isa = PBXGroup;
 			children = (
 				C6CC84B7BBA8C36ACEA14548 /* DriverAuthView.swift */,
-				699F209390E5D6ECE47043C0 /* DriverLoginView.swift */,
-				5C6AC34EE8E173E462E0B99C /* DriverSignupView.swift */,
+				ONBOARD987654321FEDCBA00 /* DriverOnboardingView.swift */,
 			);
 			path = Auth;
 			sourceTree = "<group>";
@@ -504,8 +501,7 @@
 				14790A1C6E4BF7984B5FF3E4 /* DriverAnnotationView.swift in Sources */,
 				B9EF3DD412FA186F53E44D22 /* DriverAuthView.swift in Sources */,
 				4F219CCBF09D2A91F8C8A08F /* DriverDesignSystem.swift in Sources */,
-				A1874D6EE60010B81564415A /* DriverLoginView.swift in Sources */,
-				9FE3D022782A33B5C680D556 /* DriverSignupView.swift in Sources */,
+				ONBOARD001234567890ABCDEF /* DriverOnboardingView.swift in Sources */,
 				E2802E3778DC622FD2129867 /* DriverTabView.swift in Sources */,
 				3D564E63BD08DA8886FDA8AF /* EarningsModels.swift in Sources */,
 				9A935658ADCF82A0A67E6CC0 /* EarningsView.swift in Sources */,
