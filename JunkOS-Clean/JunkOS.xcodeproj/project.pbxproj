@@ -397,6 +397,10 @@
 			dependencies = (
 			);
 			name = JunkOS;
+			packageProductDependencies = (
+				F49FDC8DF4FBA9B367D765BF /* SocketIO */,
+				CF19A5872F40D68B007960A8 /* StripePaymentSheet */,
+			);
 			productName = JunkOS;
 			productReference = B0000000 /* JunkOS.app */;
 			productType = "com.apple.product-type.application";
