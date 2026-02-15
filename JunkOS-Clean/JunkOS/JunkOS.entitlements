@@ -2,11 +2,16 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>com.apple.developer.applesignin</key>
+	<array>
+		<string>Default</string>
+	</array>
 	<key>aps-environment</key>
 	<string>production</string>
 	<key>com.apple.developer.in-app-payments</key>
 	<array>
 		<string>merchant.com.goumuve.app</string>
+		<string>merchant.com.junkos.app</string>
 	</array>
 </dict>
 </plist>
