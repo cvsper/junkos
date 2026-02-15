@@ -8,16 +8,14 @@
 
 /* Begin PBXBuildFile section */
 		596F12A23226F6D9277A0312 /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D2E91CB87D310F9902CA2CB /* APIClient.swift */; };
+		5DC0864DB58C489DB7633A3B /* PaymentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FEB1C0CFE8A4201B3540879 /* PaymentView.swift */; };
+		5FF95075F663443EA6840FD2 /* BookingReviewViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C773B1D98EDF410CBD206EED /* BookingReviewViewModel.swift */; };
 		6B2AB21B02F247EB1C77B2F3 /* APIModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73F780F7A677603E6AB31CBA /* APIModels.swift */; };
+		978EAC332A244D5F8FEA2CBF /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80B991BBD5664B339818E691 /* NotificationManager.swift */; };
+		9C7FD09841C54C99A29DA7A5 /* BookingWizardViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19D768CA0F8C43A6BD9AC939 /* BookingWizardViewModel.swift */; };
 		A0000001 /* JunkOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000001 /* JunkOSApp.swift */; };
 		A0000002 /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000002 /* DesignSystem.swift */; };
 		A0000003 /* BookingModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000003 /* BookingModels.swift */; };
-		A0000004 /* WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000004 /* WelcomeView.swift */; };
-		A0000005 /* ServiceSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000005 /* ServiceSelectionView.swift */; };
-		A0000006 /* DateTimePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000006 /* DateTimePickerView.swift */; };
-		A0000007 /* AddressInputView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000007 /* AddressInputView.swift */; };
-		A0000008 /* PhotoUploadView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000008 /* PhotoUploadView.swift */; };
-		A0000009 /* ConfirmationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000009 /* ConfirmationView.swift */; };
 		A0000010 /* WelcomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000010 /* WelcomeViewModel.swift */; };
 		A0000011 /* ServiceSelectionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000011 /* ServiceSelectionViewModel.swift */; };
 		A0000012 /* DateTimePickerViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000012 /* DateTimePickerViewModel.swift */; };
@@ -35,15 +33,14 @@
 		A0000024 /* HapticManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000024 /* HapticManager.swift */; };
 		A0000025 /* LocationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000025 /* LocationManager.swift */; };
 		A0000026 /* AccessibilityHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000026 /* AccessibilityHelpers.swift */; };
-		KCH6273DDE75A8449FD9F693 /* KeychainHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = KCH1A95DDFA72D44911BFED2 /* KeychainHelper.swift */; };
 		A0000027 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B0000027 /* Assets.xcassets */; };
-		A0000028 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000029 /* MainTabView.swift */; };
-		A0000029 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000030 /* HomeView.swift */; };
-		A0000030 /* MapAddressPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000031 /* MapAddressPickerView.swift */; };
-		A0000031 /* OrdersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000032 /* OrdersView.swift */; };
-		A0000032 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000033 /* ProfileView.swift */; };
-		A0000033 /* ServiceSelectionRedesignView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000034 /* ServiceSelectionRedesignView.swift */; };
-		A0000034 /* EnhancedWelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000035 /* EnhancedWelcomeView.swift */; };
+		AAFF00112233445566778899 /* ReferralView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBFF00112233445566778899 /* ReferralView.swift */; };
+		B61D2F5F685941D8A9A1117E /* BookingWizardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF8FEDE3A12D4A61A3A53F6B /* BookingWizardView.swift */; };
+		CD34EF56AB12CD34EF56AB12 /* BookingSuccessView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB12CD34EF56AB12CD34EF56 /* BookingSuccessView.swift */; };
+		CDB687E6F7E84384879FDFAE /* CameraPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4FFB908C7184F8F99358601 /* CameraPickerView.swift */; };
+		CF19A5882F40D68B007960A8 /* StripePaymentSheet in Frameworks */ = {isa = PBXBuildFile; productRef = CF19A5872F40D68B007960A8 /* StripePaymentSheet */; };
+		DCB6AC1F7668F776ABECD3E5 /* SocketIO in Frameworks */ = {isa = PBXBuildFile; productRef = F49FDC8DF4FBA9B367D765BF /* SocketIO */; };
+		CF19A58D2F41C60C007960A8 /* JobTrackingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF19A58C2F41C60C007960A8 /* JobTrackingView.swift */; };
 		CF7C17B42F37BC810083FF08 /* ServiceSelectionRedesignView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF7C17B02F37BC810083FF08 /* ServiceSelectionRedesignView.swift */; };
 		CF7C17B52F37BC810083FF08 /* AccountView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF7C17A52F37BC810083FF08 /* AccountView.swift */; };
 		CF7C17B62F37BC810083FF08 /* OrdersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF7C17AD2F37BC810083FF08 /* OrdersView.swift */; };
@@ -64,24 +61,24 @@
 		CF7C17C52F37BC810083FF08 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF7C17AB2F37BC810083FF08 /* MainTabView.swift */; };
 		CF7C17C62F37BC810083FF08 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF7C17AF2F37BC810083FF08 /* ProfileView.swift */; };
 		CF7C17CC2F37BF700083FF08 /* AuthenticationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF7C17CA2F37BF700083FF08 /* AuthenticationManager.swift */; };
-		EE6ED07F2A53D504E2E75373 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D09B14030B3F26192D37DF3 /* Config.swift */; };
-		978EAC332A244D5F8FEA2CBF /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80B991BBD5664B339818E691 /* NotificationManager.swift */; };
 		D2D1D62684D24BC79EA47513 /* PaymentService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F0811DCB5C84EAA9DF1E741 /* PaymentService.swift */; };
-		5DC0864DB58C489DB7633A3B /* PaymentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FEB1C0CFE8A4201B3540879 /* PaymentView.swift */; };
-		CDB687E6F7E84384879FDFAE /* CameraPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4FFB908C7184F8F99358601 /* CameraPickerView.swift */; };
-		CD34EF56AB12CD34EF56AB12 /* BookingSuccessView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB12CD34EF56AB12CD34EF56 /* BookingSuccessView.swift */; };
-		AAFF00112233445566778899 /* ReferralView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBFF00112233445566778899 /* ReferralView.swift */; };
-		9C7FD09841C54C99A29DA7A5 /* BookingWizardViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19D768CA0F8C43A6BD9AC939 /* BookingWizardViewModel.swift */; };
-		B61D2F5F685941D8A9A1117E /* BookingWizardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF8FEDE3A12D4A61A3A53F6B /* BookingWizardView.swift */; };
 		E42A8F1C99DD45A3B1C2F789 /* ServiceTypeSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F35B7E9D88CC46B4A0D1E234 /* ServiceTypeSelectionView.swift */; };
 		E9EFC98AFA8643E28EACC354 /* BookingReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B62C6AE0CC2476CBA66EB5C /* BookingReviewView.swift */; };
-		5FF95075F663443EA6840FD2 /* BookingReviewViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C773B1D98EDF410CBD206EED /* BookingReviewViewModel.swift */; };
+		EE6ED07F2A53D504E2E75373 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D09B14030B3F26192D37DF3 /* Config.swift */; };
+		KCH6273DDE75A8449FD9F693 /* KeychainHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = KCH1A95DDFA72D44911BFED2 /* KeychainHelper.swift */; };
+		9C4365602D62A3A1AFC56F9E /* CustomerSocketManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D2155F15A266820B253CC38 /* CustomerSocketManager.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		0D2E91CB87D310F9902CA2CB /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
+		19D768CA0F8C43A6BD9AC939 /* BookingWizardViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookingWizardViewModel.swift; sourceTree = "<group>"; };
+		2F0811DCB5C84EAA9DF1E741 /* PaymentService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentService.swift; sourceTree = "<group>"; };
+		4FEB1C0CFE8A4201B3540879 /* PaymentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentView.swift; sourceTree = "<group>"; };
+		6B62C6AE0CC2476CBA66EB5C /* BookingReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookingReviewView.swift; sourceTree = "<group>"; };
 		73F780F7A677603E6AB31CBA /* APIModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIModels.swift; sourceTree = "<group>"; };
 		7D09B14030B3F26192D37DF3 /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
+		80B991BBD5664B339818E691 /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
+		AB12CD34EF56AB12CD34EF56 /* BookingSuccessView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookingSuccessView.swift; sourceTree = "<group>"; };
 		B0000000 /* JunkOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = JunkOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B0000001 /* JunkOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JunkOSApp.swift; sourceTree = "<group>"; };
 		B0000002 /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
@@ -109,7 +106,6 @@
 		B0000024 /* HapticManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticManager.swift; sourceTree = "<group>"; };
 		B0000025 /* LocationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationManager.swift; sourceTree = "<group>"; };
 		B0000026 /* AccessibilityHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityHelpers.swift; sourceTree = "<group>"; };
-		KCH1A95DDFA72D44911BFED2 /* KeychainHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainHelper.swift; sourceTree = "<group>"; };
 		B0000027 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B0000028 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		B0000029 /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
@@ -119,6 +115,9 @@
 		B0000033 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
 		B0000034 /* ServiceSelectionRedesignView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceSelectionRedesignView.swift; sourceTree = "<group>"; };
 		B0000035 /* EnhancedWelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnhancedWelcomeView.swift; sourceTree = "<group>"; };
+		BBFF00112233445566778899 /* ReferralView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReferralView.swift; sourceTree = "<group>"; };
+		C773B1D98EDF410CBD206EED /* BookingReviewViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookingReviewViewModel.swift; sourceTree = "<group>"; };
+		CF19A58C2F41C60C007960A8 /* JobTrackingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobTrackingView.swift; sourceTree = "<group>"; };
 		CF7C179F2F37BC810083FF08 /* EmailLoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmailLoginView.swift; sourceTree = "<group>"; };
 		CF7C17A02F37BC810083FF08 /* LoginOptionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginOptionsView.swift; sourceTree = "<group>"; };
 		CF7C17A12F37BC810083FF08 /* PhoneSignUpView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneSignUpView.swift; sourceTree = "<group>"; };
@@ -139,17 +138,11 @@
 		CF7C17B12F37BC810083FF08 /* ServiceSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceSelectionView.swift; sourceTree = "<group>"; };
 		CF7C17B22F37BC810083FF08 /* WelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeView.swift; sourceTree = "<group>"; };
 		CF7C17CA2F37BF700083FF08 /* AuthenticationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthenticationManager.swift; sourceTree = "<group>"; };
-		80B991BBD5664B339818E691 /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
-		2F0811DCB5C84EAA9DF1E741 /* PaymentService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentService.swift; sourceTree = "<group>"; };
-		4FEB1C0CFE8A4201B3540879 /* PaymentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentView.swift; sourceTree = "<group>"; };
-		D4FFB908C7184F8F99358601 /* CameraPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraPickerView.swift; sourceTree = "<group>"; };
-		AB12CD34EF56AB12CD34EF56 /* BookingSuccessView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookingSuccessView.swift; sourceTree = "<group>"; };
-		BBFF00112233445566778899 /* ReferralView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReferralView.swift; sourceTree = "<group>"; };
-		19D768CA0F8C43A6BD9AC939 /* BookingWizardViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookingWizardViewModel.swift; sourceTree = "<group>"; };
 		CF8FEDE3A12D4A61A3A53F6B /* BookingWizardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookingWizardView.swift; sourceTree = "<group>"; };
+		D4FFB908C7184F8F99358601 /* CameraPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraPickerView.swift; sourceTree = "<group>"; };
 		F35B7E9D88CC46B4A0D1E234 /* ServiceTypeSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceTypeSelectionView.swift; sourceTree = "<group>"; };
-		6B62C6AE0CC2476CBA66EB5C /* BookingReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookingReviewView.swift; sourceTree = "<group>"; };
-		C773B1D98EDF410CBD206EED /* BookingReviewViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookingReviewViewModel.swift; sourceTree = "<group>"; };
+		KCH1A95DDFA72D44911BFED2 /* KeychainHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainHelper.swift; sourceTree = "<group>"; };
+		9D2155F15A266820B253CC38 /* CustomerSocketManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomerSocketManager.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -157,6 +150,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CF19A5882F40D68B007960A8 /* StripePaymentSheet in Frameworks */,
+				DCB6AC1F7668F776ABECD3E5 /* SocketIO in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -166,11 +161,21 @@
 		1F2CF60D6A002C0B6DE4AE51 /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				9D2155F15A266820B253CC38 /* CustomerSocketManager.swift */,
 				2F0811DCB5C84EAA9DF1E741 /* PaymentService.swift */,
 				0D2E91CB87D310F9902CA2CB /* APIClient.swift */,
 				7D09B14030B3F26192D37DF3 /* Config.swift */,
 			);
 			path = Services;
+			sourceTree = "<group>";
+		};
+		C56BF1A9F44848D087CD2F71 /* Booking */ = {
+			isa = PBXGroup;
+			children = (
+				4FEB1C0CFE8A4201B3540879 /* PaymentView.swift */,
+				AB12CD34EF56AB12CD34EF56 /* BookingSuccessView.swift */,
+			);
+			path = Booking;
 			sourceTree = "<group>";
 		};
 		CF7C17A42F37BC810083FF08 /* Auth */ = {
@@ -188,6 +193,7 @@
 		CF7C17B32F37BC810083FF08 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				CF19A58C2F41C60C007960A8 /* JobTrackingView.swift */,
 				CF8FEDE3A12D4A61A3A53F6B /* BookingWizardView.swift */,
 				6B62C6AE0CC2476CBA66EB5C /* BookingReviewView.swift */,
 				F35B7E9D88CC46B4A0D1E234 /* ServiceTypeSelectionView.swift */,
@@ -375,15 +381,6 @@
 			path = EmptyStates;
 			sourceTree = "<group>";
 		};
-		C56BF1A9F44848D087CD2F71 /* Booking */ = {
-			isa = PBXGroup;
-			children = (
-				4FEB1C0CFE8A4201B3540879 /* PaymentView.swift */,
-				AB12CD34EF56AB12CD34EF56 /* BookingSuccessView.swift */,
-			);
-			path = Booking;
-			sourceTree = "<group>";
-		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -412,10 +409,18 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1500;
-				LastUpgradeCheck = 1500;
+				LastUpgradeCheck = 2620;
 				TargetAttributes = {
 					E0000001 = {
 						CreatedOnToolsVersion = 15.0;
+						SystemCapabilities = {
+							com.apple.InAppPurchase = {
+								enabled = 1;
+							};
+							com.apple.Push = {
+								enabled = 1;
+							};
+						};
 					};
 				};
 			};
@@ -428,6 +433,10 @@
 				Base,
 			);
 			mainGroup = D0000001;
+			packageReferences = (
+				C08C55E036FA6195717B8C3E /* XCRemoteSwiftPackageReference "socket.io-client-swift" */,
+				CF19A5862F40D68B007960A8 /* XCRemoteSwiftPackageReference "stripe-ios" */,
+			);
 			productRefGroup = D0000003 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -462,10 +471,6 @@
 				D2D1D62684D24BC79EA47513 /* PaymentService.swift in Sources */,
 				5DC0864DB58C489DB7633A3B /* PaymentView.swift in Sources */,
 				CDB687E6F7E84384879FDFAE /* CameraPickerView.swift in Sources */,
-				263DE0D419704B659FDE77B6 /* in Sources */,
-				77C21C7B63BA40BCA3F88B66 /* in Sources */,
-				A5D082504D4C4DC8AEB92C30 /* in Sources */,
-				23953A76FCF743BE96218AB0 /* in Sources */,
 				A0000001 /* JunkOSApp.swift in Sources */,
 				A0000002 /* DesignSystem.swift in Sources */,
 				CF7C17B42F37BC810083FF08 /* ServiceSelectionRedesignView.swift in Sources */,
@@ -489,12 +494,6 @@
 				CF7C17C52F37BC810083FF08 /* MainTabView.swift in Sources */,
 				CF7C17C62F37BC810083FF08 /* ProfileView.swift in Sources */,
 				A0000003 /* BookingModels.swift in Sources */,
-				A0000004 /* WelcomeView.swift in Sources */,
-				A0000005 /* ServiceSelectionView.swift in Sources */,
-				A0000006 /* DateTimePickerView.swift in Sources */,
-				A0000007 /* AddressInputView.swift in Sources */,
-				A0000008 /* PhotoUploadView.swift in Sources */,
-				A0000009 /* ConfirmationView.swift in Sources */,
 				A0000010 /* WelcomeViewModel.swift in Sources */,
 				A0000011 /* ServiceSelectionViewModel.swift in Sources */,
 				A0000012 /* DateTimePickerViewModel.swift in Sources */,
@@ -506,6 +505,7 @@
 				A0000018 /* ErrorView.swift in Sources */,
 				A0000019 /* SkeletonView.swift in Sources */,
 				A0000020 /* EmptyStateView.swift in Sources */,
+				CF19A58D2F41C60C007960A8 /* JobTrackingView.swift in Sources */,
 				A0000021 /* TrustComponents.swift in Sources */,
 				A0000022 /* ProgressiveDisclosureComponents.swift in Sources */,
 				A0000023 /* AnimationConstants.swift in Sources */,
@@ -513,13 +513,7 @@
 				A0000025 /* LocationManager.swift in Sources */,
 				A0000026 /* AccessibilityHelpers.swift in Sources */,
 				KCH6273DDE75A8449FD9F693 /* KeychainHelper.swift in Sources */,
-				A0000028 /* MainTabView.swift in Sources */,
-				A0000029 /* HomeView.swift in Sources */,
-				A0000030 /* MapAddressPickerView.swift in Sources */,
-				A0000031 /* OrdersView.swift in Sources */,
-				A0000032 /* ProfileView.swift in Sources */,
-				A0000033 /* ServiceSelectionRedesignView.swift in Sources */,
-				A0000034 /* EnhancedWelcomeView.swift in Sources */,
+				9C4365602D62A3A1AFC56F9E /* CustomerSocketManager.swift in Sources */,
 				6B2AB21B02F247EB1C77B2F3 /* APIModels.swift in Sources */,
 				596F12A23226F6D9277A0312 /* APIClient.swift in Sources */,
 				EE6ED07F2A53D504E2E75373 /* Config.swift in Sources */,
@@ -566,6 +560,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 24GH82AX9R;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -589,6 +584,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -630,6 +626,7 @@
 				COPY_PHASE_STRIP = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEPLOYMENT_POSTPROCESSING = YES;
+				DEVELOPMENT_TEAM = 24GH82AX9R;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -646,8 +643,7 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
-				STRIP_INSTALLED_PRODUCT = YES;
-				STRIP_SWIFT_SYMBOLS = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				VALIDATE_PRODUCT = YES;
@@ -663,7 +659,6 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "";
-				DEVELOPMENT_TEAM = 24GH82AX9R;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = JunkOS/Info.plist;
@@ -694,7 +689,6 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "";
-				DEVELOPMENT_TEAM = 24GH82AX9R;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = JunkOS/Info.plist;
@@ -738,6 +732,38 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		C08C55E036FA6195717B8C3E /* XCRemoteSwiftPackageReference "socket.io-client-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/socketio/socket.io-client-swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 16.1.1;
+			};
+		};
+		CF19A5862F40D68B007960A8 /* XCRemoteSwiftPackageReference "stripe-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/stripe/stripe-ios";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 25.6.2;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		F49FDC8DF4FBA9B367D765BF /* SocketIO */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C08C55E036FA6195717B8C3E /* XCRemoteSwiftPackageReference "socket.io-client-swift" */;
+			productName = SocketIO;
+		};
+		CF19A5872F40D68B007960A8 /* StripePaymentSheet */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = CF19A5862F40D68B007960A8 /* XCRemoteSwiftPackageReference "stripe-ios" */;
+			productName = StripePaymentSheet;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = G0000001 /* Project object */;
 }
