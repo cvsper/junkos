@@ -25,7 +25,6 @@
 		33B116E92E3F2A4C3480FE24 /* JunkOSDriverApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C14897C95FBADE41B4B75E28 /* JunkOSDriverApp.swift */; };
 		34C178E44B74FE2E6C1AC682 /* ActiveJobMapOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 344C45FBFECAA97F6CB507F5 /* ActiveJobMapOverlay.swift */; };
 		3542CF9944051485B6D25AFE /* RegistrationViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E4022AADB725ED1A37514F9 /* RegistrationViewModel.swift */; };
-		37EC0FCAB779630120B3C623 /* VolumeAdjustmentViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BB4C543B16861520B2D7C80 /* VolumeAdjustmentViewModel.swift */; };
 		38783044E1350D9A73D45656 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3988FAD16A2B52B69264800C /* Config.swift */; };
 		39DEA556224982280DB9CC88 /* TruckTypeSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1DC4D6D20A3CCC9709A404C /* TruckTypeSelectionView.swift */; };
 		3D564E63BD08DA8886FDA8AF /* EarningsModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6B51D6BBCBBEA9C72F356FB /* EarningsModels.swift */; };
@@ -33,24 +32,27 @@
 		4496E310971F560F7A2B8713 /* ProfileSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7CB288966F25A1F3987FC69 /* ProfileSettingsView.swift */; };
 		473C9CDB3A4B180A6F89BECC /* JobAlertOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 490C03AEE834921413337ABA /* JobAlertOverlay.swift */; };
 		4960C1A39CDFAFCC28BF11F5 /* OnlineToggleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C356D07B138BA8E0CE40F5 /* OnlineToggleView.swift */; };
-		4AA8544E326C39F151857289 /* InviteCodeStepView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18E9B0CBCF60C1EB2DF0B2BA /* InviteCodeStepView.swift */; };
 		4E8639A2456E077412D7C2B2 /* JobFeedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54CB44E65469A3687838FB24 /* JobFeedView.swift */; };
 		4F219CCBF09D2A91F8C8A08F /* DriverDesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 803F2EDEBF20C6218ADFA2CB /* DriverDesignSystem.swift */; };
 		5C4180CB8AE424D51E75FF1F /* HapticManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FCB1498666015B9BBBC1DF1 /* HapticManager.swift */; };
 		5E9FA33210F489FBB5632E05 /* SocketIOManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF8D49E5C00DA1F5B18B2699 /* SocketIOManager.swift */; };
 		60FCA470DEE7BC6DF3C2D582 /* ContractorRegistrationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3650D5429433D4FB66AA8423 /* ContractorRegistrationView.swift */; };
-		7292DDF7820943670D9C4D36 /* StripeConnectOnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B2559C4BC940385186AB071 /* StripeConnectOnboardingView.swift */; };
+		869A9EC1D8254773B7E89FE0 /* StripeConnectOnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0500796C1744D8972D8D46 /* StripeConnectOnboardingView.swift */; };
+		D4C3B2A1F0E9D8C7B6A5F4E3 /* InviteCodeStepView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3D4E5F6A7B8C9D0E1F2A3B4 /* InviteCodeStepView.swift */; };
+		E3D2C1B0A9F8E7D6C5B4A3F2 /* OperatorWebRedirectView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F6A7B8C9D0E1F2A3 /* OperatorWebRedirectView.swift */; };
+		F2E1D0C9B8A7F6E5D4C3B2A1 /* RoleSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6A7B8C9D0E1F2 /* RoleSelectionView.swift */; };
 		73B788CB2FFF7D35CBCB64A8 /* DashboardViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B6653495EF4591ACD6E5C9 /* DashboardViewModel.swift */; };
 		742D649EF5A5BF7294AC2428 /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63007B62EFC23A0A6757B294 /* DashboardView.swift */; };
 		82DEFA8055CC0754E1141F49 /* AfterPhotosView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AA0B3DB0C558CAF78DD76C4 /* AfterPhotosView.swift */; };
 		856766387D9F89422AAA08C5 /* JobCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2EEE2DA4D07D3F191694A55 /* JobCardView.swift */; };
 		8A8AA35036E08AF0A2BC5E83 /* EarningsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF238B4D85E70211F40A21F7 /* EarningsViewModel.swift */; };
-		8BBCE11D4D582E7D746F2E4F /* DriverOnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 928C74E7765B48CE6A718911 /* DriverOnboardingView.swift */; };
+		3A710C0CC51B4B828CA0EF98 /* StripeConnectViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 519F3BD4A8ED422E884771BF /* StripeConnectViewModel.swift */; };
 		94E7D38BBA06FB012C11B228 /* JobDetailViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80AE8F889AD33D7F0E337978 /* JobDetailViewModel.swift */; };
 		96A96F5462782462AEBCEBB0 /* SplashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 228E7D7E7644F745D1DAAFED /* SplashView.swift */; };
 		9A935658ADCF82A0A67E6CC0 /* EarningsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED5DECECC5344F008D376847 /* EarningsView.swift */; };
 		9E123249BC3A8E7EA11DF942 /* StatusBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABD336317A641FD03A7F918D /* StatusBadge.swift */; };
 		A2D1189B766041112EFD97FD /* AuthenticationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DEA402F6CECE2DD4CC76A0F /* AuthenticationManager.swift */; };
+		ONBOARD001234567890ABCDEF /* DriverOnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ONBOARD987654321FEDCBA00 /* DriverOnboardingView.swift */; };
 		A79407865044DF4EEDFA2AB5 /* DocumentUploadView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6FA3831A39891771A43D22D /* DocumentUploadView.swift */; };
 		AA3166875E6CBF7682E70C80 /* ConnectionStatusBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9204A9DB1C56DBF056E2E5EC /* ConnectionStatusBanner.swift */; };
 		AD64C2EE3E8FBB459A20B22E /* SocketIO in Frameworks */ = {isa = PBXBuildFile; productRef = 9192FFB37533E324867AE5D6 /* SocketIO */; };
@@ -60,17 +62,13 @@
 		BAD93C9DACE562D75D564204 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1FBC43CAFF78869678C21C3F /* Assets.xcassets */; };
 		BF70D9F10BFA3C3DE51E7908 /* PayoutSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24F8F8ADE1A72C73B582B02B /* PayoutSettingsView.swift */; };
 		C185F7208CF4AD483FB0D267 /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B635EA21FAAB5E8F8AC182AA /* NotificationManager.swift */; };
-		C440DD69A4F80D82F7D54855 /* StripeConnectViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6372D0ABD935A4BA919F1C8 /* StripeConnectViewModel.swift */; };
 		CB3DDC4640A48606B0591666 /* LocationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CF097D7D1B06883811BBF1A /* LocationManager.swift */; };
 		CD1DCEE1D0AB13C15EFCD4DE /* JobCompletionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9708A071501064F0B43DB279 /* JobCompletionView.swift */; };
-		CDAB0B258DCCB40E55DFBAB6 /* RoleSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FF356F775DBF636A95D89BA /* RoleSelectionView.swift */; };
-		D046B5278E68B23BC0235296 /* OperatorWebRedirectView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 603921AEAAE9211B5A00593C /* OperatorWebRedirectView.swift */; };
 		D14476790098FE934A99ED4A /* AnimationConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 672F85AEE329F15A6CC0C716 /* AnimationConstants.swift */; };
 		D34EE7A8BBE33ED6B72ABCEF /* AvailabilityScheduleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDBA8F8B87D1D52884F3E249 /* AvailabilityScheduleView.swift */; };
 		E0CE3BA170E2D3C662B69492 /* ContractorModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2E6817B24EDDB263AFA85CF /* ContractorModels.swift */; };
 		E1611BB4C43C44CE4183DDA7 /* QuickStatsCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19B60B02EDBC3F4047A2BD81 /* QuickStatsCard.swift */; };
 		E2802E3778DC622FD2129867 /* DriverTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9149614AAE2D78491B7C3059 /* DriverTabView.swift */; };
-		E369CFD6586407A2F2E466EA /* VolumeAdjustmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE9E48C43F8021E7F9080650 /* VolumeAdjustmentView.swift */; };
 		E5D3735C98C318A48111C440 /* JobModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC27DA7E685BE7675B0FB1 /* JobModels.swift */; };
 		E846E81BACDA70840792507E /* ActiveJobViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A445038901808240328233C0 /* ActiveJobViewModel.swift */; };
 		E8806EA1AE37848938F8D70C /* DriverAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AC42610087364CBEADF1B33 /* DriverAPIClient.swift */; };
@@ -82,9 +80,7 @@
 /* Begin PBXFileReference section */
 		00CF7F44684B3635D99E9F02 /* StarRating.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StarRating.swift; sourceTree = "<group>"; };
 		0AA0B3DB0C558CAF78DD76C4 /* AfterPhotosView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AfterPhotosView.swift; sourceTree = "<group>"; };
-		0B2559C4BC940385186AB071 /* StripeConnectOnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StripeConnectOnboardingView.swift; sourceTree = "<group>"; };
 		17D1EDD45EA760AA572801D2 /* DriverAnnotationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriverAnnotationView.swift; sourceTree = "<group>"; };
-		18E9B0CBCF60C1EB2DF0B2BA /* InviteCodeStepView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InviteCodeStepView.swift; sourceTree = "<group>"; };
 		19B60B02EDBC3F4047A2BD81 /* QuickStatsCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickStatsCard.swift; sourceTree = "<group>"; };
 		1B159DA9208AE40B64BFAC73 /* PriceBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PriceBadge.swift; sourceTree = "<group>"; };
 		1CA79264B8151B5CFA750F30 /* JunkOS-Driver.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = "JunkOS-Driver.app"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -94,11 +90,14 @@
 		24F8F8ADE1A72C73B582B02B /* PayoutSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PayoutSettingsView.swift; sourceTree = "<group>"; };
 		344C45FBFECAA97F6CB507F5 /* ActiveJobMapOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveJobMapOverlay.swift; sourceTree = "<group>"; };
 		3650D5429433D4FB66AA8423 /* ContractorRegistrationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContractorRegistrationView.swift; sourceTree = "<group>"; };
+		AA0500796C1744D8972D8D46 /* StripeConnectOnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StripeConnectOnboardingView.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F6A7B8C9D0E1F2 /* RoleSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoleSelectionView.swift; sourceTree = "<group>"; };
+		B2C3D4E5F6A7B8C9D0E1F2A3 /* OperatorWebRedirectView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OperatorWebRedirectView.swift; sourceTree = "<group>"; };
+		C3D4E5F6A7B8C9D0E1F2A3B4 /* InviteCodeStepView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InviteCodeStepView.swift; sourceTree = "<group>"; };
 		3988FAD16A2B52B69264800C /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
 		39B6653495EF4591ACD6E5C9 /* DashboardViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardViewModel.swift; sourceTree = "<group>"; };
 		3AC9DCA75B3DE3D624F8A427 /* AuthModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthModels.swift; sourceTree = "<group>"; };
 		3E4022AADB725ED1A37514F9 /* RegistrationViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegistrationViewModel.swift; sourceTree = "<group>"; };
-		3FF356F775DBF636A95D89BA /* RoleSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoleSelectionView.swift; sourceTree = "<group>"; };
 		47C356D07B138BA8E0CE40F5 /* OnlineToggleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnlineToggleView.swift; sourceTree = "<group>"; };
 		490C03AEE834921413337ABA /* JobAlertOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobAlertOverlay.swift; sourceTree = "<group>"; };
 		4D29936281490BE9C931F899 /* LiveMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveMapView.swift; sourceTree = "<group>"; };
@@ -106,25 +105,21 @@
 		54148D05F5465CFF5EB1F3CC /* AuthViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthViewModel.swift; sourceTree = "<group>"; };
 		54200844DD474F229259E177 /* JobStatusStepperView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobStatusStepperView.swift; sourceTree = "<group>"; };
 		54CB44E65469A3687838FB24 /* JobFeedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobFeedView.swift; sourceTree = "<group>"; };
-		603921AEAAE9211B5A00593C /* OperatorWebRedirectView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OperatorWebRedirectView.swift; sourceTree = "<group>"; };
 		63007B62EFC23A0A6757B294 /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
 		672F85AEE329F15A6CC0C716 /* AnimationConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnimationConstants.swift; sourceTree = "<group>"; };
-		7BB4C543B16861520B2D7C80 /* VolumeAdjustmentViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VolumeAdjustmentViewModel.swift; sourceTree = "<group>"; };
 		7CF097D7D1B06883811BBF1A /* LocationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationManager.swift; sourceTree = "<group>"; };
+		ONBOARD987654321FEDCBA00 /* DriverOnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriverOnboardingView.swift; sourceTree = "<group>"; };
 		803F2EDEBF20C6218ADFA2CB /* DriverDesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriverDesignSystem.swift; sourceTree = "<group>"; };
 		80AE8F889AD33D7F0E337978 /* JobDetailViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobDetailViewModel.swift; sourceTree = "<group>"; };
 		831F50402DD302638AD4EF32 /* AppRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRouter.swift; sourceTree = "<group>"; };
-		8D74268D761171C093876799 /* JunkOS-Driver.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "JunkOS-Driver.entitlements"; sourceTree = "<group>"; };
 		9149614AAE2D78491B7C3059 /* DriverTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriverTabView.swift; sourceTree = "<group>"; };
 		9204A9DB1C56DBF056E2E5EC /* ConnectionStatusBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionStatusBanner.swift; sourceTree = "<group>"; };
-		928C74E7765B48CE6A718911 /* DriverOnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriverOnboardingView.swift; sourceTree = "<group>"; };
 		94CEA3D9996C5038C6FCF4FA /* KeychainHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainHelper.swift; sourceTree = "<group>"; };
 		9708A071501064F0B43DB279 /* JobCompletionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobCompletionView.swift; sourceTree = "<group>"; };
 		9AC42610087364CBEADF1B33 /* DriverAPIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriverAPIClient.swift; sourceTree = "<group>"; };
 		9DEA402F6CECE2DD4CC76A0F /* AuthenticationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthenticationManager.swift; sourceTree = "<group>"; };
 		9F5425951FF88727F63532BA /* JobFeedViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobFeedViewModel.swift; sourceTree = "<group>"; };
 		A445038901808240328233C0 /* ActiveJobViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveJobViewModel.swift; sourceTree = "<group>"; };
-		A6372D0ABD935A4BA919F1C8 /* StripeConnectViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StripeConnectViewModel.swift; sourceTree = "<group>"; };
 		ABD336317A641FD03A7F918D /* StatusBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBadge.swift; sourceTree = "<group>"; };
 		B085FF75904906904989D302 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		B2EEE2DA4D07D3F191694A55 /* JobCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobCardView.swift; sourceTree = "<group>"; };
@@ -139,7 +134,6 @@
 		D074AC78D9277D0C00126A35 /* CameraPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraPickerView.swift; sourceTree = "<group>"; };
 		D1DC4D6D20A3CCC9709A404C /* TruckTypeSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TruckTypeSelectionView.swift; sourceTree = "<group>"; };
 		D6FA3831A39891771A43D22D /* DocumentUploadView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentUploadView.swift; sourceTree = "<group>"; };
-		DE9E48C43F8021E7F9080650 /* VolumeAdjustmentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VolumeAdjustmentView.swift; sourceTree = "<group>"; };
 		E12E32582549A882906AADC2 /* BeforePhotosView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BeforePhotosView.swift; sourceTree = "<group>"; };
 		E269A5BD9F9CDD622483E10C /* NavigateToJobView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigateToJobView.swift; sourceTree = "<group>"; };
 		E7CB288966F25A1F3987FC69 /* ProfileSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileSettingsView.swift; sourceTree = "<group>"; };
@@ -151,6 +145,7 @@
 		F3CEB980FB0B2AE4E5E91426 /* ActiveJobView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveJobView.swift; sourceTree = "<group>"; };
 		F412C09E80A444B74B8D3414 /* DistanceBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistanceBadge.swift; sourceTree = "<group>"; };
 		FF238B4D85E70211F40A21F7 /* EarningsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EarningsViewModel.swift; sourceTree = "<group>"; };
+		519F3BD4A8ED422E884771BF /* StripeConnectViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StripeConnectViewModel.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -174,7 +169,6 @@
 				9708A071501064F0B43DB279 /* JobCompletionView.swift */,
 				54200844DD474F229259E177 /* JobStatusStepperView.swift */,
 				E269A5BD9F9CDD622483E10C /* NavigateToJobView.swift */,
-				DE9E48C43F8021E7F9080650 /* VolumeAdjustmentView.swift */,
 			);
 			path = ActiveJob;
 			sourceTree = "<group>";
@@ -198,13 +192,12 @@
 				54148D05F5465CFF5EB1F3CC /* AuthViewModel.swift */,
 				39B6653495EF4591ACD6E5C9 /* DashboardViewModel.swift */,
 				FF238B4D85E70211F40A21F7 /* EarningsViewModel.swift */,
+				519F3BD4A8ED422E884771BF /* StripeConnectViewModel.swift */,
 				80AE8F889AD33D7F0E337978 /* JobDetailViewModel.swift */,
 				9F5425951FF88727F63532BA /* JobFeedViewModel.swift */,
 				F14A16027C1CA38C7BD4E4F7 /* LiveMapViewModel.swift */,
 				B38475343119CF6E9F5585E9 /* ProfileViewModel.swift */,
 				3E4022AADB725ED1A37514F9 /* RegistrationViewModel.swift */,
-				A6372D0ABD935A4BA919F1C8 /* StripeConnectViewModel.swift */,
-				7BB4C543B16861520B2D7C80 /* VolumeAdjustmentViewModel.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -276,7 +269,6 @@
 			isa = PBXGroup;
 			children = (
 				1FBC43CAFF78869678C21C3F /* Assets.xcassets */,
-				8D74268D761171C093876799 /* JunkOS-Driver.entitlements */,
 				C14897C95FBADE41B4B75E28 /* JunkOSDriverApp.swift */,
 				4DFFE93115C932ACD6706F02 /* Components */,
 				6A38FA0B2CA9712921C39C93 /* Config */,
@@ -305,16 +297,7 @@
 		A1350807EEEC7AE55C5B8F27 = {
 			isa = PBXGroup;
 			children = (
-				4DFFE93115C932ACD6706F02 /* Components */,
-				6A38FA0B2CA9712921C39C93 /* Config */,
-				761042F99BCA6B01B2D4DF4D /* Design */,
 				8D21F9779AE33AA444F56A39 /* JunkOS-Driver */,
-				9F9151FA6CF10BC3BAAA40B7 /* Managers */,
-				25139F93F81E700B63B6F1E2 /* Models */,
-				BB1F4C963C05906C2361DB9A /* Services */,
-				EC5CECDEE98C793847983943 /* Utilities */,
-				336EE321E5391E10A78DF6ED /* ViewModels */,
-				D96E06A3BE450C753EC755A4 /* Views */,
 				3B4C59482E265875675AEC66 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -343,7 +326,7 @@
 			isa = PBXGroup;
 			children = (
 				C6CC84B7BBA8C36ACEA14548 /* DriverAuthView.swift */,
-				928C74E7765B48CE6A718911 /* DriverOnboardingView.swift */,
+				ONBOARD987654321FEDCBA00 /* DriverOnboardingView.swift */,
 			);
 			path = Auth;
 			sourceTree = "<group>";
@@ -400,11 +383,11 @@
 			isa = PBXGroup;
 			children = (
 				3650D5429433D4FB66AA8423 /* ContractorRegistrationView.swift */,
+				AA0500796C1744D8972D8D46 /* StripeConnectOnboardingView.swift */,
 				D6FA3831A39891771A43D22D /* DocumentUploadView.swift */,
-				18E9B0CBCF60C1EB2DF0B2BA /* InviteCodeStepView.swift */,
-				603921AEAAE9211B5A00593C /* OperatorWebRedirectView.swift */,
-				3FF356F775DBF636A95D89BA /* RoleSelectionView.swift */,
-				0B2559C4BC940385186AB071 /* StripeConnectOnboardingView.swift */,
+				C3D4E5F6A7B8C9D0E1F2A3B4 /* InviteCodeStepView.swift */,
+				B2C3D4E5F6A7B8C9D0E1F2A3 /* OperatorWebRedirectView.swift */,
+				A1B2C3D4E5F6A7B8C9D0E1F2 /* RoleSelectionView.swift */,
 				D1DC4D6D20A3CCC9709A404C /* TruckTypeSelectionView.swift */,
 			);
 			path = Registration;
@@ -513,6 +496,10 @@
 				AA3166875E6CBF7682E70C80 /* ConnectionStatusBanner.swift in Sources */,
 				E0CE3BA170E2D3C662B69492 /* ContractorModels.swift in Sources */,
 				60FCA470DEE7BC6DF3C2D582 /* ContractorRegistrationView.swift in Sources */,
+				869A9EC1D8254773B7E89FE0 /* StripeConnectOnboardingView.swift in Sources */,
+				D4C3B2A1F0E9D8C7B6A5F4E3 /* InviteCodeStepView.swift in Sources */,
+				E3D2C1B0A9F8E7D6C5B4A3F2 /* OperatorWebRedirectView.swift in Sources */,
+				F2E1D0C9B8A7F6E5D4C3B2A1 /* RoleSelectionView.swift in Sources */,
 				742D649EF5A5BF7294AC2428 /* DashboardView.swift in Sources */,
 				73B788CB2FFF7D35CBCB64A8 /* DashboardViewModel.swift in Sources */,
 				07D3D958F6EC6B2561F6FEAA /* DistanceBadge.swift in Sources */,
@@ -521,15 +508,15 @@
 				14790A1C6E4BF7984B5FF3E4 /* DriverAnnotationView.swift in Sources */,
 				B9EF3DD412FA186F53E44D22 /* DriverAuthView.swift in Sources */,
 				4F219CCBF09D2A91F8C8A08F /* DriverDesignSystem.swift in Sources */,
-				8BBCE11D4D582E7D746F2E4F /* DriverOnboardingView.swift in Sources */,
+				ONBOARD001234567890ABCDEF /* DriverOnboardingView.swift in Sources */,
 				E2802E3778DC622FD2129867 /* DriverTabView.swift in Sources */,
 				3D564E63BD08DA8886FDA8AF /* EarningsModels.swift in Sources */,
 				9A935658ADCF82A0A67E6CC0 /* EarningsView.swift in Sources */,
 				8A8AA35036E08AF0A2BC5E83 /* EarningsViewModel.swift in Sources */,
+				3A710C0CC51B4B828CA0EF98 /* StripeConnectViewModel.swift in Sources */,
 				29EE5336D11165A1FC0ABC1B /* EmptyStateView.swift in Sources */,
 				5C4180CB8AE424D51E75FF1F /* HapticManager.swift in Sources */,
 				16B71C5163B965FBDF945A5C /* ImageUploadService.swift in Sources */,
-				4AA8544E326C39F151857289 /* InviteCodeStepView.swift in Sources */,
 				473C9CDB3A4B180A6F89BECC /* JobAlertOverlay.swift in Sources */,
 				856766387D9F89422AAA08C5 /* JobCardView.swift in Sources */,
 				CD1DCEE1D0AB13C15EFCD4DE /* JobCompletionView.swift in Sources */,
@@ -547,23 +534,17 @@
 				B03F09EC14CA94ED5F570AEB /* NavigateToJobView.swift in Sources */,
 				C185F7208CF4AD483FB0D267 /* NotificationManager.swift in Sources */,
 				4960C1A39CDFAFCC28BF11F5 /* OnlineToggleView.swift in Sources */,
-				D046B5278E68B23BC0235296 /* OperatorWebRedirectView.swift in Sources */,
 				BF70D9F10BFA3C3DE51E7908 /* PayoutSettingsView.swift in Sources */,
 				F361D5D58D022CB9B931D03E /* PriceBadge.swift in Sources */,
 				4496E310971F560F7A2B8713 /* ProfileSettingsView.swift in Sources */,
 				17369207B2CC0E1488DEB91E /* ProfileViewModel.swift in Sources */,
 				E1611BB4C43C44CE4183DDA7 /* QuickStatsCard.swift in Sources */,
 				3542CF9944051485B6D25AFE /* RegistrationViewModel.swift in Sources */,
-				CDAB0B258DCCB40E55DFBAB6 /* RoleSelectionView.swift in Sources */,
 				5E9FA33210F489FBB5632E05 /* SocketIOManager.swift in Sources */,
 				96A96F5462782462AEBCEBB0 /* SplashView.swift in Sources */,
 				2A3FF2C1D2D3EEB79385B548 /* StarRating.swift in Sources */,
 				9E123249BC3A8E7EA11DF942 /* StatusBadge.swift in Sources */,
-				7292DDF7820943670D9C4D36 /* StripeConnectOnboardingView.swift in Sources */,
-				C440DD69A4F80D82F7D54855 /* StripeConnectViewModel.swift in Sources */,
 				39DEA556224982280DB9CC88 /* TruckTypeSelectionView.swift in Sources */,
-				E369CFD6586407A2F2E466EA /* VolumeAdjustmentView.swift in Sources */,
-				37EC0FCAB779630120B3C623 /* VolumeAdjustmentViewModel.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -574,15 +555,12 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_ENTITLEMENTS = "JunkOS-Driver.entitlements";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 24GH82AX9R;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_GENERATION_MODE = GeneratedFile;
-				INFOPLIST_KEY_CFBundleDisplayName = "Umuve Pro";
 				INFOPLIST_KEY_CFBundleIconName = AppIcon;
-				INFOPLIST_KEY_CFBundleName = "Umuve Pro";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Umuve Pro needs camera access to take before and after photos of job sites.";
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Umuve Pro needs continuous location access to track your position during active jobs.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Umuve Pro needs your location to show you nearby jobs and share your position with customers.";
@@ -607,15 +585,12 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_ENTITLEMENTS = "JunkOS-Driver.entitlements";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 24GH82AX9R;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_GENERATION_MODE = GeneratedFile;
-				INFOPLIST_KEY_CFBundleDisplayName = "Umuve Pro";
 				INFOPLIST_KEY_CFBundleIconName = AppIcon;
-				INFOPLIST_KEY_CFBundleName = "Umuve Pro";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Umuve Pro needs camera access to take before and after photos of job sites.";
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Umuve Pro needs continuous location access to track your position during active jobs.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Umuve Pro needs your location to show you nearby jobs and share your position with customers.";

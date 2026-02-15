@@ -42,6 +42,8 @@ targets:
         INFOPLIST_KEY_UILaunchScreen_Generation: true
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: UIInterfaceOrientationPortrait
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+        INFOPLIST_KEY_CFBundleDisplayName: "Umuve Pro"
+        INFOPLIST_KEY_CFBundleName: "Umuve Pro"
         INFOPLIST_KEY_CFBundleIconName: AppIcon
         INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: "Umuve Pro needs your location to show you nearby jobs and share your position with customers."
         INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription: "Umuve Pro needs continuous location access to track your position during active jobs."
