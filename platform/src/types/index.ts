@@ -138,6 +138,9 @@ export interface BookingFormData {
   notes: string;
   estimatedPrice: number;
   promo_code?: string;
+  customerName?: string;
+  customerEmail?: string;
+  customerPhone?: string;
 }
 
 // Tracking types

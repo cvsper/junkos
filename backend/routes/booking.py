@@ -16,10 +16,10 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from models import (
-    db, Job, Payment, PricingRule, PricingConfig, SurgeZone, Contractor,
+    db, User, Job, Payment, PricingRule, PricingConfig, SurgeZone, Contractor,
     Notification, PromoCode, generate_uuid, utcnow, generate_referral_code,
 )
-from auth_routes import require_auth
+from auth_routes import require_auth, optional_auth
 from extensions import limiter
 from geofencing import is_in_service_area
 
@@ -466,7 +466,7 @@ def estimate():
 # POST /api/booking  (auth required)
 # ---------------------------------------------------------------------------
 @booking_bp.route("", methods=["POST"])
-@require_auth
+@optional_auth
 def create_booking(user_id):
     """
     Create a new job / booking.
@@ -556,6 +556,36 @@ def create_booking(user_id):
         total = round(total - discount, 2)
         # Increment use count
         promo.use_count = (promo.use_count or 0) + 1
+
+    # --- Resolve customer (auth user or guest) ---
+    if not user_id:
+        guest_email = (data.get("customerEmail") or "").strip().lower()
+        guest_name = (data.get("customerName") or "").strip()
+        guest_phone = (data.get("customerPhone") or "").strip()
+
+        if not guest_email:
+            return jsonify({"error": "Email is required for guest checkout"}), 400
+
+        # Find existing user by email, or create a guest record
+        existing = User.query.filter_by(email=guest_email).first()
+        if existing:
+            user_id = existing.id
+            # Update name/phone if not already set
+            if guest_name and not existing.name:
+                existing.name = guest_name
+            if guest_phone and not existing.phone:
+                existing.phone = guest_phone
+        else:
+            guest_user = User(
+                id=generate_uuid(),
+                email=guest_email,
+                name=guest_name or None,
+                phone=guest_phone or None,
+                role="customer",
+            )
+            db.session.add(guest_user)
+            db.session.flush()
+            user_id = guest_user.id
 
     # --- Create Job ---
     job = Job(

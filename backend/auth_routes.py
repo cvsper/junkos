@@ -166,6 +166,19 @@ def require_auth(f):
         return f(user_id=user_id, *args, **kwargs)
     return decorated_function
 
+
+def optional_auth(f):
+    """Decorator that passes user_id if authenticated, None otherwise."""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        token = request.headers.get('Authorization', '').replace('Bearer ', '')
+        user_id = verify_token(token) if token else None
+        if user_id:
+            if user_id not in users_db and not db.session.get(User, user_id):
+                user_id = None
+        return f(user_id=user_id, *args, **kwargs)
+    return decorated_function
+
 # MARK: - Phone Authentication Routes
 
 @auth_bp.route('/send-code', methods=['POST'])

@@ -293,8 +293,7 @@ def create_simple_payment_intent():
 
 @payments_bp.route("/confirm-simple", methods=["POST"])
 @limiter.limit("10 per minute")
-@require_auth
-def confirm_simple_payment(user_id):
+def confirm_simple_payment():
     """
     Confirm / mark a payment as succeeded (for customer portal / iOS app).
     Validates the PaymentIntent status against Stripe before marking as paid.

@@ -211,6 +211,9 @@ function PaymentFormInner() {
           notes,
           estimatedPrice: finalPrice,
           ...(promoApplied ? { promo_code: appliedPromoCode } : {}),
+          customerName: payerName,
+          customerEmail: payerEmail,
+          customerPhone: payerPhone,
         });
 
         const newBookingId = bookingResult.id || generateBookingId();
@@ -382,6 +385,9 @@ function PaymentFormInner() {
         notes,
         estimatedPrice: finalPrice,
         ...(promoApplied ? { promo_code: appliedPromoCode } : {}),
+        customerName: name.trim(),
+        customerEmail: email.trim(),
+        customerPhone: phone.trim(),
       });
 
       const newBookingId = bookingResult.id || generateBookingId();
