@@ -78,6 +78,22 @@ COLUMN_MIGRATIONS = [
     ("jobs", "cancelled_at", "DATETIME", "TIMESTAMP", "NULL"),
     ("jobs", "cancellation_fee", "FLOAT", "FLOAT", "0.0"),
     ("jobs", "rescheduled_count", "INTEGER", "INTEGER", "0"),
+
+    # Job confirmation & volume adjustment (added 2026-02-17)
+    ("jobs", "confirmation_code", "VARCHAR(8)", "VARCHAR(8)", "NULL"),
+    ("jobs", "volume_adjustment_proposed", "BOOLEAN", "BOOLEAN", "0"),
+    ("jobs", "adjusted_volume", "FLOAT", "FLOAT", "NULL"),
+    ("jobs", "adjusted_price", "FLOAT", "FLOAT", "NULL"),
+    ("jobs", "volume_estimate", "FLOAT", "FLOAT", "NULL"),
+    ("jobs", "volume_price", "FLOAT", "FLOAT", "0.0"),
+    ("jobs", "item_total", "FLOAT", "FLOAT", "0.0"),
+
+    # Payment fields (added 2026-02-17)
+    ("payments", "driver_payout_amount", "FLOAT", "FLOAT", "0.0"),
+    ("payments", "payout_status", "VARCHAR(30)", "VARCHAR(30)", "'pending'"),
+    ("payments", "payment_status", "VARCHAR(30)", "VARCHAR(30)", "'pending'"),
+    ("payments", "tip_amount", "FLOAT", "FLOAT", "0.0"),
+    ("payments", "commission", "FLOAT", "FLOAT", "0.0"),
 ]
 
 
