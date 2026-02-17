@@ -588,7 +588,7 @@ function PaymentFormInner() {
                 paymentRequest,
                 style: {
                   paymentRequestButton: {
-                    type: "default",
+                    type: "buy",
                     theme: "dark",
                     height: "48px",
                   },
