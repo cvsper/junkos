@@ -101,9 +101,9 @@ export function Step5Estimate() {
 
     try {
       const response = await bookingApi.estimate(items, address);
-      setBreakdown(response.breakdown);
-      setTotal(response.estimatedPrice);
-      setEstimatedPrice(response.estimatedPrice);
+      setBreakdown(response.breakdown || []);
+      setTotal(response.estimatedPrice || 0);
+      setEstimatedPrice(response.estimatedPrice || 0);
     } catch {
       // Fallback pricing
       const fallback = calculateFallbackPrice(category, quantity);

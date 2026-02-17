@@ -257,12 +257,48 @@ interface EstimateResponse {
   breakdown: { label: string; amount: number }[];
 }
 
+interface RawEstimateResponse {
+  success: boolean;
+  estimate: {
+    items_subtotal: number;
+    items: { category: string; quantity: number; unit_price: number; line_total: number }[];
+    volume_discount: number;
+    volume_discount_label: string;
+    surge_amount: number;
+    surge_reasons: string[];
+    base_price: number;
+    service_fee: number;
+    total: number;
+    minimum_applied: boolean;
+    minimum_job_price: number;
+  };
+}
+
 export const bookingApi = {
-  estimate: (items: JobItem[], address: Partial<Address>) =>
-    apiFetch<EstimateResponse>("/api/booking/estimate", {
+  estimate: async (items: JobItem[], address: Partial<Address>): Promise<EstimateResponse> => {
+    const raw = await apiFetch<RawEstimateResponse>("/api/booking/estimate", {
       method: "POST",
       body: JSON.stringify({ items, address } satisfies EstimateRequest),
-    }),
+    });
+    const est = raw.estimate;
+    const breakdown: { label: string; amount: number }[] = [
+      { label: "Items Subtotal", amount: est.items_subtotal },
+    ];
+    if (est.volume_discount > 0) {
+      breakdown.push({ label: est.volume_discount_label || "Volume Discount", amount: -est.volume_discount });
+    }
+    if (est.surge_amount > 0) {
+      breakdown.push({ label: `Surge (${est.surge_reasons.join(", ")})`, amount: est.surge_amount });
+    }
+    breakdown.push({ label: "Service Fee", amount: est.service_fee });
+    if (est.minimum_applied) {
+      const diff = est.total - (est.base_price + est.service_fee + est.surge_amount);
+      if (diff > 0) {
+        breakdown.push({ label: "Minimum Adjustment", amount: diff });
+      }
+    }
+    return { estimatedPrice: est.total, breakdown };
+  },
 
   submit: (bookingData: BookingFormData) =>
     apiFetch<Job>("/api/booking", {
