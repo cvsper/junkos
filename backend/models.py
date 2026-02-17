@@ -830,3 +830,42 @@ class Review(db.Model):
             "customer_name": self.customer.name if self.customer else None,
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }
+
+
+
+# ---------------------------------------------------------------------------
+# OperatorApplication (landing page operator signup form)
+# ---------------------------------------------------------------------------
+class OperatorApplication(db.Model):
+    __tablename__ = "operator_applications"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    first_name = Column(String(255), nullable=False)
+    last_name = Column(String(255), nullable=False)
+    email = Column(String(255), nullable=False, index=True)
+    phone = Column(String(20), nullable=False)
+    city = Column(String(100), nullable=False)
+    trucks = Column(String(20), nullable=True)
+    experience = Column(String(50), nullable=True)
+    status = Column(String(20), nullable=False, default="pending")  # pending, approved, rejected
+    rejection_reason = Column(Text, nullable=True)
+    notes = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=utcnow)
+    updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "first_name": self.first_name,
+            "last_name": self.last_name,
+            "email": self.email,
+            "phone": self.phone,
+            "city": self.city,
+            "trucks": self.trucks,
+            "experience": self.experience,
+            "status": self.status,
+            "rejection_reason": self.rejection_reason,
+            "notes": self.notes,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
