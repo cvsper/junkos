@@ -54,7 +54,7 @@ COLUMN_MIGRATIONS = [
     ("jobs", "delegated_at", "DATETIME", "TIMESTAMP", "NULL"),
 
     # Contractor table
-    ("contractors", "is_operator", "BOOLEAN", "BOOLEAN", "0"),
+    ("contractors", "is_operator", "BOOLEAN", "BOOLEAN", "FALSE"),
     ("contractors", "operator_id", "VARCHAR(36)", "VARCHAR(36)", "NULL"),
     ("contractors", "operator_commission_rate", "FLOAT", "FLOAT", "0.15"),
 
@@ -81,7 +81,7 @@ COLUMN_MIGRATIONS = [
 
     # Job confirmation & volume adjustment (added 2026-02-17)
     ("jobs", "confirmation_code", "VARCHAR(8)", "VARCHAR(8)", "NULL"),
-    ("jobs", "volume_adjustment_proposed", "BOOLEAN", "BOOLEAN", "0"),
+    ("jobs", "volume_adjustment_proposed", "BOOLEAN", "BOOLEAN", "FALSE"),
     ("jobs", "adjusted_volume", "FLOAT", "FLOAT", "NULL"),
     ("jobs", "adjusted_price", "FLOAT", "FLOAT", "NULL"),
     ("jobs", "volume_estimate", "FLOAT", "FLOAT", "NULL"),
