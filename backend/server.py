@@ -13,7 +13,7 @@ from database import Database
 from auth_routes import auth_bp
 from models import db as sqlalchemy_db
 from socket_events import socketio
-from routes import drivers_bp, pricing_bp, ratings_bp, admin_bp, payments_bp, webhook_bp, booking_bp, upload_bp, jobs_bp, tracking_bp, driver_bp, operator_bp, push_bp, service_area_bp, recurring_bp, referrals_bp, support_bp, chat_bp, onboarding_bp, promos_bp, reviews_bp
+from routes import drivers_bp, pricing_bp, ratings_bp, admin_bp, payments_bp, webhook_bp, booking_bp, upload_bp, jobs_bp, tracking_bp, driver_bp, operator_bp, push_bp, service_area_bp, recurring_bp, referrals_bp, support_bp, chat_bp, onboarding_bp, promos_bp, reviews_bp, operator_applications_bp
 
 # ---------------------------------------------------------------------------
 # Sentry error monitoring (optional -- only active when SENTRY_DSN is set)
@@ -166,6 +166,7 @@ app.register_blueprint(chat_bp)
 app.register_blueprint(onboarding_bp)
 app.register_blueprint(promos_bp)
 app.register_blueprint(reviews_bp)
+app.register_blueprint(operator_applications_bp)
 
 # ---------------------------------------------------------------------------
 # Input sanitization middleware (XSS / injection prevention)
@@ -218,10 +219,21 @@ def set_security_headers(response):
 
 
 # ---------------------------------------------------------------------------
-# Create all SQLAlchemy tables on startup
+# Create all SQLAlchemy tables on startup + run pending migrations
 # ---------------------------------------------------------------------------
 with app.app_context():
     sqlalchemy_db.create_all()
+    # Run column migrations for existing tables (create_all only creates new tables)
+    try:
+        from migrate import run_migrations
+        _migration_url = app.config["SQLALCHEMY_DATABASE_URI"]
+        _actions = run_migrations(_migration_url)
+        _applied = [a for a in _actions if "Added" in a or "Created table" in a]
+        if _applied:
+            for _a in _applied:
+                app.logger.info("Migration: %s", _a)
+    except Exception as _e:
+        app.logger.warning("Auto-migration failed (non-fatal): %s", _e)
 
 # ---------------------------------------------------------------------------
 # Background scheduler (recurring jobs, pickup reminders)
