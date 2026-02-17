@@ -317,10 +317,14 @@ def run_migrate_endpoint(secret):
     """Temporary migration endpoint secured by URL secret. Remove after use."""
     if secret != "umuve-migrate-2026-feb":
         return jsonify({"error": "Forbidden"}), 403
-    from migrate import run_migrations
-    url = app.config["SQLALCHEMY_DATABASE_URI"]
-    actions = run_migrations(url)
-    return jsonify({"success": True, "actions": actions}), 200
+    try:
+        from migrate import run_migrations
+        url = app.config["SQLALCHEMY_DATABASE_URI"]
+        actions = run_migrations(url)
+        return jsonify({"success": True, "actions": actions}), 200
+    except Exception as exc:
+        import traceback
+        return jsonify({"error": str(exc), "trace": traceback.format_exc()}), 500
 
 
 @app.route("/api/services", methods=["GET"])
