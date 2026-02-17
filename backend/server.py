@@ -219,21 +219,10 @@ def set_security_headers(response):
 
 
 # ---------------------------------------------------------------------------
-# Create all SQLAlchemy tables on startup + run pending migrations
+# Create all SQLAlchemy tables on startup
 # ---------------------------------------------------------------------------
 with app.app_context():
     sqlalchemy_db.create_all()
-    # Run column migrations for existing tables (create_all only creates new tables)
-    try:
-        from migrate import run_migrations
-        _migration_url = app.config["SQLALCHEMY_DATABASE_URI"]
-        _actions = run_migrations(_migration_url)
-        _applied = [a for a in _actions if "Added" in a or "Created table" in a]
-        if _applied:
-            for _a in _applied:
-                app.logger.info("Migration: %s", _a)
-    except Exception as _e:
-        app.logger.warning("Auto-migration failed (non-fatal): %s", _e)
 
 # ---------------------------------------------------------------------------
 # Background scheduler (recurring jobs, pickup reminders)
@@ -320,6 +309,18 @@ def get_available_time_slots(requested_date=None):
 def health_check():
     """Health check endpoint (exempt from rate limiting)"""
     return jsonify({"status": "healthy", "service": "Umuve API"}), 200
+
+
+@app.route("/api/run-migrate/<secret>", methods=["POST"])
+@limiter.exempt
+def run_migrate_endpoint(secret):
+    """Temporary migration endpoint secured by URL secret. Remove after use."""
+    if secret != "umuve-migrate-2026-feb":
+        return jsonify({"error": "Forbidden"}), 403
+    from migrate import run_migrations
+    url = app.config["SQLALCHEMY_DATABASE_URI"]
+    actions = run_migrations(url)
+    return jsonify({"success": True, "actions": actions}), 200
 
 
 @app.route("/api/services", methods=["GET"])
