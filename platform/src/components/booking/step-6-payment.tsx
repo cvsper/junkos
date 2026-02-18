@@ -216,7 +216,8 @@ function PaymentFormInner() {
           customerPhone: payerPhone,
         });
 
-        const newBookingId = bookingResult.id || generateBookingId();
+        const rawResult = bookingResult as unknown as Record<string, Record<string, unknown>>;
+      const newBookingId = (rawResult.job?.id as string) || bookingResult.id || generateBookingId();
 
         // 2. Create payment intent
         const piResult = await paymentsApi.createIntent(
@@ -390,7 +391,8 @@ function PaymentFormInner() {
         customerPhone: phone.trim(),
       });
 
-      const newBookingId = bookingResult.id || generateBookingId();
+      const rawResult = bookingResult as unknown as Record<string, Record<string, unknown>>;
+      const newBookingId = (rawResult.job?.id as string) || bookingResult.id || generateBookingId();
 
       // 2. Create payment intent on the server
       const paymentIntentResult = await paymentsApi.createIntent(
