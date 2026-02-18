@@ -23,6 +23,7 @@ import {
   Tag,
   X,
 } from "lucide-react";
+import { trackBookingConversion } from "@/components/analytics";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -264,6 +265,7 @@ function PaymentFormInner() {
         // Extract confirmation code from nested job response
         const jobData = (bookingResult as unknown as Record<string, unknown>).job as Record<string, unknown> | undefined;
         setConfirmationCode((jobData?.confirmation_code as string) || "");
+        trackBookingConversion({ bookingId: newBookingId, value: finalPrice / 100 });
         setIsSuccess(true);
       } catch (err) {
         ev.complete("fail");
@@ -436,6 +438,7 @@ function PaymentFormInner() {
       // Extract confirmation code from nested job response
       const jobData = (bookingResult as unknown as Record<string, unknown>).job as Record<string, unknown> | undefined;
       setConfirmationCode((jobData?.confirmation_code as string) || "");
+      trackBookingConversion({ bookingId: newBookingId, value: finalPrice / 100 });
       setIsSuccess(true);
     } catch (err) {
       const message =
