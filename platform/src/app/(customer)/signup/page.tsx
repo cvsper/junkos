@@ -1,34 +1,59 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/stores/auth-store";
 import { authApi, ApiError } from "@/lib/api";
 import type { User } from "@/types";
 
-export default function CustomerLoginPage() {
+export default function CustomerSignupPage() {
+  return (
+    <Suspense>
+      <SignupForm />
+    </Suspense>
+  );
+}
+
+function SignupForm() {
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const referralCode = searchParams.get("ref") || "";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
-    try {
-      const response = await authApi.login(email, password);
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters.");
+      setLoading(false);
+      return;
+    }
 
-      // Map the backend user response to the frontend User type.
-      // The backend may not return all User fields, so we fill in defaults.
+    try {
+      const response = await authApi.signup(
+        email,
+        password,
+        name,
+        phone,
+        referralCode || undefined
+      );
+
       const mappedUser: User = {
         id: response.user.id,
         email: response.user.email,
         name: response.user.name || "",
-        phone: (response.user as unknown as { phoneNumber?: string }).phoneNumber || response.user.phone || "",
+        phone:
+          (response.user as unknown as { phoneNumber?: string }).phoneNumber ||
+          response.user.phone ||
+          "",
         role: "customer" as const,
         emailVerified: true,
         createdAt: response.user.createdAt || "",
@@ -55,9 +80,13 @@ export default function CustomerLoginPage() {
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="text-center mb-8">
-          <img src="/logo-login.png" alt="Umuve — Hauling made simple" className="h-36 w-auto object-contain mx-auto mb-4" />
+          <img
+            src="/logo-login.png"
+            alt="Umuve — Hauling made simple"
+            className="h-36 w-auto object-contain mx-auto mb-4"
+          />
           <p className="text-muted-foreground text-sm mt-1">
-            Sign in to your account
+            Create your account
           </p>
         </div>
 
@@ -68,8 +97,26 @@ export default function CustomerLoginPage() {
           </div>
         )}
 
-        {/* Login Form */}
+        {/* Signup Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label
+              htmlFor="name"
+              className="block text-sm font-medium mb-1.5"
+            >
+              Full Name
+            </label>
+            <input
+              id="name"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="John Doe"
+              required
+              className="w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-colors"
+            />
+          </div>
+
           <div>
             <label
               htmlFor="email"
@@ -90,6 +137,23 @@ export default function CustomerLoginPage() {
 
           <div>
             <label
+              htmlFor="phone"
+              className="block text-sm font-medium mb-1.5"
+            >
+              Phone Number
+            </label>
+            <input
+              id="phone"
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="(555) 123-4567"
+              className="w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-colors"
+            />
+          </div>
+
+          <div>
+            <label
               htmlFor="password"
               className="block text-sm font-medium mb-1.5"
             >
@@ -100,8 +164,9 @@ export default function CustomerLoginPage() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter your password"
+              placeholder="At least 6 characters"
               required
+              minLength={6}
               className="w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-colors"
             />
           </div>
@@ -133,18 +198,18 @@ export default function CustomerLoginPage() {
                 />
               </svg>
             )}
-            {loading ? "Signing in..." : "Sign In"}
+            {loading ? "Creating account..." : "Create Account"}
           </button>
         </form>
 
-        {/* Sign Up Link */}
+        {/* Sign In Link */}
         <p className="mt-6 text-center text-sm text-muted-foreground">
-          Don&apos;t have an account?{" "}
+          Already have an account?{" "}
           <Link
-            href="/signup"
+            href="/login"
             className="font-medium text-primary hover:text-primary/80 transition-colors"
           >
-            Sign up
+            Sign in
           </Link>
         </p>
 

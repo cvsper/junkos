@@ -91,12 +91,20 @@ export default function CustomerLayout({
                 </button>
               </>
             ) : (
-              <Link
-                href="/login"
-                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Sign In
-              </Link>
+              <>
+                <Link
+                  href="/login"
+                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  href="/signup"
+                  className="text-sm font-medium text-primary-foreground bg-primary px-3 py-1.5 rounded-lg hover:bg-primary/90 transition-colors"
+                >
+                  Sign Up
+                </Link>
+              </>
             )}
           </div>
         </nav>

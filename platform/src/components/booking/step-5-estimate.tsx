@@ -258,4 +258,4 @@ function SummaryRow({
   );
 }
 
-Step5Estimate.validate = (): boolean => false;
+Step5Estimate.validate = (): boolean => true;

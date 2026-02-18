@@ -13,17 +13,9 @@ export default function BookError({
         <h2 className="text-lg font-bold text-destructive">
           Booking Page Error
         </h2>
-        <pre className="text-sm text-destructive/80 whitespace-pre-wrap break-words bg-destructive/5 rounded p-3 border border-destructive/20">
-          {error.message}
-        </pre>
-        {error.stack && (
-          <details className="text-xs text-muted-foreground">
-            <summary className="cursor-pointer">Stack trace</summary>
-            <pre className="mt-2 whitespace-pre-wrap break-words">
-              {error.stack}
-            </pre>
-          </details>
-        )}
+        <p className="text-sm text-destructive/80">
+          Something went wrong loading the booking page. Please try again.
+        </p>
         <button
           onClick={reset}
           className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium"
