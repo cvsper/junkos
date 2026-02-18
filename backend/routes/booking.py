@@ -486,13 +486,22 @@ def create_booking(user_id):
     if not data:
         return jsonify({"error": "Request body is required"}), 400
 
-    # --- Validate required fields ---
+    # --- Validate required fields (accept both camelCase and snake_case) ---
     address = data.get("address")
+    if isinstance(address, dict):
+        # Frontend sends address as object — flatten to string
+        lat = address.get("lat") or data.get("lat")
+        lng = address.get("lng") or data.get("lng")
+        address = address.get("street") or address.get("formatted") or ", ".join(
+            v for v in [address.get("street"), address.get("city"),
+                        address.get("state"), address.get("zip")] if v
+        )
+    else:
+        lat = data.get("lat")
+        lng = data.get("lng")
+
     if not address:
         return jsonify({"error": "address is required"}), 400
-
-    lat = data.get("lat")
-    lng = data.get("lng")
 
     # --- Service area geofence check ---
     if lat is not None and lng is not None:
@@ -509,7 +518,7 @@ def create_booking(user_id):
     if not items or not isinstance(items, list):
         return jsonify({"error": "items array is required"}), 400
 
-    estimated_price = data.get("estimated_price")
+    estimated_price = data.get("estimated_price") or data.get("estimatedPrice")
     if estimated_price is None:
         return jsonify({"error": "estimated_price is required"}), 400
 
@@ -518,10 +527,17 @@ def create_booking(user_id):
     except (TypeError, ValueError):
         return jsonify({"error": "estimated_price must be a number"}), 400
 
-    # Parse scheduled datetime
+    # Parse scheduled datetime (accept camelCase from web frontend)
     scheduled_at = None
-    scheduled_date = data.get("scheduled_date")
-    scheduled_time = data.get("scheduled_time", "09:00")
+    scheduled_date = data.get("scheduled_date") or data.get("scheduledDate")
+    scheduled_time = data.get("scheduled_time") or data.get("scheduledTimeSlot") or "09:00"
+    # Convert time slot ranges (e.g. "8-10") to HH:MM start time
+    if scheduled_time and "-" in scheduled_time and ":" not in scheduled_time:
+        try:
+            start_hour = int(scheduled_time.split("-")[0])
+            scheduled_time = "{:02d}:00".format(start_hour)
+        except (ValueError, IndexError):
+            scheduled_time = "09:00"
     if scheduled_date:
         try:
             scheduled_at = datetime.strptime(
