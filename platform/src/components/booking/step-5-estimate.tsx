@@ -7,6 +7,7 @@ import {
   Package,
   Loader2,
   AlertTriangle,
+  Sparkles,
 } from "lucide-react";
 import { useBookingStore } from "@/stores/booking-store";
 import { bookingApi } from "@/lib/api";
@@ -83,6 +84,7 @@ export function Step5Estimate() {
     scheduledDate,
     scheduledTimeSlot,
     setEstimatedPrice,
+    aiAnalysis,
   } = useBookingStore();
 
   const [breakdown, setBreakdown] = useState<PriceBreakdown[]>([]);
@@ -163,6 +165,32 @@ export function Step5Estimate() {
           />
         </div>
       </div>
+
+      {/* AI Volume Estimate */}
+      {aiAnalysis && (
+        <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-2">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-primary" />
+            <h3 className="text-sm font-semibold text-primary">AI Photo Analysis</h3>
+          </div>
+          <div className="grid grid-cols-3 gap-3 text-center">
+            <div>
+              <p className="text-lg font-bold text-foreground">{aiAnalysis.estimatedVolume} cu ft</p>
+              <p className="text-xs text-muted-foreground">Est. Volume</p>
+            </div>
+            <div>
+              <p className="text-lg font-bold text-foreground">{aiAnalysis.truckSize}</p>
+              <p className="text-xs text-muted-foreground">Suggested</p>
+            </div>
+            <div>
+              <p className="text-lg font-bold text-foreground">
+                {aiAnalysis.confidence >= 0.8 ? "High" : aiAnalysis.confidence >= 0.5 ? "Medium" : "Low"}
+              </p>
+              <p className="text-xs text-muted-foreground">Confidence</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Price Breakdown */}
       <div className="rounded-lg border border-border bg-card p-5 space-y-4">

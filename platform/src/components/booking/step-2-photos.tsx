@@ -1,17 +1,18 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import { Upload, X, ImageIcon, AlertCircle } from "lucide-react";
+import { Upload, X, ImageIcon, AlertCircle, Sparkles, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useBookingStore } from "@/stores/booking-store";
 import { cn } from "@/lib/utils";
+import { aiApi } from "@/lib/api";
 
 const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const MAX_FILES = 10;
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 export function Step2Photos() {
-  const { photos, photoPreviewUrls, addPhotos, removePhoto } =
+  const { photos, photoPreviewUrls, addPhotos, removePhoto, aiAnalysis, aiAnalyzing, setAiAnalysis, setAiAnalyzing } =
     useBookingStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -44,6 +45,17 @@ export function Step2Photos() {
 
       if (validFiles.length > 0) {
         addPhotos(validFiles);
+        // Trigger AI analysis in background
+        const allPhotos = [...photos, ...validFiles];
+        if (allPhotos.length > 0) {
+          setAiAnalyzing(true);
+          aiApi.analyzePhotos(allPhotos.slice(0, 5)).then((result) => {
+            setAiAnalysis(result);
+            setAiAnalyzing(false);
+          }).catch(() => {
+            setAiAnalyzing(false);
+          });
+        }
       }
     },
     [photos.length, addPhotos]
@@ -184,6 +196,24 @@ export function Step2Photos() {
           can skip this step if you prefer.
         </p>
       </div>
+
+      {/* AI Analysis Status */}
+      {aiAnalyzing && (
+        <div className="flex items-center gap-2 rounded-lg border border-primary/20 bg-primary/5 p-3">
+          <Loader2 className="h-4 w-4 text-primary animate-spin shrink-0" />
+          <p className="text-sm text-primary font-medium">
+            Analyzing your photos...
+          </p>
+        </div>
+      )}
+      {aiAnalysis && !aiAnalyzing && (
+        <div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 p-3 dark:border-green-800 dark:bg-green-950/20">
+          <Sparkles className="h-4 w-4 text-green-600 shrink-0" />
+          <p className="text-sm text-green-700 dark:text-green-400 font-medium">
+            AI detected {aiAnalysis.items.length} item{aiAnalysis.items.length !== 1 ? "s" : ""} from your photos
+          </p>
+        </div>
+      )}
     </div>
   );
 }

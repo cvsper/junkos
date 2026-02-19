@@ -11,6 +11,8 @@ import {
   Package,
   Minus,
   Plus,
+  Sparkles,
+  X as XIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -30,7 +32,7 @@ const CATEGORIES = [
 const MAX_DESCRIPTION = 500;
 
 export function Step3Items() {
-  const { items, setItems } = useBookingStore();
+  const { items, setItems, aiAnalysis } = useBookingStore();
 
   // Initialize from store if there's an existing item
   const existingItem = items[0];
@@ -42,6 +44,21 @@ export function Step3Items() {
   );
   const [quantity, setQuantity] = useState(existingItem?.quantity || 1);
   const [errors, setErrors] = useState<{ category?: string; description?: string }>({});
+  const [aiDismissed, setAiDismissed] = useState(false);
+
+  // Pre-fill from AI analysis when entering step with empty form
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (aiAnalysis && !aiDismissed && !selectedCategory && !existingItem) {
+      const firstItem = aiAnalysis.items[0];
+      if (firstItem) {
+        setSelectedCategory(firstItem.category);
+        setDescription(firstItem.description || aiAnalysis.notes || "");
+        const totalQty = aiAnalysis.items.reduce((sum: number, i: { quantity: number }) => sum + i.quantity, 0);
+        setQuantity(Math.min(totalQty, 20));
+      }
+    }
+  }, [aiAnalysis, aiDismissed]);
 
   // Sync to store on changes
   useEffect(() => {
@@ -90,6 +107,26 @@ export function Step3Items() {
           Select a category and describe the items for your junk removal.
         </p>
       </div>
+
+      {/* AI-detected items banner */}
+      {aiAnalysis && !aiDismissed && (
+        <div className="flex items-center justify-between rounded-lg border border-primary/20 bg-primary/5 p-3">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-primary shrink-0" />
+            <p className="text-sm text-primary font-medium">
+              Items detected from your photos
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setAiDismissed(true)}
+            className="text-primary/60 hover:text-primary"
+            aria-label="Dismiss AI suggestions"
+          >
+            <XIcon className="h-4 w-4" />
+          </button>
+        </div>
+      )}
 
       {/* Category Selection */}
       <div className="space-y-3">

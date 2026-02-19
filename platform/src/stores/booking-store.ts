@@ -19,6 +19,16 @@ interface BookingState {
   promoDiscount: number;
   promoApplied: boolean;
 
+  // AI analysis state
+  aiAnalysis: {
+    items: Array<{category: string; size: string; quantity: number; description: string}>;
+    estimatedVolume: number;
+    truckSize: string;
+    confidence: number;
+    notes: string;
+  } | null;
+  aiAnalyzing: boolean;
+
   // Navigation actions
   setStep: (step: number) => void;
   nextStep: () => void;
@@ -49,6 +59,10 @@ interface BookingState {
   applyPromo: (code: string, discount: number) => void;
   clearPromo: () => void;
 
+  // AI analysis actions
+  setAiAnalysis: (analysis: BookingState["aiAnalysis"]) => void;
+  setAiAnalyzing: (analyzing: boolean) => void;
+
   // Reset
   reset: () => void;
 }
@@ -67,6 +81,8 @@ const initialState = {
   promoCode: "",
   promoDiscount: 0,
   promoApplied: false,
+  aiAnalysis: null,
+  aiAnalyzing: false,
 };
 
 export const useBookingStore = create<BookingState>((set, get) => ({
@@ -126,6 +142,10 @@ export const useBookingStore = create<BookingState>((set, get) => ({
     set({ promoCode, promoDiscount, promoApplied: true }),
   clearPromo: () =>
     set({ promoCode: "", promoDiscount: 0, promoApplied: false }),
+
+  // AI analysis
+  setAiAnalysis: (aiAnalysis) => set({ aiAnalysis }),
+  setAiAnalyzing: (aiAnalyzing) => set({ aiAnalyzing }),
 
   // Reset - revoke all object URLs before clearing
   reset: () => {

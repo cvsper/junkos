@@ -10,10 +10,10 @@ from extensions import limiter
 
 from app_config import Config
 from database import Database
-from auth_routes import auth_bp
+from auth_routes import auth_bp, require_auth
 from models import db as sqlalchemy_db
 from socket_events import socketio
-from routes import drivers_bp, pricing_bp, ratings_bp, admin_bp, payments_bp, webhook_bp, booking_bp, upload_bp, jobs_bp, tracking_bp, driver_bp, operator_bp, push_bp, service_area_bp, recurring_bp, referrals_bp, support_bp, chat_bp, onboarding_bp, promos_bp, reviews_bp, operator_applications_bp
+from routes import drivers_bp, pricing_bp, ratings_bp, admin_bp, payments_bp, webhook_bp, booking_bp, upload_bp, jobs_bp, tracking_bp, driver_bp, operator_bp, push_bp, service_area_bp, recurring_bp, referrals_bp, support_bp, chat_bp, onboarding_bp, promos_bp, reviews_bp, operator_applications_bp, ai_bp
 
 # ---------------------------------------------------------------------------
 # Sentry error monitoring (optional -- only active when SENTRY_DSN is set)
@@ -83,6 +83,7 @@ else:
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///umuve.db"
 
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16 MB max request body
 
 # ---------------------------------------------------------------------------
 # CORS configuration
@@ -167,12 +168,13 @@ app.register_blueprint(onboarding_bp)
 app.register_blueprint(promos_bp)
 app.register_blueprint(reviews_bp)
 app.register_blueprint(operator_applications_bp)
+app.register_blueprint(ai_bp)
 
 # ---------------------------------------------------------------------------
 # Input sanitization middleware (XSS / injection prevention)
 # ---------------------------------------------------------------------------
 # Paths that must NOT have their bodies sanitized (file uploads, webhooks).
-_SANITIZE_SKIP_PREFIXES = ("/api/bookings/upload-photos", "/uploads/", "/api/webhooks/", "/api/upload/", "/api/drivers/onboarding/documents")
+_SANITIZE_SKIP_PREFIXES = ("/api/bookings/upload-photos", "/uploads/", "/api/webhooks/", "/api/upload/", "/api/drivers/onboarding/documents", "/api/ai/")
 
 
 @app.before_request
@@ -308,14 +310,15 @@ def get_available_time_slots(requested_date=None):
 @limiter.exempt
 def health_check():
     """Health check endpoint (exempt from rate limiting)"""
-    return jsonify({"status": "healthy", "service": "Umuve API"}), 200
+    return jsonify({"status": "healthy", "service": "Umuve API", "version": "2.0.0-secure"}), 200
 
 
 @app.route("/api/run-migrate/<secret>", methods=["POST"])
 @limiter.exempt
 def run_migrate_endpoint(secret):
-    """Temporary migration endpoint secured by URL secret. Remove after use."""
-    if secret != "umuve-migrate-2026-feb":
+    """Database migration endpoint secured by ADMIN_SEED_SECRET env var."""
+    expected = os.environ.get("ADMIN_SEED_SECRET", "")
+    if not expected or secret != expected:
         return jsonify({"error": "Forbidden"}), 403
     try:
         from migrate import run_migrations
@@ -439,17 +442,13 @@ def get_booking(booking_id):
 # Customer bookings endpoint (used by iOS app)
 # ---------------------------------------------------------------------------
 @app.route("/api/bookings/customer", methods=["POST"])
-def get_customer_bookings():
-    """Get all bookings for a customer by email"""
+@require_auth
+def get_customer_bookings(user_id):
+    """Get all bookings for the authenticated customer"""
     from models import Job, User, Contractor
-    data = request.get_json()
-    email = data.get("email") if data else None
 
-    if not email:
-        return jsonify({"success": True, "bookings": []}), 200
-
-    # Find user by email
-    user = User.query.filter_by(email=email).first()
+    # Use the authenticated user — ignore any email in the body
+    user = sqlalchemy_db.session.get(User, user_id)
     if not user:
         return jsonify({"success": True, "bookings": []}), 200
 
@@ -494,7 +493,8 @@ def validate_address():
 
 
 @app.route("/api/bookings/upload-photos", methods=["POST"])
-def upload_booking_photos():
+@require_auth
+def upload_booking_photos(user_id):
     """Upload photos for a booking (proxy to upload blueprint)"""
     from models import generate_uuid
     from werkzeug.utils import secure_filename
@@ -507,6 +507,8 @@ def upload_booking_photos():
         return jsonify({"success": False, "error": "No photos provided"}), 400
 
     files = request.files.getlist("photos")
+    if len(files) > 10:
+        return jsonify({"success": False, "error": "Maximum 10 photos per upload"}), 400
     urls = []
 
     for file in files:

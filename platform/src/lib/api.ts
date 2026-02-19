@@ -308,6 +308,54 @@ export const bookingApi = {
 };
 
 // ---------------------------------------------------------------------------
+// AI Analysis API
+// ---------------------------------------------------------------------------
+
+export interface AiAnalysisItem {
+  category: string;
+  size: string;
+  quantity: number;
+  description: string;
+}
+
+export interface AiAnalysisResult {
+  items: AiAnalysisItem[];
+  estimatedVolume: number;
+  truckSize: string;
+  confidence: number;
+  notes: string;
+}
+
+interface AiAnalysisResponse {
+  success: boolean;
+  analysis?: AiAnalysisResult;
+  error?: string;
+}
+
+export const aiApi = {
+  /** POST /api/ai/analyze-photos — analyze photos with GPT-4o-mini Vision */
+  analyzePhotos: async (files: File[]): Promise<AiAnalysisResult | null> => {
+    const formData = new FormData();
+    files.forEach((file) => formData.append("photos", file));
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/ai/analyze-photos`, {
+        method: "POST",
+        body: formData,
+        // No Content-Type header — browser sets multipart boundary automatically
+      });
+      const data: AiAnalysisResponse = await res.json();
+      if (data.success && data.analysis) {
+        return data.analysis;
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  },
+};
+
+// ---------------------------------------------------------------------------
 // Payments API
 // ---------------------------------------------------------------------------
 
