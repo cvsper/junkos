@@ -10,14 +10,14 @@
     <meta property="og:url" content="https://goumuve.com/operators">
     <meta property="og:title" content="Drive for Umuve - Get More Hauling Jobs">
     <meta property="og:description" content="Join Umuve - Get more hauling jobs in South Florida. We send you customers, you haul. Keep 85% of revenue.">
-    <meta property="og:image" content="https://goumuve.com/og-image.png">
+    <meta property="og:image" content="https://app.goumuve.com/opengraph-image">
     <meta property="og:site_name" content="Umuve">
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Drive for Umuve - Get More Hauling Jobs">
     <meta name="twitter:description" content="Join Umuve - Get more hauling jobs in South Florida. We send you customers, you haul. Keep 85% of revenue.">
-    <meta name="twitter:image" content="https://goumuve.com/og-image.png">
+    <meta name="twitter:image" content="https://app.goumuve.com/opengraph-image">
 
     <!-- Canonical -->
     <link rel="canonical" href="https://goumuve.com/operators">
@@ -86,6 +86,12 @@
         <symbol id="icon-star" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1">
             <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
         </symbol>
+        <symbol id="icon-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/>
+        </symbol>
+        <symbol id="icon-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+        </symbol>
     </svg>
 
     <!-- Navbar -->
@@ -96,7 +102,12 @@
                     <img src="logo-nav.png" alt="Umuve" style="height: 40px; width: auto;">
                     <span class="badge-operator">For Operators</span>
                 </div>
-                
+
+                <button class="nav-toggle" aria-label="Toggle menu" aria-expanded="false">
+                    <svg class="icon nav-toggle-open"><use href="#icon-menu"/></svg>
+                    <svg class="icon nav-toggle-close"><use href="#icon-x"/></svg>
+                </button>
+
                 <div class="nav-links">
                     <a href="#how-it-works" class="nav-link">How It Works</a>
                     <a href="#earnings" class="nav-link">Earnings</a>

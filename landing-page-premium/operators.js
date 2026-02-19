@@ -46,6 +46,24 @@ applyButtons.forEach(button => {
     });
 });
 
+// Mobile nav toggle
+const navToggle = document.querySelector('.nav-toggle');
+const navLinks = document.querySelector('.nav-links');
+
+if (navToggle && navLinks) {
+    navToggle.addEventListener('click', () => {
+        const isOpen = navLinks.classList.toggle('open');
+        navToggle.setAttribute('aria-expanded', isOpen);
+    });
+
+    navLinks.querySelectorAll('.nav-link').forEach(link => {
+        link.addEventListener('click', () => {
+            navLinks.classList.remove('open');
+            navToggle.setAttribute('aria-expanded', 'false');
+        });
+    });
+}
+
 // Smooth scroll for other navigation links
 document.querySelectorAll('a[href^="#"]:not([href="#apply"])').forEach(anchor => {
     anchor.addEventListener('click', function (e) {
@@ -80,8 +98,7 @@ if (operatorForm) {
         submitBtn.disabled = true;
         
         try {
-            // TODO: Replace with actual API endpoint
-            const response = await fetch('/api/operator-applications', {
+            const response = await fetch('https://junkos-backend.onrender.com/api/operator-applications', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -110,25 +127,22 @@ if (operatorForm) {
                 throw new Error('Submission failed');
             }
         } catch (error) {
-            // For demo purposes, show success anyway
-            // In production, show actual error
             console.error('Form submission error:', error);
             
-            operatorForm.innerHTML = `
-                <div style="text-align: center; padding: 3rem;">
-                    <svg style="width: 64px; height: 64px; color: #DC2626; margin: 0 auto 1.5rem;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                        <path d="m9 11 3 3L22 4"/>
-                    </svg>
-                    <h3 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 1rem;">Application Received!</h3>
-                    <p style="color: #5c5c5c; margin-bottom: 1.5rem;">
-                        Thanks for applying! We'll review your application and get back to you within 24 hours.
-                    </p>
-                    <p style="color: #8a8a8a; font-size: 0.875rem;">
-                        Check your email (${data.email}) for confirmation.
-                    </p>
-                </div>
-            `;
+            // Show error message and re-enable submit button
+            const errorDiv = operatorForm.querySelector('.form-error');
+            if (errorDiv) {
+                errorDiv.textContent = 'Something went wrong. Please try again or contact us directly.';
+                errorDiv.style.display = 'block';
+            } else {
+                const msg = document.createElement('p');
+                msg.className = 'form-error';
+                msg.style.cssText = 'color: #DC2626; text-align: center; margin-top: 1rem; font-size: 0.875rem;';
+                msg.textContent = 'Something went wrong. Please try again or contact us directly.';
+                operatorForm.appendChild(msg);
+            }
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
         }
     });
 }

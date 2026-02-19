@@ -47,12 +47,21 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_US",
     url: SITE_URL,
+    images: [
+      {
+        url: "/opengraph-image",
+        width: 1200,
+        height: 630,
+        alt: "Umuve - Premium Junk Removal in South Florida",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Umuve | Premium Junk Removal in South Florida",
     description:
       "Book professional junk removal in South Florida. Fast, reliable, affordable. Get instant quotes and real-time tracking.",
+    images: ["/opengraph-image"],
   },
   robots: {
     index: true,
