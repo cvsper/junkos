@@ -5,24 +5,61 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Hauling made simple. Same-day service in Palm Beach & Broward County. Upfront pricing, eco-friendly disposal.">
 
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://goumuve.com">
+    <meta property="og:title" content="Umuve — Hauling Made Simple">
+    <meta property="og:description" content="Hauling made simple. Same-day service in Palm Beach & Broward County. Upfront pricing, eco-friendly disposal.">
+    <meta property="og:image" content="https://goumuve.com/og-image.png">
+    <meta property="og:site_name" content="Umuve">
+    <meta property="og:locale" content="en_US">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Umuve — Hauling Made Simple">
+    <meta name="twitter:description" content="Hauling made simple. Same-day service in Palm Beach & Broward County. Upfront pricing, eco-friendly disposal.">
+    <meta name="twitter:image" content="https://goumuve.com/og-image.png">
+
+    <!-- Canonical -->
+    <link rel="canonical" href="https://goumuve.com">
+
     <title>Umuve — Hauling Made Simple</title>
 
     <link rel="stylesheet" href="styles.css">
     <link rel="icon" type="image/png" href="logo-icon.png">
 
     <!-- Google Analytics -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-CLGPJ5TS3G"></script>
     <script>
         window.dataLayer = window.dataLayer || [];
         function gtag(){dataLayer.push(arguments);}
         gtag('js', new Date());
-        gtag('config', 'G-XXXXXXXXXX');
+        gtag('config', 'G-CLGPJ5TS3G');
     </script>
 
     <!-- Preload critical fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "LocalBusiness",
+        "name": "Umuve",
+        "description": "Premium junk removal and hauling service in South Florida",
+        "url": "https://goumuve.com",
+        "areaServed": [
+            {"@type": "City", "name": "West Palm Beach"},
+            {"@type": "City", "name": "Fort Lauderdale"},
+            {"@type": "City", "name": "Boca Raton"},
+            {"@type": "City", "name": "Delray Beach"}
+        ],
+        "serviceType": "Junk Removal",
+        "priceRange": "$$"
+    }
+    </script>
 </head>
 <body>
     <!-- SVG Icon Sprite -->
@@ -116,10 +153,10 @@
         <div class="container">
             <div class="nav-content">
                 <div class="logo">
-                    <img src="logo-nav.png" alt="Umuve" style="height: 70px; width: auto;">
+                    <img src="logo-nav.png" alt="Umuve" style="height: 36px; width: auto;">
                 </div>
 
-                <!-- Hamburger Toggle -->
+                <!-- Hamburger Toggle (mobile only) -->
                 <button class="nav-toggle" aria-label="Toggle menu" aria-expanded="false">
                     <svg class="icon nav-toggle-open"><use href="#icon-menu"/></svg>
                     <svg class="icon nav-toggle-close"><use href="#icon-x"/></svg>
@@ -131,8 +168,7 @@
                     <a href="#areas" class="nav-link">Service Areas</a>
                     <a href="#faq" class="nav-link">FAQ</a>
                     <a href="https://app.goumuve.com/book" class="btn btn-glow" rel="noopener">
-                        <svg class="icon icon-btn"><use href="#icon-sparkles"/></svg>
-                        <span>Book Online</span>
+                        <span>Book Now</span>
                     </a>
                 </div>
             </div>
@@ -147,56 +183,47 @@
         <img class="hero-mobile-img" src="hero-mobile.jpg" alt="" aria-hidden="true">
         <div class="hero-overlay"></div>
 
-        <!-- Decorative faded vertical border lines -->
-        <div class="hero-borders" aria-hidden="true">
-            <div class="hero-border hero-border--outer-left"></div>
-            <div class="hero-border hero-border--outer-right"></div>
-            <div class="hero-border hero-border--inner-left"></div>
-            <div class="hero-border hero-border--inner-right"></div>
-        </div>
-
         <div class="container">
             <div class="hero-content">
                 <!-- Floating Badge -->
-                <div class="hero-badge" data-animate>
+                <div class="hero-badge hero-stagger">
                     <span class="badge-dot"></span>
                     <span>Same-Day Service Available</span>
                 </div>
 
                 <!-- Hero Title -->
-                <h1 class="hero-title" data-animate>
-                    <span class="title-line">South Florida's</span>
-                    <span class="title-line gradient-text">Fastest Junk</span>
-                    <span class="title-line">Removal Service</span>
+                <h1 class="hero-title hero-stagger">
+                    <span class="title-line">Hauling</span>
+                    <span class="title-line gradient-text">made simple.</span>
                 </h1>
 
                 <!-- Subtitle -->
-                <p class="hero-subtitle" data-animate>
-                    Professional junk removal in <strong>Palm Beach</strong> & <strong>Broward County</strong>.
-                    Upfront pricing, same-day pickup, eco-friendly disposal. We handle everything.
+                <p class="hero-subtitle hero-stagger">
+                    Professional junk removal in <strong>Palm Beach</strong> &amp; <strong>Broward County</strong>.
+                    Upfront pricing, same-day pickup, eco-friendly disposal.
                 </p>
 
                 <!-- CTA Buttons -->
-                <div class="hero-cta" data-animate>
+                <div class="hero-cta hero-stagger">
                     <a href="https://app.goumuve.com/book" class="btn btn-primary btn-xl" rel="noopener">
                         <svg class="icon icon-btn"><use href="#icon-sparkles"/></svg>
                         <span>Book Online Now</span>
                     </a>
                     <a href="tel:+15618883427" class="btn btn-secondary btn-xl">
                         <svg class="icon icon-btn"><use href="#icon-phone"/></svg>
-                        <span>Call (561) 888-3427</span>
+                        <span>(561) 888-3427</span>
                     </a>
                 </div>
 
                 <!-- Hero Stats -->
-                <div class="hero-stats" data-animate>
+                <div class="hero-stats hero-stagger">
                     <div class="hero-stat">
                         <span class="hero-stat-number" data-count="500">0</span>
                         <span class="hero-stat-label">Jobs Completed</span>
                     </div>
                     <div class="hero-stat-divider"></div>
                     <div class="hero-stat">
-                        <span class="hero-stat-number">4.9</span>
+                        <span class="hero-stat-number">4.9<svg class="icon icon-star" style="width:16px;height:16px;margin-left:4px;vertical-align:-1px;"><use href="#icon-star"/></svg></span>
                         <span class="hero-stat-label">Google Rating</span>
                     </div>
                     <div class="hero-stat-divider"></div>
@@ -207,25 +234,25 @@
                 </div>
 
                 <!-- Trust Pills -->
-                <div class="trust-pills" data-animate>
+                <div class="trust-pills hero-stagger">
                     <span class="trust-pill">
                         <svg class="icon" style="width:16px;height:16px;"><use href="#icon-check"/></svg>
                         Licensed & Insured
                     </span>
                     <span class="trust-pill">
                         <svg class="icon" style="width:16px;height:16px;"><use href="#icon-recycle"/></svg>
-                        Eco-Friendly Disposal
+                        Eco-Friendly
                     </span>
                     <span class="trust-pill">
                         <svg class="icon" style="width:16px;height:16px;"><use href="#icon-shield"/></svg>
-                        Satisfaction Guaranteed
+                        Guaranteed
                     </span>
                 </div>
             </div>
         </div>
 
         <!-- Scroll Indicator -->
-        <div class="scroll-indicator" data-animate>
+        <div class="scroll-indicator hero-stagger">
             <span>Scroll to explore</span>
             <div class="scroll-line"></div>
         </div>
