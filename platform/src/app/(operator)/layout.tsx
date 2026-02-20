@@ -47,25 +47,48 @@ export default function OperatorLayout({
 
   useEffect(() => {
     if (!hydrated) return;
-    if (!isAuthenticated) {
+
+    // Allow public access to login and signup pages
+    const isPublicPage = pathname === "/operator/login" || pathname === "/operator/signup";
+
+    if (!isAuthenticated && !isPublicPage) {
       router.replace("/operator/login");
     }
-  }, [hydrated, isAuthenticated, router]);
+  }, [hydrated, isAuthenticated, router, pathname]);
 
   // Close mobile menu on route change
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [pathname]);
 
-  if (!hydrated || !isAuthenticated) {
+  // Show loading only during hydration
+  if (!hydrated) {
     return (
       <div className="h-screen flex items-center justify-center">
         <div className="text-center">
-          <img src="/logo.png" alt="Umuve" className="h-8 w-8 object-contain mx-auto mb-3 animate-pulse" />
+          <img src="/logo.png" alt="Umuve" className="h-20 w-20 object-contain mx-auto mb-3 animate-pulse" />
           <p className="text-sm text-muted-foreground">Loading...</p>
         </div>
       </div>
     );
+  }
+
+  // Allow login/signup pages to render without auth
+  const isPublicPage = pathname === "/operator/login" || pathname === "/operator/signup";
+  if (!isAuthenticated && !isPublicPage) {
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <div className="text-center">
+          <img src="/logo.png" alt="Umuve" className="h-20 w-20 object-contain mx-auto mb-3 animate-pulse" />
+          <p className="text-sm text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If on login/signup page, render without layout chrome
+  if (isPublicPage) {
+    return <>{children}</>;
   }
 
   const userName = user?.name || user?.email || "Operator";
