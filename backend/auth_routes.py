@@ -745,7 +745,7 @@ def find_or_create_user_by_phone(phone_number):
 
 
 # MARK: - Utility Endpoint for Testing
-@auth_bp.route('/upgrade-to-operator', methods=['POST'])
+@auth_bp.route('/upgrade_operator', methods=['POST'])
 def upgrade_to_operator():
     """Temporary endpoint to upgrade a user to operator role for testing.
 
