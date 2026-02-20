@@ -57,6 +57,7 @@
 		B03F09EC14CA94ED5F570AEB /* NavigateToJobView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E269A5BD9F9CDD622483E10C /* NavigateToJobView.swift */; };
 		B6088267C57D4BFE5934D029 /* KeychainHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94CEA3D9996C5038C6FCF4FA /* KeychainHelper.swift */; };
 		B9EF3DD412FA186F53E44D22 /* DriverAuthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6CC84B7BBA8C36ACEA14548 /* DriverAuthView.swift */; };
+		CA0CD9A528904A2CD1E266DB /* PhoneSignupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F99313D9A94E708D4B813C6 /* PhoneSignupView.swift */; };
 		BAD93C9DACE562D75D564204 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1FBC43CAFF78869678C21C3F /* Assets.xcassets */; };
 		BF70D9F10BFA3C3DE51E7908 /* PayoutSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24F8F8ADE1A72C73B582B02B /* PayoutSettingsView.swift */; };
 		C185F7208CF4AD483FB0D267 /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B635EA21FAAB5E8F8AC182AA /* NotificationManager.swift */; };
@@ -135,6 +136,7 @@
 		BF8D49E5C00DA1F5B18B2699 /* SocketIOManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SocketIOManager.swift; sourceTree = "<group>"; };
 		C14897C95FBADE41B4B75E28 /* JunkOSDriverApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JunkOSDriverApp.swift; sourceTree = "<group>"; };
 		C6CC84B7BBA8C36ACEA14548 /* DriverAuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriverAuthView.swift; sourceTree = "<group>"; };
+		2F99313D9A94E708D4B813C6 /* PhoneSignupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneSignupView.swift; sourceTree = "<group>"; };
 		CDBA8F8B87D1D52884F3E249 /* AvailabilityScheduleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AvailabilityScheduleView.swift; sourceTree = "<group>"; };
 		D074AC78D9277D0C00126A35 /* CameraPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraPickerView.swift; sourceTree = "<group>"; };
 		D1DC4D6D20A3CCC9709A404C /* TruckTypeSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TruckTypeSelectionView.swift; sourceTree = "<group>"; };
@@ -334,6 +336,7 @@
 			isa = PBXGroup;
 			children = (
 				C6CC84B7BBA8C36ACEA14548 /* DriverAuthView.swift */,
+				2F99313D9A94E708D4B813C6 /* PhoneSignupView.swift */,
 				928C74E7765B48CE6A718911 /* DriverOnboardingView.swift */,
 			);
 			path = Auth;
@@ -504,6 +507,7 @@
 				E8806EA1AE37848938F8D70C /* DriverAPIClient.swift in Sources */,
 				14790A1C6E4BF7984B5FF3E4 /* DriverAnnotationView.swift in Sources */,
 				B9EF3DD412FA186F53E44D22 /* DriverAuthView.swift in Sources */,
+				CA0CD9A528904A2CD1E266DB /* PhoneSignupView.swift in Sources */,
 				4F219CCBF09D2A91F8C8A08F /* DriverDesignSystem.swift in Sources */,
 				8BBCE11D4D582E7D746F2E4F /* DriverOnboardingView.swift in Sources */,
 				E2802E3778DC622FD2129867 /* DriverTabView.swift in Sources */,

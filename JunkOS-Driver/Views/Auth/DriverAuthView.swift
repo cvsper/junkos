@@ -83,7 +83,7 @@ struct DriverAuthView: View {
                             Image(systemName: "phone.fill")
                                 .font(.system(size: 16, weight: .medium))
                             Text("Sign Up with Phone Number")
-                                .font(DriverTypography.button)
+                                .font(DriverTypography.headline)
                         }
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)

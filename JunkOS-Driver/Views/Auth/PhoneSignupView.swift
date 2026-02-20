@@ -107,7 +107,7 @@ struct PhoneSignupView: View {
                     }
                 } label: {
                     Text("Send Code")
-                        .font(DriverTypography.button)
+                        .font(DriverTypography.headline)
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
                         .frame(height: 52)
@@ -168,7 +168,7 @@ struct PhoneSignupView: View {
                     }
                 } label: {
                     Text("Verify & Sign Up")
-                        .font(DriverTypography.button)
+                        .font(DriverTypography.headline)
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
                         .frame(height: 52)
