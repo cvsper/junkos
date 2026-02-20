@@ -775,15 +775,37 @@ def upgrade_to_operator():
 
     # Upgrade to operator
     user.role = 'operator'
+
+    # Create or update Contractor record with is_operator=True
+    from models import Contractor, generate_uuid
+    contractor = Contractor.query.filter_by(user_id=user.id).first()
+    if not contractor:
+        contractor = Contractor(
+            id=generate_uuid(),
+            user_id=user.id,
+            is_operator=True,
+            approval_status='approved',
+            onboarding_status='approved'
+        )
+        db.session.add(contractor)
+    else:
+        contractor.is_operator = True
+        contractor.approval_status = 'approved'
+        contractor.onboarding_status = 'approved'
+
     db.session.commit()
 
     return jsonify({
         'success': True,
-        'message': f'User {email} upgraded to operator',
+        'message': f'User {email} upgraded to operator with contractor record',
         'user': {
             'id': user.id,
             'email': user.email,
             'name': user.name,
             'role': user.role
+        },
+        'contractor': {
+            'id': contractor.id,
+            'is_operator': contractor.is_operator
         }
     }), 200
