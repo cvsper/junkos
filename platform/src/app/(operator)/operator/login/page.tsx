@@ -28,11 +28,20 @@ export default function OperatorLoginPage() {
         email: response.user.email,
         name: response.user.name || "",
         phone: (response.user as unknown as { phoneNumber?: string }).phoneNumber || response.user.phone || "",
-        role: "operator" as const,
+        role: response.user.role, // Use actual role from backend
         emailVerified: true,
         createdAt: response.user.createdAt || "",
         updatedAt: response.user.updatedAt || "",
       };
+
+      // Check if user has operator access
+      if (mappedUser.role !== "operator") {
+        setError(
+          "This account does not have operator access. Please apply to become an operator at goumuve.com/operators"
+        );
+        setLoading(false);
+        return;
+      }
 
       useAuthStore.getState().login(mappedUser, response.token);
       router.push("/operator");

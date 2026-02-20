@@ -55,11 +55,22 @@ function SignupForm() {
           (response.user as unknown as { phoneNumber?: string }).phoneNumber ||
           response.user.phone ||
           "",
-        role: "operator" as const,
+        role: response.user.role, // Use actual role from backend
         emailVerified: true,
         createdAt: response.user.createdAt || "",
         updatedAt: response.user.updatedAt || "",
       };
+
+      // NOTE: Backend signup creates users as "customer" by default.
+      // Operator accounts must be upgraded through admin or operator applications workflow.
+      // For now, we'll allow signup but they'll need admin approval to access operator portal.
+      if (mappedUser.role !== "operator") {
+        setError(
+          "Account created successfully! However, operator access requires approval. Please contact support@goumuve.com or apply at goumuve.com/operators"
+        );
+        setLoading(false);
+        return;
+      }
 
       useAuthStore.getState().login(mappedUser, response.token);
       router.push("/operator");
