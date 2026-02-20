@@ -11,8 +11,19 @@ import AuthenticationServices
 
 struct DriverAuthView: View {
     @Bindable var appState: AppState
+    @State private var showPhoneSignup = false
 
     var body: some View {
+        if showPhoneSignup {
+            PhoneSignupView(appState: appState) {
+                showPhoneSignup = false
+            }
+        } else {
+            mainAuthView
+        }
+    }
+
+    private var mainAuthView: some View {
         ZStack {
             Color.driverBackground.ignoresSafeArea()
 
@@ -38,8 +49,9 @@ struct DriverAuthView: View {
 
                 Spacer()
 
-                // Apple Sign In Button
-                VStack(spacing: DriverSpacing.sm) {
+                // Sign In Options
+                VStack(spacing: DriverSpacing.md) {
+                    // Apple Sign In Button
                     SignInWithAppleButton(.signIn) { request in
                         appState.auth.handleAppleSignInRequest(request)
                     } onCompletion: { result in
@@ -48,6 +60,37 @@ struct DriverAuthView: View {
                     .signInWithAppleButtonStyle(.black)
                     .frame(height: 52)
                     .clipShape(RoundedRectangle(cornerRadius: DriverRadius.md))
+
+                    // Divider
+                    HStack(spacing: DriverSpacing.sm) {
+                        Rectangle()
+                            .fill(Color.driverBorder)
+                            .frame(height: 1)
+                        Text("or")
+                            .font(DriverTypography.footnote)
+                            .foregroundStyle(Color.driverTextSecondary)
+                        Rectangle()
+                            .fill(Color.driverBorder)
+                            .frame(height: 1)
+                    }
+                    .padding(.vertical, DriverSpacing.xs)
+
+                    // Phone Sign Up Button
+                    Button {
+                        showPhoneSignup = true
+                    } label: {
+                        HStack(spacing: DriverSpacing.sm) {
+                            Image(systemName: "phone.fill")
+                                .font(.system(size: 16, weight: .medium))
+                            Text("Sign Up with Phone Number")
+                                .font(DriverTypography.button)
+                        }
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 52)
+                        .background(Color.driverPrimary)
+                        .clipShape(RoundedRectangle(cornerRadius: DriverRadius.md))
+                    }
 
                     // Error message display
                     if let errorMessage = appState.auth.errorMessage {

@@ -143,6 +143,24 @@ actor DriverAPIClient {
         try await request("/api/auth/refresh", method: "POST", authenticated: true)
     }
 
+    func sendVerificationCode(phoneNumber: String) async throws -> PhoneVerificationResponse {
+        try await request(
+            "/api/auth/send-code",
+            method: "POST",
+            body: PhoneVerificationRequest(phoneNumber: phoneNumber),
+            authenticated: false
+        )
+    }
+
+    func verifyCode(phoneNumber: String, code: String) async throws -> AuthResponse {
+        try await request(
+            "/api/auth/verify-code",
+            method: "POST",
+            body: PhoneVerifyCodeRequest(phoneNumber: phoneNumber, code: code),
+            authenticated: false
+        )
+    }
+
     // MARK: - Contractor Registration
 
     func registerContractor(_ registration: RegistrationRequest) async throws -> RegistrationResponse {

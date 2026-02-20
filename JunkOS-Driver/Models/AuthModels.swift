@@ -38,6 +38,21 @@ struct AuthRefreshResponse: Codable {
     let token: String
 }
 
+struct PhoneVerificationRequest: Codable {
+    let phoneNumber: String
+}
+
+struct PhoneVerificationResponse: Codable {
+    let success: Bool
+    let message: String
+    let code: String? // Only present in dev mode
+}
+
+struct PhoneVerifyCodeRequest: Codable {
+    let phoneNumber: String
+    let code: String
+}
+
 struct DriverUser: Codable, Identifiable {
     let id: String
     let name: String?

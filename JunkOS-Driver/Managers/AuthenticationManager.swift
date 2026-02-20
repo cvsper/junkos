@@ -84,7 +84,45 @@ final class AuthenticationManager {
             }
         case .failure(let error):
             currentNonce = nil
+            let asError = error as? ASAuthorizationError
+            print("🔴 Apple Sign In FAILED — code: \(asError?.code.rawValue ?? -1), domain: \((error as NSError).domain), description: \(error.localizedDescription)")
             errorMessage = error.localizedDescription
+            HapticManager.shared.error()
+        }
+    }
+
+    // MARK: - Phone Authentication
+
+    func sendVerificationCode(phoneNumber: String) async {
+        isLoading = true
+        errorMessage = nil
+
+        do {
+            let response = try await api.sendVerificationCode(phoneNumber: phoneNumber)
+            isLoading = false
+            // Success - caller should show code input screen
+        } catch {
+            errorMessage = "Failed to send code. Try again."
+            isLoading = false
+            HapticManager.shared.error()
+        }
+    }
+
+    func verifyCode(phoneNumber: String, code: String) async {
+        isLoading = true
+        errorMessage = nil
+
+        do {
+            let response = try await api.verifyCode(phoneNumber: phoneNumber, code: code)
+            setAuthenticated(user: response.user, token: response.token)
+            isLoading = false
+        } catch {
+            if let apiError = error as? APIError {
+                errorMessage = apiError.errorDescription
+            } else {
+                errorMessage = "Invalid code. Try again."
+            }
+            isLoading = false
             HapticManager.shared.error()
         }
     }

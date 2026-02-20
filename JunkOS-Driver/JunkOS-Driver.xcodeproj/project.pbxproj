@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 77;
+	objectVersion = 63;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -87,7 +87,7 @@
 		18E9B0CBCF60C1EB2DF0B2BA /* InviteCodeStepView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InviteCodeStepView.swift; sourceTree = "<group>"; };
 		19B60B02EDBC3F4047A2BD81 /* QuickStatsCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickStatsCard.swift; sourceTree = "<group>"; };
 		1B159DA9208AE40B64BFAC73 /* PriceBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PriceBadge.swift; sourceTree = "<group>"; };
-		1CA79264B8151B5CFA750F30 /* JunkOS-Driver.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = "JunkOS-Driver.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		1CA79264B8151B5CFA750F30 /* JunkOS-Driver.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "JunkOS-Driver.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		1FBC43CAFF78869678C21C3F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		1FCB1498666015B9BBBC1DF1 /* HapticManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticManager.swift; sourceTree = "<group>"; };
 		228E7D7E7644F745D1DAAFED /* SplashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplashView.swift; sourceTree = "<group>"; };
@@ -278,15 +278,6 @@
 				1FBC43CAFF78869678C21C3F /* Assets.xcassets */,
 				8D74268D761171C093876799 /* JunkOS-Driver.entitlements */,
 				C14897C95FBADE41B4B75E28 /* JunkOSDriverApp.swift */,
-				4DFFE93115C932ACD6706F02 /* Components */,
-				6A38FA0B2CA9712921C39C93 /* Config */,
-				761042F99BCA6B01B2D4DF4D /* Design */,
-				9F9151FA6CF10BC3BAAA40B7 /* Managers */,
-				25139F93F81E700B63B6F1E2 /* Models */,
-				BB1F4C963C05906C2361DB9A /* Services */,
-				EC5CECDEE98C793847983943 /* Utilities */,
-				336EE321E5391E10A78DF6ED /* ViewModels */,
-				D96E06A3BE450C753EC755A4 /* Views */,
 			);
 			name = "JunkOS-Driver";
 			path = .;
@@ -451,12 +442,6 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1600;
-				TargetAttributes = {
-					682035F336F6697960DAA9AB = {
-						DevelopmentTeam = 24GH82AX9R;
-						ProvisioningStyle = Automatic;
-					};
-				};
 			};
 			buildConfigurationList = E1E966CBA6305367382A8CCF /* Build configuration list for PBXProject "JunkOS-Driver" */;
 			compatibilityVersion = "Xcode 14.0";
@@ -469,9 +454,8 @@
 			mainGroup = A1350807EEEC7AE55C5B8F27;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				4ADF621E3619959956E54BD8 /* XCRemoteSwiftPackageReference "socket.io-client-swift" */,
+				4ADF621E3619959956E54BD8 /* XCRemoteSwiftPackageReference "socket" */,
 			);
-			preferredProjectObjectVersion = 77;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -575,7 +559,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = "JunkOS-Driver.entitlements";
-				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 24GH82AX9R;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -598,6 +582,7 @@
 					"@executable_path/Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.goumuve.pro;
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -608,7 +593,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = "JunkOS-Driver.entitlements";
-				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 24GH82AX9R;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -631,6 +616,7 @@
 					"@executable_path/Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.goumuve.pro;
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -783,7 +769,7 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		4ADF621E3619959956E54BD8 /* XCRemoteSwiftPackageReference "socket.io-client-swift" */ = {
+		4ADF621E3619959956E54BD8 /* XCRemoteSwiftPackageReference "socket" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/socketio/socket.io-client-swift";
 			requirement = {
@@ -796,7 +782,7 @@
 /* Begin XCSwiftPackageProductDependency section */
 		9192FFB37533E324867AE5D6 /* SocketIO */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 4ADF621E3619959956E54BD8 /* XCRemoteSwiftPackageReference "socket.io-client-swift" */;
+			package = 4ADF621E3619959956E54BD8 /* XCRemoteSwiftPackageReference "socket" */;
 			productName = SocketIO;
 		};
 /* End XCSwiftPackageProductDependency section */
