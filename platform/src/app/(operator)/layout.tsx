@@ -48,7 +48,7 @@ export default function OperatorLayout({
   useEffect(() => {
     if (!hydrated) return;
     if (!isAuthenticated) {
-      router.replace("/admin/login");
+      router.replace("/operator/login");
     }
   }, [hydrated, isAuthenticated, router]);
 
@@ -117,6 +117,7 @@ export default function OperatorLayout({
               <Link
                 key={link.href}
                 href={link.href}
+                onClick={() => setMobileMenuOpen(false)}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                   isActive
                     ? "bg-primary/10 text-primary"
