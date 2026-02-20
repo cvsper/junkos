@@ -8,6 +8,8 @@ import {
   ClipboardList,
   Loader2,
   X,
+  Copy,
+  Check,
 } from "lucide-react";
 import { operatorApi, type OperatorJobRecord, type OperatorFleetContractor } from "@/lib/api";
 
@@ -38,6 +40,13 @@ export default function OperatorJobsPage() {
   const [loading, setLoading] = useState(true);
   const [delegateJob, setDelegateJob] = useState<OperatorJobRecord | null>(null);
   const [delegating, setDelegating] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const copyJobId = (jobId: string) => {
+    navigator.clipboard.writeText(jobId);
+    setCopiedId(jobId);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
 
   const loadJobs = useCallback(async () => {
     setLoading(true);
@@ -157,7 +166,20 @@ export default function OperatorJobsPage() {
               ) : (
                 jobs.map((job) => (
                   <tr key={job.id} className="hover:bg-muted/30 transition-colors">
-                    <td className="px-4 py-3 font-mono text-xs">{job.id.slice(0, 8)}</td>
+                    <td className="px-4 py-3">
+                      <button
+                        onClick={() => copyJobId(job.id)}
+                        className="flex items-center gap-1.5 font-mono text-xs hover:text-primary transition-colors group"
+                        title="Click to copy full job ID"
+                      >
+                        <span>{job.id.slice(0, 8)}...</span>
+                        {copiedId === job.id ? (
+                          <Check className="w-3 h-3 text-green-600" />
+                        ) : (
+                          <Copy className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        )}
+                      </button>
+                    </td>
                     <td className="px-4 py-3">
                       <div>
                         <p className="font-medium">{job.customer_name || "N/A"}</p>
@@ -261,7 +283,17 @@ export default function OperatorJobsPage() {
                   {job.driver_name ? (
                     <span>Driver: <span className="font-medium text-foreground">{job.driver_name}</span></span>
                   ) : (
-                    <span className="font-mono">{job.id.slice(0, 8)}</span>
+                    <button
+                      onClick={() => copyJobId(job.id)}
+                      className="flex items-center gap-1 font-mono text-xs hover:text-primary transition-colors"
+                    >
+                      <span>{job.id.slice(0, 8)}...</span>
+                      {copiedId === job.id ? (
+                        <Check className="w-3 h-3 text-green-600" />
+                      ) : (
+                        <Copy className="w-3 h-3" />
+                      )}
+                    </button>
                   )}
                 </div>
                 {job.status === "delegating" && (
