@@ -164,9 +164,9 @@ function GuestLookup() {
   const [job, setJob] = useState<LookedUpJob | null>(null);
 
   const handleLookup = async () => {
-    const trimmed = code.trim().toUpperCase();
-    if (trimmed.length !== 8) {
-      setError("Please enter a valid 8-character confirmation code.");
+    const trimmed = code.trim();
+    if (trimmed.length === 0) {
+      setError("Please enter a job ID or confirmation code.");
       return;
     }
 
@@ -179,7 +179,7 @@ function GuestLookup() {
       setJob(res.job);
     } catch (err: unknown) {
       const message =
-        err instanceof Error ? err.message : "Job not found. Please check your code.";
+        err instanceof Error ? err.message : "No job found with that ID or confirmation code.";
       setError(message);
     } finally {
       setLoading(false);
@@ -208,7 +208,7 @@ function GuestLookup() {
           Track Your Pickup
         </h1>
         <p className="text-muted-foreground mt-2">
-          Enter the confirmation code from your booking to view your job status.
+          Enter your job ID or confirmation code to view your job status.
         </p>
       </div>
 
@@ -216,22 +216,21 @@ function GuestLookup() {
         <CardContent className="p-6 space-y-4">
           <div className="flex gap-3">
             <Input
-              placeholder="e.g. ABCD1234"
+              placeholder="Job ID or confirmation code"
               value={code}
               onChange={(e) => {
-                setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8));
+                setCode(e.target.value.trim());
                 if (error) setError(null);
               }}
               onKeyDown={(e) => {
                 if (e.key === "Enter") handleLookup();
               }}
-              className="flex-1 text-center text-lg font-mono tracking-widest uppercase h-12"
-              maxLength={8}
+              className="flex-1 text-center text-sm font-mono h-12"
               disabled={loading}
             />
             <Button
               onClick={handleLookup}
-              disabled={loading || code.trim().length < 8}
+              disabled={loading || code.trim().length === 0}
               className="h-12 px-6"
             >
               {loading ? (
