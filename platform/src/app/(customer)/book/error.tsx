@@ -1,5 +1,8 @@
 "use client";
 
+import * as Sentry from "@sentry/nextjs";
+import { useEffect } from "react";
+
 export default function BookError({
   error,
   reset,
@@ -7,6 +10,10 @@ export default function BookError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  useEffect(() => {
+    Sentry.captureException(error);
+  }, [error]);
+
   return (
     <div className="max-w-3xl mx-auto px-4 py-12">
       <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-6 space-y-4">
