@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAuthStore } from "@/stores/auth-store";
+import { SocketProvider } from "@/lib/socket-provider";
 import { NotificationBell } from "@/components/notification-bell";
 import { operatorApi } from "@/lib/api";
 import {
@@ -36,7 +37,7 @@ export default function OperatorLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, isAuthenticated } = useAuthStore();
+  const { user, token, isAuthenticated } = useAuthStore();
   const [hydrated, setHydrated] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -71,6 +72,7 @@ export default function OperatorLayout({
   const userInitial = userName[0]?.toUpperCase() || "O";
 
   return (
+    <SocketProvider token={token ?? undefined}>
     <div className="h-screen flex overflow-hidden">
       {/* Mobile overlay */}
       {mobileMenuOpen && (
@@ -179,5 +181,6 @@ export default function OperatorLayout({
         <main className="flex-1 p-4 sm:p-6 overflow-y-auto">{children}</main>
       </div>
     </div>
+    </SocketProvider>
   );
 }
