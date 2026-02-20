@@ -740,5 +740,50 @@ def find_or_create_user_by_phone(phone_number):
         'email': None,
         'name': None
     }
-    
+
     return user_id
+
+
+# MARK: - Utility Endpoint for Testing
+@auth_bp.route('/upgrade-to-operator', methods=['POST'])
+def upgrade_to_operator():
+    """Temporary endpoint to upgrade a user to operator role for testing.
+
+    Requires a secret key for security.
+    Body: {"email": "user@example.com", "secret": "your-secret"}
+    """
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'Request body required'}), 400
+
+    email = data.get('email', '').strip().lower()
+    secret = data.get('secret', '').strip()
+
+    # Simple secret check (use env var in production)
+    UPGRADE_SECRET = os.environ.get('UPGRADE_SECRET', 'umuve-upgrade-2026')
+
+    if secret != UPGRADE_SECRET:
+        return jsonify({'error': 'Invalid secret'}), 403
+
+    if not email:
+        return jsonify({'error': 'Email required'}), 400
+
+    # Find and upgrade the user
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+
+    # Upgrade to operator
+    user.role = 'operator'
+    db.session.commit()
+
+    return jsonify({
+        'success': True,
+        'message': f'User {email} upgraded to operator',
+        'user': {
+            'id': user.id,
+            'email': user.email,
+            'name': user.name,
+            'role': user.role
+        }
+    }), 200
