@@ -99,11 +99,9 @@ final class AppState {
         locationManager.startTracking()
 
         guard let token = KeychainHelper.loadString(forKey: "authToken") else { return }
-        socket.connect(token: token)
 
-        if let contractorId = contractorProfile?.id {
-            socket.joinDriverRoom(driverId: contractorId)
-        }
+        // Connect to socket and join driver room automatically
+        socket.connect(token: token, contractorId: contractorProfile?.id)
 
         locationManager.onLocationUpdate = { [weak self] location in
             let lat = location.coordinate.latitude

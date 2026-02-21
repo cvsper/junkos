@@ -25,11 +25,15 @@ final class SocketIOManager {
     var newJobAlert: DriverJob?
     var assignedJobId: String?
 
+    private var pendingDriverId: String?
+
     private init() {}
 
     // MARK: - Connection
 
-    func connect(token: String) {
+    func connect(token: String, contractorId: String? = nil) {
+        pendingDriverId = contractorId
+
         let url = URL(string: AppConfig.shared.socketURL)!
         manager = SocketManager(socketURL: url, config: [
             .log(false),
@@ -42,6 +46,12 @@ final class SocketIOManager {
 
         socket?.on(clientEvent: .connect) { [weak self] _, _ in
             self?.isConnected = true
+
+            // Join driver room after connection is established
+            if let driverId = self?.pendingDriverId {
+                self?.socket?.emit("join", ["room": "driver:\(driverId)"])
+                print("🔵 SocketIO: Joined driver room: driver:\(driverId)")
+            }
         }
 
         socket?.on(clientEvent: .disconnect) { [weak self] _, _ in
@@ -68,6 +78,16 @@ final class SocketIOManager {
             guard let dict = data.first as? [String: Any],
                   let jobId = dict["job_id"] as? String else { return }
             self?.assignedJobId = jobId
+
+            // Notify UI to refresh active jobs
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(
+                    name: NSNotification.Name("socket:job:assigned"),
+                    object: nil,
+                    userInfo: ["job_id": jobId]
+                )
+            }
+            print("🟢 SocketIO: Job assigned - \(jobId)")
         }
 
         // Listen for job acceptance by other drivers (remove from feed)
