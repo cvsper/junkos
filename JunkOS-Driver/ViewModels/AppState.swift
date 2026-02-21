@@ -101,7 +101,9 @@ final class AppState {
         guard let token = KeychainHelper.loadString(forKey: "authToken") else { return }
 
         // Connect to socket and join driver room automatically
-        socket.connect(token: token, contractorId: contractorProfile?.id)
+        let contractorId = contractorProfile?.id
+        print("📍 AppState: Starting socket with contractorId: \(contractorId ?? "nil")")
+        socket.connect(token: token, contractorId: contractorId)
 
         locationManager.onLocationUpdate = { [weak self] location in
             let lat = location.coordinate.latitude

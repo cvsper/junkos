@@ -45,17 +45,25 @@ final class SocketIOManager {
         socket = manager?.defaultSocket
 
         socket?.on(clientEvent: .connect) { [weak self] _, _ in
+            print("🟢 SocketIO: Connected!")
             self?.isConnected = true
 
             // Join driver room after connection is established
             if let driverId = self?.pendingDriverId {
                 self?.socket?.emit("join", ["room": "driver:\(driverId)"])
                 print("🔵 SocketIO: Joined driver room: driver:\(driverId)")
+            } else {
+                print("⚠️ SocketIO: No pendingDriverId - cannot join room")
             }
         }
 
         socket?.on(clientEvent: .disconnect) { [weak self] _, _ in
+            print("🔴 SocketIO: Disconnected!")
             self?.isConnected = false
+        }
+
+        socket?.on(clientEvent: .error) { data, _ in
+            print("❌ SocketIO Error: \(data)")
         }
 
         socket?.on("job:new") { [weak self] data, _ in
