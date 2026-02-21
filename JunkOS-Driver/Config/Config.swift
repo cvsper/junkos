@@ -15,7 +15,7 @@ enum APIEnvironment {
     var baseURL: String {
         switch self {
         case .development:
-            return "http://localhost:8080"
+            return "https://junkos-backend.onrender.com" // Use production in DEBUG for testing
         case .production:
             return "https://junkos-backend.onrender.com"
         }
@@ -24,7 +24,7 @@ enum APIEnvironment {
     var socketURL: String {
         switch self {
         case .development:
-            return "http://localhost:8080"
+            return "https://junkos-backend.onrender.com" // Use production in DEBUG for testing
         case .production:
             return "https://junkos-backend.onrender.com"
         }
