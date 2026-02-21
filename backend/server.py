@@ -120,7 +120,17 @@ else:
 # ---------------------------------------------------------------------------
 CORS(app, resources={r"/api/*": {"origins": _allowed_origins}})
 sqlalchemy_db.init_app(app)
-socketio.init_app(app, cors_allowed_origins=_allowed_origins, async_mode="eventlet")
+socketio.init_app(
+    app,
+    cors_allowed_origins=_allowed_origins,
+    async_mode="eventlet",
+    logger=False,
+    engineio_logger=False,
+    # Explicitly support both Socket.IO v2.x and v4.x protocols
+    allow_upgrades=True,
+    # Enable both polling and websocket transports
+    transports=['polling', 'websocket']
+)
 
 # ---------------------------------------------------------------------------
 # Rate limiting (in-memory; upgrade to Redis via RATELIMIT_STORAGE_URI)
@@ -309,7 +319,7 @@ def get_available_time_slots(requested_date=None):
 @limiter.exempt
 def health_check():
     """Health check endpoint (exempt from rate limiting)"""
-    return jsonify({"status": "healthy", "service": "Umuve API", "version": "2.2.0-operator-invites"}), 200
+    return jsonify({"status": "healthy", "service": "Umuve API", "version": "2.2.1-socketio-v4-protocol"}), 200
 
 
 @app.route("/api/run-migrate/<secret>", methods=["POST"])
