@@ -7,9 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		48E5DB9CA4FA46C6821D0717 /* UberStyleMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B464E84DA1724CD599198C9C /* UberStyleMapView.swift */; };
-		4075F7DB78684154A1D04AED /* TruckAnnotationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2D2F53BCACD45E6A17FC6B7 /* TruckAnnotationView.swift */; };
-		8A80119644DB4C2895A1F950 /* TruckAnnotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50951C36B10246E9A2DA389B /* TruckAnnotation.swift */; };
 		07D3D958F6EC6B2561F6FEAA /* DistanceBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = F412C09E80A444B74B8D3414 /* DistanceBadge.swift */; };
 		07FA90FCA1373A44089255FA /* ActiveJobView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3CEB980FB0B2AE4E5E91426 /* ActiveJobView.swift */; };
 		14790A1C6E4BF7984B5FF3E4 /* DriverAnnotationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17D1EDD45EA760AA572801D2 /* DriverAnnotationView.swift */; };
@@ -76,7 +73,6 @@
 		E2802E3778DC622FD2129867 /* DriverTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9149614AAE2D78491B7C3059 /* DriverTabView.swift */; };
 		E369CFD6586407A2F2E466EA /* VolumeAdjustmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE9E48C43F8021E7F9080650 /* VolumeAdjustmentView.swift */; };
 		E5D3735C98C318A48111C440 /* JobModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC27DA7E685BE7675B0FB1 /* JobModels.swift */; };
-		E7BFCFCFCFCFCFCFCFCFCFCF /* EmailSignupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7A7E7E7E7E7E7E7E7E7E7E7 /* EmailSignupView.swift */; };
 		E846E81BACDA70840792507E /* ActiveJobViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A445038901808240328233C0 /* ActiveJobViewModel.swift */; };
 		E8806EA1AE37848938F8D70C /* DriverAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AC42610087364CBEADF1B33 /* DriverAPIClient.swift */; };
 		EFF5C17CB3686BD2C855518D /* JobFeedViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F5425951FF88727F63532BA /* JobFeedViewModel.swift */; };
@@ -85,9 +81,6 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		50951C36B10246E9A2DA389B /* TruckAnnotation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TruckAnnotation.swift; sourceTree = "<group>"; };
-		A2D2F53BCACD45E6A17FC6B7 /* TruckAnnotationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TruckAnnotationView.swift; sourceTree = "<group>"; };
-		B464E84DA1724CD599198C9C /* UberStyleMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UberStyleMapView.swift; sourceTree = "<group>"; };
 		00CF7F44684B3635D99E9F02 /* StarRating.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StarRating.swift; sourceTree = "<group>"; };
 		0AA0B3DB0C558CAF78DD76C4 /* AfterPhotosView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AfterPhotosView.swift; sourceTree = "<group>"; };
 		0B2559C4BC940385186AB071 /* StripeConnectOnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StripeConnectOnboardingView.swift; sourceTree = "<group>"; };
@@ -151,7 +144,6 @@
 		DE9E48C43F8021E7F9080650 /* VolumeAdjustmentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VolumeAdjustmentView.swift; sourceTree = "<group>"; };
 		E12E32582549A882906AADC2 /* BeforePhotosView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BeforePhotosView.swift; sourceTree = "<group>"; };
 		E269A5BD9F9CDD622483E10C /* NavigateToJobView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigateToJobView.swift; sourceTree = "<group>"; };
-		E7A7E7E7E7E7E7E7E7E7E7E7 /* EmailSignupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmailSignupView.swift; sourceTree = "<group>"; };
 		E7CB288966F25A1F3987FC69 /* ProfileSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileSettingsView.swift; sourceTree = "<group>"; };
 		ED5DECECC5344F008D376847 /* EarningsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EarningsView.swift; sourceTree = "<group>"; };
 		EE6A30F12DD65BEE0708A3A6 /* ImageUploadService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageUploadService.swift; sourceTree = "<group>"; };
@@ -343,7 +335,6 @@
 		D3932D7C39CB246114E627A5 /* Auth */ = {
 			isa = PBXGroup;
 			children = (
-				E7A7E7E7E7E7E7E7E7E7E7E7 /* EmailSignupView.swift */,
 				C6CC84B7BBA8C36ACEA14548 /* DriverAuthView.swift */,
 				2F99313D9A94E708D4B813C6 /* PhoneSignupView.swift */,
 				928C74E7765B48CE6A718911 /* DriverOnboardingView.swift */,
@@ -455,7 +446,7 @@
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 2620;
 			};
-			buildConfigurationList = E1E966CBA6305367382A8CCF /* Build configuration list for PBXProject "JunkOS-Driver" */;
+			buildConfigurationList = E1E966CBA6305367382A8CCF /* Build configuration list for PBXProject "Umuve Pro" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -476,10 +467,7 @@
 		};
 /* End PBXProject section */
 
-/* Begin PBXRes				8A80119644DB4C2895A1F950 /* TruckAnnotation.swift in Sources */,
-				4075F7DB78684154A1D04AED /* TruckAnnotationView.swift in Sources */,
-				48E5DB9CA4FA46C6821D0717 /* UberStyleMapView.swift in Sources */,
-ourcesBuildPhase section */
+/* Begin PBXResourcesBuildPhase section */
 		EB4BB04E1D944692F9B9127A /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -520,7 +508,6 @@ ourcesBuildPhase section */
 				14790A1C6E4BF7984B5FF3E4 /* DriverAnnotationView.swift in Sources */,
 				B9EF3DD412FA186F53E44D22 /* DriverAuthView.swift in Sources */,
 				CA0CD9A528904A2CD1E266DB /* PhoneSignupView.swift in Sources */,
-				E7BFCFCFCFCFCFCFCFCFCFCF /* EmailSignupView.swift in Sources */,
 				4F219CCBF09D2A91F8C8A08F /* DriverDesignSystem.swift in Sources */,
 				8BBCE11D4D582E7D746F2E4F /* DriverOnboardingView.swift in Sources */,
 				E2802E3778DC622FD2129867 /* DriverTabView.swift in Sources */,
@@ -583,7 +570,6 @@ ourcesBuildPhase section */
 				INFOPLIST_KEY_CFBundleDisplayName = "Umuve Pro";
 				INFOPLIST_KEY_CFBundleIconName = AppIcon;
 				INFOPLIST_KEY_CFBundleName = "Umuve Pro";
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.business";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Umuve Pro needs camera access to take before and after photos of job sites.";
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Umuve Pro needs continuous location access to track your position during active jobs.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Umuve Pro needs your location to show you nearby jobs and share your position with customers.";
@@ -617,7 +603,6 @@ ourcesBuildPhase section */
 				INFOPLIST_KEY_CFBundleDisplayName = "Umuve Pro";
 				INFOPLIST_KEY_CFBundleIconName = AppIcon;
 				INFOPLIST_KEY_CFBundleName = "Umuve Pro";
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.business";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Umuve Pro needs camera access to take before and after photos of job sites.";
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Umuve Pro needs continuous location access to track your position during active jobs.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Umuve Pro needs your location to show you nearby jobs and share your position with customers.";
@@ -674,7 +659,7 @@ ourcesBuildPhase section */
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 18;
+				CURRENT_PROJECT_VERSION = 13;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 24GH82AX9R;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -736,7 +721,7 @@ ourcesBuildPhase section */
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 18;
+				CURRENT_PROJECT_VERSION = 13;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = 24GH82AX9R;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -782,7 +767,7 @@ ourcesBuildPhase section */
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
-		E1E966CBA6305367382A8CCF /* Build configuration list for PBXProject "JunkOS-Driver" */ = {
+		E1E966CBA6305367382A8CCF /* Build configuration list for PBXProject "Umuve Pro" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				4F2E1F8B5146150677D39864 /* Debug */,
