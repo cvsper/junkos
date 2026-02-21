@@ -12,16 +12,11 @@ import AuthenticationServices
 struct DriverAuthView: View {
     @Bindable var appState: AppState
     @State private var showPhoneSignup = false
-    @State private var showEmailSignup = false
 
     var body: some View {
         if showPhoneSignup {
             PhoneSignupView(appState: appState) {
                 showPhoneSignup = false
-            }
-        } else if showEmailSignup {
-            EmailSignupView(appState: appState) {
-                showEmailSignup = false
             }
         } else {
             mainAuthView
@@ -80,23 +75,6 @@ struct DriverAuthView: View {
                     }
                     .padding(.vertical, DriverSpacing.xs)
 
-                    // Email Sign Up Button
-                    Button {
-                        showEmailSignup = true
-                    } label: {
-                        HStack(spacing: DriverSpacing.sm) {
-                            Image(systemName: "envelope.fill")
-                                .font(.system(size: 16, weight: .medium))
-                            Text("Sign Up with Email")
-                                .font(DriverTypography.headline)
-                        }
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 52)
-                        .background(Color.driverPrimary)
-                        .clipShape(RoundedRectangle(cornerRadius: DriverRadius.md))
-                    }
-
                     // Phone Sign Up Button
                     Button {
                         showPhoneSignup = true
@@ -110,21 +88,9 @@ struct DriverAuthView: View {
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
                         .frame(height: 52)
-                        .background(Color.driverPrimary.opacity(0.8))
+                        .background(Color.driverPrimary)
                         .clipShape(RoundedRectangle(cornerRadius: DriverRadius.md))
                     }
-
-                    // Dev Login Button (for testing)
-                    Button {
-                        Task {
-                            await appState.auth.devLogin()
-                        }
-                    } label: {
-                        Text("Quick Test Login")
-                            .font(DriverTypography.caption)
-                            .foregroundStyle(Color.driverTextSecondary)
-                    }
-                    .padding(.top, DriverSpacing.sm)
 
                     // Error message display
                     if let errorMessage = appState.auth.errorMessage {
