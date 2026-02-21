@@ -67,8 +67,12 @@ final class LiveMapViewModel {
             do {
                 let response = try await api.getAvailableJobs()
                 nearbyJobs = response.jobs
+                print("📋 LiveMapViewModel: Fetched \(response.jobs.count) available jobs")
             } catch {
-                // Silently fail — jobs will refresh next cycle
+                print("❌ LiveMapViewModel: Failed to fetch jobs - \(error.localizedDescription)")
+                if let apiError = error as? DriverAPIClient.APIError {
+                    print("   API Error details: \(apiError)")
+                }
             }
         }
     }
