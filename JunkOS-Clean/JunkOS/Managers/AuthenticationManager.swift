@@ -114,7 +114,8 @@ class AuthenticationManager: ObservableObject {
 
         var body: [String: Any] = [
             "identity_token": identityToken,
-            "nonce": nonce
+            "nonce": nonce,
+            "role": "customer"
         ]
 
         if let email = email {

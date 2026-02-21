@@ -27,7 +27,7 @@
                BlueprintIdentifier = "682035F336F6697960DAA9AB"
                BuildableName = "JunkOS-Driver.app"
                BlueprintName = "JunkOS-Driver"
-               ReferencedContainer = "container:Umuve Pro.xcodeproj">
+               ReferencedContainer = "container:JunkOS-Driver.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -56,7 +56,7 @@
             BlueprintIdentifier = "682035F336F6697960DAA9AB"
             BuildableName = "JunkOS-Driver.app"
             BlueprintName = "JunkOS-Driver"
-            ReferencedContainer = "container:Umuve Pro.xcodeproj">
+            ReferencedContainer = "container:JunkOS-Driver.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -73,7 +73,7 @@
             BlueprintIdentifier = "682035F336F6697960DAA9AB"
             BuildableName = "JunkOS-Driver.app"
             BlueprintName = "JunkOS-Driver"
-            ReferencedContainer = "container:Umuve Pro.xcodeproj">
+            ReferencedContainer = "container:JunkOS-Driver.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>
