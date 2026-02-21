@@ -57,11 +57,11 @@
 		B03F09EC14CA94ED5F570AEB /* NavigateToJobView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E269A5BD9F9CDD622483E10C /* NavigateToJobView.swift */; };
 		B6088267C57D4BFE5934D029 /* KeychainHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94CEA3D9996C5038C6FCF4FA /* KeychainHelper.swift */; };
 		B9EF3DD412FA186F53E44D22 /* DriverAuthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6CC84B7BBA8C36ACEA14548 /* DriverAuthView.swift */; };
-		CA0CD9A528904A2CD1E266DB /* PhoneSignupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F99313D9A94E708D4B813C6 /* PhoneSignupView.swift */; };
 		BAD93C9DACE562D75D564204 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1FBC43CAFF78869678C21C3F /* Assets.xcassets */; };
 		BF70D9F10BFA3C3DE51E7908 /* PayoutSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24F8F8ADE1A72C73B582B02B /* PayoutSettingsView.swift */; };
 		C185F7208CF4AD483FB0D267 /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B635EA21FAAB5E8F8AC182AA /* NotificationManager.swift */; };
 		C440DD69A4F80D82F7D54855 /* StripeConnectViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6372D0ABD935A4BA919F1C8 /* StripeConnectViewModel.swift */; };
+		CA0CD9A528904A2CD1E266DB /* PhoneSignupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F99313D9A94E708D4B813C6 /* PhoneSignupView.swift */; };
 		CB3DDC4640A48606B0591666 /* LocationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CF097D7D1B06883811BBF1A /* LocationManager.swift */; };
 		CD1DCEE1D0AB13C15EFCD4DE /* JobCompletionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9708A071501064F0B43DB279 /* JobCompletionView.swift */; };
 		CDAB0B258DCCB40E55DFBAB6 /* RoleSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FF356F775DBF636A95D89BA /* RoleSelectionView.swift */; };
@@ -93,6 +93,7 @@
 		1FCB1498666015B9BBBC1DF1 /* HapticManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticManager.swift; sourceTree = "<group>"; };
 		228E7D7E7644F745D1DAAFED /* SplashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplashView.swift; sourceTree = "<group>"; };
 		24F8F8ADE1A72C73B582B02B /* PayoutSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PayoutSettingsView.swift; sourceTree = "<group>"; };
+		2F99313D9A94E708D4B813C6 /* PhoneSignupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneSignupView.swift; sourceTree = "<group>"; };
 		344C45FBFECAA97F6CB507F5 /* ActiveJobMapOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveJobMapOverlay.swift; sourceTree = "<group>"; };
 		3650D5429433D4FB66AA8423 /* ContractorRegistrationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContractorRegistrationView.swift; sourceTree = "<group>"; };
 		3988FAD16A2B52B69264800C /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
@@ -136,7 +137,6 @@
 		BF8D49E5C00DA1F5B18B2699 /* SocketIOManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SocketIOManager.swift; sourceTree = "<group>"; };
 		C14897C95FBADE41B4B75E28 /* JunkOSDriverApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JunkOSDriverApp.swift; sourceTree = "<group>"; };
 		C6CC84B7BBA8C36ACEA14548 /* DriverAuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriverAuthView.swift; sourceTree = "<group>"; };
-		2F99313D9A94E708D4B813C6 /* PhoneSignupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneSignupView.swift; sourceTree = "<group>"; };
 		CDBA8F8B87D1D52884F3E249 /* AvailabilityScheduleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AvailabilityScheduleView.swift; sourceTree = "<group>"; };
 		D074AC78D9277D0C00126A35 /* CameraPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraPickerView.swift; sourceTree = "<group>"; };
 		D1DC4D6D20A3CCC9709A404C /* TruckTypeSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TruckTypeSelectionView.swift; sourceTree = "<group>"; };
@@ -444,7 +444,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
-				LastUpgradeCheck = 1600;
+				LastUpgradeCheck = 2620;
 			};
 			buildConfigurationList = E1E966CBA6305367382A8CCF /* Build configuration list for PBXProject "JunkOS-Driver" */;
 			compatibilityVersion = "Xcode 14.0";
@@ -565,7 +565,6 @@
 				CODE_SIGN_ENTITLEMENTS = "JunkOS-Driver.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 24GH82AX9R;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_GENERATION_MODE = GeneratedFile;
 				INFOPLIST_KEY_CFBundleDisplayName = "Umuve Pro";
@@ -599,7 +598,6 @@
 				CODE_SIGN_ENTITLEMENTS = "JunkOS-Driver.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 24GH82AX9R;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_GENERATION_MODE = GeneratedFile;
 				INFOPLIST_KEY_CFBundleDisplayName = "Umuve Pro";
@@ -630,6 +628,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
@@ -662,8 +661,10 @@
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 4;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 24GH82AX9R;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -678,6 +679,7 @@
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 5.9;
@@ -688,6 +690,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
@@ -720,8 +723,10 @@
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 4;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 24GH82AX9R;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -743,6 +748,7 @@
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.9;

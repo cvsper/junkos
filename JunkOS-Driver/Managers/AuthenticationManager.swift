@@ -99,8 +99,11 @@ final class AuthenticationManager {
 
         do {
             let response = try await api.sendVerificationCode(phoneNumber: phoneNumber)
+            // Check if dev mode code is present
+            if let code = response.code {
+                errorMessage = "DEV MODE - Your code is: \(code)"
+            }
             isLoading = false
-            // Success - caller should show code input screen
         } catch {
             errorMessage = "Failed to send code. Try again."
             isLoading = false

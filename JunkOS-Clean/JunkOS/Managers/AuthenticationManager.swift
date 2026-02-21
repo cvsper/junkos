@@ -345,11 +345,21 @@ class AuthenticationManager: ObservableObject {
             let body = ["phoneNumber": phoneNumber]
             request.httpBody = try JSONEncoder().encode(body)
 
-            let (_, response) = try await URLSession.shared.data(for: request)
+            let (data, response) = try await URLSession.shared.data(for: request)
 
             if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 {
-                await MainActor.run {
-                    isLoading = false
+                // Parse response to get dev code if available
+                if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                   let code = json["code"] as? String {
+                    // Dev mode - show code in error message
+                    await MainActor.run {
+                        errorMessage = "DEV MODE - Your code is: \(code)"
+                        isLoading = false
+                    }
+                } else {
+                    await MainActor.run {
+                        isLoading = false
+                    }
                 }
             } else {
                 throw NSError(domain: "Auth", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to send code"])
