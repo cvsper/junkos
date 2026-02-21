@@ -424,14 +424,6 @@ class AuthenticationManager: ObservableObject {
         }
     }
 
-    /// Deprecated: Email auth removed - Apple Sign In only
-    func loginWithEmail(email: String, password: String, completion: @escaping (Bool, String?) -> Void) {
-        DispatchQueue.main.async {
-            self.errorMessage = "Email authentication is no longer supported. Please use Sign in with Apple."
-            completion(false, "Email authentication is no longer supported")
-        }
-    }
-
     /// Deprecated: Password reset removed - Apple Sign In only
     func requestPasswordReset(email: String, completion: @escaping (Bool, String?) -> Void) {
         DispatchQueue.main.async {
