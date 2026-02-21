@@ -18,7 +18,7 @@ from extensions import limiter
 auth_bp = Blueprint('auth', __name__, url_prefix='/api/auth')
 
 # In-memory storage for demo (use Redis in production)
-verification_codes = {}  # phone_number: {code, expires_at}
+verification_codes = {}  # phone: {code, expires_at}
 users_db = {}  # user_id: {id, name, email, phone, password_hash}
 
 # JWT secret — read from env (shared with app_config.Config.JWT_SECRET)
@@ -185,23 +185,23 @@ def optional_auth(f):
 def send_verification_code():
     """Send SMS verification code to phone number"""
     data = request.get_json()
-    phone_number = data.get('phoneNumber')
+    phone = data.get('phoneNumber')
     
-    if not phone_number:
+    if not phone:
         return jsonify({'error': 'Phone number required'}), 400
     
     # Generate and store code
     code = generate_verification_code()
     expires_at = datetime.datetime.utcnow() + datetime.timedelta(minutes=10)
     
-    verification_codes[phone_number] = {
+    verification_codes[phone] = {
         'code': code,
         'expires_at': expires_at
     }
     
     # Send SMS via Twilio (falls back to console print in dev mode)
     from notifications import send_verification_sms
-    send_verification_sms(phone_number, code)
+    send_verification_sms(phone, code)
 
     response_data = {
         'success': True,
@@ -218,17 +218,17 @@ def send_verification_code():
 def verify_code():
     """Verify SMS code and create/login user"""
     data = request.get_json()
-    phone_number = data.get('phoneNumber')
+    phone = data.get('phoneNumber')
     code = data.get('code')
     
-    if not phone_number or not code:
+    if not phone or not code:
         return jsonify({'error': 'Phone number and code required'}), 400
     
     # Check if code exists
-    if phone_number not in verification_codes:
+    if phone not in verification_codes:
         return jsonify({'error': 'No verification code found'}), 400
     
-    stored_data = verification_codes[phone_number]
+    stored_data = verification_codes[phone]
     
     # Check if code matches
     if stored_data['code'] != code:
@@ -236,15 +236,15 @@ def verify_code():
     
     # Check if code expired
     if datetime.datetime.utcnow() > stored_data['expires_at']:
-        del verification_codes[phone_number]
+        del verification_codes[phone]
         return jsonify({'error': 'Verification code expired'}), 401
     
     # Code is valid - create or get user
-    user_id = find_or_create_user_by_phone(phone_number)
+    user_id = find_or_create_user_by_phone(phone)
     user = users_db[user_id]
     
     # Clear verification code
-    del verification_codes[phone_number]
+    del verification_codes[phone]
     
     # Generate token
     token = generate_token(user_id)
@@ -441,7 +441,7 @@ def apple_signin():
                 'apple_id': db_user.apple_id,
                 'email': db_user.email,
                 'name': db_user.name,
-                'phoneNumber': db_user.phone_number,
+                'phoneNumber': db_user.phone,
                 'role': db_user.role
             }
 
@@ -455,7 +455,7 @@ def apple_signin():
             apple_id=user_identifier,
             email=email,
             name=name,
-            phone_number=None,
+            phone=None,
             role=role
         )
         db.session.add(db_user)
@@ -785,18 +785,18 @@ def refresh_token_endpoint():
 
 # MARK: - Helper Functions
 
-def find_or_create_user_by_phone(phone_number):
+def find_or_create_user_by_phone(phone):
     """Find existing user by phone or create new one"""
     # Search for existing user
     for user_id, user in users_db.items():
-        if user.get('phoneNumber') == phone_number:
+        if user.get('phoneNumber') == phone:
             return user_id
     
     # Create new user
     user_id = secrets.token_hex(16)
     users_db[user_id] = {
         'id': user_id,
-        'phoneNumber': phone_number,
+        'phoneNumber': phone,
         'email': None,
         'name': None
     }
@@ -877,18 +877,17 @@ def dev_driver_login():
     """Dev-only endpoint to quickly login as a test driver"""
     from models import Contractor, generate_uuid
 
-    data = request.get_json()
-    phone = data.get('phone', '+15555555555')
+    data = request.get_json() or {}
+    email = data.get('email', 'testdriver@goumuve.com')
 
     # Find or create test driver
-    test_driver = User.query.filter_by(phone_number=phone).first()
+    test_driver = User.query.filter_by(email=email, role='driver').first()
 
     if not test_driver:
         test_driver = User(
             id=secrets.token_hex(16),
-            phone_number=phone,
+            email=email,
             name="Test Driver",
-            email="driver@test.com",
             role="driver"
         )
         db.session.add(test_driver)
@@ -912,7 +911,7 @@ def dev_driver_login():
             'id': test_driver.id,
             'name': test_driver.name,
             'email': test_driver.email,
-            'phoneNumber': test_driver.phone_number,
+            'phoneNumber': test_driver.phone,
             'role': test_driver.role
         }
     })
@@ -968,7 +967,7 @@ def driver_signup():
             'id': new_user.id,
             'name': new_user.name,
             'email': new_user.email,
-            'phoneNumber': new_user.phone_number,
+            'phoneNumber': new_user.phone,
             'role': new_user.role
         }
     })
@@ -1002,7 +1001,7 @@ def driver_login():
             'id': user.id,
             'name': user.name,
             'email': user.email,
-            'phoneNumber': user.phone_number,
+            'phoneNumber': user.phone,
             'role': user.role
         }
     })
