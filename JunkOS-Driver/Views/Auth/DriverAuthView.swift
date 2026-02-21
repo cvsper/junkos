@@ -12,9 +12,14 @@ import AuthenticationServices
 struct DriverAuthView: View {
     @Bindable var appState: AppState
     @State private var showPhoneSignup = false
+    @State private var showEmailSignup = false
 
     var body: some View {
-        if showPhoneSignup {
+        if showEmailSignup {
+            EmailSignupView(appState: appState) {
+                showEmailSignup = false
+            }
+        } else if showPhoneSignup {
             PhoneSignupView(appState: appState) {
                 showPhoneSignup = false
             }
@@ -75,6 +80,23 @@ struct DriverAuthView: View {
                     }
                     .padding(.vertical, DriverSpacing.xs)
 
+                    // Email Sign Up Button
+                    Button {
+                        showEmailSignup = true
+                    } label: {
+                        HStack(spacing: DriverSpacing.sm) {
+                            Image(systemName: "envelope.fill")
+                                .font(.system(size: 16, weight: .medium))
+                            Text("Sign Up with Email")
+                                .font(DriverTypography.headline)
+                        }
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 52)
+                        .background(Color.driverPrimary)
+                        .clipShape(RoundedRectangle(cornerRadius: DriverRadius.md))
+                    }
+
                     // Phone Sign Up Button
                     Button {
                         showPhoneSignup = true
@@ -88,7 +110,7 @@ struct DriverAuthView: View {
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
                         .frame(height: 52)
-                        .background(Color.driverPrimary)
+                        .background(Color.driverSecondary)
                         .clipShape(RoundedRectangle(cornerRadius: DriverRadius.md))
                     }
 
