@@ -28,13 +28,35 @@ struct LiveMapView: View {
 
     var body: some View {
         ZStack {
-            // MARK: - Full-Screen 3D Uber-Style Map
-            UberStyleMapView(
-                userLocation: .constant(appState.locationManager.currentLocation),
-                nearbyJobs: mapVM.nearbyJobs,
-                route: mapVM.route,
-                truckType: appState.contractorProfile?.truckType
-            )
+            // MARK: - Full-Screen Map
+            Map(position: $mapVM.cameraPosition) {
+                // Driver annotation
+                Annotation("You", coordinate: driverCoordinate) {
+                    DriverAnnotationView(
+                        truckIcon: truckIcon,
+                        heading: appState.locationManager.currentLocation?.course ?? 0
+                    )
+                }
+
+                // Nearby job markers
+                ForEach(mapVM.nearbyJobs) { job in
+                    if let lat = job.lat, let lng = job.lng {
+                        Marker(job.formattedPrice, coordinate: CLLocationCoordinate2D(latitude: lat, longitude: lng))
+                            .tint(Color.driverPrimary)
+                    }
+                }
+
+                // Route polyline for accepted job
+                if let route = mapVM.route {
+                    MapPolyline(route)
+                        .stroke(Color.driverPrimary, lineWidth: 5)
+                }
+            }
+            .mapControls {
+                MapUserLocationButton()
+                MapCompass()
+            }
+            .mapStyle(.standard(pointsOfInterest: .excludingAll))
             .ignoresSafeArea(edges: .top)
 
             // MARK: - Top Overlays
