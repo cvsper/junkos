@@ -13,7 +13,7 @@ from database import Database
 from auth_routes import auth_bp, require_auth
 from models import db as sqlalchemy_db
 from socket_events import socketio
-from routes import drivers_bp, pricing_bp, ratings_bp, admin_bp, payments_bp, webhook_bp, booking_bp, upload_bp, jobs_bp, tracking_bp, driver_bp, operator_bp, push_bp, service_area_bp, recurring_bp, referrals_bp, support_bp, chat_bp, onboarding_bp, promos_bp, reviews_bp, operator_applications_bp, ai_bp
+from routes import drivers_bp, pricing_bp, ratings_bp, admin_bp, payments_bp, webhook_bp, booking_bp, upload_bp, jobs_bp, tracking_bp, driver_bp, operator_bp, push_bp, service_area_bp, recurring_bp, referrals_bp, support_bp, chat_bp, onboarding_bp, promos_bp, reviews_bp, operator_applications_bp
 
 # ---------------------------------------------------------------------------
 # Sentry error monitoring (optional -- only active when SENTRY_DSN is set)
@@ -168,13 +168,12 @@ app.register_blueprint(onboarding_bp)
 app.register_blueprint(promos_bp)
 app.register_blueprint(reviews_bp)
 app.register_blueprint(operator_applications_bp)
-app.register_blueprint(ai_bp)
 
 # ---------------------------------------------------------------------------
 # Input sanitization middleware (XSS / injection prevention)
 # ---------------------------------------------------------------------------
 # Paths that must NOT have their bodies sanitized (file uploads, webhooks).
-_SANITIZE_SKIP_PREFIXES = ("/api/bookings/upload-photos", "/uploads/", "/api/webhooks/", "/api/upload/", "/api/drivers/onboarding/documents", "/api/ai/")
+_SANITIZE_SKIP_PREFIXES = ("/api/bookings/upload-photos", "/uploads/", "/api/webhooks/", "/api/upload/", "/api/drivers/onboarding/documents")
 
 
 @app.before_request
@@ -310,7 +309,7 @@ def get_available_time_slots(requested_date=None):
 @limiter.exempt
 def health_check():
     """Health check endpoint (exempt from rate limiting)"""
-    return jsonify({"status": "healthy", "service": "Umuve API", "version": "2.0.0-secure"}), 200
+    return jsonify({"status": "healthy", "service": "Umuve API", "version": "2.1.0-driver-auth"}), 200
 
 
 @app.route("/api/run-migrate/<secret>", methods=["POST"])

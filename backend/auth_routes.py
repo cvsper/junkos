@@ -377,12 +377,19 @@ def login():
 @auth_bp.route('/apple', methods=['POST'])
 def apple_signin():
     """Authenticate with Apple Sign In credential"""
+    from models import Contractor
+
     data = request.get_json()
     identity_token = data.get('identity_token')
     nonce = data.get('nonce')
     user_identifier = data.get('userIdentifier')
     email = data.get('email')
     name = data.get('name')
+    role = data.get('role', 'customer')  # Default to customer if not specified
+
+    # Validate role
+    if role not in ['customer', 'driver', 'operator']:
+        return jsonify({'error': 'Invalid role'}), 400
 
     # New flow: validate identity_token and nonce
     if identity_token and nonce:
@@ -405,24 +412,76 @@ def apple_signin():
     user = None
     user_id = None
 
-    # Search by Apple ID
+    # Search by Apple ID in in-memory store
     for uid, u in users_db.items():
         if u.get('apple_id') == user_identifier:
             user = u
             user_id = uid
             break
 
+    # Also check database for existing user
+    if not user:
+        db_user = User.query.filter_by(apple_id=user_identifier).first()
+        if db_user:
+            # Validate role matches
+            if db_user.role and db_user.role != role:
+                if role == 'customer':
+                    return jsonify({'error': 'This account is registered as a driver. Please use the driver app.'}), 403
+                elif role == 'driver':
+                    return jsonify({'error': 'This account is registered as a customer. Please use the customer app.'}), 403
+
+            # Update role if not set
+            if not db_user.role:
+                db_user.role = role
+                db.session.commit()
+
+            user_id = db_user.id
+            user = {
+                'id': db_user.id,
+                'apple_id': db_user.apple_id,
+                'email': db_user.email,
+                'name': db_user.name,
+                'phoneNumber': db_user.phone_number,
+                'role': db_user.role
+            }
+
     # Create new user if not found
     if not user:
         user_id = secrets.token_hex(16)
-        users_db[user_id] = {
+
+        # Create database user
+        db_user = User(
+            id=user_id,
+            apple_id=user_identifier,
+            email=email,
+            name=name,
+            phone_number=None,
+            role=role
+        )
+        db.session.add(db_user)
+
+        # If driver, create contractor record
+        if role == 'driver':
+            contractor = Contractor(
+                user_id=user_id,
+                is_available=False,
+                rating=5.0
+            )
+            db.session.add(contractor)
+
+        db.session.commit()
+
+        user = {
             'id': user_id,
             'apple_id': user_identifier,
             'email': email,
             'name': name,
-            'phoneNumber': None
+            'phoneNumber': None,
+            'role': role
         }
-        user = users_db[user_id]
+
+        # Also add to in-memory store for backward compatibility
+        users_db[user_id] = user
 
     # Generate token
     token = generate_token(user_id)
@@ -434,7 +493,8 @@ def apple_signin():
             'id': user['id'],
             'name': user.get('name'),
             'email': user.get('email'),
-            'phoneNumber': user.get('phoneNumber')
+            'phoneNumber': user.get('phoneNumber'),
+            'role': user.get('role')
         }
     })
 
@@ -809,3 +869,138 @@ def upgrade_to_operator():
             'is_operator': contractor.is_operator
         }
     }), 200
+
+# MARK: - Dev/Test Login for Drivers
+
+@auth_bp.route('/dev-driver-login', methods=['POST'])
+def dev_driver_login():
+    """Dev-only endpoint to quickly login as a test driver"""
+    from models import Contractor
+    
+    data = request.get_json()
+    phone = data.get('phone', '+15555555555')
+    
+    # Find or create test driver
+    test_driver = User.query.filter_by(phone_number=phone).first()
+    
+    if not test_driver:
+        test_driver = User(
+            id=secrets.token_hex(16),
+            phone_number=phone,
+            name="Test Driver",
+            email="driver@test.com",
+            role="driver"
+        )
+        db.session.add(test_driver)
+        
+        # Create contractor
+        contractor = Contractor(
+            user_id=test_driver.id,
+            is_available=True,
+            rating=5.0
+        )
+        db.session.add(contractor)
+        db.session.commit()
+    
+    token = generate_token(test_driver.id)
+    
+    return jsonify({
+        'success': True,
+        'token': token,
+        'user': {
+            'id': test_driver.id,
+            'name': test_driver.name,
+            'email': test_driver.email,
+            'phoneNumber': test_driver.phone_number,
+            'role': test_driver.role
+        }
+    })
+
+# MARK: - Email/Password Auth for Drivers
+
+@auth_bp.route('/driver-signup', methods=['POST'])
+def driver_signup():
+    """Sign up as a driver with email and password"""
+    from models import Contractor
+    
+    data = request.get_json()
+    email = data.get('email')
+    password = data.get('password')
+    name = data.get('name')
+    
+    if not email or not password:
+        return jsonify({'error': 'Email and password required'}), 400
+    
+    # Check if email already exists
+    existing_user = User.query.filter_by(email=email).first()
+    if existing_user:
+        return jsonify({'error': 'Email already registered'}), 409
+    
+    # Create driver user
+    user_id = secrets.token_hex(16)
+    new_user = User(
+        id=user_id,
+        email=email,
+        password_hash=hash_password(password),
+        name=name,
+        role='driver'
+    )
+    db.session.add(new_user)
+    
+    # Create contractor record
+    contractor = Contractor(
+        user_id=user_id,
+        is_available=False,
+        rating=5.0
+    )
+    db.session.add(contractor)
+    db.session.commit()
+    
+    # Generate token
+    token = generate_token(user_id)
+    
+    return jsonify({
+        'success': True,
+        'token': token,
+        'user': {
+            'id': new_user.id,
+            'name': new_user.name,
+            'email': new_user.email,
+            'phoneNumber': new_user.phone_number,
+            'role': new_user.role
+        }
+    })
+
+@auth_bp.route('/driver-login', methods=['POST'])
+def driver_login():
+    """Login as a driver with email and password"""
+    data = request.get_json()
+    email = data.get('email')
+    password = data.get('password')
+    
+    if not email or not password:
+        return jsonify({'error': 'Email and password required'}), 400
+    
+    # Find user
+    user = User.query.filter_by(email=email).first()
+    if not user or user.password_hash != hash_password(password):
+        return jsonify({'error': 'Invalid email or password'}), 401
+    
+    # Verify role
+    if user.role != 'driver':
+        return jsonify({'error': 'This account is not registered as a driver. Please use the customer app.'}), 403
+    
+    # Generate token
+    token = generate_token(user.id)
+    
+    return jsonify({
+        'success': True,
+        'token': token,
+        'user': {
+            'id': user.id,
+            'name': user.name,
+            'email': user.email,
+            'phoneNumber': user.phone_number,
+            'role': user.role
+        }
+    })

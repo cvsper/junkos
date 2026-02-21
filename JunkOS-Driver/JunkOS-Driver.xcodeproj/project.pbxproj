@@ -446,7 +446,7 @@
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 2620;
 			};
-			buildConfigurationList = E1E966CBA6305367382A8CCF /* Build configuration list for PBXProject "JunkOS-Driver" */;
+			buildConfigurationList = E1E966CBA6305367382A8CCF /* Build configuration list for PBXProject "Umuve Pro" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -659,7 +659,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 13;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 24GH82AX9R;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -721,7 +721,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 13;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = 24GH82AX9R;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -767,7 +767,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
-		E1E966CBA6305367382A8CCF /* Build configuration list for PBXProject "JunkOS-Driver" */ = {
+		E1E966CBA6305367382A8CCF /* Build configuration list for PBXProject "Umuve Pro" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				4F2E1F8B5146150677D39864 /* Debug */,
