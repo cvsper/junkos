@@ -55,7 +55,6 @@ struct UmuveProApp: App {
                 } else if !appState.isRegistered && appState.selectedRole == nil {
                     // Role selection before registration
                     RoleSelectionView(appState: appState)
-                        .task { await appState.loadContractorProfile() }
                 } else if appState.isOperator {
                     // Operator registered -- redirect to web dashboard
                     OperatorWebRedirectView(appState: appState)
