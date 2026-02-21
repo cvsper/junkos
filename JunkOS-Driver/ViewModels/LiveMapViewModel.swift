@@ -70,7 +70,7 @@ final class LiveMapViewModel {
                 print("📋 LiveMapViewModel: Fetched \(response.jobs.count) available jobs")
             } catch {
                 print("❌ LiveMapViewModel: Failed to fetch jobs - \(error.localizedDescription)")
-                if let apiError = error as? DriverAPIClient.APIError {
+                if let apiError = error as? APIError {
                     print("   API Error details: \(apiError)")
                 }
             }
