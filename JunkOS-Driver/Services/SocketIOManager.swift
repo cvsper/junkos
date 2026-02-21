@@ -36,10 +36,13 @@ final class SocketIOManager {
 
         let url = URL(string: AppConfig.shared.socketURL)!
         manager = SocketManager(socketURL: url, config: [
-            .log(false),
+            .log(true),  // Enable logging to debug connection
             .compress,
             .connectParams(["token": token]),
-            .forceWebsockets(true),
+            // Remove forceWebsockets - let it upgrade naturally from polling
+            .reconnects(true),
+            .reconnectAttempts(-1),  // Infinite reconnection attempts
+            .reconnectWait(2),       // 2 seconds between attempts
         ])
 
         socket = manager?.defaultSocket
@@ -57,13 +60,25 @@ final class SocketIOManager {
             }
         }
 
-        socket?.on(clientEvent: .disconnect) { [weak self] _, _ in
-            print("🔴 SocketIO: Disconnected!")
+        socket?.on(clientEvent: .disconnect) { [weak self] data, _ in
+            print("🔴 SocketIO: Disconnected! Reason: \(data)")
             self?.isConnected = false
+        }
+
+        socket?.on(clientEvent: .reconnect) { data, _ in
+            print("🔄 SocketIO: Reconnecting... Attempt: \(data)")
+        }
+
+        socket?.on(clientEvent: .reconnectAttempt) { data, _ in
+            print("🔄 SocketIO: Reconnect attempt: \(data)")
         }
 
         socket?.on(clientEvent: .error) { data, _ in
             print("❌ SocketIO Error: \(data)")
+        }
+
+        socket?.on(clientEvent: .statusChange) { data, _ in
+            print("📊 SocketIO Status Change: \(data)")
         }
 
         socket?.on("job:new") { [weak self] data, _ in
