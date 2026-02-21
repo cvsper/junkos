@@ -110,7 +110,7 @@ struct DriverAuthView: View {
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
                         .frame(height: 52)
-                        .background(Color.driverSecondary)
+                        .background(Color.driverPrimary.opacity(0.9))
                         .clipShape(RoundedRectangle(cornerRadius: DriverRadius.md))
                     }
 

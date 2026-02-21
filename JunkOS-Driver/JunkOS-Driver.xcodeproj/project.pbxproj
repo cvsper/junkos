@@ -65,6 +65,7 @@
 		CB3DDC4640A48606B0591666 /* LocationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CF097D7D1B06883811BBF1A /* LocationManager.swift */; };
 		CD1DCEE1D0AB13C15EFCD4DE /* JobCompletionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9708A071501064F0B43DB279 /* JobCompletionView.swift */; };
 		CDAB0B258DCCB40E55DFBAB6 /* RoleSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FF356F775DBF636A95D89BA /* RoleSelectionView.swift */; };
+		CF090D4B2F4A6FC7003372AF /* EmailSignupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF090D4A2F4A6FC7003372AF /* EmailSignupView.swift */; };
 		D046B5278E68B23BC0235296 /* OperatorWebRedirectView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 603921AEAAE9211B5A00593C /* OperatorWebRedirectView.swift */; };
 		D14476790098FE934A99ED4A /* AnimationConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 672F85AEE329F15A6CC0C716 /* AnimationConstants.swift */; };
 		D34EE7A8BBE33ED6B72ABCEF /* AvailabilityScheduleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDBA8F8B87D1D52884F3E249 /* AvailabilityScheduleView.swift */; };
@@ -138,6 +139,7 @@
 		C14897C95FBADE41B4B75E28 /* JunkOSDriverApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JunkOSDriverApp.swift; sourceTree = "<group>"; };
 		C6CC84B7BBA8C36ACEA14548 /* DriverAuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriverAuthView.swift; sourceTree = "<group>"; };
 		CDBA8F8B87D1D52884F3E249 /* AvailabilityScheduleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AvailabilityScheduleView.swift; sourceTree = "<group>"; };
+		CF090D4A2F4A6FC7003372AF /* EmailSignupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmailSignupView.swift; sourceTree = "<group>"; };
 		D074AC78D9277D0C00126A35 /* CameraPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraPickerView.swift; sourceTree = "<group>"; };
 		D1DC4D6D20A3CCC9709A404C /* TruckTypeSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TruckTypeSelectionView.swift; sourceTree = "<group>"; };
 		D6FA3831A39891771A43D22D /* DocumentUploadView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentUploadView.swift; sourceTree = "<group>"; };
@@ -335,6 +337,7 @@
 		D3932D7C39CB246114E627A5 /* Auth */ = {
 			isa = PBXGroup;
 			children = (
+				CF090D4A2F4A6FC7003372AF /* EmailSignupView.swift */,
 				C6CC84B7BBA8C36ACEA14548 /* DriverAuthView.swift */,
 				2F99313D9A94E708D4B813C6 /* PhoneSignupView.swift */,
 				928C74E7765B48CE6A718911 /* DriverOnboardingView.swift */,
@@ -446,7 +449,7 @@
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 2620;
 			};
-			buildConfigurationList = E1E966CBA6305367382A8CCF /* Build configuration list for PBXProject "Umuve Pro" */;
+			buildConfigurationList = E1E966CBA6305367382A8CCF /* Build configuration list for PBXProject "JunkOS-Driver" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -514,6 +517,7 @@
 				3D564E63BD08DA8886FDA8AF /* EarningsModels.swift in Sources */,
 				9A935658ADCF82A0A67E6CC0 /* EarningsView.swift in Sources */,
 				8A8AA35036E08AF0A2BC5E83 /* EarningsViewModel.swift in Sources */,
+				CF090D4B2F4A6FC7003372AF /* EmailSignupView.swift in Sources */,
 				29EE5336D11165A1FC0ABC1B /* EmptyStateView.swift in Sources */,
 				5C4180CB8AE424D51E75FF1F /* HapticManager.swift in Sources */,
 				16B71C5163B965FBDF945A5C /* ImageUploadService.swift in Sources */,
@@ -570,6 +574,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = "Umuve Pro";
 				INFOPLIST_KEY_CFBundleIconName = AppIcon;
 				INFOPLIST_KEY_CFBundleName = "Umuve Pro";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.business";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Umuve Pro needs camera access to take before and after photos of job sites.";
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Umuve Pro needs continuous location access to track your position during active jobs.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Umuve Pro needs your location to show you nearby jobs and share your position with customers.";
@@ -603,6 +608,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = "Umuve Pro";
 				INFOPLIST_KEY_CFBundleIconName = AppIcon;
 				INFOPLIST_KEY_CFBundleName = "Umuve Pro";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.business";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Umuve Pro needs camera access to take before and after photos of job sites.";
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Umuve Pro needs continuous location access to track your position during active jobs.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Umuve Pro needs your location to show you nearby jobs and share your position with customers.";
@@ -659,7 +665,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 13;
+				CURRENT_PROJECT_VERSION = 20;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 24GH82AX9R;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -721,7 +727,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 13;
+				CURRENT_PROJECT_VERSION = 20;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = 24GH82AX9R;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -767,7 +773,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
-		E1E966CBA6305367382A8CCF /* Build configuration list for PBXProject "Umuve Pro" */ = {
+		E1E966CBA6305367382A8CCF /* Build configuration list for PBXProject "JunkOS-Driver" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				4F2E1F8B5146150677D39864 /* Debug */,
