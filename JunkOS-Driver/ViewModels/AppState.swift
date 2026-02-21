@@ -76,6 +76,8 @@ final class AppState {
             toggleError = nil
 
             if isOnline {
+                // CRITICAL: Load profile first to ensure we have contractor ID
+                await loadContractorProfile()
                 startLocationTracking()
             } else {
                 stopLocationTracking()
@@ -85,6 +87,7 @@ final class AppState {
             // Toggle locally for demo even if API fails
             isOnline = newState
             if isOnline {
+                await loadContractorProfile()
                 startLocationTracking()
             } else {
                 stopLocationTracking()
@@ -100,10 +103,20 @@ final class AppState {
 
         guard let token = KeychainHelper.loadString(forKey: "authToken") else { return }
 
-        // Connect to socket and join driver room automatically
-        let contractorId = contractorProfile?.id
-        print("📍 AppState: Starting socket with contractorId: \(contractorId ?? "nil")")
-        socket.connect(token: token, contractorId: contractorId)
+        // Connect to socket
+        socket.connect(token: token, contractorId: contractorProfile?.id)
+
+        // CRITICAL FIX: Manually join room after connection if profile is loaded
+        // This fixes the race condition where profile might not be loaded during connect()
+        if let contractorId = contractorProfile?.id {
+            print("📍 AppState: Socket connected, joining room for contractor: \(contractorId)")
+            // Give socket time to connect before joining room
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+                self?.socket.joinDriverRoom(driverId: contractorId)
+            }
+        } else {
+            print("⚠️ AppState: No contractor ID available - room join will fail!")
+        }
 
         locationManager.onLocationUpdate = { [weak self] location in
             let lat = location.coordinate.latitude

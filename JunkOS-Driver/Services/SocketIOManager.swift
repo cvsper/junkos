@@ -99,7 +99,7 @@ final class SocketIOManager {
         }
 
         // Listen for job acceptance by other drivers (remove from feed)
-        socket?.on("job:accepted") { [weak self] data, _ in
+        socket?.on("job:accepted") { data, _ in
             guard let dict = data.first as? [String: Any],
                   let jobId = dict["job_id"] as? String else { return }
             DispatchQueue.main.async {
@@ -109,6 +109,14 @@ final class SocketIOManager {
                     userInfo: ["job_id": jobId]
                 )
             }
+        }
+
+        // Listen for room join confirmation from backend
+        socket?.on("joined") { [weak self] data, _ in
+            guard let dict = data.first as? [String: Any],
+                  let room = dict["room"] as? String else { return }
+            print("✅ SocketIO: Successfully joined room: \(room)")
+            self?.isConnected = true
         }
 
         // Listen for volume adjustment approval
@@ -151,7 +159,9 @@ final class SocketIOManager {
     // MARK: - Room Management
 
     func joinDriverRoom(driverId: String) {
+        print("🔵 SocketIO: Manually joining driver room: driver:\(driverId)")
         socket?.emit("join", ["room": "driver:\(driverId)"])
+        pendingDriverId = driverId // Update in case we reconnect
     }
 
     func leaveDriverRoom(driverId: String) {
