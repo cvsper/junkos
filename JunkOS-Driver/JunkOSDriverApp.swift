@@ -65,6 +65,16 @@ struct UmuveProApp: App {
                     StripeConnectOnboardingView(appState: appState)
                 } else {
                     DriverTabView(appState: appState)
+                        .task {
+                            // CRITICAL: Load profile on app launch to ensure contractor ID is available
+                            await appState.loadContractorProfile()
+
+                            // If already online from previous session, restart socket with correct contractor ID
+                            if appState.isOnline {
+                                appState.socket.disconnect()
+                                appState.startLocationTracking()
+                            }
+                        }
                         .onAppear {
                             // Request push notification permission once authenticated and registered
                             NotificationManager.shared.requestPermission()
