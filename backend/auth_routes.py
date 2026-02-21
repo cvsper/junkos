@@ -464,8 +464,8 @@ def apple_signin():
         if role == 'driver':
             contractor = Contractor(
                 user_id=user_id,
-                is_available=False,
-                rating=5.0
+                is_online=False,
+                avg_rating=5.0
             )
             db.session.add(contractor)
 
@@ -896,8 +896,8 @@ def dev_driver_login():
         contractor = Contractor(
             id=generate_uuid(),
             user_id=test_driver.id,
-            is_available=True,
-            rating=5.0
+            is_online=False,
+            avg_rating=5.0
         )
         db.session.add(contractor)
         db.session.commit()
@@ -951,8 +951,8 @@ def driver_signup():
     contractor = Contractor(
         id=generate_uuid(),
         user_id=user_id,
-        is_available=False,
-        rating=5.0
+        is_online=False,
+        avg_rating=5.0
     )
     db.session.add(contractor)
     db.session.commit()
