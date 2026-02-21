@@ -875,14 +875,14 @@ def upgrade_to_operator():
 @auth_bp.route('/dev-driver-login', methods=['POST'])
 def dev_driver_login():
     """Dev-only endpoint to quickly login as a test driver"""
-    from models import Contractor
-    
+    from models import Contractor, generate_uuid
+
     data = request.get_json()
     phone = data.get('phone', '+15555555555')
-    
+
     # Find or create test driver
     test_driver = User.query.filter_by(phone_number=phone).first()
-    
+
     if not test_driver:
         test_driver = User(
             id=secrets.token_hex(16),
@@ -892,9 +892,10 @@ def dev_driver_login():
             role="driver"
         )
         db.session.add(test_driver)
-        
+
         # Create contractor
         contractor = Contractor(
+            id=generate_uuid(),
             user_id=test_driver.id,
             is_available=True,
             rating=5.0
@@ -921,21 +922,21 @@ def dev_driver_login():
 @auth_bp.route('/driver-signup', methods=['POST'])
 def driver_signup():
     """Sign up as a driver with email and password"""
-    from models import Contractor
-    
+    from models import Contractor, generate_uuid
+
     data = request.get_json()
     email = data.get('email')
     password = data.get('password')
     name = data.get('name')
-    
+
     if not email or not password:
         return jsonify({'error': 'Email and password required'}), 400
-    
+
     # Check if email already exists
     existing_user = User.query.filter_by(email=email).first()
     if existing_user:
         return jsonify({'error': 'Email already registered'}), 409
-    
+
     # Create driver user
     user_id = secrets.token_hex(16)
     new_user = User(
@@ -946,9 +947,10 @@ def driver_signup():
         role='driver'
     )
     db.session.add(new_user)
-    
+
     # Create contractor record
     contractor = Contractor(
+        id=generate_uuid(),
         user_id=user_id,
         is_available=False,
         rating=5.0
