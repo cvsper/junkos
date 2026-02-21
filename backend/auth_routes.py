@@ -921,12 +921,14 @@ def dev_driver_login():
 @auth_bp.route('/driver-signup', methods=['POST'])
 def driver_signup():
     """Sign up as a driver with email and password"""
-    from models import Contractor, generate_uuid
+    from models import Contractor, OperatorInvite, generate_uuid
+    from datetime import datetime
 
     data = request.get_json()
     email = data.get('email')
     password = data.get('password')
     name = data.get('name')
+    invite_code = data.get('inviteCode')
 
     if not email or not password:
         return jsonify({'error': 'Email and password required'}), 400
@@ -935,6 +937,26 @@ def driver_signup():
     existing_user = User.query.filter_by(email=email).first()
     if existing_user:
         return jsonify({'error': 'Email already registered'}), 409
+
+    # Validate invite code if provided
+    operator_id = None
+    if invite_code:
+        invite = OperatorInvite.query.filter_by(invite_code=invite_code).first()
+
+        if not invite:
+            return jsonify({'error': 'Invalid invite code'}), 400
+
+        if not invite.is_active:
+            return jsonify({'error': 'Invite code is no longer active'}), 400
+
+        if invite.expires_at and invite.expires_at < datetime.utcnow():
+            return jsonify({'error': 'Invite code has expired'}), 400
+
+        if invite.use_count >= invite.max_uses:
+            return jsonify({'error': 'Invite code has reached maximum uses'}), 400
+
+        operator_id = invite.operator_id
+        invite.use_count += 1
 
     # Create driver user
     user_id = secrets.token_hex(16)
@@ -952,14 +974,15 @@ def driver_signup():
         id=generate_uuid(),
         user_id=user_id,
         is_online=False,
-        avg_rating=5.0
+        avg_rating=5.0,
+        operator_id=operator_id
     )
     db.session.add(contractor)
     db.session.commit()
-    
+
     # Generate token
     token = generate_token(user_id)
-    
+
     return jsonify({
         'success': True,
         'token': token,

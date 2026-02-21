@@ -133,7 +133,8 @@ actor DriverAPIClient {
                 nonce: nonce,
                 userIdentifier: userIdentifier,
                 email: email,
-                name: name
+                name: name,
+                role: "driver"
             ),
             authenticated: false
         )
@@ -141,6 +142,28 @@ actor DriverAPIClient {
 
     func refreshToken() async throws -> AuthRefreshResponse {
         try await request("/api/auth/refresh", method: "POST", authenticated: true)
+    }
+
+    func devDriverLogin() async throws -> AuthResponse {
+        try await request("/api/auth/dev-driver-login", method: "POST", authenticated: false)
+    }
+
+    func emailSignup(email: String, password: String, name: String?, inviteCode: String?) async throws -> AuthResponse {
+        try await request(
+            "/api/auth/driver-signup",
+            method: "POST",
+            body: EmailSignupRequest(email: email, password: password, name: name, inviteCode: inviteCode),
+            authenticated: false
+        )
+    }
+
+    func emailLogin(email: String, password: String) async throws -> AuthResponse {
+        try await request(
+            "/api/auth/driver-login",
+            method: "POST",
+            body: EmailLoginRequest(email: email, password: password),
+            authenticated: false
+        )
     }
 
     func sendVerificationCode(phoneNumber: String) async throws -> PhoneVerificationResponse {

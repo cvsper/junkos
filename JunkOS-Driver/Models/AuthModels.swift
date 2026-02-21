@@ -15,6 +15,7 @@ struct AppleSignInRequest: Codable {
     let userIdentifier: String
     let email: String?
     let name: String?
+    let role: String
 
     enum CodingKeys: String, CodingKey {
         case identityToken = "identity_token"
@@ -22,6 +23,7 @@ struct AppleSignInRequest: Codable {
         case userIdentifier
         case email
         case name
+        case role
     }
 }
 
@@ -51,6 +53,18 @@ struct PhoneVerificationResponse: Codable {
 struct PhoneVerifyCodeRequest: Codable {
     let phoneNumber: String
     let code: String
+}
+
+struct EmailSignupRequest: Codable {
+    let email: String
+    let password: String
+    let name: String?
+    let inviteCode: String?
+}
+
+struct EmailLoginRequest: Codable {
+    let email: String
+    let password: String
 }
 
 struct DriverUser: Codable, Identifiable {

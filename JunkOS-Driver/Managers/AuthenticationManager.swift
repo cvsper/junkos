@@ -91,6 +91,46 @@ final class AuthenticationManager {
         }
     }
 
+    // MARK: - Email Authentication
+
+    func emailSignup(email: String, password: String, name: String?, inviteCode: String?) async {
+        isLoading = true
+        errorMessage = nil
+
+        do {
+            let response = try await api.emailSignup(email: email, password: password, name: name, inviteCode: inviteCode)
+            setAuthenticated(user: response.user, token: response.token)
+            isLoading = false
+        } catch {
+            if let apiError = error as? APIError {
+                errorMessage = apiError.errorDescription
+            } else {
+                errorMessage = "Signup failed. Try again."
+            }
+            isLoading = false
+            HapticManager.shared.error()
+        }
+    }
+
+    func emailLogin(email: String, password: String) async {
+        isLoading = true
+        errorMessage = nil
+
+        do {
+            let response = try await api.emailLogin(email: email, password: password)
+            setAuthenticated(user: response.user, token: response.token)
+            isLoading = false
+        } catch {
+            if let apiError = error as? APIError {
+                errorMessage = apiError.errorDescription
+            } else {
+                errorMessage = "Login failed. Check your credentials."
+            }
+            isLoading = false
+            HapticManager.shared.error()
+        }
+    }
+
     // MARK: - Phone Authentication
 
     func sendVerificationCode(phoneNumber: String) async {
@@ -125,6 +165,23 @@ final class AuthenticationManager {
             } else {
                 errorMessage = "Invalid code. Try again."
             }
+            isLoading = false
+            HapticManager.shared.error()
+        }
+    }
+
+    // MARK: - Dev Login
+
+    func devLogin() async {
+        isLoading = true
+        errorMessage = nil
+
+        do {
+            let response = try await api.devDriverLogin()
+            setAuthenticated(user: response.user, token: response.token)
+            isLoading = false
+        } catch {
+            errorMessage = "Dev login failed. Try again."
             isLoading = false
             HapticManager.shared.error()
         }
