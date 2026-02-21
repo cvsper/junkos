@@ -12,6 +12,7 @@
 		5FF95075F663443EA6840FD2 /* BookingReviewViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C773B1D98EDF410CBD206EED /* BookingReviewViewModel.swift */; };
 		6B2AB21B02F247EB1C77B2F3 /* APIModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73F780F7A677603E6AB31CBA /* APIModels.swift */; };
 		978EAC332A244D5F8FEA2CBF /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80B991BBD5664B339818E691 /* NotificationManager.swift */; };
+		9C4365602D62A3A1AFC56F9E /* CustomerSocketManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D2155F15A266820B253CC38 /* CustomerSocketManager.swift */; };
 		9C7FD09841C54C99A29DA7A5 /* BookingWizardViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19D768CA0F8C43A6BD9AC939 /* BookingWizardViewModel.swift */; };
 		A0000001 /* JunkOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000001 /* JunkOSApp.swift */; };
 		A0000002 /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000002 /* DesignSystem.swift */; };
@@ -39,7 +40,6 @@
 		CD34EF56AB12CD34EF56AB12 /* BookingSuccessView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB12CD34EF56AB12CD34EF56 /* BookingSuccessView.swift */; };
 		CDB687E6F7E84384879FDFAE /* CameraPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4FFB908C7184F8F99358601 /* CameraPickerView.swift */; };
 		CF19A5882F40D68B007960A8 /* StripePaymentSheet in Frameworks */ = {isa = PBXBuildFile; productRef = CF19A5872F40D68B007960A8 /* StripePaymentSheet */; };
-		DCB6AC1F7668F776ABECD3E5 /* SocketIO in Frameworks */ = {isa = PBXBuildFile; productRef = F49FDC8DF4FBA9B367D765BF /* SocketIO */; };
 		CF19A58D2F41C60C007960A8 /* JobTrackingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF19A58C2F41C60C007960A8 /* JobTrackingView.swift */; };
 		CF7C17B42F37BC810083FF08 /* ServiceSelectionRedesignView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF7C17B02F37BC810083FF08 /* ServiceSelectionRedesignView.swift */; };
 		CF7C17B52F37BC810083FF08 /* AccountView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF7C17A52F37BC810083FF08 /* AccountView.swift */; };
@@ -62,11 +62,11 @@
 		CF7C17C62F37BC810083FF08 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF7C17AF2F37BC810083FF08 /* ProfileView.swift */; };
 		CF7C17CC2F37BF700083FF08 /* AuthenticationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF7C17CA2F37BF700083FF08 /* AuthenticationManager.swift */; };
 		D2D1D62684D24BC79EA47513 /* PaymentService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F0811DCB5C84EAA9DF1E741 /* PaymentService.swift */; };
+		DCB6AC1F7668F776ABECD3E5 /* SocketIO in Frameworks */ = {isa = PBXBuildFile; productRef = F49FDC8DF4FBA9B367D765BF /* SocketIO */; };
 		E42A8F1C99DD45A3B1C2F789 /* ServiceTypeSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F35B7E9D88CC46B4A0D1E234 /* ServiceTypeSelectionView.swift */; };
 		E9EFC98AFA8643E28EACC354 /* BookingReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B62C6AE0CC2476CBA66EB5C /* BookingReviewView.swift */; };
 		EE6ED07F2A53D504E2E75373 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D09B14030B3F26192D37DF3 /* Config.swift */; };
 		KCH6273DDE75A8449FD9F693 /* KeychainHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = KCH1A95DDFA72D44911BFED2 /* KeychainHelper.swift */; };
-		9C4365602D62A3A1AFC56F9E /* CustomerSocketManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D2155F15A266820B253CC38 /* CustomerSocketManager.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -78,6 +78,7 @@
 		73F780F7A677603E6AB31CBA /* APIModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIModels.swift; sourceTree = "<group>"; };
 		7D09B14030B3F26192D37DF3 /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
 		80B991BBD5664B339818E691 /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
+		9D2155F15A266820B253CC38 /* CustomerSocketManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomerSocketManager.swift; sourceTree = "<group>"; };
 		AB12CD34EF56AB12CD34EF56 /* BookingSuccessView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookingSuccessView.swift; sourceTree = "<group>"; };
 		B0000000 /* JunkOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = JunkOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B0000001 /* JunkOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JunkOSApp.swift; sourceTree = "<group>"; };
@@ -142,7 +143,6 @@
 		D4FFB908C7184F8F99358601 /* CameraPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraPickerView.swift; sourceTree = "<group>"; };
 		F35B7E9D88CC46B4A0D1E234 /* ServiceTypeSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceTypeSelectionView.swift; sourceTree = "<group>"; };
 		KCH1A95DDFA72D44911BFED2 /* KeychainHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainHelper.swift; sourceTree = "<group>"; };
-		9D2155F15A266820B253CC38 /* CustomerSocketManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomerSocketManager.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -438,7 +438,7 @@
 			);
 			mainGroup = D0000001;
 			packageReferences = (
-				C08C55E036FA6195717B8C3E /* XCRemoteSwiftPackageReference "socket.io-client-swift" */,
+				C08C55E036FA6195717B8C3E /* XCRemoteSwiftPackageReference "socket" */,
 				CF19A5862F40D68B007960A8 /* XCRemoteSwiftPackageReference "stripe-ios" */,
 			);
 			productRefGroup = D0000003 /* Products */;
@@ -666,6 +666,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = JunkOS/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -696,6 +697,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = JunkOS/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -738,7 +740,7 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		C08C55E036FA6195717B8C3E /* XCRemoteSwiftPackageReference "socket.io-client-swift" */ = {
+		C08C55E036FA6195717B8C3E /* XCRemoteSwiftPackageReference "socket" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/socketio/socket.io-client-swift";
 			requirement = {
@@ -757,15 +759,15 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		F49FDC8DF4FBA9B367D765BF /* SocketIO */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = C08C55E036FA6195717B8C3E /* XCRemoteSwiftPackageReference "socket.io-client-swift" */;
-			productName = SocketIO;
-		};
 		CF19A5872F40D68B007960A8 /* StripePaymentSheet */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = CF19A5862F40D68B007960A8 /* XCRemoteSwiftPackageReference "stripe-ios" */;
 			productName = StripePaymentSheet;
+		};
+		F49FDC8DF4FBA9B367D765BF /* SocketIO */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C08C55E036FA6195717B8C3E /* XCRemoteSwiftPackageReference "socket" */;
+			productName = SocketIO;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

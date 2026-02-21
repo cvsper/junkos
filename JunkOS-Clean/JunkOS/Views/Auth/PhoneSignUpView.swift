@@ -158,12 +158,14 @@ struct PhoneSignUpView: View {
     }
     
     private func sendVerificationCode() {
-        isLoading = true
-        HapticManager.shared.lightTap()
-        
-        authManager.sendVerificationCode(to: fullPhoneNumber) { success in
+        Task {
+            isLoading = true
+            HapticManager.shared.lightTap()
+
+            await authManager.sendVerificationCode(phoneNumber: fullPhoneNumber)
+
             isLoading = false
-            if success {
+            if authManager.errorMessage == nil {
                 HapticManager.shared.success()
                 showVerification = true
             } else {

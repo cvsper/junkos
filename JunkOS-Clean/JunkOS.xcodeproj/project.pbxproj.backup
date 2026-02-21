@@ -7,72 +7,141 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		'A0000001' = {isa = PBXBuildFile; fileRef = B0000001; };
-		'A0000002' = {isa = PBXBuildFile; fileRef = B0000002; };
-		'A0000003' = {isa = PBXBuildFile; fileRef = B0000003; };
-		'A0000004' = {isa = PBXBuildFile; fileRef = B0000004; };
-		'A0000005' = {isa = PBXBuildFile; fileRef = B0000005; };
-		'A0000006' = {isa = PBXBuildFile; fileRef = B0000006; };
-		'A0000007' = {isa = PBXBuildFile; fileRef = B0000007; };
-		'A0000008' = {isa = PBXBuildFile; fileRef = B0000008; };
-		'A0000009' = {isa = PBXBuildFile; fileRef = B0000009; };
-		'A0000010' = {isa = PBXBuildFile; fileRef = B0000010; };
-		'A0000011' = {isa = PBXBuildFile; fileRef = B0000011; };
-		'A0000012' = {isa = PBXBuildFile; fileRef = B0000012; };
-		'A0000013' = {isa = PBXBuildFile; fileRef = B0000013; };
-		'A0000014' = {isa = PBXBuildFile; fileRef = B0000014; };
-		'A0000015' = {isa = PBXBuildFile; fileRef = B0000015; };
-		'A0000016' = {isa = PBXBuildFile; fileRef = B0000016; };
-		'A0000017' = {isa = PBXBuildFile; fileRef = B0000017; };
-		'A0000018' = {isa = PBXBuildFile; fileRef = B0000018; };
-		'A0000019' = {isa = PBXBuildFile; fileRef = B0000019; };
-		'A0000020' = {isa = PBXBuildFile; fileRef = B0000020; };
-		'A0000021' = {isa = PBXBuildFile; fileRef = B0000021; };
-		'A0000022' = {isa = PBXBuildFile; fileRef = B0000022; };
-		'A0000023' = {isa = PBXBuildFile; fileRef = B0000023; };
-		'A0000024' = {isa = PBXBuildFile; fileRef = B0000024; };
-		'A0000025' = {isa = PBXBuildFile; fileRef = B0000025; };
-		'A0000026' = {isa = PBXBuildFile; fileRef = B0000026; };
-		'A0000027' = {isa = PBXBuildFile; fileRef = B0000027; };
+		596F12A23226F6D9277A0312 /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D2E91CB87D310F9902CA2CB /* APIClient.swift */; };
+		6B2AB21B02F247EB1C77B2F3 /* APIModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73F780F7A677603E6AB31CBA /* APIModels.swift */; };
+		A0000001 /* JunkOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000001 /* JunkOSApp.swift */; };
+		A0000002 /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000002 /* DesignSystem.swift */; };
+		A0000003 /* BookingModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000003 /* BookingModels.swift */; };
+		A0000004 /* WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000004 /* WelcomeView.swift */; };
+		A0000005 /* ServiceSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000005 /* ServiceSelectionView.swift */; };
+		A0000006 /* DateTimePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000006 /* DateTimePickerView.swift */; };
+		A0000007 /* AddressInputView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000007 /* AddressInputView.swift */; };
+		A0000008 /* PhotoUploadView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000008 /* PhotoUploadView.swift */; };
+		A0000009 /* ConfirmationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000009 /* ConfirmationView.swift */; };
+		A0000010 /* WelcomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000010 /* WelcomeViewModel.swift */; };
+		A0000011 /* ServiceSelectionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000011 /* ServiceSelectionViewModel.swift */; };
+		A0000012 /* DateTimePickerViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000012 /* DateTimePickerViewModel.swift */; };
+		A0000013 /* AddressInputViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000013 /* AddressInputViewModel.swift */; };
+		A0000014 /* PhotoUploadViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000014 /* PhotoUploadViewModel.swift */; };
+		A0000015 /* ConfirmationViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000015 /* ConfirmationViewModel.swift */; };
+		A0000016 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000016 /* OnboardingView.swift */; };
+		A0000017 /* ConfettiView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000017 /* ConfettiView.swift */; };
+		A0000018 /* ErrorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000018 /* ErrorView.swift */; };
+		A0000019 /* SkeletonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000019 /* SkeletonView.swift */; };
+		A0000020 /* EmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000020 /* EmptyStateView.swift */; };
+		A0000021 /* TrustComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000021 /* TrustComponents.swift */; };
+		A0000022 /* ProgressiveDisclosureComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000022 /* ProgressiveDisclosureComponents.swift */; };
+		A0000023 /* AnimationConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000023 /* AnimationConstants.swift */; };
+		A0000024 /* HapticManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000024 /* HapticManager.swift */; };
+		A0000025 /* LocationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000025 /* LocationManager.swift */; };
+		A0000026 /* AccessibilityHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000026 /* AccessibilityHelpers.swift */; };
+		A0000027 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B0000027 /* Assets.xcassets */; };
+		A0000028 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000029 /* MainTabView.swift */; };
+		A0000029 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000030 /* HomeView.swift */; };
+		A0000030 /* MapAddressPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000031 /* MapAddressPickerView.swift */; };
+		A0000031 /* OrdersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000032 /* OrdersView.swift */; };
+		A0000032 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000033 /* ProfileView.swift */; };
+		A0000033 /* ServiceSelectionRedesignView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000034 /* ServiceSelectionRedesignView.swift */; };
+		A0000034 /* EnhancedWelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000035 /* EnhancedWelcomeView.swift */; };
+		CF7C17B42F37BC810083FF08 /* ServiceSelectionRedesignView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF7C17B02F37BC810083FF08 /* ServiceSelectionRedesignView.swift */; };
+		CF7C17B52F37BC810083FF08 /* AccountView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF7C17A52F37BC810083FF08 /* AccountView.swift */; };
+		CF7C17B62F37BC810083FF08 /* OrdersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF7C17AD2F37BC810083FF08 /* OrdersView.swift */; };
+		CF7C17B72F37BC810083FF08 /* PhotoUploadView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF7C17AE2F37BC810083FF08 /* PhotoUploadView.swift */; };
+		CF7C17B82F37BC810083FF08 /* LoginOptionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF7C17A02F37BC810083FF08 /* LoginOptionsView.swift */; };
+		CF7C17B92F37BC810083FF08 /* DateTimePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF7C17A82F37BC810083FF08 /* DateTimePickerView.swift */; };
+		CF7C17BA2F37BC810083FF08 /* ConfirmationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF7C17A72F37BC810083FF08 /* ConfirmationView.swift */; };
+		CF7C17BB2F37BC810083FF08 /* ServiceSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF7C17B12F37BC810083FF08 /* ServiceSelectionView.swift */; };
+		CF7C17BC2F37BC810083FF08 /* PhoneSignUpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF7C17A12F37BC810083FF08 /* PhoneSignUpView.swift */; };
+		CF7C17BD2F37BC810083FF08 /* WelcomeAuthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF7C17A32F37BC810083FF08 /* WelcomeAuthView.swift */; };
+		CF7C17BE2F37BC810083FF08 /* VerificationCodeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF7C17A22F37BC810083FF08 /* VerificationCodeView.swift */; };
+		CF7C17BF2F37BC810083FF08 /* AddressInputView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF7C17A62F37BC810083FF08 /* AddressInputView.swift */; };
+		CF7C17C02F37BC810083FF08 /* WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF7C17B22F37BC810083FF08 /* WelcomeView.swift */; };
+		CF7C17C12F37BC810083FF08 /* EnhancedWelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF7C17A92F37BC810083FF08 /* EnhancedWelcomeView.swift */; };
+		CF7C17C22F37BC810083FF08 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF7C17AA2F37BC810083FF08 /* HomeView.swift */; };
+		CF7C17C32F37BC810083FF08 /* EmailLoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF7C179F2F37BC810083FF08 /* EmailLoginView.swift */; };
+		CF7C17C42F37BC810083FF08 /* MapAddressPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF7C17AC2F37BC810083FF08 /* MapAddressPickerView.swift */; };
+		CF7C17C52F37BC810083FF08 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF7C17AB2F37BC810083FF08 /* MainTabView.swift */; };
+		CF7C17C62F37BC810083FF08 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF7C17AF2F37BC810083FF08 /* ProfileView.swift */; };
+		CF7C17CC2F37BF700083FF08 /* AuthenticationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF7C17CA2F37BF700083FF08 /* AuthenticationManager.swift */; };
+		EE6ED07F2A53D504E2E75373 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D09B14030B3F26192D37DF3 /* Config.swift */; };
+		978EAC332A244D5F8FEA2CBF /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80B991BBD5664B339818E691 /* NotificationManager.swift */; };
+		D2D1D62684D24BC79EA47513 /* PaymentService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F0811DCB5C84EAA9DF1E741 /* PaymentService.swift */; };
+		5DC0864DB58C489DB7633A3B /* PaymentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FEB1C0CFE8A4201B3540879 /* PaymentView.swift */; };
+		CDB687E6F7E84384879FDFAE /* CameraPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4FFB908C7184F8F99358601 /* CameraPickerView.swift */; };
+		CD34EF56AB12CD34EF56AB12 /* BookingSuccessView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB12CD34EF56AB12CD34EF56 /* BookingSuccessView.swift */; };
+		AAFF00112233445566778899 /* ReferralView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBFF00112233445566778899 /* ReferralView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		311842CF8D8E3F51FDA6062B /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = APIClient.swift; path = JunkOS/Services/APIClient.swift; sourceTree = SOURCE_ROOT; };
-		'B0000000' = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = JunkOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		'B0000001' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JunkOSApp.swift; sourceTree = "<group>"; };
-		'B0000002' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
-		'B0000003' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookingModels.swift; sourceTree = "<group>"; };
-		'B0000004' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeView.swift; sourceTree = "<group>"; };
-		'B0000005' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceSelectionView.swift; sourceTree = "<group>"; };
-		'B0000006' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateTimePickerView.swift; sourceTree = "<group>"; };
-		'B0000007' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressInputView.swift; sourceTree = "<group>"; };
-		'B0000008' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoUploadView.swift; sourceTree = "<group>"; };
-		'B0000009' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfirmationView.swift; sourceTree = "<group>"; };
-		'B0000010' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeViewModel.swift; sourceTree = "<group>"; };
-		'B0000011' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceSelectionViewModel.swift; sourceTree = "<group>"; };
-		'B0000012' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateTimePickerViewModel.swift; sourceTree = "<group>"; };
-		'B0000013' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressInputViewModel.swift; sourceTree = "<group>"; };
-		'B0000014' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoUploadViewModel.swift; sourceTree = "<group>"; };
-		'B0000015' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfirmationViewModel.swift; sourceTree = "<group>"; };
-		'B0000016' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
-		'B0000017' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfettiView.swift; sourceTree = "<group>"; };
-		'B0000018' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorView.swift; sourceTree = "<group>"; };
-		'B0000019' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkeletonView.swift; sourceTree = "<group>"; };
-		'B0000020' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyStateView.swift; sourceTree = "<group>"; };
-		'B0000021' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrustComponents.swift; sourceTree = "<group>"; };
-		'B0000022' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressiveDisclosureComponents.swift; sourceTree = "<group>"; };
-		'B0000023' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnimationConstants.swift; sourceTree = "<group>"; };
-		'B0000024' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticManager.swift; sourceTree = "<group>"; };
-		'B0000025' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationManager.swift; sourceTree = "<group>"; };
-		'B0000026' = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityHelpers.swift; sourceTree = "<group>"; };
-		'B0000027' = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		'B0000028' = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		B14946829AC3E075BF79D1EB /* APIModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = APIModels.swift; path = JunkOS/Models/APIModels.swift; sourceTree = SOURCE_ROOT; };
-		F95A41BAA2A0DA41EB116F4A /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Config.swift; path = JunkOS/Services/Config.swift; sourceTree = SOURCE_ROOT; };
+		0D2E91CB87D310F9902CA2CB /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
+		73F780F7A677603E6AB31CBA /* APIModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIModels.swift; sourceTree = "<group>"; };
+		7D09B14030B3F26192D37DF3 /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
+		B0000000 /* JunkOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = JunkOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B0000001 /* JunkOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JunkOSApp.swift; sourceTree = "<group>"; };
+		B0000002 /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
+		B0000003 /* BookingModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookingModels.swift; sourceTree = "<group>"; };
+		B0000004 /* WelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeView.swift; sourceTree = "<group>"; };
+		B0000005 /* ServiceSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceSelectionView.swift; sourceTree = "<group>"; };
+		B0000006 /* DateTimePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateTimePickerView.swift; sourceTree = "<group>"; };
+		B0000007 /* AddressInputView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressInputView.swift; sourceTree = "<group>"; };
+		B0000008 /* PhotoUploadView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoUploadView.swift; sourceTree = "<group>"; };
+		B0000009 /* ConfirmationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfirmationView.swift; sourceTree = "<group>"; };
+		B0000010 /* WelcomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeViewModel.swift; sourceTree = "<group>"; };
+		B0000011 /* ServiceSelectionViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceSelectionViewModel.swift; sourceTree = "<group>"; };
+		B0000012 /* DateTimePickerViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateTimePickerViewModel.swift; sourceTree = "<group>"; };
+		B0000013 /* AddressInputViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressInputViewModel.swift; sourceTree = "<group>"; };
+		B0000014 /* PhotoUploadViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoUploadViewModel.swift; sourceTree = "<group>"; };
+		B0000015 /* ConfirmationViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfirmationViewModel.swift; sourceTree = "<group>"; };
+		B0000016 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		B0000017 /* ConfettiView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfettiView.swift; sourceTree = "<group>"; };
+		B0000018 /* ErrorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorView.swift; sourceTree = "<group>"; };
+		B0000019 /* SkeletonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkeletonView.swift; sourceTree = "<group>"; };
+		B0000020 /* EmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyStateView.swift; sourceTree = "<group>"; };
+		B0000021 /* TrustComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrustComponents.swift; sourceTree = "<group>"; };
+		B0000022 /* ProgressiveDisclosureComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressiveDisclosureComponents.swift; sourceTree = "<group>"; };
+		B0000023 /* AnimationConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnimationConstants.swift; sourceTree = "<group>"; };
+		B0000024 /* HapticManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticManager.swift; sourceTree = "<group>"; };
+		B0000025 /* LocationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationManager.swift; sourceTree = "<group>"; };
+		B0000026 /* AccessibilityHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityHelpers.swift; sourceTree = "<group>"; };
+		B0000027 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		B0000028 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B0000029 /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
+		B0000030 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		B0000031 /* MapAddressPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapAddressPickerView.swift; sourceTree = "<group>"; };
+		B0000032 /* OrdersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrdersView.swift; sourceTree = "<group>"; };
+		B0000033 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
+		B0000034 /* ServiceSelectionRedesignView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceSelectionRedesignView.swift; sourceTree = "<group>"; };
+		B0000035 /* EnhancedWelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnhancedWelcomeView.swift; sourceTree = "<group>"; };
+		CF7C179F2F37BC810083FF08 /* EmailLoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmailLoginView.swift; sourceTree = "<group>"; };
+		CF7C17A02F37BC810083FF08 /* LoginOptionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginOptionsView.swift; sourceTree = "<group>"; };
+		CF7C17A12F37BC810083FF08 /* PhoneSignUpView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneSignUpView.swift; sourceTree = "<group>"; };
+		CF7C17A22F37BC810083FF08 /* VerificationCodeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VerificationCodeView.swift; sourceTree = "<group>"; };
+		CF7C17A32F37BC810083FF08 /* WelcomeAuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeAuthView.swift; sourceTree = "<group>"; };
+		CF7C17A52F37BC810083FF08 /* AccountView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountView.swift; sourceTree = "<group>"; };
+		CF7C17A62F37BC810083FF08 /* AddressInputView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressInputView.swift; sourceTree = "<group>"; };
+		CF7C17A72F37BC810083FF08 /* ConfirmationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfirmationView.swift; sourceTree = "<group>"; };
+		CF7C17A82F37BC810083FF08 /* DateTimePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateTimePickerView.swift; sourceTree = "<group>"; };
+		CF7C17A92F37BC810083FF08 /* EnhancedWelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnhancedWelcomeView.swift; sourceTree = "<group>"; };
+		CF7C17AA2F37BC810083FF08 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		CF7C17AB2F37BC810083FF08 /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
+		CF7C17AC2F37BC810083FF08 /* MapAddressPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapAddressPickerView.swift; sourceTree = "<group>"; };
+		CF7C17AD2F37BC810083FF08 /* OrdersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrdersView.swift; sourceTree = "<group>"; };
+		CF7C17AE2F37BC810083FF08 /* PhotoUploadView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoUploadView.swift; sourceTree = "<group>"; };
+		CF7C17AF2F37BC810083FF08 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
+		CF7C17B02F37BC810083FF08 /* ServiceSelectionRedesignView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceSelectionRedesignView.swift; sourceTree = "<group>"; };
+		CF7C17B12F37BC810083FF08 /* ServiceSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceSelectionView.swift; sourceTree = "<group>"; };
+		CF7C17B22F37BC810083FF08 /* WelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeView.swift; sourceTree = "<group>"; };
+		CF7C17CA2F37BF700083FF08 /* AuthenticationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthenticationManager.swift; sourceTree = "<group>"; };
+		80B991BBD5664B339818E691 /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
+		2F0811DCB5C84EAA9DF1E741 /* PaymentService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentService.swift; sourceTree = "<group>"; };
+		4FEB1C0CFE8A4201B3540879 /* PaymentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentView.swift; sourceTree = "<group>"; };
+		D4FFB908C7184F8F99358601 /* CameraPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraPickerView.swift; sourceTree = "<group>"; };
+		AB12CD34EF56AB12CD34EF56 /* BookingSuccessView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookingSuccessView.swift; sourceTree = "<group>"; };
+		BBFF00112233445566778899 /* ReferralView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReferralView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		'C0000001' = {
+		C0000001 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -82,155 +151,231 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		'D0000001' = {
+		1F2CF60D6A002C0B6DE4AE51 /* Services */ = {
 			isa = PBXGroup;
 			children = (
-				D0000002,
-				D0000003,
+				2F0811DCB5C84EAA9DF1E741 /* PaymentService.swift */,
+				0D2E91CB87D310F9902CA2CB /* APIClient.swift */,
+				7D09B14030B3F26192D37DF3 /* Config.swift */,
 			);
+			path = Services;
 			sourceTree = "<group>";
 		};
-		'D0000002' = {
+		CF7C17A42F37BC810083FF08 /* Auth */ = {
 			isa = PBXGroup;
 			children = (
-				B0000001,
-				D0000004,
-				D0000005,
-				D0000006,
-				D0000007,
-				D0000008,
-				D0000009,
-				B0000027,
-				B0000028,
+				CF7C179F2F37BC810083FF08 /* EmailLoginView.swift */,
+				CF7C17A02F37BC810083FF08 /* LoginOptionsView.swift */,
+				CF7C17A12F37BC810083FF08 /* PhoneSignUpView.swift */,
+				CF7C17A22F37BC810083FF08 /* VerificationCodeView.swift */,
+				CF7C17A32F37BC810083FF08 /* WelcomeAuthView.swift */,
 			);
-			path = JunkOS;
+			path = Auth;
 			sourceTree = "<group>";
 		};
-		'D0000003' = {
+		CF7C17B32F37BC810083FF08 /* Views */ = {
 			isa = PBXGroup;
 			children = (
-				B0000000,
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		'D0000004' = {
-			isa = PBXGroup;
-			children = (
-				B0000002,
-			);
-			path = Design;
-			sourceTree = "<group>";
-		};
-		'D0000005' = {
-			isa = PBXGroup;
-			children = (
-				B0000003,
-			);
-			path = Models;
-			sourceTree = "<group>";
-		};
-		'D0000006' = {
-			isa = PBXGroup;
-			children = (
-				B0000004,
-				B0000005,
-				B0000006,
-				B0000007,
-				B0000008,
-				B0000009,
+				CF7C17A42F37BC810083FF08 /* Auth */,
+				C56BF1A9F44848D087CD2F71 /* Booking */,
+				CF7C17A52F37BC810083FF08 /* AccountView.swift */,
+				CF7C17A62F37BC810083FF08 /* AddressInputView.swift */,
+				CF7C17A72F37BC810083FF08 /* ConfirmationView.swift */,
+				CF7C17A82F37BC810083FF08 /* DateTimePickerView.swift */,
+				CF7C17A92F37BC810083FF08 /* EnhancedWelcomeView.swift */,
+				CF7C17AA2F37BC810083FF08 /* HomeView.swift */,
+				CF7C17AB2F37BC810083FF08 /* MainTabView.swift */,
+				CF7C17AC2F37BC810083FF08 /* MapAddressPickerView.swift */,
+				CF7C17AD2F37BC810083FF08 /* OrdersView.swift */,
+				CF7C17AE2F37BC810083FF08 /* PhotoUploadView.swift */,
+				CF7C17AF2F37BC810083FF08 /* ProfileView.swift */,
+				BBFF00112233445566778899 /* ReferralView.swift */,
+				CF7C17B02F37BC810083FF08 /* ServiceSelectionRedesignView.swift */,
+				CF7C17B12F37BC810083FF08 /* ServiceSelectionView.swift */,
+				CF7C17B22F37BC810083FF08 /* WelcomeView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
 		};
-		'D0000007' = {
+		CF7C17CB2F37BF700083FF08 /* Managers */ = {
 			isa = PBXGroup;
 			children = (
-				B0000010,
-				B0000011,
-				B0000012,
-				B0000013,
-				B0000014,
-				B0000015,
+				80B991BBD5664B339818E691 /* NotificationManager.swift */,
+				CF7C17CA2F37BF700083FF08 /* AuthenticationManager.swift */,
+			);
+			path = Managers;
+			sourceTree = "<group>";
+		};
+		D0000001 = {
+			isa = PBXGroup;
+			children = (
+				D0000002 /* JunkOS */,
+				D0000003 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		D0000002 /* JunkOS */ = {
+			isa = PBXGroup;
+			children = (
+				CF7C17CB2F37BF700083FF08 /* Managers */,
+				CF7C17B32F37BC810083FF08 /* Views */,
+				B0000001 /* JunkOSApp.swift */,
+				D0000004 /* Design */,
+				D0000005 /* Models */,
+				D0000006 /* Views */,
+				D0000007 /* ViewModels */,
+				D0000008 /* Components */,
+				D0000009 /* Utilities */,
+				1F2CF60D6A002C0B6DE4AE51 /* Services */,
+				B0000027 /* Assets.xcassets */,
+				B0000028 /* Info.plist */,
+			);
+			path = JunkOS;
+			sourceTree = "<group>";
+		};
+		D0000003 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				B0000000 /* JunkOS.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		D0000004 /* Design */ = {
+			isa = PBXGroup;
+			children = (
+				B0000002 /* DesignSystem.swift */,
+			);
+			path = Design;
+			sourceTree = "<group>";
+		};
+		D0000005 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				B0000003 /* BookingModels.swift */,
+				73F780F7A677603E6AB31CBA /* APIModels.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		D0000006 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				B0000004 /* WelcomeView.swift */,
+				B0000005 /* ServiceSelectionView.swift */,
+				B0000006 /* DateTimePickerView.swift */,
+				B0000007 /* AddressInputView.swift */,
+				B0000008 /* PhotoUploadView.swift */,
+				B0000009 /* ConfirmationView.swift */,
+				B0000029 /* MainTabView.swift */,
+				B0000030 /* HomeView.swift */,
+				B0000031 /* MapAddressPickerView.swift */,
+				B0000032 /* OrdersView.swift */,
+				B0000033 /* ProfileView.swift */,
+				B0000034 /* ServiceSelectionRedesignView.swift */,
+				B0000035 /* EnhancedWelcomeView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		D0000007 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				B0000010 /* WelcomeViewModel.swift */,
+				B0000011 /* ServiceSelectionViewModel.swift */,
+				B0000012 /* DateTimePickerViewModel.swift */,
+				B0000013 /* AddressInputViewModel.swift */,
+				B0000014 /* PhotoUploadViewModel.swift */,
+				B0000015 /* ConfirmationViewModel.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
 		};
-		'D0000008' = {
+		D0000008 /* Components */ = {
 			isa = PBXGroup;
 			children = (
-				D0000010,
-				D0000011,
-				D0000012,
-				D0000013,
-				D0000014,
-				B0000021,
-				B0000022,
+				D4FFB908C7184F8F99358601 /* CameraPickerView.swift */,
+				D0000010 /* Onboarding */,
+				D0000011 /* Animations */,
+				D0000012 /* ErrorHandling */,
+				D0000013 /* LoadingStates */,
+				D0000014 /* EmptyStates */,
+				B0000021 /* TrustComponents.swift */,
+				B0000022 /* ProgressiveDisclosureComponents.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
 		};
-		'D0000009' = {
+		D0000009 /* Utilities */ = {
 			isa = PBXGroup;
 			children = (
-				B0000023,
-				B0000024,
-				B0000025,
-				B0000026,
+				B0000023 /* AnimationConstants.swift */,
+				B0000024 /* HapticManager.swift */,
+				B0000025 /* LocationManager.swift */,
+				B0000026 /* AccessibilityHelpers.swift */,
 			);
 			path = Utilities;
 			sourceTree = "<group>";
 		};
-		'D0000010' = {
+		D0000010 /* Onboarding */ = {
 			isa = PBXGroup;
 			children = (
-				B0000016,
+				B0000016 /* OnboardingView.swift */,
 			);
 			path = Onboarding;
 			sourceTree = "<group>";
 		};
-		'D0000011' = {
+		D0000011 /* Animations */ = {
 			isa = PBXGroup;
 			children = (
-				B0000017,
+				B0000017 /* ConfettiView.swift */,
 			);
 			path = Animations;
 			sourceTree = "<group>";
 		};
-		'D0000012' = {
+		D0000012 /* ErrorHandling */ = {
 			isa = PBXGroup;
 			children = (
-				B0000018,
+				B0000018 /* ErrorView.swift */,
 			);
 			path = ErrorHandling;
 			sourceTree = "<group>";
 		};
-		'D0000013' = {
+		D0000013 /* LoadingStates */ = {
 			isa = PBXGroup;
 			children = (
-				B0000019,
+				B0000019 /* SkeletonView.swift */,
 			);
 			path = LoadingStates;
 			sourceTree = "<group>";
 		};
-		'D0000014' = {
+		D0000014 /* EmptyStates */ = {
 			isa = PBXGroup;
 			children = (
-				B0000020,
+				B0000020 /* EmptyStateView.swift */,
 			);
 			path = EmptyStates;
+			sourceTree = "<group>";
+		};
+		C56BF1A9F44848D087CD2F71 /* Booking */ = {
+			isa = PBXGroup;
+			children = (
+				4FEB1C0CFE8A4201B3540879 /* PaymentView.swift */,
+				AB12CD34EF56AB12CD34EF56 /* BookingSuccessView.swift */,
+			);
+			path = Booking;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		'E0000001' = {
+		E0000001 /* JunkOS */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = E0000002;
+			buildConfigurationList = E0000002 /* Build configuration list for PBXNativeTarget "JunkOS" */;
 			buildPhases = (
-				F0000001,
-				C0000001,
-				F0000002,
+				F0000001 /* Sources */,
+				C0000001 /* Frameworks */,
+				F0000002 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -238,13 +383,13 @@
 			);
 			name = JunkOS;
 			productName = JunkOS;
-			productReference = B0000000;
+			productReference = B0000000 /* JunkOS.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-		'G0000001' = {
+		G0000001 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
@@ -256,7 +401,7 @@
 					};
 				};
 			};
-			buildConfigurationList = G0000002;
+			buildConfigurationList = G0000002 /* Build configuration list for PBXProject "JunkOS" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -265,64 +410,104 @@
 				Base,
 			);
 			mainGroup = D0000001;
-			productRefGroup = D0000003;
+			productRefGroup = D0000003 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				E0000001,
+				E0000001 /* JunkOS */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		'F0000002' = {
+		F0000002 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A0000027,
+				A0000027 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		'F0000001' = {
+		F0000001 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A0000001,
-				A0000002,
-				A0000003,
-				A0000004,
-				A0000005,
-				A0000006,
-				A0000007,
-				A0000008,
-				A0000009,
-				A0000010,
-				A0000011,
-				A0000012,
-				A0000013,
-				A0000014,
-				A0000015,
-				A0000016,
-				A0000017,
-				A0000018,
-				A0000019,
-				A0000020,
-				A0000021,
-				A0000022,
-				A0000023,
-				A0000024,
-				A0000025,
-				A0000026,
+				978EAC332A244D5F8FEA2CBF /* NotificationManager.swift in Sources */,
+				D2D1D62684D24BC79EA47513 /* PaymentService.swift in Sources */,
+				5DC0864DB58C489DB7633A3B /* PaymentView.swift in Sources */,
+				CDB687E6F7E84384879FDFAE /* CameraPickerView.swift in Sources */,
+				263DE0D419704B659FDE77B6 /* in Sources */,
+				77C21C7B63BA40BCA3F88B66 /* in Sources */,
+				A5D082504D4C4DC8AEB92C30 /* in Sources */,
+				23953A76FCF743BE96218AB0 /* in Sources */,
+				A0000001 /* JunkOSApp.swift in Sources */,
+				A0000002 /* DesignSystem.swift in Sources */,
+				CF7C17B42F37BC810083FF08 /* ServiceSelectionRedesignView.swift in Sources */,
+				CF7C17B52F37BC810083FF08 /* AccountView.swift in Sources */,
+				CF7C17B62F37BC810083FF08 /* OrdersView.swift in Sources */,
+				CF7C17B72F37BC810083FF08 /* PhotoUploadView.swift in Sources */,
+				CF7C17B82F37BC810083FF08 /* LoginOptionsView.swift in Sources */,
+				CF7C17B92F37BC810083FF08 /* DateTimePickerView.swift in Sources */,
+				CF7C17BA2F37BC810083FF08 /* ConfirmationView.swift in Sources */,
+				CF7C17CC2F37BF700083FF08 /* AuthenticationManager.swift in Sources */,
+				CF7C17BB2F37BC810083FF08 /* ServiceSelectionView.swift in Sources */,
+				CF7C17BC2F37BC810083FF08 /* PhoneSignUpView.swift in Sources */,
+				CF7C17BD2F37BC810083FF08 /* WelcomeAuthView.swift in Sources */,
+				CF7C17BE2F37BC810083FF08 /* VerificationCodeView.swift in Sources */,
+				CF7C17BF2F37BC810083FF08 /* AddressInputView.swift in Sources */,
+				CF7C17C02F37BC810083FF08 /* WelcomeView.swift in Sources */,
+				CF7C17C12F37BC810083FF08 /* EnhancedWelcomeView.swift in Sources */,
+				CF7C17C22F37BC810083FF08 /* HomeView.swift in Sources */,
+				CF7C17C32F37BC810083FF08 /* EmailLoginView.swift in Sources */,
+				CF7C17C42F37BC810083FF08 /* MapAddressPickerView.swift in Sources */,
+				CF7C17C52F37BC810083FF08 /* MainTabView.swift in Sources */,
+				CF7C17C62F37BC810083FF08 /* ProfileView.swift in Sources */,
+				A0000003 /* BookingModels.swift in Sources */,
+				A0000004 /* WelcomeView.swift in Sources */,
+				A0000005 /* ServiceSelectionView.swift in Sources */,
+				A0000006 /* DateTimePickerView.swift in Sources */,
+				A0000007 /* AddressInputView.swift in Sources */,
+				A0000008 /* PhotoUploadView.swift in Sources */,
+				A0000009 /* ConfirmationView.swift in Sources */,
+				A0000010 /* WelcomeViewModel.swift in Sources */,
+				A0000011 /* ServiceSelectionViewModel.swift in Sources */,
+				A0000012 /* DateTimePickerViewModel.swift in Sources */,
+				A0000013 /* AddressInputViewModel.swift in Sources */,
+				A0000014 /* PhotoUploadViewModel.swift in Sources */,
+				A0000015 /* ConfirmationViewModel.swift in Sources */,
+				A0000016 /* OnboardingView.swift in Sources */,
+				A0000017 /* ConfettiView.swift in Sources */,
+				A0000018 /* ErrorView.swift in Sources */,
+				A0000019 /* SkeletonView.swift in Sources */,
+				A0000020 /* EmptyStateView.swift in Sources */,
+				A0000021 /* TrustComponents.swift in Sources */,
+				A0000022 /* ProgressiveDisclosureComponents.swift in Sources */,
+				A0000023 /* AnimationConstants.swift in Sources */,
+				A0000024 /* HapticManager.swift in Sources */,
+				A0000025 /* LocationManager.swift in Sources */,
+				A0000026 /* AccessibilityHelpers.swift in Sources */,
+				A0000028 /* MainTabView.swift in Sources */,
+				A0000029 /* HomeView.swift in Sources */,
+				A0000030 /* MapAddressPickerView.swift in Sources */,
+				A0000031 /* OrdersView.swift in Sources */,
+				A0000032 /* ProfileView.swift in Sources */,
+				A0000033 /* ServiceSelectionRedesignView.swift in Sources */,
+				A0000034 /* EnhancedWelcomeView.swift in Sources */,
+				6B2AB21B02F247EB1C77B2F3 /* APIModels.swift in Sources */,
+				596F12A23226F6D9277A0312 /* APIClient.swift in Sources */,
+				EE6ED07F2A53D504E2E75373 /* Config.swift in Sources */,
+				CD34EF56AB12CD34EF56AB12 /* BookingSuccessView.swift in Sources */,
+				AAFF00112233445566778899 /* ReferralView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
-		'H0000001' = {
+		H0000001 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -374,7 +559,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
@@ -385,7 +570,7 @@
 			};
 			name = Debug;
 		};
-		'H0000002' = {
+		H0000002 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -418,8 +603,9 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				COPY_PHASE_STRIP = NO;
+				COPY_PHASE_STRIP = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEPLOYMENT_POSTPROCESSING = YES;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -431,24 +617,29 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
+				STRIP_INSTALLED_PRODUCT = YES;
+				STRIP_SWIFT_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
 		};
-		'H0000003' = {
+		H0000003 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = JunkOS/JunkOS.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "";
+				DEVELOPMENT_TEAM = 24GH82AX9R;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = JunkOS/Info.plist;
@@ -461,8 +652,8 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.junkos.JunkOS;
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.goumuve.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -470,14 +661,16 @@
 			};
 			name = Debug;
 		};
-		'H0000004' = {
+		H0000004 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = JunkOS/JunkOS.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "";
+				DEVELOPMENT_TEAM = 24GH82AX9R;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = JunkOS/Info.plist;
@@ -490,8 +683,8 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.junkos.JunkOS;
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.goumuve.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -502,25 +695,25 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		'E0000002' = {
+		E0000002 /* Build configuration list for PBXNativeTarget "JunkOS" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				H0000003,
-				H0000004,
+				H0000003 /* Debug */,
+				H0000004 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		'G0000002' = {
+		G0000002 /* Build configuration list for PBXProject "JunkOS" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				H0000001,
-				H0000002,
+				H0000001 /* Debug */,
+				H0000002 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
-	rootObject = G0000001;
+	rootObject = G0000001 /* Project object */;
 }

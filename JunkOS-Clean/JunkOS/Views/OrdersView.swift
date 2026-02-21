@@ -392,20 +392,18 @@ struct BookingCard: View {
 
 #Preview("Booking Card") {
     BookingCard(
-        booking: BookingResponse(
-            from: try! JSONDecoder().decode(
-                BookingResponse.self,
-                from: """
-                {
-                    "id": "test-123",
-                    "confirmation": "confirmed",
-                    "estimated_price": 150.0,
-                    "scheduled_datetime": "2026-02-20 14:00",
-                    "status": "pending",
-                    "services": []
-                }
-                """.data(using: .utf8)!
-            )
+        booking: try! JSONDecoder().decode(
+            BookingResponse.self,
+            from: """
+            {
+                "id": "test-123",
+                "confirmation": "confirmed",
+                "estimated_price": 150.0,
+                "scheduled_datetime": "2026-02-20 14:00",
+                "status": "pending",
+                "services": []
+            }
+            """.data(using: .utf8)!
         ),
         onRefresh: {}
     )

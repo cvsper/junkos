@@ -7,6 +7,7 @@
 
 import SwiftUI
 import MapKit
+import Combine
 import StripePaymentSheet
 
 struct BookingReviewView: View {
@@ -95,7 +96,7 @@ struct BookingReviewView: View {
                 }
             }
         }
-        .onChange(of: viewModel.paymentSheet) { sheet in
+        .onReceive(viewModel.$paymentSheet) { sheet in
             showPaymentSheet = (sheet != nil)
         }
         .paymentSheet(

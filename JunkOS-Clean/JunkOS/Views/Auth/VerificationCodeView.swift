@@ -189,28 +189,32 @@ struct VerificationCodeView: View {
     }
     
     private func verifyCode() {
-        isLoading = true
-        errorMessage = nil
-        HapticManager.shared.lightTap()
-        
-        authManager.verifyCode(fullCode, for: phoneNumber) { success, error in
+        Task {
+            isLoading = true
+            errorMessage = nil
+            HapticManager.shared.lightTap()
+
+            await authManager.verifyCode(phoneNumber: phoneNumber, code: fullCode)
+
             isLoading = false
-            if success {
+            if authManager.errorMessage == nil {
                 HapticManager.shared.success()
                 dismiss()
             } else {
                 HapticManager.shared.error()
-                errorMessage = error ?? "Invalid code. Please try again."
+                errorMessage = authManager.errorMessage ?? "Invalid code. Please try again."
                 // Clear code
                 code = Array(repeating: "", count: 6)
                 focusedField = 0
             }
         }
     }
-    
+
     private func resendCode() {
-        authManager.sendVerificationCode(to: phoneNumber) { success in
-            if success {
+        Task {
+            await authManager.sendVerificationCode(phoneNumber: phoneNumber)
+
+            if authManager.errorMessage == nil {
                 HapticManager.shared.success()
                 startResendTimer()
             } else {

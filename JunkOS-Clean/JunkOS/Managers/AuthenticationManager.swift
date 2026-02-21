@@ -327,19 +327,90 @@ class AuthenticationManager: ObservableObject {
 
     // MARK: - Deprecated Auth Methods (Stubs for UI Compatibility)
 
-    /// Deprecated: Phone auth removed - Apple Sign In only
-    func sendVerificationCode(to phoneNumber: String, completion: @escaping (Bool) -> Void) {
-        DispatchQueue.main.async {
-            self.errorMessage = "Phone authentication is no longer supported. Please use Sign in with Apple."
-            completion(false)
+    // MARK: - Phone Authentication
+
+    /// Send verification code via SMS
+    func sendVerificationCode(phoneNumber: String) async {
+        await MainActor.run {
+            isLoading = true
+            errorMessage = nil
+        }
+
+        do {
+            let url = URL(string: "\(baseURL)/api/auth/send-code")!
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+            let body = ["phoneNumber": phoneNumber]
+            request.httpBody = try JSONEncoder().encode(body)
+
+            let (_, response) = try await URLSession.shared.data(for: request)
+
+            if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 {
+                await MainActor.run {
+                    isLoading = false
+                }
+            } else {
+                throw NSError(domain: "Auth", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to send code"])
+            }
+        } catch {
+            await MainActor.run {
+                errorMessage = "Failed to send code. Try again."
+                isLoading = false
+                HapticManager.shared.error()
+            }
         }
     }
 
-    /// Deprecated: Phone auth removed - Apple Sign In only
-    func verifyCode(_ code: String, for phoneNumber: String, completion: @escaping (Bool, String?) -> Void) {
+    /// Verify SMS code and authenticate
+    func verifyCode(phoneNumber: String, code: String) async {
+        await MainActor.run {
+            isLoading = true
+            errorMessage = nil
+        }
+
+        do {
+            let url = URL(string: "\(baseURL)/api/auth/verify-code")!
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+            let body = ["phoneNumber": phoneNumber, "code": code]
+            request.httpBody = try JSONEncoder().encode(body)
+
+            let (data, response) = try await URLSession.shared.data(for: request)
+
+            if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 {
+                let authResponse = try JSONDecoder().decode(AuthResponse.self, from: data)
+
+                // Save token to Keychain
+                KeychainHelper.save(authResponse.token, forKey: "authToken")
+
+                // Update state
+                await MainActor.run {
+                    currentUser = authResponse.user
+                    isAuthenticated = true
+                    isLoading = false
+                    HapticManager.shared.success()
+                }
+            } else {
+                throw NSError(domain: "Auth", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid code"])
+            }
+        } catch {
+            await MainActor.run {
+                errorMessage = "Invalid code. Try again."
+                isLoading = false
+                HapticManager.shared.error()
+            }
+        }
+    }
+
+    /// Deprecated: Email auth removed - Apple Sign In only
+    func loginWithEmail(email: String, password: String, completion: @escaping (Bool, String?) -> Void) {
         DispatchQueue.main.async {
-            self.errorMessage = "Phone authentication is no longer supported. Please use Sign in with Apple."
-            completion(false, "Phone authentication is no longer supported")
+            self.errorMessage = "Email authentication is no longer supported. Please use Sign in with Apple."
+            completion(false, "Email authentication is no longer supported")
         }
     }
 

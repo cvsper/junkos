@@ -54,6 +54,10 @@ struct MainTabView: View {
             switch deepLink {
             case .bookingConfirmed, .driverEnRoute, .jobCompleted:
                 selectedTab = 1 // Orders tab
+            case .driverAssigned:
+                selectedTab = 1 // Orders tab
+            case .volumeAdjustment:
+                selectedTab = 1 // Orders tab
             }
             notificationManager.pendingDeepLink = nil
         }

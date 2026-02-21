@@ -10,6 +10,7 @@ import AuthenticationServices
 
 struct WelcomeAuthView: View {
     @EnvironmentObject var authManager: AuthenticationManager
+    @State private var showPhoneSignup = false
 
     var body: some View {
         ZStack {
@@ -58,6 +59,37 @@ struct WelcomeAuthView: View {
                     .frame(height: 52)
                     .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.md))
 
+                    // Divider
+                    HStack(spacing: UmuveSpacing.small) {
+                        Rectangle()
+                            .fill(Color.umuveBorder)
+                            .frame(height: 1)
+                        Text("or")
+                            .font(UmuveTypography.bodySmallFont)
+                            .foregroundStyle(Color.umuveTextMuted)
+                        Rectangle()
+                            .fill(Color.umuveBorder)
+                            .frame(height: 1)
+                    }
+                    .padding(.vertical, UmuveSpacing.tiny)
+
+                    // Phone Sign Up Button
+                    Button {
+                        showPhoneSignup = true
+                    } label: {
+                        HStack(spacing: UmuveSpacing.small) {
+                            Image(systemName: "phone.fill")
+                                .font(.system(size: 16, weight: .medium))
+                            Text("Sign Up with Phone Number")
+                                .font(UmuveTypography.h3Font)
+                        }
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 52)
+                        .background(Color.umuvePrimary)
+                        .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.md))
+                    }
+
                     // Error message
                     if let errorMessage = authManager.errorMessage {
                         Text(errorMessage)
@@ -79,6 +111,12 @@ struct WelcomeAuthView: View {
                         }
                     }
                 )
+            }
+        }
+        .fullScreenCover(isPresented: $showPhoneSignup) {
+            NavigationView {
+                PhoneSignUpView()
+                    .environmentObject(authManager)
             }
         }
     }
