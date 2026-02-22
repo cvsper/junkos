@@ -43,18 +43,17 @@ struct UmuveProApp: App {
                 if showingSplash {
                     SplashView()
                         .task {
-                            // Load contractor profile during splash if authenticated
-                            // This ensures isRegistered is accurate before showing screens
-                            if appState.auth.isAuthenticated {
-                                print("🔄 Loading profile during splash...")
-                                await appState.loadContractorProfile(retries: 3)
-                            }
+                            // ALWAYS attempt to load profile during splash
+                            // This handles race condition with restoreSession()
+                            // If not authenticated, it will fail quickly and that's fine
+                            print("🔄 Loading profile during splash...")
+                            await appState.loadContractorProfile(retries: 3)
 
                             // Wait minimum 2 seconds for splash animation
                             try? await Task.sleep(nanoseconds: 2_000_000_000)
 
                             // Dismiss splash after profile is loaded
-                            print("👋 Dismissing splash - isRegistered: \(appState.isRegistered)")
+                            print("👋 Dismissing splash - isAuthenticated: \(appState.auth.isAuthenticated), isRegistered: \(appState.isRegistered)")
                             withAnimation(.easeInOut(duration: 0.4)) {
                                 showingSplash = false
                             }
