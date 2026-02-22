@@ -42,18 +42,19 @@ struct UmuveProApp: App {
             Group {
                 if showingSplash {
                     SplashView()
-                        .onAppear {
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 1.8) {
-                                withAnimation(.easeInOut(duration: 0.4)) {
-                                    showingSplash = false
-                                }
-                            }
-                        }
                         .task {
                             // Load contractor profile during splash if authenticated
                             // This ensures isRegistered is accurate before showing screens
                             if appState.auth.isAuthenticated {
                                 await appState.loadContractorProfile()
+                            }
+
+                            // Wait minimum 1.8 seconds for splash animation
+                            try? await Task.sleep(nanoseconds: 1_800_000_000)
+
+                            // Dismiss splash after profile is loaded
+                            withAnimation(.easeInOut(duration: 0.4)) {
+                                showingSplash = false
                             }
                         }
                 } else if !hasCompletedOnboarding {
