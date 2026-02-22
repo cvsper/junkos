@@ -48,6 +48,13 @@ struct UmuveProApp: App {
                                 }
                             }
                         }
+                        .task {
+                            // Load contractor profile during splash if authenticated
+                            // This ensures isRegistered is accurate before showing screens
+                            if appState.auth.isAuthenticated {
+                                await appState.loadContractorProfile()
+                            }
+                        }
                 } else if !hasCompletedOnboarding {
                     DriverOnboardingView()
                 } else if !appState.auth.isAuthenticated {
