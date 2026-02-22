@@ -63,10 +63,12 @@ struct UmuveProApp: App {
                 } else if appState.isOperator {
                     // Operator registered -- redirect to web dashboard
                     OperatorWebRedirectView(appState: appState)
-                } else if !appState.isRegistered && appState.selectedRole == nil {
-                    // Role selection for NEW users only (before registration)
-                    RoleSelectionView(appState: appState)
+                } else if !appState.isRegistered && appState.selectedRole != nil {
+                    // Role selected but not yet registered - show registration
+                    ContractorRegistrationView(appState: appState)
                 } else if !appState.isRegistered {
+                    // Authenticated but no profile yet - start registration directly
+                    // (Skip role selection for contractors - it's the default)
                     ContractorRegistrationView(appState: appState)
                 } else if !appState.hasCompletedStripeConnect {
                     StripeConnectOnboardingView(appState: appState)

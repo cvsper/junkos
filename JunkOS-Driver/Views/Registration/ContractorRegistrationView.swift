@@ -11,6 +11,7 @@ struct ContractorRegistrationView: View {
     @Bindable var appState: AppState
     @State private var viewModel = RegistrationViewModel()
     @State private var showCamera = false
+    @State private var navigateToLogin = false
 
     var body: some View {
         ZStack {
@@ -78,10 +79,27 @@ struct ContractorRegistrationView: View {
 
                 // Error
                 if let error = viewModel.errorMessage {
-                    Text(error)
-                        .font(DriverTypography.footnote)
-                        .foregroundStyle(Color.driverError)
-                        .padding(.horizontal, DriverSpacing.xl)
+                    VStack(spacing: DriverSpacing.xs) {
+                        Text(error)
+                            .font(DriverTypography.footnote)
+                            .foregroundStyle(Color.driverError)
+                            .multilineTextAlignment(.center)
+
+                        // Show login link if user already exists
+                        if viewModel.showUserExistsError {
+                            Button {
+                                // Log out and return to login
+                                appState.auth.logout()
+                            } label: {
+                                Text("Go to Login")
+                                    .font(DriverTypography.footnote)
+                                    .foregroundStyle(Color.driverPrimary)
+                                    .underline()
+                            }
+                            .padding(.top, DriverSpacing.xs)
+                        }
+                    }
+                    .padding(.horizontal, DriverSpacing.xl)
                 }
 
                 // Navigation buttons

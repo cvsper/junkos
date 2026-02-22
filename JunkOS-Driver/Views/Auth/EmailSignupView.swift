@@ -14,13 +14,14 @@ enum LoginMethod {
 
 struct EmailSignupView: View {
     @Bindable var appState: AppState
+    var isSignup: Bool = true
     let onDismiss: () -> Void
 
     @State private var email = ""
     @State private var phoneNumber = ""
     @State private var password = ""
     @State private var name = ""
-    @State private var isSignup = true
+    @State private var isSignupState = true
     @State private var hasInviteCode = false
     @State private var inviteCode = ""
     @State private var loginMethod: LoginMethod = .email
@@ -37,16 +38,19 @@ struct EmailSignupView: View {
                             .font(.system(size: 48))
                             .foregroundStyle(Color.driverPrimary)
 
-                        Text(isSignup ? "Create Account" : "Welcome Back")
+                        Text(isSignupState ? "Create Account" : "Welcome Back")
                             .font(DriverTypography.title2)
                             .foregroundStyle(Color.driverText)
                     }
                     .padding(.top, DriverSpacing.xxl)
+                    .onAppear {
+                        isSignupState = isSignup
+                    }
 
                     // Form
                     VStack(spacing: DriverSpacing.md) {
                         // Login method toggle (login only)
-                        if !isSignup {
+                        if !isSignupState {
                             HStack(spacing: 0) {
                                 Button {
                                     loginMethod = .email
@@ -78,7 +82,7 @@ struct EmailSignupView: View {
                         }
 
                         // Name field (signup only)
-                        if isSignup {
+                        if isSignupState {
                             TextField("Name (optional)", text: $name)
                                 .textContentType(.name)
                                 .autocapitalization(.words)
@@ -111,7 +115,7 @@ struct EmailSignupView: View {
                         }
 
                         // Email or Phone field based on login method
-                        if isSignup || loginMethod == .email {
+                        if isSignupState || loginMethod == .email {
                             TextField("Email", text: $email)
                                 .textContentType(.emailAddress)
                                 .textInputAutocapitalization(.never)
@@ -138,7 +142,7 @@ struct EmailSignupView: View {
 
                         // Password field
                         SecureField("Password", text: $password)
-                            .textContentType(isSignup ? .newPassword : .password)
+                            .textContentType(isSignupState ? .newPassword : .password)
                             .padding()
                             .background(Color.white)
                             .clipShape(RoundedRectangle(cornerRadius: DriverRadius.md))
@@ -151,7 +155,7 @@ struct EmailSignupView: View {
                         Button {
                             submit()
                         } label: {
-                            Text(isSignup ? "Sign Up" : "Log In")
+                            Text(isSignupState ? "Sign Up" : "Log In")
                                 .font(DriverTypography.headline)
                                 .foregroundStyle(.white)
                                 .frame(maxWidth: .infinity)
@@ -164,10 +168,10 @@ struct EmailSignupView: View {
 
                         // Toggle signup/login
                         Button {
-                            isSignup.toggle()
+                            isSignupState.toggle()
                             appState.auth.errorMessage = nil
                         } label: {
-                            Text(isSignup ? "Already have an account? Log in" : "Don't have an account? Sign up")
+                            Text(isSignupState ? "Already have an account? Log in" : "Don't have an account? Sign up")
                                 .font(DriverTypography.body)
                                 .foregroundStyle(Color.driverPrimary)
                         }
@@ -221,7 +225,7 @@ struct EmailSignupView: View {
     private var isSubmitDisabled: Bool {
         if password.isEmpty { return true }
 
-        if isSignup {
+        if isSignupState {
             return email.isEmpty
         } else {
             switch loginMethod {
@@ -261,7 +265,7 @@ struct EmailSignupView: View {
         Task {
             HapticManager.shared.lightTap()
 
-            if isSignup {
+            if isSignupState {
                 await appState.auth.emailSignup(
                     email: email.trimmingCharacters(in: .whitespaces),
                     password: password,

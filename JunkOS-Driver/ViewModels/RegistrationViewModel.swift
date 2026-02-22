@@ -31,6 +31,7 @@ final class RegistrationViewModel {
     var isLoading = false
     var errorMessage: String?
     var isComplete = false
+    var showUserExistsError = false
 
     var canProceed: Bool {
         switch currentStep {
@@ -106,7 +107,14 @@ final class RegistrationViewModel {
             isComplete = true
             HapticManager.shared.success()
         } catch {
-            errorMessage = error.localizedDescription
+            let errorDesc = error.localizedDescription.lowercased()
+            // Check if error is about user already existing
+            if errorDesc.contains("already exists") || errorDesc.contains("already registered") || errorDesc.contains("duplicate") {
+                showUserExistsError = true
+                errorMessage = "An account with this information already exists."
+            } else {
+                errorMessage = error.localizedDescription
+            }
             HapticManager.shared.error()
         }
         isLoading = false

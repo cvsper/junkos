@@ -11,17 +11,18 @@ import AuthenticationServices
 
 struct DriverAuthView: View {
     @Bindable var appState: AppState
-    @State private var showPhoneSignup = false
-    @State private var showEmailSignup = false
+    @State private var showPhoneAuth = false
+    @State private var showEmailAuth = false
+    @State private var isSignupMode = false
 
     var body: some View {
-        if showEmailSignup {
-            EmailSignupView(appState: appState) {
-                showEmailSignup = false
+        if showEmailAuth {
+            EmailSignupView(appState: appState, isSignup: isSignupMode) {
+                showEmailAuth = false
             }
-        } else if showPhoneSignup {
+        } else if showPhoneAuth {
             PhoneSignupView(appState: appState) {
-                showPhoneSignup = false
+                showPhoneAuth = false
             }
         } else {
             mainAuthView
@@ -54,17 +55,33 @@ struct DriverAuthView: View {
 
                 Spacer()
 
-                // Sign In Options
+                // Auth Options
                 VStack(spacing: DriverSpacing.md) {
-                    // Apple Sign In Button
-                    SignInWithAppleButton(.signIn) { request in
-                        appState.auth.handleAppleSignInRequest(request)
-                    } onCompletion: { result in
-                        appState.auth.handleAppleSignInCompletion(result)
+                    // Login Button (Primary)
+                    Button {
+                        isSignupMode = false
+                        showEmailAuth = true
+                    } label: {
+                        Text("Log In")
+                            .font(DriverTypography.headline)
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 52)
+                            .background(Color.driverPrimary)
+                            .clipShape(RoundedRectangle(cornerRadius: DriverRadius.md))
                     }
-                    .signInWithAppleButtonStyle(.black)
-                    .frame(height: 52)
-                    .clipShape(RoundedRectangle(cornerRadius: DriverRadius.md))
+
+                    // Sign Up Link (Secondary)
+                    Button {
+                        isSignupMode = true
+                        showEmailAuth = true
+                    } label: {
+                        Text("Sign Up")
+                            .font(DriverTypography.body)
+                            .foregroundStyle(Color.driverPrimary)
+                            .underline()
+                    }
+                    .padding(.top, DriverSpacing.xs)
 
                     // Divider
                     HStack(spacing: DriverSpacing.sm) {
@@ -78,41 +95,17 @@ struct DriverAuthView: View {
                             .fill(Color.driverBorder)
                             .frame(height: 1)
                     }
-                    .padding(.vertical, DriverSpacing.xs)
+                    .padding(.vertical, DriverSpacing.sm)
 
-                    // Email Sign Up Button
-                    Button {
-                        showEmailSignup = true
-                    } label: {
-                        HStack(spacing: DriverSpacing.sm) {
-                            Image(systemName: "envelope.fill")
-                                .font(.system(size: 16, weight: .medium))
-                            Text("Sign Up with Email")
-                                .font(DriverTypography.headline)
-                        }
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 52)
-                        .background(Color.driverPrimary)
-                        .clipShape(RoundedRectangle(cornerRadius: DriverRadius.md))
+                    // Apple Sign In Button
+                    SignInWithAppleButton(.signIn) { request in
+                        appState.auth.handleAppleSignInRequest(request)
+                    } onCompletion: { result in
+                        appState.auth.handleAppleSignInCompletion(result)
                     }
-
-                    // Phone Sign Up Button
-                    Button {
-                        showPhoneSignup = true
-                    } label: {
-                        HStack(spacing: DriverSpacing.sm) {
-                            Image(systemName: "phone.fill")
-                                .font(.system(size: 16, weight: .medium))
-                            Text("Sign Up with Phone Number")
-                                .font(DriverTypography.headline)
-                        }
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 52)
-                        .background(Color.driverPrimary.opacity(0.9))
-                        .clipShape(RoundedRectangle(cornerRadius: DriverRadius.md))
-                    }
+                    .signInWithAppleButtonStyle(.black)
+                    .frame(height: 52)
+                    .clipShape(RoundedRectangle(cornerRadius: DriverRadius.md))
 
                     // Error message display
                     if let errorMessage = appState.auth.errorMessage {
