@@ -35,6 +35,7 @@ struct UmuveProApp: App {
     @State private var appState = AppState()
     @State private var showingSplash = true
     @AppStorage("hasCompletedDriverOnboarding") private var hasCompletedOnboarding = false
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some Scene {
         WindowGroup {
@@ -75,11 +76,7 @@ struct UmuveProApp: App {
                             // CRITICAL: Load profile on app launch to ensure contractor ID is available
                             await appState.loadContractorProfile()
 
-                            // If already online from previous session, restart socket with correct contractor ID
-                            if appState.isOnline {
-                                appState.socket.disconnect()
-                                appState.startLocationTracking()
-                            }
+                            // Don't auto-reconnect - let driver choose to go online manually
                         }
                         .onAppear {
                             // Request push notification permission once authenticated and registered
@@ -88,6 +85,15 @@ struct UmuveProApp: App {
                 }
             }
             .preferredColorScheme(.light)
+            .onChange(of: scenePhase) { oldPhase, newPhase in
+                // Go offline when app goes to background or inactive
+                if newPhase == .background || newPhase == .inactive {
+                    if appState.isOnline {
+                        print("📱 App backgrounding - going offline")
+                        Task { await appState.toggleOnline() }
+                    }
+                }
+            }
         }
     }
 }
