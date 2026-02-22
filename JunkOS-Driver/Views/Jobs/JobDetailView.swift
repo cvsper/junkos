@@ -82,8 +82,8 @@ struct JobDetailView: View {
                                 .padding(.horizontal, DriverSpacing.xl)
                         }
 
-                        // Accept button (show for confirmed/pending jobs that aren't assigned yet)
-                        if [.pending, .confirmed].contains(job.jobStatus) && job.driverId == nil {
+                        // Accept button (show for jobs that can be accepted)
+                        if job.jobStatus == .pending || job.jobStatus == .confirmed || job.jobStatus == .assigned {
                             Button {
                                 Task {
                                     await viewModel.acceptJob(jobId: job.id)
@@ -119,6 +119,11 @@ struct JobDetailView: View {
         }
         .navigationTitle("Job Details")
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            if let job = job {
+                print("🔍 JobDetailView: Job status = \(job.status), jobStatus enum = \(job.jobStatus), driverId = \(job.driverId ?? "nil")")
+            }
+        }
     }
 }
 
