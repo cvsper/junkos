@@ -11,7 +11,8 @@ struct ActiveJobMapOverlay: View {
     let job: DriverJob
     let eta: String?
     let isUpdating: Bool
-    let onNavigate: () -> Void
+    let isNavigating: Bool
+    let onStartNavigation: () -> Void
     let onStatusUpdate: () async -> Void
 
     @State private var expanded = false
@@ -63,17 +64,19 @@ struct ActiveJobMapOverlay: View {
 
                 // Action buttons
                 HStack(spacing: DriverSpacing.sm) {
-                    // Navigate button
-                    Button(action: onNavigate) {
-                        Label("Navigate", systemImage: "location.fill")
-                            .font(DriverTypography.headline)
-                            .foregroundStyle(Color.driverPrimary)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 14)
-                            .background(
-                                RoundedRectangle(cornerRadius: DriverRadius.md)
-                                    .stroke(Color.driverPrimary, lineWidth: 1.5)
-                            )
+                    // Navigate button (only show if not already navigating)
+                    if !isNavigating {
+                        Button(action: onStartNavigation) {
+                            Label("Start Navigation", systemImage: "location.fill")
+                                .font(DriverTypography.headline)
+                                .foregroundStyle(Color.driverPrimary)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 14)
+                                .background(
+                                    RoundedRectangle(cornerRadius: DriverRadius.md)
+                                        .stroke(Color.driverPrimary, lineWidth: 1.5)
+                                )
+                        }
                     }
 
                     // Status action button

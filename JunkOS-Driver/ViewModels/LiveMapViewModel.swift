@@ -28,6 +28,16 @@ final class LiveMapViewModel {
     var route: MKRoute?
     var routeETA: String?
 
+    // MARK: - In-App Navigation
+
+    var isNavigating = false
+    var navigationSteps: [MKRoute.Step] = []
+    var currentStepIndex = 0
+    var currentStep: MKRoute.Step? {
+        guard currentStepIndex < navigationSteps.count else { return nil }
+        return navigationSteps[currentStepIndex]
+    }
+
     // MARK: - UI State
 
     var isLoadingJobs = false
@@ -240,6 +250,7 @@ final class LiveMapViewModel {
             acceptedJob = nil
             route = nil
             routeETA = nil
+            stopNavigation()
             HapticManager.shared.success()
         } catch {
             errorMessage = error.localizedDescription
@@ -249,6 +260,30 @@ final class LiveMapViewModel {
     }
 
     // MARK: - Navigation
+
+    func startNavigation() {
+        guard let route = route else { return }
+        isNavigating = true
+        navigationSteps = route.steps
+        currentStepIndex = 0
+        // Focus camera on user location for navigation
+        cameraPosition = .userLocation(followsHeading: true, fallback: .automatic)
+        HapticManager.shared.lightTap()
+    }
+
+    func stopNavigation() {
+        isNavigating = false
+        navigationSteps = []
+        currentStepIndex = 0
+        cameraPosition = .userLocation(fallback: .automatic)
+    }
+
+    func advanceToNextStep() {
+        if currentStepIndex < navigationSteps.count - 1 {
+            currentStepIndex += 1
+            HapticManager.shared.lightTap()
+        }
+    }
 
     func openInAppleMaps() {
         guard let job = acceptedJob, let lat = job.lat, let lng = job.lng else { return }
@@ -267,5 +302,6 @@ final class LiveMapViewModel {
         acceptedJob = nil
         route = nil
         routeETA = nil
+        stopNavigation()
     }
 }

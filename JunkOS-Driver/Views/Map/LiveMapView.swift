@@ -116,13 +116,25 @@ struct LiveMapView: View {
                     .padding(.bottom, DriverSpacing.xs)
                 }
 
-                // Active job overlay
-                if let acceptedJob = mapVM.acceptedJob, mapVM.incomingJobAlert == nil {
+                // Navigation overlay (when navigation is active)
+                if mapVM.isNavigating {
+                    NavigationOverlay(
+                        step: mapVM.currentStep,
+                        eta: mapVM.routeETA,
+                        onNext: { mapVM.advanceToNextStep() },
+                        onStop: { mapVM.stopNavigation() }
+                    )
+                    .padding(.top, DriverSpacing.md)
+                }
+
+                // Active job overlay (when not navigating)
+                if let acceptedJob = mapVM.acceptedJob, mapVM.incomingJobAlert == nil && !mapVM.isNavigating {
                     ActiveJobMapOverlay(
                         job: acceptedJob,
                         eta: mapVM.routeETA,
                         isUpdating: mapVM.isUpdatingStatus,
-                        onNavigate: { mapVM.openInAppleMaps() },
+                        isNavigating: mapVM.isNavigating,
+                        onStartNavigation: { mapVM.startNavigation() },
                         onStatusUpdate: {
                             await handleStatusUpdate(for: acceptedJob)
                         }
