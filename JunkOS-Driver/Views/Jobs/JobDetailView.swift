@@ -87,8 +87,14 @@ struct JobDetailView: View {
                             Button {
                                 Task {
                                     await viewModel.acceptJob(jobId: job.id)
-                                    if viewModel.didAccept {
-                                        appState.activeJob = viewModel.job
+                                    if viewModel.didAccept, let acceptedJob = viewModel.job {
+                                        appState.activeJob = acceptedJob
+                                        // Post notification to switch to Home tab and show route
+                                        NotificationCenter.default.post(
+                                            name: .jobWasAccepted,
+                                            object: nil,
+                                            userInfo: ["job_id": acceptedJob.id]
+                                        )
                                         dismiss()
                                     }
                                 }

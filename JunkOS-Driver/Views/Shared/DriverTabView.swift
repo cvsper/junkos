@@ -49,5 +49,11 @@ struct DriverTabView: View {
                 selectedTab = 0 // Home
             }
         }
+        .onReceive(NotificationCenter.default.publisher(for: .jobWasAccepted)) { _ in
+            // Switch to Home tab to show map with route
+            withAnimation(.easeInOut(duration: 0.3)) {
+                selectedTab = 0
+            }
+        }
     }
 }

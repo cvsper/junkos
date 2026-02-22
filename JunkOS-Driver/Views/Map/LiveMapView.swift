@@ -194,6 +194,22 @@ struct LiveMapView: View {
             guard let jobId = appState.consumeAssignment() else { return }
             mapVM.handleAssignment(jobId: jobId)
         }
+        .onChange(of: appState.activeJob?.id) { _, newJobId in
+            // When active job changes (accepted from Jobs tab), calculate route
+            guard let job = appState.activeJob else {
+                // Job cleared - clear route
+                mapVM.clearAcceptedJob()
+                return
+            }
+            // Sync with map view model
+            mapVM.acceptedJob = job
+            // Calculate route to job location
+            if let lat = job.lat, let lng = job.lng {
+                Task {
+                    await mapVM.calculateRoute(to: CLLocationCoordinate2D(latitude: lat, longitude: lng))
+                }
+            }
+        }
     }
 
     private func handleStatusUpdate(for job: DriverJob) async {
