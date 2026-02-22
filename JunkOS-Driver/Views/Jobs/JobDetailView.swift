@@ -82,8 +82,8 @@ struct JobDetailView: View {
                                 .padding(.horizontal, DriverSpacing.xl)
                         }
 
-                        // Accept button
-                        if job.jobStatus == .pending {
+                        // Accept button (show for confirmed/pending jobs that aren't assigned yet)
+                        if [.pending, .confirmed].contains(job.jobStatus) && job.driverId == nil {
                             Button {
                                 Task {
                                     await viewModel.acceptJob(jobId: job.id)
