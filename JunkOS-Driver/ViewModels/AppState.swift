@@ -55,7 +55,14 @@ final class AppState {
             // Re-register push token now that we have an auth context
             registerPushTokenIfNeeded()
         } catch {
-            contractorProfile = nil
+            // Only clear profile on auth errors, not on network/server errors
+            if let apiError = error as? APIError,
+               case .unauthorized = apiError {
+                contractorProfile = nil
+                auth.logout()
+            }
+            // For other errors (network, server), keep existing profile
+            print("⚠️ Failed to load profile: \(error.localizedDescription)")
         }
     }
 
