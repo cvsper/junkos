@@ -7,16 +7,23 @@
 
 import SwiftUI
 
+enum LoginMethod {
+    case email
+    case phone
+}
+
 struct EmailSignupView: View {
     @Bindable var appState: AppState
     let onDismiss: () -> Void
 
     @State private var email = ""
+    @State private var phoneNumber = ""
     @State private var password = ""
     @State private var name = ""
     @State private var isSignup = true
     @State private var hasInviteCode = false
     @State private var inviteCode = ""
+    @State private var loginMethod: LoginMethod = .email
 
     var body: some View {
         ZStack {
@@ -38,6 +45,38 @@ struct EmailSignupView: View {
 
                     // Form
                     VStack(spacing: DriverSpacing.md) {
+                        // Login method toggle (login only)
+                        if !isSignup {
+                            HStack(spacing: 0) {
+                                Button {
+                                    loginMethod = .email
+                                } label: {
+                                    Text("Email")
+                                        .font(DriverTypography.callout)
+                                        .foregroundStyle(loginMethod == .email ? Color.white : Color.driverText)
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, DriverSpacing.sm)
+                                        .background(loginMethod == .email ? Color.driverPrimary : Color.white)
+                                }
+
+                                Button {
+                                    loginMethod = .phone
+                                } label: {
+                                    Text("Phone")
+                                        .font(DriverTypography.callout)
+                                        .foregroundStyle(loginMethod == .phone ? Color.white : Color.driverText)
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, DriverSpacing.sm)
+                                        .background(loginMethod == .phone ? Color.driverPrimary : Color.white)
+                                }
+                            }
+                            .clipShape(RoundedRectangle(cornerRadius: DriverRadius.md))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: DriverRadius.md)
+                                    .stroke(Color.driverBorder, lineWidth: 1)
+                            )
+                        }
+
                         // Name field (signup only)
                         if isSignup {
                             TextField("Name (optional)", text: $name)
@@ -71,18 +110,31 @@ struct EmailSignupView: View {
                             }
                         }
 
-                        // Email field
-                        TextField("Email", text: $email)
-                            .textContentType(.emailAddress)
-                            .textInputAutocapitalization(.never)
-                            .keyboardType(.emailAddress)
-                            .padding()
-                            .background(Color.white)
-                            .clipShape(RoundedRectangle(cornerRadius: DriverRadius.md))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: DriverRadius.md)
-                                    .stroke(Color.driverBorder, lineWidth: 1)
-                            )
+                        // Email or Phone field based on login method
+                        if isSignup || loginMethod == .email {
+                            TextField("Email", text: $email)
+                                .textContentType(.emailAddress)
+                                .textInputAutocapitalization(.never)
+                                .keyboardType(.emailAddress)
+                                .padding()
+                                .background(Color.white)
+                                .clipShape(RoundedRectangle(cornerRadius: DriverRadius.md))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: DriverRadius.md)
+                                        .stroke(Color.driverBorder, lineWidth: 1)
+                                )
+                        } else {
+                            TextField("Phone Number", text: $phoneNumber)
+                                .textContentType(.telephoneNumber)
+                                .keyboardType(.phonePad)
+                                .padding()
+                                .background(Color.white)
+                                .clipShape(RoundedRectangle(cornerRadius: DriverRadius.md))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: DriverRadius.md)
+                                        .stroke(Color.driverBorder, lineWidth: 1)
+                                )
+                        }
 
                         // Password field
                         SecureField("Password", text: $password)
@@ -107,8 +159,8 @@ struct EmailSignupView: View {
                                 .background(Color.driverPrimary)
                                 .clipShape(RoundedRectangle(cornerRadius: DriverRadius.md))
                         }
-                        .disabled(email.isEmpty || password.isEmpty)
-                        .opacity(email.isEmpty || password.isEmpty ? 0.5 : 1)
+                        .disabled(isSubmitDisabled)
+                        .opacity(isSubmitDisabled ? 0.5 : 1)
 
                         // Toggle signup/login
                         Button {
@@ -166,6 +218,45 @@ struct EmailSignupView: View {
         .preferredColorScheme(.light)
     }
 
+    private var isSubmitDisabled: Bool {
+        if password.isEmpty { return true }
+
+        if isSignup {
+            return email.isEmpty
+        } else {
+            switch loginMethod {
+            case .email:
+                return email.isEmpty || !isValidEmail(email)
+            case .phone:
+                return phoneNumber.isEmpty || !isValidPhone(phoneNumber)
+            }
+        }
+    }
+
+    private func isValidEmail(_ email: String) -> Bool {
+        let emailRegex = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
+        let emailPredicate = NSPredicate(format: "SELF MATCHES %@", emailRegex)
+        return emailPredicate.evaluate(with: email)
+    }
+
+    private func isValidPhone(_ phone: String) -> Bool {
+        // Remove non-numeric characters for validation
+        let digits = phone.filter { $0.isNumber }
+        // Accept 10 digits (US) or 11 digits (with country code)
+        return digits.count >= 10 && digits.count <= 15
+    }
+
+    private func formatPhoneNumber(_ phone: String) -> String {
+        // Format to +1XXXXXXXXXX for US numbers
+        let digits = phone.filter { $0.isNumber }
+        if digits.count == 10 {
+            return "+1" + digits
+        } else if digits.count == 11 && digits.hasPrefix("1") {
+            return "+" + digits
+        }
+        return phone // Return as-is for international
+    }
+
     private func submit() {
         Task {
             HapticManager.shared.lightTap()
@@ -178,10 +269,19 @@ struct EmailSignupView: View {
                     inviteCode: hasInviteCode && !inviteCode.isEmpty ? inviteCode.trimmingCharacters(in: .whitespaces) : nil
                 )
             } else {
-                await appState.auth.emailLogin(
-                    email: email.trimmingCharacters(in: .whitespaces),
-                    password: password
-                )
+                switch loginMethod {
+                case .email:
+                    await appState.auth.emailLogin(
+                        email: email.trimmingCharacters(in: .whitespaces),
+                        password: password
+                    )
+                case .phone:
+                    let formattedPhone = formatPhoneNumber(phoneNumber.trimmingCharacters(in: .whitespaces))
+                    await appState.auth.phoneLogin(
+                        phone: formattedPhone,
+                        password: password
+                    )
+                }
             }
 
             if appState.auth.isAuthenticated {

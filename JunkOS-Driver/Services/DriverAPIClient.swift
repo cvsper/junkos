@@ -166,6 +166,15 @@ actor DriverAPIClient {
         )
     }
 
+    func phoneLogin(phone: String, password: String) async throws -> AuthResponse {
+        try await request(
+            "/api/auth/driver-login",
+            method: "POST",
+            body: PhoneLoginRequest(phone: phone, password: password),
+            authenticated: false
+        )
+    }
+
     func sendVerificationCode(phoneNumber: String) async throws -> PhoneVerificationResponse {
         try await request(
             "/api/auth/send-code",

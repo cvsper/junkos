@@ -346,18 +346,24 @@ def signup():
 @auth_bp.route('/login', methods=['POST'])
 @limiter.limit("5 per minute")
 def login():
-    """Login with email and password"""
+    """Login with email/phone and password"""
     data = request.get_json(force=True)
     email = data.get('email')
+    phone = data.get('phone') or data.get('phoneNumber')
     password = data.get('password')
 
-    if not email or not password:
-        return jsonify({'error': 'Email and password required'}), 400
+    if (not email and not phone) or not password:
+        return jsonify({'error': 'Email or phone number and password required'}), 400
 
-    # Check database
-    db_user = User.query.filter_by(email=email).first()
+    # Check database - try email first, then phone
+    db_user = None
+    if email:
+        db_user = User.query.filter_by(email=email).first()
+    elif phone:
+        db_user = User.query.filter_by(phone=phone).first()
+
     if not db_user or not db_user.check_password(password):
-        return jsonify({'error': 'Invalid email or password'}), 401
+        return jsonify({'error': 'Invalid credentials'}), 401
 
     token = generate_token(db_user.id)
     return jsonify({
@@ -997,26 +1003,32 @@ def driver_signup():
 
 @auth_bp.route('/driver-login', methods=['POST'])
 def driver_login():
-    """Login as a driver with email and password"""
+    """Login as a driver with email/phone and password"""
     data = request.get_json()
     email = data.get('email')
+    phone = data.get('phone') or data.get('phoneNumber')
     password = data.get('password')
-    
-    if not email or not password:
-        return jsonify({'error': 'Email and password required'}), 400
-    
-    # Find user
-    user = User.query.filter_by(email=email).first()
+
+    if (not email and not phone) or not password:
+        return jsonify({'error': 'Email or phone number and password required'}), 400
+
+    # Find user - try email first, then phone
+    user = None
+    if email:
+        user = User.query.filter_by(email=email).first()
+    elif phone:
+        user = User.query.filter_by(phone=phone).first()
+
     if not user or user.password_hash != hash_password(password):
-        return jsonify({'error': 'Invalid email or password'}), 401
-    
+        return jsonify({'error': 'Invalid credentials'}), 401
+
     # Verify role
     if user.role != 'driver':
         return jsonify({'error': 'This account is not registered as a driver. Please use the customer app.'}), 403
-    
+
     # Generate token
     token = generate_token(user.id)
-    
+
     return jsonify({
         'success': True,
         'token': token,

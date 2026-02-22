@@ -67,6 +67,11 @@ struct EmailLoginRequest: Codable {
     let password: String
 }
 
+struct PhoneLoginRequest: Codable {
+    let phone: String
+    let password: String
+}
+
 struct DriverUser: Codable, Identifiable {
     let id: String
     let name: String?

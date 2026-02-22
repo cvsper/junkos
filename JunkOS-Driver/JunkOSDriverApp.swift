@@ -60,12 +60,12 @@ struct UmuveProApp: App {
                     DriverOnboardingView()
                 } else if !appState.auth.isAuthenticated {
                     DriverAuthView(appState: appState)
-                } else if !appState.isRegistered && appState.selectedRole == nil {
-                    // Role selection before registration
-                    RoleSelectionView(appState: appState)
                 } else if appState.isOperator {
                     // Operator registered -- redirect to web dashboard
                     OperatorWebRedirectView(appState: appState)
+                } else if !appState.isRegistered && appState.selectedRole == nil {
+                    // Role selection for NEW users only (before registration)
+                    RoleSelectionView(appState: appState)
                 } else if !appState.isRegistered {
                     ContractorRegistrationView(appState: appState)
                 } else if !appState.hasCompletedStripeConnect {

@@ -131,6 +131,25 @@ final class AuthenticationManager {
         }
     }
 
+    func phoneLogin(phone: String, password: String) async {
+        isLoading = true
+        errorMessage = nil
+
+        do {
+            let response = try await api.phoneLogin(phone: phone, password: password)
+            setAuthenticated(user: response.user, token: response.token)
+            isLoading = false
+        } catch {
+            if let apiError = error as? APIError {
+                errorMessage = apiError.errorDescription
+            } else {
+                errorMessage = "Login failed. Check your credentials."
+            }
+            isLoading = false
+            HapticManager.shared.error()
+        }
+    }
+
     // MARK: - Phone Authentication
 
     func sendVerificationCode(phoneNumber: String) async {
