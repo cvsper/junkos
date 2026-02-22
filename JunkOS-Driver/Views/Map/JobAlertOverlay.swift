@@ -106,7 +106,7 @@ struct JobAlertOverlay: View {
                     Image(systemName: "cube.box.fill")
                         .font(.system(size: 12))
                         .foregroundStyle(Color.driverTextSecondary)
-                    Text(items.prefix(3).joined(separator: ", "))
+                    Text(job.itemNames.prefix(3).joined(separator: ", "))
                         .font(DriverTypography.footnote)
                         .foregroundStyle(Color.driverTextSecondary)
                         .lineLimit(1)

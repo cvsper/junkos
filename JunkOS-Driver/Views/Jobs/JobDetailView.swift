@@ -60,7 +60,7 @@ struct JobDetailView: View {
                             DetailRow(label: "Distance", value: job.formattedDistance, icon: "location")
 
                             if let items = job.items, !items.isEmpty {
-                                DetailRow(label: "Items", value: items.joined(separator: ", "), icon: "cube.box")
+                                DetailRow(label: "Items", value: job.itemNames.joined(separator: ", "), icon: "cube.box")
                             }
 
                             if let notes = job.notes, !notes.isEmpty {

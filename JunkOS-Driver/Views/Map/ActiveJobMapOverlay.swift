@@ -112,7 +112,7 @@ struct ActiveJobMapOverlay: View {
 
                         // Items
                         if let items = job.items, !items.isEmpty {
-                            Label(items.joined(separator: ", "), systemImage: "cube.box")
+                            Label(job.itemNames.joined(separator: ", "), systemImage: "cube.box")
                                 .font(DriverTypography.footnote)
                                 .foregroundStyle(Color.driverTextSecondary)
                         }

@@ -47,7 +47,7 @@ struct JobCardView: View {
 
             // Items preview
             if let items = job.items, !items.isEmpty {
-                Text(items.prefix(3).joined(separator: " · "))
+                Text(job.itemNames.prefix(3).joined(separator: " · "))
                     .font(DriverTypography.caption)
                     .foregroundStyle(Color.driverTextSecondary)
                     .lineLimit(1)
