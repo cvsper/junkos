@@ -40,8 +40,8 @@ actor DriverAPIClient {
 
     private init() {
         let config = URLSessionConfiguration.default
-        config.timeoutIntervalForRequest = 30
-        config.timeoutIntervalForResource = 60
+        config.timeoutIntervalForRequest = 60  // Increased for Render cold starts
+        config.timeoutIntervalForResource = 120
         self.session = URLSession(configuration: config)
         self.baseURL = AppConfig.shared.baseURL
     }
