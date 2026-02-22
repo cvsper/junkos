@@ -118,6 +118,23 @@ struct DriverAuthView: View {
                 }
                 .padding(.horizontal, DriverSpacing.xl)
                 .padding(.bottom, DriverSpacing.xxl)
+
+                // Debug: Clear Keychain button
+                Button(action: {
+                    KeychainHelper.delete(forKey: "authToken")
+                    KeychainHelper.delete(forKey: "userId")
+                    // Also clear old keys if they exist
+                    KeychainHelper.delete(forKey: "com.junkos.driver.authToken")
+                    KeychainHelper.delete(forKey: "com.junkos.driver.userId")
+                    appState.auth.isAuthenticated = false
+                    appState.auth.currentUser = nil
+                    print("🗑️ Cleared all Keychain data")
+                }) {
+                    Text("Clear Keychain (Debug)")
+                        .font(.system(size: 10))
+                        .foregroundStyle(Color.gray.opacity(0.5))
+                }
+                .padding(.bottom, DriverSpacing.sm)
             }
 
             // Loading overlay
