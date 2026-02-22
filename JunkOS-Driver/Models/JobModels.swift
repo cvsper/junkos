@@ -8,6 +8,13 @@
 import Foundation
 import SwiftUI
 
+// MARK: - Job Item
+
+struct JobItem: Codable {
+    let category: String
+    let quantity: Int?
+}
+
 // MARK: - Job Status
 
 enum JobStatus: String, Codable, CaseIterable {
@@ -93,7 +100,7 @@ struct DriverJob: Codable, Identifiable {
     let address: String
     let lat: Double?
     let lng: Double?
-    let items: [String]?
+    let items: [JobItem]?
     let volumeEstimate: Double?
     let photos: [String]
     let beforePhotos: [String]
@@ -154,6 +161,10 @@ struct DriverJob: Codable, Identifiable {
 
     var formattedPrice: String {
         String(format: "$%.0f", totalPrice)
+    }
+
+    var itemNames: [String] {
+        items?.map { $0.category } ?? []
     }
 
     var shortAddress: String {
