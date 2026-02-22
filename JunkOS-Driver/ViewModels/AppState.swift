@@ -47,22 +47,43 @@ final class AppState {
 
     // MARK: - Load Profile
 
-    func loadContractorProfile() async {
-        do {
-            let response = try await api.getContractorProfile()
-            contractorProfile = response.contractor
-            isOnline = response.contractor.isOnline
-            // Re-register push token now that we have an auth context
-            registerPushTokenIfNeeded()
-        } catch {
-            // Only clear profile on auth errors, not on network/server errors
-            if let apiError = error as? APIError,
-               case .unauthorized = apiError {
-                contractorProfile = nil
-                auth.logout()
+    func loadContractorProfile(retries: Int = 2) async {
+        var attempts = 0
+        var lastError: Error?
+
+        while attempts <= retries {
+            do {
+                let response = try await api.getContractorProfile()
+                contractorProfile = response.contractor
+                isOnline = response.contractor.isOnline
+                // Re-register push token now that we have an auth context
+                registerPushTokenIfNeeded()
+                print("✅ Profile loaded successfully")
+                return
+            } catch {
+                lastError = error
+                attempts += 1
+
+                // Only clear profile on auth errors, not on network/server errors
+                if let apiError = error as? APIError,
+                   case .unauthorized = apiError {
+                    contractorProfile = nil
+                    auth.logout()
+                    print("❌ Auth error - logged out")
+                    return
+                }
+
+                // For network errors, retry with delay
+                if attempts <= retries {
+                    print("⚠️ Profile load attempt \(attempts) failed, retrying in \(attempts * 3)s...")
+                    try? await Task.sleep(nanoseconds: UInt64(attempts * 3_000_000_000))
+                }
             }
-            // For other errors (network, server), keep existing profile
-            print("⚠️ Failed to load profile: \(error.localizedDescription)")
+        }
+
+        // All retries exhausted
+        if let error = lastError {
+            print("❌ Failed to load profile after \(retries + 1) attempts: \(error.localizedDescription)")
         }
     }
 

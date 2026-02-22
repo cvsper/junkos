@@ -46,13 +46,15 @@ struct UmuveProApp: App {
                             // Load contractor profile during splash if authenticated
                             // This ensures isRegistered is accurate before showing screens
                             if appState.auth.isAuthenticated {
-                                await appState.loadContractorProfile()
+                                print("🔄 Loading profile during splash...")
+                                await appState.loadContractorProfile(retries: 3)
                             }
 
-                            // Wait minimum 1.8 seconds for splash animation
-                            try? await Task.sleep(nanoseconds: 1_800_000_000)
+                            // Wait minimum 2 seconds for splash animation
+                            try? await Task.sleep(nanoseconds: 2_000_000_000)
 
                             // Dismiss splash after profile is loaded
+                            print("👋 Dismissing splash - isRegistered: \(appState.isRegistered)")
                             withAnimation(.easeInOut(duration: 0.4)) {
                                 showingSplash = false
                             }
