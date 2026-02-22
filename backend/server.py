@@ -123,7 +123,7 @@ sqlalchemy_db.init_app(app)
 socketio.init_app(
     app,
     cors_allowed_origins=_allowed_origins,
-    async_mode="eventlet",
+    async_mode="threading",  # Threading mode is fully compatible with Socket.IO v4
     logger=False,
     engineio_logger=False,
     # Explicitly support both Socket.IO v2.x and v4.x protocols
