@@ -294,6 +294,37 @@ def delete_jobs_without_category():
         "deleted_count": deleted_count,
     }), 200
 
+
+@app.route("/api/test/fix-jobs-add-category", methods=["POST"])
+def fix_jobs_add_category():
+    """Add category field to jobs that are missing it"""
+    fixed_count = 0
+    jobs = Job.query.filter_by(status="confirmed").all()
+
+    for job in jobs:
+        if job.items:
+            # Check if any item is missing the category field
+            needs_fix = False
+            for item in job.items:
+                if "category" not in item:
+                    # Add a default category based on the item name or use 'other'
+                    item["category"] = "other"
+                    needs_fix = True
+
+            if needs_fix:
+                # Mark the job as modified so SQLAlchemy saves it
+                from sqlalchemy.orm.attributes import flag_modified
+                flag_modified(job, "items")
+                fixed_count += 1
+
+    sqlalchemy_db.session.commit()
+
+    return jsonify({
+        "success": True,
+        "message": f"✅ Fixed {fixed_count} jobs by adding category field",
+        "fixed_count": fixed_count,
+    }), 200
+
 # ---------------------------------------------------------------------------
 # Input sanitization middleware (XSS / injection prevention)
 # ---------------------------------------------------------------------------
