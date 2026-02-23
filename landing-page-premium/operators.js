@@ -107,6 +107,28 @@ if (operatorForm) {
             });
             
             if (response.ok) {
+                // Track conversion in GA4
+                if (typeof gtag !== 'undefined') {
+                    // Standard GA4 lead event
+                    gtag('event', 'generate_lead', {
+                        'event_category': 'Operator Recruitment',
+                        'event_label': 'Operator Application Submitted',
+                        'value': 100, // Estimated value per operator application
+                        'currency': 'USD'
+                    });
+
+                    // Enhanced Conversions (user-provided data for better attribution)
+                    gtag('set', 'user_data', {
+                        'email': data.email,
+                        'phone_number': data.phone,
+                        'address': {
+                            'first_name': data.first_name,
+                            'last_name': data.last_name,
+                            'city': data.city
+                        }
+                    });
+                }
+
                 // Success
                 operatorForm.innerHTML = `
                     <div style="text-align: center; padding: 3rem;">
