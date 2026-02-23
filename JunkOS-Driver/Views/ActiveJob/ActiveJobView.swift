@@ -36,9 +36,9 @@ struct ActiveJobView: View {
                     Group {
                         switch job.jobStatus {
                         case .accepted:
-                            NavigateToJobView(job: job, viewModel: viewModel)
+                            NavigateToJobView(job: job, viewModel: viewModel, appState: appState)
                         case .enRoute:
-                            NavigateToJobView(job: job, viewModel: viewModel)
+                            NavigateToJobView(job: job, viewModel: viewModel, appState: appState)
                         case .arrived:
                             VStack(spacing: DriverSpacing.md) {
                                 BeforePhotosView(viewModel: viewModel)
