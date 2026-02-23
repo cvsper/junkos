@@ -44,11 +44,9 @@ final class SocketIOManager {
             .reconnectAttempts(-1),  // Infinite reconnection attempts
             .reconnectWait(1),       // Faster reconnection: 1 second (was 2)
             .reconnectWaitMax(5),    // Cap max wait at 5 seconds
-            .extraHeaders(["X-Client-Type": "ios-driver"]),  // Help backend identify mobile clients
-            // CRITICAL: Force Socket.IO v2 (Engine.IO v3) to avoid batched POST issues
-            // Engine.IO v4 batches messages with \^^ delimiter, which Render's proxy rejects
-            // Causing "Error flushing waiting posts" and connection drops
-            .version(.two)  // Single POST per packet - works reliably with Render
+            .extraHeaders(["X-Client-Type": "ios-driver"])  // Help backend identify mobile clients
+            // Removed .version(.two) to match backend Engine.IO v4 protocol
+            // Backend requires v4 (python-socketio >= 5.11.0)
         ])
 
         socket = manager?.defaultSocket
