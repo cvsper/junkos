@@ -929,77 +929,88 @@ def driver_signup():
     """Sign up as a driver with email and password"""
     from models import Contractor, OperatorInvite, generate_uuid
     from datetime import datetime
+    import traceback
 
-    data = request.get_json()
-    email = data.get('email')
-    password = data.get('password')
-    name = data.get('name')
-    invite_code = data.get('inviteCode')
+    try:
+        data = request.get_json()
+        email = data.get('email')
+        password = data.get('password')
+        name = data.get('name') or None  # Convert empty string to None
+        invite_code = data.get('inviteCode') or None  # Convert null/empty to None
 
-    if not email or not password:
-        return jsonify({'error': 'Email and password required'}), 400
+        if not email or not password:
+            return jsonify({'error': 'Email and password required'}), 400
+    except Exception as e:
+        _auth_logger.error(f"driver-signup error (parsing): {e}\n{traceback.format_exc()}")
+        return jsonify({'error': 'Invalid request data'}), 400
 
-    # Check if email already exists
-    existing_user = User.query.filter_by(email=email).first()
-    if existing_user:
-        return jsonify({'error': 'Email already registered'}), 409
+    try:
+        # Check if email already exists
+        existing_user = User.query.filter_by(email=email).first()
+        if existing_user:
+            return jsonify({'error': 'Email already registered'}), 409
 
-    # Validate invite code if provided
-    operator_id = None
-    if invite_code:
-        invite = OperatorInvite.query.filter_by(invite_code=invite_code).first()
+        # Validate invite code if provided
+        operator_id = None
+        if invite_code:
+            invite = OperatorInvite.query.filter_by(invite_code=invite_code).first()
 
-        if not invite:
-            return jsonify({'error': 'Invalid invite code'}), 400
+            if not invite:
+                return jsonify({'error': 'Invalid invite code'}), 400
 
-        if not invite.is_active:
-            return jsonify({'error': 'Invite code is no longer active'}), 400
+            if not invite.is_active:
+                return jsonify({'error': 'Invite code is no longer active'}), 400
 
-        if invite.expires_at and invite.expires_at < datetime.utcnow():
-            return jsonify({'error': 'Invite code has expired'}), 400
+            if invite.expires_at and invite.expires_at < datetime.utcnow():
+                return jsonify({'error': 'Invite code has expired'}), 400
 
-        if invite.use_count >= invite.max_uses:
-            return jsonify({'error': 'Invite code has reached maximum uses'}), 400
+            if invite.use_count >= invite.max_uses:
+                return jsonify({'error': 'Invite code has reached maximum uses'}), 400
 
-        operator_id = invite.operator_id
-        invite.use_count += 1
+            operator_id = invite.operator_id
+            invite.use_count += 1
 
-    # Create driver user
-    user_id = secrets.token_hex(16)
-    new_user = User(
-        id=user_id,
-        email=email,
-        password_hash=hash_password(password),
-        name=name,
-        role='driver'
-    )
-    db.session.add(new_user)
+        # Create driver user
+        user_id = secrets.token_hex(16)
+        new_user = User(
+            id=user_id,
+            email=email,
+            password_hash=hash_password(password),
+            name=name,
+            role='driver'
+        )
+        db.session.add(new_user)
 
-    # Create contractor record
-    contractor = Contractor(
-        id=generate_uuid(),
-        user_id=user_id,
-        is_online=False,
-        avg_rating=5.0,
-        operator_id=operator_id
-    )
-    db.session.add(contractor)
-    db.session.commit()
+        # Create contractor record
+        contractor = Contractor(
+            id=generate_uuid(),
+            user_id=user_id,
+            is_online=False,
+            avg_rating=5.0,
+            operator_id=operator_id
+        )
+        db.session.add(contractor)
+        db.session.commit()
 
-    # Generate token
-    token = generate_token(user_id)
+        # Generate token
+        token = generate_token(user_id)
 
-    return jsonify({
-        'success': True,
-        'token': token,
-        'user': {
-            'id': new_user.id,
-            'name': new_user.name,
-            'email': new_user.email,
-            'phoneNumber': new_user.phone,
-            'role': new_user.role
-        }
-    })
+        return jsonify({
+            'success': True,
+            'token': token,
+            'user': {
+                'id': new_user.id,
+                'name': new_user.name,
+                'email': new_user.email,
+                'phoneNumber': new_user.phone,
+                'role': new_user.role
+            }
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        _auth_logger.error(f"driver-signup error: {e}\n{traceback.format_exc()}")
+        return jsonify({'error': f'Server error: {str(e)}'}), 500
 
 @auth_bp.route('/driver-login', methods=['POST'])
 def driver_login():
