@@ -228,23 +228,69 @@ final class AuthenticationManager {
 
     private func restoreSession() async {
         guard let savedToken = KeychainHelper.loadString(forKey: "authToken"),
-              !savedToken.isEmpty else { return }
+              !savedToken.isEmpty else {
+            print("🔐 No saved token found")
+            return
+        }
+
+        print("🔐 Checking saved token...")
+
+        // First, check if token is expired and try to refresh
+        if isTokenExpired(savedToken) {
+            print("⏰ Token expired, attempting refresh...")
+            do {
+                let response = try await api.refreshToken()
+                if response.success {
+                    KeychainHelper.save(response.token, forKey: "authToken")
+                    print("✅ Token refreshed successfully")
+                } else {
+                    print("❌ Token refresh failed")
+                    logout()
+                    return
+                }
+            } catch {
+                print("❌ Token refresh error: \(error.localizedDescription)")
+                logout()
+                return
+            }
+        }
+
+        // Now try to restore session with valid token
         do {
             let profileResponse = try await api.getContractorProfile()
             if let user = profileResponse.contractor.user {
                 currentUser = user
                 isAuthenticated = true
-                // Refresh token if needed after successful session restore
-                await refreshTokenIfNeeded()
+                print("✅ Session restored successfully")
             }
         } catch {
+            print("❌ Session restore failed: \(error.localizedDescription)")
             // Only clear if the token hasn't been replaced by a fresh login
             let currentToken = KeychainHelper.loadString(forKey: "authToken")
             if currentToken == savedToken {
-                KeychainHelper.delete(forKey: "authToken")
-                KeychainHelper.delete(forKey: "userId")
+                logout()
             }
         }
+    }
+
+    private func isTokenExpired(_ token: String) -> Bool {
+        let segments = token.split(separator: ".")
+        guard segments.count == 3 else { return true }
+
+        let payloadSegment = String(segments[1])
+        var base64 = payloadSegment.replacingOccurrences(of: "-", with: "+").replacingOccurrences(of: "_", with: "/")
+        while base64.count % 4 != 0 {
+            base64.append("=")
+        }
+
+        guard let payloadData = Data(base64Encoded: base64),
+              let payload = try? JSONSerialization.jsonObject(with: payloadData) as? [String: Any],
+              let exp = payload["exp"] as? TimeInterval else {
+            return true
+        }
+
+        let expirationDate = Date(timeIntervalSince1970: exp)
+        return Date() >= expirationDate
     }
 
     private func refreshTokenIfNeeded() async {
