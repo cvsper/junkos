@@ -12,51 +12,60 @@ struct NavigateToJobView: View {
     let job: DriverJob
     @Bindable var viewModel: ActiveJobViewModel
     var appState: AppState? = nil // Optional for backward compatibility
+    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         VStack(spacing: DriverSpacing.lg) {
             Spacer()
 
-            // Map preview with NavigationLink
+            // Map preview (tappable to go to live map)
             if let lat = job.lat, let lng = job.lng {
                 if let appState = appState {
-                    NavigationLink(destination: LiveMapView(appState: appState)) {
-                    VStack(spacing: DriverSpacing.md) {
-                        Map(initialPosition: .region(MKCoordinateRegion(
-                            center: CLLocationCoordinate2D(latitude: lat, longitude: lng),
-                            span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
-                        ))) {
-                            Marker(job.shortAddress, coordinate: CLLocationCoordinate2D(latitude: lat, longitude: lng))
-                                .tint(Color.driverPrimary)
+                    Button {
+                        // Go online and dismiss to show live map
+                        Task {
+                            if !appState.isOnline {
+                                await appState.toggleOnline()
+                            }
+                            dismiss()
                         }
-                        .frame(height: 200)
-                        .clipShape(RoundedRectangle(cornerRadius: DriverRadius.lg))
-                        .allowsHitTesting(false) // Disable map interaction, make whole area tappable
+                    } label: {
+                        VStack(spacing: DriverSpacing.md) {
+                            Map(initialPosition: .region(MKCoordinateRegion(
+                                center: CLLocationCoordinate2D(latitude: lat, longitude: lng),
+                                span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+                            ))) {
+                                Marker(job.shortAddress, coordinate: CLLocationCoordinate2D(latitude: lat, longitude: lng))
+                                    .tint(Color.driverPrimary)
+                            }
+                            .frame(height: 200)
+                            .clipShape(RoundedRectangle(cornerRadius: DriverRadius.lg))
+                            .allowsHitTesting(false) // Disable map interaction, make whole area tappable
 
-                        // Address info
-                        VStack(spacing: DriverSpacing.xs) {
-                            HStack {
-                                Text(job.shortAddress)
-                                    .font(DriverTypography.title3)
-                                    .foregroundStyle(Color.driverText)
+                            // Address info
+                            VStack(spacing: DriverSpacing.xs) {
+                                HStack {
+                                    Text(job.shortAddress)
+                                        .font(DriverTypography.title3)
+                                        .foregroundStyle(Color.driverText)
 
-                                Image(systemName: "chevron.right")
-                                    .font(.caption)
+                                    Image(systemName: "chevron.right")
+                                        .font(.caption)
+                                        .foregroundStyle(Color.driverTextSecondary)
+                                }
+
+                                Text(job.address)
+                                    .font(DriverTypography.footnote)
                                     .foregroundStyle(Color.driverTextSecondary)
-                            }
+                                    .multilineTextAlignment(.center)
 
-                            Text(job.address)
-                                .font(DriverTypography.footnote)
-                                .foregroundStyle(Color.driverTextSecondary)
-                                .multilineTextAlignment(.center)
-
-                            if job.jobStatus == .enRoute {
-                                Text("Tap to view full map")
-                                    .font(.caption2)
-                                    .foregroundStyle(Color.driverPrimary)
+                                if job.jobStatus == .enRoute {
+                                    Text("Tap to view full map")
+                                        .font(.caption2)
+                                        .foregroundStyle(Color.driverPrimary)
+                                }
                             }
                         }
-                    }
                     }
                     .buttonStyle(.plain)
                     .padding(.horizontal, DriverSpacing.xl)
