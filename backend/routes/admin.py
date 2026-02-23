@@ -1054,3 +1054,95 @@ def admin_send_sms(user_id):
     sms_custom(target_user.phone, message)
 
     return jsonify({"success": True, "message": "SMS queued"}), 200
+
+
+# ---------------------------------------------------------------------------
+# POST /api/admin/seed-jobs — Create test jobs
+# ---------------------------------------------------------------------------
+@admin_bp.route("/seed-jobs", methods=["POST"])
+@require_admin
+def seed_test_jobs(user_id):
+    """Create 30 test jobs for testing (admin only)."""
+    import random
+
+    # Find or create test customer
+    test_customer = User.query.filter_by(email="test@umuve.com").first()
+    if not test_customer:
+        test_customer = User(
+            id=generate_uuid(),
+            name="Test Customer",
+            email="test@umuve.com",
+            phone="+15555551234",
+            role="customer",
+        )
+        db.session.add(test_customer)
+        db.session.commit()
+
+    # Job data (30 jobs)
+    jobs_data = [
+        ("123 Ocean Drive, Miami Beach, FL 33139", 25.7907, -80.1300, "Old Couch"),
+        ("456 Palm Ave, Fort Lauderdale, FL 33301", 26.1224, -80.1373, "Mattress Set"),
+        ("1501 Brickell Ave, Miami, FL 33129", 25.7617, -80.1918, "Filing Cabinets"),
+        ("2100 Collins Ave, Miami Beach, FL 33139", 25.7959, -80.1284, "Patio Furniture"),
+        ("3300 NE 1st Ave, Miami, FL 33137", 25.8076, -80.1918, "Washer/Dryer"),
+        ("401 Biscayne Blvd, Miami, FL 33132", 25.7743, -80.1871, "Office Desks"),
+        ("1200 Anastasia Ave, Coral Gables, FL 33134", 25.7459, -80.2615, "Piano"),
+        ("2500 E Las Olas Blvd, Fort Lauderdale, FL 33301", 26.1185, -80.1134, "Sectional Sofa"),
+        ("1 E Broward Blvd, Fort Lauderdale, FL 33301", 26.1224, -80.1434, "Elliptical"),
+        ("3501 N Federal Hwy, Fort Lauderdale, FL 33308", 26.1601, -80.1097, "Bed Frame"),
+        ("101 N Ocean Dr, Hollywood, FL 33019", 26.0112, -80.1218, "Hot Tub"),
+        ("2000 S Dixie Hwy, Miami, FL 33133", 25.7459, -80.2042, "Entertainment Center"),
+        ("1200 S Flagler Dr, West Palm Beach, FL 33401", 26.7067, -80.0495, "Lawn Mower"),
+        ("400 Clematis St, West Palm Beach, FL 33401", 26.7153, -80.0533, "Conference Table"),
+        ("1500 S Ocean Blvd, Delray Beach, FL 33483", 26.4525, -80.0717, "Wardrobes"),
+        ("801 E Atlantic Ave, Delray Beach, FL 33483", 26.4615, -80.0628, "Pool Table"),
+        ("2201 NW 2nd Ave, Boca Raton, FL 33431", 26.3754, -80.0810, "Armchairs"),
+        ("1000 Glades Rd, Boca Raton, FL 33431", 26.3683, -80.0831, "Kitchen Cabinets"),
+        ("7100 W Camino Real, Boca Raton, FL 33433", 26.3587, -80.1753, "Chest Freezer"),
+        ("201 E Palmetto Park Rd, Boca Raton, FL 33432", 26.3587, -80.0784, "Dressers"),
+        ("3850 NW 25th St, Miami, FL 33142", 25.7988, -80.2543, "Shelving Units"),
+        ("9700 Collins Ave, Bal Harbour, FL 33154", 25.8906, -80.1231, "Loveseat"),
+        ("789 Bay Street, Tampa, FL 33602", 27.9506, -82.4572, "Refrigerator"),
+        ("321 Sunset Blvd, Orlando, FL 32801", 28.5383, -81.3792, "TV & Microwave"),
+        ("567 Beach Road, Jacksonville, FL 32202", 30.3322, -81.6557, "Washing Machine"),
+        ("890 Pine Street, St. Petersburg, FL 33701", 27.7676, -82.6403, "Wooden Desk"),
+        ("234 Coral Way, Coral Gables, FL 33134", 25.7481, -80.2620, "Dining Set"),
+        ("678 Marina Drive, West Palm Beach, FL 33401", 26.7153, -80.0534, "Outdoor Grill"),
+        ("135 Lake Avenue, Clearwater, FL 33755", 27.9659, -82.8001, "Bookshelf & Books"),
+        ("999 Bayshore Blvd, Sarasota, FL 34236", 27.3364, -82.5307, "Treadmill"),
+    ]
+
+    created = 0
+    for address, lat, lng, item_name in jobs_data:
+        days = random.randint(0, 7)
+        hours = random.randint(9, 17)
+        total = random.randint(70, 200)
+
+        scheduled_at = datetime.now(timezone.utc) + timedelta(days=days, hours=hours)
+
+        job = Job(
+            id=generate_uuid(),
+            customer_id=test_customer.id,
+            status="confirmed",
+            address=address,
+            lat=lat,
+            lng=lng,
+            items=[{"name": item_name, "quantity": 1}],
+            notes=f"Test job - {item_name}",
+            total_price=total,
+            item_total=total * 0.7,
+            service_fee=total * 0.3,
+            scheduled_at=scheduled_at,
+            created_at=utcnow(),
+            updated_at=utcnow(),
+        )
+        db.session.add(job)
+        created += 1
+
+    db.session.commit()
+
+    return jsonify({
+        "success": True,
+        "message": f"Created {created} test jobs in 'confirmed' status",
+        "created_count": created,
+    }), 200
