@@ -16,32 +16,49 @@ struct NavigateToJobView: View {
         VStack(spacing: DriverSpacing.lg) {
             Spacer()
 
-            // Map preview
+            // Map preview with NavigationLink
             if let lat = job.lat, let lng = job.lng {
-                Map(initialPosition: .region(MKCoordinateRegion(
-                    center: CLLocationCoordinate2D(latitude: lat, longitude: lng),
-                    span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
-                ))) {
-                    Marker(job.shortAddress, coordinate: CLLocationCoordinate2D(latitude: lat, longitude: lng))
-                        .tint(Color.driverPrimary)
+                NavigationLink(destination: LiveMapView(jobId: job.id)) {
+                    VStack(spacing: DriverSpacing.md) {
+                        Map(initialPosition: .region(MKCoordinateRegion(
+                            center: CLLocationCoordinate2D(latitude: lat, longitude: lng),
+                            span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+                        ))) {
+                            Marker(job.shortAddress, coordinate: CLLocationCoordinate2D(latitude: lat, longitude: lng))
+                                .tint(Color.driverPrimary)
+                        }
+                        .frame(height: 200)
+                        .clipShape(RoundedRectangle(cornerRadius: DriverRadius.lg))
+                        .allowsHitTesting(false) // Disable map interaction, make whole area tappable
+
+                        // Address info
+                        VStack(spacing: DriverSpacing.xs) {
+                            HStack {
+                                Text(job.shortAddress)
+                                    .font(DriverTypography.title3)
+                                    .foregroundStyle(Color.driverText)
+
+                                Image(systemName: "chevron.right")
+                                    .font(.caption)
+                                    .foregroundStyle(Color.driverTextSecondary)
+                            }
+
+                            Text(job.address)
+                                .font(DriverTypography.footnote)
+                                .foregroundStyle(Color.driverTextSecondary)
+                                .multilineTextAlignment(.center)
+
+                            if job.jobStatus == .enRoute {
+                                Text("Tap to view full map")
+                                    .font(.caption2)
+                                    .foregroundStyle(Color.driverPrimary)
+                            }
+                        }
+                    }
                 }
-                .frame(height: 200)
-                .clipShape(RoundedRectangle(cornerRadius: DriverRadius.lg))
+                .buttonStyle(.plain)
                 .padding(.horizontal, DriverSpacing.xl)
             }
-
-            // Address info
-            VStack(spacing: DriverSpacing.xs) {
-                Text(job.shortAddress)
-                    .font(DriverTypography.title3)
-                    .foregroundStyle(Color.driverText)
-
-                Text(job.address)
-                    .font(DriverTypography.footnote)
-                    .foregroundStyle(Color.driverTextSecondary)
-                    .multilineTextAlignment(.center)
-            }
-            .padding(.horizontal, DriverSpacing.xl)
 
             Spacer()
 

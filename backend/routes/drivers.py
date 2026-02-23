@@ -199,6 +199,14 @@ def accept_job(user_id, job_id):
     if contractor.approval_status != "approved":
         return jsonify({"error": "Contractor is not approved"}), 403
 
+    # Check if driver already has a job en route
+    active_job = Job.query.filter_by(driver_id=contractor.id, status="en_route").first()
+    if active_job:
+        return jsonify({
+            "error": "You already have a job en route. Complete your current job before accepting another.",
+            "active_job_id": active_job.id
+        }), 409
+
     job = db.session.get(Job, job_id)
     if not job:
         return jsonify({"error": "Job not found"}), 404
