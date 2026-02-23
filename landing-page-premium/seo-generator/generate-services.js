@@ -1,0 +1,120 @@
+#!/usr/bin/env node
+
+const fs = require('fs');
+const path = require('path');
+
+const services = require('./data/services.json');
+
+function generateServicePage(service) {
+    const title = `${service.name} in South Florida — Same-Day Pickup | Umuve`;
+    const description = `${service.description} Average cost: $${service.avgCost}. ${service.jobsCompleted}+ jobs completed. Book online in 3 minutes.`;
+
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="${description}">
+    <link rel="canonical" href="https://goumuve.com/services/${service.slug}">
+    <title>${title}</title>
+    <link rel="stylesheet" href="../styles.css">
+    <link rel="icon" type="image/png" href="../logo-icon.png">
+    
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-CLGPJ5TS3G"></script>
+    <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-CLGPJ5TS3G');</script>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Outfit:wght@700;800;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar" style="position: sticky; top: 0; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); z-index: 100; border-bottom: 1px solid rgba(0,0,0,0.06);">
+        <div class="container">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 0;">
+                <a href="/"><img src="../logo-nav.png" alt="Umuve" style="height: 36px;"></a>
+                <a href="https://app.goumuve.com/book" class="btn btn-primary" style="padding: 0.75rem 1.5rem;">Book Now</a>
+            </div>
+        </div>
+    </nav>
+
+    <section style="padding: 4rem 0 3rem; background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);">
+        <div class="container">
+            <div style="max-width: 900px; margin: 0 auto;">
+                <h1 style="font-family: Outfit; font-size: 2.5rem; font-weight: 800; margin-bottom: 1.5rem; text-align: center; line-height: 1.2;">${service.name}</h1>
+                <p style="font-size: 1.25rem; color: #5c5c5c; text-align: center; margin-bottom: 2rem;">${service.description}</p>
+                <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                    <a href="https://app.goumuve.com/book" class="btn btn-primary btn-xl">Book Online Now</a>
+                    <a href="tel:+15618883427" class="btn btn-secondary btn-xl">Call (561) 888-3427</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section style="padding: 3rem 0; background: #ffffff;">
+        <div class="container">
+            <div style="max-width: 900px; margin: 0 auto;">
+                <div class="stats-grid">
+                    <div class="stat-card"><div class="stat-number">${service.jobsCompleted}+</div><div class="stat-label">Jobs Completed</div></div>
+                    <div class="stat-card"><div class="stat-number">$${service.avgCost}</div><div class="stat-label">Average Cost</div></div>
+                    <div class="stat-card"><div class="stat-number">${service.avgDuration}</div><div class="stat-label">Average Time</div></div>
+                    <div class="stat-card"><div class="stat-number">${service.ecoFriendly}</div><div class="stat-label">Eco-Friendly</div></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section style="padding: 4rem 0; background: #f9fafb;">
+        <div class="container">
+            <div style="max-width: 900px; margin: 0 auto;">
+                <h2 style="font-family: Outfit; font-size: 2rem; font-weight: 800; text-align: center; margin-bottom: 2rem;">What We Remove</h2>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                    ${service.items.map(item => `<div style="padding: 1.25rem; background: white; border: 1px solid rgba(0,0,0,0.08); border-radius: 0.75rem; text-align: center;"><strong>${item}</strong></div>`).join('')}
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section style="padding: 4rem 0; background: #ffffff;">
+        <div class="container">
+            <div style="max-width: 900px; margin: 0 auto;">
+                <h2 style="font-family: Outfit; font-size: 2rem; font-weight: 800; margin-bottom: 2rem;">Pricing</h2>
+                <div style="background: #f9fafb; border: 2px solid #DC2626; border-radius: 1rem; padding: 2rem; text-align: center; margin-bottom: 2rem;">
+                    <div style="font-size: 3rem; font-weight: 800; color: #DC2626; margin-bottom: 0.5rem;">$${service.avgCost}</div>
+                    <div style="font-size: 1.25rem; color: #5c5c5c;">Average Cost</div>
+                    <div style="font-size: 0.875rem; color: #8a8a8a; margin-top: 0.5rem;">Range: $${service.minCost} - $${service.maxCost}</div>
+                </div>
+                <p style="text-align: center; color: #5c5c5c;">All prices include labor, hauling, and eco-friendly disposal. Get instant quote online.</p>
+            </div>
+        </div>
+    </section>
+
+    <section style="padding: 4rem 0; background: linear-gradient(135deg, #DC2626, #E11D48); color: white; text-align: center;">
+        <div class="container">
+            <h2 style="font-family: Outfit; font-size: 2rem; font-weight: 800; margin-bottom: 1rem;">Ready for ${service.name}?</h2>
+            <p style="font-size: 1.125rem; margin-bottom: 2rem; opacity: 0.95;">Book online in 3 minutes. ${service.jobsCompleted}+ customers trust Umuve.</p>
+            <a href="https://app.goumuve.com/book" style="background: white; color: #DC2626; padding: 1rem 2rem; font-weight: 700; border-radius: 0.5rem; text-decoration: none; display: inline-block;">Book Now →</a>
+        </div>
+    </section>
+
+    <footer style="background: #1a1a1a; color: white; padding: 3rem 0;">
+        <div class="container">
+            <div style="text-align: center;">
+                <p>&copy; 2026 Umuve. Licensed & Insured.</p>
+                <p style="color: #8a8a8a; margin-top: 0.5rem;">Serving Palm Beach & Broward County, Florida</p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>`;
+    return html;
+}
+
+console.log('Generating service pages...');
+services.forEach(service => {
+    const html = generateServicePage(service);
+    const filepath = path.join(__dirname, '../pages/services', `${service.slug}.html`);
+    fs.writeFileSync(filepath, html);
+    console.log(`✓ Generated: pages/services/${service.slug}.html`);
+});
+
+console.log(`\n✓ Generated ${services.length} service pages`);

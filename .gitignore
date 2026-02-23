@@ -48,3 +48,4 @@ temp/
 # Deprecated apps (replaced by platform/)
 customer-portal/
 .vercel
+.env*.local
