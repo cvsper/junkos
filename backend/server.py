@@ -202,42 +202,42 @@ def public_seed_jobs():
         sqlalchemy_db.session.add(test_customer)
         sqlalchemy_db.session.commit()
 
-    # Job data (30 jobs)
+    # Job data (30 jobs) - (address, lat, lng, item_name, category)
     jobs_data = [
-        ("123 Ocean Drive, Miami Beach, FL 33139", 25.7907, -80.1300, "Old Couch"),
-        ("456 Palm Ave, Fort Lauderdale, FL 33301", 26.1224, -80.1373, "Mattress Set"),
-        ("1501 Brickell Ave, Miami, FL 33129", 25.7617, -80.1918, "Filing Cabinets"),
-        ("2100 Collins Ave, Miami Beach, FL 33139", 25.7959, -80.1284, "Patio Furniture"),
-        ("3300 NE 1st Ave, Miami, FL 33137", 25.8076, -80.1918, "Washer/Dryer"),
-        ("401 Biscayne Blvd, Miami, FL 33132", 25.7743, -80.1871, "Office Desks"),
-        ("1200 Anastasia Ave, Coral Gables, FL 33134", 25.7459, -80.2615, "Piano"),
-        ("2500 E Las Olas Blvd, Fort Lauderdale, FL 33301", 26.1185, -80.1134, "Sectional Sofa"),
-        ("1 E Broward Blvd, Fort Lauderdale, FL 33301", 26.1224, -80.1434, "Elliptical"),
-        ("3501 N Federal Hwy, Fort Lauderdale, FL 33308", 26.1601, -80.1097, "Bed Frame"),
-        ("101 N Ocean Dr, Hollywood, FL 33019", 26.0112, -80.1218, "Hot Tub"),
-        ("2000 S Dixie Hwy, Miami, FL 33133", 25.7459, -80.2042, "Entertainment Center"),
-        ("1200 S Flagler Dr, West Palm Beach, FL 33401", 26.7067, -80.0495, "Lawn Mower"),
-        ("400 Clematis St, West Palm Beach, FL 33401", 26.7153, -80.0533, "Conference Table"),
-        ("1500 S Ocean Blvd, Delray Beach, FL 33483", 26.4525, -80.0717, "Wardrobes"),
-        ("801 E Atlantic Ave, Delray Beach, FL 33483", 26.4615, -80.0628, "Pool Table"),
-        ("2201 NW 2nd Ave, Boca Raton, FL 33431", 26.3754, -80.0810, "Armchairs"),
-        ("1000 Glades Rd, Boca Raton, FL 33431", 26.3683, -80.0831, "Kitchen Cabinets"),
-        ("7100 W Camino Real, Boca Raton, FL 33433", 26.3587, -80.1753, "Chest Freezer"),
-        ("201 E Palmetto Park Rd, Boca Raton, FL 33432", 26.3587, -80.0784, "Dressers"),
-        ("3850 NW 25th St, Miami, FL 33142", 25.7988, -80.2543, "Shelving Units"),
-        ("9700 Collins Ave, Bal Harbour, FL 33154", 25.8906, -80.1231, "Loveseat"),
-        ("789 Bay Street, Tampa, FL 33602", 27.9506, -82.4572, "Refrigerator"),
-        ("321 Sunset Blvd, Orlando, FL 32801", 28.5383, -81.3792, "TV & Microwave"),
-        ("567 Beach Road, Jacksonville, FL 32202", 30.3322, -81.6557, "Washing Machine"),
-        ("890 Pine Street, St. Petersburg, FL 33701", 27.7676, -82.6403, "Wooden Desk"),
-        ("234 Coral Way, Coral Gables, FL 33134", 25.7481, -80.2620, "Dining Set"),
-        ("678 Marina Drive, West Palm Beach, FL 33401", 26.7153, -80.0534, "Outdoor Grill"),
-        ("135 Lake Avenue, Clearwater, FL 33755", 27.9659, -82.8001, "Bookshelf & Books"),
-        ("999 Bayshore Blvd, Sarasota, FL 34236", 27.3364, -82.5307, "Treadmill"),
+        ("123 Ocean Drive, Miami Beach, FL 33139", 25.7907, -80.1300, "Old Couch", "furniture"),
+        ("456 Palm Ave, Fort Lauderdale, FL 33301", 26.1224, -80.1373, "Mattress Set", "furniture"),
+        ("1501 Brickell Ave, Miami, FL 33129", 25.7617, -80.1918, "Filing Cabinets", "furniture"),
+        ("2100 Collins Ave, Miami Beach, FL 33139", 25.7959, -80.1284, "Patio Furniture", "furniture"),
+        ("3300 NE 1st Ave, Miami, FL 33137", 25.8076, -80.1918, "Washer/Dryer", "appliances"),
+        ("401 Biscayne Blvd, Miami, FL 33132", 25.7743, -80.1871, "Office Desks", "furniture"),
+        ("1200 Anastasia Ave, Coral Gables, FL 33134", 25.7459, -80.2615, "Piano", "furniture"),
+        ("2500 E Las Olas Blvd, Fort Lauderdale, FL 33301", 26.1185, -80.1134, "Sectional Sofa", "furniture"),
+        ("1 E Broward Blvd, Fort Lauderdale, FL 33301", 26.1224, -80.1434, "Elliptical", "appliances"),
+        ("3501 N Federal Hwy, Fort Lauderdale, FL 33308", 26.1601, -80.1097, "Bed Frame", "furniture"),
+        ("101 N Ocean Dr, Hollywood, FL 33019", 26.0112, -80.1218, "Hot Tub", "appliances"),
+        ("2000 S Dixie Hwy, Miami, FL 33133", 25.7459, -80.2042, "Entertainment Center", "furniture"),
+        ("1200 S Flagler Dr, West Palm Beach, FL 33401", 26.7067, -80.0495, "Lawn Mower", "yard"),
+        ("400 Clematis St, West Palm Beach, FL 33401", 26.7153, -80.0533, "Conference Table", "furniture"),
+        ("1500 S Ocean Blvd, Delray Beach, FL 33483", 26.4525, -80.0717, "Wardrobes", "furniture"),
+        ("801 E Atlantic Ave, Delray Beach, FL 33483", 26.4615, -80.0628, "Pool Table", "furniture"),
+        ("2201 NW 2nd Ave, Boca Raton, FL 33431", 26.3754, -80.0810, "Armchairs", "furniture"),
+        ("1000 Glades Rd, Boca Raton, FL 33431", 26.3683, -80.0831, "Kitchen Cabinets", "furniture"),
+        ("7100 W Camino Real, Boca Raton, FL 33433", 26.3587, -80.1753, "Chest Freezer", "appliances"),
+        ("201 E Palmetto Park Rd, Boca Raton, FL 33432", 26.3587, -80.0784, "Dressers", "furniture"),
+        ("3850 NW 25th St, Miami, FL 33142", 25.7988, -80.2543, "Shelving Units", "furniture"),
+        ("9700 Collins Ave, Bal Harbour, FL 33154", 25.8906, -80.1231, "Loveseat", "furniture"),
+        ("789 Bay Street, Tampa, FL 33602", 27.9506, -82.4572, "Refrigerator", "appliances"),
+        ("321 Sunset Blvd, Orlando, FL 32801", 28.5383, -81.3792, "TV & Microwave", "electronics"),
+        ("567 Beach Road, Jacksonville, FL 32202", 30.3322, -81.6557, "Washing Machine", "appliances"),
+        ("890 Pine Street, St. Petersburg, FL 33701", 27.7676, -82.6403, "Wooden Desk", "furniture"),
+        ("234 Coral Way, Coral Gables, FL 33134", 25.7481, -80.2620, "Dining Set", "furniture"),
+        ("678 Marina Drive, West Palm Beach, FL 33401", 26.7153, -80.0534, "Outdoor Grill", "appliances"),
+        ("135 Lake Avenue, Clearwater, FL 33755", 27.9659, -82.8001, "Bookshelf & Books", "furniture"),
+        ("999 Bayshore Blvd, Sarasota, FL 34236", 27.3364, -82.5307, "Treadmill", "appliances"),
     ]
 
     created = 0
-    for address, lat, lng, item_name in jobs_data:
+    for address, lat, lng, item_name, category in jobs_data:
         days = random.randint(0, 7)
         hours = random.randint(9, 17)
         total = random.randint(70, 200)
@@ -251,7 +251,7 @@ def public_seed_jobs():
             address=address,
             lat=lat,
             lng=lng,
-            items=[{"name": item_name, "quantity": 1}],
+            items=[{"name": item_name, "quantity": 1, "category": category}],
             notes=f"Test job - {item_name}",
             total_price=total,
             item_total=total * 0.7,
