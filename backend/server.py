@@ -187,7 +187,23 @@ def public_seed_jobs():
     """Create 30 test jobs for testing (public endpoint)."""
     from models import User, Job, generate_uuid, utcnow
     from datetime import timezone
+    from sqlalchemy.orm.attributes import flag_modified
     import random
+
+    # FIRST: Fix existing jobs that are missing category field
+    fixed_count = 0
+    existing_jobs = Job.query.filter_by(status="confirmed").all()
+    for job in existing_jobs:
+        if job.items:
+            needs_fix = False
+            for item in job.items:
+                if "category" not in item:
+                    item["category"] = "other"
+                    needs_fix = True
+            if needs_fix:
+                flag_modified(job, "items")
+                fixed_count += 1
+    sqlalchemy_db.session.commit()
 
     # Find or create test customer
     test_customer = User.query.filter_by(email="test@umuve.com").first()
@@ -267,7 +283,8 @@ def public_seed_jobs():
 
     return jsonify({
         "success": True,
-        "message": f"✅ Created {created} test jobs in 'confirmed' status",
+        "message": f"✅ Fixed {fixed_count} old jobs, created {created} new test jobs",
+        "fixed_count": fixed_count,
         "created_count": created,
     }), 200
 
