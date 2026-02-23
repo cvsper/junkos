@@ -28,19 +28,27 @@
     <link rel="stylesheet" href="styles.css">
     <link rel="icon" type="image/png" href="logo-icon.png">
 
-    <!-- Google Analytics -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-CLGPJ5TS3G"></script>
+    <!-- Google Analytics (Deferred for Performance) -->
     <script>
+        // Defer GA4 until after page is interactive
         window.dataLayer = window.dataLayer || [];
         function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', 'G-CLGPJ5TS3G');
+
+        window.addEventListener('load', function() {
+            var script = document.createElement('script');
+            script.src = 'https://www.googletagmanager.com/gtag/js?id=G-CLGPJ5TS3G';
+            script.async = true;
+            document.head.appendChild(script);
+
+            gtag('js', new Date());
+            gtag('config', 'G-CLGPJ5TS3G');
+        });
     </script>
 
     <!-- Preload critical fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&family=Outfit:wght@700;800&display=swap" rel="stylesheet">
 
     <!-- Structured Data - Organization -->
     <script type="application/ld+json">
@@ -273,10 +281,10 @@
 
     <!-- Hero Section -->
     <section class="hero">
-        <video class="hero-video" autoplay muted loop playsinline preload="auto" poster="hero-poster.jpg" aria-hidden="true">
+        <video class="hero-video" autoplay muted loop playsinline preload="metadata" poster="hero-poster.jpg" aria-hidden="true">
             <source src="hero-bg.mp4" type="video/mp4">
         </video>
-        <img class="hero-mobile-img" src="hero-mobile.jpg" alt="" aria-hidden="true">
+        <img class="hero-mobile-img" src="hero-mobile.jpg" alt="" aria-hidden="true" fetchpriority="high" width="768" height="1024">
         <div class="hero-overlay"></div>
 
         <div class="container">
@@ -948,7 +956,7 @@
             <div class="footer-grid">
                 <div class="footer-brand">
                     <div class="logo">
-                        <img src="logo-full.png" alt="Umuve" style="height: 36px; width: auto;">
+                        <img src="logo-full.png" alt="Umuve" style="height: 36px; width: auto;" loading="lazy" width="120" height="36">
                         <span class="logo-text">Umuve</span>
                     </div>
                     <p>South Florida's fastest junk removal service</p>
