@@ -221,6 +221,10 @@ actor DriverAPIClient {
         try await request("/api/drivers/jobs/available?radius=\(radius)")
     }
 
+    func getCurrentJob() async throws -> CurrentJobResponse {
+        try await request("/api/drivers/jobs/current")
+    }
+
     func acceptJob(jobId: String) async throws -> JobActionResponse {
         try await request("/api/drivers/jobs/\(jobId)/accept", method: "POST")
     }

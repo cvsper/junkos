@@ -59,6 +59,9 @@ final class AppState {
                 // Re-register push token now that we have an auth context
                 registerPushTokenIfNeeded()
                 print("✅ Profile loaded successfully")
+
+                // Load active job after profile loads
+                await loadActiveJob()
                 return
             } catch {
                 lastError = error
@@ -84,6 +87,23 @@ final class AppState {
         // All retries exhausted
         if let error = lastError {
             print("❌ Failed to load profile after \(retries + 1) attempts: \(error.localizedDescription)")
+        }
+    }
+
+    // MARK: - Load Active Job
+
+    func loadActiveJob() async {
+        do {
+            let response = try await api.getCurrentJob()
+            activeJob = response.job
+            if let job = response.job {
+                print("✅ Active job loaded: \(job.id) - \(job.jobStatus.displayName)")
+            } else {
+                print("ℹ️ No active job")
+            }
+        } catch {
+            print("⚠️ Failed to load active job: \(error.localizedDescription)")
+            // Don't clear activeJob on error - might be temporary network issue
         }
     }
 

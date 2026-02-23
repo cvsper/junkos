@@ -186,6 +186,11 @@ struct AvailableJobsResponse: Codable {
     let jobs: [DriverJob]
 }
 
+struct CurrentJobResponse: Codable {
+    let success: Bool
+    let job: DriverJob?
+}
+
 struct JobActionResponse: Codable {
     let success: Bool
     let job: DriverJob
