@@ -188,6 +188,25 @@ def get_available_jobs(user_id):
     return jsonify({"success": True, "jobs": nearby}), 200
 
 
+@drivers_bp.route("/jobs/current", methods=["GET"])
+@require_auth
+def get_current_job(user_id):
+    """Return the driver's current active job (accepted, en_route, arrived, or started)."""
+    contractor = Contractor.query.filter_by(user_id=user_id).first()
+    if not contractor:
+        return jsonify({"error": "Contractor profile not found"}), 404
+
+    # Find the driver's current active job
+    active_job = Job.query.filter_by(driver_id=contractor.id).filter(
+        Job.status.in_(["accepted", "en_route", "arrived", "started"])
+    ).first()
+
+    if not active_job:
+        return jsonify({"success": True, "job": None}), 200
+
+    return jsonify({"success": True, "job": active_job.to_dict()}), 200
+
+
 @drivers_bp.route("/jobs/<job_id>/accept", methods=["POST"])
 @require_auth
 def accept_job(user_id, job_id):
