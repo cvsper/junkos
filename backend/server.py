@@ -271,6 +271,29 @@ def public_seed_jobs():
         "created_count": created,
     }), 200
 
+
+@app.route("/api/test/delete-jobs-without-category", methods=["POST"])
+def delete_jobs_without_category():
+    """Delete all jobs where items don't have a category field"""
+    deleted_count = 0
+    jobs = Job.query.filter_by(status="confirmed").all()
+
+    for job in jobs:
+        if job.items:
+            # Check if any item is missing the category field
+            missing_category = any("category" not in item for item in job.items)
+            if missing_category:
+                sqlalchemy_db.session.delete(job)
+                deleted_count += 1
+
+    sqlalchemy_db.session.commit()
+
+    return jsonify({
+        "success": True,
+        "message": f"✅ Deleted {deleted_count} jobs without category field",
+        "deleted_count": deleted_count,
+    }), 200
+
 # ---------------------------------------------------------------------------
 # Input sanitization middleware (XSS / injection prevention)
 # ---------------------------------------------------------------------------
