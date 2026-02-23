@@ -578,7 +578,7 @@ def get_earnings_history(user_id):
     if not contractor:
         return jsonify({"error": "Contractor profile not found"}), 404
 
-    now = utcnow()
+    now = utcnow().replace(tzinfo=None)  # Make timezone-naive for DB comparison
     today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
     seven_days_ago = now - timedelta(days=7)
     thirty_days_ago = now - timedelta(days=30)
