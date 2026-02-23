@@ -60,6 +60,23 @@ struct EmailSignupRequest: Codable {
     let password: String
     let name: String?
     let inviteCode: String?
+
+    // Custom encoding to omit nil values (backend returns 500 when null is sent)
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(email, forKey: .email)
+        try container.encode(password, forKey: .password)
+        if let name = name {
+            try container.encode(name, forKey: .name)
+        }
+        if let inviteCode = inviteCode {
+            try container.encode(inviteCode, forKey: .inviteCode)
+        }
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case email, password, name, inviteCode
+    }
 }
 
 struct EmailLoginRequest: Codable {
