@@ -1,0 +1,162 @@
+[
+  {
+    "name": "Furniture Removal",
+    "slug": "furniture-removal",
+    "description": "Professional furniture removal service in South Florida. We haul away couches, mattresses, dressers, tables, chairs, and all types of household furniture.",
+    "items": ["Couches & Sofas", "Mattresses & Box Springs", "Dressers & Armoires", "Dining Tables & Chairs", "Office Desks", "Entertainment Centers", "Bookshelves", "Recliners & Loveseats"],
+    "avgCost": 189,
+    "minCost": 89,
+    "maxCost": 499,
+    "avgDuration": "45 minutes",
+    "ecoFriendly": "92% donated or recycled",
+    "jobsCompleted": 4820,
+    "commonQuestions": [
+      "Do you disassemble furniture?",
+      "Can you remove furniture from upstairs?",
+      "What if my couch doesn't fit through the door?",
+      "Do you donate usable furniture?"
+    ],
+    "disposal": "We partner with Habitat for Humanity, Goodwill, and local furniture banks to donate usable pieces. Damaged furniture is recycled for materials recovery.",
+    "process": "We'll assess your furniture, provide a quote, handle all lifting and loading, and ensure proper disposal or donation."
+  },
+  {
+    "name": "Appliance Removal",
+    "slug": "appliance-removal",
+    "description": "Same-day appliance removal and disposal in Palm Beach and Broward County. Refrigerators, washers, dryers, stoves, and more.",
+    "items": ["Refrigerators & Freezers", "Washers & Dryers", "Dishwashers", "Stoves & Ovens", "Microwaves", "Water Heaters", "Air Conditioners", "Dehumidifiers"],
+    "avgCost": 145,
+    "minCost": 89,
+    "maxCost": 299,
+    "avgDuration": "30 minutes",
+    "ecoFriendly": "95% recycled (metals, plastics, refrigerants)",
+    "jobsCompleted": 3240,
+    "commonQuestions": [
+      "Do you handle refrigerant removal?",
+      "Can you disconnect appliances?",
+      "Do you remove built-in appliances?",
+      "What happens to old appliances?"
+    ],
+    "disposal": "All appliances are taken to certified recycling facilities. Refrigerants are properly recovered per EPA guidelines. Metals, plastics, and electronics are separated for recycling.",
+    "process": "We'll disconnect appliances safely (if needed), remove them from your home, and transport them to appropriate recycling facilities."
+  },
+  {
+    "name": "Mattress Disposal",
+    "slug": "mattress-disposal",
+    "description": "Eco-friendly mattress and box spring removal in South Florida. Same-day pickup available. We recycle mattress components to keep them out of landfills.",
+    "items": ["Twin Mattresses", "Full/Double Mattresses", "Queen Mattresses", "King Mattresses", "California King", "Box Springs", "Memory Foam Mattresses", "Adjustable Beds"],
+    "avgCost": 119,
+    "minCost": 89,
+    "maxCost": 199,
+    "avgDuration": "20 minutes",
+    "ecoFriendly": "89% recycled (foam, springs, fabric)",
+    "jobsCompleted": 2180,
+    "commonQuestions": [
+      "Do you remove mattresses from upstairs?",
+      "Can you take bed frames too?",
+      "What if my mattress is infested?",
+      "How do you recycle mattresses?"
+    ],
+    "disposal": "Mattresses are disassembled at recycling facilities. Steel springs are melted down, foam is repurposed for carpet padding, and fabric is processed into fiber.",
+    "process": "We'll remove your mattress and box spring from anywhere in your home, wrap them for transport, and deliver them to specialized mattress recycling facilities."
+  },
+  {
+    "name": "Estate Cleanout",
+    "slug": "estate-cleanout",
+    "description": "Compassionate, professional estate cleanout services in South Florida. We handle entire homes, apartments, and storage units with care and respect.",
+    "items": ["Full Home Cleanouts", "Apartment Cleanouts", "Storage Unit Emptying", "Garage Clearing", "Attic & Basement Cleanouts", "Downsizing Assistance", "Hoarding Cleanouts", "Foreclosure Cleanouts"],
+    "avgCost": 1240,
+    "minCost": 399,
+    "maxCost": 3500,
+    "avgDuration": "4-8 hours",
+    "ecoFriendly": "84% donated or recycled",
+    "jobsCompleted": 890,
+    "commonQuestions": [
+      "How long does an estate cleanout take?",
+      "Can you help sort valuable items?",
+      "Do you work with executors and families?",
+      "What items can you donate?"
+    ],
+    "disposal": "We work with local charities, donation centers, and recycling facilities to minimize waste. Valuable items can be set aside for families. We handle everything with dignity and care.",
+    "process": "We'll walk through the property with you, sort items for donation/disposal/keeping, handle all heavy lifting, and leave the space clean and ready."
+  },
+  {
+    "name": "Construction Debris",
+    "slug": "construction-debris",
+    "description": "Construction debris removal for contractors and homeowners in South Florida. Drywall, lumber, tile, concrete, and renovation waste.",
+    "items": ["Drywall & Sheetrock", "Lumber & Wood Scraps", "Tile & Flooring", "Concrete & Masonry", "Carpet & Padding", "Cabinets & Countertops", "Bathroom Fixtures", "Doors & Windows"],
+    "avgCost": 325,
+    "minCost": 149,
+    "maxCost": 899,
+    "avgDuration": "1-2 hours",
+    "ecoFriendly": "78% recycled (metal, wood, concrete)",
+    "jobsCompleted": 1650,
+    "commonQuestions": [
+      "Do you accept hazardous materials?",
+      "Can you remove demolition debris?",
+      "What about wet materials?",
+      "Do you work with contractors?"
+    ],
+    "disposal": "Metal, wood, and concrete are separated for recycling. Drywall goes to specialized facilities. We do NOT accept asbestos, lead paint, or hazardous waste.",
+    "process": "We'll load all construction debris, separate recyclables, and haul everything to appropriate facilities. Perfect for renovation projects and contractor cleanups."
+  },
+  {
+    "name": "Hot Tub Removal",
+    "slug": "hot-tub-removal",
+    "description": "Professional hot tub and spa removal in Palm Beach and Broward County. We handle disconnection, demolition if needed, and complete removal.",
+    "items": ["Above-Ground Hot Tubs", "In-Ground Spas", "Jacuzzis", "Swim Spas", "Hot Tub Covers", "Spa Equipment", "Pool Heaters", "Sauna Units"],
+    "avgCost": 425,
+    "minCost": 299,
+    "maxCost": 799,
+    "avgDuration": "2-3 hours",
+    "ecoFriendly": "73% recycled (acrylic, metals, wood)",
+    "jobsCompleted": 340,
+    "commonQuestions": [
+      "Do you disconnect plumbing and electrical?",
+      "Can you demo an in-ground spa?",
+      "How do you remove hot tubs from backyards?",
+      "What about crane access?"
+    ],
+    "disposal": "Hot tubs are disassembled on-site. Acrylic shells are recycled, wood frames are processed as lumber, and electrical components are recycled as e-waste.",
+    "process": "We'll disconnect utilities (or coordinate with your electrician), cut the tub into manageable sections if needed, remove all debris, and clean up the area."
+  },
+  {
+    "name": "Yard Waste Removal",
+    "slug": "yard-waste-removal",
+    "description": "Yard waste and landscaping debris removal in South Florida. Tree branches, brush, leaves, sod, and green waste hauling.",
+    "items": ["Tree Branches & Limbs", "Brush & Shrubs", "Leaves & Grass Clippings", "Sod & Dirt", "Palm Fronds", "Hedge Trimmings", "Fallen Trees", "Landscaping Debris"],
+    "avgCost": 165,
+    "minCost": 89,
+    "maxCost": 499,
+    "avgDuration": "30-60 minutes",
+    "ecoFriendly": "98% composted or mulched",
+    "jobsCompleted": 1870,
+    "commonQuestions": [
+      "Do you haul hurricane debris?",
+      "Can you remove tree stumps?",
+      "What about large fallen trees?",
+      "Do you compost yard waste?"
+    ],
+    "disposal": "All yard waste goes to composting facilities or is processed into mulch. Nothing goes to landfills. Perfect for post-storm cleanup and landscaping projects.",
+    "process": "We'll load all yard waste, including branches, leaves, and debris. Great for after landscaping work, tree removal, or storm cleanup."
+  },
+  {
+    "name": "Electronics Recycling",
+    "slug": "electronics-recycling",
+    "description": "Certified electronics recycling and e-waste removal in South Florida. Secure data destruction and environmentally responsible disposal.",
+    "items": ["Computers & Laptops", "TVs & Monitors", "Printers & Scanners", "Cell Phones & Tablets", "Gaming Consoles", "Stereo Equipment", "Cables & Accessories", "Small Appliances"],
+    "avgCost": 125,
+    "minCost": 89,
+    "maxCost": 299,
+    "avgDuration": "20 minutes",
+    "ecoFriendly": "96% recycled (metals, plastics, glass)",
+    "jobsCompleted": 1420,
+    "commonQuestions": [
+      "Do you wipe hard drives?",
+      "Can you provide data destruction certificates?",
+      "What electronics do you accept?",
+      "Are you R2 certified?"
+    ],
+    "disposal": "All electronics go to R2-certified recycling facilities. Hard drives are wiped or destroyed. Precious metals, glass, and plastics are recovered. No e-waste goes to landfills.",
+    "process": "We'll collect all electronics, provide secure data destruction if needed, and transport everything to certified e-waste recycling facilities."
+  }
+]
