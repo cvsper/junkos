@@ -39,16 +39,14 @@ final class SocketIOManager {
             .log(true),  // Enable logging to debug connection
             .compress,
             .connectParams(["token": token]),
-            // Use polling first, upgrade to WebSocket (more reliable than forceWebsockets)
+            // Force WebSocket-only to bypass polling issues with Render proxy
+            // Render's proxy doesn't handle Engine.IO v4 batched POSTs correctly
+            .forceWebsockets(true),
             .reconnects(true),
             .reconnectAttempts(-1),  // Infinite reconnection attempts
             .reconnectWait(1),       // Faster reconnection: 1 second (was 2)
             .reconnectWaitMax(5),    // Cap max wait at 5 seconds
-            .extraHeaders(["X-Client-Type": "ios-driver"]),  // Help backend identify mobile clients
-            // CRITICAL: Force Socket.IO v2 (Engine.IO v3) to avoid batched POST issues
-            // Engine.IO v4 batches messages with \^^ delimiter, which Render's proxy rejects
-            // Causing "Error flushing waiting posts" and connection drops
-            .version(.two)  // Single POST per packet - works reliably with Render
+            .extraHeaders(["X-Client-Type": "ios-driver"])  // Help backend identify mobile clients
         ])
 
         socket = manager?.defaultSocket
