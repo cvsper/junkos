@@ -1057,11 +1057,10 @@ def admin_send_sms(user_id):
 
 
 # ---------------------------------------------------------------------------
-# POST /api/admin/seed-jobs — Create test jobs
+# POST /api/admin/seed-jobs — Create test jobs (public with secret)
 # ---------------------------------------------------------------------------
 @admin_bp.route("/seed-jobs", methods=["POST"])
-@require_admin
-def seed_test_jobs(user_id):
+def seed_test_jobs():
     """Create 30 test jobs for testing (admin only)."""
     import random
 

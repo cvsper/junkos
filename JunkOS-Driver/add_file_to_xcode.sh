@@ -1,0 +1,22 @@
+#!/bin/bash
+FILE_PATH="$PWD/Views/Map/NavigationOverlay.swift"
+PROJECT_PATH="$PWD/JunkOS-Driver.xcodeproj"
+
+echo "Opening file in Finder..."
+open -R "$FILE_PATH"
+
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "📋 MANUAL STEP REQUIRED:"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+echo "1. Xcode should be open with the project"
+echo "2. Finder window opened to NavigationOverlay.swift"
+echo "3. DRAG the file from Finder into Xcode under 'Views/Map'"
+echo "4. When prompted:"
+echo "   ✓ Check 'JunkOS-Driver' target"
+echo "   ✗ Uncheck 'Copy items if needed'"
+echo "5. Click 'Finish'"
+echo ""
+echo "Then build with: Cmd+B"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

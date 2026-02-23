@@ -66,6 +66,8 @@
 		CD1DCEE1D0AB13C15EFCD4DE /* JobCompletionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9708A071501064F0B43DB279 /* JobCompletionView.swift */; };
 		CDAB0B258DCCB40E55DFBAB6 /* RoleSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FF356F775DBF636A95D89BA /* RoleSelectionView.swift */; };
 		CF090D4B2F4A6FC7003372AF /* EmailSignupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF090D4A2F4A6FC7003372AF /* EmailSignupView.swift */; };
+		CF090D4D2F4B91D0003372AF /* NavigationOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF090D4C2F4B91D0003372AF /* NavigationOverlay.swift */; };
+		CFBBCB222F4B96DB00DCA746 /* NavigationOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFBBCB212F4B96DB00DCA746 /* NavigationOverlay.swift */; };
 		D046B5278E68B23BC0235296 /* OperatorWebRedirectView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 603921AEAAE9211B5A00593C /* OperatorWebRedirectView.swift */; };
 		D14476790098FE934A99ED4A /* AnimationConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 672F85AEE329F15A6CC0C716 /* AnimationConstants.swift */; };
 		D34EE7A8BBE33ED6B72ABCEF /* AvailabilityScheduleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDBA8F8B87D1D52884F3E249 /* AvailabilityScheduleView.swift */; };
@@ -140,6 +142,8 @@
 		C6CC84B7BBA8C36ACEA14548 /* DriverAuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriverAuthView.swift; sourceTree = "<group>"; };
 		CDBA8F8B87D1D52884F3E249 /* AvailabilityScheduleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AvailabilityScheduleView.swift; sourceTree = "<group>"; };
 		CF090D4A2F4A6FC7003372AF /* EmailSignupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmailSignupView.swift; sourceTree = "<group>"; };
+		CF090D4C2F4B91D0003372AF /* NavigationOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationOverlay.swift; sourceTree = "<group>"; };
+		CFBBCB212F4B96DB00DCA746 /* NavigationOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationOverlay.swift; sourceTree = "<group>"; };
 		D074AC78D9277D0C00126A35 /* CameraPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraPickerView.swift; sourceTree = "<group>"; };
 		D1DC4D6D20A3CCC9709A404C /* TruckTypeSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TruckTypeSelectionView.swift; sourceTree = "<group>"; };
 		D6FA3831A39891771A43D22D /* DocumentUploadView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentUploadView.swift; sourceTree = "<group>"; };
@@ -252,6 +256,8 @@
 		5997DA88E928A2A8B445CB8F /* Map */ = {
 			isa = PBXGroup;
 			children = (
+				CF090D4C2F4B91D0003372AF /* NavigationOverlay.swift */,
+				CFBBCB212F4B96DB00DCA746 /* NavigationOverlay.swift */,
 				344C45FBFECAA97F6CB507F5 /* ActiveJobMapOverlay.swift */,
 				17D1EDD45EA760AA572801D2 /* DriverAnnotationView.swift */,
 				490C03AEE834921413337ABA /* JobAlertOverlay.swift */,
@@ -508,6 +514,7 @@
 				07D3D958F6EC6B2561F6FEAA /* DistanceBadge.swift in Sources */,
 				A79407865044DF4EEDFA2AB5 /* DocumentUploadView.swift in Sources */,
 				E8806EA1AE37848938F8D70C /* DriverAPIClient.swift in Sources */,
+				CF090D4D2F4B91D0003372AF /* NavigationOverlay.swift in Sources */,
 				14790A1C6E4BF7984B5FF3E4 /* DriverAnnotationView.swift in Sources */,
 				B9EF3DD412FA186F53E44D22 /* DriverAuthView.swift in Sources */,
 				CA0CD9A528904A2CD1E266DB /* PhoneSignupView.swift in Sources */,
@@ -529,6 +536,7 @@
 				94E7D38BBA06FB012C11B228 /* JobDetailViewModel.swift in Sources */,
 				4E8639A2456E077412D7C2B2 /* JobFeedView.swift in Sources */,
 				EFF5C17CB3686BD2C855518D /* JobFeedViewModel.swift in Sources */,
+				CFBBCB222F4B96DB00DCA746 /* NavigationOverlay.swift in Sources */,
 				E5D3735C98C318A48111C440 /* JobModels.swift in Sources */,
 				1EE82A346AE23683BAC05940 /* JobStatusStepperView.swift in Sources */,
 				33B116E92E3F2A4C3480FE24 /* JunkOSDriverApp.swift in Sources */,
