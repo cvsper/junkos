@@ -194,6 +194,22 @@ struct LiveMapView: View {
         .onAppear {
             mapVM.startPolling()
             mapVM.todayJobsCount = appState.contractorProfile?.totalJobs ?? 0
+
+            // CRITICAL: Sync existing active job when going online
+            // If driver already has an active job, show it on map immediately
+            if let existingJob = appState.activeJob {
+                mapVM.acceptedJob = existingJob
+                // Calculate route to job location
+                if let lat = existingJob.lat, let lng = existingJob.lng {
+                    Task {
+                        await mapVM.calculateRoute(to: CLLocationCoordinate2D(latitude: lat, longitude: lng))
+                        // Auto-start navigation if already en route
+                        if existingJob.status == "en_route" && !mapVM.isNavigating {
+                            mapVM.startNavigation()
+                        }
+                    }
+                }
+            }
         }
         .onDisappear {
             mapVM.stopPolling()
