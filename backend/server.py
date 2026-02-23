@@ -129,7 +129,10 @@ socketio.init_app(
     # Explicitly support both Socket.IO v2.x and v4.x protocols
     allow_upgrades=True,
     # Enable both polling and websocket transports
-    transports=['polling', 'websocket']
+    transports=['polling', 'websocket'],
+    # Optimize for mobile: faster ping/pong for quick dead connection detection
+    ping_interval=10,  # Send ping every 10s (was 25s default) - faster detection
+    ping_timeout=5,    # Disconnect if no pong in 5s (was 20s default) - quicker cleanup
 )
 
 # ---------------------------------------------------------------------------

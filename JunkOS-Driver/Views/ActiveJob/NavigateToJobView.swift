@@ -121,6 +121,12 @@ struct NavigateToJobView: View {
                     Task {
                         if job.jobStatus == .accepted {
                             await viewModel.markEnRoute()
+                            // Go online to show live map with navigation
+                            if let appState = appState, !appState.isOnline {
+                                await appState.toggleOnline()
+                            }
+                            // Auto-dismiss to show live map with navigation
+                            dismiss()
                         } else if job.jobStatus == .enRoute {
                             await viewModel.markArrived()
                         }

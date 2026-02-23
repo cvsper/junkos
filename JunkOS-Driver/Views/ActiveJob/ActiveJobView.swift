@@ -80,5 +80,11 @@ struct ActiveJobView: View {
         .onAppear {
             viewModel.job = appState.activeJob
         }
+        .onChange(of: viewModel.job?.status) { _, newStatus in
+            // Sync job status changes back to appState so LiveMapView can react
+            if let job = viewModel.job {
+                appState.activeJob = job
+            }
+        }
     }
 }

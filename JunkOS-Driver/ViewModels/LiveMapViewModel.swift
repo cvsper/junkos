@@ -206,6 +206,8 @@ final class LiveMapViewModel {
             let response = try await api.updateJobStatus(jobId: job.id, status: "en_route")
             acceptedJob = response.job
             HapticManager.shared.success()
+            // Auto-start navigation when marking en route
+            startNavigation()
         } catch {
             errorMessage = error.localizedDescription
             HapticManager.shared.error()
@@ -282,6 +284,26 @@ final class LiveMapViewModel {
         if currentStepIndex < navigationSteps.count - 1 {
             currentStepIndex += 1
             HapticManager.shared.lightTap()
+        }
+    }
+
+    /// Called when driver location updates during navigation.
+    /// Auto-advances to next step when driver is within threshold of step endpoint.
+    func updateNavigationLocation(_ location: CLLocation) {
+        guard isNavigating, let step = currentStep else { return }
+
+        // Get the endpoint of the current step (where the next instruction begins)
+        let stepPolyline = step.polyline
+        let stepEndCoordinate = stepPolyline.points()[stepPolyline.pointCount - 1].coordinate
+        let stepEndLocation = CLLocation(latitude: stepEndCoordinate.latitude, longitude: stepEndCoordinate.longitude)
+
+        // Calculate distance to end of this step
+        let distanceToStepEnd = location.distance(from: stepEndLocation)
+
+        // Auto-advance when within 50 meters of the step endpoint
+        let advanceThreshold: CLLocationDistance = 50.0
+        if distanceToStepEnd < advanceThreshold {
+            advanceToNextStep()
         }
     }
 

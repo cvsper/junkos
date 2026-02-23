@@ -39,10 +39,12 @@ final class SocketIOManager {
             .log(true),  // Enable logging to debug connection
             .compress,
             .connectParams(["token": token]),
-            // Remove forceWebsockets - let it upgrade naturally from polling
+            // Use polling first, upgrade to WebSocket (more reliable than forceWebsockets)
             .reconnects(true),
             .reconnectAttempts(-1),  // Infinite reconnection attempts
-            .reconnectWait(2),       // 2 seconds between attempts
+            .reconnectWait(1),       // Faster reconnection: 1 second (was 2)
+            .reconnectWaitMax(5),    // Cap max wait at 5 seconds
+            .extraHeaders(["X-Client-Type": "ios-driver"])  // Help backend identify mobile clients
         ])
 
         socket = manager?.defaultSocket

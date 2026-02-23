@@ -151,20 +151,8 @@ final class AppState {
 
         guard let token = KeychainHelper.loadString(forKey: "authToken") else { return }
 
-        // Connect to socket
+        // Connect to socket - it will auto-join room after handshake completes
         socket.connect(token: token, contractorId: contractorProfile?.id)
-
-        // CRITICAL FIX: Manually join room after connection if profile is loaded
-        // This fixes the race condition where profile might not be loaded during connect()
-        if let contractorId = contractorProfile?.id {
-            print("📍 AppState: Socket connected, joining room for contractor: \(contractorId)")
-            // Give socket time to connect before joining room
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
-                self?.socket.joinDriverRoom(driverId: contractorId)
-            }
-        } else {
-            print("⚠️ AppState: No contractor ID available - room join will fail!")
-        }
 
         locationManager.onLocationUpdate = { [weak self] location in
             let lat = location.coordinate.latitude

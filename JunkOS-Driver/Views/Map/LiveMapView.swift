@@ -219,8 +219,22 @@ struct LiveMapView: View {
             if let lat = job.lat, let lng = job.lng {
                 Task {
                     await mapVM.calculateRoute(to: CLLocationCoordinate2D(latitude: lat, longitude: lng))
+                    // Check if should auto-start navigation
+                    if job.status == "en_route" && !mapVM.isNavigating {
+                        mapVM.startNavigation()
+                    }
                 }
             }
+        }
+        .onChange(of: appState.activeJob?.status) { oldStatus, newStatus in
+            // Auto-start navigation when status changes to en_route
+            guard newStatus == "en_route", !mapVM.isNavigating, mapVM.route != nil else { return }
+            mapVM.startNavigation()
+        }
+        .onChange(of: appState.locationManager.currentLocation) { _, newLocation in
+            // Update navigation when location changes (for auto-advance)
+            guard let location = newLocation, mapVM.isNavigating else { return }
+            mapVM.updateNavigationLocation(location)
         }
     }
 

@@ -36,6 +36,12 @@ struct NavigationOverlay: View {
                             Text(step.instructions)
                                 .font(DriverTypography.headline)
                                 .foregroundStyle(Color.driverText)
+
+                            // Lane guidance (if turn requires lane change)
+                            if shouldShowLaneGuidance {
+                                LaneGuidanceView(laneDirections: laneDirections)
+                                    .padding(.top, DriverSpacing.xxs)
+                            }
                         } else {
                             Text("Calculating route...")
                                 .font(DriverTypography.body)
@@ -123,6 +129,96 @@ struct NavigationOverlay: View {
         } else {
             let miles = meters / 1609.34
             return String(format: "%.1f mi", miles)
+        }
+    }
+
+    /// Whether to show lane guidance based on turn type
+    private var shouldShowLaneGuidance: Bool {
+        guard let step = step else { return false }
+        let instruction = step.instructions.lowercased()
+        // Show lane guidance for turns (not for straight/continue/arrive)
+        return instruction.contains("left") || instruction.contains("right") || instruction.contains("exit")
+    }
+
+    /// Lane directions based on turn instruction
+    private var laneDirections: [LaneDirection] {
+        guard let step = step else { return [] }
+        let instruction = step.instructions.lowercased()
+
+        // Determine recommended lanes based on turn type
+        if instruction.contains("sharp left") || instruction.contains("turn left") {
+            return [.left, .straightLeft, .none, .none]
+        } else if instruction.contains("slight left") {
+            return [.none, .straightLeft, .straight, .none]
+        } else if instruction.contains("sharp right") || instruction.contains("turn right") {
+            return [.none, .none, .straightRight, .right]
+        } else if instruction.contains("slight right") {
+            return [.none, .straight, .straightRight, .none]
+        } else if instruction.contains("exit") && instruction.contains("right") {
+            return [.none, .none, .straightRight, .right]
+        } else if instruction.contains("exit") && instruction.contains("left") {
+            return [.left, .straightLeft, .none, .none]
+        } else {
+            return [.none, .straight, .straight, .none]
+        }
+    }
+}
+
+// MARK: - Lane Direction
+
+enum LaneDirection {
+    case none
+    case left
+    case straightLeft
+    case straight
+    case straightRight
+    case right
+
+    var icon: String {
+        switch self {
+        case .none: return ""
+        case .left: return "arrow.turn.up.left"
+        case .straightLeft: return "arrow.up.left"
+        case .straight: return "arrow.up"
+        case .straightRight: return "arrow.up.right"
+        case .right: return "arrow.turn.up.right"
+        }
+    }
+
+    var isActive: Bool {
+        self != .none
+    }
+}
+
+// MARK: - Lane Guidance View
+
+struct LaneGuidanceView: View {
+    let laneDirections: [LaneDirection]
+
+    var body: some View {
+        HStack(spacing: 4) {
+            ForEach(Array(laneDirections.enumerated()), id: \.offset) { index, direction in
+                VStack(spacing: 2) {
+                    if direction.isActive {
+                        Image(systemName: direction.icon)
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(Color.driverPrimary)
+                    } else {
+                        Rectangle()
+                            .fill(Color.driverTextSecondary.opacity(0.3))
+                            .frame(width: 16, height: 2)
+                    }
+
+                    // Lane line
+                    Rectangle()
+                        .fill(direction.isActive ? Color.driverPrimary : Color.driverTextSecondary.opacity(0.5))
+                        .frame(width: 20, height: 24)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 2)
+                                .strokeBorder(direction.isActive ? Color.driverPrimary : Color.driverTextSecondary.opacity(0.3), lineWidth: 1.5)
+                        )
+                }
+            }
         }
     }
 }
