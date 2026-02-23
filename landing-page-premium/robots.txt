@@ -1,0 +1,45 @@
+# Umuve robots.txt
+# Allow AI search bots for citations in ChatGPT, Perplexity, Gemini, etc.
+
+User-agent: *
+Allow: /
+
+# Explicitly allow AI search bots
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: Gemini-Bot
+Allow: /
+
+# Block training-only crawlers (prevent our content from being used for model training without citation)
+User-agent: CCBot
+Disallow: /
+
+User-agent: Bytespider
+Disallow: /
+
+# Protect non-public areas
+Disallow: /api/
+Disallow: /admin/
+Disallow: /_next/
+Disallow: /dashboard/
+
+Sitemap: https://goumuve.com/sitemap.xml
