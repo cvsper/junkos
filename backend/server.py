@@ -186,6 +186,7 @@ app.register_blueprint(operator_applications_bp)
 def public_seed_jobs():
     """Create 30 test jobs for testing (public endpoint)."""
     from models import User, Job, generate_uuid, utcnow
+    from datetime import timezone
     import random
 
     # Find or create test customer
