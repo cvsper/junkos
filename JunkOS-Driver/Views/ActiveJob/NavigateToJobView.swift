@@ -60,9 +60,13 @@ struct NavigateToJobView: View {
                                     .multilineTextAlignment(.center)
 
                                 if job.jobStatus == .enRoute {
-                                    Text("Tap to view full map")
-                                        .font(.caption2)
-                                        .foregroundStyle(Color.driverPrimary)
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "arrow.up.circle.fill")
+                                        Text("Tap for in-app navigation")
+                                    }
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(Color.driverPrimary)
+                                    .padding(.top, 4)
                                 }
                             }
                         }
@@ -102,13 +106,15 @@ struct NavigateToJobView: View {
 
             // Buttons
             VStack(spacing: DriverSpacing.sm) {
-                // Open in Maps
-                Button {
-                    openInMaps()
-                } label: {
-                    Label("Navigate in Maps", systemImage: "map.fill")
+                // Open in Maps - only show when accepted, hide when en route
+                if job.jobStatus == .accepted {
+                    Button {
+                        openInMaps()
+                    } label: {
+                        Label("Navigate in Maps", systemImage: "map.fill")
+                    }
+                    .buttonStyle(DriverSecondaryButtonStyle())
                 }
-                .buttonStyle(DriverSecondaryButtonStyle())
 
                 // Status button
                 Button {
