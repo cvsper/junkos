@@ -159,9 +159,9 @@ private struct EarningsRow: View {
 
     private func payoutStatusColor(_ status: PayoutStatus) -> Color {
         switch status {
-        case .pending: return Color("driverWarning")
-        case .processing: return Color("driverPrimary")
-        case .paid: return Color("driverSuccess")
+        case .pending: return Color.driverWarning
+        case .processing: return Color.driverPrimary
+        case .paid: return Color.driverSuccess
         }
     }
 }

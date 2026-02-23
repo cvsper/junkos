@@ -39,14 +39,14 @@ final class SocketIOManager {
             .log(true),  // Enable logging to debug connection
             .compress,
             .connectParams(["token": token]),
-            // Use polling first, upgrade to WebSocket (more reliable than forceWebsockets)
+            // Force WebSocket-only to bypass polling issues with Render proxy
+            // Render's proxy doesn't handle Engine.IO v4 batched POSTs correctly
+            .forceWebsockets(true),
             .reconnects(true),
             .reconnectAttempts(-1),  // Infinite reconnection attempts
             .reconnectWait(1),       // Faster reconnection: 1 second (was 2)
             .reconnectWaitMax(5),    // Cap max wait at 5 seconds
             .extraHeaders(["X-Client-Type": "ios-driver"])  // Help backend identify mobile clients
-            // Removed .version(.two) to match backend Engine.IO v4 protocol
-            // Backend requires v4 (python-socketio >= 5.11.0)
         ])
 
         socket = manager?.defaultSocket
