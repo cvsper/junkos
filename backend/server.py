@@ -242,7 +242,7 @@ def public_seed_jobs():
         hours = random.randint(9, 17)
         total = random.randint(70, 200)
 
-        scheduled_at = datetime.now(timezone.utc) + timedelta(days=days, hours=hours)
+        scheduled_at = utcnow() + timedelta(days=days, hours=hours)
 
         job = Job(
             id=generate_uuid(),
