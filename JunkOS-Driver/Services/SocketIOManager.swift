@@ -169,6 +169,10 @@ final class SocketIOManager {
     // MARK: - GPS Streaming
 
     func emitLocation(lat: Double, lng: Double, contractorId: String? = nil, jobId: String? = nil) {
+        guard isConnected else {
+            print("⚠️ SocketIO: Cannot emit location - not connected")
+            return
+        }
         var data: [String: Any] = ["lat": lat, "lng": lng]
         if let contractorId { data["contractor_id"] = contractorId }
         if let jobId { data["job_id"] = jobId }
@@ -178,12 +182,21 @@ final class SocketIOManager {
     // MARK: - Room Management
 
     func joinDriverRoom(driverId: String) {
+        guard isConnected else {
+            print("⚠️ SocketIO: Cannot join room - not connected. Will join on reconnect.")
+            pendingDriverId = driverId // Save for when connection establishes
+            return
+        }
         print("🔵 SocketIO: Manually joining driver room: driver:\(driverId)")
         socket?.emit("join", ["room": "driver:\(driverId)"])
         pendingDriverId = driverId // Update in case we reconnect
     }
 
     func leaveDriverRoom(driverId: String) {
+        guard isConnected else {
+            print("⚠️ SocketIO: Cannot leave room - not connected")
+            return
+        }
         socket?.emit("leave", ["room": "driver:\(driverId)"])
     }
 }
