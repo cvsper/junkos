@@ -1030,7 +1030,7 @@ def driver_login():
     elif phone:
         user = User.query.filter_by(phone=phone).first()
 
-    if not user or user.password_hash != hash_password(password):
+    if not user or not user.check_password(password):
         return jsonify({'error': 'Invalid credentials'}), 401
 
     # Verify role
