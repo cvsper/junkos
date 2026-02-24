@@ -173,6 +173,7 @@ app.register_blueprint(driver_bp)
 app.register_blueprint(operator_bp)
 app.register_blueprint(push_bp)
 app.register_blueprint(service_area_bp)
+app.register_blueprint(migration_bp)  # TEMPORARY - DELETE AFTER USE
 app.register_blueprint(recurring_bp)
 app.register_blueprint(referrals_bp)
 app.register_blueprint(support_bp)
