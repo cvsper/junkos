@@ -23,6 +23,7 @@ from .promos import promos_bp
 from .reviews import reviews_bp
 from .operator_applications import operator_applications_bp
 from .ai_analysis import ai_bp
+from .migration import migration_bp
 
 __all__ = [
     "drivers_bp",
@@ -48,4 +49,5 @@ __all__ = [
     "reviews_bp",
     "operator_applications_bp",
     "ai_bp",
+    "migration_bp",
 ]
