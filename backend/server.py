@@ -13,7 +13,7 @@ from database import Database
 from auth_routes import auth_bp, require_auth
 from models import db as sqlalchemy_db
 from socket_events import socketio
-from routes import drivers_bp, pricing_bp, ratings_bp, admin_bp, payments_bp, webhook_bp, booking_bp, upload_bp, jobs_bp, tracking_bp, driver_bp, operator_bp, push_bp, service_area_bp, recurring_bp, referrals_bp, support_bp, chat_bp, onboarding_bp, promos_bp, reviews_bp, operator_applications_bp
+from routes import drivers_bp, pricing_bp, ratings_bp, admin_bp, payments_bp, webhook_bp, booking_bp, upload_bp, jobs_bp, tracking_bp, driver_bp, operator_bp, push_bp, service_area_bp, recurring_bp, referrals_bp, support_bp, chat_bp, onboarding_bp, promos_bp, reviews_bp, operator_applications_bp, migration_bp
 
 # ---------------------------------------------------------------------------
 # Sentry error monitoring (optional -- only active when SENTRY_DSN is set)
