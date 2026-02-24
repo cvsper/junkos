@@ -929,6 +929,7 @@ def driver_signup():
     """Sign up as a driver with email and password"""
     from models import Contractor, OperatorInvite, generate_uuid
     from datetime import datetime
+    from werkzeug.security import generate_password_hash
     import traceback
 
     try:
@@ -975,7 +976,7 @@ def driver_signup():
         new_user = User(
             id=user_id,
             email=email,
-            password_hash=hash_password(password),
+            password_hash=generate_password_hash(password),
             name=name,
             role='driver'
         )
