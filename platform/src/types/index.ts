@@ -143,6 +143,100 @@ export interface BookingFormData {
   customerPhone?: string;
 }
 
+// ============================================
+// Driver Portal Types
+// ============================================
+
+export type DriverApprovalStatus = "pending" | "approved" | "rejected" | "suspended";
+export type DriverOnboardingStep = "profile" | "documents" | "stripe" | "review";
+
+export interface DriverProfile {
+  id: string;
+  user_id: string;
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+  truck_type: string | null;
+  license_plate: string | null;
+  is_online: boolean;
+  approval_status: DriverApprovalStatus;
+  onboarding_status: string;
+  avg_rating: number;
+  total_jobs: number;
+  acceptance_rate: number;
+  stripe_account_id: string | null;
+  stripe_onboarding_complete: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DriverStats {
+  today_earnings: number;
+  today_jobs: number;
+  rating: number;
+  acceptance_rate: number;
+  total_earnings: number;
+  total_jobs: number;
+  weekly_earnings: { day: string; amount: number }[];
+}
+
+export interface DriverJob {
+  id: string;
+  customer_id: string;
+  driver_id: string | null;
+  operator_id: string | null;
+  status: string;
+  address: string;
+  city: string;
+  lat: number;
+  lng: number;
+  items: { category: string; quantity: number }[];
+  photos: string[];
+  before_photos: string[];
+  after_photos: string[];
+  scheduled_at: string | null;
+  total_price: number;
+  base_price: number;
+  notes: string | null;
+  distance_miles: number | null;
+  customer_name: string | null;
+  customer_phone: string | null;
+  created_at: string;
+  updated_at: string;
+  started_at: string | null;
+  completed_at: string | null;
+}
+
+export interface DriverEarningsSummary {
+  total: number;
+  jobs_completed: number;
+  avg_per_job: number;
+  period: string;
+}
+
+export interface DriverEarningsRecord {
+  id: string;
+  job_id: string;
+  address: string;
+  amount: number;
+  tip: number;
+  payout_status: "pending" | "paid" | "processing";
+  completed_at: string;
+}
+
+export interface DriverOnboardingStatus {
+  current_step: DriverOnboardingStep;
+  profile_complete: boolean;
+  documents_uploaded: boolean;
+  stripe_connected: boolean;
+  submitted_for_review: boolean;
+  approval_status: DriverApprovalStatus;
+  rejection_reason: string | null;
+  drivers_license_url: string | null;
+  insurance_document_url: string | null;
+  vehicle_registration_url: string | null;
+}
+
 // Tracking types
 export interface TrackingUpdate {
   jobId: string;
