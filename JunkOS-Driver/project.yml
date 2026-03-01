@@ -16,6 +16,9 @@ packages:
   SocketIO:
     url: https://github.com/socketio/socket.io-client-swift
     from: "16.1.1"
+  MapboxNavigation:
+    url: https://github.com/mapbox/mapbox-navigation-ios.git
+    from: "3.18.2"
 
 targets:
   JunkOS-Driver:
@@ -25,6 +28,7 @@ targets:
       - path: .
         excludes:
           - project.yml
+          - Tests
           - "*.xcodeproj"
           - "*.xcworkspace"
           - DerivedData
@@ -45,11 +49,37 @@ targets:
         INFOPLIST_KEY_CFBundleDisplayName: "Umuve Pro"
         INFOPLIST_KEY_CFBundleName: "Umuve Pro"
         INFOPLIST_KEY_CFBundleIconName: AppIcon
+        INFOPLIST_KEY_MBXAccessToken: $(MAPBOX_PUBLIC_ACCESS_TOKEN)
         INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: "Umuve Pro needs your location to show you nearby jobs and share your position with customers."
         INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription: "Umuve Pro needs continuous location access to track your position during active jobs."
         INFOPLIST_KEY_NSCameraUsageDescription: "Umuve Pro needs camera access to take before and after photos of job sites."
         INFOPLIST_KEY_NSPhotoLibraryUsageDescription: "Umuve Pro needs photo library access to upload job site photos."
-        INFOPLIST_KEY_UIBackgroundModes: "location"
+        INFOPLIST_KEY_UIBackgroundModes: "audio location"
     dependencies:
       - package: SocketIO
         product: SocketIO
+      - package: MapboxNavigation
+        product: MapboxNavigationCore
+      - package: MapboxNavigation
+        product: MapboxNavigationUIKit
+      - package: MapboxNavigation
+        product: MapboxMaps
+  JunkOS-DriverTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: Tests
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: true
+    dependencies:
+      - target: JunkOS-Driver
+
+schemes:
+  Umuve Pro:
+    build:
+      targets:
+        JunkOS-Driver: all
+    test:
+      targets:
+        - JunkOS-DriverTests

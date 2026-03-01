@@ -24,7 +24,9 @@ struct DashboardView: View {
             }
             .navigationBarTitleDisplayMode(.inline)
             .task {
-                await appState.loadContractorProfile()
+                if appState.contractorProfile == nil {
+                    await appState.loadContractorProfile()
+                }
                 dashVM.loadStats(from: appState.contractorProfile)
             }
             .navigationDestination(for: AppRoute.self) { route in

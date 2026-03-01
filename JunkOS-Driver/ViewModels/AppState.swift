@@ -44,10 +44,36 @@ final class AppState {
     var showingSplash = true
 
     private let api = DriverAPIClient.shared
+    private var isProfileLoadInFlight = false
+    private var lastProfileLoadAt: Date?
+    private let minProfileReloadInterval: TimeInterval = 5
 
     // MARK: - Load Profile
 
-    func loadContractorProfile(retries: Int = 2) async {
+    func loadContractorProfile(retries: Int = 2, force: Bool = false) async {
+        if isProfileLoadInFlight {
+            return
+        }
+
+        if !force,
+           let lastProfileLoadAt,
+           Date().timeIntervalSince(lastProfileLoadAt) < minProfileReloadInterval {
+            return
+        }
+
+        isProfileLoadInFlight = true
+        defer {
+            isProfileLoadInFlight = false
+            lastProfileLoadAt = Date()
+        }
+
+        // No auth token means profile fetch will always fail; skip network call.
+        guard KeychainHelper.loadString(forKey: "authToken") != nil else {
+            contractorProfile = nil
+            isOnline = false
+            return
+        }
+
         var attempts = 0
         var lastError: Error?
 
@@ -56,6 +82,14 @@ final class AppState {
                 let response = try await api.getContractorProfile()
                 contractorProfile = response.contractor
                 isOnline = response.contractor.isOnline
+
+                // Keep runtime tracking/socket state aligned when online.
+                // Avoid forcing disconnects from periodic profile refreshes;
+                // explicit offline/logout/background paths handle teardown.
+                if isOnline {
+                    startLocationTracking()
+                }
+
                 // Re-register push token now that we have an auth context
                 registerPushTokenIfNeeded()
                 print("✅ Profile loaded successfully")
@@ -132,14 +166,7 @@ final class AppState {
             }
         } catch {
             toggleError = error.localizedDescription
-            // Toggle locally for demo even if API fails
-            isOnline = newState
-            if isOnline {
-                await loadContractorProfile()
-                startLocationTracking()
-            } else {
-                stopLocationTracking()
-            }
+            // Keep local state aligned with backend when availability update fails.
         }
     }
 

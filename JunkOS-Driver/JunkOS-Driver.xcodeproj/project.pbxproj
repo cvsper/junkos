@@ -3,22 +3,29 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 63;
+	objectVersion = 77;
 	objects = {
 
 /* Begin PBXBuildFile section */
 		07D3D958F6EC6B2561F6FEAA /* DistanceBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = F412C09E80A444B74B8D3414 /* DistanceBadge.swift */; };
 		07FA90FCA1373A44089255FA /* ActiveJobView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3CEB980FB0B2AE4E5E91426 /* ActiveJobView.swift */; };
+		10EA98CF33FB08CD7BD0F885 /* ExportOptions.plist in Resources */ = {isa = PBXBuildFile; fileRef = 48870C02A80F4EF1D4CDD4DF /* ExportOptions.plist */; };
+		13117D1F797E808B70E4CD84 /* JobAcceptHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = E23EB63D12655125E9C07F48 /* JobAcceptHandler.swift */; };
 		14790A1C6E4BF7984B5FF3E4 /* DriverAnnotationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17D1EDD45EA760AA572801D2 /* DriverAnnotationView.swift */; };
 		1571465FB7BA821EBF25A926 /* LiveMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D29936281490BE9C931F899 /* LiveMapView.swift */; };
 		16B71C5163B965FBDF945A5C /* ImageUploadService.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE6A30F12DD65BEE0708A3A6 /* ImageUploadService.swift */; };
 		17369207B2CC0E1488DEB91E /* ProfileViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38475343119CF6E9F5585E9 /* ProfileViewModel.swift */; };
+		1989C223FB285E2A98A6B722 /* EmailSignupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0215A03352D619BDD92EA63 /* EmailSignupView.swift */; };
 		19A68D46F9F1493920BF9B4F /* AppRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 831F50402DD302638AD4EF32 /* AppRouter.swift */; };
 		1A023C9585E19F759DF1B92F /* CameraPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D074AC78D9277D0C00126A35 /* CameraPickerView.swift */; };
 		1A641CEB9CC125B788902752 /* BeforePhotosView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E12E32582549A882906AADC2 /* BeforePhotosView.swift */; };
+		1C781277F8C7C9DE1D1A5D8A /* DriverNavigationContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C2B61C0905865AE47D4013A /* DriverNavigationContainerView.swift */; };
+		1D9CED63F0E498502A126B1D /* JobAcceptHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 590A28D68129D58B9E85ED9E /* JobAcceptHandlerTests.swift */; };
 		1DC41CF49D4FA211AC146DAE /* AuthViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54148D05F5465CFF5EB1F3CC /* AuthViewModel.swift */; };
 		1EE82A346AE23683BAC05940 /* JobStatusStepperView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54200844DD474F229259E177 /* JobStatusStepperView.swift */; };
+		20D92C8530A83FC685021866 /* PhoneSignupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCB7D7EB4AF6794B515D25B0 /* PhoneSignupView.swift */; };
 		24034206CB760E5A99B8052F /* AuthModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AC9DCA75B3DE3D624F8A427 /* AuthModels.swift */; };
+		2518157DAD17B49A8D4EC2E2 /* MapboxMaps in Frameworks */ = {isa = PBXBuildFile; productRef = EE250E8FBE1649E28F18FD30 /* MapboxMaps */; };
 		29C93DE1E779BE522D41D0C0 /* LiveMapViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F14A16027C1CA38C7BD4E4F7 /* LiveMapViewModel.swift */; };
 		29EE5336D11165A1FC0ABC1B /* EmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF3CF6C40F54DC805B224734 /* EmptyStateView.swift */; };
 		2A3FF2C1D2D3EEB79385B548 /* StarRating.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00CF7F44684B3635D99E9F02 /* StarRating.swift */; };
@@ -28,29 +35,41 @@
 		37EC0FCAB779630120B3C623 /* VolumeAdjustmentViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BB4C543B16861520B2D7C80 /* VolumeAdjustmentViewModel.swift */; };
 		38783044E1350D9A73D45656 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3988FAD16A2B52B69264800C /* Config.swift */; };
 		39DEA556224982280DB9CC88 /* TruckTypeSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1DC4D6D20A3CCC9709A404C /* TruckTypeSelectionView.swift */; };
+		3B02F055C4F4D3E42AE321BF /* MapboxConfigTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F92CE47D4AD772AB0E015CB4 /* MapboxConfigTests.swift */; };
+		3C0648E9CA6D8A2785AE762B /* CustomPuckSetup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A6317B536CB366B943FE885 /* CustomPuckSetup.swift */; };
 		3D564E63BD08DA8886FDA8AF /* EarningsModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6B51D6BBCBBEA9C72F356FB /* EarningsModels.swift */; };
 		4005FB578099B0D60FA29E27 /* JobDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BEAD9400F04B3D94D21E5F2A /* JobDetailView.swift */; };
+		42E30B4C3F63F6BDAC5F0125 /* MapboxConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3996C54B03A0D70BB3BCDFCD /* MapboxConfig.swift */; };
 		4496E310971F560F7A2B8713 /* ProfileSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7CB288966F25A1F3987FC69 /* ProfileSettingsView.swift */; };
+		4546C91F88B3DC9BDB3E58D4 /* add_navigation_file.sh in Resources */ = {isa = PBXBuildFile; fileRef = C5E3F3D403E2B18000445A56 /* add_navigation_file.sh */; };
 		473C9CDB3A4B180A6F89BECC /* JobAlertOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 490C03AEE834921413337ABA /* JobAlertOverlay.swift */; };
 		4960C1A39CDFAFCC28BF11F5 /* OnlineToggleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C356D07B138BA8E0CE40F5 /* OnlineToggleView.swift */; };
 		4AA8544E326C39F151857289 /* InviteCodeStepView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18E9B0CBCF60C1EB2DF0B2BA /* InviteCodeStepView.swift */; };
+		4D2D51D22D35EE4E94E221C9 /* mapbox-build.log in Resources */ = {isa = PBXBuildFile; fileRef = 9ADD5EB8110A6EDB2B0B63D6 /* mapbox-build.log */; };
 		4E8639A2456E077412D7C2B2 /* JobFeedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54CB44E65469A3687838FB24 /* JobFeedView.swift */; };
 		4F219CCBF09D2A91F8C8A08F /* DriverDesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 803F2EDEBF20C6218ADFA2CB /* DriverDesignSystem.swift */; };
+		51871BDB30F8368F3F8EC867 /* MapboxNavigationUIKit in Frameworks */ = {isa = PBXBuildFile; productRef = 99F9BA012822441FBAC1A4F8 /* MapboxNavigationUIKit */; };
 		5C4180CB8AE424D51E75FF1F /* HapticManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FCB1498666015B9BBBC1DF1 /* HapticManager.swift */; };
 		5E9FA33210F489FBB5632E05 /* SocketIOManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF8D49E5C00DA1F5B18B2699 /* SocketIOManager.swift */; };
 		60FCA470DEE7BC6DF3C2D582 /* ContractorRegistrationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3650D5429433D4FB66AA8423 /* ContractorRegistrationView.swift */; };
+		6FB34622D4038AB51AAE5B3D /* DriverNavigationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3E547968623BAF24419FBF8 /* DriverNavigationViewController.swift */; };
+		70D388672B23FEC6BC7F1ABF /* build-ios.log in Resources */ = {isa = PBXBuildFile; fileRef = 15903CEC30ED2002B4B75D27 /* build-ios.log */; };
 		7292DDF7820943670D9C4D36 /* StripeConnectOnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B2559C4BC940385186AB071 /* StripeConnectOnboardingView.swift */; };
 		73B788CB2FFF7D35CBCB64A8 /* DashboardViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39B6653495EF4591ACD6E5C9 /* DashboardViewModel.swift */; };
 		742D649EF5A5BF7294AC2428 /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63007B62EFC23A0A6757B294 /* DashboardView.swift */; };
+		75A86652BC37583EC879374B /* red_truck.glb in Resources */ = {isa = PBXBuildFile; fileRef = 6D6377601A6F2DF42DF4DFE3 /* red_truck.glb */; };
 		82DEFA8055CC0754E1141F49 /* AfterPhotosView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AA0B3DB0C558CAF78DD76C4 /* AfterPhotosView.swift */; };
 		856766387D9F89422AAA08C5 /* JobCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2EEE2DA4D07D3F191694A55 /* JobCardView.swift */; };
+		883192B3E3C595849EFFFC9B /* MapboxNavigationCore in Frameworks */ = {isa = PBXBuildFile; productRef = 9C48840C24F9A7A1792C3B52 /* MapboxNavigationCore */; };
 		8A8AA35036E08AF0A2BC5E83 /* EarningsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF238B4D85E70211F40A21F7 /* EarningsViewModel.swift */; };
 		8BBCE11D4D582E7D746F2E4F /* DriverOnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 928C74E7765B48CE6A718911 /* DriverOnboardingView.swift */; };
 		94E7D38BBA06FB012C11B228 /* JobDetailViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80AE8F889AD33D7F0E337978 /* JobDetailViewModel.swift */; };
 		96A96F5462782462AEBCEBB0 /* SplashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 228E7D7E7644F745D1DAAFED /* SplashView.swift */; };
+		9A5BFFFC91CD7B2DB16403A5 /* NavigationOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = B93BC8AD3F170098B98B239B /* NavigationOverlay.swift */; };
 		9A935658ADCF82A0A67E6CC0 /* EarningsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED5DECECC5344F008D376847 /* EarningsView.swift */; };
 		9E123249BC3A8E7EA11DF942 /* StatusBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABD336317A641FD03A7F918D /* StatusBadge.swift */; };
 		A2D1189B766041112EFD97FD /* AuthenticationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DEA402F6CECE2DD4CC76A0F /* AuthenticationManager.swift */; };
+		A782AA636BD36D70CE7B9F71 /* MapboxNavigationREADME.md in Resources */ = {isa = PBXBuildFile; fileRef = 2941CDE9C0C7E0D3A739F0A1 /* MapboxNavigationREADME.md */; };
 		A79407865044DF4EEDFA2AB5 /* DocumentUploadView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6FA3831A39891771A43D22D /* DocumentUploadView.swift */; };
 		AA3166875E6CBF7682E70C80 /* ConnectionStatusBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9204A9DB1C56DBF056E2E5EC /* ConnectionStatusBanner.swift */; };
 		AD64C2EE3E8FBB459A20B22E /* SocketIO in Frameworks */ = {isa = PBXBuildFile; productRef = 9192FFB37533E324867AE5D6 /* SocketIO */; };
@@ -61,13 +80,11 @@
 		BF70D9F10BFA3C3DE51E7908 /* PayoutSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24F8F8ADE1A72C73B582B02B /* PayoutSettingsView.swift */; };
 		C185F7208CF4AD483FB0D267 /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B635EA21FAAB5E8F8AC182AA /* NotificationManager.swift */; };
 		C440DD69A4F80D82F7D54855 /* StripeConnectViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6372D0ABD935A4BA919F1C8 /* StripeConnectViewModel.swift */; };
-		CA0CD9A528904A2CD1E266DB /* PhoneSignupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F99313D9A94E708D4B813C6 /* PhoneSignupView.swift */; };
+		C934F4E73453A391EA7AC996 /* add_file_to_xcode.sh in Resources */ = {isa = PBXBuildFile; fileRef = 2FDEC7E1081F9701F0D2C131 /* add_file_to_xcode.sh */; };
+		CA6F8AF4C32EBC5160BC3494 /* NavigationCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8B6BDEF51AB3AAF0BBE344D /* NavigationCoordinator.swift */; };
 		CB3DDC4640A48606B0591666 /* LocationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CF097D7D1B06883811BBF1A /* LocationManager.swift */; };
 		CD1DCEE1D0AB13C15EFCD4DE /* JobCompletionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9708A071501064F0B43DB279 /* JobCompletionView.swift */; };
 		CDAB0B258DCCB40E55DFBAB6 /* RoleSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FF356F775DBF636A95D89BA /* RoleSelectionView.swift */; };
-		CF090D4B2F4A6FC7003372AF /* EmailSignupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF090D4A2F4A6FC7003372AF /* EmailSignupView.swift */; };
-		CF090D4D2F4B91D0003372AF /* NavigationOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF090D4C2F4B91D0003372AF /* NavigationOverlay.swift */; };
-		CFBBCB222F4B96DB00DCA746 /* NavigationOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFBBCB212F4B96DB00DCA746 /* NavigationOverlay.swift */; };
 		D046B5278E68B23BC0235296 /* OperatorWebRedirectView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 603921AEAAE9211B5A00593C /* OperatorWebRedirectView.swift */; };
 		D14476790098FE934A99ED4A /* AnimationConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 672F85AEE329F15A6CC0C716 /* AnimationConstants.swift */; };
 		D34EE7A8BBE33ED6B72ABCEF /* AvailabilityScheduleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDBA8F8B87D1D52884F3E249 /* AvailabilityScheduleView.swift */; };
@@ -83,42 +100,59 @@
 		FD39D911FE97C3F7209D09C8 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B085FF75904906904989D302 /* AppState.swift */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		6C4DA718A9AA00D116E1407D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 413F732802FF68BE9F9DBF74 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 682035F336F6697960DAA9AB;
+			remoteInfo = "JunkOS-Driver";
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		00CF7F44684B3635D99E9F02 /* StarRating.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StarRating.swift; sourceTree = "<group>"; };
 		0AA0B3DB0C558CAF78DD76C4 /* AfterPhotosView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AfterPhotosView.swift; sourceTree = "<group>"; };
 		0B2559C4BC940385186AB071 /* StripeConnectOnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StripeConnectOnboardingView.swift; sourceTree = "<group>"; };
+		15903CEC30ED2002B4B75D27 /* build-ios.log */ = {isa = PBXFileReference; path = "build-ios.log"; sourceTree = "<group>"; };
 		17D1EDD45EA760AA572801D2 /* DriverAnnotationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriverAnnotationView.swift; sourceTree = "<group>"; };
 		18E9B0CBCF60C1EB2DF0B2BA /* InviteCodeStepView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InviteCodeStepView.swift; sourceTree = "<group>"; };
 		19B60B02EDBC3F4047A2BD81 /* QuickStatsCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickStatsCard.swift; sourceTree = "<group>"; };
 		1B159DA9208AE40B64BFAC73 /* PriceBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PriceBadge.swift; sourceTree = "<group>"; };
-		1CA79264B8151B5CFA750F30 /* JunkOS-Driver.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "JunkOS-Driver.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		1CA79264B8151B5CFA750F30 /* JunkOS-Driver.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = "JunkOS-Driver.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		1FBC43CAFF78869678C21C3F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		1FCB1498666015B9BBBC1DF1 /* HapticManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticManager.swift; sourceTree = "<group>"; };
 		228E7D7E7644F745D1DAAFED /* SplashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplashView.swift; sourceTree = "<group>"; };
 		24F8F8ADE1A72C73B582B02B /* PayoutSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PayoutSettingsView.swift; sourceTree = "<group>"; };
-		2F99313D9A94E708D4B813C6 /* PhoneSignupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneSignupView.swift; sourceTree = "<group>"; };
+		2941CDE9C0C7E0D3A739F0A1 /* MapboxNavigationREADME.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = MapboxNavigationREADME.md; sourceTree = "<group>"; };
+		2FDEC7E1081F9701F0D2C131 /* add_file_to_xcode.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = add_file_to_xcode.sh; sourceTree = "<group>"; };
 		344C45FBFECAA97F6CB507F5 /* ActiveJobMapOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveJobMapOverlay.swift; sourceTree = "<group>"; };
 		3650D5429433D4FB66AA8423 /* ContractorRegistrationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContractorRegistrationView.swift; sourceTree = "<group>"; };
 		3988FAD16A2B52B69264800C /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
+		3996C54B03A0D70BB3BCDFCD /* MapboxConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapboxConfig.swift; sourceTree = "<group>"; };
 		39B6653495EF4591ACD6E5C9 /* DashboardViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardViewModel.swift; sourceTree = "<group>"; };
 		3AC9DCA75B3DE3D624F8A427 /* AuthModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthModels.swift; sourceTree = "<group>"; };
 		3E4022AADB725ED1A37514F9 /* RegistrationViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegistrationViewModel.swift; sourceTree = "<group>"; };
 		3FF356F775DBF636A95D89BA /* RoleSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoleSelectionView.swift; sourceTree = "<group>"; };
 		47C356D07B138BA8E0CE40F5 /* OnlineToggleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnlineToggleView.swift; sourceTree = "<group>"; };
+		48870C02A80F4EF1D4CDD4DF /* ExportOptions.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = ExportOptions.plist; sourceTree = "<group>"; };
 		490C03AEE834921413337ABA /* JobAlertOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobAlertOverlay.swift; sourceTree = "<group>"; };
 		4D29936281490BE9C931F899 /* LiveMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveMapView.swift; sourceTree = "<group>"; };
 		51AC27DA7E685BE7675B0FB1 /* JobModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobModels.swift; sourceTree = "<group>"; };
 		54148D05F5465CFF5EB1F3CC /* AuthViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthViewModel.swift; sourceTree = "<group>"; };
 		54200844DD474F229259E177 /* JobStatusStepperView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobStatusStepperView.swift; sourceTree = "<group>"; };
 		54CB44E65469A3687838FB24 /* JobFeedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobFeedView.swift; sourceTree = "<group>"; };
+		590A28D68129D58B9E85ED9E /* JobAcceptHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobAcceptHandlerTests.swift; sourceTree = "<group>"; };
 		603921AEAAE9211B5A00593C /* OperatorWebRedirectView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OperatorWebRedirectView.swift; sourceTree = "<group>"; };
 		63007B62EFC23A0A6757B294 /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
 		672F85AEE329F15A6CC0C716 /* AnimationConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnimationConstants.swift; sourceTree = "<group>"; };
+		6D6377601A6F2DF42DF4DFE3 /* red_truck.glb */ = {isa = PBXFileReference; path = red_truck.glb; sourceTree = "<group>"; };
 		7BB4C543B16861520B2D7C80 /* VolumeAdjustmentViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VolumeAdjustmentViewModel.swift; sourceTree = "<group>"; };
 		7CF097D7D1B06883811BBF1A /* LocationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationManager.swift; sourceTree = "<group>"; };
 		803F2EDEBF20C6218ADFA2CB /* DriverDesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriverDesignSystem.swift; sourceTree = "<group>"; };
 		80AE8F889AD33D7F0E337978 /* JobDetailViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobDetailViewModel.swift; sourceTree = "<group>"; };
 		831F50402DD302638AD4EF32 /* AppRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRouter.swift; sourceTree = "<group>"; };
+		8A6317B536CB366B943FE885 /* CustomPuckSetup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomPuckSetup.swift; sourceTree = "<group>"; };
 		8D74268D761171C093876799 /* JunkOS-Driver.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "JunkOS-Driver.entitlements"; sourceTree = "<group>"; };
 		9149614AAE2D78491B7C3059 /* DriverTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriverTabView.swift; sourceTree = "<group>"; };
 		9204A9DB1C56DBF056E2E5EC /* ConnectionStatusBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionStatusBanner.swift; sourceTree = "<group>"; };
@@ -126,6 +160,8 @@
 		94CEA3D9996C5038C6FCF4FA /* KeychainHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainHelper.swift; sourceTree = "<group>"; };
 		9708A071501064F0B43DB279 /* JobCompletionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobCompletionView.swift; sourceTree = "<group>"; };
 		9AC42610087364CBEADF1B33 /* DriverAPIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriverAPIClient.swift; sourceTree = "<group>"; };
+		9ADD5EB8110A6EDB2B0B63D6 /* mapbox-build.log */ = {isa = PBXFileReference; path = "mapbox-build.log"; sourceTree = "<group>"; };
+		9C2B61C0905865AE47D4013A /* DriverNavigationContainerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriverNavigationContainerView.swift; sourceTree = "<group>"; };
 		9DEA402F6CECE2DD4CC76A0F /* AuthenticationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthenticationManager.swift; sourceTree = "<group>"; };
 		9F5425951FF88727F63532BA /* JobFeedViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobFeedViewModel.swift; sourceTree = "<group>"; };
 		A445038901808240328233C0 /* ActiveJobViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveJobViewModel.swift; sourceTree = "<group>"; };
@@ -134,23 +170,27 @@
 		B085FF75904906904989D302 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		B2EEE2DA4D07D3F191694A55 /* JobCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobCardView.swift; sourceTree = "<group>"; };
 		B38475343119CF6E9F5585E9 /* ProfileViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileViewModel.swift; sourceTree = "<group>"; };
+		B3E547968623BAF24419FBF8 /* DriverNavigationViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriverNavigationViewController.swift; sourceTree = "<group>"; };
 		B635EA21FAAB5E8F8AC182AA /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
 		B6B51D6BBCBBEA9C72F356FB /* EarningsModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EarningsModels.swift; sourceTree = "<group>"; };
+		B93BC8AD3F170098B98B239B /* NavigationOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationOverlay.swift; sourceTree = "<group>"; };
 		BEAD9400F04B3D94D21E5F2A /* JobDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobDetailView.swift; sourceTree = "<group>"; };
 		BF8D49E5C00DA1F5B18B2699 /* SocketIOManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SocketIOManager.swift; sourceTree = "<group>"; };
+		C0215A03352D619BDD92EA63 /* EmailSignupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmailSignupView.swift; sourceTree = "<group>"; };
 		C14897C95FBADE41B4B75E28 /* JunkOSDriverApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JunkOSDriverApp.swift; sourceTree = "<group>"; };
+		C5E3F3D403E2B18000445A56 /* add_navigation_file.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = add_navigation_file.sh; sourceTree = "<group>"; };
 		C6CC84B7BBA8C36ACEA14548 /* DriverAuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriverAuthView.swift; sourceTree = "<group>"; };
+		CCB7D7EB4AF6794B515D25B0 /* PhoneSignupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneSignupView.swift; sourceTree = "<group>"; };
 		CDBA8F8B87D1D52884F3E249 /* AvailabilityScheduleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AvailabilityScheduleView.swift; sourceTree = "<group>"; };
-		CF090D4A2F4A6FC7003372AF /* EmailSignupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmailSignupView.swift; sourceTree = "<group>"; };
-		CF090D4C2F4B91D0003372AF /* NavigationOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationOverlay.swift; sourceTree = "<group>"; };
-		CFBBCB212F4B96DB00DCA746 /* NavigationOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationOverlay.swift; sourceTree = "<group>"; };
 		D074AC78D9277D0C00126A35 /* CameraPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraPickerView.swift; sourceTree = "<group>"; };
 		D1DC4D6D20A3CCC9709A404C /* TruckTypeSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TruckTypeSelectionView.swift; sourceTree = "<group>"; };
 		D6FA3831A39891771A43D22D /* DocumentUploadView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentUploadView.swift; sourceTree = "<group>"; };
 		DE9E48C43F8021E7F9080650 /* VolumeAdjustmentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VolumeAdjustmentView.swift; sourceTree = "<group>"; };
 		E12E32582549A882906AADC2 /* BeforePhotosView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BeforePhotosView.swift; sourceTree = "<group>"; };
+		E23EB63D12655125E9C07F48 /* JobAcceptHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobAcceptHandler.swift; sourceTree = "<group>"; };
 		E269A5BD9F9CDD622483E10C /* NavigateToJobView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigateToJobView.swift; sourceTree = "<group>"; };
 		E7CB288966F25A1F3987FC69 /* ProfileSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileSettingsView.swift; sourceTree = "<group>"; };
+		E8B6BDEF51AB3AAF0BBE344D /* NavigationCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationCoordinator.swift; sourceTree = "<group>"; };
 		ED5DECECC5344F008D376847 /* EarningsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EarningsView.swift; sourceTree = "<group>"; };
 		EE6A30F12DD65BEE0708A3A6 /* ImageUploadService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageUploadService.swift; sourceTree = "<group>"; };
 		EF3CF6C40F54DC805B224734 /* EmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyStateView.swift; sourceTree = "<group>"; };
@@ -158,6 +198,8 @@
 		F2E6817B24EDDB263AFA85CF /* ContractorModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContractorModels.swift; sourceTree = "<group>"; };
 		F3CEB980FB0B2AE4E5E91426 /* ActiveJobView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveJobView.swift; sourceTree = "<group>"; };
 		F412C09E80A444B74B8D3414 /* DistanceBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistanceBadge.swift; sourceTree = "<group>"; };
+		F92CE47D4AD772AB0E015CB4 /* MapboxConfigTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapboxConfigTests.swift; sourceTree = "<group>"; };
+		FB2A61C6BC96EF6B73B59E99 /* JunkOS-DriverTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = "JunkOS-DriverTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		FF238B4D85E70211F40A21F7 /* EarningsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EarningsViewModel.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -167,12 +209,24 @@
 			buildActionMask = 2147483647;
 			files = (
 				AD64C2EE3E8FBB459A20B22E /* SocketIO in Frameworks */,
+				883192B3E3C595849EFFFC9B /* MapboxNavigationCore in Frameworks */,
+				51871BDB30F8368F3F8EC867 /* MapboxNavigationUIKit in Frameworks */,
+				2518157DAD17B49A8D4EC2E2 /* MapboxMaps in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		1FB501D393A3FFFD7013637B /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				590A28D68129D58B9E85ED9E /* JobAcceptHandlerTests.swift */,
+				F92CE47D4AD772AB0E015CB4 /* MapboxConfigTests.swift */,
+			);
+			path = Tests;
+			sourceTree = "<group>";
+		};
 		21F6F91F8BA89EF7B758BA9B /* ActiveJob */ = {
 			isa = PBXGroup;
 			children = (
@@ -229,6 +283,7 @@
 			isa = PBXGroup;
 			children = (
 				1CA79264B8151B5CFA750F30 /* JunkOS-Driver.app */,
+				FB2A61C6BC96EF6B73B59E99 /* JunkOS-DriverTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -256,14 +311,21 @@
 		5997DA88E928A2A8B445CB8F /* Map */ = {
 			isa = PBXGroup;
 			children = (
-				CF090D4C2F4B91D0003372AF /* NavigationOverlay.swift */,
-				CFBBCB212F4B96DB00DCA746 /* NavigationOverlay.swift */,
 				344C45FBFECAA97F6CB507F5 /* ActiveJobMapOverlay.swift */,
 				17D1EDD45EA760AA572801D2 /* DriverAnnotationView.swift */,
 				490C03AEE834921413337ABA /* JobAlertOverlay.swift */,
 				4D29936281490BE9C931F899 /* LiveMapView.swift */,
+				B93BC8AD3F170098B98B239B /* NavigationOverlay.swift */,
 			);
 			path = Map;
+			sourceTree = "<group>";
+		};
+		654BCE383D1B90F40524BA66 /* Navigation */ = {
+			isa = PBXGroup;
+			children = (
+				CB794C01433CE480FF622918 /* Mapbox */,
+			);
+			path = Navigation;
 			sourceTree = "<group>";
 		};
 		6A38FA0B2CA9712921C39C93 /* Config */ = {
@@ -285,9 +347,26 @@
 		8D21F9779AE33AA444F56A39 /* JunkOS-Driver */ = {
 			isa = PBXGroup;
 			children = (
+				2FDEC7E1081F9701F0D2C131 /* add_file_to_xcode.sh */,
+				C5E3F3D403E2B18000445A56 /* add_navigation_file.sh */,
 				1FBC43CAFF78869678C21C3F /* Assets.xcassets */,
+				15903CEC30ED2002B4B75D27 /* build-ios.log */,
+				48870C02A80F4EF1D4CDD4DF /* ExportOptions.plist */,
 				8D74268D761171C093876799 /* JunkOS-Driver.entitlements */,
 				C14897C95FBADE41B4B75E28 /* JunkOSDriverApp.swift */,
+				9ADD5EB8110A6EDB2B0B63D6 /* mapbox-build.log */,
+				6D6377601A6F2DF42DF4DFE3 /* red_truck.glb */,
+				4DFFE93115C932ACD6706F02 /* Components */,
+				6A38FA0B2CA9712921C39C93 /* Config */,
+				761042F99BCA6B01B2D4DF4D /* Design */,
+				EB3CE005A3A57E4814D88B56 /* Docs */,
+				9F9151FA6CF10BC3BAAA40B7 /* Managers */,
+				25139F93F81E700B63B6F1E2 /* Models */,
+				654BCE383D1B90F40524BA66 /* Navigation */,
+				BB1F4C963C05906C2361DB9A /* Services */,
+				EC5CECDEE98C793847983943 /* Utilities */,
+				336EE321E5391E10A78DF6ED /* ViewModels */,
+				D96E06A3BE450C753EC755A4 /* Views */,
 			);
 			name = "JunkOS-Driver";
 			path = .;
@@ -309,10 +388,13 @@
 				4DFFE93115C932ACD6706F02 /* Components */,
 				6A38FA0B2CA9712921C39C93 /* Config */,
 				761042F99BCA6B01B2D4DF4D /* Design */,
+				EB3CE005A3A57E4814D88B56 /* Docs */,
 				8D21F9779AE33AA444F56A39 /* JunkOS-Driver */,
 				9F9151FA6CF10BC3BAAA40B7 /* Managers */,
 				25139F93F81E700B63B6F1E2 /* Models */,
+				654BCE383D1B90F40524BA66 /* Navigation */,
 				BB1F4C963C05906C2361DB9A /* Services */,
+				1FB501D393A3FFFD7013637B /* Tests */,
 				EC5CECDEE98C793847983943 /* Utilities */,
 				336EE321E5391E10A78DF6ED /* ViewModels */,
 				D96E06A3BE450C753EC755A4 /* Views */,
@@ -340,13 +422,26 @@
 			path = Jobs;
 			sourceTree = "<group>";
 		};
+		CB794C01433CE480FF622918 /* Mapbox */ = {
+			isa = PBXGroup;
+			children = (
+				8A6317B536CB366B943FE885 /* CustomPuckSetup.swift */,
+				9C2B61C0905865AE47D4013A /* DriverNavigationContainerView.swift */,
+				B3E547968623BAF24419FBF8 /* DriverNavigationViewController.swift */,
+				E23EB63D12655125E9C07F48 /* JobAcceptHandler.swift */,
+				3996C54B03A0D70BB3BCDFCD /* MapboxConfig.swift */,
+				E8B6BDEF51AB3AAF0BBE344D /* NavigationCoordinator.swift */,
+			);
+			path = Mapbox;
+			sourceTree = "<group>";
+		};
 		D3932D7C39CB246114E627A5 /* Auth */ = {
 			isa = PBXGroup;
 			children = (
-				CF090D4A2F4A6FC7003372AF /* EmailSignupView.swift */,
 				C6CC84B7BBA8C36ACEA14548 /* DriverAuthView.swift */,
-				2F99313D9A94E708D4B813C6 /* PhoneSignupView.swift */,
 				928C74E7765B48CE6A718911 /* DriverOnboardingView.swift */,
+				C0215A03352D619BDD92EA63 /* EmailSignupView.swift */,
+				CCB7D7EB4AF6794B515D25B0 /* PhoneSignupView.swift */,
 			);
 			path = Auth;
 			sourceTree = "<group>";
@@ -386,6 +481,14 @@
 				3AC758A97FBC15501D71A1C1 /* Splash */,
 			);
 			path = Views;
+			sourceTree = "<group>";
+		};
+		EB3CE005A3A57E4814D88B56 /* Docs */ = {
+			isa = PBXGroup;
+			children = (
+				2941CDE9C0C7E0D3A739F0A1 /* MapboxNavigationREADME.md */,
+			);
+			path = Docs;
 			sourceTree = "<group>";
 		};
 		EC5CECDEE98C793847983943 /* Utilities */ = {
@@ -441,10 +544,31 @@
 			name = "JunkOS-Driver";
 			packageProductDependencies = (
 				9192FFB37533E324867AE5D6 /* SocketIO */,
+				9C48840C24F9A7A1792C3B52 /* MapboxNavigationCore */,
+				99F9BA012822441FBAC1A4F8 /* MapboxNavigationUIKit */,
+				EE250E8FBE1649E28F18FD30 /* MapboxMaps */,
 			);
 			productName = "JunkOS-Driver";
 			productReference = 1CA79264B8151B5CFA750F30 /* JunkOS-Driver.app */;
 			productType = "com.apple.product-type.application";
+		};
+		DA1947FAE0623888B117DA66 /* JunkOS-DriverTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4012DB6800E0C930F96B4E89 /* Build configuration list for PBXNativeTarget "JunkOS-DriverTests" */;
+			buildPhases = (
+				3D8C1E1E68B59AB9F638860E /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				D4170EE8DB6506AD3292FEE0 /* PBXTargetDependency */,
+			);
+			name = "JunkOS-DriverTests";
+			packageProductDependencies = (
+			);
+			productName = "JunkOS-DriverTests";
+			productReference = FB2A61C6BC96EF6B73B59E99 /* JunkOS-DriverTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
 
@@ -453,7 +577,13 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
-				LastUpgradeCheck = 2620;
+				LastUpgradeCheck = 1600;
+				TargetAttributes = {
+					682035F336F6697960DAA9AB = {
+						DevelopmentTeam = 24GH82AX9R;
+						ProvisioningStyle = Automatic;
+					};
+				};
 			};
 			buildConfigurationList = E1E966CBA6305367382A8CCF /* Build configuration list for PBXProject "JunkOS-Driver" */;
 			compatibilityVersion = "Xcode 14.0";
@@ -466,12 +596,15 @@
 			mainGroup = A1350807EEEC7AE55C5B8F27;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				4ADF621E3619959956E54BD8 /* XCRemoteSwiftPackageReference "socket" */,
+				E5BB90363FB4C34C66198645 /* XCRemoteSwiftPackageReference "mapbox-navigation-ios" */,
+				4ADF621E3619959956E54BD8 /* XCRemoteSwiftPackageReference "socket.io-client-swift" */,
 			);
+			preferredProjectObjectVersion = 77;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
 				682035F336F6697960DAA9AB /* JunkOS-Driver */,
+				DA1947FAE0623888B117DA66 /* JunkOS-DriverTests */,
 			);
 		};
 /* End PBXProject section */
@@ -482,12 +615,28 @@
 			buildActionMask = 2147483647;
 			files = (
 				BAD93C9DACE562D75D564204 /* Assets.xcassets in Resources */,
+				10EA98CF33FB08CD7BD0F885 /* ExportOptions.plist in Resources */,
+				A782AA636BD36D70CE7B9F71 /* MapboxNavigationREADME.md in Resources */,
+				C934F4E73453A391EA7AC996 /* add_file_to_xcode.sh in Resources */,
+				4546C91F88B3DC9BDB3E58D4 /* add_navigation_file.sh in Resources */,
+				70D388672B23FEC6BC7F1ABF /* build-ios.log in Resources */,
+				4D2D51D22D35EE4E94E221C9 /* mapbox-build.log in Resources */,
+				75A86652BC37583EC879374B /* red_truck.glb in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		3D8C1E1E68B59AB9F638860E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1D9CED63F0E498502A126B1D /* JobAcceptHandlerTests.swift in Sources */,
+				3B02F055C4F4D3E42AE321BF /* MapboxConfigTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		4FE67CDC14D97B4FDA73E534 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -509,26 +658,28 @@
 				AA3166875E6CBF7682E70C80 /* ConnectionStatusBanner.swift in Sources */,
 				E0CE3BA170E2D3C662B69492 /* ContractorModels.swift in Sources */,
 				60FCA470DEE7BC6DF3C2D582 /* ContractorRegistrationView.swift in Sources */,
+				3C0648E9CA6D8A2785AE762B /* CustomPuckSetup.swift in Sources */,
 				742D649EF5A5BF7294AC2428 /* DashboardView.swift in Sources */,
 				73B788CB2FFF7D35CBCB64A8 /* DashboardViewModel.swift in Sources */,
 				07D3D958F6EC6B2561F6FEAA /* DistanceBadge.swift in Sources */,
 				A79407865044DF4EEDFA2AB5 /* DocumentUploadView.swift in Sources */,
 				E8806EA1AE37848938F8D70C /* DriverAPIClient.swift in Sources */,
-				CF090D4D2F4B91D0003372AF /* NavigationOverlay.swift in Sources */,
 				14790A1C6E4BF7984B5FF3E4 /* DriverAnnotationView.swift in Sources */,
 				B9EF3DD412FA186F53E44D22 /* DriverAuthView.swift in Sources */,
-				CA0CD9A528904A2CD1E266DB /* PhoneSignupView.swift in Sources */,
 				4F219CCBF09D2A91F8C8A08F /* DriverDesignSystem.swift in Sources */,
+				1C781277F8C7C9DE1D1A5D8A /* DriverNavigationContainerView.swift in Sources */,
+				6FB34622D4038AB51AAE5B3D /* DriverNavigationViewController.swift in Sources */,
 				8BBCE11D4D582E7D746F2E4F /* DriverOnboardingView.swift in Sources */,
 				E2802E3778DC622FD2129867 /* DriverTabView.swift in Sources */,
 				3D564E63BD08DA8886FDA8AF /* EarningsModels.swift in Sources */,
 				9A935658ADCF82A0A67E6CC0 /* EarningsView.swift in Sources */,
 				8A8AA35036E08AF0A2BC5E83 /* EarningsViewModel.swift in Sources */,
-				CF090D4B2F4A6FC7003372AF /* EmailSignupView.swift in Sources */,
+				1989C223FB285E2A98A6B722 /* EmailSignupView.swift in Sources */,
 				29EE5336D11165A1FC0ABC1B /* EmptyStateView.swift in Sources */,
 				5C4180CB8AE424D51E75FF1F /* HapticManager.swift in Sources */,
 				16B71C5163B965FBDF945A5C /* ImageUploadService.swift in Sources */,
 				4AA8544E326C39F151857289 /* InviteCodeStepView.swift in Sources */,
+				13117D1F797E808B70E4CD84 /* JobAcceptHandler.swift in Sources */,
 				473C9CDB3A4B180A6F89BECC /* JobAlertOverlay.swift in Sources */,
 				856766387D9F89422AAA08C5 /* JobCardView.swift in Sources */,
 				CD1DCEE1D0AB13C15EFCD4DE /* JobCompletionView.swift in Sources */,
@@ -536,7 +687,6 @@
 				94E7D38BBA06FB012C11B228 /* JobDetailViewModel.swift in Sources */,
 				4E8639A2456E077412D7C2B2 /* JobFeedView.swift in Sources */,
 				EFF5C17CB3686BD2C855518D /* JobFeedViewModel.swift in Sources */,
-				CFBBCB222F4B96DB00DCA746 /* NavigationOverlay.swift in Sources */,
 				E5D3735C98C318A48111C440 /* JobModels.swift in Sources */,
 				1EE82A346AE23683BAC05940 /* JobStatusStepperView.swift in Sources */,
 				33B116E92E3F2A4C3480FE24 /* JunkOSDriverApp.swift in Sources */,
@@ -544,11 +694,15 @@
 				1571465FB7BA821EBF25A926 /* LiveMapView.swift in Sources */,
 				29C93DE1E779BE522D41D0C0 /* LiveMapViewModel.swift in Sources */,
 				CB3DDC4640A48606B0591666 /* LocationManager.swift in Sources */,
+				42E30B4C3F63F6BDAC5F0125 /* MapboxConfig.swift in Sources */,
 				B03F09EC14CA94ED5F570AEB /* NavigateToJobView.swift in Sources */,
+				CA6F8AF4C32EBC5160BC3494 /* NavigationCoordinator.swift in Sources */,
+				9A5BFFFC91CD7B2DB16403A5 /* NavigationOverlay.swift in Sources */,
 				C185F7208CF4AD483FB0D267 /* NotificationManager.swift in Sources */,
 				4960C1A39CDFAFCC28BF11F5 /* OnlineToggleView.swift in Sources */,
 				D046B5278E68B23BC0235296 /* OperatorWebRedirectView.swift in Sources */,
 				BF70D9F10BFA3C3DE51E7908 /* PayoutSettingsView.swift in Sources */,
+				20D92C8530A83FC685021866 /* PhoneSignupView.swift in Sources */,
 				F361D5D58D022CB9B931D03E /* PriceBadge.swift in Sources */,
 				4496E310971F560F7A2B8713 /* ProfileSettingsView.swift in Sources */,
 				17369207B2CC0E1488DEB91E /* ProfileViewModel.swift in Sources */,
@@ -569,27 +723,53 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		D4170EE8DB6506AD3292FEE0 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 682035F336F6697960DAA9AB /* JunkOS-Driver */;
+			targetProxy = 6C4DA718A9AA00D116E1407D /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		01E8AACCF05CC2B72005CDEE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.goumuve.JunkOS-DriverTests";
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/JunkOS-Driver.app/JunkOS-Driver";
+			};
+			name = Release;
+		};
 		10E0932E46A64D2BE5C08057 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = "JunkOS-Driver.entitlements";
-				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 24GH82AX9R;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_GENERATION_MODE = GeneratedFile;
 				INFOPLIST_KEY_CFBundleDisplayName = "Umuve Pro";
 				INFOPLIST_KEY_CFBundleIconName = AppIcon;
 				INFOPLIST_KEY_CFBundleName = "Umuve Pro";
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.business";
+				INFOPLIST_KEY_MBXAccessToken = "$(MAPBOX_PUBLIC_ACCESS_TOKEN)";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Umuve Pro needs camera access to take before and after photos of job sites.";
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Umuve Pro needs continuous location access to track your position during active jobs.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Umuve Pro needs your location to show you nearby jobs and share your position with customers.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Umuve Pro needs photo library access to upload job site photos.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UIBackgroundModes = location;
+				INFOPLIST_KEY_UIBackgroundModes = "audio location";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
@@ -598,7 +778,6 @@
 					"@executable_path/Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.goumuve.pro;
-				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -609,21 +788,22 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = "JunkOS-Driver.entitlements";
-				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 24GH82AX9R;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_GENERATION_MODE = GeneratedFile;
 				INFOPLIST_KEY_CFBundleDisplayName = "Umuve Pro";
 				INFOPLIST_KEY_CFBundleIconName = AppIcon;
 				INFOPLIST_KEY_CFBundleName = "Umuve Pro";
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.business";
+				INFOPLIST_KEY_MBXAccessToken = "$(MAPBOX_PUBLIC_ACCESS_TOKEN)";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Umuve Pro needs camera access to take before and after photos of job sites.";
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Umuve Pro needs continuous location access to track your position during active jobs.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Umuve Pro needs your location to show you nearby jobs and share your position with customers.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Umuve Pro needs photo library access to upload job site photos.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UIBackgroundModes = location;
+				INFOPLIST_KEY_UIBackgroundModes = "audio location";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
@@ -632,7 +812,6 @@
 					"@executable_path/Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.goumuve.pro;
-				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -642,7 +821,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
@@ -673,12 +851,10 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 20;
+				CURRENT_PROJECT_VERSION = 4;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				DEVELOPMENT_TEAM = 24GH82AX9R;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -688,12 +864,12 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MAPBOX_PUBLIC_ACCESS_TOKEN = "";
 				MARKETING_VERSION = 1.0.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 5.9;
@@ -704,7 +880,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
@@ -735,12 +910,10 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 20;
+				CURRENT_PROJECT_VERSION = 4;
 				DEBUG_INFORMATION_FORMAT = dwarf;
-				DEVELOPMENT_TEAM = 24GH82AX9R;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -756,22 +929,48 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MAPBOX_PUBLIC_ACCESS_TOKEN = "";
 				MARKETING_VERSION = 1.0.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.9;
 			};
 			name = Debug;
 		};
+		8C5D5DBA9D50D879514034C7 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.goumuve.JunkOS-DriverTests";
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/JunkOS-Driver.app/JunkOS-Driver";
+			};
+			name = Debug;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		4012DB6800E0C930F96B4E89 /* Build configuration list for PBXNativeTarget "JunkOS-DriverTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				8C5D5DBA9D50D879514034C7 /* Debug */,
+				01E8AACCF05CC2B72005CDEE /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
 		695964FB20794C74A3D1ADD7 /* Build configuration list for PBXNativeTarget "JunkOS-Driver" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -793,7 +992,7 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		4ADF621E3619959956E54BD8 /* XCRemoteSwiftPackageReference "socket" */ = {
+		4ADF621E3619959956E54BD8 /* XCRemoteSwiftPackageReference "socket.io-client-swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/socketio/socket.io-client-swift";
 			requirement = {
@@ -801,13 +1000,36 @@
 				minimumVersion = 16.1.1;
 			};
 		};
+		E5BB90363FB4C34C66198645 /* XCRemoteSwiftPackageReference "mapbox-navigation-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/mapbox/mapbox-navigation-ios.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 3.18.2;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
 		9192FFB37533E324867AE5D6 /* SocketIO */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 4ADF621E3619959956E54BD8 /* XCRemoteSwiftPackageReference "socket" */;
+			package = 4ADF621E3619959956E54BD8 /* XCRemoteSwiftPackageReference "socket.io-client-swift" */;
 			productName = SocketIO;
+		};
+		99F9BA012822441FBAC1A4F8 /* MapboxNavigationUIKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E5BB90363FB4C34C66198645 /* XCRemoteSwiftPackageReference "mapbox-navigation-ios" */;
+			productName = MapboxNavigationUIKit;
+		};
+		9C48840C24F9A7A1792C3B52 /* MapboxNavigationCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E5BB90363FB4C34C66198645 /* XCRemoteSwiftPackageReference "mapbox-navigation-ios" */;
+			productName = MapboxNavigationCore;
+		};
+		EE250E8FBE1649E28F18FD30 /* MapboxMaps */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E5BB90363FB4C34C66198645 /* XCRemoteSwiftPackageReference "mapbox-navigation-ios" */;
+			productName = MapboxMaps;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

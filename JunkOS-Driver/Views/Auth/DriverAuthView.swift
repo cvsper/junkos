@@ -104,6 +104,7 @@ struct DriverAuthView: View {
                         appState.auth.handleAppleSignInCompletion(result)
                     }
                     .signInWithAppleButtonStyle(.black)
+                    .frame(maxWidth: 375)
                     .frame(height: 52)
                     .clipShape(RoundedRectangle(cornerRadius: DriverRadius.md))
 
@@ -119,6 +120,7 @@ struct DriverAuthView: View {
                 .padding(.horizontal, DriverSpacing.xl)
                 .padding(.bottom, DriverSpacing.xxl)
 
+                #if DEBUG
                 // Debug: Clear Keychain button
                 Button(action: {
                     KeychainHelper.delete(forKey: "authToken")
@@ -135,6 +137,7 @@ struct DriverAuthView: View {
                         .foregroundStyle(Color.gray.opacity(0.5))
                 }
                 .padding(.bottom, DriverSpacing.sm)
+                #endif
             }
 
             // Loading overlay
@@ -143,7 +146,7 @@ struct DriverAuthView: View {
                     .ignoresSafeArea()
                 ProgressView()
                     .tint(.white)
-                    .scaleEffect(1.5)
+                    .scaleEffect(x: 1.5, y: 1.5)
             }
         }
         .preferredColorScheme(.light)

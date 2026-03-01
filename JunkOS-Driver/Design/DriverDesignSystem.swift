@@ -136,7 +136,7 @@ struct DriverPrimaryButtonStyle: ButtonStyle {
                 RoundedRectangle(cornerRadius: DriverRadius.md)
                     .fill(isEnabled ? Color.driverPrimary : Color.driverPrimary.opacity(0.4))
             )
-            .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
+            .scaleEffect(x: configuration.isPressed ? 0.97 : 1.0, y: configuration.isPressed ? 0.97 : 1.0)
             .animation(.easeInOut(duration: 0.15), value: configuration.isPressed)
     }
 }
@@ -152,7 +152,7 @@ struct DriverSecondaryButtonStyle: ButtonStyle {
                 RoundedRectangle(cornerRadius: DriverRadius.md)
                     .stroke(Color.driverPrimary, lineWidth: 1.5)
             )
-            .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
+            .scaleEffect(x: configuration.isPressed ? 0.97 : 1.0, y: configuration.isPressed ? 0.97 : 1.0)
             .animation(.easeInOut(duration: 0.15), value: configuration.isPressed)
     }
 }
@@ -168,7 +168,7 @@ struct DriverDestructiveButtonStyle: ButtonStyle {
                 RoundedRectangle(cornerRadius: DriverRadius.md)
                     .fill(Color.driverError.opacity(0.1))
             )
-            .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
+            .scaleEffect(x: configuration.isPressed ? 0.97 : 1.0, y: configuration.isPressed ? 0.97 : 1.0)
             .animation(.easeInOut(duration: 0.15), value: configuration.isPressed)
     }
 }

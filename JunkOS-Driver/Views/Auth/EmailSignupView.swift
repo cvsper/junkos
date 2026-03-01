@@ -25,6 +25,7 @@ struct EmailSignupView: View {
     @State private var hasInviteCode = false
     @State private var inviteCode = ""
     @State private var loginMethod: LoginMethod = .email
+    @State private var autoSwitchedToLogin = false
 
     var body: some View {
         ZStack {
@@ -169,6 +170,7 @@ struct EmailSignupView: View {
                         // Toggle signup/login
                         Button {
                             isSignupState.toggle()
+                            autoSwitchedToLogin = false
                             appState.auth.errorMessage = nil
                         } label: {
                             Text(isSignupState ? "Already have an account? Log in" : "Don't have an account? Sign up")
@@ -178,10 +180,19 @@ struct EmailSignupView: View {
 
                         // Error message
                         if let errorMessage = appState.auth.errorMessage {
-                            Text(errorMessage)
-                                .font(DriverTypography.footnote)
-                                .foregroundStyle(Color.driverError)
-                                .multilineTextAlignment(.center)
+                            VStack(spacing: DriverSpacing.xs) {
+                                Text(errorMessage)
+                                    .font(DriverTypography.footnote)
+                                    .foregroundStyle(Color.driverError)
+                                    .multilineTextAlignment(.center)
+
+                                if autoSwitchedToLogin && !appState.auth.isAuthenticated {
+                                    Text("Your email and password are still filled in.")
+                                        .font(DriverTypography.footnote)
+                                        .foregroundStyle(Color.driverTextSecondary)
+                                        .multilineTextAlignment(.center)
+                                }
+                            }
                         }
                     }
                     .padding(.horizontal, DriverSpacing.xl)
@@ -216,10 +227,19 @@ struct EmailSignupView: View {
                     .ignoresSafeArea()
                 ProgressView()
                     .tint(.white)
-                    .scaleEffect(1.5)
+                    .scaleEffect(x: 1.5, y: 1.5)
             }
         }
         .preferredColorScheme(.light)
+        .onChange(of: appState.auth.errorMessage) { _, newValue in
+            guard isSignupState,
+                  appState.auth.indicatesExistingAccount(message: newValue),
+                  !appState.auth.isAuthenticated else { return }
+            loginMethod = .email
+            isSignupState = false
+            autoSwitchedToLogin = true
+            appState.auth.errorMessage = "Account already exists. Log in with your existing password."
+        }
     }
 
     private var isSubmitDisabled: Bool {

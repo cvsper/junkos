@@ -12,6 +12,7 @@ import MapKit
 struct LiveMapView: View {
     @Bindable var appState: AppState
     @State private var mapVM = LiveMapViewModel()
+    @State private var navigationCoordinator = NavigationCoordinator()
 
     private var driverCoordinate: CLLocationCoordinate2D {
         appState.locationManager.currentLocation?.coordinate
@@ -58,6 +59,18 @@ struct LiveMapView: View {
             }
             .mapStyle(.standard(pointsOfInterest: .excludingAll))
             .ignoresSafeArea(edges: .top)
+            .simultaneousGesture(
+                DragGesture(minimumDistance: 2)
+                    .onChanged { _ in
+                        mapVM.userInteractedWithMap()
+                    }
+            )
+            .simultaneousGesture(
+                MagnificationGesture()
+                    .onChanged { _ in
+                        mapVM.userInteractedWithMap()
+                    }
+            )
 
             // MARK: - Top Overlays
             VStack(spacing: 0) {
@@ -69,7 +82,7 @@ struct LiveMapView: View {
                             .fill(appState.socket.isConnected ? Color.driverSuccess : Color.driverWarning)
                             .frame(width: 8, height: 8)
 
-                        Text(appState.socket.isConnected ? "Connected" : "Reconnecting...")
+                        Text(appState.socket.isConnected ? "Connected" : "Connecting...")
                             .font(DriverTypography.caption)
                             .foregroundStyle(Color.driverText)
                     }
@@ -134,7 +147,9 @@ struct LiveMapView: View {
                         eta: mapVM.routeETA,
                         isUpdating: mapVM.isUpdatingStatus,
                         isNavigating: mapVM.isNavigating,
-                        onStartNavigation: { mapVM.startNavigation() },
+                        onStartNavigation: {
+                            Task { await startNavigation(for: acceptedJob) }
+                        },
                         onStatusUpdate: {
                             await handleStatusUpdate(for: acceptedJob)
                         }
@@ -191,6 +206,20 @@ struct LiveMapView: View {
         }
         .animation(.spring(response: 0.4), value: mapVM.incomingJobAlert?.id)
         .animation(.spring(response: 0.4), value: mapVM.acceptedJob?.id)
+        .fullScreenCover(
+            isPresented: Binding(
+                get: { navigationCoordinator.shouldPresentNavigation },
+                set: { isPresented in
+                    if !isPresented {
+                        navigationCoordinator.stopNavigation()
+                        mapVM.stopNavigation()
+                    }
+                }
+            )
+        ) {
+            DriverNavigationContainerView(coordinator: navigationCoordinator)
+                .ignoresSafeArea()
+        }
         .onAppear {
             mapVM.startPolling()
             mapVM.todayJobsCount = appState.contractorProfile?.totalJobs ?? 0
@@ -205,7 +234,7 @@ struct LiveMapView: View {
                         await mapVM.calculateRoute(to: CLLocationCoordinate2D(latitude: lat, longitude: lng))
                         // Auto-start navigation if already en route
                         if existingJob.status == "en_route" && !mapVM.isNavigating {
-                            mapVM.startNavigation()
+                            await startNavigation(for: existingJob)
                         }
                     }
                 }
@@ -237,7 +266,7 @@ struct LiveMapView: View {
                     await mapVM.calculateRoute(to: CLLocationCoordinate2D(latitude: lat, longitude: lng))
                     // Check if should auto-start navigation
                     if job.status == "en_route" && !mapVM.isNavigating {
-                        mapVM.startNavigation()
+                        await startNavigation(for: job)
                     }
                 }
             }
@@ -245,12 +274,21 @@ struct LiveMapView: View {
         .onChange(of: appState.activeJob?.status) { oldStatus, newStatus in
             // Auto-start navigation when status changes to en_route
             guard newStatus == "en_route", !mapVM.isNavigating, mapVM.route != nil else { return }
-            mapVM.startNavigation()
+            if let activeJob = appState.activeJob {
+                Task { await startNavigation(for: activeJob) }
+            }
+        }
+        .onChange(of: mapVM.isNavigating) { _, isNavigating in
+            guard isNavigating,
+                  let location = appState.locationManager.currentLocation else { return }
+            mapVM.updateNavigationCamera(using: location)
         }
         .onChange(of: appState.locationManager.currentLocation) { _, newLocation in
-            // Update navigation when location changes (for auto-advance)
-            guard let location = newLocation, mapVM.isNavigating else { return }
-            mapVM.updateNavigationLocation(location)
+            guard let location = newLocation else { return }
+
+            if mapVM.isNavigating {
+                mapVM.updateNavigationLocation(location)
+            }
         }
     }
 
@@ -266,6 +304,25 @@ struct LiveMapView: View {
             await mapVM.markCompleted()
         default:
             break
+        }
+    }
+
+    @MainActor
+    private func startNavigation(for job: DriverJob) async {
+        mapVM.startNavigation()
+
+        guard navigationCoordinator.isMapboxRuntimeAvailable else {
+            return
+        }
+
+        do {
+            try navigationCoordinator.prepareNavigation(
+                for: job,
+                currentLocation: appState.locationManager.currentLocation?.coordinate
+            )
+        } catch {
+            mapVM.errorMessage = error.localizedDescription
+            navigationCoordinator.lastErrorMessage = error.localizedDescription
         }
     }
 }

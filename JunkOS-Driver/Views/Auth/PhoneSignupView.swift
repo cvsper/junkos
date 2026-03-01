@@ -59,7 +59,7 @@ struct PhoneSignupView: View {
                     .ignoresSafeArea()
                 ProgressView()
                     .tint(.white)
-                    .scaleEffect(1.5)
+                    .scaleEffect(x: 1.5, y: 1.5)
             }
         }
         .preferredColorScheme(.light)

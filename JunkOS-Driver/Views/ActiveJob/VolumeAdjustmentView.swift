@@ -176,7 +176,7 @@ struct VolumeAdjustmentView: View {
                     VStack(spacing: DriverSpacing.md) {
                         ProgressView()
                             .tint(.white)
-                            .scaleEffect(1.5)
+                            .scaleEffect(x: 1.5, y: 1.5)
 
                         Text("Waiting for customer approval...")
                             .font(DriverTypography.headline)

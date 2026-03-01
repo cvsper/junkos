@@ -17,6 +17,11 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
 
     /// Whether push permission has been granted
     private(set) var isPermissionGranted = false
+    private var isRegisteringToken = false
+
+    private let registeredTokenKey = "pushRegisteredTokenValue"
+    private let registeredAtKey = "pushTokenRegisteredAt"
+    private let tokenRefreshInterval: TimeInterval = 60 * 60
 
     private override init() {
         super.init()
@@ -47,7 +52,8 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
     /// Called from AppDelegate when APNs returns a device token
     func handleDeviceToken(_ deviceToken: Data) {
         let token = deviceToken.map { String(format: "%02.2hhx", $0) }.joined()
-        print("[Push] APNs token: \(token)")
+        let redactedSuffix = String(token.suffix(6))
+        print("[Push] APNs token received (ending: \(redactedSuffix))")
         registerTokenWithBackend(token)
     }
 
@@ -61,15 +67,31 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         // Store the token locally so AppState can re-register after login
         UserDefaults.standard.set(token, forKey: "pushDeviceToken")
 
+        let lastRegisteredToken = UserDefaults.standard.string(forKey: registeredTokenKey)
+        let lastRegisteredAt = UserDefaults.standard.double(forKey: registeredAtKey)
+        let secondsSinceLastRegistration = Date().timeIntervalSince1970 - lastRegisteredAt
+        if token == lastRegisteredToken, secondsSinceLastRegistration < tokenRefreshInterval {
+            return
+        }
+
+        if isRegisteringToken {
+            return
+        }
+
+        isRegisteringToken = true
+
         Task {
             do {
                 _ = try await DriverAPIClient.shared.registerPushToken(token)
                 UserDefaults.standard.set(true, forKey: "pushTokenRegistered")
+                UserDefaults.standard.set(token, forKey: registeredTokenKey)
+                UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: registeredAtKey)
                 print("[Push] Token registered with backend")
             } catch {
                 UserDefaults.standard.set(false, forKey: "pushTokenRegistered")
                 print("[Push] Backend registration failed: \(error.localizedDescription)")
             }
+            self.isRegisteringToken = false
         }
     }
 

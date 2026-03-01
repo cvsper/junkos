@@ -3,7 +3,7 @@ Driver / Contractor API routes for Umuve.
 Handles contractor registration, availability, location, and job management.
 """
 
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 from datetime import datetime, timezone
 from math import radians, cos, sin, asin, sqrt
 import logging
@@ -95,11 +95,16 @@ def register_contractor(user_id):
 @require_auth
 def get_profile(user_id):
     """Return the contractor profile for the authenticated user."""
-    contractor = Contractor.query.filter_by(user_id=user_id).first()
-    if not contractor:
-        return jsonify({"error": "Contractor profile not found"}), 404
+    try:
+        contractor = Contractor.query.filter_by(user_id=user_id).first()
+        if not contractor:
+            return jsonify({"error": "Contractor profile not found"}), 404
 
-    return jsonify({"success": True, "contractor": contractor.to_dict()}), 200
+        return jsonify({"success": True, "contractor": contractor.to_dict()}), 200
+    except Exception as e:
+        current_app.logger.exception("Failed to load contractor profile for user %s: %s", user_id, e)
+        db.session.rollback()
+        return jsonify({"error": "Failed to load contractor profile"}), 500
 
 
 @drivers_bp.route("/availability", methods=["PUT"])

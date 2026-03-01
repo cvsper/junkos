@@ -52,7 +52,8 @@ actor DriverAPIClient {
         _ endpoint: String,
         method: String = "GET",
         body: (any Encodable)? = nil,
-        authenticated: Bool = true
+        authenticated: Bool = true,
+        allowTokenRefresh: Bool = true
     ) async throws -> T {
         guard let url = URL(string: baseURL + endpoint) else {
             throw APIError.invalidURL
@@ -81,13 +82,19 @@ actor DriverAPIClient {
             break
         case 401:
             // Attempt silent token refresh on 401
-            if authenticated {
+            if authenticated && allowTokenRefresh {
                 do {
                     let refreshResponse: AuthRefreshResponse = try await refreshToken()
                     if refreshResponse.success {
                         KeychainHelper.save(refreshResponse.token, forKey: "authToken")
                         // Retry original request once with new token
-                        return try await request(endpoint, method: method, body: body, authenticated: authenticated)
+                        return try await request(
+                            endpoint,
+                            method: method,
+                            body: body,
+                            authenticated: authenticated,
+                            allowTokenRefresh: false
+                        )
                     }
                 } catch {
                     // Refresh failed, throw unauthorized
@@ -141,7 +148,12 @@ actor DriverAPIClient {
     }
 
     func refreshToken() async throws -> AuthRefreshResponse {
-        try await request("/api/auth/refresh", method: "POST", authenticated: true)
+        try await request(
+            "/api/auth/refresh",
+            method: "POST",
+            authenticated: true,
+            allowTokenRefresh: false
+        )
     }
 
     func devDriverLogin() async throws -> AuthResponse {

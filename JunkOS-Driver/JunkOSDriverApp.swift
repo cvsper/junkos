@@ -43,11 +43,12 @@ struct UmuveProApp: App {
                 if showingSplash {
                     SplashView()
                         .task {
-                            // ALWAYS attempt to load profile during splash
-                            // This handles race condition with restoreSession()
-                            // If not authenticated, it will fail quickly and that's fine
-                            print("🔄 Loading profile during splash...")
-                            await appState.loadContractorProfile(retries: 3)
+                            // Load profile only when a token exists to avoid unnecessary
+                            // network timeouts for logged-out sessions.
+                            if KeychainHelper.loadString(forKey: "authToken") != nil {
+                                print("🔄 Loading profile during splash...")
+                                await appState.loadContractorProfile(retries: 3)
+                            }
 
                             // Wait minimum 2 seconds for splash animation
                             try? await Task.sleep(nanoseconds: 2_000_000_000)
@@ -77,8 +78,10 @@ struct UmuveProApp: App {
                 } else {
                     DriverTabView(appState: appState)
                         .task {
-                            // CRITICAL: Load profile on app launch to ensure contractor ID is available
-                            await appState.loadContractorProfile()
+                            // Load only when missing; splash already loads for authenticated sessions.
+                            if appState.contractorProfile == nil {
+                                await appState.loadContractorProfile()
+                            }
 
                             // Don't auto-reconnect - let driver choose to go online manually
                         }
@@ -90,8 +93,10 @@ struct UmuveProApp: App {
             }
             .preferredColorScheme(.light)
             .onChange(of: scenePhase) { oldPhase, newPhase in
-                // Go offline when app goes to background or inactive
-                if newPhase == .background || newPhase == .inactive {
+                // Only force offline when truly backgrounded.
+                // `.inactive` fires during transient UI interruptions and caused
+                // unintended socket disconnects ("Namespace leave").
+                if newPhase == .background {
                     if appState.isOnline {
                         print("📱 App backgrounding - going offline")
                         Task { await appState.toggleOnline() }

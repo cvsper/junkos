@@ -11,6 +11,7 @@ import datetime
 from functools import wraps
 import requests
 from typing import Optional, Dict
+from werkzeug.security import check_password_hash
 
 from models import db, User, Referral, generate_referral_code
 from extensions import limiter
@@ -134,6 +135,26 @@ def hash_password(password):
     """Simple password hashing (use bcrypt in production)"""
     return hashlib.sha256(password.encode()).hexdigest()
 
+
+def verify_password(stored_hash: str, provided_password: str) -> bool:
+    """Verify password against both legacy sha256 and Werkzeug hashes.
+
+    Some users were created with simple sha256 (driver endpoints), while others
+    may have Werkzeug hashes. Support both to avoid login regressions.
+    """
+    if not stored_hash or not provided_password:
+        return False
+
+    # Werkzeug hashes usually start with an algorithm prefix, e.g. "scrypt:" / "pbkdf2:"
+    if ":" in stored_hash:
+        try:
+            return check_password_hash(stored_hash, provided_password)
+        except Exception:
+            return False
+
+    # Legacy fallback: direct sha256 comparison
+    return secrets.compare_digest(stored_hash, hash_password(provided_password))
+
 def generate_token(user_id):
     """Generate JWT token for user"""
     payload = {
@@ -184,8 +205,8 @@ def optional_auth(f):
 @auth_bp.route('/send-code', methods=['POST'])
 def send_verification_code():
     """Send SMS verification code to phone number"""
-    data = request.get_json()
-    phone = data.get('phoneNumber')
+    data = request.get_json(silent=True) or {}
+    phone = (data.get('phoneNumber') or data.get('phone') or '').strip()
     
     if not phone:
         return jsonify({'error': 'Phone number required'}), 400
@@ -217,9 +238,9 @@ def send_verification_code():
 @auth_bp.route('/verify-code', methods=['POST'])
 def verify_code():
     """Verify SMS code and create/login user"""
-    data = request.get_json()
-    phone = data.get('phoneNumber')
-    code = data.get('code')
+    data = request.get_json(silent=True) or {}
+    phone = (data.get('phoneNumber') or data.get('phone') or '').strip()
+    code = (data.get('code') or '').strip()
     
     if not phone or not code:
         return jsonify({'error': 'Phone number and code required'}), 400
@@ -933,11 +954,11 @@ def driver_signup():
     import traceback
 
     try:
-        data = request.get_json()
-        email = data.get('email')
+        data = request.get_json(silent=True) or {}
+        email = (data.get('email') or '').strip().lower()
         password = data.get('password')
-        name = data.get('name') or None  # Convert empty string to None
-        invite_code = data.get('inviteCode') or None  # Convert null/empty to None
+        name = (data.get('name') or '').strip() or None
+        invite_code = (data.get('inviteCode') or '').strip() or None
 
         if not email or not password:
             return jsonify({'error': 'Email and password required'}), 400
@@ -1016,39 +1037,43 @@ def driver_signup():
 @auth_bp.route('/driver-login', methods=['POST'])
 def driver_login():
     """Login as a driver with email/phone and password"""
-    data = request.get_json()
-    email = data.get('email')
-    phone = data.get('phone') or data.get('phoneNumber')
+    data = request.get_json(silent=True) or {}
+    email = (data.get('email') or '').strip()
+    phone = (data.get('phone') or data.get('phoneNumber') or '').strip()
     password = data.get('password')
 
     if (not email and not phone) or not password:
         return jsonify({'error': 'Email or phone number and password required'}), 400
 
-    # Find user - try email first, then phone
-    user = None
-    if email:
-        user = User.query.filter_by(email=email).first()
-    elif phone:
-        user = User.query.filter_by(phone=phone).first()
+    try:
+        # Find user - try email first, then phone
+        user = None
+        if email:
+            user = User.query.filter_by(email=email).first()
+        elif phone:
+            user = User.query.filter_by(phone=phone).first()
 
-    if not user or not user.check_password(password):
-        return jsonify({'error': 'Invalid credentials'}), 401
+        if not user or not verify_password(user.password_hash or '', password):
+            return jsonify({'error': 'Invalid credentials'}), 401
 
-    # Verify role
-    if user.role != 'driver':
-        return jsonify({'error': 'This account is not registered as a driver. Please use the customer app.'}), 403
+        # Verify role
+        if user.role != 'driver':
+            return jsonify({'error': 'This account is not registered as a driver. Please use the customer app.'}), 403
 
-    # Generate token
-    token = generate_token(user.id)
+        # Generate token
+        token = generate_token(user.id)
 
-    return jsonify({
-        'success': True,
-        'token': token,
-        'user': {
-            'id': user.id,
-            'name': user.name,
-            'email': user.email,
-            'phoneNumber': user.phone,
-            'role': user.role
-        }
-    })
+        return jsonify({
+            'success': True,
+            'token': token,
+            'user': {
+                'id': user.id,
+                'name': user.name,
+                'email': user.email,
+                'phoneNumber': user.phone,
+                'role': user.role
+            }
+        })
+    except Exception as e:
+        _auth_logger.exception("Driver login failed unexpectedly: %s", e)
+        return jsonify({'error': 'Login failed. Please try again.'}), 500

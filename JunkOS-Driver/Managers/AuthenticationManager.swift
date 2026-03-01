@@ -19,6 +19,15 @@ final class AuthenticationManager {
 
     private let api = DriverAPIClient.shared
     private var currentNonce: String?
+    private let existingAccountMarkers = [
+        "already exists",
+        "already registered",
+        "account exists",
+        "user exists",
+        "duplicate",
+        "email already",
+        "phone already"
+    ]
 
     init() {
         Task { await restoreSession() }
@@ -102,11 +111,7 @@ final class AuthenticationManager {
             setAuthenticated(user: response.user, token: response.token)
             isLoading = false
         } catch {
-            if let apiError = error as? APIError {
-                errorMessage = apiError.errorDescription
-            } else {
-                errorMessage = "Signup failed. Try again."
-            }
+            errorMessage = normalizedAuthErrorMessage(for: error, fallback: "Signup failed. Try again.")
             isLoading = false
             HapticManager.shared.error()
         }
@@ -121,11 +126,7 @@ final class AuthenticationManager {
             setAuthenticated(user: response.user, token: response.token)
             isLoading = false
         } catch {
-            if let apiError = error as? APIError {
-                errorMessage = apiError.errorDescription
-            } else {
-                errorMessage = "Login failed. Check your credentials."
-            }
+            errorMessage = normalizedAuthErrorMessage(for: error, fallback: "Login failed. Check your credentials.")
             isLoading = false
             HapticManager.shared.error()
         }
@@ -140,11 +141,7 @@ final class AuthenticationManager {
             setAuthenticated(user: response.user, token: response.token)
             isLoading = false
         } catch {
-            if let apiError = error as? APIError {
-                errorMessage = apiError.errorDescription
-            } else {
-                errorMessage = "Login failed. Check your credentials."
-            }
+            errorMessage = normalizedAuthErrorMessage(for: error, fallback: "Login failed. Check your credentials.")
             isLoading = false
             HapticManager.shared.error()
         }
@@ -179,14 +176,16 @@ final class AuthenticationManager {
             setAuthenticated(user: response.user, token: response.token)
             isLoading = false
         } catch {
-            if let apiError = error as? APIError {
-                errorMessage = apiError.errorDescription
-            } else {
-                errorMessage = "Invalid code. Try again."
-            }
+            errorMessage = normalizedAuthErrorMessage(for: error, fallback: "Invalid code. Try again.")
             isLoading = false
             HapticManager.shared.error()
         }
+    }
+
+    func indicatesExistingAccount(message: String?) -> Bool {
+        guard let message else { return false }
+        let normalized = message.lowercased()
+        return existingAccountMarkers.contains { normalized.contains($0) }
     }
 
     // MARK: - Dev Login
@@ -224,6 +223,21 @@ final class AuthenticationManager {
         KeychainHelper.save(token, forKey: "authToken")
         KeychainHelper.save(user.id, forKey: "userId")
         HapticManager.shared.success()
+    }
+
+    private func normalizedAuthErrorMessage(for error: Error, fallback: String) -> String {
+        let message: String
+        if let apiError = error as? APIError {
+            message = apiError.errorDescription ?? fallback
+        } else {
+            message = fallback
+        }
+
+        if indicatesExistingAccount(message: message) {
+            return "Account already exists. Log in with your existing password."
+        }
+
+        return message
     }
 
     private func restoreSession() async {
@@ -336,7 +350,7 @@ final class AuthenticationManager {
         var bytes = [UInt8](repeating: 0, count: length)
         let result = SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes)
         guard result == errSecSuccess else {
-            fatalError("Unable to generate nonce")
+            return UUID().uuidString.replacingOccurrences(of: "-", with: "")
         }
         return bytes.map { String(format: "%02x", $0) }.joined()
     }

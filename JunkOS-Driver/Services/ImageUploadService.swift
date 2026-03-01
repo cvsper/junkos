@@ -55,9 +55,7 @@ actor ImageUploadService {
             body.append("\r\n".data(using: .utf8)!)
         }
         body.append("--\(boundary)--\r\n".data(using: .utf8)!)
-        req.httpBody = body
-
-        let (data, response) = try await session.data(for: req)
+        let (data, response) = try await session.upload(for: req, from: body)
 
         guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
             throw APIError.server("Photo upload failed")

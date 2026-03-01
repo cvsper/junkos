@@ -26,6 +26,7 @@ final class SocketIOManager {
     var assignedJobId: String?
 
     private var pendingDriverId: String?
+    private var hasLoggedEmitWhileDisconnected = false
 
     private init() {}
 
@@ -34,19 +35,28 @@ final class SocketIOManager {
     func connect(token: String, contractorId: String? = nil) {
         pendingDriverId = contractorId
 
-        let url = URL(string: AppConfig.shared.socketURL)!
+        if let socket,
+           socket.status == .connected || socket.status == .connecting {
+            return
+        }
+
+        guard let url = URL(string: AppConfig.shared.socketURL) else {
+            isConnected = false
+            print("❌ SocketIO: Invalid socket URL: \(AppConfig.shared.socketURL)")
+            return
+        }
         manager = SocketManager(socketURL: url, config: [
-            .log(true),  // Enable logging to debug connection
+            .log(false),
             .compress,
+            .path("/socket.io/"),
             .connectParams(["token": token]),
-            // Force WebSocket-only to bypass polling issues with Render proxy
-            // Render's proxy doesn't handle Engine.IO v4 batched POSTs correctly
-            .forceWebsockets(true),
             .reconnects(true),
             .reconnectAttempts(-1),  // Infinite reconnection attempts
             .reconnectWait(1),       // Faster reconnection: 1 second (was 2)
             .reconnectWaitMax(5),    // Cap max wait at 5 seconds
-            .extraHeaders(["X-Client-Type": "ios-driver"])  // Help backend identify mobile clients
+            .extraHeaders([
+                "X-Client-Type": "ios-driver"
+            ])
         ])
 
         socket = manager?.defaultSocket
@@ -54,6 +64,7 @@ final class SocketIOManager {
         socket?.on(clientEvent: .connect) { [weak self] _, _ in
             print("🟢 SocketIO: Connected!")
             self?.isConnected = true
+            self?.hasLoggedEmitWhileDisconnected = false
 
             // Join driver room after connection is established
             if let driverId = self?.pendingDriverId {
@@ -169,8 +180,11 @@ final class SocketIOManager {
     // MARK: - GPS Streaming
 
     func emitLocation(lat: Double, lng: Double, contractorId: String? = nil, jobId: String? = nil) {
-        guard isConnected else {
-            print("⚠️ SocketIO: Cannot emit location - not connected")
+        guard socket?.status == .connected else {
+            if !hasLoggedEmitWhileDisconnected {
+                print("⚠️ SocketIO: Skipping location emit while disconnected")
+                hasLoggedEmitWhileDisconnected = true
+            }
             return
         }
         var data: [String: Any] = ["lat": lat, "lng": lng]
@@ -182,21 +196,14 @@ final class SocketIOManager {
     // MARK: - Room Management
 
     func joinDriverRoom(driverId: String) {
-        guard isConnected else {
-            print("⚠️ SocketIO: Cannot join room - not connected. Will join on reconnect.")
-            pendingDriverId = driverId // Save for when connection establishes
-            return
-        }
+        pendingDriverId = driverId // Update in case we reconnect
+        guard socket?.status == .connected else { return }
         print("🔵 SocketIO: Manually joining driver room: driver:\(driverId)")
         socket?.emit("join", ["room": "driver:\(driverId)"])
-        pendingDriverId = driverId // Update in case we reconnect
     }
 
     func leaveDriverRoom(driverId: String) {
-        guard isConnected else {
-            print("⚠️ SocketIO: Cannot leave room - not connected")
-            return
-        }
+        guard socket?.status == .connected else { return }
         socket?.emit("leave", ["room": "driver:\(driverId)"])
     }
 }
