@@ -1360,10 +1360,10 @@ export const reviewsApi = {
 // ---------------------------------------------------------------------------
 
 export const driverApi = {
-  /** POST /api/driver/register — register as a driver after signup */
+  /** POST /api/drivers/register — register as a driver after signup */
   register: (data: { truck_type: string; invite_code?: string }) =>
     apiFetch<{ success: boolean; contractor: Record<string, unknown> }>(
-      "/api/driver/register",
+      "/api/drivers/register",
       { method: "POST", body: JSON.stringify(data) }
     ),
 
@@ -1386,28 +1386,28 @@ export const driverApi = {
       "/api/driver/stats"
     ),
 
-  /** PUT /api/driver/availability — toggle online/offline */
+  /** PUT /api/drivers/availability — toggle online/offline */
   setAvailability: (isOnline: boolean) =>
     apiFetch<{ success: boolean; is_online: boolean }>(
-      "/api/driver/availability",
+      "/api/drivers/availability",
       { method: "PUT", body: JSON.stringify({ is_online: isOnline }) }
     ),
 
-  /** PUT /api/driver/location — update current location */
+  /** PUT /api/drivers/location — update current location */
   updateLocation: (lat: number, lng: number) =>
-    apiFetch<{ success: boolean }>("/api/driver/location", {
+    apiFetch<{ success: boolean }>("/api/drivers/location", {
       method: "PUT",
       body: JSON.stringify({ lat, lng }),
     }),
 
-  /** GET /api/driver/onboarding — get onboarding status */
+  /** GET /api/drivers/onboarding/status — get onboarding status */
   onboardingStatus: () =>
     apiFetch<{
       success: boolean;
       onboarding: import("@/types").DriverOnboardingStatus;
-    }>("/api/driver/onboarding"),
+    }>("/api/drivers/onboarding/status"),
 
-  /** POST /api/driver/onboarding/documents — upload documents (multipart) */
+  /** POST /api/drivers/onboarding/documents — upload documents (multipart) */
   uploadDocuments: async (files: {
     drivers_license?: File;
     insurance?: File;
@@ -1419,7 +1419,7 @@ export const driverApi = {
     if (files.insurance) formData.append("insurance", files.insurance);
     if (files.vehicle_registration) formData.append("vehicle_registration", files.vehicle_registration);
 
-    const res = await fetch(`${API_BASE_URL}/api/driver/onboarding/documents`, {
+    const res = await fetch(`${API_BASE_URL}/api/drivers/onboarding/documents`, {
       method: "POST",
       headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
       body: formData,
@@ -1429,19 +1429,19 @@ export const driverApi = {
     return data as { success: boolean };
   },
 
-  /** POST /api/driver/onboarding/submit — submit for review */
+  /** POST /api/drivers/onboarding/submit — submit for review */
   submitOnboarding: () =>
-    apiFetch<{ success: boolean }>("/api/driver/onboarding/submit", {
+    apiFetch<{ success: boolean }>("/api/drivers/onboarding/submit", {
       method: "POST",
     }),
 
-  /** POST /api/driver/stripe/connect — create Stripe Connect account */
+  /** POST /api/payments/connect/account-link — create Stripe Connect account link */
   stripeConnect: () =>
-    apiFetch<{ success: boolean; url: string }>("/api/driver/stripe/connect", {
+    apiFetch<{ success: boolean; url: string }>("/api/payments/connect/account-link", {
       method: "POST",
     }),
 
-  /** GET /api/driver/stripe/status — check Stripe Connect status */
+  /** GET /api/payments/connect/status — check Stripe Connect status */
   stripeStatus: () =>
     apiFetch<{
       success: boolean;
@@ -1449,13 +1449,13 @@ export const driverApi = {
       stripe_account_id: string | null;
       details_submitted: boolean;
       charges_enabled: boolean;
-    }>("/api/driver/stripe/status"),
+    }>("/api/payments/connect/status"),
 
-  /** GET /api/driver/stripe/dashboard — get Stripe Express dashboard link */
+  /** GET /api/payments/connect/status — get Stripe Express dashboard link (same endpoint) */
   stripeDashboard: () =>
-    apiFetch<{ success: boolean; url: string }>("/api/driver/stripe/dashboard"),
+    apiFetch<{ success: boolean; url: string }>("/api/payments/connect/status"),
 
-  /** GET /api/driver/jobs/available — list available jobs */
+  /** GET /api/drivers/jobs/available — list available jobs */
   availableJobs: (radius?: number, page?: number) => {
     const params = new URLSearchParams();
     if (radius) params.append("radius", String(radius));
@@ -1467,16 +1467,16 @@ export const driverApi = {
       total: number;
       page: number;
       pages: number;
-    }>(`/api/driver/jobs/available${query ? `?${query}` : ""}`);
+    }>(`/api/drivers/jobs/available${query ? `?${query}` : ""}`);
   },
 
-  /** GET /api/driver/jobs/active — list driver's active jobs */
+  /** GET /api/drivers/jobs/current — list driver's active jobs */
   activeJobs: () =>
     apiFetch<{ success: boolean; jobs: import("@/types").DriverJob[] }>(
-      "/api/driver/jobs/active"
+      "/api/drivers/jobs/current"
     ),
 
-  /** GET /api/driver/jobs/completed — list driver's completed jobs */
+  /** GET /api/driver/earnings/history — list driver's completed jobs */
   completedJobs: (page?: number) => {
     const params = page ? `?page=${page}` : "";
     return apiFetch<{
@@ -1485,39 +1485,39 @@ export const driverApi = {
       total: number;
       page: number;
       pages: number;
-    }>(`/api/driver/jobs/completed${params}`);
+    }>(`/api/driver/earnings/history${params}`);
   },
 
-  /** GET /api/driver/jobs/:id — get job detail */
+  /** GET /api/drivers/jobs/:id — get job detail (using available jobs endpoint) */
   getJob: (id: string) =>
     apiFetch<{ success: boolean; job: import("@/types").DriverJob }>(
-      `/api/driver/jobs/${id}`
+      `/api/drivers/jobs/${id}`
     ),
 
-  /** PUT /api/driver/jobs/:id/accept — accept a job */
+  /** POST /api/drivers/jobs/:id/accept — accept a job */
   acceptJob: (id: string) =>
     apiFetch<{ success: boolean; job: import("@/types").DriverJob }>(
-      `/api/driver/jobs/${id}/accept`,
-      { method: "PUT" }
+      `/api/drivers/jobs/${id}/accept`,
+      { method: "POST" }
     ),
 
-  /** PUT /api/driver/jobs/:id/decline — decline a job */
+  /** POST /api/drivers/jobs/:id/decline — decline a job */
   declineJob: (id: string) =>
-    apiFetch<{ success: boolean }>(`/api/driver/jobs/${id}/decline`, {
-      method: "PUT",
+    apiFetch<{ success: boolean }>(`/api/drivers/jobs/${id}/decline`, {
+      method: "POST",
     }),
 
-  /** PUT /api/driver/jobs/:id/status — update job status */
+  /** PUT /api/drivers/jobs/:id/status — update job status */
   updateJobStatus: (id: string, status: string, lat?: number, lng?: number) =>
     apiFetch<{ success: boolean; job: import("@/types").DriverJob }>(
-      `/api/driver/jobs/${id}/status`,
+      `/api/drivers/jobs/${id}/status`,
       {
         method: "PUT",
         body: JSON.stringify({ status, ...(lat && lng ? { lat, lng } : {}) }),
       }
     ),
 
-  /** POST /api/driver/jobs/:id/photos — upload job photos (multipart) */
+  /** POST /api/drivers/jobs/:id/proof — upload job photos (multipart) */
   uploadJobPhotos: async (
     id: string,
     photos: File[],
@@ -1528,7 +1528,7 @@ export const driverApi = {
     photos.forEach((file) => formData.append("photos", file));
     formData.append("type", type);
 
-    const res = await fetch(`${API_BASE_URL}/api/driver/jobs/${id}/photos`, {
+    const res = await fetch(`${API_BASE_URL}/api/drivers/jobs/${id}/proof`, {
       method: "POST",
       headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
       body: formData,
