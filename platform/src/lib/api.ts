@@ -1453,10 +1453,10 @@ export const driverApi = {
   stripeStatus: () =>
     apiFetch<{
       success: boolean;
-      connected: boolean;
-      stripe_account_id: string | null;
+      status: string;
       details_submitted: boolean;
       charges_enabled: boolean;
+      payouts_enabled: boolean;
     }>("/api/payments/connect/status"),
 
   /** GET /api/payments/connect/status — get Stripe Express dashboard link (same endpoint) */

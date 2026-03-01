@@ -351,7 +351,7 @@ export default function DriverOnboardingPage() {
     const interval = setInterval(async () => {
       try {
         const res = await driverApi.stripeStatus();
-        if (res.connected && res.details_submitted) {
+        if (res.details_submitted) {
           setStripeConnected(true);
           setStripePolling(false);
           setOnboarding((prev) =>
