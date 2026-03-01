@@ -1435,11 +1435,19 @@ export const driverApi = {
       method: "POST",
     }),
 
-  /** POST /api/payments/connect/account-link — create Stripe Connect account link */
-  stripeConnect: () =>
-    apiFetch<{ success: boolean; url: string }>("/api/payments/connect/account-link", {
-      method: "POST",
-    }),
+  /** Create Stripe Connect account (if needed) then get onboarding link */
+  stripeConnect: async () => {
+    // Step 1: Create account (idempotent — returns existing if already created)
+    await apiFetch<{ success: boolean; account_id: string }>(
+      "/api/payments/connect/create-account",
+      { method: "POST" }
+    );
+    // Step 2: Get the onboarding link
+    return apiFetch<{ success: boolean; url: string }>(
+      "/api/payments/connect/account-link",
+      { method: "POST" }
+    );
+  },
 
   /** GET /api/payments/connect/status — check Stripe Connect status */
   stripeStatus: () =>
