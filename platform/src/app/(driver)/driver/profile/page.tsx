@@ -60,12 +60,12 @@ function ToastContainer({ toasts }: { toasts: Toast[] }) {
 // ---------------------------------------------------------------------------
 
 const TRUCK_TYPES = [
-  { value: "pickup", label: "Pickup Truck" },
-  { value: "cargo_van", label: "Cargo Van" },
-  { value: "box_truck_sm", label: "Box Truck (Small)" },
-  { value: "box_truck_lg", label: "Box Truck (Large)" },
+  { value: "pickup_truck", label: "Pickup Truck" },
+  { value: "box_truck", label: "Box Truck" },
   { value: "flatbed", label: "Flatbed" },
+  { value: "van", label: "Van" },
   { value: "dump_truck", label: "Dump Truck" },
+  { value: "other", label: "Other" },
 ];
 
 // ---------------------------------------------------------------------------

@@ -14,12 +14,12 @@ import type { DriverOnboardingStatus } from "@/types";
 const STEPS = ["Profile", "Documents", "Stripe", "Review"] as const;
 
 const TRUCK_TYPES = [
-  "Pickup Truck",
-  "Box Truck",
-  "Flatbed",
-  "Van",
-  "Dump Truck",
-  "Other",
+  { value: "pickup_truck", label: "Pickup Truck" },
+  { value: "box_truck", label: "Box Truck" },
+  { value: "flatbed", label: "Flatbed" },
+  { value: "van", label: "Van" },
+  { value: "dump_truck", label: "Dump Truck" },
+  { value: "other", label: "Other" },
 ] as const;
 
 // ---------------------------------------------------------------------------
@@ -348,7 +348,17 @@ export default function DriverOnboardingPage() {
   useEffect(() => {
     if (!stripePolling) return;
 
+    let attempts = 0;
+    const maxAttempts = 60; // 3s * 60 = 3 minutes max
+
     const interval = setInterval(async () => {
+      attempts++;
+      if (attempts >= maxAttempts) {
+        setStripePolling(false);
+        setError("Stripe verification timed out. If you completed setup, refresh the page.");
+        clearInterval(interval);
+        return;
+      }
       try {
         const res = await driverApi.stripeStatus();
         if (res.details_submitted) {
@@ -615,8 +625,8 @@ export default function DriverOnboardingPage() {
                     Select truck type
                   </option>
                   {TRUCK_TYPES.map((t) => (
-                    <option key={t} value={t}>
-                      {t}
+                    <option key={t.value} value={t.value}>
+                      {t.label}
                     </option>
                   ))}
                 </select>

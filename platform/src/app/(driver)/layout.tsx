@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useAuthStore } from "@/stores/auth-store";
 import { SocketProvider } from "@/lib/socket-provider";
 import { NotificationBell } from "@/components/notification-bell";
@@ -15,6 +15,11 @@ import {
   LogOut,
   Menu,
   X,
+  Clock,
+  CheckCircle2,
+  AlertCircle,
+  RefreshCw,
+  Loader2,
 } from "lucide-react";
 
 const sidebarLinks = [
@@ -34,6 +39,11 @@ export default function DriverLayout({
   const { user, token, isAuthenticated } = useAuthStore();
   const [hydrated, setHydrated] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Approval gate state
+  const [approvalStatus, setApprovalStatus] = useState<string | null>(null);
+  const [approvalLoading, setApprovalLoading] = useState(true);
+  const [approvalError, setApprovalError] = useState(false);
 
   useEffect(() => {
     setHydrated(true);
@@ -58,6 +68,32 @@ export default function DriverLayout({
     setMobileMenuOpen(false);
   }, [pathname]);
 
+  // Check approval status for authenticated drivers on non-public pages
+  const isPublicPage =
+    pathname === "/driver/login" ||
+    pathname === "/driver/signup" ||
+    pathname === "/driver/onboarding";
+
+  const checkApproval = useCallback(async () => {
+    if (!isAuthenticated || isPublicPage) {
+      setApprovalLoading(false);
+      return;
+    }
+    try {
+      setApprovalError(false);
+      const res = await driverApi.profile();
+      setApprovalStatus(res.profile.approval_status);
+    } catch {
+      setApprovalError(true);
+    } finally {
+      setApprovalLoading(false);
+    }
+  }, [isAuthenticated, isPublicPage]);
+
+  useEffect(() => {
+    if (hydrated) checkApproval();
+  }, [hydrated, checkApproval]);
+
   // Show loading only during hydration
   if (!hydrated) {
     return (
@@ -75,10 +111,6 @@ export default function DriverLayout({
   }
 
   // Allow login/signup/onboarding pages to render without auth
-  const isPublicPage =
-    pathname === "/driver/login" ||
-    pathname === "/driver/signup" ||
-    pathname === "/driver/onboarding";
   if (!isAuthenticated && !isPublicPage) {
     return (
       <div className="h-screen flex items-center justify-center">
@@ -97,6 +129,99 @@ export default function DriverLayout({
   // If on login/signup/onboarding page, render without layout chrome
   if (isPublicPage) {
     return <>{children}</>;
+  }
+
+  // ---------- Approval gate for authenticated drivers ----------
+
+  if (approvalLoading) {
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 text-emerald-600 animate-spin mx-auto mb-3" />
+          <p className="text-sm text-muted-foreground">Checking your account status...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (approvalError) {
+    return (
+      <div className="h-screen flex items-center justify-center px-4">
+        <div className="text-center max-w-sm">
+          <AlertCircle className="h-10 w-10 text-red-400 mx-auto mb-3" />
+          <p className="text-sm font-medium text-foreground mb-1">Could not verify account</p>
+          <p className="text-sm text-muted-foreground mb-4">
+            We couldn&apos;t check your approval status. Please try again.
+          </p>
+          <button
+            onClick={() => { setApprovalLoading(true); checkApproval(); }}
+            className="inline-flex items-center gap-2 text-sm bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 transition-colors font-medium"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (approvalStatus && approvalStatus !== "approved") {
+    const isRejected = approvalStatus === "rejected";
+
+    return (
+      <div className="h-screen flex items-center justify-center px-4">
+        <div className="text-center max-w-md">
+          <div className={`w-16 h-16 rounded-full ${isRejected ? "bg-red-100" : "bg-amber-100"} flex items-center justify-center mx-auto mb-5`}>
+            {isRejected ? (
+              <AlertCircle className="w-8 h-8 text-red-500" />
+            ) : (
+              <Clock className="w-8 h-8 text-amber-500" />
+            )}
+          </div>
+
+          <h1 className="text-xl font-bold mb-2">
+            {isRejected ? "Application Not Approved" : "Waiting on Approval"}
+          </h1>
+
+          <p className="text-muted-foreground text-sm mb-6 max-w-xs mx-auto">
+            {isRejected
+              ? "Your application was not approved. Please check your onboarding page for details and re-submit."
+              : "Your application is being reviewed by our team. We'll notify you as soon as you're approved to start accepting jobs."}
+          </p>
+
+          <div className="space-y-3">
+            <Link
+              href="/driver/onboarding"
+              className="inline-flex items-center gap-2 text-sm bg-emerald-600 text-white px-5 py-2.5 rounded-lg hover:bg-emerald-700 transition-colors font-medium"
+            >
+              {isRejected ? "Re-submit Application" : "Check Onboarding Status"}
+            </Link>
+
+            <div>
+              <button
+                onClick={() => { setApprovalLoading(true); checkApproval(); }}
+                className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors font-medium mt-2"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                Refresh Status
+              </button>
+            </div>
+
+            <div className="pt-2">
+              <button
+                onClick={() => {
+                  useAuthStore.getState().logout();
+                  router.push("/driver/login");
+                }}
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Sign Out
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   const userName = user?.name || user?.email || "Driver";
