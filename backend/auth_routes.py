@@ -316,10 +316,13 @@ def signup():
             new_user_referral_code = candidate
             break
 
+    phone = (data.get('phone') or data.get('phoneNumber') or '').strip() or None
+
     # Create user in database
     new_user = User(
         email=email,
         name=name,
+        phone=phone,
         password_hash=generate_password_hash(password),
         role='customer',
         referral_code=new_user_referral_code,
