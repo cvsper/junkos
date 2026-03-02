@@ -253,17 +253,25 @@ def accept_job(user_id, job_id):
     db.session.add(notification)
     db.session.commit()
 
-    # Send APNs push to customer
+    # Send APNs push + email to customer
     try:
-        from notifications import send_push_notification
+        from notifications import send_push_notification, send_driver_assigned_email
         send_push_notification(
             job.customer_id,
             "Driver Assigned",
             "A driver has been assigned to your job!",
             {"job_id": job.id, "type": "job_update", "status": "accepted"}
         )
+        customer = db.session.get(User, job.customer_id)
+        if customer and customer.email:
+            send_driver_assigned_email(
+                customer.email, customer.name,
+                contractor.user.name if contractor.user else "Your driver",
+                job.address,
+                truck_type=contractor.truck_type,
+            )
     except Exception as e:
-        logger.exception("Failed to send push to customer for job %s: %s", job.id, e)
+        logger.exception("Failed to send push/email to customer for job %s: %s", job.id, e)
 
     # Broadcast via SocketIO
     from socket_events import broadcast_job_accepted, socketio
@@ -417,7 +425,8 @@ def update_job_status(user_id, job_id):
     try:
         from notifications import (
             send_driver_en_route_email, send_driver_en_route_sms,
-            send_job_completed_email, send_push_notification,
+            send_job_completed_email, send_job_status_update_email,
+            send_push_notification,
         )
         customer = db.session.get(User, job.customer_id)
 
@@ -436,6 +445,11 @@ def update_job_status(user_id, job_id):
 
         elif new_status == "arrived":
             if customer:
+                if customer.email:
+                    send_job_status_update_email(
+                        customer.email, customer.name, job.id, "arrived",
+                        driver_name=driver_name,
+                    )
                 send_push_notification(
                     customer.id, "Driver Has Arrived",
                     "Your driver has arrived at the location.",
@@ -444,6 +458,11 @@ def update_job_status(user_id, job_id):
 
         elif new_status == "started":
             if customer:
+                if customer.email:
+                    send_job_status_update_email(
+                        customer.email, customer.name, job.id, "started",
+                        driver_name=driver_name,
+                    )
                 send_push_notification(
                     customer.id, "Job In Progress",
                     "Your driver has started the job.",
@@ -454,7 +473,8 @@ def update_job_status(user_id, job_id):
             # Email + push to customer
             if customer:
                 if customer.email:
-                    send_job_completed_email(customer.email, customer.name, job.id, job.address)
+                    send_job_completed_email(customer.email, customer.name, job.id, job.address,
+                                             total=job.total_price)
                 send_push_notification(
                     customer.id, "Pickup Complete!",
                     "Pickup complete! Rate your experience",

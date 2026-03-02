@@ -429,3 +429,48 @@ def send_push_notification(user_id, title, body, data=None, category=None):
     except Exception:
         logger.exception("Failed in send_push_notification for user %s", user_id)
         return None
+
+
+# ---------------------------------------------------------------------------
+# Job status update email (generic — covers assigned, en_route, arrived, etc.)
+# ---------------------------------------------------------------------------
+def send_job_status_update_email(to_email, customer_name, job_id, status, driver_name=None):
+    """Email customer a generic job status update. Never raises."""
+    try:
+        status_lower = (status or "").lower()
+        subject = "Umuve Job Update — {}".format(status_lower.replace("_", " ").title())
+
+        html = job_status_update_html(
+            customer_name=customer_name,
+            job_id=job_id,
+            status=status,
+            driver_name=driver_name,
+        )
+
+        return send_email(to_email, subject, html)
+    except Exception:
+        logger.exception("Failed in send_job_status_update_email for %s", to_email)
+        return None
+
+
+# ---------------------------------------------------------------------------
+# Pickup reminder email (24h before scheduled pickup)
+# ---------------------------------------------------------------------------
+def send_pickup_reminder_email(to_email, customer_name, job_id, address,
+                                scheduled_date, scheduled_time):
+    """Email customer a 24-hour pickup reminder. Never raises."""
+    try:
+        subject = "Umuve Pickup Reminder — Tomorrow!"
+
+        html = pickup_reminder_html(
+            customer_name=customer_name,
+            job_id=job_id,
+            address=address,
+            date=scheduled_date,
+            time=scheduled_time,
+        )
+
+        return send_email(to_email, subject, html)
+    except Exception:
+        logger.exception("Failed in send_pickup_reminder_email for %s", to_email)
+        return None

@@ -275,6 +275,17 @@ def cancel_job(user_id, job_id):
 
     db.session.commit()
 
+    # --- Send cancellation email to customer ---
+    try:
+        customer = db.session.get(User, user_id)
+        if customer and customer.email:
+            from notifications import send_job_status_update_email
+            send_job_status_update_email(
+                customer.email, customer.name, job.id, "cancelled",
+            )
+    except Exception:
+        pass  # Notifications must never block the main flow
+
     return jsonify({
         "success": True,
         "job": job.to_dict(),

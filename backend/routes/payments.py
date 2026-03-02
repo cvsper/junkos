@@ -841,6 +841,20 @@ def _auto_assign_driver(job):
         )
         db.session.add(notification_cust)
 
+        # Email customer about driver assignment
+        try:
+            customer = db.session.get(User, job.customer_id)
+            if customer and customer.email:
+                from notifications import send_driver_assigned_email
+                send_driver_assigned_email(
+                    customer.email, customer.name,
+                    best.user.name if best.user else "Your driver",
+                    job.address,
+                    truck_type=best.truck_type,
+                )
+        except Exception:
+            pass  # Notifications must never block the main flow
+
         # Emit SocketIO events
         from socket_events import socketio
         socketio.emit("job:assigned", {

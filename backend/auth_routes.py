@@ -1017,6 +1017,14 @@ def driver_signup():
         db.session.add(contractor)
         db.session.commit()
 
+        # --- Send welcome email to driver ---
+        try:
+            from notifications import send_welcome_email
+            if new_user.email:
+                send_welcome_email(new_user.email, new_user.name)
+        except Exception:
+            pass  # Notifications must never block the main flow
+
         # Generate token
         token = generate_token(user_id)
 
