@@ -102,6 +102,7 @@ export default function OperatorLayout({
         <div
           className="fixed inset-0 bg-black/50 z-30 md:hidden"
           onClick={() => setMobileMenuOpen(false)}
+          aria-hidden="true"
         />
       )}
 
@@ -123,12 +124,13 @@ export default function OperatorLayout({
           <button
             className="md:hidden p-1 rounded-lg hover:bg-muted transition-colors"
             onClick={() => setMobileMenuOpen(false)}
+            aria-label="Close navigation menu"
           >
-            <X className="w-5 h-5" />
+            <X className="w-5 h-5" aria-hidden="true" />
           </button>
         </div>
 
-        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+        <nav aria-label="Operator navigation" className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
           {sidebarLinks.map((link) => {
             const isActive =
               link.href === "/operator"
@@ -167,7 +169,7 @@ export default function OperatorLayout({
           <button
             onClick={() => {
               useAuthStore.getState().logout();
-              router.push("/admin/login");
+              router.push("/operator/login");
             }}
             className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors w-full px-3 py-2 rounded-lg hover:bg-muted"
           >
@@ -184,8 +186,10 @@ export default function OperatorLayout({
             <button
               className="md:hidden p-2 -ml-2 rounded-lg hover:bg-muted transition-colors"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
+              aria-expanded={mobileMenuOpen}
             >
-              <Menu className="w-5 h-5" />
+              <Menu className="w-5 h-5" aria-hidden="true" />
             </button>
 
             <div className="ml-auto flex items-center gap-3">
@@ -202,7 +206,7 @@ export default function OperatorLayout({
           </div>
         </header>
 
-        <main className="flex-1 p-4 sm:p-6 overflow-y-auto">{children}</main>
+        <main id="main-content" className="flex-1 p-4 sm:p-6 overflow-y-auto">{children}</main>
       </div>
     </div>
     </SocketProvider>

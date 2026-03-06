@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { useAuthStore } from "@/stores/auth-store";
 import { SupportChat } from "@/components/support-chat";
+import { Menu, X } from "lucide-react";
 
 export default function CustomerLayout({
   children,
@@ -12,6 +14,7 @@ export default function CustomerLayout({
 }) {
   const { isAuthenticated, user, logout } = useAuthStore();
   const router = useRouter();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleSignOut = () => {
     logout();
@@ -22,14 +25,28 @@ export default function CustomerLayout({
     <div className="min-h-screen flex flex-col">
       {/* Top Navbar */}
       <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        <nav aria-label="Main navigation" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
             <img src="/logo-nav.png" alt="Umuve" className="h-9 w-auto object-contain" />
           </Link>
 
-          {/* Navigation Links */}
-          <div className="flex items-center gap-6">
+          {/* Mobile hamburger button */}
+          <button
+            className="md:hidden p-2 -mr-2 rounded-lg hover:bg-muted transition-colors"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
+            aria-expanded={mobileMenuOpen}
+          >
+            {mobileMenuOpen ? (
+              <X className="w-5 h-5" aria-hidden="true" />
+            ) : (
+              <Menu className="w-5 h-5" aria-hidden="true" />
+            )}
+          </button>
+
+          {/* Desktop Navigation Links */}
+          <div className="hidden md:flex items-center gap-6">
             <Link
               href="/book"
               className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
@@ -108,10 +125,75 @@ export default function CustomerLayout({
             )}
           </div>
         </nav>
+
+        {/* Mobile Navigation Menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t border-border bg-background px-4 py-4 space-y-3">
+            <Link
+              href="/book"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block text-sm font-medium text-muted-foreground hover:text-foreground transition-colors py-2"
+            >
+              Book a Pickup
+            </Link>
+            <Link
+              href="/dashboard"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block text-sm font-medium text-muted-foreground hover:text-foreground transition-colors py-2"
+            >
+              My Jobs
+            </Link>
+
+            {isAuthenticated ? (
+              <>
+                <Link
+                  href="/referrals"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block text-sm font-medium text-primary hover:text-primary/80 transition-colors py-2"
+                >
+                  Refer a Friend
+                </Link>
+                <Link
+                  href="/profile"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block text-sm font-medium text-muted-foreground hover:text-foreground transition-colors py-2"
+                >
+                  Profile
+                </Link>
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    handleSignOut();
+                  }}
+                  className="block text-sm font-medium text-muted-foreground hover:text-foreground transition-colors py-2 w-full text-left"
+                >
+                  Sign Out
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block text-sm font-medium text-muted-foreground hover:text-foreground transition-colors py-2"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  href="/signup"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block text-sm font-medium text-primary-foreground bg-primary px-3 py-2 rounded-lg hover:bg-primary/90 transition-colors text-center"
+                >
+                  Sign Up
+                </Link>
+              </>
+            )}
+          </div>
+        )}
       </header>
 
       {/* Main Content */}
-      <main className="flex-1">{children}</main>
+      <main id="main-content" className="flex-1">{children}</main>
 
       {/* Support Chat Widget */}
       <SupportChat />
