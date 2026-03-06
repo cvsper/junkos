@@ -1,8 +1,17 @@
-import { withSentryConfig } from "@sentry/nextjs";
-
 /** @type {import("next").NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  async rewrites() {
+    const backendBase =
+      process.env.NEXT_PUBLIC_API_URL || "https://junkos-backend.onrender.com";
+
+    return [
+      {
+        source: "/api-proxy/:path*",
+        destination: `${backendBase}/:path*`,
+      },
+    ];
+  },
   images: {
     remotePatterns: [
       {
@@ -25,10 +34,4 @@ const nextConfig = {
   },
 };
 
-export default withSentryConfig(nextConfig, {
-  org: process.env.SENTRY_ORG,
-  project: process.env.SENTRY_PROJECT,
-  silent: !process.env.CI,
-  tunnelRoute: "/monitoring",
-  hideSourceMaps: true,
-});
+export default nextConfig;
