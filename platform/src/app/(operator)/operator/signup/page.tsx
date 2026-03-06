@@ -1,79 +1,41 @@
 "use client";
 
 import Link from "next/link";
-import { Suspense, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useAuthStore } from "@/stores/auth-store";
-import { authApi, ApiError } from "@/lib/api";
-import type { User } from "@/types";
+import { useState } from "react";
+import { operatorApplicationApi, ApiError } from "@/lib/api";
 
 export default function OperatorSignupPage() {
-  return (
-    <Suspense>
-      <SignupForm />
-    </Suspense>
-  );
+  return <SignupForm />;
 }
 
 function SignupForm() {
-  const [name, setName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [password, setPassword] = useState("");
-  const [companyName, setCompanyName] = useState("");
+  const [city, setCity] = useState("");
+  const [trucks, setTrucks] = useState("");
+  const [experience, setExperience] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const inviteCode = searchParams.get("invite") || "";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters.");
-      setLoading(false);
-      return;
-    }
-
     try {
-      const response = await authApi.signup(
+      await operatorApplicationApi.submit({
+        first_name: firstName,
+        last_name: lastName,
         email,
-        password,
-        name,
         phone,
-        inviteCode || undefined
-      );
-
-      const mappedUser: User = {
-        id: response.user.id,
-        email: response.user.email,
-        name: response.user.name || "",
-        phone:
-          (response.user as unknown as { phoneNumber?: string }).phoneNumber ||
-          response.user.phone ||
-          "",
-        role: response.user.role, // Use actual role from backend
-        emailVerified: true,
-        createdAt: response.user.createdAt || "",
-        updatedAt: response.user.updatedAt || "",
-      };
-
-      // NOTE: Backend signup creates users as "customer" by default.
-      // Operator accounts must be upgraded through admin or operator applications workflow.
-      // For now, we'll allow signup but they'll need admin approval to access operator portal.
-      if (mappedUser.role !== "operator") {
-        setError(
-          "Account created successfully! However, operator access requires approval. Please contact support@goumuve.com or apply at goumuve.com/operators"
-        );
-        setLoading(false);
-        return;
-      }
-
-      useAuthStore.getState().login(mappedUser, response.token);
-      router.push("/operator");
+        city,
+        trucks: trucks || undefined,
+        experience: experience || undefined,
+      });
+      setSuccess(true);
     } catch (err) {
       if (err instanceof ApiError) {
         setError(err.message);
@@ -86,6 +48,37 @@ function SignupForm() {
       setLoading(false);
     }
   };
+
+  if (success) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4 bg-background">
+        <div className="w-full max-w-sm text-center">
+          <img
+            src="/logo-login.png"
+            alt="Umuve — Hauling made simple"
+            className="h-36 w-auto object-contain mx-auto mb-4"
+          />
+          <div className="rounded-lg border border-green-200 bg-green-50 px-6 py-8 dark:bg-green-950/20 dark:border-green-800">
+            <svg className="h-12 w-12 text-green-600 mx-auto mb-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <h2 className="text-xl font-bold mb-2">Application Submitted!</h2>
+            <p className="text-sm text-muted-foreground">
+              Thanks for applying to become an Umuve operator. Our team will review your application within 24 hours and send you an email with the result.
+            </p>
+          </div>
+          <Link
+            href="/"
+            className="mt-6 inline-block text-sm text-primary hover:text-primary/80 transition-colors"
+          >
+            Back to home
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const inputClass = "w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-colors";
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 bg-background">
@@ -115,35 +108,37 @@ function SignupForm() {
           </div>
         )}
 
-        {/* Signup Form */}
+        {/* Application Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="name" className="block text-sm font-medium mb-1.5">
-              Full Name
-            </label>
-            <input
-              id="name"
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="John Doe"
-              required
-              className="w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-colors"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="company" className="block text-sm font-medium mb-1.5">
-              Company Name (Optional)
-            </label>
-            <input
-              id="company"
-              type="text"
-              value={companyName}
-              onChange={(e) => setCompanyName(e.target.value)}
-              placeholder="ABC Hauling LLC"
-              className="w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-colors"
-            />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label htmlFor="firstName" className="block text-sm font-medium mb-1.5">
+                First Name
+              </label>
+              <input
+                id="firstName"
+                type="text"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                placeholder="John"
+                required
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label htmlFor="lastName" className="block text-sm font-medium mb-1.5">
+                Last Name
+              </label>
+              <input
+                id="lastName"
+                type="text"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                placeholder="Doe"
+                required
+                className={inputClass}
+              />
+            </div>
           </div>
 
           <div>
@@ -157,7 +152,7 @@ function SignupForm() {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="operator@example.com"
               required
-              className="w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-colors"
+              className={inputClass}
             />
           </div>
 
@@ -172,37 +167,50 @@ function SignupForm() {
               onChange={(e) => setPhone(e.target.value)}
               placeholder="(555) 123-4567"
               required
-              className="w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-colors"
+              className={inputClass}
             />
           </div>
 
-          {inviteCode && (
-            <div>
-              <label htmlFor="invite" className="block text-sm font-medium mb-1.5">
-                Invite Code
-              </label>
-              <input
-                id="invite"
-                type="text"
-                value={inviteCode}
-                disabled
-                className="w-full rounded-lg border border-border bg-muted px-3 py-2.5 text-sm text-muted-foreground cursor-not-allowed"
-              />
-            </div>
-          )}
-
           <div>
-            <label htmlFor="password" className="block text-sm font-medium mb-1.5">
-              Password
+            <label htmlFor="city" className="block text-sm font-medium mb-1.5">
+              City
             </label>
             <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="At least 6 characters"
+              id="city"
+              type="text"
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              placeholder="Miami"
               required
-              className="w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-colors"
+              className={inputClass}
+            />
+          </div>
+
+          <div>
+            <label htmlFor="trucks" className="block text-sm font-medium mb-1.5">
+              How many trucks? <span className="text-muted-foreground font-normal">(Optional)</span>
+            </label>
+            <input
+              id="trucks"
+              type="text"
+              value={trucks}
+              onChange={(e) => setTrucks(e.target.value)}
+              placeholder="e.g. 2"
+              className={inputClass}
+            />
+          </div>
+
+          <div>
+            <label htmlFor="experience" className="block text-sm font-medium mb-1.5">
+              Experience <span className="text-muted-foreground font-normal">(Optional)</span>
+            </label>
+            <input
+              id="experience"
+              type="text"
+              value={experience}
+              onChange={(e) => setExperience(e.target.value)}
+              placeholder="e.g. 3 years in junk removal"
+              className={inputClass}
             />
           </div>
 
@@ -233,13 +241,13 @@ function SignupForm() {
                 />
               </svg>
             )}
-            {loading ? "Creating account..." : "Create Account"}
+            {loading ? "Submitting..." : "Submit Application"}
           </button>
         </form>
 
         {/* Login Link */}
         <p className="mt-6 text-center text-sm text-muted-foreground">
-          Already have an account?{" "}
+          Already approved?{" "}
           <Link
             href="/operator/login"
             className="font-medium text-primary hover:text-primary/80 transition-colors"
@@ -251,12 +259,6 @@ function SignupForm() {
         {/* Footer Links */}
         <div className="mt-4 text-center space-y-2">
           <Link
-            href="https://goumuve.com/operators"
-            className="block text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Learn about driving for Umuve
-          </Link>
-          <Link
             href="/"
             className="block text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
@@ -266,7 +268,7 @@ function SignupForm() {
 
         {/* Terms */}
         <p className="mt-6 text-xs text-center text-muted-foreground">
-          By signing up, you agree to our{" "}
+          By applying, you agree to our{" "}
           <Link href="/terms" className="underline hover:text-foreground">
             Terms
           </Link>{" "}

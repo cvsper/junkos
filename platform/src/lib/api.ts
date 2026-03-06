@@ -802,6 +802,81 @@ export const adminApi = {
       `/api/admin/promos/${id}`,
       { method: "DELETE" }
     ),
+
+  /** GET /api/admin/operator-applications -- list operator applications */
+  operatorApplications: (filters?: AdminFilters) => {
+    const params = new URLSearchParams();
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== "") params.append(key, String(value));
+      });
+    }
+    const query = params.toString();
+    return apiFetch<{
+      success: boolean;
+      applications: OperatorApplicationRecord[];
+      total: number;
+      page: number;
+      pages: number;
+    }>(`/api/admin/operator-applications${query ? `?${query}` : ""}`);
+  },
+
+  /** PUT /api/admin/operator-applications/:id/review -- approve or reject */
+  reviewOperatorApplication: (
+    appId: string,
+    action: "approve" | "reject",
+    rejectionReason?: string,
+    notes?: string
+  ) =>
+    apiFetch<{ success: boolean; application: OperatorApplicationRecord; action: string }>(
+      `/api/admin/operator-applications/${appId}/review`,
+      {
+        method: "PUT",
+        body: JSON.stringify({
+          action,
+          ...(rejectionReason ? { rejection_reason: rejectionReason } : {}),
+          ...(notes ? { notes } : {}),
+        }),
+      }
+    ),
+};
+
+// ---------------------------------------------------------------------------
+// Operator Application types
+// ---------------------------------------------------------------------------
+export interface OperatorApplicationRecord {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone: string;
+  city: string;
+  trucks: string | null;
+  experience: string | null;
+  status: string;
+  rejection_reason: string | null;
+  notes: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+// ---------------------------------------------------------------------------
+// Public operator application API (no auth)
+// ---------------------------------------------------------------------------
+export const operatorApplicationApi = {
+  submit: (data: {
+    first_name: string;
+    last_name: string;
+    email: string;
+    phone: string;
+    city: string;
+    trucks?: string;
+    experience?: string;
+  }) =>
+    apiFetch<{ success: boolean; application: OperatorApplicationRecord }>(
+      "/api/operator-applications",
+      { method: "POST", body: JSON.stringify(data) }
+    ),
 };
 
 // ---------------------------------------------------------------------------
