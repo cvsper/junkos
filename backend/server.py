@@ -174,7 +174,7 @@ app.register_blueprint(driver_bp)
 app.register_blueprint(operator_bp)
 app.register_blueprint(push_bp)
 app.register_blueprint(service_area_bp)
-app.register_blueprint(migration_bp)  # TEMPORARY - DELETE AFTER USE
+# app.register_blueprint(migration_bp)  # TEMPORARY - DISABLED for security
 app.register_blueprint(recurring_bp)
 app.register_blueprint(referrals_bp)
 app.register_blueprint(support_bp)
@@ -185,167 +185,9 @@ app.register_blueprint(reviews_bp)
 app.register_blueprint(operator_applications_bp)
 
 # ---------------------------------------------------------------------------
-# Public test endpoint to seed jobs (no auth required)
+# Test endpoints DISABLED for security (were /api/test/seed-jobs,
+# /api/test/delete-jobs-without-category, /api/test/fix-jobs-add-category)
 # ---------------------------------------------------------------------------
-@app.route("/api/test/seed-jobs", methods=["POST"])
-def public_seed_jobs():
-    """Create 30 test jobs for testing (public endpoint)."""
-    from models import User, Job, generate_uuid, utcnow
-    from datetime import timezone
-    from sqlalchemy.orm.attributes import flag_modified
-    import random
-
-    # FIRST: Fix existing jobs that are missing category field
-    fixed_count = 0
-    existing_jobs = Job.query.filter_by(status="confirmed").all()
-    for job in existing_jobs:
-        if job.items:
-            needs_fix = False
-            for item in job.items:
-                if "category" not in item:
-                    item["category"] = "other"
-                    needs_fix = True
-            if needs_fix:
-                flag_modified(job, "items")
-                fixed_count += 1
-    sqlalchemy_db.session.commit()
-
-    # Find or create test customer
-    test_customer = User.query.filter_by(email="test@umuve.com").first()
-    if not test_customer:
-        test_customer = User(
-            id=generate_uuid(),
-            name="Test Customer",
-            email="test@umuve.com",
-            phone="+15555551234",
-            role="customer",
-        )
-        sqlalchemy_db.session.add(test_customer)
-        sqlalchemy_db.session.commit()
-
-    # Job data (30 jobs) - (address, lat, lng, item_name, category)
-    jobs_data = [
-        ("123 Ocean Drive, Miami Beach, FL 33139", 25.7907, -80.1300, "Old Couch", "furniture"),
-        ("456 Palm Ave, Fort Lauderdale, FL 33301", 26.1224, -80.1373, "Mattress Set", "furniture"),
-        ("1501 Brickell Ave, Miami, FL 33129", 25.7617, -80.1918, "Filing Cabinets", "furniture"),
-        ("2100 Collins Ave, Miami Beach, FL 33139", 25.7959, -80.1284, "Patio Furniture", "furniture"),
-        ("3300 NE 1st Ave, Miami, FL 33137", 25.8076, -80.1918, "Washer/Dryer", "appliances"),
-        ("401 Biscayne Blvd, Miami, FL 33132", 25.7743, -80.1871, "Office Desks", "furniture"),
-        ("1200 Anastasia Ave, Coral Gables, FL 33134", 25.7459, -80.2615, "Piano", "furniture"),
-        ("2500 E Las Olas Blvd, Fort Lauderdale, FL 33301", 26.1185, -80.1134, "Sectional Sofa", "furniture"),
-        ("1 E Broward Blvd, Fort Lauderdale, FL 33301", 26.1224, -80.1434, "Elliptical", "appliances"),
-        ("3501 N Federal Hwy, Fort Lauderdale, FL 33308", 26.1601, -80.1097, "Bed Frame", "furniture"),
-        ("101 N Ocean Dr, Hollywood, FL 33019", 26.0112, -80.1218, "Hot Tub", "appliances"),
-        ("2000 S Dixie Hwy, Miami, FL 33133", 25.7459, -80.2042, "Entertainment Center", "furniture"),
-        ("1200 S Flagler Dr, West Palm Beach, FL 33401", 26.7067, -80.0495, "Lawn Mower", "yard"),
-        ("400 Clematis St, West Palm Beach, FL 33401", 26.7153, -80.0533, "Conference Table", "furniture"),
-        ("1500 S Ocean Blvd, Delray Beach, FL 33483", 26.4525, -80.0717, "Wardrobes", "furniture"),
-        ("801 E Atlantic Ave, Delray Beach, FL 33483", 26.4615, -80.0628, "Pool Table", "furniture"),
-        ("2201 NW 2nd Ave, Boca Raton, FL 33431", 26.3754, -80.0810, "Armchairs", "furniture"),
-        ("1000 Glades Rd, Boca Raton, FL 33431", 26.3683, -80.0831, "Kitchen Cabinets", "furniture"),
-        ("7100 W Camino Real, Boca Raton, FL 33433", 26.3587, -80.1753, "Chest Freezer", "appliances"),
-        ("201 E Palmetto Park Rd, Boca Raton, FL 33432", 26.3587, -80.0784, "Dressers", "furniture"),
-        ("3850 NW 25th St, Miami, FL 33142", 25.7988, -80.2543, "Shelving Units", "furniture"),
-        ("9700 Collins Ave, Bal Harbour, FL 33154", 25.8906, -80.1231, "Loveseat", "furniture"),
-        ("789 Bay Street, Tampa, FL 33602", 27.9506, -82.4572, "Refrigerator", "appliances"),
-        ("321 Sunset Blvd, Orlando, FL 32801", 28.5383, -81.3792, "TV & Microwave", "electronics"),
-        ("567 Beach Road, Jacksonville, FL 32202", 30.3322, -81.6557, "Washing Machine", "appliances"),
-        ("890 Pine Street, St. Petersburg, FL 33701", 27.7676, -82.6403, "Wooden Desk", "furniture"),
-        ("234 Coral Way, Coral Gables, FL 33134", 25.7481, -80.2620, "Dining Set", "furniture"),
-        ("678 Marina Drive, West Palm Beach, FL 33401", 26.7153, -80.0534, "Outdoor Grill", "appliances"),
-        ("135 Lake Avenue, Clearwater, FL 33755", 27.9659, -82.8001, "Bookshelf & Books", "furniture"),
-        ("999 Bayshore Blvd, Sarasota, FL 34236", 27.3364, -82.5307, "Treadmill", "appliances"),
-    ]
-
-    created = 0
-    for address, lat, lng, item_name, category in jobs_data:
-        days = random.randint(0, 7)
-        hours = random.randint(9, 17)
-        total = random.randint(70, 200)
-
-        scheduled_at = utcnow() + timedelta(days=days, hours=hours)
-
-        job = Job(
-            id=generate_uuid(),
-            customer_id=test_customer.id,
-            status="confirmed",
-            address=address,
-            lat=lat,
-            lng=lng,
-            items=[{"name": item_name, "quantity": 1, "category": category}],
-            notes=f"Test job - {item_name}",
-            total_price=total,
-            item_total=total * 0.7,
-            service_fee=total * 0.3,
-            scheduled_at=scheduled_at,
-            created_at=utcnow(),
-            updated_at=utcnow(),
-        )
-        sqlalchemy_db.session.add(job)
-        created += 1
-
-    sqlalchemy_db.session.commit()
-
-    return jsonify({
-        "success": True,
-        "message": f"✅ Fixed {fixed_count} old jobs, created {created} new test jobs",
-        "fixed_count": fixed_count,
-        "created_count": created,
-    }), 200
-
-
-@app.route("/api/test/delete-jobs-without-category", methods=["POST"])
-def delete_jobs_without_category():
-    """Delete all jobs where items don't have a category field"""
-    deleted_count = 0
-    jobs = Job.query.filter_by(status="confirmed").all()
-
-    for job in jobs:
-        if job.items:
-            # Check if any item is missing the category field
-            missing_category = any("category" not in item for item in job.items)
-            if missing_category:
-                sqlalchemy_db.session.delete(job)
-                deleted_count += 1
-
-    sqlalchemy_db.session.commit()
-
-    return jsonify({
-        "success": True,
-        "message": f"✅ Deleted {deleted_count} jobs without category field",
-        "deleted_count": deleted_count,
-    }), 200
-
-
-@app.route("/api/test/fix-jobs-add-category", methods=["POST"])
-def fix_jobs_add_category():
-    """Add category field to jobs that are missing it"""
-    fixed_count = 0
-    jobs = Job.query.filter_by(status="confirmed").all()
-
-    for job in jobs:
-        if job.items:
-            # Check if any item is missing the category field
-            needs_fix = False
-            for item in job.items:
-                if "category" not in item:
-                    # Add a default category based on the item name or use 'other'
-                    item["category"] = "other"
-                    needs_fix = True
-
-            if needs_fix:
-                # Mark the job as modified so SQLAlchemy saves it
-                from sqlalchemy.orm.attributes import flag_modified
-                flag_modified(job, "items")
-                fixed_count += 1
-
-    sqlalchemy_db.session.commit()
-
-    return jsonify({
-        "success": True,
-        "message": f"✅ Fixed {fixed_count} jobs by adding category field",
-        "fixed_count": fixed_count,
-    }), 200
 
 # ---------------------------------------------------------------------------
 # Input sanitization middleware (XSS / injection prevention)
@@ -504,7 +346,8 @@ def run_migrate_endpoint(secret):
         return jsonify({"success": True, "actions": actions}), 200
     except Exception as exc:
         import traceback
-        return jsonify({"error": str(exc), "trace": traceback.format_exc()}), 500
+        app.logger.error("Migration failed: %s\n%s", exc, traceback.format_exc())
+        return jsonify({"error": "Migration failed"}), 500
 
 
 @app.route("/api/services", methods=["GET"])
@@ -673,12 +516,7 @@ def validate_address():
 @require_auth
 def upload_booking_photos(user_id):
     """Upload photos for a booking (proxy to upload blueprint)"""
-    from models import generate_uuid
-    from werkzeug.utils import secure_filename
-    import os
-
-    upload_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), "uploads")
-    os.makedirs(upload_folder, exist_ok=True)
+    from storage import save_file
 
     if "photos" not in request.files:
         return jsonify({"success": False, "error": "No photos provided"}), 400
@@ -692,10 +530,8 @@ def upload_booking_photos(user_id):
         if file and file.filename:
             ext = file.filename.rsplit(".", 1)[-1].lower()
             if ext in {"jpg", "jpeg", "png", "webp"}:
-                unique_name = "{}.{}".format(generate_uuid(), ext)
-                filepath = os.path.join(upload_folder, secure_filename(unique_name))
-                file.save(filepath)
-                urls.append("/uploads/{}".format(secure_filename(unique_name)))
+                url = save_file(file, prefix="bookings", filename=file.filename)
+                urls.append(url)
 
     return jsonify({"success": True, "urls": urls}), 201
 
@@ -779,6 +615,7 @@ def get_portal_available_slots():
 
 
 @app.route("/api/bookings/create", methods=["POST"])
+@limiter.limit("10 per minute")
 def portal_create_booking():
     """Create a booking from the customer portal (no auth required).
 
@@ -813,11 +650,6 @@ def portal_create_booking():
     category = data.get("itemCategory") or data.get("category") or "general"
     quantity = int(data.get("quantity", 1))
     size = data.get("size")
-    total_amount = float(data.get("totalAmount", 0))
-    # Also accept total from estimate object
-    if total_amount <= 0:
-        estimate_data = data.get("estimate") or {}
-        total_amount = float(estimate_data.get("total", 0))
 
     # Parse location from addressDetails if available
     addr_details = data.get("addressDetails") or {}
@@ -869,7 +701,7 @@ def portal_create_booking():
         items[0]["size"] = size
     photos = data.get("photoUrls") or data.get("photos") or []
 
-    # Use the v2 pricing engine for accurate calculation
+    # Use the v2 pricing engine for accurate server-side calculation
     scheduled_date_for_pricing = selected_date[:10] if selected_date and isinstance(selected_date, str) else None
     est = calculate_estimate(
         items,
@@ -878,9 +710,8 @@ def portal_create_booking():
         lng=float(lng) if lng else None,
     )
 
-    # Use calculated total, unless the caller provided a valid totalAmount
-    if total_amount <= 0:
-        total_amount = est["total"]
+    # SECURITY: Always use server-calculated price — never trust client totalAmount
+    total_amount = est["total"]
 
     # --- Apply promo code if provided ---
     promo_code_str = data.get("promoCode", "").strip() or data.get("promo_code", "").strip()
@@ -962,6 +793,29 @@ def serve_uploaded_file(filename):
     import os
     upload_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), "uploads")
     return send_from_directory(upload_folder, filename)
+
+
+# ---------------------------------------------------------------------------
+# Global JSON error handlers
+# ---------------------------------------------------------------------------
+@app.errorhandler(400)
+def bad_request(e):
+    return jsonify(error="Bad request"), 400
+
+
+@app.errorhandler(404)
+def not_found(e):
+    return jsonify(error="Not found"), 404
+
+
+@app.errorhandler(405)
+def method_not_allowed(e):
+    return jsonify(error="Method not allowed"), 405
+
+
+@app.errorhandler(500)
+def internal_error(e):
+    return jsonify(error="Internal server error"), 500
 
 
 # ---------------------------------------------------------------------------

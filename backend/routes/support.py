@@ -47,10 +47,9 @@ def create_support_message():
     auth_header = request.headers.get("Authorization", "")
     if auth_header.startswith("Bearer "):
         import jwt as pyjwt
-        from app_config import Config
         token = auth_header.split(" ", 1)[1]
         try:
-            payload = pyjwt.decode(token, Config.SECRET_KEY, algorithms=["HS256"])
+            payload = pyjwt.decode(token, os.environ.get("JWT_SECRET", ""), algorithms=["HS256"])
             user_id = payload.get("user_id")
         except Exception:
             pass  # Token invalid -- still accept the message as anonymous

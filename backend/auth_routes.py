@@ -203,6 +203,7 @@ def optional_auth(f):
 # MARK: - Phone Authentication Routes
 
 @auth_bp.route('/send-code', methods=['POST'])
+@limiter.limit("5 per minute")
 def send_verification_code():
     """Send SMS verification code to phone number"""
     data = request.get_json(silent=True) or {}
@@ -236,6 +237,7 @@ def send_verification_code():
     return jsonify(response_data)
 
 @auth_bp.route('/verify-code', methods=['POST'])
+@limiter.limit("10 per minute")
 def verify_code():
     """Verify SMS code and create/login user"""
     data = request.get_json(silent=True) or {}
@@ -299,6 +301,9 @@ def signup():
 
     if not email or not password:
         return jsonify({'error': 'Email and password required'}), 400
+
+    if len(password) < 6:
+        return jsonify({'error': 'Password must be at least 6 characters'}), 400
 
     # Check if email already exists in DB
     existing = User.query.filter_by(email=email).first()
@@ -405,6 +410,7 @@ def login():
 # MARK: - Apple Sign In
 
 @auth_bp.route('/apple', methods=['POST'])
+@limiter.limit("10 per minute")
 def apple_signin():
     """Authenticate with Apple Sign In credential"""
     from models import Contractor
@@ -849,8 +855,9 @@ def upgrade_to_operator():
     email = data.get('email', '').strip().lower()
     secret = data.get('secret', '').strip()
 
-    # Simple secret check (use env var in production)
-    UPGRADE_SECRET = os.environ.get('UPGRADE_SECRET', 'umuve-upgrade-2026')
+    UPGRADE_SECRET = os.environ.get('UPGRADE_SECRET')
+    if not UPGRADE_SECRET:
+        return jsonify(error="Not configured"), 503
 
     if secret != UPGRADE_SECRET:
         return jsonify({'error': 'Invalid secret'}), 403
@@ -905,6 +912,9 @@ def upgrade_to_operator():
 @auth_bp.route('/dev-driver-login', methods=['POST'])
 def dev_driver_login():
     """Dev-only endpoint to quickly login as a test driver"""
+    if os.environ.get('FLASK_ENV') != 'development':
+        return jsonify(error="Not available"), 404
+
     from models import Contractor, generate_uuid
 
     data = request.get_json() or {}
@@ -931,9 +941,9 @@ def dev_driver_login():
         )
         db.session.add(contractor)
         db.session.commit()
-    
+
     token = generate_token(test_driver.id)
-    
+
     return jsonify({
         'success': True,
         'token': token,
