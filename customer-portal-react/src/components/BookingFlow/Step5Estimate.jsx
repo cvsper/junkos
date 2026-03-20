@@ -20,47 +20,95 @@ const Step5Estimate = ({ formData, updateFormData, nextStep, prevStep, setError,
     setError(null);
 
     try {
-      const estimateData = {
-        address: formData.address,
-        itemCategory: formData.itemCategory,
-        itemDescription: formData.itemDescription,
-        quantity: formData.quantity,
-        selectedDate: formData.selectedDate,
-        selectedTime: formData.selectedTime,
-        photoCount: formData.photos?.length || 0,
-      };
+      // Build v2-format request with items array
+      const scheduledDate = formData.selectedDate
+        ? (typeof formData.selectedDate === 'string' ? formData.selectedDate : format(formData.selectedDate, 'yyyy-MM-dd'))
+        : undefined;
 
-      const result = await api.getPriceEstimate(estimateData);
-      
+      let result;
+
+      if (formData.pricingMode === 'load' && formData.selectedLoad) {
+        // Truck load pricing mode
+        result = await api.getLoadEstimate({
+          load_size: formData.selectedLoad,
+          scheduledDate,
+        });
+      } else {
+        // Item-based pricing mode
+        const estimateData = {
+          items: formData.items || [{ category: formData.itemCategory, quantity: formData.quantity || 1 }],
+          address: typeof formData.address === 'object'
+            ? formData.address
+            : { street: formData.address },
+          scheduledDate,
+        };
+        result = await api.getPriceEstimate(estimateData);
+      }
+
       setEstimate(result.estimate);
       updateFormData('estimate', result.estimate);
     } catch (err) {
-      // Fallback estimate calculation
-      const basePrice = 150;
-      const quantityPrice = (formData.quantity - 1) * 50;
-      const categoryMultiplier = formData.itemCategory === 'appliances' ? 1.2 : 1;
-      const total = (basePrice + quantityPrice) * categoryMultiplier;
+      // Fallback: calculate from local data
+      let fallbackEstimate;
 
-      const fallbackEstimate = {
-        subtotal: total,
-        serviceFee: total * 0.1,
-        tax: total * 0.08,
-        total: total * 1.18,
-        estimatedDuration: '1-2 hours',
-        truckSize: formData.quantity > 5 ? 'Large Truck' : 'Standard Truck',
-      };
+      if (formData.pricingMode === 'load' && formData.loadPrice) {
+        const basePrice = formData.loadPrice;
+        const serviceFee = Math.round(basePrice * 0.08 * 100) / 100;
+        fallbackEstimate = {
+          load_size: formData.selectedLoad,
+          base_price: basePrice,
+          service_fee: serviceFee,
+          recycling_fees: 0,
+          labor_fee: 0,
+          total: Math.max(basePrice + serviceFee, 79),
+          surge_amount: 0,
+          surge_reasons: [],
+          is_load_estimate: true,
+        };
+      } else {
+        const items = formData.items || [];
+        let subtotal = 0;
+        items.forEach((item) => {
+          subtotal += (item.price || 79) * (item.quantity || 1);
+        });
+        if (subtotal === 0) subtotal = 150;
+
+        const serviceFee = Math.round(subtotal * 0.08 * 100) / 100;
+        const total = Math.max(subtotal + serviceFee, 79);
+        const totalQty = items.reduce((s, i) => s + (i.quantity || 1), 0);
+
+        fallbackEstimate = {
+          items_subtotal: subtotal,
+          items: items.map((i) => ({
+            category: i.category,
+            quantity: i.quantity || 1,
+            unit_price: i.price || 79,
+            line_total: (i.price || 79) * (i.quantity || 1),
+          })),
+          service_fee: serviceFee,
+          total: total,
+          estimated_duration: 30 + totalQty * 8,
+          truck_size: totalQty <= 5 ? 'Standard Pickup' : totalQty <= 12 ? 'Large Truck' : 'Extra-Large Truck',
+          volume_discount: 0,
+          surge_amount: 0,
+          surge_reasons: [],
+          recycling_fees: 0,
+          total_quantity: totalQty,
+          subtotal: subtotal,
+          serviceFee: serviceFee,
+          tax: 0,
+          estimatedDuration: `${30 + totalQty * 8} min`,
+          truckSize: totalQty <= 5 ? 'Standard Pickup' : totalQty <= 12 ? 'Large Truck' : 'Extra-Large Truck',
+        };
+      }
 
       setEstimate(fallbackEstimate);
       updateFormData('estimate', fallbackEstimate);
-      
-      console.error('Failed to fetch estimate from API:', err);
+
+      console.error('Failed to fetch estimate from API, using fallback:', err);
     } finally {
       setLoadingEstimate(false);
     }
-  };
-
-  const handleAccept = () => {
-    setAccepted(true);
   };
 
   const handleSubmit = async (e) => {
@@ -96,6 +144,30 @@ const Step5Estimate = ({ formData, updateFormData, nextStep, prevStep, setError,
     );
   }
 
+  // Normalize estimate keys (backend uses snake_case, fallback uses camelCase)
+  const isLoadEstimate = estimate?.is_load_estimate || estimate?.load_size;
+  const loadSize = estimate?.load_size;
+  const basePrice = estimate?.base_price ?? 0;
+  const itemsSubtotal = estimate?.items_subtotal ?? estimate?.subtotal ?? basePrice ?? 0;
+  const serviceFee = estimate?.service_fee ?? estimate?.serviceFee ?? 0;
+  const total = estimate?.total ?? 0;
+  const volumeDiscount = estimate?.volume_discount ?? 0;
+  const surgeAmount = estimate?.surge_amount ?? 0;
+  const surgeReasons = estimate?.surge_reasons ?? [];
+  const itemBreakdown = estimate?.items ?? [];
+  const recyclingFees = estimate?.recycling_fees ?? 0;
+  const recyclingBreakdown = estimate?.recycling_breakdown ?? [];
+  const laborFee = estimate?.labor_fee ?? 0;
+  const laborRate = estimate?.labor_fee_rate ?? 55;
+  const estimatedDuration = estimate?.estimated_duration ?? estimate?.estimatedDuration;
+  const truckSize = estimate?.truck_size ?? estimate?.truckSize;
+
+  const durationLabel = typeof estimatedDuration === 'number'
+    ? estimatedDuration < 60
+      ? `${estimatedDuration} min`
+      : `${Math.round(estimatedDuration / 60 * 10) / 10} hours`
+    : estimatedDuration;
+
   const TIME_SLOTS = [
     { value: '08:00', label: '8:00 AM - 10:00 AM' },
     { value: '10:00', label: '10:00 AM - 12:00 PM' },
@@ -114,7 +186,7 @@ const Step5Estimate = ({ formData, updateFormData, nextStep, prevStep, setError,
           <h2 className="text-2xl font-bold text-gray-900">Your Estimate</h2>
         </div>
         <p className="text-gray-600">
-          Based on the information provided, here's your estimated cost.
+          Based on the items you selected, here's your estimated cost.
         </p>
       </div>
 
@@ -122,12 +194,16 @@ const Step5Estimate = ({ formData, updateFormData, nextStep, prevStep, setError,
         {/* Booking Summary */}
         <div className="bg-gray-50 rounded-lg p-5 space-y-4">
           <h3 className="font-semibold text-gray-900 mb-3">Booking Summary</h3>
-          
+
           <div className="flex items-start gap-3">
             <MapPin className="w-5 h-5 text-gray-400 mt-0.5" />
             <div className="flex-1">
               <p className="text-sm font-medium text-gray-700">Location</p>
-              <p className="text-sm text-gray-600">{formData.address}</p>
+              <p className="text-sm text-gray-600">
+                {typeof formData.address === 'object'
+                  ? formData.address.street || formData.address.formatted || JSON.stringify(formData.address)
+                  : formData.address}
+              </p>
             </div>
           </div>
 
@@ -136,8 +212,15 @@ const Step5Estimate = ({ formData, updateFormData, nextStep, prevStep, setError,
             <div className="flex-1">
               <p className="text-sm font-medium text-gray-700">Scheduled For</p>
               <p className="text-sm text-gray-600">
-                {format(formData.selectedDate, 'EEEE, MMMM d, yyyy')} at{' '}
-                {TIME_SLOTS.find(slot => slot.value === formData.selectedTime)?.label}
+                {formData.selectedDate
+                  ? format(
+                      typeof formData.selectedDate === 'string'
+                        ? new Date(formData.selectedDate)
+                        : formData.selectedDate,
+                      'EEEE, MMMM d, yyyy'
+                    )
+                  : 'TBD'}{' '}
+                at {TIME_SLOTS.find((slot) => slot.value === formData.selectedTime)?.label || formData.selectedTime}
               </p>
             </div>
           </div>
@@ -147,12 +230,14 @@ const Step5Estimate = ({ formData, updateFormData, nextStep, prevStep, setError,
             <div className="flex-1">
               <p className="text-sm font-medium text-gray-700">Items</p>
               <p className="text-sm text-gray-600">
-                {formData.quantity} item(s) - {formData.itemCategory?.replace('-', ' ')}
+                {estimate?.total_quantity || formData.quantity || 0} item(s)
               </p>
-              <p className="text-xs text-gray-500 mt-1">
-                {formData.itemDescription?.substring(0, 100)}
-                {formData.itemDescription?.length > 100 ? '...' : ''}
-              </p>
+              {formData.itemDescription && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Note: {formData.itemDescription.substring(0, 100)}
+                  {formData.itemDescription.length > 100 ? '...' : ''}
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -161,46 +246,127 @@ const Step5Estimate = ({ formData, updateFormData, nextStep, prevStep, setError,
         {estimate && (
           <div className="border-2 border-primary-200 rounded-lg p-5">
             <h3 className="font-semibold text-gray-900 mb-4">Price Breakdown</h3>
-            
-            <div className="space-y-3">
-              <div className="flex justify-between text-gray-700">
-                <span>Service Fee</span>
-                <span>{formatCurrency(estimate.subtotal)}</span>
-              </div>
-              
-              {estimate.serviceFee > 0 && (
-                <div className="flex justify-between text-gray-700">
-                  <span>Environmental Fee</span>
-                  <span>{formatCurrency(estimate.serviceFee)}</span>
+
+            <div className="space-y-2">
+              {/* Truck load line (load mode) */}
+              {isLoadEstimate && (
+                <div className="flex justify-between text-gray-700 pb-2 border-b border-gray-200">
+                  <span className="capitalize">{loadSize} truck load</span>
+                  <span>{formatCurrency(basePrice)}</span>
                 </div>
               )}
-              
-              <div className="flex justify-between text-gray-700">
-                <span>Tax</span>
-                <span>{formatCurrency(estimate.tax)}</span>
-              </div>
+
+              {/* Per-item lines (item mode) */}
+              {!isLoadEstimate && itemBreakdown.length > 0 && (
+                <div className="space-y-1.5 pb-3 border-b border-gray-200">
+                  {itemBreakdown.map((item, idx) => (
+                    <div key={idx} className="flex justify-between text-sm text-gray-600">
+                      <span className="capitalize">
+                        {(item.category || '').replace(/_/g, ' ')}
+                        {item.quantity > 1 ? ` x${item.quantity}` : ''}
+                      </span>
+                      <span>{formatCurrency(item.line_total)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {!isLoadEstimate && (
+                <div className="flex justify-between text-gray-700">
+                  <span>Items Subtotal</span>
+                  <span>{formatCurrency(itemsSubtotal)}</span>
+                </div>
+              )}
+
+              {volumeDiscount > 0 && (
+                <div className="flex justify-between text-green-600">
+                  <span>Volume Discount</span>
+                  <span>-{formatCurrency(volumeDiscount)}</span>
+                </div>
+              )}
+
+              {surgeAmount > 0 && (
+                <div className="flex justify-between text-orange-600">
+                  <span>
+                    {surgeReasons.length > 0 ? surgeReasons.join(', ') : 'Surge'}
+                  </span>
+                  <span>+{formatCurrency(surgeAmount)}</span>
+                </div>
+              )}
+
+              {/* Recycling / disposal fees */}
+              {recyclingFees > 0 && (
+                <div>
+                  <div className="flex justify-between text-gray-700">
+                    <span>Disposal &amp; Recycling Fees</span>
+                    <span>{formatCurrency(recyclingFees)}</span>
+                  </div>
+                  {recyclingBreakdown.length > 0 && (
+                    <div className="ml-4 space-y-0.5 mt-1">
+                      {recyclingBreakdown.map((fee, idx) => (
+                        <div key={idx} className="flex justify-between text-xs text-gray-500">
+                          <span className="capitalize">{(fee.fee_type || '').replace(/_/g, ' ')}{fee.quantity > 1 ? ` x${fee.quantity}` : ''}</span>
+                          <span>{formatCurrency(fee.total)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Labor fee */}
+              {laborFee > 0 && (
+                <div className="flex justify-between text-gray-700">
+                  <span>Labor ({estimate?.labor_hours}hr x ${laborRate}/hr)</span>
+                  <span>{formatCurrency(laborFee)}</span>
+                </div>
+              )}
+
+              {serviceFee > 0 && (
+                <div className="flex justify-between text-gray-700">
+                  <span>Service Fee</span>
+                  <span>{formatCurrency(serviceFee)}</span>
+                </div>
+              )}
 
               <div className="border-t-2 border-gray-300 pt-3 mt-3">
                 <div className="flex justify-between items-center">
                   <span className="text-xl font-bold text-gray-900">Total</span>
                   <span className="text-2xl font-bold text-primary-600">
-                    {formatCurrency(estimate.total)}
+                    {formatCurrency(total)}
                   </span>
                 </div>
               </div>
 
               <div className="flex justify-between text-sm text-gray-600 pt-2">
                 <span>Estimated Duration</span>
-                <span className="font-medium">{estimate.estimatedDuration}</span>
+                <span className="font-medium">{durationLabel}</span>
               </div>
-              
-              <div className="flex justify-between text-sm text-gray-600">
-                <span>Truck Size</span>
-                <span className="font-medium">{estimate.truckSize}</span>
-              </div>
+
+              {truckSize && (
+                <div className="flex justify-between text-sm text-gray-600">
+                  <span>Truck Size</span>
+                  <span className="font-medium">{truckSize}</span>
+                </div>
+              )}
             </div>
           </div>
         )}
+
+        {/* Donation Promise */}
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+          <div className="flex gap-3">
+            <span className="text-green-600 text-lg mt-0.5">&#9851;&#65039;</span>
+            <div className="text-sm text-green-900">
+              <p className="font-semibold">Donate First, Dispose Last</p>
+              <p className="text-green-800 mt-1">
+                Usable items are donated to local charities and shelters before anything
+                goes to the landfill. You'll receive a donation receipt for tax purposes
+                when applicable. Recycling and responsible disposal for everything else.
+              </p>
+            </div>
+          </div>
+        </div>
 
         {/* Important Notes */}
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
@@ -209,7 +375,7 @@ const Step5Estimate = ({ formData, updateFormData, nextStep, prevStep, setError,
             <div className="text-sm text-yellow-900">
               <p className="font-medium mb-2">Please Note:</p>
               <ul className="list-disc list-inside space-y-1 text-yellow-800">
-                <li>This is an <strong>estimate</strong> based on your description</li>
+                <li>This is an <strong>estimate</strong> based on your selections</li>
                 <li>Final price may vary based on actual volume and labor required</li>
                 <li>We'll provide a final quote before starting the job</li>
                 <li>No hidden fees - you only pay for what we remove</li>
@@ -263,7 +429,7 @@ const Step5Estimate = ({ formData, updateFormData, nextStep, prevStep, setError,
             disabled={isLoading}
             className="btn-secondary"
           >
-            ← Back
+            &larr; Back
           </button>
           <button
             type="submit"
@@ -278,7 +444,7 @@ const Step5Estimate = ({ formData, updateFormData, nextStep, prevStep, setError,
             ) : (
               <>
                 Proceed to Payment
-                <span>→</span>
+                <span>&rarr;</span>
               </>
             )}
           </button>

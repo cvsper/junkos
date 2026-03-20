@@ -117,9 +117,27 @@ function BookPageInner() {
       <h1 className="font-display text-3xl sm:text-4xl font-bold tracking-tight mb-2">
         Book a Pickup
       </h1>
-      <p className="text-muted-foreground mb-8">
+      <p className="text-muted-foreground mb-4">
         Schedule your junk removal in just a few steps.
       </p>
+
+      {/* Donation & Recycling Badge */}
+      {step <= 3 && (
+        <div className="mb-8 flex flex-col sm:flex-row gap-3">
+          <div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-4 py-2.5">
+            <span className="text-lg">&#10084;&#65039;</span>
+            <p className="text-sm text-green-800">
+              <span className="font-semibold">Donate First</span> — usable items go to local charities &amp; shelters
+            </p>
+          </div>
+          <div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-4 py-2.5">
+            <span className="text-lg">&#9851;&#65039;</span>
+            <p className="text-sm text-green-800">
+              <span className="font-semibold">Recycle &amp; Reuse</span> — landfill is always the last resort
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Progress Bar */}
       <div className="mb-10">

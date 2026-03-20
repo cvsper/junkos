@@ -64,13 +64,23 @@ export const api = {
     }
   },
 
-  // Get price estimate
+  // Get price estimate (item-based)
   getPriceEstimate: async (bookingData) => {
     try {
       const response = await apiClient.post('/bookings/estimate', bookingData);
       return response.data;
     } catch (error) {
       throw new Error(error.response?.data?.error || 'Failed to get price estimate');
+    }
+  },
+
+  // Get price estimate (truck load volume-based)
+  getLoadEstimate: async (loadData) => {
+    try {
+      const response = await apiClient.post('/booking/estimate-load', loadData);
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.error || 'Failed to get load estimate');
     }
   },
 

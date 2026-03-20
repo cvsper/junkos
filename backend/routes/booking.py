@@ -30,57 +30,146 @@ booking_bp = Blueprint("booking", __name__, url_prefix="/api/booking")
 # ---------------------------------------------------------------------------
 BASE_PRICE = 0.0            # Removed flat base -- pricing is fully item-driven
 SERVICE_FEE_RATE = 0.08     # 8 % of subtotal
-MINIMUM_JOB_PRICE = 89.00   # Floor price for any job
+MINIMUM_JOB_PRICE = 79.00   # Floor price for any job
 
 # ---------------------------------------------------------------------------
-# Default category prices (size-dependent where applicable).
-# Keyed by category -> size -> price.  A flat-rate category uses "default".
+# Specific item prices -- benchmarked ~25% below 1-800-GOT-JUNK.
+# Keyed by item_type -> size -> price.  A flat-rate item uses "default".
 # Admin PricingRules in the DB override these when present.
 # ---------------------------------------------------------------------------
 CATEGORY_PRICES = {
-    "furniture": {
-        "small":   45.00,
-        "medium":  65.00,
-        "large":   85.00,
-        "default": 65.00,
-    },
-    "appliances": {
-        "small":   60.00,
-        "medium":  90.00,
-        "large":  120.00,
-        "default": 90.00,
-    },
-    "electronics": {
-        "small":   25.00,
-        "medium":  35.00,
-        "large":   50.00,
-        "default": 35.00,
-    },
-    "yard_waste": {
-        "default": 35.00,   # per cubic yard
-    },
-    "construction": {
-        "default": 55.00,   # per cubic yard
-    },
-    "general": {
-        "default": 30.00,
-    },
-    "mattress": {
-        "default": 50.00,
-    },
-    "hot_tub": {
-        "small":  250.00,
-        "medium": 325.00,
-        "large":  400.00,
-        "default": 325.00,
-    },
-    "other": {
-        "default": 30.00,
-    },
+    # ── Furniture ─────────────────────────────────────────────────────────
+    "sofa":                 {"default":  89.00},   # competitor: $120
+    "sofa_sleeper":         {"default": 109.00},   # competitor: $145
+    "sofa_sectional":       {"default": 139.00},   # competitor: $175–$225
+    "chair_recliner":       {"default":  79.00},   # competitor: $120
+    "chair_office":         {"default":  69.00},   # competitor: $120
+    "dresser":              {"default":  79.00},   # competitor: $120
+    "bookcase":             {"default":  69.00},   # competitor: $120
+    "cabinet":              {"default": 149.00},   # competitor: $225
+    "table_dining":         {"default":  99.00},   # competitor: $140
+    "table_dining_chairs":  {"default": 129.00},   # competitor: $175
+    "table_coffee":         {"default":  59.00},   # competitor: $120
+    "table_end":            {"default":  49.00},   # competitor: $120
+    "table_kitchen":        {"default":  69.00},   # competitor: $120
+    "table_conference":     {"default":  89.00},   # competitor: $125
+    "futon":                {"default":  79.00},   # competitor: $120
+    "filing_cabinet":       {"default":  69.00},   # competitor: $120
+    "desk_small":           {"default":  69.00},   # competitor: $120
+    "desk_large":           {"default":  99.00},   # competitor: $159
+    # ── Beds & Mattresses ─────────────────────────────────────────────────
+    "mattress":             {"default":  75.00},   # competitor: $120
+    "box_spring":           {"default":  75.00},   # competitor: $120
+    "bed_frame":            {"default":  75.00},   # competitor: $120
+    "bed_set":              {"default": 149.00},   # competitor: $120 (but set = 3 items)
+    # ── Appliances ────────────────────────────────────────────────────────
+    "refrigerator":         {"default":  99.00},   # competitor: $145
+    "refrigerator_bar":     {"default":  69.00},   # competitor: $120
+    "washer":               {"default":  79.00},   # competitor: $120
+    "dryer":                {"default":  79.00},   # competitor: $120
+    "washer_dryer_set":     {"default": 119.00},   # competitor: $160
+    "dishwasher":           {"default":  69.00},   # competitor: $120
+    "stove":                {"default":  79.00},   # competitor: $120
+    "microwave":            {"default":  35.00},   # competitor: $59
+    "freezer_chest":        {"default":  79.00},   # competitor: $120
+    "freezer_upright":      {"default":  89.00},   # competitor: $125
+    # ── Electronics & Entertainment ───────────────────────────────────────
+    "tv_flatscreen":        {"default":  89.00},   # competitor: $140
+    "tv_console":           {"default":  79.00},   # competitor: $120
+    "tv_stand":             {"default":  59.00},   # competitor: $120
+    "entertainment_center": {"default":  89.00},   # competitor: $145
+    "computer":             {"default":  59.00},   # competitor: $125
+    "copier_commercial":    {"default": 109.00},   # competitor: $175
+    "printer":              {"default":  35.00},   # competitor: $120
+    # ── Exercise Equipment ────────────────────────────────────────────────
+    "treadmill":            {"default":  89.00},   # competitor: $120
+    "elliptical":           {"default":  99.00},   # competitor: $140
+    "bike_stationary":      {"default":  69.00},   # competitor: $120
+    # ── Outdoor & Specialty ───────────────────────────────────────────────
+    "bbq_grill":            {"default":  69.00},   # competitor: $120
+    "basketball_hoop":      {"default":  79.00},   # competitor: $120
+    "basketball_hoop_stand":{"default":  99.00},   # competitor: $145
+    "lawn_mower_push":      {"default":  69.00},   # competitor: $120
+    "lawn_mower_riding":    {"default": 149.00},   # competitor: $200
+    "hot_tub":              {"default": 299.00},   # competitor: $400
+    "pool_table":           {"default": 199.00},   # competitor: $328
+    "piano":                {"default": 199.00},   # competitor: $298
+    # ── General / Bulk ────────────────────────────────────────────────────
+    "bike":                 {"default":  49.00},   # competitor: $120
+    "general":              {"default":  25.00},
+    "yard_waste":           {"default":  30.00},   # per cubic yard
+    "construction":         {"default":  45.00},   # per cubic yard
+    "other":                {"default":  25.00},
+    # ── Legacy category fallbacks (for old bookings / AI analysis) ────────
+    "furniture":  {"small": 59.00, "medium": 79.00, "large": 99.00, "default": 79.00},
+    "appliances": {"small": 49.00, "medium": 79.00, "large": 99.00, "default": 79.00},
+    "electronics":{"small": 25.00, "medium": 45.00, "large": 69.00, "default": 45.00},
 }
 
 # Legacy flat-price mapping (used as ultimate fallback)
 FALLBACK_PRICES = {cat: sizes["default"] for cat, sizes in CATEGORY_PRICES.items()}
+
+# ---------------------------------------------------------------------------
+# Truck load volume pricing (alternative to per-item).
+# Competitor charges $148 min up to $798 full load.
+# We undercut by ~25%.
+# ---------------------------------------------------------------------------
+TRUCK_LOAD_PRICES = {
+    # fraction_label: (fraction_value, price)
+    "min":   (0.0,    99.00),    # competitor: $148
+    "1/8":   (0.125, 179.00),    # competitor: $258
+    "1/6":   (0.167, 229.00),    # competitor: $328
+    "1/4":   (0.25,  279.00),    # competitor: $388
+    "1/3":   (0.333, 329.00),    # competitor: $448
+    "3/8":   (0.375, 359.00),    # competitor: $498
+    "1/2":   (0.5,   389.00),    # competitor: $538
+    "5/8":   (0.625, 419.00),    # competitor: $578
+    "2/3":   (0.667, 449.00),    # competitor: $628
+    "3/4":   (0.75,  489.00),    # competitor: $678
+    "5/6":   (0.833, 529.00),    # competitor: $728
+    "7/8":   (0.875, 549.00),    # competitor: $758
+    "full":  (1.0,   579.00),    # competitor: $798
+}
+
+# ---------------------------------------------------------------------------
+# Recycling / disposal surcharges (added on top of item price).
+# Competitor charges these as separate fees; we include most but charge
+# for genuinely expensive disposal items at lower rates.
+# ---------------------------------------------------------------------------
+RECYCLING_FEES = {
+    "tire_small":        5.00,     # competitor: $10
+    "tire_large":       15.00,     # competitor: $25
+    "tire_tractor":     20.00,     # competitor: $30
+    "mattress":         20.00,     # competitor: $30 (recycling surcharge)
+    "box_spring":       20.00,     # competitor: $30
+    "propane_tank":      5.00,     # competitor: $10
+    "e_waste":           0.00,     # competitor: $5 -- we absorb this
+    "appliance_freon":  10.00,     # competitor: $20 (freon recovery)
+    "batteries":         5.00,     # competitor: $10
+    "tube_tv":          10.00,     # competitor: $15
+    "paint":            10.00,     # competitor: $20 per gallon
+    "hazardous":       100.00,     # competitor: $150
+}
+
+# Items that automatically trigger recycling fees
+RECYCLING_FEE_TRIGGERS = {
+    "mattress":          "mattress",
+    "box_spring":        "box_spring",
+    "refrigerator":      "appliance_freon",
+    "freezer_chest":     "appliance_freon",
+    "freezer_upright":   "appliance_freon",
+    "tv_console":        "tube_tv",
+    "washer":            "appliance_freon",
+    "dryer":             "appliance_freon",
+    "washer_dryer_set":  "appliance_freon",
+    "dishwasher":        "appliance_freon",
+}
+
+# ---------------------------------------------------------------------------
+# Labor fee -- competitor charges $75/hr/person, we charge $55
+# Applied only for jobs requiring extra labor (stairs, long carry, etc.)
+# ---------------------------------------------------------------------------
+LABOR_FEE_PER_HOUR = 55.00   # competitor: $75
 
 # ---------------------------------------------------------------------------
 # Volume discount tiers
@@ -358,6 +447,26 @@ def calculate_estimate(items, scheduled_date=None, lat=None, lng=None):
             line["size"] = size
         item_breakdown.append(line)
 
+    # --- Recycling / disposal fees ---
+    recycling_total = 0.0
+    recycling_breakdown = []
+    for entry in items:
+        category = (entry.get("category") or "other").lower()
+        quantity = int(entry.get("quantity", 1))
+        fee_key = RECYCLING_FEE_TRIGGERS.get(category)
+        if fee_key and fee_key in RECYCLING_FEES:
+            fee = RECYCLING_FEES[fee_key]
+            if fee > 0:
+                line_fee = fee * quantity
+                recycling_total += line_fee
+                recycling_breakdown.append({
+                    "item": category,
+                    "fee_type": fee_key,
+                    "unit_fee": fee,
+                    "quantity": quantity,
+                    "total": round(line_fee, 2),
+                })
+
     # --- Volume discount ---
     discount_rate = _volume_discount_rate(total_quantity)
     volume_discount = round(item_total * discount_rate, 2)
@@ -384,9 +493,13 @@ def calculate_estimate(items, scheduled_date=None, lat=None, lng=None):
     fee_rate = _get_service_fee_rate()
     service_fee = round(surged_subtotal * fee_rate, 2)
 
+    # --- Labor hours (optional, passed from frontend) ---
+    labor_hours = 0
+    labor_fee = 0.0
+
     # --- Total (with minimum floor, admin-overridable) ---
     min_price = _get_minimum_job_price()
-    raw_total = round(surged_subtotal + service_fee, 2)
+    raw_total = round(surged_subtotal + service_fee + recycling_total + labor_fee, 2)
     total = max(raw_total, min_price)
     minimum_applied = total > raw_total
 
@@ -405,6 +518,10 @@ def calculate_estimate(items, scheduled_date=None, lat=None, lng=None):
         "surge_reasons": surge_reasons,
         "base_price": round(items_subtotal, 2),
         "service_fee": service_fee,
+        "recycling_fees": round(recycling_total, 2),
+        "recycling_breakdown": recycling_breakdown,
+        "labor_fee": labor_fee,
+        "labor_fee_rate": LABOR_FEE_PER_HOUR,
         "total": total,
         "minimum_applied": minimum_applied,
         "minimum_job_price": min_price,
@@ -459,6 +576,109 @@ def estimate():
     return jsonify({
         "success": True,
         "estimate": result,
+    }), 200
+
+
+# ---------------------------------------------------------------------------
+# POST /api/booking/estimate-load  (public -- truck load pricing)
+# ---------------------------------------------------------------------------
+@booking_bp.route("/estimate-load", methods=["POST"])
+def estimate_load():
+    """
+    Calculate a price estimate based on truck load volume.
+
+    Body JSON:
+        load_size: str  (e.g. "1/4", "1/2", "full")
+        scheduledDate: str (ISO date for time-based surge)
+        labor_hours: float (optional, extra labor hours needed)
+        recycling_items: [ { type: str, quantity: int }, ... ]  (optional)
+    """
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "Request body is required"}), 400
+
+    load_size = (data.get("load_size") or "").strip().lower()
+    if load_size not in TRUCK_LOAD_PRICES:
+        return jsonify({
+            "error": "Invalid load_size. Options: {}".format(
+                ", ".join(sorted(TRUCK_LOAD_PRICES.keys()))
+            )
+        }), 400
+
+    fraction, base_price = TRUCK_LOAD_PRICES[load_size]
+
+    # --- Time-based surge ---
+    scheduled_date = data.get("scheduledDate") or data.get("scheduled_date")
+    time_surge_pct, surge_reasons = _time_based_surge(scheduled_date)
+    surged_price = round(base_price * (1.0 + time_surge_pct), 2)
+    surge_amount = round(surged_price - base_price, 2)
+
+    # --- Service fee ---
+    fee_rate = _get_service_fee_rate()
+    service_fee = round(surged_price * fee_rate, 2)
+
+    # --- Labor hours ---
+    labor_hours = float(data.get("labor_hours", 0))
+    labor_fee = round(labor_hours * LABOR_FEE_PER_HOUR, 2)
+
+    # --- Recycling fees ---
+    recycling_total = 0.0
+    recycling_breakdown = []
+    for entry in (data.get("recycling_items") or []):
+        fee_type = (entry.get("type") or "").lower()
+        qty = int(entry.get("quantity", 1))
+        fee = RECYCLING_FEES.get(fee_type, 0)
+        if fee > 0:
+            line = fee * qty
+            recycling_total += line
+            recycling_breakdown.append({
+                "fee_type": fee_type,
+                "unit_fee": fee,
+                "quantity": qty,
+                "total": round(line, 2),
+            })
+
+    # --- Total ---
+    min_price = _get_minimum_job_price()
+    raw_total = round(surged_price + service_fee + labor_fee + recycling_total, 2)
+    total = max(raw_total, min_price)
+
+    return jsonify({
+        "success": True,
+        "estimate": {
+            "load_size": load_size,
+            "load_fraction": fraction,
+            "base_price": base_price,
+            "surge_amount": surge_amount,
+            "surge_reasons": surge_reasons,
+            "service_fee": service_fee,
+            "labor_hours": labor_hours,
+            "labor_fee": labor_fee,
+            "labor_fee_rate": LABOR_FEE_PER_HOUR,
+            "recycling_fees": round(recycling_total, 2),
+            "recycling_breakdown": recycling_breakdown,
+            "total": total,
+            "minimum_applied": total > raw_total,
+        },
+    }), 200
+
+
+# ---------------------------------------------------------------------------
+# GET /api/booking/pricing  (public -- pricing info for frontend)
+# ---------------------------------------------------------------------------
+@booking_bp.route("/pricing", methods=["GET"])
+def get_pricing_info():
+    """Return current pricing data for the frontend to display."""
+    return jsonify({
+        "success": True,
+        "truck_load_prices": {
+            k: {"fraction": v[0], "price": v[1]}
+            for k, v in TRUCK_LOAD_PRICES.items()
+        },
+        "recycling_fees": RECYCLING_FEES,
+        "labor_fee_per_hour": LABOR_FEE_PER_HOUR,
+        "minimum_job_price": _get_minimum_job_price(),
+        "service_fee_rate": _get_service_fee_rate(),
     }), 200
 
 

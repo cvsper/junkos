@@ -195,6 +195,32 @@ export default function CustomerLayout({
       {/* Main Content */}
       <main id="main-content" className="flex-1">{children}</main>
 
+      {/* Footer */}
+      <footer className="border-t border-border bg-background mt-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex flex-col items-center gap-4">
+            <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm text-green-700 font-medium">
+              <span className="flex items-center gap-1.5">&#10084;&#65039; Donate First</span>
+              <span className="text-border hidden sm:inline">|</span>
+              <span className="flex items-center gap-1.5">&#9851;&#65039; Recycle &amp; Reuse</span>
+              <span className="text-border hidden sm:inline">|</span>
+              <span className="flex items-center gap-1.5">&#127758; Landfill Last</span>
+            </div>
+            <p className="text-xs text-muted-foreground text-center max-w-lg">
+              We partner with local charities, shelters, and recycling centers.
+              Usable items are donated before anything is disposed of. Donation
+              receipts provided for tax purposes when applicable.
+            </p>
+            <div className="text-center text-muted-foreground text-xs space-x-3">
+              <span>&copy; {new Date().getFullYear()} Umuve. All rights reserved.</span>
+              <Link href="/privacy" className="hover:text-foreground underline-offset-4 hover:underline">Privacy</Link>
+              <Link href="/terms" className="hover:text-foreground underline-offset-4 hover:underline">Terms</Link>
+              <a href="mailto:support@goumuve.com" className="hover:text-foreground underline-offset-4 hover:underline">Contact</a>
+            </div>
+          </div>
+        </div>
+      </footer>
+
       {/* Support Chat Widget */}
       <SupportChat />
     </div>
