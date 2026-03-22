@@ -768,6 +768,7 @@ def create_booking(user_id):
 
     photos = data.get("photos", [])
     notes = data.get("notes", "")
+    lead_source = data.get("lead_source") or data.get("leadSource") or None
 
     # --- Re-calculate pricing with the v2 engine ---
     est = calculate_estimate(items, scheduled_date=scheduled_date, lat=lat, lng=lng)
@@ -842,6 +843,7 @@ def create_booking(user_id):
         promo_code_id=promo_code_id,
         discount_amount=discount_amount,
         notes=notes,
+        lead_source=lead_source,
         confirmation_code=generate_referral_code(),
     )
     db.session.add(job)
@@ -883,6 +885,52 @@ def create_booking(user_id):
         "job": job.to_dict(),
         "payment": payment.to_dict(),
     }), 201
+
+
+# ---------------------------------------------------------------------------
+# GET /api/booking/lead-stats  (admin -- lead source analytics)
+# ---------------------------------------------------------------------------
+@booking_bp.route("/lead-stats", methods=["GET"])
+@require_auth
+def lead_stats(user_id):
+    """Return lead source analytics: booking count and revenue per source."""
+    from sqlalchemy import func
+
+    # Verify admin role
+    user = db.session.get(User, user_id)
+    if not user or user.role != "admin":
+        return jsonify({"error": "Admin access required"}), 403
+
+    rows = (
+        db.session.query(
+            Job.lead_source,
+            func.count(Job.id).label("count"),
+            func.coalesce(func.sum(Job.total_price), 0.0).label("revenue"),
+        )
+        .group_by(Job.lead_source)
+        .all()
+    )
+
+    stats = []
+    for source, count, revenue in rows:
+        stats.append({
+            "source": source or "unknown",
+            "count": count,
+            "revenue": round(float(revenue), 2),
+        })
+
+    # Sort by count descending
+    stats.sort(key=lambda x: x["count"], reverse=True)
+
+    total_bookings = sum(s["count"] for s in stats)
+    total_revenue = round(sum(s["revenue"] for s in stats), 2)
+
+    return jsonify({
+        "success": True,
+        "total_bookings": total_bookings,
+        "total_revenue": total_revenue,
+        "by_source": stats,
+    }), 200
 
 
 # ---------------------------------------------------------------------------

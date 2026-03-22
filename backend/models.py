@@ -252,6 +252,7 @@ class Job(db.Model):
     discount_amount = Column(Float, default=0.0)
 
     notes = Column(Text, nullable=True)
+    lead_source = Column(String(50), nullable=True, default=None)  # google_ads, craigslist, facebook, nextdoor, referral, organic, direct, google_business, etc.
     confirmation_code = Column(String(8), unique=True, nullable=True, index=True, default=generate_referral_code)
 
     cancelled_at = Column(DateTime, nullable=True)
@@ -306,6 +307,7 @@ class Job(db.Model):
             "promo_code_id": self.promo_code_id,
             "discount_amount": self.discount_amount or 0.0,
             "notes": self.notes,
+            "lead_source": self.lead_source,
             "confirmation_code": self.confirmation_code,
             "cancelled_at": self.cancelled_at.isoformat() if self.cancelled_at else None,
             "cancellation_fee": self.cancellation_fee or 0.0,
