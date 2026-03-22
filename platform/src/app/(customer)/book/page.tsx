@@ -2,7 +2,7 @@
 
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { ArrowLeft, ArrowRight, Gift } from "lucide-react";
+import { ArrowLeft, ArrowRight, Gift, RotateCcw, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useBookingStore } from "@/stores/booking-store";
 import { referralsApi } from "@/lib/api";
@@ -15,6 +15,94 @@ import { Step5Estimate } from "@/components/booking/step-5-estimate";
 import { Step6Payment } from "@/components/booking/step-6-payment";
 
 // ---------------------------------------------------------------------------
+// Lead source detection helpers
+// ---------------------------------------------------------------------------
+
+function detectLeadSource(searchParams: URLSearchParams): string {
+  // 1. Check UTM params
+  const utmSource = searchParams.get("utm_source");
+  if (utmSource) return utmSource;
+
+  // 2. Check shorthand src param
+  const src = searchParams.get("src");
+  if (src) return src;
+
+  // 3. Check document.referrer
+  if (typeof document !== "undefined" && document.referrer) {
+    const ref = document.referrer.toLowerCase();
+    if (ref.includes("google")) return "google";
+    if (ref.includes("facebook") || ref.includes("fb.com")) return "facebook";
+    if (ref.includes("nextdoor")) return "nextdoor";
+    if (ref.includes("craigslist")) return "craigslist";
+  }
+
+  // 4. Check localStorage fallback
+  if (typeof localStorage !== "undefined") {
+    const stored = localStorage.getItem("umuve_lead_source");
+    if (stored) return stored;
+  }
+
+  return "";
+}
+
+// ---------------------------------------------------------------------------
+// Abandoned booking helpers
+// ---------------------------------------------------------------------------
+
+const ABANDONED_BOOKING_KEY = "umuve_abandoned_booking";
+const ONE_HOUR_MS = 60 * 60 * 1000;
+const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+
+interface AbandonedBooking {
+  step: number;
+  timestamp: number;
+  address: Record<string, unknown>;
+  items: unknown[];
+  scheduledDate: string;
+  scheduledTimeSlot: string;
+  notes: string;
+}
+
+function getAbandonedBooking(): AbandonedBooking | null {
+  try {
+    const raw = localStorage.getItem(ABANDONED_BOOKING_KEY);
+    if (!raw) return null;
+    const data = JSON.parse(raw) as AbandonedBooking;
+    const age = Date.now() - data.timestamp;
+    if (age > ONE_HOUR_MS && age < SEVEN_DAYS_MS) return data;
+    // Too old or too recent — clear it
+    if (age >= SEVEN_DAYS_MS) localStorage.removeItem(ABANDONED_BOOKING_KEY);
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function saveAbandonedBooking(state: {
+  step: number;
+  address: Record<string, unknown>;
+  items: unknown[];
+  scheduledDate: string;
+  scheduledTimeSlot: string;
+  notes: string;
+}) {
+  try {
+    const data: AbandonedBooking = { ...state, timestamp: Date.now() };
+    localStorage.setItem(ABANDONED_BOOKING_KEY, JSON.stringify(data));
+  } catch {
+    // Silently fail if localStorage is full
+  }
+}
+
+export function clearAbandonedBooking() {
+  try {
+    localStorage.removeItem(ABANDONED_BOOKING_KEY);
+  } catch {
+    // noop
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Inner component that uses useSearchParams (requires Suspense boundary)
 // ---------------------------------------------------------------------------
 
@@ -22,10 +110,74 @@ function BookPageInner() {
   const step = useBookingStore((s) => s.step);
   const nextStep = useBookingStore((s) => s.nextStep);
   const prevStep = useBookingStore((s) => s.prevStep);
+  const setStep = useBookingStore((s) => s.setStep);
+  const setAddress = useBookingStore((s) => s.setAddress);
+  const setItems = useBookingStore((s) => s.setItems);
+  const setSchedule = useBookingStore((s) => s.setSchedule);
+  const setNotes = useBookingStore((s) => s.setNotes);
+  const setLeadSource = useBookingStore((s) => s.setLeadSource);
   const searchParams = useSearchParams();
 
   // Referral banner state
   const [referrerName, setReferrerName] = useState<string | null>(null);
+
+  // Abandoned booking banner state
+  const [abandonedBooking, setAbandonedBooking] = useState<AbandonedBooking | null>(null);
+
+  // --- Lead source auto-detection ---
+  useEffect(() => {
+    const source = detectLeadSource(searchParams);
+    if (source) {
+      setLeadSource(source);
+      localStorage.setItem("umuve_lead_source", source);
+    }
+  }, [searchParams, setLeadSource]);
+
+  // --- Check for abandoned booking on mount ---
+  useEffect(() => {
+    const abandoned = getAbandonedBooking();
+    if (abandoned) {
+      setAbandonedBooking(abandoned);
+    }
+  }, []);
+
+  // --- Save abandoned booking when step >= 3 ---
+  const address = useBookingStore((s) => s.address);
+  const items = useBookingStore((s) => s.items);
+  const scheduledDate = useBookingStore((s) => s.scheduledDate);
+  const scheduledTimeSlot = useBookingStore((s) => s.scheduledTimeSlot);
+  const notes = useBookingStore((s) => s.notes);
+
+  useEffect(() => {
+    if (step >= 3) {
+      saveAbandonedBooking({
+        step,
+        address: address as Record<string, unknown>,
+        items: items as unknown[],
+        scheduledDate,
+        scheduledTimeSlot,
+        notes,
+      });
+    }
+  }, [step, address, items, scheduledDate, scheduledTimeSlot, notes]);
+
+  // --- Resume abandoned booking ---
+  const handleResumeAbandoned = useCallback(() => {
+    if (!abandonedBooking) return;
+    setAddress(abandonedBooking.address as Record<string, string>);
+    setItems(abandonedBooking.items as Parameters<typeof setItems>[0]);
+    if (abandonedBooking.scheduledDate && abandonedBooking.scheduledTimeSlot) {
+      setSchedule(abandonedBooking.scheduledDate, abandonedBooking.scheduledTimeSlot);
+    }
+    if (abandonedBooking.notes) setNotes(abandonedBooking.notes);
+    setStep(abandonedBooking.step);
+    setAbandonedBooking(null);
+  }, [abandonedBooking, setAddress, setItems, setSchedule, setNotes, setStep]);
+
+  const handleDismissAbandoned = useCallback(() => {
+    localStorage.removeItem(ABANDONED_BOOKING_KEY);
+    setAbandonedBooking(null);
+  }, []);
 
   // Check for ?ref= query param and store it
   useEffect(() => {
@@ -110,6 +262,34 @@ function BookPageInner() {
             Sign up to get <span className="font-semibold">$10 off</span> your
             first pickup.
           </p>
+        </div>
+      )}
+
+      {/* Abandoned Booking Banner */}
+      {abandonedBooking && (
+        <div className="mb-6 flex items-center justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+          <div className="flex items-center gap-3">
+            <RotateCcw className="h-5 w-5 text-amber-600 flex-shrink-0" />
+            <p className="text-sm text-amber-800">
+              You have an unfinished booking. Pick up where you left off?
+            </p>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleResumeAbandoned}
+              className="border-amber-300 text-amber-800 hover:bg-amber-100"
+            >
+              Resume
+            </Button>
+            <button
+              onClick={handleDismissAbandoned}
+              className="text-amber-400 hover:text-amber-600 transition-colors"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
         </div>
       )}
 

@@ -235,7 +235,7 @@ export default function CityPage({ params }: { params: { city: string } }) {
           </p>
           <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
-              href="/book"
+              href={`/book?utm_source=seo_city&utm_campaign=${params.city}`}
               className="inline-flex items-center justify-center rounded-xl bg-white text-red-700 font-bold text-lg px-8 py-4 shadow-lg hover:bg-red-50 transition-colors"
             >
               Book a Pickup
@@ -329,7 +329,7 @@ export default function CityPage({ params }: { params: { city: string } }) {
             Book your junk removal pickup in {cityName} in under 2 minutes. Same-day service available.
           </p>
           <Link
-            href="/book"
+            href={`/book?utm_source=seo_city&utm_campaign=${params.city}`}
             className="mt-8 inline-flex items-center justify-center rounded-xl bg-white text-red-700 font-bold text-lg px-8 py-4 shadow-lg hover:bg-red-50 transition-colors"
           >
             Book a Pickup Now

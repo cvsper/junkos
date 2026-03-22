@@ -29,6 +29,8 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useBookingStore } from "@/stores/booking-store";
 import { bookingApi, paymentsApi, promosApi } from "@/lib/api";
+import { clearAbandonedBooking } from "@/app/(customer)/book/page";
+import { ReviewPrompt } from "@/components/review-prompt";
 
 // ---------------------------------------------------------------------------
 // Stripe singleton
@@ -135,6 +137,7 @@ function PaymentFormInner() {
     promoApplied,
     applyPromo,
     clearPromo,
+    leadSource,
   } = useBookingStore();
 
   // Contact info
@@ -212,6 +215,7 @@ function PaymentFormInner() {
           notes,
           estimatedPrice: finalPrice,
           ...(promoApplied ? { promo_code: appliedPromoCode } : {}),
+          ...(leadSource ? { lead_source: leadSource } : {}),
           customerName: payerName,
           customerEmail: payerEmail,
           customerPhone: payerPhone,
@@ -266,6 +270,7 @@ function PaymentFormInner() {
         const jobData = (bookingResult as unknown as Record<string, unknown>).job as Record<string, unknown> | undefined;
         setConfirmationCode((jobData?.confirmation_code as string) || "");
         trackBookingConversion({ bookingId: newBookingId, value: finalPrice / 100 });
+        clearAbandonedBooking();
         setIsSuccess(true);
       } catch (err) {
         ev.complete("fail");
@@ -278,7 +283,7 @@ function PaymentFormInner() {
     return () => {
       paymentRequestRef.current = null;
     };
-  }, [stripe, finalPrice, estimatedPrice, address, items, scheduledDate, scheduledTimeSlot, notes, photos, promoApplied, appliedPromoCode]);
+  }, [stripe, finalPrice, estimatedPrice, address, items, scheduledDate, scheduledTimeSlot, notes, photos, promoApplied, appliedPromoCode, leadSource]);
 
   // ---------------------------------------------------------------------------
   // Card change handler
@@ -388,6 +393,7 @@ function PaymentFormInner() {
         notes,
         estimatedPrice: finalPrice,
         ...(promoApplied ? { promo_code: appliedPromoCode } : {}),
+        ...(leadSource ? { lead_source: leadSource } : {}),
         customerName: name.trim(),
         customerEmail: email.trim(),
         customerPhone: phone.trim(),
@@ -439,6 +445,7 @@ function PaymentFormInner() {
       const jobData = (bookingResult as unknown as Record<string, unknown>).job as Record<string, unknown> | undefined;
       setConfirmationCode((jobData?.confirmation_code as string) || "");
       trackBookingConversion({ bookingId: newBookingId, value: finalPrice / 100 });
+      clearAbandonedBooking();
       setIsSuccess(true);
     } catch (err) {
       const message =
@@ -534,6 +541,9 @@ function PaymentFormInner() {
           <span className="font-medium text-foreground">{email}</span>. Our team
           will contact you before your scheduled pickup.
         </p>
+
+        {/* Review Prompt */}
+        <ReviewPrompt bookingId={bookingId} />
 
         <Button
           onClick={() => {
