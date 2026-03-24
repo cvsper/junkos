@@ -1254,6 +1254,12 @@ export interface VapiCallRecord {
   transcript: string;
   status: "completed" | "missed" | "failed";
   created_at: string;
+  assigned_operator_id: string | null;
+  assigned_operator_name: string | null;
+  assigned_driver_id: string | null;
+  assigned_driver_name: string | null;
+  assignment_status: "unassigned" | "assigned_operator" | "assigned_driver" | "completed";
+  assigned_at: string | null;
 }
 
 export interface VapiCallbackRecord {
@@ -1263,6 +1269,18 @@ export interface VapiCallbackRecord {
   requested_time: string;
   status: "pending" | "completed" | "failed";
   created_at: string;
+  assigned_operator_id: string | null;
+  assigned_operator_name: string | null;
+  assigned_driver_id: string | null;
+  assigned_driver_name: string | null;
+  assignment_status: "unassigned" | "assigned_operator" | "assigned_driver" | "completed";
+  assigned_at: string | null;
+}
+
+export interface Assignee {
+  id: string;
+  name: string | null;
+  email: string | null;
 }
 
 export const vapiApi = {
@@ -1273,6 +1291,8 @@ export const vapiApi = {
     status?: string;
     lead_score?: string;
     booking_only?: boolean;
+    assigned_to?: string;
+    assignment_status?: string;
   }) => {
     const qs = new URLSearchParams();
     if (params?.page) qs.append("page", String(params.page));
@@ -1280,6 +1300,8 @@ export const vapiApi = {
     if (params?.status) qs.append("status", params.status);
     if (params?.lead_score) qs.append("lead_score", params.lead_score);
     if (params?.booking_only) qs.append("booking_only", "true");
+    if (params?.assigned_to) qs.append("assigned_to", params.assigned_to);
+    if (params?.assignment_status) qs.append("assignment_status", params.assignment_status);
     const query = qs.toString();
     return apiFetch<{
       success: boolean;
@@ -1297,12 +1319,43 @@ export const vapiApi = {
     ),
 
   /** GET /api/vapi/callbacks -- list callbacks */
-  callbacks: (status?: string) => {
-    const qs = status ? `?status=${status}` : "";
+  callbacks: (params?: {
+    status?: string;
+    assigned_to?: string;
+    assignment_status?: string;
+  }) => {
+    const qs = new URLSearchParams();
+    if (params?.status) qs.append("status", params.status);
+    if (params?.assigned_to) qs.append("assigned_to", params.assigned_to);
+    if (params?.assignment_status) qs.append("assignment_status", params.assignment_status);
+    const query = qs.toString();
     return apiFetch<{
       success: boolean;
       callbacks: VapiCallbackRecord[];
-    }>(`/api/vapi/callbacks${qs}`);
+    }>(`/api/vapi/callbacks${query ? `?${query}` : ""}`);
+  },
+
+  /** POST /api/vapi/calls/:id/assign -- assign call to operator/driver */
+  assignCall: (callId: string, body: { operator_id?: string; driver_id?: string }) =>
+    apiFetch<VapiCallRecord>(`/api/vapi/calls/${callId}/assign`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+
+  /** POST /api/vapi/callbacks/:id/assign -- assign callback to operator/driver */
+  assignCallback: (callbackId: string, body: { operator_id?: string; driver_id?: string }) =>
+    apiFetch<VapiCallbackRecord>(`/api/vapi/callbacks/${callbackId}/assign`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+
+  /** GET /api/vapi/assignees -- list operators and drivers for assignment */
+  assignees: (role?: "operator" | "driver") => {
+    const qs = role ? `?role=${role}` : "";
+    return apiFetch<{
+      operators: Assignee[];
+      drivers: Assignee[];
+    }>(`/api/vapi/assignees${qs}`);
   },
 };
 

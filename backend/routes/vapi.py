@@ -11,7 +11,8 @@ import logging
 from datetime import datetime, timezone
 from flask import Blueprint, request, jsonify
 
-from models import db, User, Job, Payment, CallLog, ScheduledCallback, generate_uuid, generate_referral_code
+from models import db, User, Job, Payment, CallLog, ScheduledCallback, Contractor, generate_uuid, generate_referral_code
+from auth_routes import require_auth
 
 logger = logging.getLogger(__name__)
 
@@ -787,11 +788,15 @@ def list_call_logs():
         per_page (int): results per page, default 50, max 100
         status (str): filter by status
         booking_only (bool): if "true", only calls that created bookings
+        assigned_to (str): filter by assigned operator or driver user_id
+        assignment_status (str): filter by assignment_status (unassigned, assigned_operator, assigned_driver, completed)
     """
     page = request.args.get("page", 1, type=int)
     per_page = min(request.args.get("per_page", 50, type=int), 100)
     status_filter = request.args.get("status", None)
     booking_only = request.args.get("booking_only", "").lower() == "true"
+    assigned_to = request.args.get("assigned_to", None)
+    assignment_status = request.args.get("assignment_status", None)
 
     query = CallLog.query
 
@@ -799,6 +804,16 @@ def list_call_logs():
         query = query.filter(CallLog.status == status_filter)
     if booking_only:
         query = query.filter(CallLog.booking_created == True)
+    if assigned_to:
+        from sqlalchemy import or_
+        query = query.filter(
+            or_(
+                CallLog.assigned_operator_id == assigned_to,
+                CallLog.assigned_driver_id == assigned_to,
+            )
+        )
+    if assignment_status:
+        query = query.filter(CallLog.assignment_status == assignment_status)
 
     query = query.order_by(CallLog.created_at.desc())
     pagination = query.paginate(page=page, per_page=per_page, error_out=False)
@@ -833,15 +848,29 @@ def list_callbacks():
         status (str): filter by status (default: pending)
         page (int): page number, default 1
         per_page (int): results per page, default 50, max 100
+        assigned_to (str): filter by assigned operator or driver user_id
+        assignment_status (str): filter by assignment_status
     """
     page = request.args.get("page", 1, type=int)
     per_page = min(request.args.get("per_page", 50, type=int), 100)
     status_filter = request.args.get("status", "pending")
+    assigned_to = request.args.get("assigned_to", None)
+    assignment_status = request.args.get("assignment_status", None)
 
     query = ScheduledCallback.query
 
     if status_filter:
         query = query.filter(ScheduledCallback.status == status_filter)
+    if assigned_to:
+        from sqlalchemy import or_
+        query = query.filter(
+            or_(
+                ScheduledCallback.assigned_operator_id == assigned_to,
+                ScheduledCallback.assigned_driver_id == assigned_to,
+            )
+        )
+    if assignment_status:
+        query = query.filter(ScheduledCallback.assignment_status == assignment_status)
 
     query = query.order_by(ScheduledCallback.created_at.desc())
     pagination = query.paginate(page=page, per_page=per_page, error_out=False)
@@ -852,4 +881,135 @@ def list_callbacks():
         "page": pagination.page,
         "per_page": pagination.per_page,
         "pages": pagination.pages,
+    })
+
+
+# ---------------------------------------------------------------------------
+# Lead assignment endpoints
+# ---------------------------------------------------------------------------
+@vapi_bp.route("/calls/<call_id>/assign", methods=["POST"])
+@require_auth
+def assign_call(user_id, call_id):
+    """Assign a call/lead to an operator and/or driver.
+
+    Body: {"operator_id": "...", "driver_id": "..."}  (either or both)
+    """
+    # Verify requesting user is admin or operator
+    requesting_user = db.session.get(User, user_id)
+    if not requesting_user or requesting_user.role not in ("admin", "operator"):
+        return jsonify({"error": "Forbidden"}), 403
+
+    call_log = CallLog.query.filter_by(id=call_id).first()
+    if not call_log:
+        call_log = CallLog.query.filter_by(call_id=call_id).first()
+    if not call_log:
+        return jsonify({"error": "Call log not found"}), 404
+
+    data = request.get_json() or {}
+    operator_id = data.get("operator_id")
+    driver_id = data.get("driver_id")
+
+    if not operator_id and not driver_id:
+        return jsonify({"error": "Must provide operator_id or driver_id"}), 400
+
+    now = datetime.now(timezone.utc)
+
+    if operator_id:
+        op_user = db.session.get(User, operator_id)
+        if not op_user or op_user.role not in ("operator", "admin"):
+            return jsonify({"error": "Invalid operator_id"}), 400
+        call_log.assigned_operator_id = operator_id
+        call_log.assignment_status = "assigned_operator"
+        call_log.assigned_at = now
+
+    if driver_id:
+        drv_user = db.session.get(User, driver_id)
+        if not drv_user or drv_user.role not in ("driver", "operator", "admin"):
+            return jsonify({"error": "Invalid driver_id"}), 400
+        call_log.assigned_driver_id = driver_id
+        call_log.assignment_status = "assigned_driver"
+        call_log.assigned_at = now
+
+    db.session.commit()
+    return jsonify(call_log.to_dict())
+
+
+@vapi_bp.route("/callbacks/<callback_id>/assign", methods=["POST"])
+@require_auth
+def assign_callback(user_id, callback_id):
+    """Assign a callback to an operator and/or driver.
+
+    Body: {"operator_id": "...", "driver_id": "..."}  (either or both)
+    """
+    requesting_user = db.session.get(User, user_id)
+    if not requesting_user or requesting_user.role not in ("admin", "operator"):
+        return jsonify({"error": "Forbidden"}), 403
+
+    callback = ScheduledCallback.query.filter_by(id=callback_id).first()
+    if not callback:
+        return jsonify({"error": "Callback not found"}), 404
+
+    data = request.get_json() or {}
+    operator_id = data.get("operator_id")
+    driver_id = data.get("driver_id")
+
+    if not operator_id and not driver_id:
+        return jsonify({"error": "Must provide operator_id or driver_id"}), 400
+
+    now = datetime.now(timezone.utc)
+
+    if operator_id:
+        op_user = db.session.get(User, operator_id)
+        if not op_user or op_user.role not in ("operator", "admin"):
+            return jsonify({"error": "Invalid operator_id"}), 400
+        callback.assigned_operator_id = operator_id
+        callback.assignment_status = "assigned_operator"
+        callback.assigned_at = now
+
+    if driver_id:
+        drv_user = db.session.get(User, driver_id)
+        if not drv_user or drv_user.role not in ("driver", "operator", "admin"):
+            return jsonify({"error": "Invalid driver_id"}), 400
+        callback.assigned_driver_id = driver_id
+        callback.assignment_status = "assigned_driver"
+        callback.assigned_at = now
+
+    db.session.commit()
+    return jsonify(callback.to_dict())
+
+
+@vapi_bp.route("/assignees", methods=["GET"])
+@require_auth
+def list_assignees(user_id):
+    """Return lists of operators and drivers for assignment dropdowns.
+
+    Query params:
+        role (str): "operator", "driver", or omit for both
+    """
+    requesting_user = db.session.get(User, user_id)
+    if not requesting_user or requesting_user.role not in ("admin", "operator"):
+        return jsonify({"error": "Forbidden"}), 403
+
+    role_filter = request.args.get("role", None)
+
+    operators = []
+    drivers = []
+
+    if not role_filter or role_filter == "operator":
+        op_users = User.query.filter(
+            User.role == "operator",
+            User.status == "active",
+        ).order_by(User.name).all()
+        operators = [{"id": u.id, "name": u.name, "email": u.email} for u in op_users]
+
+    if not role_filter or role_filter == "driver":
+        drv_users = User.query.filter(
+            User.role == "driver",
+            User.status == "active",
+        ).order_by(User.name).all()
+        drivers = [{"id": u.id, "name": u.name, "email": u.email} for u in drv_users]
+
+    return jsonify({
+        "operators": operators,
+        "drivers": drivers,
     })

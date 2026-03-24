@@ -948,7 +948,15 @@ class CallLog(db.Model):
     lead_score = Column(String(10), nullable=True)  # hot, warm, cold
     followup_sent = Column(Boolean, default=False)
 
+    # Lead assignment fields
+    assigned_operator_id = Column(String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    assigned_driver_id = Column(String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    assignment_status = Column(String(20), default="unassigned")  # unassigned, assigned_operator, assigned_driver, completed
+    assigned_at = Column(DateTime, nullable=True)
+
     customer = relationship("User", foreign_keys=[customer_id])
+    assigned_operator = relationship("User", foreign_keys=[assigned_operator_id])
+    assigned_driver = relationship("User", foreign_keys=[assigned_driver_id])
 
     def to_dict(self):
         return {
@@ -967,6 +975,12 @@ class CallLog(db.Model):
             "customer_name": self.customer.name if self.customer else None,
             "lead_score": self.lead_score,
             "followup_sent": self.followup_sent or False,
+            "assigned_operator_id": self.assigned_operator_id,
+            "assigned_operator_name": self.assigned_operator.name if self.assigned_operator else None,
+            "assigned_driver_id": self.assigned_driver_id,
+            "assigned_driver_name": self.assigned_driver.name if self.assigned_driver else None,
+            "assignment_status": self.assignment_status or "unassigned",
+            "assigned_at": self.assigned_at.isoformat() if self.assigned_at else None,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "ended_at": self.ended_at.isoformat() if self.ended_at else None,
         }
@@ -987,6 +1001,15 @@ class ScheduledCallback(db.Model):
     call_id = Column(String(255), nullable=True)  # Vapi call ID that created this
     created_at = Column(DateTime, default=utcnow)
 
+    # Lead assignment fields
+    assigned_operator_id = Column(String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    assigned_driver_id = Column(String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    assignment_status = Column(String(20), default="unassigned")  # unassigned, assigned_operator, assigned_driver, completed
+    assigned_at = Column(DateTime, nullable=True)
+
+    assigned_operator = relationship("User", foreign_keys=[assigned_operator_id])
+    assigned_driver = relationship("User", foreign_keys=[assigned_driver_id])
+
     __table_args__ = (
         CheckConstraint(
             "status IN ('pending', 'completed', 'failed')",
@@ -1003,5 +1026,11 @@ class ScheduledCallback(db.Model):
             "scheduled_at": self.scheduled_at.isoformat() if self.scheduled_at else None,
             "status": self.status,
             "call_id": self.call_id,
+            "assigned_operator_id": self.assigned_operator_id,
+            "assigned_operator_name": self.assigned_operator.name if self.assigned_operator else None,
+            "assigned_driver_id": self.assigned_driver_id,
+            "assigned_driver_name": self.assigned_driver.name if self.assigned_driver else None,
+            "assignment_status": self.assignment_status or "unassigned",
+            "assigned_at": self.assigned_at.isoformat() if self.assigned_at else None,
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }

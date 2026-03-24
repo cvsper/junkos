@@ -94,6 +94,18 @@ COLUMN_MIGRATIONS = [
     ("payments", "payment_status", "VARCHAR(30)", "VARCHAR(30)", "'pending'"),
     ("payments", "tip_amount", "FLOAT", "FLOAT", "0.0"),
     ("payments", "commission", "FLOAT", "FLOAT", "0.0"),
+
+    # Call log lead assignment fields (added 2026-03-24)
+    ("call_logs", "assigned_operator_id", "VARCHAR(36)", "VARCHAR(36)", "NULL"),
+    ("call_logs", "assigned_driver_id", "VARCHAR(36)", "VARCHAR(36)", "NULL"),
+    ("call_logs", "assignment_status", "VARCHAR(20)", "VARCHAR(20)", "'unassigned'"),
+    ("call_logs", "assigned_at", "DATETIME", "TIMESTAMP", "NULL"),
+
+    # Scheduled callback lead assignment fields (added 2026-03-24)
+    ("scheduled_callbacks", "assigned_operator_id", "VARCHAR(36)", "VARCHAR(36)", "NULL"),
+    ("scheduled_callbacks", "assigned_driver_id", "VARCHAR(36)", "VARCHAR(36)", "NULL"),
+    ("scheduled_callbacks", "assignment_status", "VARCHAR(20)", "VARCHAR(20)", "'unassigned'"),
+    ("scheduled_callbacks", "assigned_at", "DATETIME", "TIMESTAMP", "NULL"),
 ]
 
 
