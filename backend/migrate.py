@@ -95,6 +95,9 @@ COLUMN_MIGRATIONS = [
     ("payments", "tip_amount", "FLOAT", "FLOAT", "0.0"),
     ("payments", "commission", "FLOAT", "FLOAT", "0.0"),
 
+    # Job lead source (added 2026-03-24)
+    ("jobs", "lead_source", "VARCHAR(100)", "VARCHAR(100)", "NULL"),
+
     # Job reminder + review fields (added 2026-03-24)
     ("jobs", "reminder_sent", "BOOLEAN", "BOOLEAN", "FALSE"),
     ("jobs", "reminder_call_id", "VARCHAR(255)", "VARCHAR(255)", "NULL"),
