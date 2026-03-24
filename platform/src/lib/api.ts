@@ -1241,6 +1241,72 @@ export const operatorApi = {
 };
 
 // ---------------------------------------------------------------------------
+// VAPI Call Logs & Callbacks API
+// ---------------------------------------------------------------------------
+
+export interface VapiCallRecord {
+  id: string;
+  phone_number: string;
+  duration: number; // seconds
+  lead_score: "hot" | "warm" | "cold";
+  booking_created: boolean;
+  summary: string;
+  transcript: string;
+  status: "completed" | "missed" | "failed";
+  created_at: string;
+}
+
+export interface VapiCallbackRecord {
+  id: string;
+  customer_name: string;
+  phone: string;
+  requested_time: string;
+  status: "pending" | "completed" | "failed";
+  created_at: string;
+}
+
+export const vapiApi = {
+  /** GET /api/vapi/calls -- paginated call logs */
+  calls: (params?: {
+    page?: number;
+    per_page?: number;
+    status?: string;
+    lead_score?: string;
+    booking_only?: boolean;
+  }) => {
+    const qs = new URLSearchParams();
+    if (params?.page) qs.append("page", String(params.page));
+    if (params?.per_page) qs.append("per_page", String(params.per_page));
+    if (params?.status) qs.append("status", params.status);
+    if (params?.lead_score) qs.append("lead_score", params.lead_score);
+    if (params?.booking_only) qs.append("booking_only", "true");
+    const query = qs.toString();
+    return apiFetch<{
+      success: boolean;
+      calls: VapiCallRecord[];
+      total: number;
+      page: number;
+      pages: number;
+    }>(`/api/vapi/calls${query ? `?${query}` : ""}`);
+  },
+
+  /** GET /api/vapi/calls/:id -- single call detail */
+  call: (callId: string) =>
+    apiFetch<{ success: boolean; call: VapiCallRecord }>(
+      `/api/vapi/calls/${callId}`
+    ),
+
+  /** GET /api/vapi/callbacks -- list callbacks */
+  callbacks: (status?: string) => {
+    const qs = status ? `?status=${status}` : "";
+    return apiFetch<{
+      success: boolean;
+      callbacks: VapiCallbackRecord[];
+    }>(`/api/vapi/callbacks${qs}`);
+  },
+};
+
+// ---------------------------------------------------------------------------
 // Referrals API
 // ---------------------------------------------------------------------------
 

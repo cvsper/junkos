@@ -18,11 +18,15 @@ import {
   LogOut,
   Menu,
   X,
+  Phone,
+  PhoneCall,
 } from "lucide-react";
 
 const sidebarLinks = [
   { href: "/operator", label: "Dashboard", icon: LayoutDashboard },
   { href: "/operator/jobs", label: "Jobs", icon: Briefcase },
+  { href: "/operator/calls", label: "Calls", icon: Phone },
+  { href: "/operator/callbacks", label: "Callbacks", icon: PhoneCall },
   { href: "/operator/fleet", label: "Fleet", icon: Users },
   { href: "/operator/invites", label: "Invite Codes", icon: Mail },
   { href: "/operator/earnings", label: "Earnings", icon: DollarSign },

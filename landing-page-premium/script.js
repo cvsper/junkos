@@ -280,12 +280,32 @@
     // Analytics Event Tracking (gtag)
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+    // Google Ads conversion label — replace with your actual label from:
+    // Google Ads > Goals > Conversions > click conversion > "Use Google tag" > copy the label
+    // The label is the part after the slash, e.g. 'AbC123xYz' from 'AW-17954201120/AbC123xYz'
+    var GADS_CONVERSION_LABEL = 'REPLACE_WITH_CONVERSION_LABEL';
+    var GADS_CONVERSION_ID = 'AW-17954201120';
+
+    /**
+     * Fire a Google Ads conversion event.
+     * Only fires if the conversion label has been set (not the placeholder).
+     */
+    function fireGadsConversion(eventLabel) {
+        if (typeof gtag === 'undefined') return;
+        if (GADS_CONVERSION_LABEL === 'REPLACE_WITH_CONVERSION_LABEL') return;
+        gtag('event', 'conversion', {
+            send_to: GADS_CONVERSION_ID + '/' + GADS_CONVERSION_LABEL,
+            event_label: eventLabel,
+        });
+    }
+
     document.querySelectorAll('a[href^="tel:"]').forEach((link) => {
         link.addEventListener('click', function () {
             if (typeof gtag !== 'undefined') {
                 gtag('event', 'phone_call', {
                     phone_number: this.getAttribute('href'),
                 });
+                fireGadsConversion('phone_call');
             }
         });
     });
@@ -296,6 +316,19 @@
                 gtag('event', 'sms_sent', {
                     phone_number: this.getAttribute('href'),
                 });
+                fireGadsConversion('sms_sent');
+            }
+        });
+    });
+
+    // Track clicks on "Book Online" CTAs that lead to app.goumuve.com/book
+    document.querySelectorAll('a[href*="app.goumuve.com/book"]').forEach((link) => {
+        link.addEventListener('click', function () {
+            if (typeof gtag !== 'undefined') {
+                gtag('event', 'book_online_click', {
+                    link_url: this.getAttribute('href'),
+                });
+                fireGadsConversion('book_online_click');
             }
         });
     });

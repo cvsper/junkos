@@ -54,13 +54,14 @@ function generateLocationPage(city) {
     <link rel="stylesheet" href="../styles.css">
     <link rel="icon" type="image/png" href="../logo-icon.png">
 
-    <!-- Google Analytics -->
+    <!-- Google Analytics + Google Ads -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-CLGPJ5TS3G"></script>
     <script>
         window.dataLayer = window.dataLayer || [];
         function gtag(){dataLayer.push(arguments);}
         gtag('js', new Date());
         gtag('config', 'G-CLGPJ5TS3G');
+        gtag('config', 'AW-17954201120');
     </script>
 
     <!-- Preload fonts -->
