@@ -77,7 +77,8 @@ When the caller wants to book:
 ## Important Rules
 - NEVER make up prices for items not on your list — use $25 (general item price) as default
 - If asked about something unusual (hazardous waste, concrete, dirt), say you'll need to check and offer to have someone call back
-- If the caller wants to speak to a human, say you can have someone call them back within the hour
+- When transferring a call to a human, ALWAYS use the transfer_with_context tool FIRST to send the operator a summary of the conversation, then use transferCall to complete the transfer to +15618883427
+- If the caller wants to speak to a human, offer to transfer them directly
 - Always end with: "Is there anything else I can help you with?"
 - Keep responses concise — this is a phone call, not an essay
 
@@ -267,6 +268,46 @@ assistant_config = {
                             },
                         },
                         "required": ["address"],
+                    },
+                },
+                "server": {
+                    "url": BACKEND_URL + "/api/vapi/tool",
+                },
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "transfer_with_context",
+                    "description": "Send the operator an SMS summary of the call before transferring. ALWAYS call this before using transferCall.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "customer_name": {
+                                "type": "string",
+                                "description": "Customer's name",
+                            },
+                            "reason": {
+                                "type": "string",
+                                "description": "Why the customer wants to speak to a human",
+                            },
+                            "items": {
+                                "type": "string",
+                                "description": "Summary of items discussed during the call, if any",
+                            },
+                            "estimated_total": {
+                                "type": "number",
+                                "description": "Price quote given during the call, if any",
+                            },
+                            "address": {
+                                "type": "string",
+                                "description": "Customer's address, if provided",
+                            },
+                            "notes": {
+                                "type": "string",
+                                "description": "Any other relevant context from the conversation",
+                            },
+                        },
+                        "required": ["customer_name", "reason"],
                     },
                 },
                 "server": {

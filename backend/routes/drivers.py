@@ -404,6 +404,16 @@ def update_job_status(user_id, job_id):
         except Exception as e:
             logger.warning("Failed to update referral on job completion: %s", e)
 
+        # --- Reset win-back flag so customer can be called again next cycle ---
+        try:
+            customer_user = User.query.get(job.customer_id)
+            if customer_user and customer_user.winback_called:
+                customer_user.winback_called = False
+                logger.info("Reset winback_called for customer %s after job %s completed",
+                            job.customer_id, job.id)
+        except Exception as e:
+            logger.warning("Failed to reset winback flag on job completion: %s", e)
+
     if data.get("before_photos"):
         job.before_photos = data["before_photos"]
     if data.get("after_photos"):

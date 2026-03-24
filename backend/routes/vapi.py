@@ -11,7 +11,7 @@ import logging
 from datetime import datetime, timezone
 from flask import Blueprint, request, jsonify
 
-from models import db, User, Job, Payment, CallLog, generate_uuid, generate_referral_code
+from models import db, User, Job, Payment, CallLog, ScheduledCallback, generate_uuid, generate_referral_code
 
 logger = logging.getLogger(__name__)
 
@@ -80,6 +80,12 @@ def handle_tool_call():
             result = _handle_service_area(args)
         elif name == "send_checkout_text":
             result = _handle_checkout_text(args, data)
+        elif name == "send_review_link":
+            result = _handle_send_review_link(args, data)
+        elif name == "transfer_with_context":
+            result = _handle_transfer_with_context(args)
+        elif name == "schedule_callback":
+            result = _handle_schedule_callback(args, data)
         else:
             result = "Unknown tool: {}".format(name)
 
@@ -368,6 +374,128 @@ def _handle_checkout_text(args, vapi_data):
     return "Text sent to {} with the checkout link.".format(phone)
 
 
+def _handle_send_review_link(args, vapi_data):
+    """Send the customer a Google review link via SMS."""
+    from sms_service import send_sms_async
+
+    phone = args.get("phone", "")
+
+    # Get caller phone from Vapi if not provided
+    if not phone:
+        call = vapi_data.get("message", {}).get("call", {})
+        phone = call.get("customer", {}).get("number", "")
+
+    if not phone:
+        return "I need a phone number to send the review link."
+
+    google_review_url = os.environ.get(
+        "GOOGLE_REVIEW_URL", "https://g.page/r/umuve/review"
+    )
+
+    msg = (
+        "Thanks for choosing You-Move! \U0001f64f "
+        "We'd love a quick Google review: {}\n"
+        "It really helps us out!"
+    ).format(google_review_url)
+
+    send_sms_async(phone, msg)
+    return "Review link sent to {} via text.".format(phone)
+
+
+def _handle_transfer_with_context(args):
+    """Send operator an SMS context summary before a warm transfer."""
+    from sms_service import send_sms_async
+
+    customer_name = args.get("customer_name", "Unknown")
+    reason = args.get("reason", "Not specified")
+    items = args.get("items", "None discussed")
+    estimated_total = args.get("estimated_total", "")
+    address = args.get("address", "Not provided")
+    notes = args.get("notes", "")
+
+    quote_line = "${:.0f}".format(float(estimated_total)) if estimated_total else "No quote given"
+
+    msg = (
+        "INCOMING TRANSFER from Maya:\n"
+        "Customer: {}\n"
+        "Reason: {}\n"
+        "Items discussed: {}\n"
+        "Quote given: {}\n"
+        "Address: {}"
+    ).format(customer_name, reason, items, quote_line, address)
+
+    if notes:
+        msg += "\nNotes: {}".format(notes)
+
+    operator_phone = os.environ.get("OPERATOR_PHONE", "+15618883427")
+    send_sms_async(operator_phone, msg)
+
+    logger.info("Transfer context SMS sent to operator for customer: %s", customer_name)
+
+    return "Context sent to operator. Please transfer the call now."
+
+
+def _handle_schedule_callback(args, vapi_data):
+    """Schedule a callback for the customer."""
+    customer_name = args.get("customer_name", "")
+    phone = args.get("phone", "")
+    callback_time = args.get("callback_time", "")
+
+    # Get caller phone from Vapi if not provided
+    if not phone:
+        call = vapi_data.get("message", {}).get("call", {})
+        phone = call.get("customer", {}).get("number", "")
+
+    if not phone:
+        return "I need a phone number to schedule a callback."
+
+    if not callback_time:
+        return "I need to know when you'd like us to call back."
+
+    # Get call_id from Vapi data
+    call_id = vapi_data.get("message", {}).get("call", {}).get("id", "")
+
+    # Try to parse the callback time into a datetime
+    scheduled_at = None
+    try:
+        from dateutil import parser as dateutil_parser
+        scheduled_at = dateutil_parser.parse(callback_time, fuzzy=True)
+        if scheduled_at.tzinfo is None:
+            scheduled_at = scheduled_at.replace(tzinfo=timezone.utc)
+    except Exception:
+        # Store the raw text; operator will interpret it
+        pass
+
+    callback = ScheduledCallback(
+        id=generate_uuid(),
+        phone=phone,
+        customer_name=customer_name or None,
+        requested_time=callback_time,
+        scheduled_at=scheduled_at,
+        status="pending",
+        call_id=call_id or None,
+    )
+    db.session.add(callback)
+    db.session.commit()
+
+    # Notify operator
+    try:
+        from sms_service import send_sms_async
+        operator_phone = os.environ.get("OPERATOR_PHONE", "")
+        if operator_phone:
+            msg = (
+                "CALLBACK REQUESTED\n"
+                "Name: {}\n"
+                "Phone: {}\n"
+                "When: {}"
+            ).format(customer_name or "Unknown", phone, callback_time)
+            send_sms_async(operator_phone, msg)
+    except Exception:
+        logger.exception("Failed to send callback notification SMS")
+
+    return "Got it! We'll give you a call back {}. Talk soon!".format(callback_time)
+
+
 # ---------------------------------------------------------------------------
 # Webhook handler -- Vapi sends call events here
 # ---------------------------------------------------------------------------
@@ -458,12 +586,26 @@ def _handle_end_of_call_report(message):
         )
         db.session.add(call_log)
 
+    # -----------------------------------------------------------------------
+    # Feature 1: Lead Qualification Scoring
+    # -----------------------------------------------------------------------
+    if booking_created:
+        lead_score = "hot"
+    elif "get_price_estimate" in tools_used or "schedule_callback" in tools_used:
+        lead_score = "warm"
+    else:
+        lead_score = "cold"
+
+    call_log.lead_score = lead_score
+
     db.session.commit()
 
     logger.info(
-        "CallLog saved: call_id=%s phone=%s duration=%s booking=%s",
-        call_id, phone_number, duration, booking_created,
+        "CallLog saved: call_id=%s phone=%s duration=%s booking=%s lead=%s",
+        call_id, phone_number, duration, booking_created, lead_score,
     )
+
+    frontend_url = os.environ.get("FRONTEND_URL", "https://app.goumuve.com")
 
     # Send follow-up email if booking was created and customer has email
     if booking_created and customer and customer.email:
@@ -487,6 +629,80 @@ def _handle_end_of_call_report(message):
         except Exception:
             logger.exception("Failed to send post-call follow-up email")
 
+    # -----------------------------------------------------------------------
+    # Feature 1 (warm leads): Auto-text customer with quote + booking link
+    # -----------------------------------------------------------------------
+    if lead_score == "warm" and phone_number:
+        try:
+            from sms_service import send_sms_async
+
+            # Try to find the price estimate from the call's tool results
+            estimate_total = None
+            customer_name_from_call = ""
+            for msg_item in message.get("messages", []):
+                if msg_item.get("role") == "tool_calls":
+                    for tc in msg_item.get("toolCalls", []):
+                        if tc.get("function", {}).get("name") == "get_price_estimate":
+                            # Look for the result in subsequent tool_call_result messages
+                            pass
+                # Try to extract name from assistant messages
+                if msg_item.get("role") == "tool_call_result":
+                    result_text = msg_item.get("result", "")
+                    if "Total:" in result_text:
+                        try:
+                            total_str = result_text.split("Total: $")[1].split("\n")[0].split(" ")[0]
+                            estimate_total = float(total_str)
+                        except Exception:
+                            pass
+
+            # Also check if customer record has a name
+            cust_name = ""
+            if customer:
+                cust_name = customer.name or ""
+
+            greeting = "Hey {}! ".format(cust_name) if cust_name else "Hey! "
+
+            if estimate_total:
+                warm_msg = (
+                    "{}Here's your You-Move quote: ${:.0f}. "
+                    "Book anytime: {}/book?ref=phone "
+                    "-- price is good for 48 hours!"
+                ).format(greeting, estimate_total, frontend_url)
+            else:
+                warm_msg = (
+                    "{}Thanks for calling You-Move! "
+                    "Ready to book? {}/book?ref=phone "
+                    "-- or call us back at (561) 944-1636!"
+                ).format(greeting, frontend_url)
+
+            send_sms_async(phone_number, warm_msg)
+            call_log.followup_sent = True
+            db.session.commit()
+            logger.info("Warm lead follow-up SMS sent to %s", phone_number)
+        except Exception:
+            logger.exception("Failed to send warm lead follow-up SMS")
+
+    # -----------------------------------------------------------------------
+    # Feature 2: SMS Follow-Up After Non-Booking Calls
+    # -----------------------------------------------------------------------
+    duration_val = int(duration) if duration else 0
+    if (not booking_created and phone_number and duration_val > 30
+            and not call_log.followup_sent):
+        try:
+            from sms_service import send_sms_async
+            followup_msg = (
+                "Hey! Thanks for calling You-Move. Need a pickup? "
+                "Book online anytime at {}/book?ref=phone "
+                "or call us back at (561) 944-1636. "
+                "We're here 7 days a week!"
+            ).format(frontend_url)
+            send_sms_async(phone_number, followup_msg)
+            call_log.followup_sent = True
+            db.session.commit()
+            logger.info("Non-booking follow-up SMS sent to %s", phone_number)
+        except Exception:
+            logger.exception("Failed to send non-booking follow-up SMS")
+
     # Send operator summary SMS
     try:
         from sms_service import send_sms_async
@@ -501,6 +717,7 @@ def _handle_end_of_call_report(message):
                 "Duration: {}\n"
                 "Status: {}\n"
                 "Booking: {}\n"
+                "Lead: {}\n"
                 "Tools: {}\n"
                 "Summary: {}"
             ).format(
@@ -508,6 +725,7 @@ def _handle_end_of_call_report(message):
                 duration_str,
                 ended_reason or "completed",
                 "Yes" if booking_created else "No",
+                lead_score,
                 tools_str,
                 summary_short,
             )
@@ -605,3 +823,33 @@ def get_call_log(call_id):
         return jsonify({"error": "Call log not found"}), 404
 
     return jsonify(call_log.to_dict())
+
+
+@vapi_bp.route("/callbacks", methods=["GET"])
+def list_callbacks():
+    """Return pending scheduled callbacks for the operator dashboard.
+
+    Query params:
+        status (str): filter by status (default: pending)
+        page (int): page number, default 1
+        per_page (int): results per page, default 50, max 100
+    """
+    page = request.args.get("page", 1, type=int)
+    per_page = min(request.args.get("per_page", 50, type=int), 100)
+    status_filter = request.args.get("status", "pending")
+
+    query = ScheduledCallback.query
+
+    if status_filter:
+        query = query.filter(ScheduledCallback.status == status_filter)
+
+    query = query.order_by(ScheduledCallback.created_at.desc())
+    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+
+    return jsonify({
+        "callbacks": [cb.to_dict() for cb in pagination.items],
+        "total": pagination.total,
+        "page": pagination.page,
+        "per_page": pagination.per_page,
+        "pages": pagination.pages,
+    })

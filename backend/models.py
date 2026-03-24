@@ -51,6 +51,9 @@ class User(db.Model):
     apple_id = Column(String(255), nullable=True, unique=True)
     referral_code = Column(String(8), unique=True, nullable=True, index=True, default=generate_referral_code)
 
+    winback_called = Column(Boolean, default=False)
+    last_winback_at = Column(DateTime, nullable=True)
+
     created_at = Column(DateTime, default=utcnow)
     updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
 
@@ -262,6 +265,9 @@ class Job(db.Model):
     reminder_sent = Column(Boolean, default=False)
     reminder_call_id = Column(String(255), nullable=True)
 
+    review_requested = Column(Boolean, default=False)
+    review_call_id = Column(String(255), nullable=True)
+
     volume_adjustment_proposed = Column(Boolean, default=False)
     adjusted_volume = Column(Float, nullable=True)
     adjusted_price = Column(Float, nullable=True)
@@ -317,6 +323,8 @@ class Job(db.Model):
             "rescheduled_count": self.rescheduled_count or 0,
             "reminder_sent": self.reminder_sent or False,
             "reminder_call_id": self.reminder_call_id,
+            "review_requested": self.review_requested or False,
+            "review_call_id": self.review_call_id,
             "volume_adjustment_proposed": self.volume_adjustment_proposed,
             "adjusted_volume": self.adjusted_volume,
             "adjusted_price": self.adjusted_price,
@@ -937,6 +945,9 @@ class CallLog(db.Model):
     created_at = Column(DateTime, default=utcnow)
     ended_at = Column(DateTime, nullable=True)
 
+    lead_score = Column(String(10), nullable=True)  # hot, warm, cold
+    followup_sent = Column(Boolean, default=False)
+
     customer = relationship("User", foreign_keys=[customer_id])
 
     def to_dict(self):
@@ -954,6 +965,43 @@ class CallLog(db.Model):
             "booking_created": self.booking_created,
             "customer_id": self.customer_id,
             "customer_name": self.customer.name if self.customer else None,
+            "lead_score": self.lead_score,
+            "followup_sent": self.followup_sent or False,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "ended_at": self.ended_at.isoformat() if self.ended_at else None,
+        }
+
+
+# ---------------------------------------------------------------------------
+# ScheduledCallback (Vapi AI callback scheduling)
+# ---------------------------------------------------------------------------
+class ScheduledCallback(db.Model):
+    __tablename__ = "scheduled_callbacks"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    phone = Column(String(20), nullable=False)
+    customer_name = Column(String(255), nullable=True)
+    requested_time = Column(String(255), nullable=False)  # raw text from caller
+    scheduled_at = Column(DateTime, nullable=True)  # parsed datetime if possible
+    status = Column(String(20), nullable=False, default="pending")  # pending, completed, failed
+    call_id = Column(String(255), nullable=True)  # Vapi call ID that created this
+    created_at = Column(DateTime, default=utcnow)
+
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('pending', 'completed', 'failed')",
+            name="ck_callback_status",
+        ),
+    )
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "phone": self.phone,
+            "customer_name": self.customer_name,
+            "requested_time": self.requested_time,
+            "scheduled_at": self.scheduled_at.isoformat() if self.scheduled_at else None,
+            "status": self.status,
+            "call_id": self.call_id,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
         }
