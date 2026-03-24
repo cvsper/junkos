@@ -245,6 +245,12 @@ def set_security_headers(response):
 # ---------------------------------------------------------------------------
 with app.app_context():
     sqlalchemy_db.create_all()
+    # Auto-run column migrations on startup (idempotent)
+    try:
+        from migrate import run_migrations
+        run_migrations(app.config["SQLALCHEMY_DATABASE_URI"])
+    except Exception as exc:
+        app.logger.warning("Auto-migration on startup skipped: %s", exc)
 
 # ---------------------------------------------------------------------------
 # Background scheduler (recurring jobs, pickup reminders)
