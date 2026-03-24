@@ -8,12 +8,18 @@ Usage:
     python vapi_setup.py buy-number <asst_id>   # Buy phone number
 """
 
+import os
 import sys
 import requests
 import json
 
-VAPI_API_KEY = "d80992a4-f86a-417d-8cb3-211706887ab9"
-BACKEND_URL = "https://junkos-backend.onrender.com"
+VAPI_API_KEY = os.environ.get("VAPI_API_KEY", "")
+BACKEND_URL = os.environ.get("BACKEND_URL", "https://junkos-backend.onrender.com")
+
+if not VAPI_API_KEY:
+    print("Error: VAPI_API_KEY environment variable is required")
+    print("  export VAPI_API_KEY=your-key-here")
+    sys.exit(1)
 
 HEADERS = {
     "Authorization": "Bearer {}".format(VAPI_API_KEY),
