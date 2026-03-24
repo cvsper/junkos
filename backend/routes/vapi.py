@@ -11,7 +11,7 @@ import logging
 from datetime import datetime, timezone
 from flask import Blueprint, request, jsonify
 
-from models import db, User, Job, Payment, generate_uuid, generate_referral_code
+from models import db, User, Job, Payment, CallLog, generate_uuid, generate_referral_code
 
 logger = logging.getLogger(__name__)
 
@@ -382,18 +382,226 @@ def handle_webhook():
     msg_type = message.get("type", "")
 
     if msg_type == "end-of-call-report":
-        call = message.get("call", {})
-        summary = message.get("summary", "")
-        duration = message.get("endedReason", "")
-        logger.info(
-            "Vapi call ended: duration=%s reason=%s summary=%s",
-            call.get("duration"), duration, summary[:200] if summary else "",
-        )
+        _handle_end_of_call_report(message)
     elif msg_type == "status-update":
         status = message.get("status", "")
         logger.info("Vapi call status: %s", status)
     elif msg_type == "transcript":
-        # Could store transcripts for training/review
-        pass
+        _handle_transcript(message)
 
     return jsonify({"ok": True})
+
+
+def _handle_end_of_call_report(message):
+    """Process end-of-call report: store CallLog, match customer, notify operator."""
+    call = message.get("call", {})
+    call_id = call.get("id", "")
+    phone_number = call.get("customer", {}).get("number", "")
+    duration = call.get("duration", None)
+    ended_reason = message.get("endedReason", "")
+    transcript_text = message.get("transcript", "")
+    summary = message.get("summary", "")
+    analysis = message.get("analysis", {})
+    sentiment = analysis.get("sentiment", None)
+
+    # Extract tools used from the messages array
+    tools_used = []
+    for msg in message.get("messages", []):
+        if msg.get("role") == "tool_calls":
+            for tc in msg.get("toolCalls", []):
+                func_name = tc.get("function", {}).get("name", "")
+                if func_name and func_name not in tools_used:
+                    tools_used.append(func_name)
+
+    # Check if a booking was created during this call
+    booking_created = "create_booking" in tools_used
+
+    # Try to match customer by phone number
+    customer_id = None
+    customer = None
+    if phone_number:
+        customer = User.query.filter_by(phone=phone_number).first()
+        if customer:
+            customer_id = customer.id
+
+    # Check if CallLog already exists (from partial transcript)
+    call_log = CallLog.query.filter_by(call_id=call_id).first() if call_id else None
+
+    if call_log:
+        # Update existing record
+        call_log.phone_number = phone_number or call_log.phone_number
+        call_log.duration_seconds = int(duration) if duration else None
+        call_log.status = ended_reason or "completed"
+        call_log.transcript = transcript_text or call_log.transcript
+        call_log.summary = summary
+        call_log.sentiment = sentiment
+        call_log.tools_used = tools_used if tools_used else call_log.tools_used
+        call_log.booking_created = booking_created
+        call_log.customer_id = customer_id or call_log.customer_id
+        call_log.ended_at = datetime.now(timezone.utc)
+    else:
+        # Create new record
+        call_log = CallLog(
+            id=generate_uuid(),
+            call_id=call_id or generate_uuid(),
+            phone_number=phone_number,
+            direction=call.get("direction", "inbound"),
+            duration_seconds=int(duration) if duration else None,
+            status=ended_reason or "completed",
+            transcript=transcript_text,
+            summary=summary,
+            sentiment=sentiment,
+            tools_used=tools_used if tools_used else None,
+            booking_created=booking_created,
+            customer_id=customer_id,
+            ended_at=datetime.now(timezone.utc),
+        )
+        db.session.add(call_log)
+
+    db.session.commit()
+
+    logger.info(
+        "CallLog saved: call_id=%s phone=%s duration=%s booking=%s",
+        call_id, phone_number, duration, booking_created,
+    )
+
+    # Send follow-up email if booking was created and customer has email
+    if booking_created and customer and customer.email:
+        try:
+            from notifications import send_booking_confirmation_email
+            # Find the most recent job for this customer booked via phone
+            recent_job = Job.query.filter_by(
+                customer_id=customer.id,
+            ).order_by(Job.created_at.desc()).first()
+
+            if recent_job:
+                send_booking_confirmation_email(
+                    to_email=customer.email,
+                    customer_name=customer.name or "",
+                    booking_id=recent_job.id,
+                    address=recent_job.address or "",
+                    scheduled_date=str(recent_job.scheduled_at.date()) if recent_job.scheduled_at else "TBD",
+                    scheduled_time=str(recent_job.scheduled_at.strftime("%H:%M")) if recent_job.scheduled_at else "",
+                    total_amount=recent_job.total_price or 0,
+                )
+        except Exception:
+            logger.exception("Failed to send post-call follow-up email")
+
+    # Send operator summary SMS
+    try:
+        from sms_service import send_sms_async
+        operator_phone = os.environ.get("OPERATOR_PHONE", "")
+        if operator_phone:
+            duration_str = "{}s".format(duration) if duration else "N/A"
+            summary_short = (summary[:150] + "...") if summary and len(summary) > 150 else (summary or "No summary")
+            tools_str = ", ".join(tools_used) if tools_used else "none"
+            msg = (
+                "CALL ENDED\n"
+                "Phone: {}\n"
+                "Duration: {}\n"
+                "Status: {}\n"
+                "Booking: {}\n"
+                "Tools: {}\n"
+                "Summary: {}"
+            ).format(
+                phone_number or "unknown",
+                duration_str,
+                ended_reason or "completed",
+                "Yes" if booking_created else "No",
+                tools_str,
+                summary_short,
+            )
+            send_sms_async(operator_phone, msg)
+    except Exception:
+        logger.exception("Failed to send operator call summary SMS")
+
+
+def _handle_transcript(message):
+    """Store partial transcript updates. Append to existing CallLog or create placeholder."""
+    call = message.get("call", {})
+    call_id = call.get("id", "")
+    phone_number = call.get("customer", {}).get("number", "")
+    transcript_text = message.get("transcript", "")
+
+    if not call_id:
+        return
+
+    call_log = CallLog.query.filter_by(call_id=call_id).first()
+
+    if call_log:
+        # Append new transcript content
+        if transcript_text:
+            if call_log.transcript:
+                call_log.transcript = call_log.transcript + "\n" + transcript_text
+            else:
+                call_log.transcript = transcript_text
+    else:
+        # Create placeholder record
+        customer_id = None
+        if phone_number:
+            customer = User.query.filter_by(phone=phone_number).first()
+            if customer:
+                customer_id = customer.id
+
+        call_log = CallLog(
+            id=generate_uuid(),
+            call_id=call_id,
+            phone_number=phone_number,
+            direction=call.get("direction", "inbound"),
+            status="in-progress",
+            transcript=transcript_text,
+            customer_id=customer_id,
+        )
+        db.session.add(call_log)
+
+    db.session.commit()
+
+
+# ---------------------------------------------------------------------------
+# Call log API endpoints (operator dashboard)
+# ---------------------------------------------------------------------------
+@vapi_bp.route("/calls", methods=["GET"])
+def list_call_logs():
+    """Return recent call logs, paginated. Defaults to last 50.
+
+    Query params:
+        page (int): page number, default 1
+        per_page (int): results per page, default 50, max 100
+        status (str): filter by status
+        booking_only (bool): if "true", only calls that created bookings
+    """
+    page = request.args.get("page", 1, type=int)
+    per_page = min(request.args.get("per_page", 50, type=int), 100)
+    status_filter = request.args.get("status", None)
+    booking_only = request.args.get("booking_only", "").lower() == "true"
+
+    query = CallLog.query
+
+    if status_filter:
+        query = query.filter(CallLog.status == status_filter)
+    if booking_only:
+        query = query.filter(CallLog.booking_created == True)
+
+    query = query.order_by(CallLog.created_at.desc())
+    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+
+    return jsonify({
+        "calls": [c.to_dict() for c in pagination.items],
+        "total": pagination.total,
+        "page": pagination.page,
+        "per_page": pagination.per_page,
+        "pages": pagination.pages,
+    })
+
+
+@vapi_bp.route("/calls/<call_id>", methods=["GET"])
+def get_call_log(call_id):
+    """Return a single call log by Vapi call_id or internal id."""
+    call_log = CallLog.query.filter_by(call_id=call_id).first()
+    if not call_log:
+        call_log = CallLog.query.filter_by(id=call_id).first()
+
+    if not call_log:
+        return jsonify({"error": "Call log not found"}), 404
+
+    return jsonify(call_log.to_dict())

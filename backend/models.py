@@ -259,6 +259,9 @@ class Job(db.Model):
     cancellation_fee = Column(Float, default=0.0)
     rescheduled_count = Column(Integer, default=0)
 
+    reminder_sent = Column(Boolean, default=False)
+    reminder_call_id = Column(String(255), nullable=True)
+
     volume_adjustment_proposed = Column(Boolean, default=False)
     adjusted_volume = Column(Float, nullable=True)
     adjusted_price = Column(Float, nullable=True)
@@ -312,6 +315,8 @@ class Job(db.Model):
             "cancelled_at": self.cancelled_at.isoformat() if self.cancelled_at else None,
             "cancellation_fee": self.cancellation_fee or 0.0,
             "rescheduled_count": self.rescheduled_count or 0,
+            "reminder_sent": self.reminder_sent or False,
+            "reminder_call_id": self.reminder_call_id,
             "volume_adjustment_proposed": self.volume_adjustment_proposed,
             "adjusted_volume": self.adjusted_volume,
             "adjusted_price": self.adjusted_price,
@@ -908,4 +913,47 @@ class AbandonedBooking(db.Model):
             "drip_stage": self.drip_stage,
             "converted": self.converted,
             "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
+
+
+# ---------------------------------------------------------------------------
+# CallLog (Vapi AI phone call transcripts and summaries)
+# ---------------------------------------------------------------------------
+class CallLog(db.Model):
+    __tablename__ = "call_logs"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    call_id = Column(String(255), unique=True, nullable=False, index=True)
+    phone_number = Column(String(20), nullable=True)
+    direction = Column(String(10), nullable=False, default="inbound")
+    duration_seconds = Column(Integer, nullable=True)
+    status = Column(String(50), nullable=True)  # completed, missed, transferred, etc.
+    transcript = Column(Text, nullable=True)
+    summary = Column(Text, nullable=True)
+    sentiment = Column(String(20), nullable=True)  # positive, neutral, negative
+    tools_used = Column(JSON, nullable=True)
+    booking_created = Column(Boolean, default=False)
+    customer_id = Column(String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    created_at = Column(DateTime, default=utcnow)
+    ended_at = Column(DateTime, nullable=True)
+
+    customer = relationship("User", foreign_keys=[customer_id])
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "call_id": self.call_id,
+            "phone_number": self.phone_number,
+            "direction": self.direction,
+            "duration_seconds": self.duration_seconds,
+            "status": self.status,
+            "transcript": self.transcript,
+            "summary": self.summary,
+            "sentiment": self.sentiment,
+            "tools_used": self.tools_used,
+            "booking_created": self.booking_created,
+            "customer_id": self.customer_id,
+            "customer_name": self.customer.name if self.customer else None,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "ended_at": self.ended_at.isoformat() if self.ended_at else None,
         }
