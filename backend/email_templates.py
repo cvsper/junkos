@@ -487,3 +487,78 @@ def password_reset_html(name, reset_url):
     ).format(url=_esc(str(reset_url or '')))
 
     return _wrap(body)
+
+
+# ---------------------------------------------------------------------------
+# 8. Abandoned booking drip — 1-hour follow-up
+# ---------------------------------------------------------------------------
+
+def abandoned_drip_1h_html(name=None, items=None, resume_url=None):
+    """1-hour abandoned booking follow-up — 'Still thinking it over?'"""
+    greeting = "Hi {}".format(_esc(name)) if name else "Hi there"
+    items_text = ""
+    if items and isinstance(items, list):
+        count = sum(i.get("quantity", 1) for i in items if isinstance(i, dict))
+        items_text = '<p style="color:#4b5563;font-size:15px;">You had <strong>{} item{}</strong> ready for pickup.</p>'.format(count, "s" if count != 1 else "")
+
+    btn = ""
+    if resume_url:
+        btn = '<div style="text-align:center;margin:25px 0;"><a href="{}" style="display:inline-block;padding:14px 32px;background:#DC2626;color:#ffffff;text-decoration:none;border-radius:8px;font-weight:600;font-size:16px;">Finish Your Booking</a></div>'.format(_esc(resume_url))
+
+    body = (
+        '<h2 style="color:#111827;font-size:22px;margin:0 0 15px;">{}, still thinking it over?</h2>'
+        '<p style="color:#4b5563;font-size:15px;line-height:1.6;">We noticed you started a junk removal booking but didn\'t finish. No worries — your items are saved and ready to go.</p>'
+        '{}'
+        '{}'
+        '<p style="color:#6b7280;font-size:14px;margin-top:20px;">Questions? Reply to this email or call us at (561) 888-3427.</p>'
+    ).format(greeting, items_text, btn)
+    return _wrap(body)
+
+
+# ---------------------------------------------------------------------------
+# 9. Abandoned booking drip — 24-hour follow-up
+# ---------------------------------------------------------------------------
+
+def abandoned_drip_24h_html(name=None, estimated_price=None, resume_url=None):
+    """24-hour abandoned booking follow-up — social proof + urgency."""
+    greeting = "Hi {}".format(_esc(name)) if name else "Hi there"
+    price_text = ""
+    if estimated_price:
+        price_text = '<p style="color:#4b5563;font-size:15px;">Your estimated pickup was just <strong>${:.0f}</strong> — that\'s up to 25% less than the big guys.</p>'.format(float(estimated_price))
+
+    btn = ""
+    if resume_url:
+        btn = '<div style="text-align:center;margin:25px 0;"><a href="{}" style="display:inline-block;padding:14px 32px;background:#DC2626;color:#ffffff;text-decoration:none;border-radius:8px;font-weight:600;font-size:16px;">Complete Your Booking</a></div>'.format(_esc(resume_url))
+
+    body = (
+        '<h2 style="color:#111827;font-size:22px;margin:0 0 15px;">{}, your junk won\'t remove itself!</h2>'
+        '{}'
+        '<p style="color:#4b5563;font-size:15px;line-height:1.6;">Hundreds of South Florida homeowners trust Umuve for fast, affordable junk removal. Most pickups are completed within 48 hours of booking.</p>'
+        '{}'
+        '<p style="color:#6b7280;font-size:14px;margin-top:20px;">We\'re here to help — (561) 888-3427</p>'
+    ).format(greeting, price_text, btn)
+    return _wrap(body)
+
+
+# ---------------------------------------------------------------------------
+# 10. Abandoned booking drip — 72-hour follow-up (last chance + discount)
+# ---------------------------------------------------------------------------
+
+def abandoned_drip_72h_html(name=None, resume_url=None):
+    """72-hour abandoned booking follow-up — last chance with discount hint."""
+    greeting = "Hi {}".format(_esc(name)) if name else "Hi there"
+
+    btn = ""
+    if resume_url:
+        btn = '<div style="text-align:center;margin:25px 0;"><a href="{}" style="display:inline-block;padding:14px 32px;background:#DC2626;color:#ffffff;text-decoration:none;border-radius:8px;font-weight:600;font-size:16px;">Book Now</a></div>'.format(_esc(resume_url))
+
+    body = (
+        '<h2 style="color:#111827;font-size:22px;margin:0 0 15px;">{}, last chance — we\'d love to help</h2>'
+        '<p style="color:#4b5563;font-size:15px;line-height:1.6;">This is our last nudge — we promise! If you still need junk removed, we\'re the fastest and most affordable option in South Florida.</p>'
+        '<div style="background:#fef3c7;border-radius:8px;padding:16px;margin:20px 0;">'
+        '<p style="color:#92400e;font-size:15px;margin:0;"><strong>Limited offer:</strong> Use code <strong>COMEBACK10</strong> for 10% off your first pickup.</p>'
+        '</div>'
+        '{}'
+        '<p style="color:#6b7280;font-size:14px;margin-top:20px;">Need help? Just reply to this email.</p>'
+    ).format(greeting, btn)
+    return _wrap(body)

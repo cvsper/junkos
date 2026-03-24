@@ -778,6 +778,42 @@ def portal_create_booking():
     if phone:
         send_booking_sms(phone, job.id, date_str, address)
 
+    # --- Mark abandoned booking as converted ---
+    try:
+        from models import AbandonedBooking
+        if email:
+            abandoned = AbandonedBooking.query.filter_by(
+                email=email.strip().lower(), converted=False
+            ).first()
+            if abandoned:
+                abandoned.converted = True
+                sqlalchemy_db.session.commit()
+    except Exception:
+        pass
+
+    # --- SMS operator about new booking ---
+    try:
+        from sms_service import send_sms_async
+        operator_phone = os.environ.get("OPERATOR_PHONE", "")
+        if operator_phone:
+            items_count = sum(i.get("quantity", 1) for i in items if isinstance(i, dict))
+            lead_source = data.get("leadSource") or data.get("lead_source") or "direct"
+            msg = (
+                "NEW BOOKING!\n"
+                "{} - {} item{}\n"
+                "${:.0f} | {}\n"
+                "Scheduled: {}"
+            ).format(
+                address or "No address",
+                items_count, "s" if items_count != 1 else "",
+                total_amount,
+                lead_source,
+                date_str,
+            )
+            send_sms_async(operator_phone, msg)
+    except Exception:
+        pass
+
     return jsonify({
         "success": True,
         "bookingId": job.id,

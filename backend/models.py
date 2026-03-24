@@ -871,3 +871,41 @@ class OperatorApplication(db.Model):
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
+
+
+# ---------------------------------------------------------------------------
+# AbandonedBooking (lead recovery drip)
+# ---------------------------------------------------------------------------
+class AbandonedBooking(db.Model):
+    __tablename__ = "abandoned_bookings"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    email = Column(String(255), nullable=False, index=True)
+    phone = Column(String(20), nullable=True)
+    name = Column(String(255), nullable=True)
+    address = Column(Text, nullable=True)
+    items = Column(JSON, nullable=True)
+    step = Column(Integer, nullable=True)  # Which booking step they reached
+    estimated_price = Column(Float, nullable=True)
+    lead_source = Column(String(100), nullable=True)
+    drip_stage = Column(Integer, default=0)  # 0=new, 1=1h sent, 2=24h sent, 3=72h sent
+    converted = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=utcnow)
+    updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
+    last_drip_at = Column(DateTime, nullable=True)
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "email": self.email,
+            "phone": self.phone,
+            "name": self.name,
+            "address": self.address,
+            "items": self.items,
+            "step": self.step,
+            "estimated_price": self.estimated_price,
+            "lead_source": self.lead_source,
+            "drip_stage": self.drip_stage,
+            "converted": self.converted,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }

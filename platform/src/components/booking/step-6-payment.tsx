@@ -171,6 +171,42 @@ function PaymentFormInner() {
   const paymentRequestRef = useRef<PaymentRequest | null>(null);
 
   // ---------------------------------------------------------------------------
+  // Beacon abandoned booking to backend for email drip recovery
+  // ---------------------------------------------------------------------------
+  useEffect(() => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email || !emailRegex.test(email)) return;
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => {
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/booking/abandoned`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: email.trim(),
+          phone: phone.trim() || undefined,
+          name: name.trim() || undefined,
+          address:
+            typeof address === "object"
+              ? (address as Record<string, string>).street ||
+                JSON.stringify(address)
+              : address,
+          items,
+          step: 6,
+          estimatedPrice: estimatedPrice || undefined,
+          leadSource: leadSource || undefined,
+        }),
+        signal: controller.signal,
+      }).catch(() => {});
+    }, 2000); // Debounce 2s
+
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [email, phone, name, address, items, estimatedPrice, leadSource]);
+
+  // ---------------------------------------------------------------------------
   // Apple Pay / Google Pay setup
   // ---------------------------------------------------------------------------
   useEffect(() => {

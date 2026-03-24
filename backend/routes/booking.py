@@ -17,7 +17,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from models import (
     db, User, Job, Payment, PricingRule, PricingConfig, SurgeZone, Contractor,
-    Notification, PromoCode, generate_uuid, utcnow, generate_referral_code,
+    Notification, PromoCode, AbandonedBooking, generate_uuid, utcnow, generate_referral_code,
 )
 from auth_routes import require_auth, optional_auth
 from extensions import limiter
@@ -880,6 +880,41 @@ def create_booking(user_id):
     except Exception:
         pass  # Notifications must never block the main flow
 
+    # --- Mark abandoned booking as converted ---
+    try:
+        customer = db.session.get(User, user_id)
+        if customer and customer.email:
+            abandoned = AbandonedBooking.query.filter_by(
+                email=customer.email, converted=False
+            ).first()
+            if abandoned:
+                abandoned.converted = True
+                db.session.commit()
+    except Exception:
+        pass
+
+    # --- SMS operator about new booking ---
+    try:
+        from sms_service import send_sms_async
+        operator_phone = os.environ.get("OPERATOR_PHONE", "")
+        if operator_phone:
+            items_count = sum(i.get("quantity", 1) for i in items if isinstance(i, dict))
+            msg = (
+                "NEW BOOKING!\n"
+                "{} - {} item{}\n"
+                "${:.0f} | {}\n"
+                "Scheduled: {}"
+            ).format(
+                address or "No address",
+                items_count, "s" if items_count != 1 else "",
+                total,
+                lead_source or "direct",
+                str(scheduled_at.date()) if scheduled_at else "ASAP",
+            )
+            send_sms_async(operator_phone, msg)
+    except Exception:
+        pass
+
     return jsonify({
         "success": True,
         "job": job.to_dict(),
@@ -1016,3 +1051,53 @@ def _notify_nearby_contractors(job):
                 "Failed to send push notification for job %s to contractor %s: %s",
                 job.id, contractor.id, e
             )
+
+
+# ---------------------------------------------------------------------------
+# POST /api/booking/abandoned  (capture partial booking for drip recovery)
+# ---------------------------------------------------------------------------
+@booking_bp.route("/abandoned", methods=["POST"])
+def capture_abandoned():
+    """Capture a partial booking for email drip recovery.
+
+    Called by the frontend when a user reaches step 6 of booking
+    and provides their email. No auth required.
+    """
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "Request body required"}), 400
+
+    email = (data.get("email") or "").strip().lower()
+    if not email or "@" not in email:
+        return jsonify({"error": "Valid email required"}), 400
+
+    # Upsert -- update if same email exists and hasn't converted
+    existing = AbandonedBooking.query.filter_by(
+        email=email, converted=False
+    ).first()
+
+    if existing:
+        existing.phone = data.get("phone") or existing.phone
+        existing.name = data.get("name") or existing.name
+        existing.address = data.get("address") or existing.address
+        existing.items = data.get("items") or existing.items
+        existing.step = data.get("step") or existing.step
+        existing.estimated_price = data.get("estimatedPrice") or existing.estimated_price
+        existing.lead_source = data.get("leadSource") or existing.lead_source
+        existing.updated_at = utcnow()
+    else:
+        abandoned = AbandonedBooking(
+            id=generate_uuid(),
+            email=email,
+            phone=data.get("phone"),
+            name=data.get("name"),
+            address=data.get("address"),
+            items=data.get("items"),
+            step=data.get("step"),
+            estimated_price=data.get("estimatedPrice"),
+            lead_source=data.get("leadSource"),
+        )
+        db.session.add(abandoned)
+
+    db.session.commit()
+    return jsonify({"success": True}), 200
