@@ -44,7 +44,7 @@ function generateServicePage(service) {
                 <p style="font-size: 1.25rem; color: #5c5c5c; text-align: center; margin-bottom: 2rem;">${service.description}</p>
                 <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
                     <a href="https://app.goumuve.com/book" class="btn btn-primary btn-xl">Book Online Now</a>
-                    <a href="tel:+15618883427" class="btn btn-secondary btn-xl">Call (561) 888-3427</a>
+                    <a href="tel:+15619441636" class="btn btn-secondary btn-xl">Call (561) 944-1636</a>
                 </div>
             </div>
         </div>

@@ -62,7 +62,7 @@ Before deploying:
 - [ ] Click all buttons (phone + SMS links work?)
 - [ ] Scroll through entire page (animations smooth?)
 - [ ] Check text for typos
-- [ ] Verify phone number: **(561) 888-3427**
+- [ ] Verify phone number: **(561) 944-1636**
 - [ ] Test in dark mode (should look amazing)
 - [ ] Test in light mode (if user overrides)
 
@@ -155,7 +155,7 @@ After deploying:
 After launch:
 
 1. **Conversions**
-   - Phone calls: (561) 888-3427
+   - Phone calls: (561) 944-1636
    - Text messages: Same number
    - Track via GA4 events (already setup in script.js)
 
@@ -230,7 +230,7 @@ After launch:
 
 Run `./DEPLOY.sh` and go live. Your premium landing page will be deployed in ~60 seconds.
 
-Questions? Text the number on your new landing page: **(561) 888-3427** 📱
+Questions? Text the number on your new landing page: **(561) 944-1636** 📱
 
 ---
 

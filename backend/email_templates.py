@@ -39,7 +39,7 @@ def _footer():
         '<div style="text-align:center;margin-top:30px;padding-top:20px;border-top:1px solid #e5e7eb;color:#9ca3af;font-size:12px;line-height:1.6;">'
         '<p style="margin:0 0 4px;">Umuve &mdash; South Florida\'s Premium Junk Removal</p>'
         '<p style="margin:0 0 4px;">Palm Beach &amp; Broward County, FL</p>'
-        '<p style="margin:0;">(561) 888-3427 &middot; support@goumuve.com</p>'
+        '<p style="margin:0;">(561) 944-1636 &middot; support@goumuve.com</p>'
         '</div>'
     )
 
@@ -134,7 +134,7 @@ def booking_confirmation_html(customer_name, booking_id, address, date, time, to
         '<p style="color:#4b5563;font-size:14px;line-height:1.6;">'
         'We\'ll send you a reminder 24 hours before your appointment. '
         'Need to reschedule? Reply to this email or call us at '
-        '<strong>(561) 888-3427</strong>.</p>'
+        '<strong>(561) 944-1636</strong>.</p>'
     )
 
     return _wrap(body)
@@ -164,7 +164,7 @@ def booking_assigned_html(customer_name, driver_name, truck_type, eta):
     body += (
         '<p style="color:#4b5563;font-size:14px;line-height:1.6;">'
         'We\'ll notify you again once your driver is en route. '
-        'If you have any questions, call us at <strong>(561) 888-3427</strong>.</p>'
+        'If you have any questions, call us at <strong>(561) 944-1636</strong>.</p>'
     )
 
     return _wrap(body)
@@ -204,7 +204,7 @@ def driver_en_route_html(customer_name, driver_name, eta_minutes):
     body += (
         '<p style="color:#4b5563;font-size:14px;line-height:1.6;">'
         'Please make sure the items are accessible. '
-        'If you need to reach your driver, call us at <strong>(561) 888-3427</strong>.</p>'
+        'If you need to reach your driver, call us at <strong>(561) 944-1636</strong>.</p>'
     )
 
     return _wrap(body)
@@ -283,7 +283,7 @@ def payment_receipt_html(customer_name, booking_id, amount, payment_method_last4
     body += (
         '<p style="color:#6b7280;font-size:13px;line-height:1.6;">'
         'If you have billing questions, reply to this email or call '
-        '<strong>(561) 888-3427</strong>.</p>'
+        '<strong>(561) 944-1636</strong>.</p>'
     )
 
     return _wrap(body)
@@ -321,7 +321,7 @@ def welcome_html(name):
 
     body += (
         '<p style="color:#6b7280;font-size:13px;line-height:1.6;text-align:center;">'
-        'Questions? Just reply to this email or call <strong>(561) 888-3427</strong>.</p>'
+        'Questions? Just reply to this email or call <strong>(561) 944-1636</strong>.</p>'
     )
 
     return _wrap(body)
@@ -399,12 +399,12 @@ def job_status_update_html(customer_name, job_id, status, driver_name=None):
         body += (
             '<p style="color:#4b5563;font-size:14px;line-height:1.6;">'
             'If you\'d like to rebook, visit our website or call us at '
-            '<strong>(561) 888-3427</strong>.</p>'
+            '<strong>(561) 944-1636</strong>.</p>'
         )
     else:
         body += (
             '<p style="color:#4b5563;font-size:14px;line-height:1.6;">'
-            'Questions? Reply to this email or call <strong>(561) 888-3427</strong>.</p>'
+            'Questions? Reply to this email or call <strong>(561) 944-1636</strong>.</p>'
         )
 
     return _wrap(body)
@@ -449,7 +449,7 @@ def pickup_reminder_html(customer_name, job_id, address, date, time):
 
     body += (
         '<p style="color:#4b5563;font-size:14px;line-height:1.6;">'
-        'Need to reschedule? Call us at <strong>(561) 888-3427</strong> '
+        'Need to reschedule? Call us at <strong>(561) 944-1636</strong> '
         'or reply to this email as soon as possible.</p>'
     )
 
@@ -510,7 +510,7 @@ def abandoned_drip_1h_html(name=None, items=None, resume_url=None):
         '<p style="color:#4b5563;font-size:15px;line-height:1.6;">We noticed you started a junk removal booking but didn\'t finish. No worries — your items are saved and ready to go.</p>'
         '{}'
         '{}'
-        '<p style="color:#6b7280;font-size:14px;margin-top:20px;">Questions? Reply to this email or call us at (561) 888-3427.</p>'
+        '<p style="color:#6b7280;font-size:14px;margin-top:20px;">Questions? Reply to this email or call us at (561) 944-1636.</p>'
     ).format(greeting, items_text, btn)
     return _wrap(body)
 
@@ -535,7 +535,7 @@ def abandoned_drip_24h_html(name=None, estimated_price=None, resume_url=None):
         '{}'
         '<p style="color:#4b5563;font-size:15px;line-height:1.6;">Hundreds of South Florida homeowners trust Umuve for fast, affordable junk removal. Most pickups are completed within 48 hours of booking.</p>'
         '{}'
-        '<p style="color:#6b7280;font-size:14px;margin-top:20px;">We\'re here to help — (561) 888-3427</p>'
+        '<p style="color:#6b7280;font-size:14px;margin-top:20px;">We\'re here to help — (561) 944-1636</p>'
     ).format(greeting, price_text, btn)
     return _wrap(body)
 

@@ -266,7 +266,7 @@ struct CodeDigitField: View {
 
 #Preview {
     NavigationView {
-        VerificationCodeView(phoneNumber: "+15618883427")
+        VerificationCodeView(phoneNumber: "+15619441636")
             .environmentObject(AuthenticationManager())
     }
 }
