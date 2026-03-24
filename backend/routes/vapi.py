@@ -78,6 +78,8 @@ def handle_tool_call():
             result = _handle_create_booking(args, data)
         elif name == "check_service_area":
             result = _handle_service_area(args)
+        elif name == "send_checkout_text":
+            result = _handle_checkout_text(args, data)
         else:
             result = "Unknown tool: {}".format(name)
 
@@ -328,6 +330,42 @@ def _handle_service_area(args):
         "We currently serve Miami-Dade, Broward, and Palm Beach counties "
         "in South Florida."
     ).format(args["address"])
+
+
+def _handle_checkout_text(args, vapi_data):
+    """Send the customer a text with the checkout/confirmation link."""
+    from sms_service import send_sms_async
+
+    phone = args.get("phone", "")
+    booking_id = args.get("booking_id", "")
+    customer_name = args.get("customer_name", "")
+    total = args.get("total", 0)
+
+    # Get caller phone from Vapi if not provided
+    if not phone:
+        call = vapi_data.get("message", {}).get("call", {})
+        phone = call.get("customer", {}).get("number", "")
+
+    if not phone:
+        return "I need a phone number to send the text."
+
+    frontend_url = os.environ.get("FRONTEND_URL", "https://app.goumuve.com")
+    short_id = str(booking_id)[:8] if booking_id else ""
+    checkout_url = "{}/book?ref=phone".format(frontend_url)
+    if booking_id:
+        checkout_url = "{}/jobs/{}".format(frontend_url, booking_id)
+
+    greeting = "Hi {}! ".format(customer_name) if customer_name else ""
+    msg = (
+        "{}Thanks for calling You-Move! "
+        "Here's your booking link to confirm & pay:\n\n"
+        "{}\n\n"
+        "Total: ${:.0f}\n"
+        "Questions? Just call us back at (561) 944-1636"
+    ).format(greeting, checkout_url, float(total) if total else 0)
+
+    send_sms_async(phone, msg)
+    return "Text sent to {} with the checkout link.".format(phone)
 
 
 # ---------------------------------------------------------------------------
