@@ -95,6 +95,20 @@ COLUMN_MIGRATIONS = [
     ("payments", "tip_amount", "FLOAT", "FLOAT", "0.0"),
     ("payments", "commission", "FLOAT", "FLOAT", "0.0"),
 
+    # Job reminder + review fields (added 2026-03-24)
+    ("jobs", "reminder_sent", "BOOLEAN", "BOOLEAN", "FALSE"),
+    ("jobs", "reminder_call_id", "VARCHAR(255)", "VARCHAR(255)", "NULL"),
+    ("jobs", "review_requested", "BOOLEAN", "BOOLEAN", "FALSE"),
+    ("jobs", "review_call_id", "VARCHAR(255)", "VARCHAR(255)", "NULL"),
+
+    # User win-back fields (added 2026-03-24)
+    ("users", "winback_called", "BOOLEAN", "BOOLEAN", "FALSE"),
+    ("users", "last_winback_at", "DATETIME", "TIMESTAMP", "NULL"),
+
+    # Call log scoring + follow-up fields (added 2026-03-24)
+    ("call_logs", "lead_score", "VARCHAR(10)", "VARCHAR(10)", "NULL"),
+    ("call_logs", "followup_sent", "BOOLEAN", "BOOLEAN", "FALSE"),
+
     # Call log lead assignment fields (added 2026-03-24)
     ("call_logs", "assigned_operator_id", "VARCHAR(36)", "VARCHAR(36)", "NULL"),
     ("call_logs", "assigned_driver_id", "VARCHAR(36)", "VARCHAR(36)", "NULL"),
