@@ -95,6 +95,12 @@ COLUMN_MIGRATIONS = [
     ("payments", "tip_amount", "FLOAT", "FLOAT", "0.0"),
     ("payments", "commission", "FLOAT", "FLOAT", "0.0"),
 
+    # Contractors availability
+    ("contractors", "availability_schedule", "TEXT", "JSON", "NULL"),
+
+    # Payments updated_at
+    ("payments", "updated_at", "DATETIME", "TIMESTAMP", "NULL"),
+
     # Job lead source (added 2026-03-24)
     ("jobs", "lead_source", "VARCHAR(100)", "VARCHAR(100)", "NULL"),
 
