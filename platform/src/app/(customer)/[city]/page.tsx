@@ -194,7 +194,7 @@ export default function CityPage({ params }: { params: { city: string } }) {
     name: `Umuve Junk Removal - ${cityName}, FL`,
     description: `Professional junk removal services in ${cityName}, Florida. Furniture, appliances, yard waste, construction debris and more.`,
     url: `https://app.goumuve.com/${params.city}`,
-    telephone: "+1-561-000-0000",
+    telephone: "+1-561-944-1636",
     address: {
       "@type": "PostalAddress",
       addressLocality: cityName,
@@ -207,7 +207,10 @@ export default function CityPage({ params }: { params: { city: string } }) {
     },
     priceRange: "$79 - $579",
     image: "https://app.goumuve.com/logo-nav.png",
-    sameAs: ["https://app.goumuve.com"],
+    sameAs: [
+      "https://goumuve.com",
+      "https://instagram.com/goumuve",
+    ],
     openingHoursSpecification: {
       "@type": "OpeningHoursSpecification",
       dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
