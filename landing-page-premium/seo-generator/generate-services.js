@@ -20,8 +20,8 @@ function generateServicePage(service) {
     <link rel="stylesheet" href="../styles.css">
     <link rel="icon" type="image/png" href="../logo-icon.png">
     
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-CLGPJ5TS3G"></script>
-    <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-CLGPJ5TS3G');gtag('config','AW-17954201120');</script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-RD443LTXVJ"></script>
+    <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-RD443LTXVJ');gtag('config','AW-17954201120');</script>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
