@@ -129,6 +129,9 @@ COLUMN_MIGRATIONS = [
     ("scheduled_callbacks", "assigned_driver_id", "VARCHAR(36)", "VARCHAR(36)", "NULL"),
     ("scheduled_callbacks", "assignment_status", "VARCHAR(20)", "VARCHAR(20)", "'unassigned'"),
     ("scheduled_callbacks", "assigned_at", "DATETIME", "TIMESTAMP", "NULL"),
+
+    # Job drip stage for abandoned booking emails (added 2026-03-30)
+    ("jobs", "drip_stage", "INTEGER", "INTEGER", "0"),
 ]
 
 
