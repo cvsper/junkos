@@ -7,7 +7,7 @@ import {
   normalizeDriverStats,
   normalizePagedJobsResponse,
 } from "@/lib/driver-api-adapters.js";
-import { resolveApiBaseUrl } from "@/lib/api-base-url.js";
+import { resolveApiBaseUrl } from "@/lib/api-base-url";
 import type {
   User,
   Job,
