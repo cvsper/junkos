@@ -272,6 +272,8 @@ class Job(db.Model):
     adjusted_volume = Column(Float, nullable=True)
     adjusted_price = Column(Float, nullable=True)
 
+    drip_stage = Column(Integer, default=0)  # 0=none, 1=reminder, 2=incentive, 3=final
+
     created_at = Column(DateTime, default=utcnow)
     updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
 
@@ -1033,4 +1035,5 @@ class ScheduledCallback(db.Model):
             "assignment_status": self.assignment_status or "unassigned",
             "assigned_at": self.assigned_at.isoformat() if self.assigned_at else None,
             "created_at": self.created_at.isoformat() if self.created_at else None,
+            "ended_at": self.ended_at.isoformat() if self.ended_at else None,
         }

@@ -460,6 +460,99 @@ def pickup_reminder_html(customer_name, job_id, address, date, time):
 # 7. Password reset
 # ---------------------------------------------------------------------------
 
+def abandoned_booking_reminder_html(customer_name, booking_url):
+    """Return HTML for a 2-hour abandoned booking reminder email."""
+    name = _esc(str(customer_name)) if customer_name else 'there'
+
+    body = (
+        '<h2 style="color:#111827;margin:0 0 12px;font-size:22px;">You left something behind!</h2>'
+        '<p style="color:#4b5563;line-height:1.6;">Hi {name},</p>'
+        '<p style="color:#4b5563;line-height:1.6;">'
+        'It looks like you started booking a junk removal but didn\'t finish. '
+        'No worries &mdash; your details are still saved and ready for you.</p>'
+        '<p style="color:#4b5563;line-height:1.6;">'
+        'Completing your booking only takes a minute, and we\'ll have your '
+        'space cleared out in no time.</p>'
+    ).format(name=name)
+
+    body += _button(booking_url or '#', 'Complete Your Booking')
+
+    body += (
+        '<p style="color:#6b7280;font-size:13px;line-height:1.6;text-align:center;">'
+        'Questions? Reply to this email or call <strong>(561) 888-3427</strong>.</p>'
+    )
+
+    return _wrap(body)
+
+
+def abandoned_booking_incentive_html(customer_name, booking_url, promo_code):
+    """Return HTML for a 24-hour abandoned booking incentive email with promo code."""
+    name = _esc(str(customer_name)) if customer_name else 'there'
+    code = _esc(str(promo_code)) if promo_code else 'COMEBACK10'
+
+    body = (
+        '<h2 style="color:#111827;margin:0 0 12px;font-size:22px;">Here\'s 10% off to finish your booking</h2>'
+        '<p style="color:#4b5563;line-height:1.6;">Hi {name},</p>'
+        '<p style="color:#4b5563;line-height:1.6;">'
+        'We noticed you haven\'t completed your junk removal booking yet. '
+        'We\'d love to help you get that space cleared &mdash; so here\'s a little nudge:</p>'
+    ).format(name=name)
+
+    body += (
+        '<div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;'
+        'padding:24px;margin:20px 0;text-align:center;">'
+        '<p style="color:#6b7280;font-size:13px;margin:0 0 6px;text-transform:uppercase;letter-spacing:0.5px;">Your Promo Code</p>'
+        '<p style="color:#DC2626;font-size:32px;font-weight:700;margin:0;letter-spacing:2px;">{code}</p>'
+        '<p style="color:#6b7280;font-size:13px;margin:8px 0 0;">10% off your first pickup</p>'
+        '</div>'
+    ).format(code=code)
+
+    body += _button(booking_url or '#', 'Claim Your Discount')
+
+    body += (
+        '<p style="color:#6b7280;font-size:13px;line-height:1.6;text-align:center;">'
+        'This offer won\'t last forever. Book now and save!</p>'
+    )
+
+    return _wrap(body)
+
+
+def abandoned_booking_final_html(customer_name, booking_url):
+    """Return HTML for a 72-hour final abandoned booking email."""
+    name = _esc(str(customer_name)) if customer_name else 'there'
+
+    body = (
+        '<h2 style="color:#111827;margin:0 0 12px;font-size:22px;">We saved your spot</h2>'
+        '<p style="color:#4b5563;line-height:1.6;">Hi {name},</p>'
+        '<p style="color:#4b5563;line-height:1.6;">'
+        'This is your last reminder &mdash; your junk removal booking is still waiting for you. '
+        'We\'ve held onto your details so you can pick up right where you left off.</p>'
+    ).format(name=name)
+
+    body += (
+        '<div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;'
+        'padding:24px;margin:20px 0;text-align:center;">'
+        '<p style="color:#DC2626;font-size:18px;font-weight:600;margin:0 0 8px;">500+ pickups completed in South Florida</p>'
+        '<p style="color:#6b7280;font-size:14px;margin:0;line-height:1.6;">'
+        'Our customers love the speed and care we bring to every job. '
+        'Join hundreds of happy homeowners who\'ve already reclaimed their space.</p>'
+        '</div>'
+    )
+
+    body += _button(booking_url or '#', 'Book Now')
+
+    body += (
+        '<p style="color:#6b7280;font-size:13px;line-height:1.6;text-align:center;">'
+        'If you\'ve already booked or no longer need service, feel free to ignore this email.</p>'
+    )
+
+    return _wrap(body)
+
+
+# ---------------------------------------------------------------------------
+# 7. Password reset
+# ---------------------------------------------------------------------------
+
 def password_reset_html(name, reset_url):
     """Return HTML for a password-reset email with a clickable link."""
     display_name = _esc(str(name)) if name else 'there'

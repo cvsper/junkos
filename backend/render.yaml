@@ -16,6 +16,8 @@ services:
         fromDatabase:
           name: umuve-db
           property: connectionString
+      - key: ENABLE_SCHEDULER
+        value: "true"
 
 databases:
   - name: umuve-db

@@ -26,6 +26,9 @@ from email_templates import (
     password_reset_html,
     job_status_update_html,
     pickup_reminder_html,
+    abandoned_booking_reminder_html,
+    abandoned_booking_incentive_html,
+    abandoned_booking_final_html,
 )
 
 logger = logging.getLogger(__name__)
@@ -473,4 +476,50 @@ def send_pickup_reminder_email(to_email, customer_name, job_id, address,
         return send_email(to_email, subject, html)
     except Exception:
         logger.exception("Failed in send_pickup_reminder_email for %s", to_email)
+        return None
+
+
+# ---------------------------------------------------------------------------
+# Abandoned booking drip emails
+# ---------------------------------------------------------------------------
+def send_abandoned_booking_reminder(to_email, customer_name, booking_url):
+    """Send a 2-hour abandoned booking reminder email. Never raises."""
+    try:
+        subject = "You left something behind!"
+        html = abandoned_booking_reminder_html(
+            customer_name=customer_name,
+            booking_url=booking_url,
+        )
+        return send_email(to_email, subject, html)
+    except Exception:
+        logger.exception("Failed in send_abandoned_booking_reminder for %s", to_email)
+        return None
+
+
+def send_abandoned_booking_incentive(to_email, customer_name, booking_url, promo_code):
+    """Send a 24-hour abandoned booking incentive email with promo code. Never raises."""
+    try:
+        subject = "Here's 10% off to finish your booking"
+        html = abandoned_booking_incentive_html(
+            customer_name=customer_name,
+            booking_url=booking_url,
+            promo_code=promo_code,
+        )
+        return send_email(to_email, subject, html)
+    except Exception:
+        logger.exception("Failed in send_abandoned_booking_incentive for %s", to_email)
+        return None
+
+
+def send_abandoned_booking_final(to_email, customer_name, booking_url):
+    """Send a 72-hour final abandoned booking email. Never raises."""
+    try:
+        subject = "We saved your spot"
+        html = abandoned_booking_final_html(
+            customer_name=customer_name,
+            booking_url=booking_url,
+        )
+        return send_email(to_email, subject, html)
+    except Exception:
+        logger.exception("Failed in send_abandoned_booking_final for %s", to_email)
         return None

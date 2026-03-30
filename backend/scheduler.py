@@ -107,6 +107,88 @@ def _send_pickup_reminders(app):
             logger.info("Scheduler: sent reminders for %d upcoming jobs", len(jobs))
 
 
+def _send_abandoned_booking_drip(app):
+    """Send abandoned booking drip emails based on pending job age."""
+    with app.app_context():
+        from models import db, Job, User
+        from notifications import (
+            send_abandoned_booking_reminder,
+            send_abandoned_booking_incentive,
+            send_abandoned_booking_final,
+        )
+
+        now = datetime.now(timezone.utc)
+        base_url = os.environ.get("FRONTEND_URL", "https://goumuve.com")
+
+        # Stage 1: 2+ hours old, drip_stage=0 → send reminder
+        stage1_cutoff = now - timedelta(hours=2)
+        stage1_jobs = Job.query.filter(
+            Job.status == "pending",
+            Job.drip_stage == 0,
+            Job.created_at <= stage1_cutoff,
+        ).all()
+
+        for job in stage1_jobs:
+            try:
+                user = db.session.get(User, job.customer_id)
+                if not user or not user.email:
+                    continue
+                booking_url = "{}/book?resume={}".format(base_url.rstrip("/"), job.id)
+                send_abandoned_booking_reminder(user.email, user.name, booking_url)
+                job.drip_stage = 1
+            except Exception:
+                logger.exception("Failed to send drip stage 1 for job %s", job.id)
+
+        # Stage 2: 24+ hours old, drip_stage=1 → send incentive
+        stage2_cutoff = now - timedelta(hours=24)
+        stage2_jobs = Job.query.filter(
+            Job.status == "pending",
+            Job.drip_stage == 1,
+            Job.created_at <= stage2_cutoff,
+        ).all()
+
+        for job in stage2_jobs:
+            try:
+                user = db.session.get(User, job.customer_id)
+                if not user or not user.email:
+                    continue
+                booking_url = "{}/book?resume={}".format(base_url.rstrip("/"), job.id)
+                send_abandoned_booking_incentive(
+                    user.email, user.name, booking_url, "COMEBACK10"
+                )
+                job.drip_stage = 2
+            except Exception:
+                logger.exception("Failed to send drip stage 2 for job %s", job.id)
+
+        # Stage 3: 72+ hours old, drip_stage=2 → send final
+        stage3_cutoff = now - timedelta(hours=72)
+        stage3_jobs = Job.query.filter(
+            Job.status == "pending",
+            Job.drip_stage == 2,
+            Job.created_at <= stage3_cutoff,
+        ).all()
+
+        for job in stage3_jobs:
+            try:
+                user = db.session.get(User, job.customer_id)
+                if not user or not user.email:
+                    continue
+                booking_url = "{}/book?resume={}".format(base_url.rstrip("/"), job.id)
+                send_abandoned_booking_final(user.email, user.name, booking_url)
+                job.drip_stage = 3
+            except Exception:
+                logger.exception("Failed to send drip stage 3 for job %s", job.id)
+
+        total = len(stage1_jobs) + len(stage2_jobs) + len(stage3_jobs)
+        if total > 0:
+            db.session.commit()
+            logger.info(
+                "Scheduler: sent abandoned booking drip emails — "
+                "stage1=%d, stage2=%d, stage3=%d",
+                len(stage1_jobs), len(stage2_jobs), len(stage3_jobs),
+            )
+
+
 def init_scheduler(app):
     """Initialize and start the background scheduler.
 
@@ -141,8 +223,18 @@ def init_scheduler(app):
             name="Send 24h pickup reminders",
         )
 
+        # Send abandoned booking drip emails every 30 minutes
+        scheduler.add_job(
+            _send_abandoned_booking_drip,
+            "interval",
+            minutes=30,
+            args=[app],
+            id="send_abandoned_booking_drip",
+            name="Send abandoned booking drip emails",
+        )
+
         scheduler.start()
-        logger.info("Background scheduler started with 2 jobs")
+        logger.info("Background scheduler started with 3 jobs")
         return scheduler
     except ImportError:
         logger.warning("APScheduler not installed — scheduler disabled")

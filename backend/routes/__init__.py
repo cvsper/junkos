@@ -21,6 +21,7 @@ from .chat import chat_bp
 from .onboarding import onboarding_bp
 from .promos import promos_bp
 from .reviews import reviews_bp
+from .vapi import vapi_bp
 from .operator_applications import operator_applications_bp
 from .ai_analysis import ai_bp
 from .migration import migration_bp
