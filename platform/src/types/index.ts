@@ -43,6 +43,7 @@ export interface JobItem {
   category: string;
   quantity: number;
   estimatedWeight?: number;
+  estimatedCuFt?: number;
 }
 
 export interface Job {

@@ -94,7 +94,8 @@ function saveAbandonedBooking(state: {
   }
 }
 
-export function clearAbandonedBooking() {
+// Exported from booking store for use in step-6-payment
+function clearAbandonedBooking() {
   try {
     localStorage.removeItem(ABANDONED_BOOKING_KEY);
   } catch {

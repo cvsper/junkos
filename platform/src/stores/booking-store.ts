@@ -158,3 +158,13 @@ export const useBookingStore = create<BookingState>((set, get) => ({
     set(initialState);
   },
 }));
+
+const ABANDONED_BOOKING_KEY = "umuve_abandoned_booking";
+
+export function clearAbandonedBooking() {
+  try {
+    localStorage.removeItem(ABANDONED_BOOKING_KEY);
+  } catch {
+    // noop
+  }
+}

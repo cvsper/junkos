@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Sofa,
   Refrigerator,
@@ -13,11 +13,21 @@ import {
   Plus,
   Sparkles,
   X as XIcon,
+  Truck,
+  Weight,
+  ChevronDown,
+  ChevronUp,
+  Info,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useBookingStore } from "@/stores/booking-store";
 import { cn } from "@/lib/utils";
+import type { JobItem } from "@/types";
+
+// ---------------------------------------------------------------------------
+// Category definitions with truck space & weight data (1-800-GOT-JUNK model)
+// ---------------------------------------------------------------------------
 
 const CATEGORIES = [
   { value: "furniture", label: "Furniture", icon: Sofa },
@@ -29,71 +39,410 @@ const CATEGORIES = [
   { value: "other", label: "Other", icon: Package },
 ] as const;
 
+// Common items per category with estimated cubic feet and weight per unit
+interface ItemPreset {
+  label: string;
+  cuFtPerUnit: number;
+  lbsPerUnit: number;
+}
+
+const ITEM_PRESETS: Record<string, ItemPreset[]> = {
+  furniture: [
+    { label: "Couch / Sofa", cuFtPerUnit: 40, lbsPerUnit: 150 },
+    { label: "Loveseat", cuFtPerUnit: 28, lbsPerUnit: 100 },
+    { label: "Recliner / Armchair", cuFtPerUnit: 20, lbsPerUnit: 80 },
+    { label: "Mattress (any size)", cuFtPerUnit: 35, lbsPerUnit: 80 },
+    { label: "Box Spring", cuFtPerUnit: 30, lbsPerUnit: 60 },
+    { label: "Bed Frame", cuFtPerUnit: 15, lbsPerUnit: 50 },
+    { label: "Dresser / Chest", cuFtPerUnit: 25, lbsPerUnit: 120 },
+    { label: "Desk", cuFtPerUnit: 20, lbsPerUnit: 70 },
+    { label: "Dining Table", cuFtPerUnit: 25, lbsPerUnit: 80 },
+    { label: "Dining Chairs (set of 4)", cuFtPerUnit: 16, lbsPerUnit: 40 },
+    { label: "Bookshelf", cuFtPerUnit: 18, lbsPerUnit: 60 },
+    { label: "Other Furniture", cuFtPerUnit: 20, lbsPerUnit: 70 },
+  ],
+  appliances: [
+    { label: "Refrigerator", cuFtPerUnit: 35, lbsPerUnit: 200 },
+    { label: "Washer", cuFtPerUnit: 20, lbsPerUnit: 175 },
+    { label: "Dryer", cuFtPerUnit: 20, lbsPerUnit: 125 },
+    { label: "Dishwasher", cuFtPerUnit: 15, lbsPerUnit: 100 },
+    { label: "Oven / Stove", cuFtPerUnit: 20, lbsPerUnit: 150 },
+    { label: "Microwave", cuFtPerUnit: 4, lbsPerUnit: 35 },
+    { label: "Water Heater", cuFtPerUnit: 15, lbsPerUnit: 120 },
+    { label: "AC Unit (window)", cuFtPerUnit: 6, lbsPerUnit: 60 },
+    { label: "Other Appliance", cuFtPerUnit: 15, lbsPerUnit: 100 },
+  ],
+  electronics: [
+    { label: "TV (flat screen)", cuFtPerUnit: 8, lbsPerUnit: 30 },
+    { label: "TV (CRT / tube)", cuFtPerUnit: 12, lbsPerUnit: 80 },
+    { label: "Computer / Desktop", cuFtPerUnit: 4, lbsPerUnit: 25 },
+    { label: "Monitor", cuFtPerUnit: 4, lbsPerUnit: 15 },
+    { label: "Printer / Scanner", cuFtPerUnit: 4, lbsPerUnit: 30 },
+    { label: "Other Electronics", cuFtPerUnit: 4, lbsPerUnit: 20 },
+  ],
+  construction: [
+    { label: "Drywall / Sheetrock", cuFtPerUnit: 10, lbsPerUnit: 80 },
+    { label: "Lumber / Wood", cuFtPerUnit: 10, lbsPerUnit: 60 },
+    { label: "Carpet / Flooring", cuFtPerUnit: 15, lbsPerUnit: 100 },
+    { label: "Cabinets", cuFtPerUnit: 20, lbsPerUnit: 80 },
+    { label: "Concrete / Brick", cuFtPerUnit: 5, lbsPerUnit: 200 },
+    { label: "Roofing Materials", cuFtPerUnit: 10, lbsPerUnit: 90 },
+    { label: "Mixed Debris (bags/pile)", cuFtPerUnit: 8, lbsPerUnit: 50 },
+    { label: "Other Construction", cuFtPerUnit: 10, lbsPerUnit: 70 },
+  ],
+  yard_waste: [
+    { label: "Tree Branches / Limbs", cuFtPerUnit: 15, lbsPerUnit: 40 },
+    { label: "Bagged Leaves / Clippings", cuFtPerUnit: 5, lbsPerUnit: 30 },
+    { label: "Soil / Dirt (bags)", cuFtPerUnit: 3, lbsPerUnit: 50 },
+    { label: "Sod / Turf", cuFtPerUnit: 5, lbsPerUnit: 60 },
+    { label: "Fence Sections", cuFtPerUnit: 10, lbsPerUnit: 40 },
+    { label: "Hot Tub / Spa", cuFtPerUnit: 60, lbsPerUnit: 500 },
+    { label: "Other Yard Waste", cuFtPerUnit: 8, lbsPerUnit: 35 },
+  ],
+  general: [
+    { label: "Bags of Junk", cuFtPerUnit: 4, lbsPerUnit: 25 },
+    { label: "Boxes (moving boxes)", cuFtPerUnit: 4, lbsPerUnit: 30 },
+    { label: "Exercise Equipment", cuFtPerUnit: 15, lbsPerUnit: 100 },
+    { label: "Toys / Kids Items", cuFtPerUnit: 6, lbsPerUnit: 20 },
+    { label: "Clothing / Textiles", cuFtPerUnit: 4, lbsPerUnit: 15 },
+    { label: "Misc Household Items", cuFtPerUnit: 5, lbsPerUnit: 25 },
+  ],
+  other: [
+    { label: "Tires", cuFtPerUnit: 6, lbsPerUnit: 25 },
+    { label: "Piano", cuFtPerUnit: 40, lbsPerUnit: 500 },
+    { label: "Pool Table", cuFtPerUnit: 50, lbsPerUnit: 400 },
+    { label: "Custom / Unlisted Item", cuFtPerUnit: 10, lbsPerUnit: 50 },
+  ],
+};
+
+// Truck load thresholds based on 1-800-GOT-JUNK sizing (full truck = ~450 cu ft)
+const TRUCK_LOADS = [
+  { label: "1/8 Truck", fraction: 0.125, maxCuFt: 56, price: "$89" },
+  { label: "1/4 Truck", fraction: 0.25, maxCuFt: 112, price: "$149" },
+  { label: "1/2 Truck", fraction: 0.5, maxCuFt: 225, price: "$249" },
+  { label: "3/4 Truck", fraction: 0.75, maxCuFt: 337, price: "$399" },
+  { label: "Full Truck", fraction: 1.0, maxCuFt: 450, price: "$599" },
+];
+
+function getTruckLoad(totalCuFt: number) {
+  for (const load of TRUCK_LOADS) {
+    if (totalCuFt <= load.maxCuFt) return load;
+  }
+  return TRUCK_LOADS[TRUCK_LOADS.length - 1];
+}
+
 const MAX_DESCRIPTION = 500;
+
+// ---------------------------------------------------------------------------
+// Item row component
+// ---------------------------------------------------------------------------
+
+interface ItemRowProps {
+  item: JobItem & { preset?: string };
+  presets: ItemPreset[];
+  onUpdate: (id: string, updates: Partial<JobItem & { preset: string }>) => void;
+  onRemove: (id: string) => void;
+}
+
+function ItemRow({ item, presets, onUpdate, onRemove }: ItemRowProps) {
+  const preset = presets.find((p) => p.label === item.name);
+  const cuFt = (preset?.cuFtPerUnit ?? 10) * item.quantity;
+  const lbs = (preset?.lbsPerUnit ?? 50) * item.quantity;
+
+  return (
+    <div className="flex items-center gap-3 rounded-lg border border-border bg-background p-3">
+      <div className="flex-1 min-w-0 space-y-2">
+        <select
+          value={item.name}
+          onChange={(e) => onUpdate(item.id, { name: e.target.value })}
+          className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <option value="">Select item...</option>
+          {presets.map((p) => (
+            <option key={p.label} value={p.label}>
+              {p.label}
+            </option>
+          ))}
+        </select>
+        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+          <span className="flex items-center gap-1">
+            <Truck className="h-3 w-3" />
+            ~{cuFt} cu ft
+          </span>
+          <span className="flex items-center gap-1">
+            <Weight className="h-3 w-3" />
+            ~{lbs} lbs
+          </span>
+        </div>
+      </div>
+
+      {/* Quantity */}
+      <div className="flex items-center gap-1.5 shrink-0">
+        <button
+          type="button"
+          onClick={() => onUpdate(item.id, { quantity: Math.max(1, item.quantity - 1) })}
+          disabled={item.quantity <= 1}
+          className="h-7 w-7 rounded border border-input flex items-center justify-center text-muted-foreground hover:bg-muted disabled:opacity-40"
+        >
+          <Minus className="h-3 w-3" />
+        </button>
+        <span className="w-6 text-center text-sm font-semibold tabular-nums">
+          {item.quantity}
+        </span>
+        <button
+          type="button"
+          onClick={() => onUpdate(item.id, { quantity: Math.min(20, item.quantity + 1) })}
+          disabled={item.quantity >= 20}
+          className="h-7 w-7 rounded border border-input flex items-center justify-center text-muted-foreground hover:bg-muted disabled:opacity-40"
+        >
+          <Plus className="h-3 w-3" />
+        </button>
+      </div>
+
+      {/* Remove */}
+      <button
+        type="button"
+        onClick={() => onRemove(item.id)}
+        className="h-7 w-7 rounded flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0"
+        aria-label="Remove item"
+      >
+        <XIcon className="h-4 w-4" />
+      </button>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Truck fill visualization
+// ---------------------------------------------------------------------------
+
+function TruckFillBar({ totalCuFt }: { totalCuFt: number }) {
+  const maxCuFt = 450;
+  const pct = Math.min((totalCuFt / maxCuFt) * 100, 100);
+  const load = getTruckLoad(totalCuFt);
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between text-sm">
+        <span className="font-medium text-foreground flex items-center gap-2">
+          <Truck className="h-4 w-4" />
+          Estimated Truck Space
+        </span>
+        <span className="font-semibold text-primary">
+          {load.label} ({load.price})
+        </span>
+      </div>
+      <div className="relative h-6 rounded-full bg-muted overflow-hidden">
+        <div
+          className={cn(
+            "absolute inset-y-0 left-0 rounded-full transition-all duration-500 ease-out",
+            pct <= 25
+              ? "bg-green-500"
+              : pct <= 50
+                ? "bg-yellow-500"
+                : pct <= 75
+                  ? "bg-orange-500"
+                  : "bg-red-500"
+          )}
+          style={{ width: `${pct}%` }}
+        />
+        {/* Tick marks for truck fractions */}
+        {[0.125, 0.25, 0.5, 0.75].map((frac) => (
+          <div
+            key={frac}
+            className="absolute top-0 bottom-0 w-px bg-foreground/20"
+            style={{ left: `${frac * 100}%` }}
+          />
+        ))}
+      </div>
+      <div className="flex justify-between text-[10px] text-muted-foreground">
+        <span>1/8</span>
+        <span>1/4</span>
+        <span>1/2</span>
+        <span>3/4</span>
+        <span>Full</span>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Main Step 3 component
+// ---------------------------------------------------------------------------
 
 export function Step3Items() {
   const { items, setItems, aiAnalysis } = useBookingStore();
 
-  // Initialize from store if there's an existing item
-  const existingItem = items[0];
-  const [selectedCategory, setSelectedCategory] = useState(
-    existingItem?.category || ""
-  );
-  const [description, setDescription] = useState(
-    existingItem?.name || ""
-  );
-  const [quantity, setQuantity] = useState(existingItem?.quantity || 1);
-  const [errors, setErrors] = useState<{ category?: string; description?: string }>({});
-  const [aiDismissed, setAiDismissed] = useState(false);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(() => {
+    // Initialize from existing items
+    const cats = Array.from(new Set(items.map((i) => i.category).filter(Boolean)));
+    return cats.length > 0 ? cats : [];
+  });
 
-  // Pre-fill from AI analysis when entering step with empty form
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const [itemsByCategory, setItemsByCategory] = useState<Record<string, (JobItem & { preset?: string })[]>>(() => {
+    // Group existing items by category
+    const grouped: Record<string, (JobItem & { preset?: string })[]> = {};
+    items.forEach((item) => {
+      if (!grouped[item.category]) grouped[item.category] = [];
+      grouped[item.category].push(item);
+    });
+    return grouped;
+  });
+
+  const [description, setDescription] = useState(() => {
+    // Use the first item's name as description if it doesn't match a preset
+    return items[0]?.name && !Object.values(ITEM_PRESETS).flat().some((p) => p.label === items[0]?.name)
+      ? items[0].name
+      : "";
+  });
+
+  const [errors, setErrors] = useState<{ categories?: string; items?: string; description?: string }>({});
+  const [aiDismissed, setAiDismissed] = useState(false);
+  const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
+
+  // Pre-fill from AI analysis
   useEffect(() => {
-    if (aiAnalysis && !aiDismissed && !selectedCategory && !existingItem) {
-      const firstItem = aiAnalysis.items[0];
-      if (firstItem) {
-        setSelectedCategory(firstItem.category);
-        setDescription(firstItem.description || aiAnalysis.notes || "");
-        const totalQty = aiAnalysis.items.reduce((sum: number, i: { quantity: number }) => sum + i.quantity, 0);
-        setQuantity(Math.min(totalQty, 20));
-      }
+    if (aiAnalysis && !aiDismissed && selectedCategories.length === 0 && items.length === 0) {
+      const cats = Array.from(new Set(aiAnalysis.items.map((i) => i.category)));
+      setSelectedCategories(cats);
+      if (aiAnalysis.notes) setDescription(aiAnalysis.notes);
+
+      const grouped: Record<string, (JobItem & { preset?: string })[]> = {};
+      aiAnalysis.items.forEach((ai, idx) => {
+        if (!grouped[ai.category]) grouped[ai.category] = [];
+        grouped[ai.category].push({
+          id: `ai-${idx}`,
+          name: ai.description || "Custom / Unlisted Item",
+          category: ai.category,
+          quantity: ai.quantity,
+        });
+      });
+      setItemsByCategory(grouped);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [aiAnalysis, aiDismissed]);
 
-  // Sync to store on changes
-  useEffect(() => {
-    if (selectedCategory && description.trim().length >= 10) {
-      setItems([
+  // Toggle category selection
+  const toggleCategory = useCallback((cat: string) => {
+    setSelectedCategories((prev) => {
+      if (prev.includes(cat)) {
+        // Removing category — also clean up its items
+        setItemsByCategory((prevItems) => {
+          const next = { ...prevItems };
+          delete next[cat];
+          return next;
+        });
+        return prev.filter((c) => c !== cat);
+      }
+      // Adding category — auto-expand and add a default item
+      setExpandedCategory(cat);
+      const presets = ITEM_PRESETS[cat] || ITEM_PRESETS.other;
+      setItemsByCategory((prevItems) => ({
+        ...prevItems,
+        [cat]: prevItems[cat]?.length
+          ? prevItems[cat]
+          : [
+              {
+                id: `item-${Date.now()}`,
+                name: presets[0].label,
+                category: cat,
+                quantity: 1,
+              },
+            ],
+      }));
+      return [...prev, cat];
+    });
+    if (errors.categories) setErrors((prev) => ({ ...prev, categories: undefined }));
+  }, [errors.categories]);
+
+  // Add item to a category
+  const addItemToCategory = useCallback((cat: string) => {
+    const presets = ITEM_PRESETS[cat] || ITEM_PRESETS.other;
+    setItemsByCategory((prev) => ({
+      ...prev,
+      [cat]: [
+        ...(prev[cat] || []),
         {
-          id: existingItem?.id || "item-1",
-          name: description.trim(),
-          category: selectedCategory,
-          quantity,
+          id: `item-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+          name: presets[0].label,
+          category: cat,
+          quantity: 1,
         },
-      ]);
-    }
-  }, [selectedCategory, description, quantity, setItems, existingItem?.id]);
+      ],
+    }));
+  }, []);
 
+  // Update an item
+  const updateItem = useCallback((cat: string, id: string, updates: Partial<JobItem>) => {
+    setItemsByCategory((prev) => ({
+      ...prev,
+      [cat]: (prev[cat] || []).map((item) =>
+        item.id === id ? { ...item, ...updates } : item
+      ),
+    }));
+  }, []);
+
+  // Remove an item
+  const removeItem = useCallback((cat: string, id: string) => {
+    setItemsByCategory((prev) => ({
+      ...prev,
+      [cat]: (prev[cat] || []).filter((item) => item.id !== id),
+    }));
+  }, []);
+
+  // Compute totals
+  const allItems = Object.entries(itemsByCategory).flatMap(([cat, catItems]) =>
+    catItems.map((item) => {
+      const presets = ITEM_PRESETS[cat] || ITEM_PRESETS.other;
+      const preset = presets.find((p) => p.label === item.name);
+      return {
+        ...item,
+        category: cat,
+        estimatedCuFt: (preset?.cuFtPerUnit ?? 10) * item.quantity,
+        estimatedWeight: (preset?.lbsPerUnit ?? 50) * item.quantity,
+      };
+    })
+  );
+
+  const totalCuFt = allItems.reduce((sum, i) => sum + (i.estimatedCuFt || 0), 0);
+  const totalWeight = allItems.reduce((sum, i) => sum + (i.estimatedWeight || 0), 0);
+
+  // Sync to store
+  useEffect(() => {
+    if (selectedCategories.length > 0 && allItems.length > 0) {
+      setItems(
+        allItems.map((item) => ({
+          id: item.id,
+          name: item.name,
+          category: item.category,
+          quantity: item.quantity,
+          estimatedCuFt: item.estimatedCuFt,
+          estimatedWeight: item.estimatedWeight,
+        }))
+      );
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [itemsByCategory, selectedCategories, setItems]);
+
+  // Validation
   const validate = (): boolean => {
-    const newErrors: { category?: string; description?: string } = {};
+    const newErrors: typeof errors = {};
 
-    if (!selectedCategory) {
-      newErrors.category = "Please select a category.";
+    if (selectedCategories.length === 0) {
+      newErrors.categories = "Please select at least one category.";
     }
 
-    const trimmedDesc = description.trim();
-    if (trimmedDesc.length < 10) {
-      newErrors.description =
-        "Please provide a description (at least 10 characters).";
-    } else if (trimmedDesc.length > MAX_DESCRIPTION) {
-      newErrors.description = `Description must be under ${MAX_DESCRIPTION} characters.`;
+    const hasItems = Object.values(itemsByCategory).some((catItems) =>
+      catItems.some((item) => item.name)
+    );
+    if (!hasItems) {
+      newErrors.items = "Please add at least one item.";
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  // Expose validation
   Step3Items.validate = validate;
 
   return (
@@ -104,7 +453,7 @@ export function Step3Items() {
           What are we removing?
         </h2>
         <p className="mt-1 text-muted-foreground">
-          Select a category and describe the items for your junk removal.
+          Select categories and tell us what items you need hauled away.
         </p>
       </div>
 
@@ -128,25 +477,23 @@ export function Step3Items() {
         </div>
       )}
 
-      {/* Category Selection */}
+      {/* Category Selection — Multi-select */}
       <div className="space-y-3">
-        <Label className="text-sm font-medium">Category</Label>
+        <Label className="text-sm font-medium">
+          Categories <span className="text-muted-foreground font-normal">(select all that apply)</span>
+        </Label>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {CATEGORIES.map((cat) => {
             const Icon = cat.icon;
-            const isSelected = selectedCategory === cat.value;
+            const isSelected = selectedCategories.includes(cat.value);
+            const itemCount = (itemsByCategory[cat.value] || []).length;
             return (
               <button
                 key={cat.value}
                 type="button"
-                onClick={() => {
-                  setSelectedCategory(cat.value);
-                  if (errors.category) {
-                    setErrors((prev) => ({ ...prev, category: undefined }));
-                  }
-                }}
+                onClick={() => toggleCategory(cat.value)}
                 className={cn(
-                  "flex flex-col items-center gap-2 rounded-lg border-2 p-4 transition-all text-center",
+                  "relative flex flex-col items-center gap-2 rounded-lg border-2 p-4 transition-all text-center",
                   isSelected
                     ? "border-primary bg-primary/5 text-primary"
                     : "border-border bg-card text-muted-foreground hover:border-primary/30 hover:bg-muted/50"
@@ -154,24 +501,124 @@ export function Step3Items() {
               >
                 <Icon className="h-6 w-6" />
                 <span className="text-xs font-medium">{cat.label}</span>
+                {isSelected && itemCount > 0 && (
+                  <span className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-primary text-[10px] font-bold text-primary-foreground flex items-center justify-center">
+                    {itemCount}
+                  </span>
+                )}
               </button>
             );
           })}
         </div>
         <div aria-live="polite" aria-atomic="true">
-          {errors.category && (
+          {errors.categories && (
             <p role="alert" className="text-sm text-destructive font-medium">
-              {errors.category}
+              {errors.categories}
             </p>
           )}
         </div>
       </div>
 
-      {/* Description */}
+      {/* Items per selected category */}
+      {selectedCategories.length > 0 && (
+        <div className="space-y-4">
+          {selectedCategories.map((cat) => {
+            const catDef = CATEGORIES.find((c) => c.value === cat);
+            const catItems = itemsByCategory[cat] || [];
+            const presets = ITEM_PRESETS[cat] || ITEM_PRESETS.other;
+            const isExpanded = expandedCategory === cat;
+            const CatIcon = catDef?.icon || Package;
+
+            return (
+              <div key={cat} className="rounded-lg border border-border overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setExpandedCategory(isExpanded ? null : cat)}
+                  className="w-full flex items-center justify-between px-4 py-3 bg-muted/30 hover:bg-muted/50 transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <CatIcon className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-semibold text-foreground">
+                      {catDef?.label || cat}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      ({catItems.length} item{catItems.length !== 1 ? "s" : ""})
+                    </span>
+                  </div>
+                  {isExpanded ? (
+                    <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </button>
+
+                {isExpanded && (
+                  <div className="p-4 space-y-3">
+                    {catItems.map((item) => (
+                      <ItemRow
+                        key={item.id}
+                        item={item}
+                        presets={presets}
+                        onUpdate={(id, updates) => updateItem(cat, id, updates)}
+                        onRemove={(id) => removeItem(cat, id)}
+                      />
+                    ))}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => addItemToCategory(cat)}
+                      className="w-full gap-1.5"
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                      Add Another {catDef?.label || "Item"}
+                    </Button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+
+          <div aria-live="polite" aria-atomic="true">
+            {errors.items && (
+              <p role="alert" className="text-sm text-destructive font-medium">
+                {errors.items}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Truck Fill Visualization + Weight Summary */}
+      {allItems.length > 0 && totalCuFt > 0 && (
+        <div className="rounded-lg border border-border bg-card p-5 space-y-4">
+          <TruckFillBar totalCuFt={totalCuFt} />
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="rounded-lg bg-muted/50 p-3 text-center">
+              <p className="text-lg font-bold text-foreground">{totalCuFt} cu ft</p>
+              <p className="text-xs text-muted-foreground">Estimated Volume</p>
+            </div>
+            <div className="rounded-lg bg-muted/50 p-3 text-center">
+              <p className="text-lg font-bold text-foreground">{totalWeight} lbs</p>
+              <p className="text-xs text-muted-foreground">Estimated Weight</p>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-2 text-xs text-muted-foreground">
+            <Info className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+            <span>
+              Estimates based on standard item sizes. Final truck space and pricing confirmed on-site.
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Additional Notes */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <Label htmlFor="description" className="text-sm font-medium">
-            Description
+            Additional Notes <span className="text-muted-foreground font-normal">(optional)</span>
           </Label>
           <span
             className={cn(
@@ -186,7 +633,7 @@ export function Step3Items() {
         </div>
         <textarea
           id="description"
-          placeholder="Describe the items you need removed (e.g., old couch, broken refrigerator, pile of yard debris)..."
+          placeholder="Anything else we should know? (e.g., items are on 2nd floor, narrow hallway, heavy items need 2 people...)"
           value={description}
           onChange={(e) => {
             setDescription(e.target.value);
@@ -194,65 +641,17 @@ export function Step3Items() {
               setErrors((prev) => ({ ...prev, description: undefined }));
             }
           }}
-          rows={4}
+          rows={3}
           maxLength={MAX_DESCRIPTION}
           className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
         />
-        <div aria-live="polite" aria-atomic="true">
-          {errors.description && (
-            <p role="alert" className="text-sm text-destructive font-medium">
-              {errors.description}
-            </p>
-          )}
-        </div>
-      </div>
-
-      {/* Quantity Selector */}
-      <div className="space-y-3">
-        <Label className="text-sm font-medium">
-          Estimated Number of Items
-        </Label>
-        <div className="flex items-center gap-4">
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-            disabled={quantity <= 1}
-            aria-label="Decrease quantity"
-          >
-            <Minus className="h-4 w-4" />
-          </Button>
-          <span className="text-2xl font-bold text-foreground tabular-nums w-12 text-center">
-            {quantity}
-          </span>
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            onClick={() => setQuantity((q) => Math.min(20, q + 1))}
-            disabled={quantity >= 20}
-            aria-label="Increase quantity"
-          >
-            <Plus className="h-4 w-4" />
-          </Button>
-          <span className="text-sm text-muted-foreground">
-            item{quantity !== 1 ? "s" : ""}
-          </span>
-        </div>
       </div>
     </div>
   );
 }
 
-// Static validation reference (overwritten on render)
+// Static validation fallback
 Step3Items.validate = (): boolean => {
   const { items } = useBookingStore.getState();
-  const item = items[0];
-  if (!item) return false;
-  return (
-    !!item.category &&
-    item.name.trim().length >= 10 &&
-    item.name.trim().length <= 500
-  );
+  return items.length > 0 && items.some((item) => !!item.category && !!item.name);
 };

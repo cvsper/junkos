@@ -27,9 +27,8 @@ import { trackBookingConversion } from "@/components/analytics";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { useBookingStore } from "@/stores/booking-store";
+import { useBookingStore, clearAbandonedBooking } from "@/stores/booking-store";
 import { bookingApi, paymentsApi, promosApi } from "@/lib/api";
-import { clearAbandonedBooking } from "@/app/(customer)/book/page";
 import { ReviewPrompt } from "@/components/review-prompt";
 
 // ---------------------------------------------------------------------------

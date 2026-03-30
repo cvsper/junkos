@@ -8,6 +8,8 @@ import {
   Loader2,
   AlertTriangle,
   Sparkles,
+  Truck,
+  Weight,
 } from "lucide-react";
 import { useBookingStore } from "@/stores/booking-store";
 import { bookingApi } from "@/lib/api";
@@ -97,6 +99,12 @@ export function Step5Estimate() {
   const category = item?.category || "general";
   const quantity = item?.quantity || 1;
 
+  // Aggregate totals from all items
+  const totalCuFt = items.reduce((sum, i) => sum + (i.estimatedCuFt || 0), 0);
+  const totalWeight = items.reduce((sum, i) => sum + (i.estimatedWeight || 0), 0);
+  const uniqueCategories = Array.from(new Set(items.map((i) => i.category)));
+  const totalItemCount = items.reduce((sum, i) => sum + i.quantity, 0);
+
   const fetchEstimate = useCallback(async () => {
     setLoading(true);
     setUsedFallback(false);
@@ -161,8 +169,22 @@ export function Step5Estimate() {
           <SummaryRow
             icon={<Package className="h-4 w-4" />}
             label="Items"
-            value={`${CATEGORY_LABELS[category] || category} - ${quantity} item${quantity !== 1 ? "s" : ""}`}
+            value={`${totalItemCount} item${totalItemCount !== 1 ? "s" : ""} across ${uniqueCategories.length} categor${uniqueCategories.length !== 1 ? "ies" : "y"}`}
           />
+          {totalCuFt > 0 && (
+            <>
+              <SummaryRow
+                icon={<Truck className="h-4 w-4" />}
+                label="Est. Volume"
+                value={`${totalCuFt} cu ft`}
+              />
+              <SummaryRow
+                icon={<Weight className="h-4 w-4" />}
+                label="Est. Weight"
+                value={`${totalWeight} lbs`}
+              />
+            </>
+          )}
         </div>
       </div>
 
