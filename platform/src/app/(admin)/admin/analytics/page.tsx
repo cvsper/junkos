@@ -340,7 +340,7 @@ export default function AdminAnalyticsPage() {
         </Card>
 
         {/* ---------------------------------------------------------------- */}
-        {/* Chart 3: Jobs by Status (horizontal bars)                         */}
+        {/* Chart 3: Jobs by Status (donut + horizontal bars)                  */}
         {/* ---------------------------------------------------------------- */}
         <Card>
           <CardHeader>
@@ -360,30 +360,116 @@ export default function AdminAnalyticsPage() {
                 </p>
               </div>
             ) : (
-              <div className="space-y-3">
-                {jobsByStatus.map((item) => {
-                  const widthPct = (item.count / maxStatusCount) * 100;
-                  const color =
-                    STATUS_COLORS[item.status] || "bg-muted-foreground";
-                  return (
-                    <div key={item.status}>
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-sm font-medium capitalize">
-                          {item.status.replace(/_/g, " ")}
-                        </span>
-                        <span className="text-sm text-muted-foreground">
-                          {item.count}
-                        </span>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Donut chart */}
+                <div className="flex flex-col items-center justify-center">
+                  {(() => {
+                    const totalJobs = jobsByStatus.reduce((s, i) => s + i.count, 0);
+                    const DONUT_COLORS: Record<string, string> = {
+                      completed: "#22c55e",
+                      in_progress: "#3b82f6",
+                      pending: "#eab308",
+                      assigned: "#a855f7",
+                      cancelled: "#ef4444",
+                    };
+                    const size = 180;
+                    const strokeWidth = 28;
+                    const radius = (size - strokeWidth) / 2;
+                    const circumference = 2 * Math.PI * radius;
+                    let currentOffset = 0;
+
+                    return (
+                      <div className="relative" style={{ width: size, height: size }}>
+                        <svg width={size} height={size} className="-rotate-90">
+                          {/* Background ring */}
+                          <circle
+                            cx={size / 2}
+                            cy={size / 2}
+                            r={radius}
+                            fill="none"
+                            stroke="currentColor"
+                            className="text-muted"
+                            strokeWidth={strokeWidth}
+                          />
+                          {/* Segments */}
+                          {jobsByStatus.map((item) => {
+                            const fraction = totalJobs > 0 ? item.count / totalJobs : 0;
+                            const segmentLength = fraction * circumference;
+                            const offset = currentOffset;
+                            currentOffset += segmentLength;
+                            const color = DONUT_COLORS[item.status] || "#6b7280";
+
+                            return (
+                              <circle
+                                key={item.status}
+                                cx={size / 2}
+                                cy={size / 2}
+                                r={radius}
+                                fill="none"
+                                stroke={color}
+                                strokeWidth={strokeWidth}
+                                strokeDasharray={`${segmentLength} ${circumference - segmentLength}`}
+                                strokeDashoffset={-offset}
+                                strokeLinecap="butt"
+                                className="transition-all duration-500"
+                              />
+                            );
+                          })}
+                        </svg>
+                        {/* Center label */}
+                        <div className="absolute inset-0 flex flex-col items-center justify-center">
+                          <p className="text-2xl font-display font-bold">{totalJobs}</p>
+                          <p className="text-xs text-muted-foreground">Total Jobs</p>
+                        </div>
                       </div>
-                      <div className="h-6 w-full rounded-full bg-muted overflow-hidden">
-                        <div
-                          className={`h-full rounded-full transition-all ${color}`}
-                          style={{ width: `${Math.max(widthPct, 1)}%` }}
-                        />
+                    );
+                  })()}
+                  {/* Legend */}
+                  <div className="flex flex-wrap gap-3 mt-4 justify-center">
+                    {jobsByStatus.map((item) => {
+                      const DOT_COLORS: Record<string, string> = {
+                        completed: "bg-green-500",
+                        in_progress: "bg-blue-500",
+                        pending: "bg-yellow-500",
+                        assigned: "bg-purple-500",
+                        cancelled: "bg-red-500",
+                      };
+                      return (
+                        <div key={item.status} className="flex items-center gap-1.5 text-xs">
+                          <span className={`w-2.5 h-2.5 rounded-full ${DOT_COLORS[item.status] || "bg-gray-500"}`} />
+                          <span className="capitalize text-muted-foreground">{item.status.replace(/_/g, " ")}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Horizontal bars */}
+                <div className="space-y-3">
+                  {jobsByStatus.map((item) => {
+                    const widthPct = (item.count / maxStatusCount) * 100;
+                    const color =
+                      STATUS_COLORS[item.status] || "bg-muted-foreground";
+                    return (
+                      <div key={item.status}>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-sm font-medium capitalize">
+                            {item.status.replace(/_/g, " ")}
+                          </span>
+                          <span className="text-sm text-muted-foreground">
+                            {item.count}
+                          </span>
+                        </div>
+                        <div className="h-6 w-full rounded-full bg-muted overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all ${color}`}
+                            style={{ width: `${Math.max(widthPct, 1)}%` }}
+                          />
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
             )}
           </CardContent>

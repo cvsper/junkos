@@ -154,7 +154,7 @@ def update_location(user_id):
 @drivers_bp.route("/jobs/available", methods=["GET"])
 @require_auth
 def get_available_jobs(user_id):
-    """Return pending jobs near the contractor current location."""
+    """Return pending jobs near the contractor current location with pagination."""
     contractor = Contractor.query.filter_by(user_id=user_id).first()
     if not contractor:
         return jsonify({"error": "Contractor profile not found"}), 404
@@ -163,6 +163,8 @@ def get_available_jobs(user_id):
         return jsonify({"error": "Contractor is not approved"}), 403
 
     radius_km = float(request.args.get("radius", DEFAULT_SEARCH_RADIUS_KM))
+    page = request.args.get("page", 1, type=int)
+    per_page = request.args.get("per_page", 20, type=int)
 
     # Include pending jobs + jobs already assigned to this contractor
     pending_jobs = Job.query.filter(
@@ -190,7 +192,20 @@ def get_available_jobs(user_id):
 
     nearby.sort(key=lambda j: j["distance_km"] if j["distance_km"] is not None else float("inf"))
 
-    return jsonify({"success": True, "jobs": nearby}), 200
+    # Apply pagination to the distance-sorted results
+    total = len(nearby)
+    start = (page - 1) * per_page
+    end = start + per_page
+    paginated = nearby[start:end]
+    pages = (total + per_page - 1) // per_page if total > 0 else 0
+
+    return jsonify({
+        "success": True,
+        "jobs": paginated,
+        "total": total,
+        "page": page,
+        "pages": pages,
+    }), 200
 
 
 @drivers_bp.route("/jobs/current", methods=["GET"])

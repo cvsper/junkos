@@ -326,7 +326,219 @@ class AuthenticationManager: ObservableObject {
         KeychainHelper.delete(forKey: "userId")
     }
 
-    // MARK: - Deprecated Auth Methods (Stubs for UI Compatibility)
+    // MARK: - Email Authentication
+
+    /// Login with email and password via POST /api/auth/login
+    func loginWithEmail(email: String, password: String, completion: @escaping (Bool, String?) -> Void) {
+        Task {
+            await MainActor.run {
+                isLoading = true
+                errorMessage = nil
+            }
+
+            guard let url = URL(string: "\(baseURL)/api/auth/login") else {
+                await MainActor.run {
+                    isLoading = false
+                    errorMessage = "Invalid API URL"
+                    completion(false, "Invalid API URL")
+                }
+                return
+            }
+
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.setValue(apiKey, forHTTPHeaderField: "X-API-Key")
+
+            let body: [String: String] = ["email": email, "password": password]
+            request.httpBody = try? JSONEncoder().encode(body)
+
+            do {
+                let (data, response) = try await URLSession.shared.data(for: request)
+
+                guard let httpResponse = response as? HTTPURLResponse else {
+                    await MainActor.run {
+                        isLoading = false
+                        let msg = "Invalid server response"
+                        errorMessage = msg
+                        completion(false, msg)
+                    }
+                    return
+                }
+
+                if httpResponse.statusCode == 200,
+                   let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                   let token = json["token"] as? String,
+                   let userData = json["user"] as? [String: Any] {
+
+                    let user = User(
+                        id: userData["id"] as? String ?? "",
+                        name: userData["name"] as? String,
+                        email: userData["email"] as? String,
+                        phoneNumber: userData["phoneNumber"] as? String,
+                        role: userData["role"] as? String
+                    )
+
+                    await setAuthenticated(user: user, token: token)
+                    await MainActor.run {
+                        isLoading = false
+                        completion(true, nil)
+                    }
+                } else {
+                    // Parse error from backend
+                    var errorMsg = "Invalid email or password"
+                    if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                       let backendError = json["error"] as? String {
+                        errorMsg = backendError
+                    }
+                    await MainActor.run {
+                        isLoading = false
+                        errorMessage = errorMsg
+                        completion(false, errorMsg)
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    isLoading = false
+                    let msg = "Network error. Please try again."
+                    errorMessage = msg
+                    completion(false, msg)
+                }
+            }
+        }
+    }
+
+    /// Sign up with email and password via POST /api/auth/signup
+    func signupWithEmail(email: String, password: String, name: String?, completion: @escaping (Bool, String?) -> Void) {
+        Task {
+            await MainActor.run {
+                isLoading = true
+                errorMessage = nil
+            }
+
+            guard let url = URL(string: "\(baseURL)/api/auth/signup") else {
+                await MainActor.run {
+                    isLoading = false
+                    errorMessage = "Invalid API URL"
+                    completion(false, "Invalid API URL")
+                }
+                return
+            }
+
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.setValue(apiKey, forHTTPHeaderField: "X-API-Key")
+
+            var body: [String: String] = ["email": email, "password": password]
+            if let name = name, !name.isEmpty {
+                body["name"] = name
+            }
+            request.httpBody = try? JSONEncoder().encode(body)
+
+            do {
+                let (data, response) = try await URLSession.shared.data(for: request)
+
+                guard let httpResponse = response as? HTTPURLResponse else {
+                    await MainActor.run {
+                        isLoading = false
+                        let msg = "Invalid server response"
+                        errorMessage = msg
+                        completion(false, msg)
+                    }
+                    return
+                }
+
+                if httpResponse.statusCode == 200 || httpResponse.statusCode == 201,
+                   let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                   let token = json["token"] as? String,
+                   let userData = json["user"] as? [String: Any] {
+
+                    let user = User(
+                        id: userData["id"] as? String ?? "",
+                        name: userData["name"] as? String,
+                        email: userData["email"] as? String,
+                        phoneNumber: userData["phoneNumber"] as? String,
+                        role: userData["role"] as? String
+                    )
+
+                    await setAuthenticated(user: user, token: token)
+                    await MainActor.run {
+                        isLoading = false
+                        completion(true, nil)
+                    }
+                } else {
+                    var errorMsg = "Signup failed. Please try again."
+                    if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                       let backendError = json["error"] as? String {
+                        errorMsg = backendError
+                    }
+                    await MainActor.run {
+                        isLoading = false
+                        errorMessage = errorMsg
+                        completion(false, errorMsg)
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    isLoading = false
+                    let msg = "Network error. Please try again."
+                    errorMessage = msg
+                    completion(false, msg)
+                }
+            }
+        }
+    }
+
+    /// Request password reset via POST /api/auth/forgot-password
+    func requestPasswordReset(email: String, completion: @escaping (Bool, String?) -> Void) {
+        Task {
+            guard let url = URL(string: "\(baseURL)/api/auth/forgot-password") else {
+                await MainActor.run {
+                    completion(false, "Invalid API URL")
+                }
+                return
+            }
+
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.setValue(apiKey, forHTTPHeaderField: "X-API-Key")
+
+            let body: [String: String] = ["email": email]
+            request.httpBody = try? JSONEncoder().encode(body)
+
+            do {
+                let (data, response) = try await URLSession.shared.data(for: request)
+
+                guard let httpResponse = response as? HTTPURLResponse else {
+                    await MainActor.run {
+                        completion(false, "Invalid server response")
+                    }
+                    return
+                }
+
+                if httpResponse.statusCode >= 200 && httpResponse.statusCode < 300 {
+                    await MainActor.run {
+                        completion(true, nil)
+                    }
+                } else {
+                    var errorMsg = "Failed to send reset link"
+                    if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                       let backendError = json["error"] as? String {
+                        errorMsg = backendError
+                    }
+                    await MainActor.run {
+                        completion(false, errorMsg)
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    completion(false, "Network error. Please try again.")
+                }
+            }
+        }
+    }
 
     // MARK: - Phone Authentication
 
@@ -414,29 +626,6 @@ class AuthenticationManager: ObservableObject {
                 isLoading = false
                 HapticManager.shared.error()
             }
-        }
-    }
-
-    /// Deprecated: Email auth removed - Apple Sign In only
-    func loginWithEmail(email: String, password: String, completion: @escaping (Bool, String?) -> Void) {
-        DispatchQueue.main.async {
-            self.errorMessage = "Email authentication is no longer supported. Please use Sign in with Apple."
-            completion(false, "Email authentication is no longer supported")
-        }
-    }
-
-    /// Deprecated: Password reset removed - Apple Sign In only
-    func requestPasswordReset(email: String, completion: @escaping (Bool, String?) -> Void) {
-        DispatchQueue.main.async {
-            self.errorMessage = "Password reset is no longer supported. Please use Sign in with Apple."
-            completion(false, "Password reset is no longer supported")
-        }
-    }
-
-    /// Deprecated: Guest mode removed
-    func continueAsGuest() {
-        DispatchQueue.main.async {
-            self.errorMessage = "Guest mode is no longer supported. Please use Sign in with Apple."
         }
     }
 

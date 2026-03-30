@@ -12,6 +12,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from models import generate_uuid
 from auth_routes import require_auth
+from storage import save_file
 
 upload_bp = Blueprint("upload", __name__)
 
@@ -27,12 +28,6 @@ UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__f
 def _allowed_file(filename):
     """Check if a filename has an allowed extension."""
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
-
-
-def _ensure_upload_dir():
-    """Create the uploads directory if it does not exist."""
-    if not os.path.exists(UPLOAD_FOLDER):
-        os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 
 # ---------------------------------------------------------------------------
@@ -62,8 +57,6 @@ def upload_photos(user_id):
     if len(files) > MAX_FILES:
         return jsonify({"error": "Maximum {} files allowed per upload".format(MAX_FILES)}), 400
 
-    _ensure_upload_dir()
-
     urls = []
     errors = []
 
@@ -91,16 +84,7 @@ def upload_photos(user_id):
             })
             continue
 
-        # Generate unique filename to avoid collisions
-        ext = file.filename.rsplit(".", 1)[1].lower()
-        unique_name = "{}.{}".format(generate_uuid(), ext)
-        safe_name = secure_filename(unique_name)
-        filepath = os.path.join(UPLOAD_FOLDER, safe_name)
-
-        file.save(filepath)
-
-        # Build public URL
-        url = "/uploads/{}".format(safe_name)
+        url = save_file(file, prefix="uploads", filename=file.filename)
         urls.append(url)
 
     response = {"success": True, "urls": urls}

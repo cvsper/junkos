@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
 
 // ---------------------------------------------------------------------------
 // Local types (mirrors backend response, not importing from @/types)
@@ -28,9 +29,25 @@ interface CustomerJob {
   address: string;
   items: { category: string; quantity: number }[];
   total_price: number;
+  base_price: number;
+  item_total: number;
+  service_fee: number;
+  surge_multiplier: number;
   scheduled_at: string | null;
   created_at: string;
+  completed_at: string | null;
+  notes: string | null;
   contractor?: JobContractor | null;
+  payment?: {
+    amount: number;
+    payment_status: string;
+    tip_amount: number;
+  } | null;
+  rating?: {
+    stars: number;
+    comment: string | null;
+    created_at: string;
+  } | null;
 }
 
 interface LookedUpJob {
@@ -214,8 +231,10 @@ function GuestLookup() {
 
       <Card>
         <CardContent className="p-6 space-y-4">
+          <label htmlFor="job-lookup" className="sr-only">Job ID or confirmation code</label>
           <div className="flex gap-3">
             <Input
+              id="job-lookup"
               placeholder="Job ID or confirmation code"
               value={code}
               onChange={(e) => {
@@ -249,9 +268,11 @@ function GuestLookup() {
             </Button>
           </div>
 
-          {error && (
-            <p className="text-sm text-destructive font-medium text-center">{error}</p>
-          )}
+          <div aria-live="polite" aria-atomic="true">
+            {error && (
+              <p role="alert" className="text-sm text-destructive font-medium text-center">{error}</p>
+            )}
+          </div>
         </CardContent>
       </Card>
 
@@ -398,6 +419,7 @@ function AuthenticatedDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabKey>("all");
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const fetchJobs = useCallback(async () => {
     setLoading(true);
@@ -592,18 +614,34 @@ function AuthenticatedDashboard() {
             </div>
           ) : (
             <div className="grid gap-4">
-              {filteredJobs.map((job) => (
+              {filteredJobs.map((job) => {
+                const isExpanded = expandedId === job.id;
+
+                return (
                 <Card
                   key={job.id}
-                  className={`cursor-pointer hover:shadow-md transition-all ${
+                  className={`hover:shadow-md transition-all ${
                     isActive(job.status)
                       ? "border-primary/20 hover:border-primary/40"
                       : ""
                   }`}
-                  onClick={() => router.push(`/jobs/${job.id}`)}
                 >
                   <CardContent className="p-5">
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                    {/* Main row -- clickable to expand */}
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      aria-expanded={isExpanded}
+                      aria-label={`Job at ${truncate(job.address, 40)}, status: ${statusLabel(job.status)}`}
+                      className="flex flex-col sm:flex-row sm:items-center gap-4 cursor-pointer"
+                      onClick={() => setExpandedId(isExpanded ? null : job.id)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          setExpandedId(isExpanded ? null : job.id);
+                        }
+                      }}
+                    >
                       {/* Left: status icon + address */}
                       <div className="flex items-start gap-3 flex-1 min-w-0">
                         {/* Status icon circle */}
@@ -738,9 +776,11 @@ function AuthenticatedDashboard() {
                               Receipt
                             </Link>
                           )}
-                          {/* Chevron */}
+                          {/* Expand chevron */}
                           <svg
-                            className="w-5 h-5 text-muted-foreground hidden sm:block"
+                            className={`w-5 h-5 text-muted-foreground hidden sm:block transition-transform duration-200 ${
+                              isExpanded ? "rotate-90" : ""
+                            }`}
                             fill="none"
                             viewBox="0 0 24 24"
                             strokeWidth={1.5}
@@ -755,9 +795,188 @@ function AuthenticatedDashboard() {
                         </div>
                       </div>
                     </div>
+
+                    {/* Expanded details */}
+                    {isExpanded && (
+                      <div className="mt-4 pt-4 border-t border-border animate-in slide-in-from-top-2 duration-200">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                          {/* Address & Schedule */}
+                          <div className="space-y-3">
+                            <div>
+                              <p className="text-xs text-muted-foreground mb-0.5">Full Address</p>
+                              <p className="text-sm font-medium">{job.address}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-muted-foreground mb-0.5">Scheduled Date</p>
+                              <p className="text-sm font-medium">
+                                {job.scheduled_at ? formatDate(job.scheduled_at) : "Not scheduled"}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-muted-foreground mb-0.5">Created</p>
+                              <p className="text-sm font-medium">{formatDate(job.created_at)}</p>
+                            </div>
+                            {job.completed_at && (
+                              <div>
+                                <p className="text-xs text-muted-foreground mb-0.5">Completed</p>
+                                <p className="text-sm font-medium">{formatDate(job.completed_at)}</p>
+                              </div>
+                            )}
+                            {job.notes && (
+                              <div>
+                                <p className="text-xs text-muted-foreground mb-0.5">Notes</p>
+                                <p className="text-sm">{job.notes}</p>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Price Breakdown & Contractor */}
+                          <div className="space-y-3">
+                            {/* Price breakdown */}
+                            <div>
+                              <p className="text-xs text-muted-foreground mb-1.5">Price Breakdown</p>
+                              <div className="space-y-1 text-sm">
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">Base Price</span>
+                                  <span>{formatPrice(job.base_price)}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">Items</span>
+                                  <span>{formatPrice(job.item_total)}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">Service Fee</span>
+                                  <span>{formatPrice(job.service_fee)}</span>
+                                </div>
+                                {job.surge_multiplier > 1.0 && (
+                                  <div className="flex justify-between text-orange-600">
+                                    <span>Surge ({job.surge_multiplier}x)</span>
+                                    <span>Applied</span>
+                                  </div>
+                                )}
+                                <Separator className="my-1" />
+                                <div className="flex justify-between font-semibold">
+                                  <span>Total</span>
+                                  <span>{formatPrice(job.total_price)}</span>
+                                </div>
+                                {job.payment && (
+                                  <div className="flex justify-between">
+                                    <span className="text-muted-foreground">Payment</span>
+                                    <Badge variant="outline" className="capitalize text-xs">
+                                      {job.payment.payment_status.replace(/_/g, " ")}
+                                    </Badge>
+                                  </div>
+                                )}
+                                {job.payment && job.payment.tip_amount > 0 && (
+                                  <div className="flex justify-between">
+                                    <span className="text-muted-foreground">Tip</span>
+                                    <span>{formatPrice(job.payment.tip_amount)}</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Contractor info */}
+                            {job.contractor && (
+                              <div>
+                                <p className="text-xs text-muted-foreground mb-1.5">Contractor</p>
+                                <div className="flex items-center gap-3">
+                                  <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-sm">
+                                    {job.contractor.user?.name
+                                      ? job.contractor.user.name.charAt(0).toUpperCase()
+                                      : "C"}
+                                  </div>
+                                  <div>
+                                    <p className="text-sm font-medium">
+                                      {job.contractor.user?.name ?? "Contractor"}
+                                    </p>
+                                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                      {job.contractor.truck_type && (
+                                        <span>{job.contractor.truck_type}</span>
+                                      )}
+                                      <span>
+                                        {job.contractor.avg_rating.toFixed(1)} stars
+                                      </span>
+                                      <span>
+                                        {job.contractor.total_jobs} jobs
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Rating */}
+                            {job.rating && (
+                              <div>
+                                <p className="text-xs text-muted-foreground mb-1">Your Rating</p>
+                                <div className="flex items-center gap-1">
+                                  {[1, 2, 3, 4, 5].map((star) => (
+                                    <svg
+                                      key={star}
+                                      className={`w-4 h-4 ${
+                                        star <= job.rating!.stars
+                                          ? "text-amber-400 fill-amber-400"
+                                          : "text-gray-300"
+                                      }`}
+                                      viewBox="0 0 24 24"
+                                      fill={star <= job.rating!.stars ? "currentColor" : "none"}
+                                      stroke="currentColor"
+                                      strokeWidth={star <= job.rating!.stars ? 0 : 1.5}
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z"
+                                      />
+                                    </svg>
+                                  ))}
+                                  {job.rating.comment && (
+                                    <span className="text-xs text-muted-foreground ml-2 truncate max-w-[180px]">
+                                      &ldquo;{job.rating.comment}&rdquo;
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Items list */}
+                        <div className="mt-4">
+                          <p className="text-xs text-muted-foreground mb-1.5">Items</p>
+                          <div className="flex flex-wrap gap-2">
+                            {job.items.map((item, idx) => (
+                              <span
+                                key={idx}
+                                className="inline-flex items-center gap-1 text-xs bg-muted rounded-full px-2.5 py-1 font-medium"
+                              >
+                                {item.category}
+                                <span className="text-muted-foreground">x{item.quantity}</span>
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* View full details link */}
+                        <div className="mt-4 pt-3 border-t border-border flex items-center gap-3">
+                          <Link
+                            href={`/jobs/${job.id}`}
+                            className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            View Full Details
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                            </svg>
+                          </Link>
+                        </div>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
-              ))}
+                );
+              })}
             </div>
           )}
         </>

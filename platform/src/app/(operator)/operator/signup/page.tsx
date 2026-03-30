@@ -102,11 +102,13 @@ function SignupForm() {
         </div>
 
         {/* Error Message */}
-        {error && (
-          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3">
-            <p className="text-sm text-red-700">{error}</p>
-          </div>
-        )}
+        <div aria-live="polite" aria-atomic="true">
+          {error && (
+            <div role="alert" className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3">
+              <p className="text-sm text-red-700">{error}</p>
+            </div>
+          )}
+        </div>
 
         {/* Application Form */}
         <form onSubmit={handleSubmit} className="space-y-4">

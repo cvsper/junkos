@@ -27,7 +27,7 @@ export default function LegalLayout({
       </header>
 
       {/* Content */}
-      <main className="flex-1 mx-auto w-full max-w-3xl px-6 py-12">
+      <main id="main-content" className="flex-1 mx-auto w-full max-w-3xl px-6 py-12">
         {children}
       </main>
 

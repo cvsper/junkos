@@ -158,11 +158,13 @@ export function Step3Items() {
             );
           })}
         </div>
-        {errors.category && (
-          <p className="text-sm text-destructive font-medium">
-            {errors.category}
-          </p>
-        )}
+        <div aria-live="polite" aria-atomic="true">
+          {errors.category && (
+            <p role="alert" className="text-sm text-destructive font-medium">
+              {errors.category}
+            </p>
+          )}
+        </div>
       </div>
 
       {/* Description */}
@@ -196,11 +198,13 @@ export function Step3Items() {
           maxLength={MAX_DESCRIPTION}
           className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
         />
-        {errors.description && (
-          <p className="text-sm text-destructive font-medium">
-            {errors.description}
-          </p>
-        )}
+        <div aria-live="polite" aria-atomic="true">
+          {errors.description && (
+            <p role="alert" className="text-sm text-destructive font-medium">
+              {errors.description}
+            </p>
+          )}
+        </div>
       </div>
 
       {/* Quantity Selector */}

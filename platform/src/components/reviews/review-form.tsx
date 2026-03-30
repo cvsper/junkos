@@ -80,7 +80,9 @@ export function ReviewForm({ jobId, onReviewSubmitted }: ReviewFormProps) {
       </div>
 
       {/* Comment */}
+      <label htmlFor={`review-comment-${jobId}`} className="sr-only">Review comment (optional)</label>
       <textarea
+        id={`review-comment-${jobId}`}
         value={comment}
         onChange={(e) => setComment(e.target.value)}
         placeholder="Tell us about your experience (optional)"
@@ -88,7 +90,9 @@ export function ReviewForm({ jobId, onReviewSubmitted }: ReviewFormProps) {
         className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm placeholder:text-gray-400 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 resize-none"
       />
 
-      {error && <p className="text-sm text-red-600 mt-1">{error}</p>}
+      <div aria-live="polite" aria-atomic="true">
+        {error && <p role="alert" className="text-sm text-red-600 mt-1">{error}</p>}
+      </div>
 
       <button
         onClick={handleSubmit}

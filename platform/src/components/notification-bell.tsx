@@ -167,8 +167,9 @@ export function NotificationBell({
                 size="icon"
                 className="h-7 w-7"
                 onClick={() => setIsOpen(false)}
+                aria-label="Close notifications"
               >
-                <X className="h-3.5 w-3.5" />
+                <X className="h-3.5 w-3.5" aria-hidden="true" />
               </Button>
             </div>
           </div>
@@ -187,12 +188,21 @@ export function NotificationBell({
                 {notifications.map((notification) => (
                   <div
                     key={notification.id}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`${notification.is_read ? "" : "Unread: "}${notification.title}`}
                     className={cn(
                       "px-4 py-3 hover:bg-muted/50 transition-colors cursor-pointer",
                       !notification.is_read && "bg-primary/5"
                     )}
                     onClick={() => {
                       if (!notification.is_read) {
+                        handleMarkAsRead(notification.id);
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if ((e.key === "Enter" || e.key === " ") && !notification.is_read) {
+                        e.preventDefault();
                         handleMarkAsRead(notification.id);
                       }
                     }}

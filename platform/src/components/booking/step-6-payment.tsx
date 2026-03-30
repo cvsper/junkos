@@ -619,19 +619,21 @@ function PaymentFormInner() {
       </div>
 
       {/* Global error */}
-      {errors.general && (
-        <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/5 p-4">
-          <AlertCircle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
-          <div>
-            <p className="text-sm font-medium text-destructive">
-              Payment Error
-            </p>
-            <p className="text-sm text-destructive/80 mt-0.5">
-              {errors.general}
-            </p>
+      <div aria-live="polite" aria-atomic="true">
+        {errors.general && (
+          <div role="alert" className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/5 p-4">
+            <AlertCircle className="h-5 w-5 text-destructive shrink-0 mt-0.5" aria-hidden="true" />
+            <div>
+              <p className="text-sm font-medium text-destructive">
+                Payment Error
+              </p>
+              <p className="text-sm text-destructive/80 mt-0.5">
+                {errors.general}
+              </p>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Apple Pay / Google Pay */}
       {paymentRequest && canMakePayment && (
@@ -695,11 +697,13 @@ function PaymentFormInner() {
                 className="pl-10 h-11"
               />
             </div>
-            {errors.name && (
-              <p className="text-sm text-destructive font-medium">
-                {errors.name}
-              </p>
-            )}
+            <div aria-live="polite" aria-atomic="true">
+              {errors.name && (
+                <p role="alert" className="text-sm text-destructive font-medium">
+                  {errors.name}
+                </p>
+              )}
+            </div>
           </div>
 
           {/* Email */}
@@ -723,11 +727,13 @@ function PaymentFormInner() {
                 className="pl-10 h-11"
               />
             </div>
-            {errors.email && (
-              <p className="text-sm text-destructive font-medium">
-                {errors.email}
-              </p>
-            )}
+            <div aria-live="polite" aria-atomic="true">
+              {errors.email && (
+                <p role="alert" className="text-sm text-destructive font-medium">
+                  {errors.email}
+                </p>
+              )}
+            </div>
           </div>
 
           {/* Phone */}
@@ -747,11 +753,13 @@ function PaymentFormInner() {
                 className="pl-10 h-11"
               />
             </div>
-            {errors.phone && (
-              <p className="text-sm text-destructive font-medium">
-                {errors.phone}
-              </p>
-            )}
+            <div aria-live="polite" aria-atomic="true">
+              {errors.phone && (
+                <p role="alert" className="text-sm text-destructive font-medium">
+                  {errors.phone}
+                </p>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -773,11 +781,13 @@ function PaymentFormInner() {
               onChange={handleCardChange}
             />
           </div>
-          {(errors.card || cardError) && (
-            <p className="text-sm text-destructive font-medium">
-              {errors.card || cardError}
-            </p>
-          )}
+          <div aria-live="polite" aria-atomic="true">
+            {(errors.card || cardError) && (
+              <p role="alert" className="text-sm text-destructive font-medium">
+                {errors.card || cardError}
+              </p>
+            )}
+          </div>
         </div>
 
         {/* Security Badge */}
@@ -817,13 +827,15 @@ function PaymentFormInner() {
               onClick={handleRemovePromo}
               className="text-muted-foreground hover:text-foreground transition-colors"
               disabled={isSubmitting}
+              aria-label="Remove promo code"
             >
-              <X className="h-4 w-4" />
+              <X className="h-4 w-4" aria-hidden="true" />
             </button>
           </div>
         ) : (
           <div className="flex gap-2">
             <Input
+              aria-label="Promo code"
               placeholder="Enter promo code"
               value={promoInput}
               onChange={(e) => {
@@ -854,11 +866,13 @@ function PaymentFormInner() {
           </div>
         )}
 
-        {promoError && (
-          <p className="text-sm text-destructive font-medium">
-            {promoError}
-          </p>
-        )}
+        <div aria-live="polite" aria-atomic="true">
+          {promoError && (
+            <p role="alert" className="text-sm text-destructive font-medium">
+              {promoError}
+            </p>
+          )}
+        </div>
       </div>
 
       {/* Total and Submit */}

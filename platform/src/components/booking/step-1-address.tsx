@@ -202,6 +202,11 @@ export function Step1Address() {
           <input
             id="address"
             type="text"
+            role="combobox"
+            aria-expanded={showSuggestions && suggestions.length > 0}
+            aria-autocomplete="list"
+            aria-controls="address-suggestions"
+            aria-activedescendant={activeSuggestion >= 0 ? `suggestion-${activeSuggestion}` : undefined}
             value={streetValue}
             onChange={(e) => handleChange(e.target.value)}
             onKeyDown={handleKeyDown}
@@ -231,10 +236,18 @@ export function Step1Address() {
 
           {/* Autocomplete Dropdown */}
           {showSuggestions && suggestions.length > 0 && (
-            <ul className="absolute z-50 top-full left-0 right-0 mt-1 bg-card border border-border rounded-lg shadow-lg overflow-hidden">
+            <ul
+              id="address-suggestions"
+              role="listbox"
+              aria-label="Address suggestions"
+              className="absolute z-50 top-full left-0 right-0 mt-1 bg-card border border-border rounded-lg shadow-lg overflow-hidden"
+            >
               {suggestions.map((feature, i) => (
                 <li
                   key={feature.id}
+                  id={`suggestion-${i}`}
+                  role="option"
+                  aria-selected={i === activeSuggestion}
                   className={`flex items-start gap-3 px-3 py-3 cursor-pointer transition-colors ${
                     i === activeSuggestion
                       ? "bg-primary/10 text-foreground"
@@ -243,16 +256,18 @@ export function Step1Address() {
                   onMouseDown={() => selectSuggestion(feature)}
                   onMouseEnter={() => setActiveSuggestion(i)}
                 >
-                  <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                  <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" aria-hidden="true" />
                   <span className="text-sm">{feature.place_name}</span>
                 </li>
               ))}
             </ul>
           )}
         </div>
-        {error && (
-          <p className="text-sm text-destructive font-medium">{error}</p>
-        )}
+        <div aria-live="polite" aria-atomic="true">
+          {error && (
+            <p role="alert" className="text-sm text-destructive font-medium">{error}</p>
+          )}
+        </div>
       </div>
 
       {/* Service Area Info */}

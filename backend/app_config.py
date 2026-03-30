@@ -10,17 +10,26 @@ if not os.path.exists(_DB_NAME) and os.path.exists('junkos.db'):
     os.rename('junkos.db', _DB_NAME)
 
 
+_MUST_SET_IN_PRODUCTION = {"JWT_SECRET", "SECRET_KEY"}
+
+
 def _require_in_production(var_name, default):
-    """Return env var value. In production, warn loudly if still using default."""
+    """Return env var value. In production, refuse to start for critical vars."""
     value = os.environ.get(var_name, "")
     if value:
         return value
     env = os.environ.get("FLASK_ENV", "development")
-    if env != "development" and default:
-        import logging
-        logging.getLogger(__name__).warning(
-            "%s is using an insecure default. Set it via environment variable!", var_name
-        )
+    if env != "development":
+        if var_name in _MUST_SET_IN_PRODUCTION:
+            raise RuntimeError(
+                f"FATAL: {var_name} must be set in production. "
+                f"Refusing to start with an auto-generated secret."
+            )
+        if default:
+            import logging
+            logging.getLogger(__name__).warning(
+                "%s is using an insecure default. Set it via environment variable!", var_name
+            )
     return default
 
 

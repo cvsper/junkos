@@ -17,6 +17,7 @@ from models import (
     db, User, Contractor, Notification, generate_uuid, utcnow,
 )
 from auth_routes import require_auth
+from storage import save_file
 
 onboarding_bp = Blueprint("onboarding", __name__)
 
@@ -144,7 +145,6 @@ def upload_onboarding_documents(user_id):
     if contractor.onboarding_status in ("approved",):
         return jsonify({"error": "Onboarding already completed"}), 409
 
-    _ensure_upload_dir()
     uploaded = {}
     errors = []
 
@@ -178,13 +178,7 @@ def upload_onboarding_documents(user_id):
                 })
                 continue
 
-            ext = file.filename.rsplit(".", 1)[1].lower()
-            unique_name = "{}.{}".format(generate_uuid(), ext)
-            safe_name = secure_filename(unique_name)
-            filepath = os.path.join(UPLOAD_FOLDER, safe_name)
-            file.save(filepath)
-
-            url = "/uploads/{}".format(safe_name)
+            url = save_file(file, prefix="onboarding", filename=file.filename)
             setattr(contractor, url_attr, url)
             uploaded[field_name] = url
 

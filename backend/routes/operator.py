@@ -90,11 +90,18 @@ def dashboard(user_id, operator):
 @operator_bp.route("/fleet", methods=["GET"])
 @require_operator
 def list_fleet(user_id, operator):
-    """List fleet contractors."""
-    fleet = Contractor.query.filter_by(operator_id=operator.id).all()
+    """List fleet contractors with pagination."""
+    page = request.args.get("page", 1, type=int)
+    per_page = request.args.get("per_page", 20, type=int)
+
+    pagination = Contractor.query.filter_by(
+        operator_id=operator.id
+    ).order_by(
+        Contractor.created_at.desc()
+    ).paginate(page=page, per_page=per_page, error_out=False)
 
     contractors = []
-    for c in fleet:
+    for c in pagination.items:
         contractors.append({
             "id": c.id,
             "name": c.user.name if c.user else None,
@@ -106,7 +113,13 @@ def list_fleet(user_id, operator):
             "approval_status": c.approval_status,
         })
 
-    return jsonify({"success": True, "contractors": contractors}), 200
+    return jsonify({
+        "success": True,
+        "contractors": contractors,
+        "total": pagination.total,
+        "page": pagination.page,
+        "pages": pagination.pages,
+    }), 200
 
 
 # ---------------------------------------------------------------------------
@@ -142,14 +155,22 @@ def create_invite(user_id, operator):
 @operator_bp.route("/invites", methods=["GET"])
 @require_operator
 def list_invites(user_id, operator):
-    """List active invite codes."""
-    invites = OperatorInvite.query.filter_by(
+    """List active invite codes with pagination."""
+    page = request.args.get("page", 1, type=int)
+    per_page = request.args.get("per_page", 20, type=int)
+
+    pagination = OperatorInvite.query.filter_by(
         operator_id=operator.id, is_active=True
-    ).order_by(OperatorInvite.created_at.desc()).all()
+    ).order_by(
+        OperatorInvite.created_at.desc()
+    ).paginate(page=page, per_page=per_page, error_out=False)
 
     return jsonify({
         "success": True,
-        "invites": [i.to_dict() for i in invites],
+        "invites": [i.to_dict() for i in pagination.items],
+        "total": pagination.total,
+        "page": pagination.page,
+        "pages": pagination.pages,
     }), 200
 
 

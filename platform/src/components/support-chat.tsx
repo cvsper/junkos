@@ -165,6 +165,9 @@ export function SupportChat() {
     <>
       {/* Chat Panel */}
       <div
+        role="dialog"
+        aria-label="Support chat"
+        aria-hidden={!isOpen}
         className={cn(
           "fixed bottom-20 right-4 sm:right-6 z-50 w-[calc(100vw-2rem)] sm:w-96",
           "bg-card border border-border rounded-2xl shadow-2xl",
@@ -263,6 +266,7 @@ export function SupportChat() {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Type your message..."
+              aria-label="Type your support message"
               disabled={isSending}
               className="flex-1 bg-muted/50 border border-border rounded-full px-4 py-2 text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 disabled:opacity-50 transition-colors"
             />

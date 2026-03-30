@@ -110,10 +110,19 @@ export function Step2Photos() {
 
       {/* Drop Zone */}
       <div
+        role="button"
+        tabIndex={0}
+        aria-label="Upload photos. Click or drag photos here. JPG, PNG, or WebP. Max 10 files, 10MB each."
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         onClick={() => fileInputRef.current?.click()}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            fileInputRef.current?.click();
+          }
+        }}
         className={cn(
           "relative cursor-pointer rounded-lg border-2 border-dashed p-8 text-center transition-colors",
           isDragging
@@ -146,12 +155,14 @@ export function Step2Photos() {
       </div>
 
       {/* Error */}
-      {error && (
-        <div className="flex items-center gap-2 text-sm text-destructive font-medium">
-          <AlertCircle className="h-4 w-4 shrink-0" />
-          {error}
-        </div>
-      )}
+      <div aria-live="polite" aria-atomic="true">
+        {error && (
+          <div role="alert" className="flex items-center gap-2 text-sm text-destructive font-medium">
+            <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
+            {error}
+          </div>
+        )}
+      </div>
 
       {/* Preview Grid */}
       {photoPreviewUrls.length > 0 && (

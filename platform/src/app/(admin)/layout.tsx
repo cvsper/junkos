@@ -104,6 +104,7 @@ export default function AdminLayout({
         <div
           className="fixed inset-0 bg-black/50 z-30 md:hidden"
           onClick={() => setMobileMenuOpen(false)}
+          aria-hidden="true"
         />
       )}
 
@@ -126,7 +127,7 @@ export default function AdminLayout({
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+        <nav aria-label="Admin navigation" className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
           {sidebarLinks.map((link) => {
             const isActive =
               link.href === "/admin"
@@ -195,8 +196,10 @@ export default function AdminLayout({
             <button
               className="md:hidden p-2 -ml-2 rounded-lg hover:bg-muted transition-colors"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
+              aria-expanded={mobileMenuOpen}
             >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
               </svg>
             </button>
@@ -221,7 +224,7 @@ export default function AdminLayout({
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 p-6 overflow-y-auto">{children}</main>
+        <main id="main-content" className="flex-1 p-6 overflow-y-auto">{children}</main>
       </div>
     </div>
   );

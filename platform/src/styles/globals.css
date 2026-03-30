@@ -59,4 +59,12 @@
   h1, h2, h3, h4, h5, h6 {
     @apply font-display;
   }
+  /* Ensure visible focus outlines for keyboard navigation */
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-ring;
+  }
+  /* Remove default outline only when NOT using keyboard (mouse/touch) */
+  :focus:not(:focus-visible) {
+    outline: none;
+  }
 }

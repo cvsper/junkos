@@ -14,6 +14,7 @@ from werkzeug.utils import secure_filename
 from models import db, Job, Contractor, Rating, Payment, User, Notification, generate_uuid, utcnow
 from auth_routes import require_auth
 from notifications import send_push_notification
+from storage import save_file
 
 jobs_bp = Blueprint("jobs", __name__, url_prefix="/api/jobs")
 
@@ -107,8 +108,11 @@ def lookup_by_confirmation_code(confirmation_code):
 @require_auth
 def list_jobs(user_id):
     """
-    Return all jobs belonging to the authenticated customer.
-    Optional query param: status (filter by job status).
+    Return jobs belonging to the authenticated customer.
+    Optional query params:
+        - status: filter by job status
+        - page: page number (default 1)
+        - per_page: results per page (default 20)
     Results are ordered by created_at descending.
     """
     query = Job.query.filter_by(customer_id=user_id)
@@ -117,11 +121,15 @@ def list_jobs(user_id):
     if status:
         query = query.filter_by(status=status)
 
-    query = query.order_by(Job.created_at.desc())
-    jobs = query.all()
+    page = request.args.get("page", 1, type=int)
+    per_page = request.args.get("per_page", 20, type=int)
+
+    pagination = query.order_by(Job.created_at.desc()).paginate(
+        page=page, per_page=per_page, error_out=False
+    )
 
     result = []
-    for job in jobs:
+    for job in pagination.items:
         job_dict = job.to_dict()
         if job.payment:
             job_dict["payment"] = {
@@ -143,7 +151,13 @@ def list_jobs(user_id):
             job_dict["rating"] = None
         result.append(job_dict)
 
-    return jsonify({"success": True, "jobs": result}), 200
+    return jsonify({
+        "success": True,
+        "jobs": result,
+        "total": pagination.total,
+        "page": pagination.page,
+        "pages": pagination.pages,
+    }), 200
 
 
 @jobs_bp.route("/<job_id>", methods=["GET"])
@@ -502,8 +516,6 @@ def upload_before_photos(user_id, job_id):
     if len(files) > MAX_FILES:
         return jsonify({"error": "Maximum {} files allowed per upload".format(MAX_FILES)}), 400
 
-    _ensure_upload_dir()
-
     urls = []
     errors = []
 
@@ -524,13 +536,7 @@ def upload_before_photos(user_id, job_id):
             errors.append({"file": file.filename, "error": "File exceeds maximum size of 10 MB"})
             continue
 
-        ext = file.filename.rsplit(".", 1)[1].lower()
-        unique_name = "{}.{}".format(generate_uuid(), ext)
-        safe_name = secure_filename(unique_name)
-        filepath = os.path.join(UPLOAD_FOLDER, safe_name)
-        file.save(filepath)
-
-        url = "/uploads/{}".format(safe_name)
+        url = save_file(file, prefix="jobs/before", filename=file.filename)
         urls.append(url)
 
     if not urls:
@@ -590,8 +596,6 @@ def upload_after_photos(user_id, job_id):
     if len(files) > MAX_FILES:
         return jsonify({"error": "Maximum {} files allowed per upload".format(MAX_FILES)}), 400
 
-    _ensure_upload_dir()
-
     urls = []
     errors = []
 
@@ -612,13 +616,7 @@ def upload_after_photos(user_id, job_id):
             errors.append({"file": file.filename, "error": "File exceeds maximum size of 10 MB"})
             continue
 
-        ext = file.filename.rsplit(".", 1)[1].lower()
-        unique_name = "{}.{}".format(generate_uuid(), ext)
-        safe_name = secure_filename(unique_name)
-        filepath = os.path.join(UPLOAD_FOLDER, safe_name)
-        file.save(filepath)
-
-        url = "/uploads/{}".format(safe_name)
+        url = save_file(file, prefix="jobs/after", filename=file.filename)
         urls.append(url)
 
     if not urls:

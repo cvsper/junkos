@@ -13,12 +13,19 @@ import { operatorApi, type OperatorFleetContractor } from "@/lib/api";
 export default function OperatorFleetPage() {
   const [contractors, setContractors] = useState<OperatorFleetContractor[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const loadFleet = () => {
+    setLoading(true);
+    setError(null);
     operatorApi.fleet()
       .then((res) => setContractors(res.contractors))
-      .catch(() => {})
+      .catch((err) => setError(err instanceof Error ? err.message : "Failed to load fleet"))
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    loadFleet();
   }, []);
 
   if (loading) {
@@ -79,13 +86,53 @@ export default function OperatorFleetPage() {
     );
   }
 
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-2xl font-display font-bold">Fleet</h1>
+        <div className="rounded-xl border border-red-200 bg-red-50 p-8 flex flex-col items-center text-center">
+          <svg className="w-10 h-10 text-red-400 mb-3" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+          </svg>
+          <p className="text-red-700 font-medium mb-1">Failed to load fleet</p>
+          <p className="text-sm text-red-600 mb-4">{error}</p>
+          <button
+            onClick={loadFleet}
+            className="inline-flex items-center gap-2 text-sm bg-red-100 text-red-700 px-4 py-2 rounded-lg hover:bg-red-200 transition-colors font-medium"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const onlineCount = contractors.filter((c) => c.is_online).length;
+  const approvedCount = contractors.filter((c) => c.approval_status === "approved").length;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-display font-bold">Fleet</h1>
-        <span className="text-sm text-muted-foreground">
-          {contractors.length} contractor{contractors.length !== 1 ? "s" : ""}
-        </span>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            <span>{contractors.length} total</span>
+            <span className="flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-green-500" />
+              {onlineCount} online
+            </span>
+            <span>{approvedCount} approved</span>
+          </div>
+          <button
+            onClick={loadFleet}
+            className="p-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+            title="Refresh fleet"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       {contractors.length === 0 ? (

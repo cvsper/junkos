@@ -2,7 +2,9 @@
 //  EmailLoginView.swift
 //  Umuve
 //
-//  Email and password login form
+//  Email and password login/signup form.
+//  Supports toggling between login and signup modes.
+//  Calls POST /api/auth/login for login, POST /api/auth/signup for signup.
 //
 
 import SwiftUI
@@ -12,15 +14,18 @@ struct EmailLoginView: View {
     @Environment(\.dismiss) var dismiss
     @State private var email = ""
     @State private var password = ""
+    @State private var name = ""
+    @State private var confirmPassword = ""
     @State private var isLoading = false
     @State private var showPassword = false
     @State private var errorMessage: String?
+    @State private var isSignupMode = false
     @State private var showForgotPassword = false
     @State private var forgotEmail = ""
     @State private var forgotPasswordSent = false
     @State private var forgotPasswordLoading = false
     @State private var forgotPasswordError: String?
-    
+
     var body: some View {
         ScrollView {
             VStack(spacing: UmuveSpacing.xxlarge) {
@@ -34,10 +39,10 @@ struct EmailLoginView: View {
                             .padding()
                     }
                 }
-                
+
                 // Header
                 VStack(spacing: UmuveSpacing.large) {
-                    Image(systemName: "envelope.circle.fill")
+                    Image(systemName: isSignupMode ? "person.crop.circle.badge.plus" : "envelope.circle.fill")
                         .font(.system(size: 80))
                         .foregroundStyle(
                             LinearGradient(
@@ -46,27 +51,53 @@ struct EmailLoginView: View {
                                 endPoint: .bottomTrailing
                             )
                         )
-                    
-                    Text("Log in with Email")
+
+                    Text(isSignupMode ? "Create Account" : "Log in with Email")
                         .font(.system(size: 32, weight: .bold))
                         .foregroundColor(.umuveText)
                         .multilineTextAlignment(.center)
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.top, UmuveSpacing.xlarge)
-                
+
                 // Form
                 VStack(spacing: UmuveSpacing.large) {
+                    // Name field (signup only)
+                    if isSignupMode {
+                        VStack(alignment: .leading, spacing: UmuveSpacing.small) {
+                            Text("Full Name")
+                                .font(UmuveTypography.bodySmallFont)
+                                .foregroundColor(.umuveTextMuted)
+
+                            HStack {
+                                Image(systemName: "person.fill")
+                                    .foregroundColor(.umuveTextMuted)
+
+                                TextField("Your name", text: $name)
+                                    .font(UmuveTypography.bodyFont)
+                                    .autocorrectionDisabled()
+                            }
+                            .padding(UmuveSpacing.normal)
+                            .background(Color.white)
+                            .cornerRadius(12)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(Color.umuveBorder, lineWidth: 1)
+                            )
+                        }
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                    }
+
                     // Email field
                     VStack(alignment: .leading, spacing: UmuveSpacing.small) {
                         Text("Email Address")
                             .font(UmuveTypography.bodySmallFont)
                             .foregroundColor(.umuveTextMuted)
-                        
+
                         HStack {
                             Image(systemName: "envelope.fill")
                                 .foregroundColor(.umuveTextMuted)
-                            
+
                             TextField("your@email.com", text: $email)
                                 .font(UmuveTypography.bodyFont)
                                 .keyboardType(.emailAddress)
@@ -81,17 +112,17 @@ struct EmailLoginView: View {
                                 .stroke(Color.umuveBorder, lineWidth: 1)
                         )
                     }
-                    
+
                     // Password field
                     VStack(alignment: .leading, spacing: UmuveSpacing.small) {
                         Text("Password")
                             .font(UmuveTypography.bodySmallFont)
                             .foregroundColor(.umuveTextMuted)
-                        
+
                         HStack {
                             Image(systemName: "lock.fill")
                                 .foregroundColor(.umuveTextMuted)
-                            
+
                             if showPassword {
                                 TextField("", text: $password)
                                     .font(UmuveTypography.bodyFont)
@@ -103,7 +134,7 @@ struct EmailLoginView: View {
                                     .autocapitalization(.none)
                                     .autocorrectionDisabled()
                             }
-                            
+
                             Button(action: { showPassword.toggle() }) {
                                 Image(systemName: showPassword ? "eye.slash.fill" : "eye.fill")
                                     .foregroundColor(.umuveTextMuted)
@@ -117,20 +148,49 @@ struct EmailLoginView: View {
                                 .stroke(Color.umuveBorder, lineWidth: 1)
                         )
                     }
-                    
-                    // Forgot password
-                    HStack {
-                        Spacer()
-                        Button("Forgot Password?") {
-                            forgotEmail = email
-                            showForgotPassword = true
+
+                    // Confirm Password (signup only)
+                    if isSignupMode {
+                        VStack(alignment: .leading, spacing: UmuveSpacing.small) {
+                            Text("Confirm Password")
+                                .font(UmuveTypography.bodySmallFont)
+                                .foregroundColor(.umuveTextMuted)
+
+                            HStack {
+                                Image(systemName: "lock.fill")
+                                    .foregroundColor(.umuveTextMuted)
+
+                                SecureField("", text: $confirmPassword)
+                                    .font(UmuveTypography.bodyFont)
+                                    .autocapitalization(.none)
+                                    .autocorrectionDisabled()
+                            }
+                            .padding(UmuveSpacing.normal)
+                            .background(Color.white)
+                            .cornerRadius(12)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(Color.umuveBorder, lineWidth: 1)
+                            )
                         }
-                        .font(UmuveTypography.bodySmallFont)
-                        .foregroundColor(.umuvePrimary)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                    }
+
+                    // Forgot password (login only)
+                    if !isSignupMode {
+                        HStack {
+                            Spacer()
+                            Button("Forgot Password?") {
+                                forgotEmail = email
+                                showForgotPassword = true
+                            }
+                            .font(UmuveTypography.bodySmallFont)
+                            .foregroundColor(.umuvePrimary)
+                        }
                     }
                 }
                 .padding(.horizontal, UmuveSpacing.xlarge)
-                
+
                 // Error message
                 if let error = errorMessage {
                     HStack {
@@ -146,16 +206,16 @@ struct EmailLoginView: View {
                     .padding(.horizontal, UmuveSpacing.xlarge)
                     .transition(.scale.combined(with: .opacity))
                 }
-                
+
                 Spacer()
-                
-                // Login button
-                Button(action: login) {
+
+                // Primary action button
+                Button(action: isSignupMode ? signup : login) {
                     if isLoading {
                         ProgressView()
                             .progressViewStyle(CircularProgressViewStyle(tint: .white))
                     } else {
-                        Text("Log In")
+                        Text(isSignupMode ? "Create Account" : "Log In")
                             .font(UmuveTypography.h3Font)
                             .foregroundColor(.white)
                     }
@@ -166,6 +226,25 @@ struct EmailLoginView: View {
                 .cornerRadius(28)
                 .disabled(!isFormValid || isLoading)
                 .padding(.horizontal, UmuveSpacing.xlarge)
+
+                // Toggle login/signup
+                Button(action: {
+                    withAnimation(AnimationConstants.smoothSpring) {
+                        isSignupMode.toggle()
+                        errorMessage = nil
+                    }
+                }) {
+                    VStack(spacing: 4) {
+                        Text(isSignupMode ? "Already have an account?" : "Don't have an account?")
+                            .foregroundColor(.umuveTextMuted)
+                        Text(isSignupMode ? "Log In" : "Sign Up")
+                            .fontWeight(.bold)
+                            .foregroundColor(.umuvePrimary)
+                    }
+                    .font(UmuveTypography.bodyFont)
+                    .multilineTextAlignment(.center)
+                }
+                .frame(maxWidth: .infinity)
                 .padding(.bottom, UmuveSpacing.xlarge)
             }
         }
@@ -278,11 +357,18 @@ struct EmailLoginView: View {
     }
 
     // MARK: - Helpers
-    
+
     private var isFormValid: Bool {
-        !email.isEmpty && email.contains("@") && password.count >= 6
+        if isSignupMode {
+            return !email.isEmpty
+                && email.contains("@")
+                && password.count >= 6
+                && password == confirmPassword
+        } else {
+            return !email.isEmpty && email.contains("@") && password.count >= 6
+        }
     }
-    
+
     private func sendForgotPassword() {
         forgotPasswordLoading = true
         forgotPasswordError = nil
@@ -303,7 +389,7 @@ struct EmailLoginView: View {
         isLoading = true
         errorMessage = nil
         HapticManager.shared.lightTap()
-        
+
         authManager.loginWithEmail(email: email, password: password) { success, error in
             isLoading = false
             if success {
@@ -312,6 +398,29 @@ struct EmailLoginView: View {
             } else {
                 HapticManager.shared.error()
                 errorMessage = error ?? "Invalid email or password"
+            }
+        }
+    }
+
+    private func signup() {
+        guard password == confirmPassword else {
+            errorMessage = "Passwords don't match"
+            HapticManager.shared.error()
+            return
+        }
+
+        isLoading = true
+        errorMessage = nil
+        HapticManager.shared.lightTap()
+
+        authManager.signupWithEmail(email: email, password: password, name: name.isEmpty ? nil : name) { success, error in
+            isLoading = false
+            if success {
+                HapticManager.shared.success()
+                dismiss()
+            } else {
+                HapticManager.shared.error()
+                errorMessage = error ?? "Signup failed. Please try again."
             }
         }
     }

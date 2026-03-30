@@ -113,9 +113,11 @@ export function Step4Schedule() {
           onChange={(e) => handleDateChange(e.target.value)}
           className="flex h-12 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
         />
-        {errors.date && (
-          <p className="text-sm text-destructive font-medium">{errors.date}</p>
-        )}
+        <div aria-live="polite" aria-atomic="true">
+          {errors.date && (
+            <p role="alert" className="text-sm text-destructive font-medium">{errors.date}</p>
+          )}
+        </div>
       </div>
 
       {/* Time Slot Selection */}
@@ -144,9 +146,11 @@ export function Step4Schedule() {
             );
           })}
         </div>
-        {errors.time && (
-          <p className="text-sm text-destructive font-medium">{errors.time}</p>
-        )}
+        <div aria-live="polite" aria-atomic="true">
+          {errors.time && (
+            <p role="alert" className="text-sm text-destructive font-medium">{errors.time}</p>
+          )}
+        </div>
       </div>
 
       {/* Summary */}

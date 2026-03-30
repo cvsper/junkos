@@ -20,9 +20,9 @@ export function ProgressBar({ currentStep }: ProgressBarProps) {
   const progressPercent = ((currentStep - 1) / (steps.length - 1)) * 100;
 
   return (
-    <div className="w-full">
+    <div className="w-full" role="navigation" aria-label={`Booking progress: step ${currentStep} of ${steps.length}, ${steps[currentStep - 1]?.label}`}>
       {/* Desktop: circles connected by lines */}
-      <div className="hidden sm:block">
+      <div className="hidden sm:block" aria-hidden="true">
         <div className="relative flex items-center justify-between">
           {/* Connecting line (background) */}
           <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-0.5 bg-border z-0" />
@@ -85,7 +85,14 @@ export function ProgressBar({ currentStep }: ProgressBarProps) {
             {steps[currentStep - 1]?.label}
           </span>
         </div>
-        <div className="h-2 bg-muted rounded-full overflow-hidden">
+        <div
+          className="h-2 bg-muted rounded-full overflow-hidden"
+          role="progressbar"
+          aria-valuenow={currentStep}
+          aria-valuemin={1}
+          aria-valuemax={steps.length}
+          aria-label={`Step ${currentStep} of ${steps.length}`}
+        >
           <div
             className="h-full bg-primary rounded-full transition-all duration-500 ease-in-out"
             style={{ width: `${(currentStep / steps.length) * 100}%` }}

@@ -62,11 +62,13 @@ export default function CustomerLoginPage() {
         </div>
 
         {/* Error Message */}
-        {error && (
-          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3">
-            <p className="text-sm text-red-700">{error}</p>
-          </div>
-        )}
+        <div aria-live="polite" aria-atomic="true">
+          {error && (
+            <div role="alert" className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3">
+              <p className="text-sm text-red-700">{error}</p>
+            </div>
+          )}
+        </div>
 
         {/* Login Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -117,6 +119,7 @@ export default function CustomerLoginPage() {
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
                 viewBox="0 0 24 24"
+                aria-hidden="true"
               >
                 <circle
                   className="opacity-25"

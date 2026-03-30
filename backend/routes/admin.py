@@ -218,8 +218,11 @@ def promote_contractor_to_operator(user_id, contractor_id):
 @admin_bp.route("/jobs", methods=["GET"])
 @require_admin
 def list_jobs(user_id):
-    """List all jobs with optional status filter."""
+    """List all jobs with search, status filter, and date range."""
     status_filter = request.args.get("status")
+    search = request.args.get("search", "").strip()
+    date_from = request.args.get("date_from")
+    date_to = request.args.get("date_to")
     page = request.args.get("page", 1, type=int)
     per_page = request.args.get("per_page", 20, type=int)
 
@@ -227,11 +230,44 @@ def list_jobs(user_id):
     if status_filter:
         query = query.filter_by(status=status_filter)
 
+    if search:
+        like_term = f"%{search}%"
+        query = query.join(User, Job.customer_id == User.id).filter(
+            db.or_(
+                User.name.ilike(like_term),
+                User.email.ilike(like_term),
+                Job.address.ilike(like_term),
+                Job.id.ilike(like_term),
+                Job.confirmation_code.ilike(like_term),
+            )
+        )
+
+    if date_from:
+        try:
+            from_dt = datetime.fromisoformat(date_from.replace("Z", "+00:00"))
+            query = query.filter(Job.created_at >= from_dt)
+        except (ValueError, TypeError):
+            pass
+
+    if date_to:
+        try:
+            to_dt = datetime.fromisoformat(date_to.replace("Z", "+00:00"))
+            query = query.filter(Job.created_at <= to_dt)
+        except (ValueError, TypeError):
+            pass
+
     pagination = query.order_by(Job.created_at.desc()).paginate(page=page, per_page=per_page, error_out=False)
+
+    jobs_data = []
+    for j in pagination.items:
+        jd = j.to_dict()
+        jd["customer_name"] = j.customer.name if j.customer else None
+        jd["customer_email"] = j.customer.email if j.customer else None
+        jobs_data.append(jd)
 
     return jsonify({
         "success": True,
-        "jobs": [j.to_dict() for j in pagination.items],
+        "jobs": jobs_data,
         "total": pagination.total,
         "page": pagination.page,
         "pages": pagination.pages,

@@ -3,6 +3,7 @@ import { DM_Sans, Outfit, JetBrains_Mono } from "next/font/google";
 import "@/styles/globals.css";
 import { Analytics } from "@/components/analytics";
 import { PostHogProvider } from "@/components/providers/posthog-provider";
+import { ErrorBoundaryWrapper } from "@/components/error-boundary-wrapper";
 
 const dmSans = DM_Sans({
   subsets: ["latin"],
@@ -29,6 +30,7 @@ export const metadata: Metadata = {
     icon: "/logo.png",
     apple: "/logo.png",
   },
+  manifest: "/manifest.json",
   title: {
     default: "Umuve | Premium Junk Removal in South Florida",
     template: "%s | Umuve",
@@ -84,8 +86,16 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${dmSans.variable} ${outfit.variable} ${jetbrainsMono.variable}`}>
       <body className="font-sans antialiased bg-background text-foreground min-h-screen">
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:absolute focus:z-[100] focus:top-4 focus:left-4 focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:rounded-lg focus:text-sm focus:font-medium focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+        >
+          Skip to main content
+        </a>
         <PostHogProvider>
-          {children}
+          <ErrorBoundaryWrapper>
+            {children}
+          </ErrorBoundaryWrapper>
         </PostHogProvider>
         <Analytics />
       </body>
