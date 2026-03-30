@@ -18,6 +18,8 @@ import {
   ChevronDown,
   ChevronUp,
   Info,
+  DollarSign,
+  Shield,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -117,11 +119,11 @@ const ITEM_PRESETS: Record<string, ItemPreset[]> = {
 
 // Truck load thresholds based on 1-800-GOT-JUNK sizing (full truck = ~450 cu ft)
 const TRUCK_LOADS = [
-  { label: "1/8 Truck", fraction: 0.125, maxCuFt: 56, price: "$89" },
-  { label: "1/4 Truck", fraction: 0.25, maxCuFt: 112, price: "$149" },
-  { label: "1/2 Truck", fraction: 0.5, maxCuFt: 225, price: "$249" },
-  { label: "3/4 Truck", fraction: 0.75, maxCuFt: 337, price: "$399" },
-  { label: "Full Truck", fraction: 1.0, maxCuFt: 450, price: "$599" },
+  { label: "1/8 Truck", fraction: 0.125, maxCuFt: 56, price: 89 },
+  { label: "1/4 Truck", fraction: 0.25, maxCuFt: 112, price: 149 },
+  { label: "1/2 Truck", fraction: 0.5, maxCuFt: 225, price: 249 },
+  { label: "3/4 Truck", fraction: 0.75, maxCuFt: 337, price: 399 },
+  { label: "Full Truck", fraction: 1.0, maxCuFt: 450, price: 599 },
 ];
 
 function getTruckLoad(totalCuFt: number) {
@@ -129,6 +131,26 @@ function getTruckLoad(totalCuFt: number) {
     if (totalCuFt <= load.maxCuFt) return load;
   }
   return TRUCK_LOADS[TRUCK_LOADS.length - 1];
+}
+
+/** Returns the price range bracket — current load price as low, next tier as high */
+function getPriceRange(totalCuFt: number): { low: number; high: number; label: string } {
+  const currentLoad = getTruckLoad(totalCuFt);
+  const currentIdx = TRUCK_LOADS.indexOf(currentLoad);
+  const nextLoad = TRUCK_LOADS[Math.min(currentIdx + 1, TRUCK_LOADS.length - 1)];
+
+  if (totalCuFt === 0) {
+    return { low: 89, high: 149, label: "1/8 – 1/4 Truck" };
+  }
+  if (currentIdx === TRUCK_LOADS.length - 1) {
+    // Already at full truck
+    return { low: currentLoad.price, high: currentLoad.price, label: currentLoad.label };
+  }
+  return {
+    low: currentLoad.price,
+    high: nextLoad.price,
+    label: `${currentLoad.label} – ${nextLoad.label}`,
+  };
 }
 
 const MAX_DESCRIPTION = 500;
@@ -229,7 +251,7 @@ function TruckFillBar({ totalCuFt }: { totalCuFt: number }) {
           Estimated Truck Space
         </span>
         <span className="font-semibold text-primary">
-          {load.label} ({load.price})
+          {load.label} (${load.price})
         </span>
       </div>
       <div className="relative h-6 rounded-full bg-muted overflow-hidden">
@@ -310,9 +332,16 @@ export function Step3Items() {
       const grouped: Record<string, (JobItem & { preset?: string })[]> = {};
       aiAnalysis.items.forEach((ai, idx) => {
         if (!grouped[ai.category]) grouped[ai.category] = [];
+        // Try to match AI description to a preset label for accurate estimates
+        const catPresets = ITEM_PRESETS[ai.category] || ITEM_PRESETS.other;
+        const desc = (ai.description || "").toLowerCase();
+        const matchedPreset = catPresets.find((p) =>
+          desc.includes(p.label.toLowerCase().split(" ")[0]) ||
+          p.label.toLowerCase().includes(desc.split(" ")[0])
+        );
         grouped[ai.category].push({
           id: `ai-${idx}`,
-          name: ai.description || "Custom / Unlisted Item",
+          name: matchedPreset?.label || ai.description || catPresets[catPresets.length - 1].label,
           category: ai.category,
           quantity: ai.quantity,
         });
@@ -406,6 +435,7 @@ export function Step3Items() {
 
   const totalCuFt = allItems.reduce((sum, i) => sum + (i.estimatedCuFt || 0), 0);
   const totalWeight = allItems.reduce((sum, i) => sum + (i.estimatedWeight || 0), 0);
+  const priceRange = getPriceRange(totalCuFt);
 
   // Sync to store
   useEffect(() => {
@@ -589,29 +619,66 @@ export function Step3Items() {
         </div>
       )}
 
-      {/* Truck Fill Visualization + Weight Summary */}
+      {/* Live Price Ticker + Truck Fill */}
       {allItems.length > 0 && totalCuFt > 0 && (
-        <div className="rounded-lg border border-border bg-card p-5 space-y-4">
-          <TruckFillBar totalCuFt={totalCuFt} />
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="rounded-lg bg-muted/50 p-3 text-center">
-              <p className="text-lg font-bold text-foreground">{totalCuFt} cu ft</p>
-              <p className="text-xs text-muted-foreground">Estimated Volume</p>
-            </div>
-            <div className="rounded-lg bg-muted/50 p-3 text-center">
-              <p className="text-lg font-bold text-foreground">{totalWeight} lbs</p>
-              <p className="text-xs text-muted-foreground">Estimated Weight</p>
+        <>
+          {/* Sticky Price Ticker */}
+          <div className="sticky bottom-0 z-10 -mx-6 sm:-mx-8 px-6 sm:px-8 py-3 bg-gradient-to-t from-card via-card to-card/95 border-t border-border">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+                  <DollarSign className="h-4 w-4 text-primary" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Estimated Price Range</p>
+                  <p className="text-lg font-bold text-foreground tabular-nums">
+                    {priceRange.low === priceRange.high ? (
+                      <>${priceRange.low}</>
+                    ) : (
+                      <>${priceRange.low} – ${priceRange.high}</>
+                    )}
+                  </p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-xs text-muted-foreground">{priceRange.label}</p>
+                <div className="flex items-center gap-1 text-xs text-green-600">
+                  <Shield className="h-3 w-3" />
+                  <span className="font-medium">No hidden fees</span>
+                </div>
+              </div>
             </div>
           </div>
 
-          <div className="flex items-start gap-2 text-xs text-muted-foreground">
-            <Info className="h-3.5 w-3.5 shrink-0 mt-0.5" />
-            <span>
-              Estimates based on standard item sizes. Final truck space and pricing confirmed on-site.
-            </span>
+          {/* Truck Fill Visualization + Weight Summary */}
+          <div className="rounded-lg border border-border bg-card p-5 space-y-4">
+            <TruckFillBar totalCuFt={totalCuFt} />
+
+            <div className="grid grid-cols-3 gap-3">
+              <div className="rounded-lg bg-muted/50 p-3 text-center">
+                <p className="text-lg font-bold text-foreground">{totalCuFt}</p>
+                <p className="text-xs text-muted-foreground">cu ft</p>
+              </div>
+              <div className="rounded-lg bg-muted/50 p-3 text-center">
+                <p className="text-lg font-bold text-foreground">{totalWeight}</p>
+                <p className="text-xs text-muted-foreground">lbs</p>
+              </div>
+              <div className="rounded-lg bg-primary/5 border border-primary/20 p-3 text-center">
+                <p className="text-lg font-bold text-primary">
+                  ${priceRange.low}{priceRange.low !== priceRange.high && <>–${priceRange.high}</>}
+                </p>
+                <p className="text-xs text-muted-foreground">est. price</p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-2 text-xs text-muted-foreground">
+              <Info className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+              <span>
+                Price based on truck space used — not by item count. Final price confirmed before we start, never higher than the high estimate.
+              </span>
+            </div>
           </div>
-        </div>
+        </>
       )}
 
       {/* Additional Notes */}
