@@ -987,6 +987,22 @@ class CallLog(db.Model):
             "ended_at": self.ended_at.isoformat() if self.ended_at else None,
         }
 
+    # Helper: link to caller profile
+    def get_or_create_caller_profile(self):
+        """Get or create the CallerProfile for this call's phone number."""
+        if not self.phone_number:
+            return None
+        profile = CallerProfile.query.filter_by(phone=self.phone_number).first()
+        if not profile:
+            profile = CallerProfile(
+                id=generate_uuid(),
+                phone=self.phone_number,
+                customer_id=self.customer_id,
+                first_call_at=self.created_at,
+            )
+            db.session.add(profile)
+        return profile
+
 
 # ---------------------------------------------------------------------------
 # ScheduledCallback (Vapi AI callback scheduling)
@@ -1036,4 +1052,106 @@ class ScheduledCallback(db.Model):
             "assigned_at": self.assigned_at.isoformat() if self.assigned_at else None,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "ended_at": self.ended_at.isoformat() if self.ended_at else None,
+        }
+
+
+# ---------------------------------------------------------------------------
+# CallerProfile (Maya caller memory — one per phone number)
+# ---------------------------------------------------------------------------
+class CallerProfile(db.Model):
+    __tablename__ = "caller_profiles"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    phone = Column(String(20), unique=True, nullable=False, index=True)
+    name = Column(String(255), nullable=True)
+    email = Column(String(255), nullable=True)
+    address = Column(Text, nullable=True)
+    language = Column(String(10), default="en")
+    customer_id = Column(String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+
+    # Cumulative stats
+    total_calls = Column(Integer, default=0)
+    total_bookings = Column(Integer, default=0)
+    total_spent = Column(Float, default=0.0)
+    last_call_at = Column(DateTime, nullable=True)
+    first_call_at = Column(DateTime, nullable=True)
+
+    # Memory fields — what Maya remembers
+    past_items = Column(JSON, nullable=True, default=list)  # ["sofa", "mattress", ...]
+    preferences = Column(JSON, nullable=True, default=dict)  # {"preferred_time": "morning", ...}
+    notes = Column(Text, nullable=True)  # Free-text notes from calls
+    tags = Column(JSON, nullable=True, default=list)  # ["repeat_customer", "spanish_speaker", ...]
+
+    created_at = Column(DateTime, default=utcnow)
+    updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
+
+    customer = relationship("User", foreign_keys=[customer_id])
+    insights = relationship("CallInsight", back_populates="caller_profile", lazy="dynamic")
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "phone": self.phone,
+            "name": self.name,
+            "email": self.email,
+            "address": self.address,
+            "language": self.language,
+            "total_calls": self.total_calls or 0,
+            "total_bookings": self.total_bookings or 0,
+            "total_spent": self.total_spent or 0.0,
+            "last_call_at": self.last_call_at.isoformat() if self.last_call_at else None,
+            "first_call_at": self.first_call_at.isoformat() if self.first_call_at else None,
+            "past_items": self.past_items or [],
+            "preferences": self.preferences or {},
+            "notes": self.notes,
+            "tags": self.tags or [],
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+
+# ---------------------------------------------------------------------------
+# CallInsight (AI-generated per-call analysis)
+# ---------------------------------------------------------------------------
+class CallInsight(db.Model):
+    __tablename__ = "call_insights"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    call_log_id = Column(String(36), ForeignKey("call_logs.id", ondelete="CASCADE"), nullable=False, index=True)
+    caller_profile_id = Column(String(36), ForeignKey("caller_profiles.id", ondelete="SET NULL"), nullable=True, index=True)
+
+    # AI analysis fields
+    caller_mood = Column(String(30), nullable=True)
+    conversion_likelihood = Column(String(10), nullable=True)
+    items_discussed = Column(JSON, nullable=True, default=list)
+    objections_raised = Column(JSON, nullable=True, default=list)
+    what_worked = Column(JSON, nullable=True, default=list)
+    what_failed = Column(JSON, nullable=True, default=list)
+    competitive_mentions = Column(JSON, nullable=True, default=list)
+    recommended_followup = Column(Text, nullable=True)
+    summary = Column(Text, nullable=True)
+    language_used = Column(String(10), nullable=True)
+    raw_analysis = Column(JSON, nullable=True)
+
+    created_at = Column(DateTime, default=utcnow)
+
+    call_log = relationship("CallLog", backref="insights")
+    caller_profile = relationship("CallerProfile", back_populates="insights")
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "call_log_id": self.call_log_id,
+            "caller_profile_id": self.caller_profile_id,
+            "caller_mood": self.caller_mood,
+            "conversion_likelihood": self.conversion_likelihood,
+            "items_discussed": self.items_discussed or [],
+            "objections_raised": self.objections_raised or [],
+            "what_worked": self.what_worked or [],
+            "what_failed": self.what_failed or [],
+            "competitive_mentions": self.competitive_mentions or [],
+            "recommended_followup": self.recommended_followup,
+            "summary": self.summary,
+            "language_used": self.language_used,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
         }

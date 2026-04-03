@@ -8,10 +8,11 @@ service area checks) and webhook events (call started, ended, etc.).
 import os
 import json
 import logging
+import threading
 from datetime import datetime, timezone
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 
-from models import db, User, Job, Payment, CallLog, ScheduledCallback, Contractor, generate_uuid, generate_referral_code
+from models import db, User, Job, Payment, CallLog, ScheduledCallback, Contractor, CallerProfile, CallInsight, generate_uuid, generate_referral_code
 from auth_routes import require_auth
 
 logger = logging.getLogger(__name__)
@@ -89,6 +90,8 @@ def handle_tool_call():
             result = _handle_schedule_callback(args, data)
         elif name == "send_operator_signup_text":
             result = _handle_operator_signup_text(args, data)
+        elif name == "lookup_caller":
+            result = _handle_lookup_caller(args, data)
         else:
             result = "Unknown tool: {}".format(name)
 
@@ -545,6 +548,95 @@ def _handle_operator_signup_text(args, vapi_data):
     return "Signup link sent! Let them know to check their texts."
 
 
+def _handle_lookup_caller(args, vapi_data):
+    """Look up caller by phone number and return their history for personalization."""
+    phone = args.get("phone", "")
+
+    if not phone:
+        call = vapi_data.get("message", {}).get("call", {})
+        phone = call.get("customer", {}).get("number", "")
+
+    if not phone:
+        return "New caller — no phone number available."
+
+    profile = CallerProfile.query.filter_by(phone=phone).first()
+
+    if not profile:
+        # Check if we have any call logs for this number
+        past_calls = CallLog.query.filter_by(phone_number=phone).count()
+        if past_calls > 0:
+            # Create profile from existing call data
+            profile = CallerProfile(
+                id=generate_uuid(),
+                phone=phone,
+                total_calls=past_calls,
+                first_call_at=datetime.now(timezone.utc),
+            )
+            # Try to find customer record
+            customer = User.query.filter_by(phone=phone).first()
+            if customer:
+                profile.customer_id = customer.id
+                profile.name = customer.name
+                profile.email = customer.email
+            db.session.add(profile)
+            db.session.commit()
+        else:
+            return "First-time caller. No history yet — make a great first impression!"
+
+    # Build personalization context for Maya
+    parts = []
+
+    if profile.name:
+        parts.append("Returning caller: {} (called {} times)".format(
+            profile.name, profile.total_calls or 1))
+    else:
+        parts.append("Returning caller (called {} times, name unknown)".format(
+            profile.total_calls or 1))
+
+    if profile.total_bookings and profile.total_bookings > 0:
+        parts.append("Previous bookings: {} (${:.0f} total spent)".format(
+            profile.total_bookings, profile.total_spent or 0))
+
+    if profile.past_items:
+        recent_items = profile.past_items[-5:]  # last 5 items
+        parts.append("Items from past calls: {}".format(", ".join(recent_items)))
+
+    if profile.address:
+        parts.append("Address on file: {}".format(profile.address))
+
+    if profile.language and profile.language != "en":
+        parts.append("Preferred language: {}".format(profile.language))
+
+    if profile.preferences:
+        pref_parts = []
+        for k, v in profile.preferences.items():
+            pref_parts.append("{}: {}".format(k.replace("_", " "), v))
+        if pref_parts:
+            parts.append("Preferences: {}".format(", ".join(pref_parts)))
+
+    if profile.notes:
+        parts.append("Notes: {}".format(profile.notes[-200:]))
+
+    if profile.tags:
+        parts.append("Tags: {}".format(", ".join(profile.tags)))
+
+    if profile.last_call_at:
+        days_ago = (datetime.now(timezone.utc) - profile.last_call_at).days
+        if days_ago == 0:
+            parts.append("Last called: today")
+        elif days_ago == 1:
+            parts.append("Last called: yesterday")
+        else:
+            parts.append("Last called: {} days ago".format(days_ago))
+
+    # Update call count
+    profile.total_calls = (profile.total_calls or 0) + 1
+    profile.last_call_at = datetime.now(timezone.utc)
+    db.session.commit()
+
+    return "\n".join(parts)
+
+
 # ---------------------------------------------------------------------------
 # Webhook handler -- Vapi sends call events here
 # ---------------------------------------------------------------------------
@@ -781,6 +873,240 @@ def _handle_end_of_call_report(message):
             send_sms_async(operator_phone, msg)
     except Exception:
         logger.exception("Failed to send operator call summary SMS")
+
+    # -----------------------------------------------------------------------
+    # Feature 3: Caller Profile Update + AI Learning Engine
+    # -----------------------------------------------------------------------
+    try:
+        _update_caller_profile(call_log, message, booking_created)
+    except Exception:
+        logger.exception("Failed to update caller profile")
+
+    # Kick off AI analysis in background thread
+    if transcript_text and len(transcript_text) > 50:
+        try:
+            app = current_app._get_current_object()
+            call_log_id = call_log.id
+            t = threading.Thread(
+                target=_run_call_analysis,
+                args=(app, call_log_id),
+                daemon=True,
+            )
+            t.start()
+        except Exception:
+            logger.exception("Failed to start call analysis thread")
+
+
+def _update_caller_profile(call_log, message, booking_created):
+    """Update or create CallerProfile with data from this call."""
+    phone = call_log.phone_number
+    if not phone:
+        return
+
+    profile = CallerProfile.query.filter_by(phone=phone).first()
+    if not profile:
+        profile = CallerProfile(
+            id=generate_uuid(),
+            phone=phone,
+            customer_id=call_log.customer_id,
+            first_call_at=call_log.created_at or datetime.now(timezone.utc),
+        )
+        db.session.add(profile)
+
+    # Update stats
+    profile.last_call_at = datetime.now(timezone.utc)
+    if not profile.first_call_at:
+        profile.first_call_at = call_log.created_at or datetime.now(timezone.utc)
+
+    if booking_created:
+        profile.total_bookings = (profile.total_bookings or 0) + 1
+
+    # Link to customer record if available
+    if call_log.customer_id and not profile.customer_id:
+        profile.customer_id = call_log.customer_id
+        customer = User.query.get(call_log.customer_id)
+        if customer:
+            if customer.name and not profile.name:
+                profile.name = customer.name
+            if customer.email and not profile.email:
+                profile.email = customer.email
+
+    # Extract items discussed from tool calls
+    items_from_call = []
+    for msg_item in message.get("messages", []):
+        if msg_item.get("role") == "tool_calls":
+            for tc in msg_item.get("toolCalls", []):
+                func = tc.get("function", {})
+                if func.get("name") in ("get_price_estimate", "create_booking"):
+                    call_args = func.get("arguments", {})
+                    if isinstance(call_args, str):
+                        try:
+                            call_args = json.loads(call_args)
+                        except Exception:
+                            call_args = {}
+                    for item in call_args.get("items", []):
+                        cat = item.get("category", "")
+                        if cat and cat not in items_from_call:
+                            items_from_call.append(cat)
+
+    if items_from_call:
+        existing = profile.past_items or []
+        for item in items_from_call:
+            if item not in existing:
+                existing.append(item)
+        profile.past_items = existing[-20:]  # Keep last 20
+
+    # Extract address if booking was created
+    for msg_item in message.get("messages", []):
+        if msg_item.get("role") == "tool_calls":
+            for tc in msg_item.get("toolCalls", []):
+                func = tc.get("function", {})
+                if func.get("name") == "create_booking":
+                    call_args = func.get("arguments", {})
+                    if isinstance(call_args, str):
+                        try:
+                            call_args = json.loads(call_args)
+                        except Exception:
+                            call_args = {}
+                    addr = call_args.get("address", "")
+                    if addr:
+                        profile.address = addr
+                    name = call_args.get("customer_name", "")
+                    if name:
+                        profile.name = name
+                    email = call_args.get("email", "")
+                    if email:
+                        profile.email = email
+
+    # Detect language from transcript
+    transcript = call_log.transcript or ""
+    spanish_indicators = ["hola", "gracias", "necesito", "quiero", "buenos"]
+    if any(word in transcript.lower() for word in spanish_indicators):
+        profile.language = "es"
+        if "spanish_speaker" not in (profile.tags or []):
+            tags = profile.tags or []
+            tags.append("spanish_speaker")
+            profile.tags = tags
+
+    # Add tags
+    tags = profile.tags or []
+    if booking_created and "has_booked" not in tags:
+        tags.append("has_booked")
+    if (profile.total_bookings or 0) >= 2 and "repeat_customer" not in tags:
+        tags.append("repeat_customer")
+    profile.tags = tags
+
+    db.session.commit()
+    logger.info("CallerProfile updated for %s (calls=%d, bookings=%d)",
+                phone, profile.total_calls or 0, profile.total_bookings or 0)
+
+
+def _run_call_analysis(app, call_log_id):
+    """Run AI analysis on a call transcript in a background thread."""
+    with app.app_context():
+        try:
+            call_log = CallLog.query.get(call_log_id)
+            if not call_log or not call_log.transcript:
+                return
+
+            analysis = _analyze_transcript(call_log.transcript, call_log.summary)
+            if not analysis:
+                return
+
+            # Find or create caller profile
+            profile = None
+            if call_log.phone_number:
+                profile = CallerProfile.query.filter_by(phone=call_log.phone_number).first()
+
+            insight = CallInsight(
+                id=generate_uuid(),
+                call_log_id=call_log.id,
+                caller_profile_id=profile.id if profile else None,
+                caller_mood=analysis.get("caller_mood"),
+                conversion_likelihood=analysis.get("conversion_likelihood"),
+                items_discussed=analysis.get("items_discussed", []),
+                objections_raised=analysis.get("objections_raised", []),
+                what_worked=analysis.get("what_worked", []),
+                what_failed=analysis.get("what_failed", []),
+                competitive_mentions=analysis.get("competitive_mentions", []),
+                recommended_followup=analysis.get("recommended_followup"),
+                summary=analysis.get("summary"),
+                language_used=analysis.get("language_used", "en"),
+                raw_analysis=analysis,
+            )
+            db.session.add(insight)
+            db.session.commit()
+            logger.info("CallInsight created for call %s", call_log_id)
+
+        except Exception:
+            logger.exception("Call analysis failed for %s", call_log_id)
+
+
+def _analyze_transcript(transcript, call_summary=None):
+    """Use OpenAI to analyze a call transcript and extract insights."""
+    import requests as http_requests
+
+    api_key = os.environ.get("OPENAI_API_KEY", "")
+    if not api_key:
+        logger.warning("No OPENAI_API_KEY set — skipping call analysis")
+        return None
+
+    prompt = """Analyze this junk removal service phone call transcript. Return a JSON object with these fields:
+
+- caller_mood: one of "friendly", "frustrated", "rushed", "skeptical", "enthusiastic", "neutral"
+- conversion_likelihood: one of "high", "medium", "low"
+- items_discussed: list of item types mentioned (e.g. ["sofa", "mattress"])
+- objections_raised: list of objections (e.g. ["price too high", "needs to check schedule"])
+- what_worked: list of things the agent did well (e.g. ["offered volume discount", "built rapport"])
+- what_failed: list of things that didn't work (e.g. ["pushed too hard for booking"])
+- competitive_mentions: list of competitor names or services mentioned
+- recommended_followup: one sentence describing the best next action
+- summary: 2-3 sentence brief of the call
+- language_used: ISO language code of the primary language used
+
+Return ONLY valid JSON, no markdown fencing.
+
+{}
+
+Transcript:
+{}""".format(
+        "Call summary: {}\n".format(call_summary) if call_summary else "",
+        transcript[:4000]  # Cap at 4000 chars to stay within token limits
+    )
+
+    try:
+        resp = http_requests.post(
+            "https://api.openai.com/v1/chat/completions",
+            headers={
+                "Authorization": "Bearer {}".format(api_key),
+                "Content-Type": "application/json",
+            },
+            json={
+                "model": "gpt-4o-mini",
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": 0.3,
+                "max_tokens": 500,
+            },
+            timeout=30,
+        )
+
+        if resp.status_code != 200:
+            logger.error("OpenAI API error: %d %s", resp.status_code, resp.text[:200])
+            return None
+
+        content = resp.json()["choices"][0]["message"]["content"].strip()
+        # Strip markdown fencing if present
+        if content.startswith("```"):
+            content = content.split("\n", 1)[1] if "\n" in content else content[3:]
+            if content.endswith("```"):
+                content = content[:-3]
+            content = content.strip()
+
+        return json.loads(content)
+
+    except Exception:
+        logger.exception("Failed to parse call analysis response")
+        return None
 
 
 def _handle_transcript(message):
@@ -1061,3 +1387,111 @@ def list_assignees(user_id):
         "operators": operators,
         "drivers": drivers,
     })
+
+
+# ---------------------------------------------------------------------------
+# Intelligence Reports & Caller Profiles
+# ---------------------------------------------------------------------------
+@vapi_bp.route("/calls/<call_id>/analyze", methods=["POST"])
+def analyze_call(call_id):
+    """On-demand AI analysis of a call. Returns or creates a CallInsight."""
+    call_log = CallLog.query.filter_by(call_id=call_id).first()
+    if not call_log:
+        call_log = CallLog.query.filter_by(id=call_id).first()
+    if not call_log:
+        return jsonify({"error": "Call log not found"}), 404
+
+    if not call_log.transcript:
+        return jsonify({"error": "No transcript available for this call"}), 400
+
+    # Check if analysis already exists
+    existing = CallInsight.query.filter_by(call_log_id=call_log.id).first()
+    if existing:
+        return jsonify(existing.to_dict())
+
+    # Run analysis synchronously for on-demand requests
+    analysis = _analyze_transcript(call_log.transcript, call_log.summary)
+    if not analysis:
+        return jsonify({"error": "Analysis failed — check OpenAI API key"}), 500
+
+    profile = None
+    if call_log.phone_number:
+        profile = CallerProfile.query.filter_by(phone=call_log.phone_number).first()
+
+    insight = CallInsight(
+        id=generate_uuid(),
+        call_log_id=call_log.id,
+        caller_profile_id=profile.id if profile else None,
+        caller_mood=analysis.get("caller_mood"),
+        conversion_likelihood=analysis.get("conversion_likelihood"),
+        items_discussed=analysis.get("items_discussed", []),
+        objections_raised=analysis.get("objections_raised", []),
+        what_worked=analysis.get("what_worked", []),
+        what_failed=analysis.get("what_failed", []),
+        competitive_mentions=analysis.get("competitive_mentions", []),
+        recommended_followup=analysis.get("recommended_followup"),
+        summary=analysis.get("summary"),
+        language_used=analysis.get("language_used", "en"),
+        raw_analysis=analysis,
+    )
+    db.session.add(insight)
+    db.session.commit()
+
+    return jsonify(insight.to_dict()), 201
+
+
+@vapi_bp.route("/calls/<call_id>/insight", methods=["GET"])
+def get_call_insight(call_id):
+    """Get the AI insight for a specific call."""
+    call_log = CallLog.query.filter_by(call_id=call_id).first()
+    if not call_log:
+        call_log = CallLog.query.filter_by(id=call_id).first()
+    if not call_log:
+        return jsonify({"error": "Call log not found"}), 404
+
+    insight = CallInsight.query.filter_by(call_log_id=call_log.id).first()
+    if not insight:
+        return jsonify({"error": "No insight yet — POST to /analyze first"}), 404
+
+    return jsonify(insight.to_dict())
+
+
+@vapi_bp.route("/callers", methods=["GET"])
+def list_caller_profiles():
+    """Return caller profiles, paginated. For the operator dashboard."""
+    page = request.args.get("page", 1, type=int)
+    per_page = min(request.args.get("per_page", 50, type=int), 100)
+    tag = request.args.get("tag", None)
+
+    query = CallerProfile.query
+
+    if tag:
+        query = query.filter(CallerProfile.tags.contains([tag]))
+
+    query = query.order_by(CallerProfile.last_call_at.desc())
+    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+
+    return jsonify({
+        "callers": [p.to_dict() for p in pagination.items],
+        "total": pagination.total,
+        "page": pagination.page,
+        "per_page": pagination.per_page,
+    })
+
+
+@vapi_bp.route("/callers/<phone>", methods=["GET"])
+def get_caller_profile(phone):
+    """Get a single caller profile by phone number."""
+    profile = CallerProfile.query.filter_by(phone=phone).first()
+    if not profile:
+        return jsonify({"error": "Caller not found"}), 404
+
+    # Include recent call insights
+    recent_insights = CallInsight.query.filter_by(
+        caller_profile_id=profile.id
+    ).order_by(CallInsight.created_at.desc()).limit(5).all()
+
+    result = profile.to_dict()
+    result["recent_insights"] = [i.to_dict() for i in recent_insights]
+
+    return jsonify(result)
