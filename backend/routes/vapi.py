@@ -87,6 +87,8 @@ def handle_tool_call():
             result = _handle_transfer_with_context(args)
         elif name == "schedule_callback":
             result = _handle_schedule_callback(args, data)
+        elif name == "send_operator_signup_text":
+            result = _handle_operator_signup_text(args, data)
         else:
             result = "Unknown tool: {}".format(name)
 
@@ -495,6 +497,52 @@ def _handle_schedule_callback(args, vapi_data):
         logger.exception("Failed to send callback notification SMS")
 
     return "Got it! We'll give you a call back {}. Talk soon!".format(callback_time)
+
+
+def _handle_operator_signup_text(args, vapi_data):
+    """Send a job seeker a text with the operator/driver signup link."""
+    from sms_service import send_sms_async
+
+    phone = args.get("phone", "")
+    name = args.get("name", "")
+    language = args.get("language", "en")
+
+    if not phone:
+        call = vapi_data.get("message", {}).get("call", {})
+        phone = call.get("customer", {}).get("number", "")
+
+    if not phone:
+        return "I need a phone number to send the signup link."
+
+    signup_url = "https://goumuve.com/operators"
+
+    if language == "es":
+        msg = (
+            "Hola{}! Gracias por tu interes en trabajar con Umuve. "
+            "Registrate aqui para ser operador/conductor: {}"
+        ).format(" " + name if name else "", signup_url)
+    else:
+        msg = (
+            "Hey{}! Thanks for your interest in working with Umuve. "
+            "Sign up here to become an operator/driver: {}"
+        ).format(" " + name if name else "", signup_url)
+
+    send_sms_async(phone, msg)
+
+    # Notify operator about the job inquiry
+    operator_phone = os.environ.get("OPERATOR_PHONE", "+15618883427")
+    notify_msg = (
+        "JOB INQUIRY via Maya:\n"
+        "Name: {}\n"
+        "Phone: {}\n"
+        "Language: {}\n"
+        "Signup link texted."
+    ).format(name or "Unknown", phone, language)
+    send_sms_async(operator_phone, notify_msg)
+
+    logger.info("Operator signup text sent to %s (%s)", phone, name)
+
+    return "Signup link sent! Let them know to check their texts."
 
 
 # ---------------------------------------------------------------------------
