@@ -517,6 +517,29 @@ def update_job_status(user_id, job_id):
                         ),
                         {"job_id": job.id, "driver_id": contractor.id},
                     )
+
+            # Auto-send review request SMS (2 hour delay handled by scheduler,
+            # but send immediate "thank you" + review link now)
+            if customer and customer.phone:
+                try:
+                    from sms_service import send_sms_async
+                    import os as _os
+                    google_review_url = _os.environ.get(
+                        "GOOGLE_REVIEW_URL", "https://g.page/r/umuve/review"
+                    )
+                    cust_name = customer.name.split()[0] if customer.name else ""
+                    greeting = "Hey {}! ".format(cust_name) if cust_name else ""
+                    review_msg = (
+                        "{}Your Umuve pickup is done! Thanks for choosing us.\n\n"
+                        "Mind leaving a quick review? It really helps:\n{}\n\n"
+                        "Thanks again! - The Umuve Team"
+                    ).format(greeting, google_review_url)
+                    send_sms_async(customer.phone, review_msg)
+                except Exception:
+                    import logging as _log2
+                    _log2.getLogger(__name__).exception(
+                        "Failed to send review SMS for job %s", job.id)
+
     except Exception as e:
         import logging as _log
         _log.getLogger(__name__).exception("Notification failed for job %s: %s", job.id, e)

@@ -25,7 +25,7 @@ from .vapi import vapi_bp
 from .operator_applications import operator_applications_bp
 from .ai_analysis import ai_bp
 from .migration import migration_bp
-from .vapi import vapi_bp
+from .sms_webhook import sms_webhook_bp
 
 __all__ = [
     "drivers_bp",
@@ -53,4 +53,5 @@ __all__ = [
     "ai_bp",
     "migration_bp",
     "vapi_bp",
+    "sms_webhook_bp",
 ]
