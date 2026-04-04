@@ -1495,3 +1495,242 @@ def get_caller_profile(phone):
     result["recent_insights"] = [i.to_dict() for i in recent_insights]
 
     return jsonify(result)
+
+
+# ---------------------------------------------------------------------------
+# Meta Lead Ads Webhook — auto-call leads with Maya
+# ---------------------------------------------------------------------------
+META_VERIFY_TOKEN = os.environ.get("META_VERIFY_TOKEN", "umuve-leads-2026")
+
+VAPI_API_KEY = os.environ.get("VAPI_API_KEY", "")
+VAPI_ASSISTANT_ID = "91198234-25c8-450a-9075-854509e9e59d"
+VAPI_PHONE_NUMBER_ID = "8efe5578-e752-4154-98d0-b1dc3eba3938"
+
+
+@vapi_bp.route("/meta-leads", methods=["GET"])
+def meta_leads_verify():
+    """Meta webhook verification (GET challenge)."""
+    mode = request.args.get("hub.mode", "")
+    token = request.args.get("hub.verify_token", "")
+    challenge = request.args.get("hub.challenge", "")
+
+    if mode == "subscribe" and token == META_VERIFY_TOKEN:
+        logger.info("Meta webhook verified")
+        return challenge, 200
+    return "Forbidden", 403
+
+
+@vapi_bp.route("/meta-leads", methods=["POST"])
+def meta_leads_webhook():
+    """Receive Meta Lead Ads form submissions and auto-call with Maya.
+
+    Meta sends:
+    {
+        "entry": [{
+            "changes": [{
+                "field": "leadgen",
+                "value": {
+                    "leadgen_id": "...",
+                    "form_id": "...",
+                    "created_time": 1234567890
+                }
+            }]
+        }]
+    }
+
+    We fetch the actual lead data from Meta's API, then trigger a Vapi call.
+    """
+    data = request.get_json()
+    if not data:
+        return jsonify({"ok": True})
+
+    app = current_app._get_current_object()
+
+    for entry in data.get("entry", []):
+        for change in entry.get("changes", []):
+            if change.get("field") == "leadgen":
+                value = change.get("value", {})
+                leadgen_id = value.get("leadgen_id", "")
+                if leadgen_id:
+                    t = threading.Thread(
+                        target=_process_meta_lead,
+                        args=(app, leadgen_id),
+                        daemon=True,
+                    )
+                    t.start()
+
+    return jsonify({"ok": True})
+
+
+def _process_meta_lead(app, leadgen_id):
+    """Fetch lead data from Meta API and trigger Maya outbound call."""
+    with app.app_context():
+        try:
+            import requests as http_requests
+
+            meta_token = os.environ.get("META_ACCESS_TOKEN", "")
+            if not meta_token:
+                logger.error("No META_ACCESS_TOKEN — cannot fetch lead %s", leadgen_id)
+                return
+
+            # Fetch lead data from Meta Graph API
+            resp = http_requests.get(
+                "https://graph.facebook.com/v19.0/{}".format(leadgen_id),
+                params={"access_token": meta_token},
+                timeout=15,
+            )
+
+            if resp.status_code != 200:
+                logger.error("Meta API error fetching lead %s: %d %s",
+                             leadgen_id, resp.status_code, resp.text[:200])
+                return
+
+            lead_data = resp.json()
+            field_data = lead_data.get("field_data", [])
+
+            # Extract fields
+            name = ""
+            phone = ""
+            email = ""
+            items = ""
+            address = ""
+
+            for field in field_data:
+                fname = field.get("name", "").lower()
+                fvalues = field.get("values", [])
+                fval = fvalues[0] if fvalues else ""
+
+                if "name" in fname and "last" not in fname:
+                    name = fval
+                elif "phone" in fname or "number" in fname:
+                    phone = fval
+                elif "email" in fname:
+                    email = fval
+                elif "item" in fname or "junk" in fname or "remove" in fname:
+                    items = fval
+                elif "address" in fname or "city" in fname or "zip" in fname:
+                    address = fval
+
+            if not phone:
+                logger.warning("Meta lead %s has no phone number", leadgen_id)
+                return
+
+            # Format phone
+            from sms_service import format_phone
+            phone = format_phone(phone)
+
+            logger.info("Meta lead received: name=%s phone=%s items=%s",
+                        name, phone, items)
+
+            # Create/update caller profile
+            profile = CallerProfile.query.filter_by(phone=phone).first()
+            if not profile:
+                profile = CallerProfile(
+                    id=generate_uuid(),
+                    phone=phone,
+                    name=name or None,
+                    email=email or None,
+                    address=address or None,
+                    first_call_at=datetime.now(timezone.utc),
+                )
+                db.session.add(profile)
+            else:
+                if name and not profile.name:
+                    profile.name = name
+                if email and not profile.email:
+                    profile.email = email
+                if address and not profile.address:
+                    profile.address = address
+
+            tags = profile.tags or []
+            if "meta_lead" not in tags:
+                tags.append("meta_lead")
+            profile.tags = tags
+            db.session.commit()
+
+            # Build personalized first message for Maya
+            first_name = name.split()[0] if name else ""
+
+            if items:
+                first_message = (
+                    "Hey {}! This is Maya from Umuve — you just filled out a form "
+                    "about getting some junk removed. Looks like you need help with {}. "
+                    "I can get you a quote right now — sound good?"
+                ).format(first_name or "there", items)
+            else:
+                first_message = (
+                    "Hey {}! This is Maya from Umuve, South Florida's junk removal service. "
+                    "You just reached out about getting some stuff picked up — "
+                    "I'd love to help! What do you need removed?"
+                ).format(first_name or "there")
+
+            voicemail_msg = (
+                "Hey {}, this is Maya from Umuve junk removal. "
+                "We got your request and I wanted to give you a quick call. "
+                "You can call us back anytime at 561-944-1636 or book online "
+                "at app.goumuve.com. Talk soon!"
+            ).format(first_name or "there")
+
+            # Place outbound call via Vapi
+            if not VAPI_API_KEY:
+                logger.error("No VAPI_API_KEY — cannot call lead")
+                return
+
+            call_payload = {
+                "assistantId": VAPI_ASSISTANT_ID,
+                "phoneNumberId": VAPI_PHONE_NUMBER_ID,
+                "customer": {
+                    "number": phone,
+                    "name": name or "Customer",
+                },
+                "assistantOverrides": {
+                    "firstMessage": first_message,
+                    "voicemailDetectionEnabled": True,
+                    "voicemailMessage": voicemail_msg,
+                },
+            }
+
+            call_resp = http_requests.post(
+                "https://api.vapi.ai/call/phone",
+                headers={
+                    "Authorization": "Bearer {}".format(VAPI_API_KEY),
+                    "Content-Type": "application/json",
+                },
+                json=call_payload,
+                timeout=30,
+            )
+
+            if call_resp.status_code in (200, 201):
+                call_id = call_resp.json().get("id", "")
+                logger.info("Meta lead call initiated: lead=%s call=%s phone=%s",
+                            leadgen_id, call_id, phone)
+            else:
+                logger.error("Failed to call meta lead %s: %d %s",
+                             leadgen_id, call_resp.status_code, call_resp.text[:200])
+                # Fallback: send SMS instead
+                from sms_service import send_sms_async
+                frontend_url = os.environ.get("FRONTEND_URL", "https://app.goumuve.com")
+                sms_msg = (
+                    "Hey {}! Thanks for reaching out to Umuve. "
+                    "Book your junk removal: {}/book?ref=meta "
+                    "Or call us: (561) 944-1636"
+                ).format(first_name or "there", frontend_url)
+                send_sms_async(phone, sms_msg)
+
+            # Notify operator
+            try:
+                from sms_service import send_sms_async
+                operator_phone = os.environ.get("OPERATOR_PHONE", "+15618883427")
+                notify = (
+                    "META LEAD!\n"
+                    "Name: {}\n"
+                    "Phone: {}\n"
+                    "Items: {}\n"
+                    "Maya is calling them now."
+                ).format(name or "Unknown", phone, items or "Not specified")
+                send_sms_async(operator_phone, notify)
+            except Exception:
+                logger.exception("Failed to notify operator about meta lead")
+
+        except Exception:
+            logger.exception("Failed to process meta lead %s", leadgen_id)
