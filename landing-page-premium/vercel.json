@@ -66,10 +66,26 @@
       ]
     }
   ],
+  "redirects": [
+    {
+      "source": "/book",
+      "destination": "https://app.goumuve.com/book",
+      "permanent": false
+    },
+    {
+      "source": "/book/:path*",
+      "destination": "https://app.goumuve.com/book/:path*",
+      "permanent": false
+    }
+  ],
   "rewrites": [
     {
       "source": "/robots.txt",
       "destination": "/robots.txt"
+    },
+    {
+      "source": "/blog/:slug",
+      "destination": "/blog/:slug.html"
     },
     {
       "source": "/(.*)",
