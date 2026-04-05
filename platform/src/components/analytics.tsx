@@ -1,11 +1,14 @@
 import Script from "next/script";
 
+const META_PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID || "1432514091446263";
+
 /**
  * Analytics component that conditionally renders tracking scripts.
  *
  * Supports:
  * - Google Analytics: set NEXT_PUBLIC_GA_ID (e.g., "G-XXXXXXXXXX")
  * - Google Ads: set NEXT_PUBLIC_GOOGLE_ADS_ID (e.g., "AW-XXXXXXXXXX")
+ * - Meta Pixel: set NEXT_PUBLIC_META_PIXEL_ID (defaults to Umuve pixel)
  * - Plausible Analytics: set NEXT_PUBLIC_PLAUSIBLE_DOMAIN (e.g., "goumuve.com")
  *
  * If no env vars are set, this component renders nothing (safe for dev).
@@ -20,6 +23,35 @@ export function Analytics() {
 
   return (
     <>
+      {/* Meta Pixel */}
+      {META_PIXEL_ID && (
+        <>
+          <Script id="meta-pixel" strategy="afterInteractive">
+            {`
+              !function(f,b,e,v,n,t,s)
+              {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+              n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+              if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+              n.queue=[];t=b.createElement(e);t.async=!0;
+              t.src=v;s=b.getElementsByTagName(e)[0];
+              s.parentNode.insertBefore(t,s)}(window, document,'script',
+              'https://connect.facebook.net/en_US/fbevents.js');
+              fbq('init', '${META_PIXEL_ID}');
+              fbq('track', 'PageView');
+            `}
+          </Script>
+          <noscript>
+            <img
+              height="1"
+              width="1"
+              style={{ display: "none" }}
+              src={`https://www.facebook.com/tr?id=${META_PIXEL_ID}&ev=PageView&noscript=1`}
+              alt=""
+            />
+          </noscript>
+        </>
+      )}
+
       {/* Google Analytics + Google Ads (shared gtag.js) */}
       {primaryTag && (
         <>
@@ -50,6 +82,33 @@ export function Analytics() {
       )}
     </>
   );
+}
+
+/**
+ * Fire a GA4 event for booking funnel step progression.
+ * Call this when the user advances to a new step in the booking flow.
+ */
+export function trackBookingStep(step: number) {
+  if (typeof window === "undefined") return;
+
+  const gtag = (window as unknown as Record<string, unknown>).gtag as
+    | ((...args: unknown[]) => void)
+    | undefined;
+  if (!gtag) return;
+
+  const stepNames: Record<number, string> = {
+    1: "address",
+    2: "photos",
+    3: "items",
+    4: "schedule",
+    5: "estimate",
+    6: "payment",
+  };
+
+  gtag("event", "booking_step", {
+    step_number: step,
+    step_name: stepNames[step] || `step_${step}`,
+  });
 }
 
 /**
@@ -92,6 +151,19 @@ export function trackBookingConversion(params: {
       value: params.value,
       currency: params.currency || "USD",
       transaction_id: params.bookingId,
+    });
+  }
+
+  // Meta Pixel purchase conversion
+  const fbq = (window as unknown as Record<string, unknown>).fbq as
+    | ((...args: unknown[]) => void)
+    | undefined;
+  if (fbq) {
+    fbq("track", "Purchase", {
+      value: params.value,
+      currency: params.currency || "USD",
+      content_ids: [params.bookingId],
+      content_type: "product",
     });
   }
 }

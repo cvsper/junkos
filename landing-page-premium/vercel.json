@@ -76,6 +76,16 @@
       "source": "/book/:path*",
       "destination": "https://app.goumuve.com/book/:path*",
       "permanent": false
+    },
+    {
+      "source": "/signup",
+      "destination": "https://app.goumuve.com/signup",
+      "statusCode": 301
+    },
+    {
+      "source": "/register",
+      "destination": "https://app.goumuve.com/register",
+      "statusCode": 301
     }
   ],
   "rewrites": [

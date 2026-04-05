@@ -6,6 +6,7 @@ import { ArrowLeft, ArrowRight, Gift, RotateCcw, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useBookingStore } from "@/stores/booking-store";
 import { referralsApi } from "@/lib/api";
+import { trackBookingStep } from "@/components/analytics";
 import { ProgressBar } from "@/components/booking/progress-bar";
 import { Step1Address } from "@/components/booking/step-1-address";
 import { Step2Photos } from "@/components/booking/step-2-photos";
@@ -124,6 +125,11 @@ function BookPageInner() {
 
   // Abandoned booking banner state
   const [abandonedBooking, setAbandonedBooking] = useState<AbandonedBooking | null>(null);
+
+  // --- Track booking funnel step in GA4 ---
+  useEffect(() => {
+    trackBookingStep(step);
+  }, [step]);
 
   // --- Lead source auto-detection ---
   useEffect(() => {
@@ -293,6 +299,17 @@ function BookPageInner() {
           </div>
         </div>
       )}
+
+      {/* Trust Bar */}
+      <div className="mb-6 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 rounded-lg bg-muted/50 px-4 py-2.5 text-xs sm:text-sm text-muted-foreground">
+        <span>4.9&#9733; rated</span>
+        <span className="hidden sm:inline" aria-hidden="true">&middot;</span>
+        <span>Same-day service</span>
+        <span className="hidden sm:inline" aria-hidden="true">&middot;</span>
+        <span>No hidden fees</span>
+        <span className="hidden sm:inline" aria-hidden="true">&middot;</span>
+        <span>Eco-friendly disposal</span>
+      </div>
 
       {/* Heading */}
       <h1 className="font-display text-3xl sm:text-4xl font-bold tracking-tight mb-2">

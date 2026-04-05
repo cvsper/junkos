@@ -292,8 +292,8 @@ export function Step1Address() {
         />
         <TrustIndicator
           icon={<DollarSign className="h-5 w-5" />}
-          title="Transparent Pricing"
-          description="No hidden fees, ever"
+          title="Starting at $89"
+          description="Transparent pricing, no hidden fees"
         />
         <TrustIndicator
           icon={<Leaf className="h-5 w-5" />}
