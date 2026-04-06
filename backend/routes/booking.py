@@ -893,6 +893,29 @@ def create_booking(user_id):
     except Exception:
         pass
 
+    # --- SMS confirmation to customer ---
+    try:
+        customer = db.session.get(User, user_id)
+        if customer and customer.phone:
+            from sms_service import send_sms_async
+            sched_str = scheduled_at.strftime("%b %d at %I:%M %p") if scheduled_at else "ASAP"
+            sms_body = (
+                "Umuve Booking Confirmed!\n"
+                "#{} — ${:.0f}\n"
+                "{}\n"
+                "Scheduled: {}\n\n"
+                "We'll text you when your hauler is on the way. "
+                "Reply to this text with any questions!"
+            ).format(
+                job.confirmation_code or str(job.id)[:8],
+                total,
+                address or "",
+                sched_str,
+            )
+            send_sms_async(customer.phone, sms_body)
+    except Exception:
+        pass
+
     # --- SMS operator about new booking ---
     try:
         from sms_service import send_sms_async
