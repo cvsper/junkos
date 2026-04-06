@@ -158,5 +158,45 @@
     ],
     "disposal": "All electronics go to R2-certified recycling facilities. Hard drives are wiped or destroyed. Precious metals, glass, and plastics are recovered. No e-waste goes to landfills.",
     "process": "We'll collect all electronics, provide secure data destruction if needed, and transport everything to certified e-waste recycling facilities."
+  },
+  {
+    "name": "Garage Cleanout",
+    "slug": "garage-cleanout",
+    "description": "Complete garage cleanout services in South Florida. We clear out single and double car garages, removing old storage, tools, sports gear, and everything that's piled up over the years.",
+    "items": ["Single Car Garage", "Double Car Garage", "Storage Shelves", "Tools & Equipment", "Sports Gear", "Holiday Decorations", "Paint Cans", "Boxes & Bins"],
+    "avgCost": 285,
+    "minCost": 149,
+    "maxCost": 699,
+    "avgDuration": "2-4 hours",
+    "ecoFriendly": "86% donated or recycled",
+    "jobsCompleted": 1340,
+    "commonQuestions": [
+      "What about hazardous materials like paint and chemicals?",
+      "How long does a full garage cleanout take?",
+      "Can I keep some items while you remove the rest?",
+      "Do you sweep and clean the garage floor after?"
+    ],
+    "disposal": "We partner with local charities for usable items like tools and sports equipment. Hazardous materials such as paint and chemicals go to proper disposal facilities. Metals and recyclables are sent to recycling centers.",
+    "process": "We'll sort through everything in your garage, separate items for donation, recycling, and disposal, load it all up, haul it away, and leave your garage swept clean."
+  },
+  {
+    "name": "Office & Commercial Cleanout",
+    "slug": "office-commercial-cleanout",
+    "description": "Professional office and commercial cleanout services in Palm Beach and Broward County. We handle full office floors, retail spaces, and warehouses with minimal disruption to your business.",
+    "items": ["Office Desks & Chairs", "Cubicle Systems", "Filing Cabinets", "Computers & IT Equipment", "Conference Tables", "Break Room Furniture", "Warehouse Shelving", "Retail Fixtures"],
+    "avgCost": 895,
+    "minCost": 299,
+    "maxCost": 2500,
+    "avgDuration": "4-8 hours",
+    "ecoFriendly": "91% recycled or donated",
+    "jobsCompleted": 620,
+    "commonQuestions": [
+      "Do you offer after-hours and weekend availability?",
+      "Can you handle secure document destruction?",
+      "Are you able to clear entire office floors?",
+      "Do you work with property managers and landlords?"
+    ],
+    "disposal": "Office furniture is donated to nonprofits and community organizations. Electronics go to R2-certified recyclers for responsible processing. Sensitive documents receive secure shredding with certification available upon request.",
+    "process": "We'll start with a walk-through assessment of your space, schedule removal at a time that works for your business (often after hours), clear the full floor or area, and leave it broom-clean and move-out ready."
   }
 ]

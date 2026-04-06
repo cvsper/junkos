@@ -94,8 +94,36 @@
       "destination": "/robots.txt"
     },
     {
+      "source": "/sitemap.xml",
+      "destination": "/sitemap.xml"
+    },
+    {
+      "source": "/junk-removal/:city",
+      "destination": "/pages/junk-removal/:city"
+    },
+    {
+      "source": "/services/:service",
+      "destination": "/pages/services/:service"
+    },
+    {
+      "source": "/vs/:comparison",
+      "destination": "/pages/vs/:comparison"
+    },
+    {
       "source": "/blog/:slug",
-      "destination": "/blog/:slug.html"
+      "destination": "/blog/:slug"
+    },
+    {
+      "source": "/operators",
+      "destination": "/operators"
+    },
+    {
+      "source": "/privacy",
+      "destination": "/privacy"
+    },
+    {
+      "source": "/terms",
+      "destination": "/terms"
     },
     {
       "source": "/(.*)",
