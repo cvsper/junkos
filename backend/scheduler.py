@@ -189,6 +189,56 @@ def _send_abandoned_booking_drip(app):
             )
 
 
+def _send_winback_emails(app):
+    """Send winback emails to customers whose last completed job was 7+ days ago."""
+    with app.app_context():
+        from models import db, User, Job
+        from notifications import send_email
+        from email_templates import winback_html
+
+        now = datetime.now(timezone.utc)
+        cutoff = now - timedelta(days=7)
+        max_age = now - timedelta(days=90)  # Don't winback customers older than 90 days
+
+        # Find customers with completed jobs 7-90 days ago who haven't been winbacked
+        from sqlalchemy import func
+        customers_with_completed = (
+            db.session.query(
+                User.id, User.email, User.name,
+                func.max(Job.updated_at).label("last_job")
+            )
+            .join(Job, Job.customer_id == User.id)
+            .filter(
+                Job.status == "completed",
+                User.winback_called == False,
+                User.email.isnot(None),
+            )
+            .group_by(User.id)
+            .having(func.max(Job.updated_at) <= cutoff)
+            .having(func.max(Job.updated_at) >= max_age)
+            .limit(20)  # Batch size per run
+            .all()
+        )
+
+        count = 0
+        for uid, email, name, last_job in customers_with_completed:
+            try:
+                html = winback_html(customer_name=name, promo_code="COMEBACK10")
+                send_email(email, "Still have stuff to get rid of?", html)
+
+                user = db.session.get(User, uid)
+                if user:
+                    user.winback_called = True
+                    user.last_winback_at = now
+                count += 1
+            except Exception:
+                logger.exception("Failed to send winback to %s", email)
+
+        if count > 0:
+            db.session.commit()
+            logger.info("Scheduler: sent %d winback emails", count)
+
+
 def init_scheduler(app):
     """Initialize and start the background scheduler.
 
@@ -233,8 +283,18 @@ def init_scheduler(app):
             name="Send abandoned booking drip emails",
         )
 
+        # Send winback emails every 6 hours
+        scheduler.add_job(
+            _send_winback_emails,
+            "interval",
+            hours=6,
+            args=[app],
+            id="send_winback_emails",
+            name="Send customer winback emails",
+        )
+
         scheduler.start()
-        logger.info("Background scheduler started with 3 jobs")
+        logger.info("Background scheduler started with 4 jobs")
         return scheduler
     except ImportError:
         logger.warning("APScheduler not installed — scheduler disabled")

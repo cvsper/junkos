@@ -1155,3 +1155,80 @@ class CallInsight(db.Model):
             "language_used": self.language_used,
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }
+
+
+# ---------------------------------------------------------------------------
+# Email Campaigns
+# ---------------------------------------------------------------------------
+class EmailCampaign(db.Model):
+    __tablename__ = "email_campaigns"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    name = Column(String(255), nullable=False)
+    subject = Column(String(500), nullable=False)
+    template = Column(String(50), nullable=False)  # e.g. "recruitment_1", "winback"
+    status = Column(String(20), nullable=False, default="draft")  # draft, sending, sent, paused
+    created_by = Column(String(36), ForeignKey("users.id"), nullable=True)
+
+    total_recipients = Column(Integer, default=0)
+    total_sent = Column(Integer, default=0)
+    total_failed = Column(Integer, default=0)
+
+    created_at = Column(DateTime, default=utcnow)
+    sent_at = Column(DateTime, nullable=True)
+    completed_at = Column(DateTime, nullable=True)
+
+    recipients = relationship("CampaignRecipient", back_populates="campaign", lazy="dynamic", cascade="all, delete-orphan")
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "subject": self.subject,
+            "template": self.template,
+            "status": self.status,
+            "total_recipients": self.total_recipients,
+            "total_sent": self.total_sent,
+            "total_failed": self.total_failed,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "sent_at": self.sent_at.isoformat() if self.sent_at else None,
+            "completed_at": self.completed_at.isoformat() if self.completed_at else None,
+        }
+
+
+class CampaignRecipient(db.Model):
+    __tablename__ = "campaign_recipients"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    campaign_id = Column(String(36), ForeignKey("email_campaigns.id", ondelete="CASCADE"), nullable=False, index=True)
+    email = Column(String(255), nullable=False)
+    first_name = Column(String(255), nullable=True)
+    company = Column(String(255), nullable=True)
+    area = Column(String(255), nullable=True)
+    phone = Column(String(50), nullable=True)
+
+    status = Column(String(20), nullable=False, default="pending")  # pending, sent, failed, bounced
+    sent_at = Column(DateTime, nullable=True)
+    error_message = Column(Text, nullable=True)
+
+    created_at = Column(DateTime, default=utcnow)
+
+    campaign = relationship("EmailCampaign", back_populates="recipients")
+
+    __table_args__ = (
+        Index("ix_campaign_recipient_email", "campaign_id", "email", unique=True),
+    )
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "campaign_id": self.campaign_id,
+            "email": self.email,
+            "first_name": self.first_name,
+            "company": self.company,
+            "area": self.area,
+            "phone": self.phone,
+            "status": self.status,
+            "sent_at": self.sent_at.isoformat() if self.sent_at else None,
+            "error_message": self.error_message,
+        }

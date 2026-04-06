@@ -655,3 +655,321 @@ def abandoned_drip_72h_html(name=None, resume_url=None):
         '<p style="color:#6b7280;font-size:14px;margin-top:20px;">Need help? Just reply to this email.</p>'
     ).format(greeting, btn)
     return _wrap(body)
+
+
+# ---------------------------------------------------------------------------
+# 11. Customer winback (7+ days after last completed job)
+# ---------------------------------------------------------------------------
+
+def winback_html(customer_name, promo_code=None):
+    """Return HTML for a winback email targeting past customers."""
+    name = _esc(str(customer_name)) if customer_name else 'there'
+    code = _esc(str(promo_code)) if promo_code else 'COMEBACK10'
+
+    body = (
+        '<h2 style="color:#111827;margin:0 0 12px;font-size:22px;">Still have stuff to get rid of?</h2>'
+        '<p style="color:#4b5563;line-height:1.6;">Hi {name},</p>'
+        '<p style="color:#4b5563;line-height:1.6;">'
+        'It\'s been a while since your last pickup with Umuve. If you\'ve got more '
+        'junk piling up, we\'re ready to haul it away &mdash; fast.</p>'
+    ).format(name=name)
+
+    body += (
+        '<div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;'
+        'padding:24px;margin:20px 0;text-align:center;">'
+        '<p style="color:#6b7280;font-size:13px;margin:0 0 6px;text-transform:uppercase;letter-spacing:0.5px;">Welcome Back Offer</p>'
+        '<p style="color:#DC2626;font-size:32px;font-weight:700;margin:0;letter-spacing:2px;">{code}</p>'
+        '<p style="color:#6b7280;font-size:13px;margin:8px 0 0;">10% off your next pickup</p>'
+        '</div>'
+    ).format(code=code)
+
+    body += (
+        '<div style="margin:20px 0;">'
+        '<h3 style="color:#111827;font-size:16px;margin:0 0 12px;">Popular This Season</h3>'
+        '<table style="width:100%;border-collapse:collapse;">'
+        '<tr>'
+        '<td style="padding:8px;background:#f9fafb;border-radius:6px;text-align:center;width:25%;">'
+        '<p style="color:#111827;font-weight:600;font-size:14px;margin:0 0 4px;">Garage Cleanout</p>'
+        '<p style="color:#DC2626;font-size:13px;margin:0;">from $249</p></td>'
+        '<td style="width:4%;"></td>'
+        '<td style="padding:8px;background:#f9fafb;border-radius:6px;text-align:center;width:25%;">'
+        '<p style="color:#111827;font-weight:600;font-size:14px;margin:0 0 4px;">Yard Waste</p>'
+        '<p style="color:#DC2626;font-size:13px;margin:0;">from $89</p></td>'
+        '<td style="width:4%;"></td>'
+        '<td style="padding:8px;background:#f9fafb;border-radius:6px;text-align:center;width:25%;">'
+        '<p style="color:#111827;font-weight:600;font-size:14px;margin:0 0 4px;">Furniture</p>'
+        '<p style="color:#DC2626;font-size:13px;margin:0;">from $89</p></td>'
+        '<td style="width:4%;"></td>'
+        '<td style="padding:8px;background:#f9fafb;border-radius:6px;text-align:center;width:25%;">'
+        '<p style="color:#111827;font-weight:600;font-size:14px;margin:0 0 4px;">Appliances</p>'
+        '<p style="color:#DC2626;font-size:13px;margin:0;">from $75</p></td>'
+        '</tr></table></div>'
+    )
+
+    body += _button('https://goumuve.com/book', 'Book a Pickup')
+
+    body += (
+        '<p style="color:#6b7280;font-size:13px;line-height:1.6;text-align:center;">'
+        'Know someone who needs junk removed? Refer a friend and earn <strong>$10</strong> '
+        'for every completed pickup.</p>'
+    )
+
+    return _wrap(body)
+
+
+# ---------------------------------------------------------------------------
+# 12. Operator recruitment sequence (5 emails)
+# ---------------------------------------------------------------------------
+
+def _operator_signature():
+    """Shared signature block for operator recruitment emails."""
+    return (
+        '<table width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #e5e7eb;margin-top:8px;">'
+        '<tr><td style="padding:20px 0 0;">'
+        '<p style="font-size:15px;color:#1a1a1a;margin:0 0 4px;font-weight:600;">The Umuve Team</p>'
+        '<p style="font-size:14px;color:#777;margin:0;">Hauling made simple. &nbsp;|&nbsp; '
+        '<a href="tel:+15619441636" style="color:#DC2626;text-decoration:none;">(561) 944-1636</a> &nbsp;|&nbsp; '
+        '<a href="https://goumuve.com" style="color:#DC2626;text-decoration:none;">goumuve.com</a></p>'
+        '</td></tr></table>'
+    )
+
+
+def _operator_wrap(body_html):
+    """Wrap operator recruitment email content (simpler layout, no card)."""
+    return (
+        '<div style="font-family:\'Helvetica Neue\',Helvetica,Arial,sans-serif;'
+        'max-width:560px;margin:0 auto;color:#1a1a1a;">'
+        '<p style="text-align:center;margin:0 0 24px;">'
+        '<img src="https://goumuve.com/logo-full.png" alt="Umuve" width="140" style="height:auto;"></p>'
+        + body_html
+        + _operator_signature()
+        + '</div>'
+    )
+
+
+def operator_recruitment_1_html(first_name=None, area=None):
+    """Email 1 — The Hook (Day 1). Subject: You have a truck. We have customers."""
+    name = _esc(str(first_name)) if first_name else 'there'
+    region = _esc(str(area)) if area else 'Palm Beach & Broward'
+
+    body = (
+        '<p style="font-size:16px;line-height:1.7;margin:0 0 16px;">Hey {name},</p>'
+        '<p style="font-size:16px;line-height:1.7;margin:0 0 16px;">'
+        'We\'re <strong>Umuve</strong> &mdash; a new junk removal platform based in South Florida. '
+        'We connect homeowners who need junk hauled with independent operators like you who have '
+        'the trucks and the muscle to get it done.</p>'
+        '<p style="font-size:16px;line-height:1.7;margin:0 0 16px;">'
+        'Think of us like Uber, but for junk removal. We spend money on Google ads, SEO, and '
+        'social media to bring in customers across {region}. When someone books a pickup, we send '
+        'the job to you. You show up, load the truck, and get paid.</p>'
+        '<p style="font-size:16px;line-height:1.7;margin:0 0 20px;">'
+        '<strong>You focus on hauling. We handle everything else</strong> &mdash; marketing, '
+        'booking, customer service, payments, and scheduling.</p>'
+    ).format(name=name, region=region)
+
+    # Value props card
+    body += (
+        '<table width="100%" cellpadding="0" cellspacing="0" style="background:#f9fafb;'
+        'border-radius:12px;border:1px solid #e5e7eb;margin:0 0 24px;">'
+        '<tr><td style="padding:24px;">'
+        '<table width="100%" cellpadding="0" cellspacing="0">'
+        '<tr><td style="padding:8px 0;font-size:15px;color:#1a1a1a;">&#10003;&nbsp; Jobs sent to your phone &mdash; accept what you want</td></tr>'
+        '<tr><td style="padding:8px 0;font-size:15px;color:#1a1a1a;">&#10003;&nbsp; You keep <strong style="color:#DC2626;font-size:17px;">85%</strong> of every job</td></tr>'
+        '<tr><td style="padding:8px 0;font-size:15px;color:#1a1a1a;">&#10003;&nbsp; <strong>Same-day payouts</strong> to your bank</td></tr>'
+        '<tr><td style="padding:8px 0;font-size:15px;color:#1a1a1a;">&#10003;&nbsp; No franchise fees, no monthly costs</td></tr>'
+        '<tr><td style="padding:8px 0;font-size:15px;color:#1a1a1a;">&#10003;&nbsp; No contracts &mdash; stop anytime</td></tr>'
+        '<tr><td style="padding:8px 0;font-size:15px;color:#1a1a1a;">&#10003;&nbsp; Keep your existing clients &mdash; we add more</td></tr>'
+        '</table></td></tr></table>'
+    )
+
+    # Earnings banner
+    body += (
+        '<table width="100%" cellpadding="0" cellspacing="0" style="background:linear-gradient(135deg,#DC2626,#E11D48);'
+        'border-radius:12px;margin:0 0 24px;">'
+        '<tr><td style="padding:28px;text-align:center;">'
+        '<p style="font-size:13px;color:rgba(255,255,255,0.85);margin:0 0 6px;text-transform:uppercase;'
+        'letter-spacing:1px;font-weight:600;">What our operators earn</p>'
+        '<p style="font-size:36px;font-weight:800;color:#ffffff;margin:0 0 6px;">$2,800 &ndash; $4,200</p>'
+        '<p style="font-size:14px;color:rgba(255,255,255,0.9);margin:0;">per week in {region}</p>'
+        '</td></tr></table>'
+    ).format(region=region)
+
+    body += (
+        '<p style="font-size:16px;line-height:1.7;margin:0 0 24px;text-align:center;">'
+        'All you need is a truck. We bring the customers.</p>'
+        '<p style="text-align:center;margin:0 0 28px;">'
+        '<a href="https://goumuve.com/operators" style="display:inline-block;background:#DC2626;'
+        'color:#ffffff;text-decoration:none;padding:16px 40px;border-radius:8px;font-weight:700;'
+        'font-size:16px;">See the Full Breakdown &#8594;</a></p>'
+        '<p style="font-size:15px;line-height:1.7;margin:0 0 24px;color:#555;">'
+        'Interested? Just reply to this email &mdash; or check out '
+        '<a href="https://goumuve.com/operators" style="color:#DC2626;font-weight:600;'
+        'text-decoration:none;">goumuve.com/operators</a>. Takes 3 minutes to apply.</p>'
+    )
+
+    return _operator_wrap(body)
+
+
+def operator_recruitment_2_html(first_name=None, area=None):
+    """Email 2 — Social Proof (Day 3). Subject: This hauler made $4,200 last week on Umuve."""
+    name = _esc(str(first_name)) if first_name else 'there'
+
+    body = (
+        '<p style="font-size:16px;line-height:1.7;margin:0 0 16px;">Hey {name},</p>'
+        '<p style="font-size:16px;line-height:1.7;margin:0 0 16px;">'
+        'Wanted to share what a few of our operators are pulling in:</p>'
+    ).format(name=name)
+
+    # Earnings table
+    body += (
+        '<table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e5e7eb;'
+        'border-radius:12px;margin:0 0 20px;overflow:hidden;">'
+        '<tr style="background:#f9fafb;">'
+        '<td style="padding:12px 16px;font-weight:600;font-size:14px;color:#6b7280;">Operator</td>'
+        '<td style="padding:12px 16px;font-weight:600;font-size:14px;color:#6b7280;">Area</td>'
+        '<td style="padding:12px 16px;font-weight:600;font-size:14px;color:#6b7280;text-align:right;">Last Week</td></tr>'
+        '<tr><td style="padding:12px 16px;font-size:15px;">Carlos R.</td>'
+        '<td style="padding:12px 16px;font-size:15px;">Boca Raton</td>'
+        '<td style="padding:12px 16px;font-size:15px;font-weight:700;color:#DC2626;text-align:right;">$2,800</td></tr>'
+        '<tr style="background:#f9fafb;"><td style="padding:12px 16px;font-size:15px;">Marcus T.</td>'
+        '<td style="padding:12px 16px;font-size:15px;">Fort Lauderdale</td>'
+        '<td style="padding:12px 16px;font-size:15px;font-weight:700;color:#DC2626;text-align:right;">$4,200</td></tr>'
+        '<tr><td style="padding:12px 16px;font-size:15px;">David L.</td>'
+        '<td style="padding:12px 16px;font-size:15px;">West Palm Beach</td>'
+        '<td style="padding:12px 16px;font-size:15px;font-weight:700;color:#DC2626;text-align:right;">$3,100</td></tr>'
+        '</table>'
+    )
+
+    body += (
+        '<p style="font-size:16px;line-height:1.7;margin:0 0 16px;">'
+        'The math is simple: average job pays <strong>$187</strong>. You keep <strong>85%</strong> '
+        '= <strong>$159 in your pocket</strong>. Most jobs take 30&ndash;60 minutes.</p>'
+        '<p style="font-size:16px;line-height:1.7;margin:0 0 16px;">'
+        'At 3&ndash;4 jobs a day, that\'s <strong>$2,800&ndash;$4,200/week</strong>.</p>'
+        '<p style="text-align:center;margin:0 0 28px;">'
+        '<a href="https://goumuve.com/operators" style="display:inline-block;background:#DC2626;'
+        'color:#ffffff;text-decoration:none;padding:16px 40px;border-radius:8px;font-weight:700;'
+        'font-size:16px;">Apply Now &mdash; Start This Week &#8594;</a></p>'
+    )
+
+    return _operator_wrap(body)
+
+
+def operator_recruitment_3_html(first_name=None):
+    """Email 3 — Objection Killer (Day 5). Subject: 'What's the catch?' — here's the honest answer."""
+    name = _esc(str(first_name)) if first_name else 'there'
+
+    body = (
+        '<p style="font-size:16px;line-height:1.7;margin:0 0 16px;">Hey {name},</p>'
+        '<p style="font-size:16px;line-height:1.7;margin:0 0 20px;">'
+        'Fair question. Here\'s the honest breakdown:</p>'
+    ).format(name=name)
+
+    # FAQ-style objection handling
+    faqs = [
+        ("What does Umuve take?", "15% of each job. That's it. No monthly fees, no signup cost, no hidden charges."),
+        ("Am I locked in?", "No contracts. You can stop accepting jobs anytime. No penalties, no notice period."),
+        ("Do I lose my existing clients?", "Nope. Keep every client you already have. We just send you more."),
+        ("What do I need?", "A truck (pickup, box truck, or trailer), valid driver's license, and basic liability insurance."),
+        ("When do I get paid?", "Same day. Every job payment hits your bank within hours of completion."),
+    ]
+
+    for q, a in faqs:
+        body += (
+            '<div style="margin:0 0 16px;padding:16px;background:#f9fafb;border-radius:8px;">'
+            '<p style="font-size:15px;font-weight:700;color:#111827;margin:0 0 6px;">{q}</p>'
+            '<p style="font-size:15px;color:#4b5563;margin:0;line-height:1.6;">{a}</p>'
+            '</div>'
+        ).format(q=_esc(q), a=_esc(a))
+
+    body += (
+        '<p style="font-size:16px;line-height:1.7;margin:0 0 24px;">'
+        'No catch. Just a platform that sends you paying customers.</p>'
+        '<p style="text-align:center;margin:0 0 28px;">'
+        '<a href="https://goumuve.com/operators" style="display:inline-block;background:#DC2626;'
+        'color:#ffffff;text-decoration:none;padding:16px 40px;border-radius:8px;font-weight:700;'
+        'font-size:16px;">Apply in 3 Minutes &#8594;</a></p>'
+    )
+
+    return _operator_wrap(body)
+
+
+def operator_recruitment_4_html(first_name=None, area=None):
+    """Email 4 — Urgency (Day 7). Subject: 3 operator spots left in {area}."""
+    name = _esc(str(first_name)) if first_name else 'there'
+    region = _esc(str(area)) if area else 'your area'
+
+    body = (
+        '<p style="font-size:16px;line-height:1.7;margin:0 0 16px;">Hey {name},</p>'
+        '<p style="font-size:16px;line-height:1.7;margin:0 0 20px;">'
+        'Quick update &mdash; we\'re capping the number of operators per zone to make sure '
+        'everyone gets enough jobs. Here\'s where things stand:</p>'
+    ).format(name=name)
+
+    # Zone availability
+    body += (
+        '<table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e5e7eb;'
+        'border-radius:12px;margin:0 0 20px;overflow:hidden;">'
+        '<tr style="background:#f9fafb;">'
+        '<td style="padding:12px 16px;font-weight:600;font-size:14px;color:#6b7280;">Zone</td>'
+        '<td style="padding:12px 16px;font-weight:600;font-size:14px;color:#6b7280;text-align:right;">Spots Left</td></tr>'
+        '<tr><td style="padding:12px 16px;font-size:15px;">West Palm Beach</td>'
+        '<td style="padding:12px 16px;font-size:15px;font-weight:700;color:#DC2626;text-align:right;">3</td></tr>'
+        '<tr style="background:#f9fafb;"><td style="padding:12px 16px;font-size:15px;">Boca Raton</td>'
+        '<td style="padding:12px 16px;font-size:15px;font-weight:700;color:#DC2626;text-align:right;">2</td></tr>'
+        '<tr><td style="padding:12px 16px;font-size:15px;">Fort Lauderdale</td>'
+        '<td style="padding:12px 16px;font-size:15px;font-weight:700;color:#DC2626;text-align:right;">4</td></tr>'
+        '<tr style="background:#f9fafb;"><td style="padding:12px 16px;font-size:15px;">Coral Springs</td>'
+        '<td style="padding:12px 16px;font-size:15px;font-weight:700;color:#DC2626;text-align:right;">3</td></tr>'
+        '</table>'
+    )
+
+    body += (
+        '<p style="font-size:16px;line-height:1.7;margin:0 0 16px;">'
+        'Once a zone is full, new applicants go on a waitlist. If {region} is your area, '
+        'now\'s the time.</p>'
+        '<p style="text-align:center;margin:0 0 28px;">'
+        '<a href="https://goumuve.com/operators" style="display:inline-block;background:#DC2626;'
+        'color:#ffffff;text-decoration:none;padding:16px 40px;border-radius:8px;font-weight:700;'
+        'font-size:16px;">Claim Your Spot &#8594;</a></p>'
+    ).format(region=region)
+
+    return _operator_wrap(body)
+
+
+def operator_recruitment_5_html(first_name=None):
+    """Email 5 — Last Chance (Day 10). Subject: Last email — $3K/week opportunity closing."""
+    name = _esc(str(first_name)) if first_name else 'there'
+
+    body = (
+        '<p style="font-size:16px;line-height:1.7;margin:0 0 16px;">Hey {name},</p>'
+        '<p style="font-size:16px;line-height:1.7;margin:0 0 16px;">'
+        'This is the last email I\'ll send about this. Here\'s the full picture:</p>'
+    ).format(name=name)
+
+    # Simple breakdown
+    steps = [
+        ("1. You have a truck", "Pickup, box truck, or trailer &mdash; any works."),
+        ("2. We send you customers", "We spend money on ads so you don\'t have to."),
+        ("3. You show up and haul", "Average job takes 30&ndash;60 minutes."),
+        ("4. You keep 85%", "Avg job = $187. Your cut = $159."),
+        ("5. Same-day payout", "Money hits your bank the same day."),
+        ("6. No fees, no contracts", "Walk away anytime. Zero risk."),
+    ]
+
+    for title, desc in steps:
+        body += (
+            '<p style="font-size:15px;line-height:1.7;margin:0 0 8px;">'
+            '<strong>{title}</strong> &mdash; {desc}</p>'
+        ).format(title=title, desc=desc)
+
+    body += (
+        '<p style="font-size:16px;line-height:1.7;margin:16px 0 24px;">'
+        'No more follow-ups after this. If you\'re interested, the link is below.</p>'
+        '<p style="text-align:center;margin:0 0 28px;">'
+        '<a href="https://goumuve.com/operators" style="display:inline-block;background:#DC2626;'
+        'color:#ffffff;text-decoration:none;padding:16px 40px;border-radius:8px;font-weight:700;'
+        'font-size:16px;">Last Chance &mdash; Apply Now &#8594;</a></p>'
+    )
+
+    return _operator_wrap(body)

@@ -29,6 +29,12 @@ from email_templates import (
     abandoned_booking_reminder_html,
     abandoned_booking_incentive_html,
     abandoned_booking_final_html,
+    winback_html,
+    operator_recruitment_1_html,
+    operator_recruitment_2_html,
+    operator_recruitment_3_html,
+    operator_recruitment_4_html,
+    operator_recruitment_5_html,
 )
 
 logger = logging.getLogger(__name__)
