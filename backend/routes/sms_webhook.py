@@ -2,7 +2,7 @@
 Twilio Inbound SMS/MMS Webhook — Photo Quoting Engine.
 
 When a customer texts a photo of their junk to the Umuve phone number,
-this endpoint receives the MMS, sends the image to GPT-4o for item
+this endpoint receives the MMS, sends the image to Claude Haiku for item
 identification, calculates a quote using the pricing engine, and texts
 the estimate + booking link back.
 
@@ -13,6 +13,7 @@ Configure in Twilio console:
 
 import os
 import json
+import base64
 import logging
 import threading
 from datetime import datetime, timezone
@@ -99,29 +100,23 @@ def _twiml_response(message):
 
 
 def _process_photo_quote(app, phone, body_text, media_urls):
-    """Background: send photos to GPT-4o vision, identify items, calculate quote, text back."""
+    """Background: send photos to Claude Haiku vision, identify items, calculate quote, text back."""
     with app.app_context():
         try:
             import requests as http_requests
             from sms_service import send_sms_async
             from routes.booking import calculate_estimate
 
-            api_key = os.environ.get("OPENAI_API_KEY", "")
-            if not api_key:
-                logger.warning("No OPENAI_API_KEY — cannot process photo quote")
+            anthropic_key = os.environ.get("ANTHROPIC_API_KEY", "")
+            openai_key = os.environ.get("OPENAI_API_KEY", "")
+
+            if not anthropic_key and not openai_key:
+                logger.warning("No ANTHROPIC_API_KEY or OPENAI_API_KEY — cannot process photo quote")
                 send_sms_async(phone,
                     "Sorry, our photo quoting is temporarily unavailable. "
-                    "Call us at (561) 944-1636 for an instant quote!"
+                    "Call us at (844) 435-6005 for an instant quote!"
                 )
                 return
-
-            # Build vision request with up to 3 images
-            image_content = []
-            for url in media_urls[:3]:
-                image_content.append({
-                    "type": "image_url",
-                    "image_url": {"url": url, "detail": "low"},
-                })
 
             prompt_text = (
                 "You are a junk removal pricing assistant for Umuve. "
@@ -140,38 +135,122 @@ def _process_photo_quote(app, phone, body_text, media_urls):
             if body_text:
                 prompt_text += "\n\nThe customer also wrote: \"{}\"".format(body_text[:200])
 
-            messages_payload = [{
-                "role": "user",
-                "content": [
-                    {"type": "text", "text": prompt_text},
-                    *image_content,
-                ],
-            }]
+            use_anthropic = bool(anthropic_key)
 
-            resp = http_requests.post(
-                "https://api.openai.com/v1/chat/completions",
-                headers={
-                    "Authorization": "Bearer {}".format(api_key),
-                    "Content-Type": "application/json",
-                },
-                json={
-                    "model": "gpt-4o",
-                    "messages": messages_payload,
-                    "temperature": 0.2,
-                    "max_tokens": 500,
-                },
-                timeout=45,
-            )
+            if use_anthropic:
+                # Fetch images as base64 (Twilio media URLs require auth)
+                twilio_sid = os.environ.get("TWILIO_ACCOUNT_SID", "")
+                twilio_token = os.environ.get("TWILIO_AUTH_TOKEN", "")
 
-            if resp.status_code != 200:
-                logger.error("OpenAI vision error: %d %s", resp.status_code, resp.text[:200])
-                send_sms_async(phone,
-                    "Hmm, I had trouble analyzing your photo. "
-                    "Call us at (561) 944-1636 and Maya can help!"
+                image_content = []
+                for url in media_urls[:3]:
+                    try:
+                        img_resp = http_requests.get(url, auth=(twilio_sid, twilio_token), timeout=15)
+                        if img_resp.status_code == 200:
+                            img_b64 = base64.standard_b64encode(img_resp.content).decode("utf-8")
+                            media_type = img_resp.headers.get("Content-Type", "image/jpeg")
+                            image_content.append({
+                                "type": "image",
+                                "source": {
+                                    "type": "base64",
+                                    "media_type": media_type,
+                                    "data": img_b64,
+                                },
+                            })
+                        else:
+                            logger.warning("Failed to fetch Twilio media %s: %d", url, img_resp.status_code)
+                    except Exception:
+                        logger.exception("Error fetching Twilio media URL: %s", url)
+
+                if not image_content:
+                    logger.error("Could not fetch any images from Twilio")
+                    send_sms_async(phone,
+                        "I had trouble loading your photo. Try sending it again or "
+                        "call (844) 435-6005 for a quick quote!"
+                    )
+                    return
+
+                messages_payload = [{
+                    "role": "user",
+                    "content": [
+                        *image_content,
+                        {"type": "text", "text": prompt_text},
+                    ],
+                }]
+
+                resp = http_requests.post(
+                    "https://api.anthropic.com/v1/messages",
+                    headers={
+                        "x-api-key": anthropic_key,
+                        "anthropic-version": "2023-06-01",
+                        "Content-Type": "application/json",
+                    },
+                    json={
+                        "model": "claude-haiku-4-5-20251001",
+                        "messages": messages_payload,
+                        "temperature": 0.2,
+                        "max_tokens": 500,
+                    },
+                    timeout=45,
                 )
-                return
 
-            content = resp.json()["choices"][0]["message"]["content"].strip()
+                if resp.status_code != 200:
+                    logger.error("Anthropic vision error: %d %s", resp.status_code, resp.text[:200])
+                    # Fall back to OpenAI if available
+                    if openai_key:
+                        logger.info("Falling back to OpenAI after Anthropic error")
+                        use_anthropic = False
+                    else:
+                        send_sms_async(phone,
+                            "Hmm, I had trouble analyzing your photo. "
+                            "Call us at (844) 435-6005 and Maya can help!"
+                        )
+                        return
+
+                if use_anthropic:
+                    content = resp.json()["content"][0]["text"].strip()
+
+            if not use_anthropic:
+                # OpenAI fallback path
+                image_content_oai = []
+                for url in media_urls[:3]:
+                    image_content_oai.append({
+                        "type": "image_url",
+                        "image_url": {"url": url, "detail": "low"},
+                    })
+
+                messages_payload = [{
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": prompt_text},
+                        *image_content_oai,
+                    ],
+                }]
+
+                resp = http_requests.post(
+                    "https://api.openai.com/v1/chat/completions",
+                    headers={
+                        "Authorization": "Bearer {}".format(openai_key),
+                        "Content-Type": "application/json",
+                    },
+                    json={
+                        "model": "gpt-4o",
+                        "messages": messages_payload,
+                        "temperature": 0.2,
+                        "max_tokens": 500,
+                    },
+                    timeout=45,
+                )
+
+                if resp.status_code != 200:
+                    logger.error("OpenAI vision error: %d %s", resp.status_code, resp.text[:200])
+                    send_sms_async(phone,
+                        "Hmm, I had trouble analyzing your photo. "
+                        "Call us at (844) 435-6005 and Maya can help!"
+                    )
+                    return
+
+                content = resp.json()["choices"][0]["message"]["content"].strip()
 
             # Strip markdown fencing
             if content.startswith("```"):
