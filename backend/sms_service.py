@@ -242,3 +242,62 @@ def sms_custom(to_phone, message):
     except Exception:
         logger.exception("sms_custom failed for %s", to_phone)
         return None
+
+
+# ---------------------------------------------------------------------------
+# Review request SMS (delayed after job completion)
+# ---------------------------------------------------------------------------
+
+# TODO: Replace this placeholder with the actual Google Business Profile
+# review link once the Umuve GBP is claimed. You can also set the
+# GOOGLE_REVIEW_URL environment variable on Render to override at runtime.
+_DEFAULT_GOOGLE_REVIEW_URL = "https://g.page/r/umuve/review"
+
+
+def send_review_request_sms(phone, customer_name, city_name):
+    """Send a Google review request SMS to the customer.
+
+    Intended to be called after a delay (see ``schedule_review_request``).
+    Never raises.
+    """
+    try:
+        import os as _os
+        review_url = _os.environ.get("GOOGLE_REVIEW_URL", _DEFAULT_GOOGLE_REVIEW_URL)
+        first_name = customer_name.split()[0] if customer_name else "there"
+        city = city_name or "your area"
+        body = (
+            "Hi {}! Thanks for choosing Umuve for your "
+            "junk removal in {}. We'd love your feedback — "
+            "it takes 30 seconds and helps us serve {} better.\n\n"
+            "Leave a review: {}\n\n"
+            "Thanks! — The Umuve Team"
+        ).format(first_name, city, city, review_url)
+        send_sms_async(phone, body)
+    except Exception:
+        logger.exception("send_review_request_sms failed for %s", phone)
+
+
+def schedule_review_request(phone, customer_name, city_name, delay_seconds=7200):
+    """Schedule a review request SMS after a delay (default 2 hours).
+
+    Uses ``threading.Timer`` so no extra dependencies are needed.
+    The timer is daemonic — it will not prevent process shutdown, which
+    means some review requests may be lost on deploy/restart.  That is
+    acceptable for v1.
+
+    Never raises.
+    """
+    try:
+        timer = threading.Timer(
+            delay_seconds,
+            send_review_request_sms,
+            args=[phone, customer_name, city_name],
+        )
+        timer.daemon = True
+        timer.start()
+        logger.info(
+            "Scheduled review request SMS to %s in %d seconds",
+            format_phone(phone), delay_seconds,
+        )
+    except Exception:
+        logger.exception("schedule_review_request failed for %s", phone)
