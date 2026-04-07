@@ -16,7 +16,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from models import (
     db, User, Contractor, Job, Payment, PricingRule, SurgeZone, Notification,
-    PricingConfig, Review, generate_uuid, utcnow,
+    PricingConfig, Review, Rating, DeviceToken, generate_uuid, utcnow,
 )
 from auth_routes import require_auth
 
@@ -1092,92 +1092,181 @@ def admin_send_sms(user_id):
     return jsonify({"success": True, "message": "SMS queued"}), 200
 
 
+    # NOTE: seed-jobs endpoint removed (was unauthenticated, security risk)
+
+
 # ---------------------------------------------------------------------------
-# POST /api/admin/seed-jobs — Create test jobs (public with secret)
+# GET/DELETE /api/admin/cleanup — Audit and remove test/seed data
 # ---------------------------------------------------------------------------
-@admin_bp.route("/seed-jobs", methods=["POST"])
-def seed_test_jobs():
-    """Create 30 test jobs for testing (admin only)."""
-    import random
+@admin_bp.route("/cleanup", methods=["GET"])
+@require_admin
+def cleanup_audit():
+    """Audit production DB for test/seed data. Returns what WOULD be deleted."""
+    from sqlalchemy import or_
 
-    # Find or create test customer
-    test_customer = User.query.filter_by(email="test@umuve.com").first()
-    if not test_customer:
-        test_customer = User(
-            id=generate_uuid(),
-            name="Test Customer",
-            email="test@umuve.com",
-            phone="+15555551234",
-            role="customer",
+    test_emails = ["test@umuve.com", "test@test.com", "demo@umuve.com",
+                   "seed@umuve.com", "fake@test.com"]
+    test_phones = ["+15555551234", "+15555550000"]
+
+    # Find test users
+    test_users = User.query.filter(
+        or_(
+            User.email.in_(test_emails),
+            User.email.like("%@example.com"),
+            User.email.like("%test%@%"),
+            User.phone.in_(test_phones),
+            User.name.like("Test %"),
+            User.name.like("Seed %"),
+            User.name.like("Fake %"),
+            User.name.like("Demo %"),
         )
-        db.session.add(test_customer)
-        db.session.commit()
+    ).all()
+    test_user_ids = [u.id for u in test_users]
 
-    # Job data (30 jobs)
-    jobs_data = [
-        ("123 Ocean Drive, Miami Beach, FL 33139", 25.7907, -80.1300, "Old Couch"),
-        ("456 Palm Ave, Fort Lauderdale, FL 33301", 26.1224, -80.1373, "Mattress Set"),
-        ("1501 Brickell Ave, Miami, FL 33129", 25.7617, -80.1918, "Filing Cabinets"),
-        ("2100 Collins Ave, Miami Beach, FL 33139", 25.7959, -80.1284, "Patio Furniture"),
-        ("3300 NE 1st Ave, Miami, FL 33137", 25.8076, -80.1918, "Washer/Dryer"),
-        ("401 Biscayne Blvd, Miami, FL 33132", 25.7743, -80.1871, "Office Desks"),
-        ("1200 Anastasia Ave, Coral Gables, FL 33134", 25.7459, -80.2615, "Piano"),
-        ("2500 E Las Olas Blvd, Fort Lauderdale, FL 33301", 26.1185, -80.1134, "Sectional Sofa"),
-        ("1 E Broward Blvd, Fort Lauderdale, FL 33301", 26.1224, -80.1434, "Elliptical"),
-        ("3501 N Federal Hwy, Fort Lauderdale, FL 33308", 26.1601, -80.1097, "Bed Frame"),
-        ("101 N Ocean Dr, Hollywood, FL 33019", 26.0112, -80.1218, "Hot Tub"),
-        ("2000 S Dixie Hwy, Miami, FL 33133", 25.7459, -80.2042, "Entertainment Center"),
-        ("1200 S Flagler Dr, West Palm Beach, FL 33401", 26.7067, -80.0495, "Lawn Mower"),
-        ("400 Clematis St, West Palm Beach, FL 33401", 26.7153, -80.0533, "Conference Table"),
-        ("1500 S Ocean Blvd, Delray Beach, FL 33483", 26.4525, -80.0717, "Wardrobes"),
-        ("801 E Atlantic Ave, Delray Beach, FL 33483", 26.4615, -80.0628, "Pool Table"),
-        ("2201 NW 2nd Ave, Boca Raton, FL 33431", 26.3754, -80.0810, "Armchairs"),
-        ("1000 Glades Rd, Boca Raton, FL 33431", 26.3683, -80.0831, "Kitchen Cabinets"),
-        ("7100 W Camino Real, Boca Raton, FL 33433", 26.3587, -80.1753, "Chest Freezer"),
-        ("201 E Palmetto Park Rd, Boca Raton, FL 33432", 26.3587, -80.0784, "Dressers"),
-        ("3850 NW 25th St, Miami, FL 33142", 25.7988, -80.2543, "Shelving Units"),
-        ("9700 Collins Ave, Bal Harbour, FL 33154", 25.8906, -80.1231, "Loveseat"),
-        ("789 Bay Street, Tampa, FL 33602", 27.9506, -82.4572, "Refrigerator"),
-        ("321 Sunset Blvd, Orlando, FL 32801", 28.5383, -81.3792, "TV & Microwave"),
-        ("567 Beach Road, Jacksonville, FL 32202", 30.3322, -81.6557, "Washing Machine"),
-        ("890 Pine Street, St. Petersburg, FL 33701", 27.7676, -82.6403, "Wooden Desk"),
-        ("234 Coral Way, Coral Gables, FL 33134", 25.7481, -80.2620, "Dining Set"),
-        ("678 Marina Drive, West Palm Beach, FL 33401", 26.7153, -80.0534, "Outdoor Grill"),
-        ("135 Lake Avenue, Clearwater, FL 33755", 27.9659, -82.8001, "Bookshelf & Books"),
-        ("999 Bayshore Blvd, Sarasota, FL 34236", 27.3364, -82.5307, "Treadmill"),
-    ]
-
-    created = 0
-    for address, lat, lng, item_name in jobs_data:
-        days = random.randint(0, 7)
-        hours = random.randint(9, 17)
-        total = random.randint(70, 200)
-
-        scheduled_at = datetime.now(timezone.utc) + timedelta(days=days, hours=hours)
-
-        job = Job(
-            id=generate_uuid(),
-            customer_id=test_customer.id,
-            status="confirmed",
-            address=address,
-            lat=lat,
-            lng=lng,
-            items=[{"name": item_name, "quantity": 1}],
-            notes=f"Test job - {item_name}",
-            total_price=total,
-            item_total=total * 0.7,
-            service_fee=total * 0.3,
-            scheduled_at=scheduled_at,
-            created_at=utcnow(),
-            updated_at=utcnow(),
+    # Find jobs owned by test users OR with test-like notes
+    test_jobs = Job.query.filter(
+        or_(
+            Job.customer_id.in_(test_user_ids) if test_user_ids else False,
+            Job.notes.like("Test job%"),
+            Job.notes.like("Seed %"),
+            Job.notes.like("%test%pickup%"),
         )
-        db.session.add(job)
-        created += 1
+    ).all()
+    test_job_ids = [j.id for j in test_jobs]
+
+    # Find payments linked to test jobs
+    test_payments = Payment.query.filter(
+        Payment.job_id.in_(test_job_ids)
+    ).all() if test_job_ids else []
+
+    # Find ratings linked to test jobs or test users
+    test_ratings = Rating.query.filter(
+        or_(
+            Rating.job_id.in_(test_job_ids) if test_job_ids else False,
+            Rating.from_user_id.in_(test_user_ids) if test_user_ids else False,
+            Rating.to_user_id.in_(test_user_ids) if test_user_ids else False,
+        )
+    ).all() if (test_job_ids or test_user_ids) else []
+
+    # Find contractor profiles for test users
+    test_contractors = Contractor.query.filter(
+        Contractor.user_id.in_(test_user_ids)
+    ).all() if test_user_ids else []
+
+    # Find notifications for test users
+    test_notifications = Notification.query.filter(
+        Notification.user_id.in_(test_user_ids)
+    ).all() if test_user_ids else []
+
+    # ALL real users (for comparison)
+    total_users = User.query.count()
+    total_jobs = Job.query.count()
+
+    return jsonify({
+        "mode": "audit",
+        "summary": {
+            "total_users": total_users,
+            "total_jobs": total_jobs,
+            "test_users_to_delete": len(test_users),
+            "test_jobs_to_delete": len(test_jobs),
+            "test_payments_to_delete": len(test_payments),
+            "test_ratings_to_delete": len(test_ratings),
+            "test_contractors_to_delete": len(test_contractors),
+            "test_notifications_to_delete": len(test_notifications),
+        },
+        "test_users": [{"id": u.id, "email": u.email, "phone": u.phone,
+                         "name": u.name, "role": u.role,
+                         "created_at": u.created_at.isoformat() if u.created_at else None}
+                        for u in test_users],
+        "test_jobs": [{"id": j.id, "status": j.status, "address": j.address,
+                        "notes": j.notes, "total_price": j.total_price,
+                        "created_at": j.created_at.isoformat() if j.created_at else None}
+                       for j in test_jobs],
+        "real_users_kept": [{"id": u.id, "email": u.email, "name": u.name, "role": u.role}
+                            for u in User.query.filter(~User.id.in_(test_user_ids)).all()]
+                           if test_user_ids else
+                           [{"id": u.id, "email": u.email, "name": u.name, "role": u.role}
+                            for u in User.query.all()],
+    }), 200
+
+
+@admin_bp.route("/cleanup", methods=["DELETE"])
+@require_admin
+def cleanup_execute():
+    """Delete all test/seed data from production. Requires ?confirm=yes."""
+    if request.args.get("confirm") != "yes":
+        return jsonify({"error": "Add ?confirm=yes to actually delete"}), 400
+
+    from sqlalchemy import or_
+
+    test_emails = ["test@umuve.com", "test@test.com", "demo@umuve.com",
+                   "seed@umuve.com", "fake@test.com"]
+    test_phones = ["+15555551234", "+15555550000"]
+
+    test_users = User.query.filter(
+        or_(
+            User.email.in_(test_emails),
+            User.email.like("%@example.com"),
+            User.email.like("%test%@%"),
+            User.phone.in_(test_phones),
+            User.name.like("Test %"),
+            User.name.like("Seed %"),
+            User.name.like("Fake %"),
+            User.name.like("Demo %"),
+        )
+    ).all()
+    test_user_ids = [u.id for u in test_users]
+
+    test_jobs = Job.query.filter(
+        or_(
+            Job.customer_id.in_(test_user_ids) if test_user_ids else False,
+            Job.notes.like("Test job%"),
+            Job.notes.like("Seed %"),
+            Job.notes.like("%test%pickup%"),
+        )
+    ).all()
+    test_job_ids = [j.id for j in test_jobs]
+
+    counts = {"users": 0, "jobs": 0, "payments": 0, "ratings": 0,
+              "contractors": 0, "notifications": 0}
+
+    # Delete in dependency order (children first)
+    if test_job_ids:
+        counts["payments"] = Payment.query.filter(Payment.job_id.in_(test_job_ids)).delete(synchronize_session=False)
+        counts["ratings"] = Rating.query.filter(
+            or_(Rating.job_id.in_(test_job_ids),
+                Rating.from_user_id.in_(test_user_ids) if test_user_ids else False,
+                Rating.to_user_id.in_(test_user_ids) if test_user_ids else False)
+        ).delete(synchronize_session=False)
+
+    if test_user_ids:
+        counts["notifications"] = Notification.query.filter(
+            Notification.user_id.in_(test_user_ids)
+        ).delete(synchronize_session=False)
+        # Device tokens
+        DeviceToken.query.filter(DeviceToken.user_id.in_(test_user_ids)).delete(synchronize_session=False)
+
+    # Delete test jobs
+    for j in test_jobs:
+        db.session.delete(j)
+        counts["jobs"] += 1
+
+    # Delete test contractor profiles (before users due to FK)
+    if test_user_ids:
+        for c in Contractor.query.filter(Contractor.user_id.in_(test_user_ids)).all():
+            db.session.delete(c)
+            counts["contractors"] += 1
+
+    # Delete test users
+    for u in test_users:
+        db.session.delete(u)
+        counts["users"] += 1
 
     db.session.commit()
 
     return jsonify({
         "success": True,
-        "message": f"Created {created} test jobs in 'confirmed' status",
-        "created_count": created,
+        "deleted": counts,
+        "remaining_users": User.query.count(),
+        "remaining_jobs": Job.query.count(),
     }), 200
