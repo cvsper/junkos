@@ -167,3 +167,13 @@ export function trackBookingConversion(params: {
     });
   }
 }
+
+export function trackLead() {
+  if (typeof window === "undefined") return;
+  const fbq = (window as unknown as Record<string, unknown>).fbq as
+    | ((...args: unknown[]) => void)
+    | undefined;
+  if (fbq) {
+    fbq("track", "Lead");
+  }
+}

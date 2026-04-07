@@ -6,7 +6,7 @@ import { ArrowLeft, ArrowRight, Gift, RotateCcw, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useBookingStore } from "@/stores/booking-store";
 import { referralsApi } from "@/lib/api";
-import { trackBookingStep } from "@/components/analytics";
+import { trackBookingStep, trackLead } from "@/components/analytics";
 import { ProgressBar } from "@/components/booking/progress-bar";
 import { Step1Address } from "@/components/booking/step-1-address";
 import { Step2Photos } from "@/components/booking/step-2-photos";
@@ -138,6 +138,7 @@ function BookPageInner() {
       setLeadSource(source);
       localStorage.setItem("umuve_lead_source", source);
     }
+    trackLead();
   }, [searchParams, setLeadSource]);
 
   // --- Check for abandoned booking on mount ---
