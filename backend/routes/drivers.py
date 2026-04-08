@@ -331,10 +331,12 @@ def decline_job(user_id, job_id):
     job.updated_at = utcnow()
     db.session.commit()
 
-    # Re-run auto-assignment to find another driver
-    from routes.payments import _auto_assign_driver
-    _auto_assign_driver(job)
-    db.session.commit()
+    # Re-run auto-dispatch to find another driver in background
+    try:
+        from dispatcher import auto_assign_job_async
+        auto_assign_job_async(job.id, current_app._get_current_object())
+    except Exception:
+        logger.exception("Failed to trigger re-dispatch for declined job %s", job.id)
 
     from socket_events import broadcast_job_status
     broadcast_job_status(job.id, job.status)
