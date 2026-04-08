@@ -916,6 +916,22 @@ def create_booking(user_id):
     except Exception:
         pass
 
+    # --- Schedule abandoned booking recovery SMS (30 min) ---
+    try:
+        customer = db.session.get(User, user_id)
+        if customer and customer.phone:
+            from flask import current_app
+            from sms_service import schedule_abandoned_booking_sms
+            schedule_abandoned_booking_sms(
+                to_phone=customer.phone,
+                customer_name=customer.name or "",
+                job_id=job.id,
+                app=current_app._get_current_object(),
+                delay_seconds=1800,
+            )
+    except Exception:
+        pass  # Recovery SMS must never block the main flow
+
     # --- SMS operator about new booking ---
     try:
         from sms_service import send_sms_async

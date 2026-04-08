@@ -277,6 +277,126 @@ def send_review_request_sms(phone, customer_name, city_name):
         logger.exception("send_review_request_sms failed for %s", phone)
 
 
+# ---------------------------------------------------------------------------
+# Abandoned booking recovery SMS (delayed after pending job creation)
+# ---------------------------------------------------------------------------
+
+# Active timers keyed by job_id — allows cancellation when job is confirmed/paid.
+_abandoned_timers = {}
+
+
+def _generate_comeback_promo(job_id):
+    """Create a single-use 10% promo code for an abandoned booking.
+
+    Returns the code string, or None on failure.  Requires Flask app context.
+    Never raises.
+    """
+    try:
+        import random
+        import string
+        from datetime import datetime, timezone, timedelta
+        from models import db, PromoCode, generate_uuid
+
+        code = "COMEBACK" + "".join(random.choices(string.ascii_uppercase + string.digits, k=4))
+        promo = PromoCode(
+            id=generate_uuid(),
+            code=code,
+            discount_type="percentage",
+            discount_value=10.0,
+            max_uses=1,
+            use_count=0,
+            expires_at=datetime.now(timezone.utc) + timedelta(hours=24),
+            is_active=True,
+        )
+        db.session.add(promo)
+        db.session.commit()
+        return code
+    except Exception:
+        logger.exception("_generate_comeback_promo failed for job %s", job_id)
+        return None
+
+
+def _send_abandoned_booking_sms(to_phone, customer_name, job_id, app):
+    """Send the abandoned booking recovery SMS (runs inside timer callback).
+
+    Needs the Flask ``app`` reference so we can push an application context
+    for the database access required to create the promo code.
+    Never raises.
+    """
+    try:
+        # Clean up the timer reference
+        _abandoned_timers.pop(job_id, None)
+
+        with app.app_context():
+            # Check if job is still pending — skip if already confirmed/paid
+            from models import Job
+            job = Job.query.get(job_id)
+            if not job or job.status != "pending":
+                logger.info(
+                    "Abandoned booking SMS skipped for job %s (status: %s)",
+                    job_id, job.status if job else "not found",
+                )
+                return
+
+            code = _generate_comeback_promo(job_id)
+            if not code:
+                return
+
+            first_name = customer_name.split()[0] if customer_name else "there"
+            body = (
+                "Hey {}! You left a pickup in your cart. "
+                "Book now and get 10% off with code {}. "
+                "Reply STOP to opt out."
+            ).format(first_name, code)
+            send_sms(to_phone, body)
+    except Exception:
+        logger.exception("_send_abandoned_booking_sms failed for job %s", job_id)
+
+
+def schedule_abandoned_booking_sms(to_phone, customer_name, job_id, app, delay_seconds=1800):
+    """Schedule an abandoned booking recovery SMS after *delay_seconds* (default 30 min).
+
+    Uses ``threading.Timer`` (same pattern as ``schedule_review_request``).
+    The timer is daemonic — it will not prevent process shutdown.
+
+    Pass the Flask ``app`` object so the callback can create an app context for
+    database access (promo code creation + job status check).
+
+    Never raises.
+    """
+    try:
+        if not to_phone:
+            return
+        timer = threading.Timer(
+            delay_seconds,
+            _send_abandoned_booking_sms,
+            args=[to_phone, customer_name, job_id, app],
+        )
+        timer.daemon = True
+        _abandoned_timers[job_id] = timer
+        timer.start()
+        logger.info(
+            "Scheduled abandoned booking SMS to %s for job %s in %d seconds",
+            format_phone(to_phone), job_id, delay_seconds,
+        )
+    except Exception:
+        logger.exception("schedule_abandoned_booking_sms failed for job %s", job_id)
+
+
+def cancel_abandoned_booking_sms(job_id):
+    """Cancel a pending abandoned booking SMS timer for the given job.
+
+    Safe to call even if no timer exists for the job.  Never raises.
+    """
+    try:
+        timer = _abandoned_timers.pop(job_id, None)
+        if timer is not None:
+            timer.cancel()
+            logger.info("Cancelled abandoned booking SMS timer for job %s", job_id)
+    except Exception:
+        logger.exception("cancel_abandoned_booking_sms failed for job %s", job_id)
+
+
 def schedule_review_request(phone, customer_name, city_name, delay_seconds=7200):
     """Schedule a review request SMS after a delay (default 2 hours).
 

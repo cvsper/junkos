@@ -4,8 +4,11 @@ Stripe Connect: customer pays -> platform takes commission -> contractor gets pa
 """
 
 import os
-from flask import Blueprint, request, jsonify
+import logging
+from flask import Blueprint, request, jsonify, current_app
 from datetime import datetime, timezone, timedelta
+
+logger = logging.getLogger(__name__)
 
 import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -147,6 +150,13 @@ def confirm_payment(user_id):
             db.session.add(notification)
 
     db.session.commit()
+
+    # --- Cancel abandoned booking recovery SMS ---
+    try:
+        from sms_service import cancel_abandoned_booking_sms
+        cancel_abandoned_booking_sms(payment.job_id)
+    except Exception:
+        pass
 
     # --- Send payment receipt email to customer ---
     try:
@@ -331,14 +341,26 @@ def confirm_simple_payment():
         job.status = "confirmed"
         job.updated_at = utcnow()
 
-        # Auto-assign nearest driver
-        _auto_assign_driver(job)
-
         # Broadcast status update via SocketIO
         from socket_events import broadcast_job_status
         broadcast_job_status(job.id, job.status)
 
     db.session.commit()
+
+    # --- Auto-dispatch best operator in background ---
+    if job and job.status == "confirmed" and not job.driver_id:
+        try:
+            from dispatcher import auto_assign_job_async
+            auto_assign_job_async(job.id, current_app._get_current_object())
+        except Exception:
+            logger.exception("Failed to trigger auto-dispatch for job %s", job.id)
+
+    # --- Cancel abandoned booking recovery SMS ---
+    try:
+        from sms_service import cancel_abandoned_booking_sms
+        cancel_abandoned_booking_sms(payment.job_id)
+    except Exception:
+        pass
 
     # --- Send payment receipt email to customer ---
     try:
@@ -752,15 +774,26 @@ def _handle_payment_succeeded(intent):
                 total_amount=payment.amount,
             )
 
-        # Auto-assign to nearest available driver
-        if not job.driver_id:
-            _auto_assign_driver(job)
-
         # Broadcast status update via SocketIO
         from socket_events import broadcast_job_status
         broadcast_job_status(job.id, job.status)
 
+        # Cancel abandoned booking recovery SMS
+        try:
+            from sms_service import cancel_abandoned_booking_sms
+            cancel_abandoned_booking_sms(job.id)
+        except Exception:
+            pass
+
     db.session.commit()
+
+    # --- Auto-dispatch best operator in background ---
+    if job and not job.driver_id and job.status in ("confirmed", "assigned"):
+        try:
+            from dispatcher import auto_assign_job_async
+            auto_assign_job_async(job.id, current_app._get_current_object())
+        except Exception:
+            logger.exception("Failed to trigger auto-dispatch for job %s", job.id)
 
 
 def _auto_assign_driver(job):
