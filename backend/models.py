@@ -1231,4 +1231,39 @@ class CampaignRecipient(db.Model):
             "status": self.status,
             "sent_at": self.sent_at.isoformat() if self.sent_at else None,
             "error_message": self.error_message,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
+
+
+# ---------------------------------------------------------------------------
+# Partner (realtor partnership program)
+# ---------------------------------------------------------------------------
+class Partner(db.Model):
+    __tablename__ = "partners"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    name = Column(String(255), nullable=False)
+    email = Column(String(255), unique=True, nullable=False, index=True)
+    phone = Column(String(20), nullable=False)
+    brokerage = Column(String(255), nullable=True)
+    coverage_areas = Column(JSON, nullable=True)
+    partner_type = Column(String(50), nullable=False, default="realtor")
+    status = Column(String(20), nullable=False, default="pending")
+    referral_code = Column(String(20), unique=True, default=generate_referral_code)
+    commission_rate = Column(Float, default=10.0)
+    created_at = Column(DateTime, default=utcnow)
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "email": self.email,
+            "phone": self.phone,
+            "brokerage": self.brokerage,
+            "coverage_areas": self.coverage_areas,
+            "partner_type": self.partner_type,
+            "status": self.status,
+            "referral_code": self.referral_code,
+            "commission_rate": self.commission_rate,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
         }

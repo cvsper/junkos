@@ -27,6 +27,7 @@ from .ai_analysis import ai_bp
 from .migration import migration_bp
 from .sms_webhook import sms_webhook_bp
 from .campaigns import campaigns_bp
+from .partners import partners_bp
 
 __all__ = [
     "drivers_bp",
@@ -56,4 +57,5 @@ __all__ = [
     "vapi_bp",
     "sms_webhook_bp",
     "campaigns_bp",
+    "partners_bp",
 ]
