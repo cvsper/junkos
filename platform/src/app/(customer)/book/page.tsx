@@ -301,17 +301,6 @@ function BookPageInner() {
         </div>
       )}
 
-      {/* Trust Bar */}
-      <div className="mb-6 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 rounded-lg bg-muted/50 px-4 py-2.5 text-xs sm:text-sm text-muted-foreground">
-        <span>4.9&#9733; rated</span>
-        <span className="hidden sm:inline" aria-hidden="true">&middot;</span>
-        <span>Same-day service</span>
-        <span className="hidden sm:inline" aria-hidden="true">&middot;</span>
-        <span>No hidden fees</span>
-        <span className="hidden sm:inline" aria-hidden="true">&middot;</span>
-        <span>Eco-friendly disposal</span>
-      </div>
-
       {/* Heading */}
       <h1 className="font-display text-3xl sm:text-4xl font-bold tracking-tight mb-2">
         Book a Pickup
@@ -319,24 +308,6 @@ function BookPageInner() {
       <p className="text-muted-foreground mb-4">
         Schedule your junk removal in just a few steps.
       </p>
-
-      {/* Donation & Recycling Badge */}
-      {step <= 3 && (
-        <div className="mb-8 flex flex-col sm:flex-row gap-3">
-          <div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-4 py-2.5">
-            <span className="text-lg">&#10084;&#65039;</span>
-            <p className="text-sm text-green-800">
-              <span className="font-semibold">Donate First</span> — usable items go to local charities &amp; shelters
-            </p>
-          </div>
-          <div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-4 py-2.5">
-            <span className="text-lg">&#9851;&#65039;</span>
-            <p className="text-sm text-green-800">
-              <span className="font-semibold">Recycle &amp; Reuse</span> — landfill is always the last resort
-            </p>
-          </div>
-        </div>
-      )}
 
       {/* Progress Bar */}
       <div className="mb-10">
