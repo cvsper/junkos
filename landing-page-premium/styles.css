@@ -3,8 +3,6 @@
    Bold, polished, conversion-optimized
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
-
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    CSS Variables
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
@@ -16,15 +14,15 @@
     --color-subtle: #F9FAFB;
     --color-wash: #F3F4F6;
 
-    /* Text — deep charcoal */
-    --color-text: #1a1a1a;
-    --color-text-secondary: #5c5c5c;
-    --color-text-muted: #8a8a8a;
-    --color-text-ghost: #b5b5b5;
+    /* Text — darkened for AA contrast */
+    --color-text: #171717;
+    --color-text-secondary: #4b5563;
+    --color-text-muted: #737373;
+    --color-text-ghost: #949494;
 
-    /* Accent — red */
-    --color-accent: #DC2626;
-    --color-accent-hover: #B91C1C;
+    /* Accent — darkened for white text contrast */
+    --color-accent: #C52222;
+    --color-accent-hover: #991B1B;
     --color-accent-subtle: rgba(220, 38, 38, 0.08);
     --color-accent-border: rgba(220, 38, 38, 0.25);
 

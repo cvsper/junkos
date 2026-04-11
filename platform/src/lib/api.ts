@@ -396,6 +396,17 @@ export const paymentsApi = {
       method: "POST",
       body: JSON.stringify({ paymentIntentId, bookingId }),
     }),
+
+  getInstantPayoutEligibility: () =>
+    apiFetch<{ eligible: boolean; available_amount: number; currency: string; reason?: string }>(
+      "/api/payments/payout/eligibility"
+    ),
+
+  triggerInstantPayout: () =>
+    apiFetch<{ success: boolean; payout_id: string; amount: number }>(
+      "/api/payments/payout/instant",
+      { method: "POST" }
+    ),
 };
 
 // ---------------------------------------------------------------------------

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { driverApi } from "@/lib/api";
+import { driverApi, paymentsApi } from "@/lib/api";
 import type { DriverEarningsSummary, DriverEarningsRecord } from "@/types";
 import {
   DollarSign,
@@ -9,7 +9,11 @@ import {
   TrendingUp,
   AlertCircle,
   RefreshCw,
+  Zap,
+  Loader2,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 
 type Period = "today" | "week" | "month" | "all";
 
@@ -50,9 +54,49 @@ export default function DriverEarningsPage() {
     }
   }, []);
 
+  // Instant Payout state
+  const [payoutData, setPayoutData] = useState({
+    eligible: false,
+    available_amount: 0,
+    currency: "usd",
+  });
+  const [payoutLoading, setPayoutLoading] = useState(false);
+
+  const fetchPayoutEligibility = useCallback(async () => {
+    try {
+      const data = await paymentsApi.getInstantPayoutEligibility();
+      setPayoutData(data);
+    } catch (err) {
+      console.error("Failed to fetch payout eligibility", err);
+    }
+  }, []);
+
+  const handleInstantPayout = useCallback(async () => {
+    if (!payoutData.eligible) return;
+
+    const ok = confirm(
+      `Cash out ${formatCurrency(
+        payoutData.available_amount
+      )} to your card instantly? (Stripe may charge a small fee)`
+    );
+    if (!ok) return;
+
+    setPayoutLoading(true);
+    try {
+      const res = await paymentsApi.triggerInstantPayout();
+      alert(`Success! ${formatCurrency(res.amount)} is on the way to your card.`);
+      await Promise.all([fetchPayoutEligibility(), fetchEarnings(period)]);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Instant payout failed.");
+    } finally {
+      setPayoutLoading(false);
+    }
+  }, [payoutData, period, fetchPayoutEligibility, fetchEarnings]);
+
   useEffect(() => {
     fetchEarnings(period);
-  }, [period, fetchEarnings]);
+    fetchPayoutEligibility();
+  }, [period, fetchEarnings, fetchPayoutEligibility]);
 
   function formatCurrency(amount: number): string {
     return `$${amount.toFixed(2)}`;
@@ -134,6 +178,51 @@ export default function DriverEarningsPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-display font-bold">Earnings</h1>
+
+      {/* ------------------------------------------------------------------ */}
+      {/* Instant Payout Card                                                 */}
+      {/* ------------------------------------------------------------------ */}
+      <Card className="bg-primary/5 border-primary/20 overflow-hidden relative">
+        <div className="absolute top-0 right-0 p-4 opacity-10">
+          <Zap className="h-24 w-24 text-primary" />
+        </div>
+        <CardContent className="pt-6 relative z-10">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <p className="text-sm text-muted-foreground uppercase font-bold tracking-wider">
+                Available for Instant Payout
+              </p>
+              <div className="flex items-baseline gap-1 mt-1">
+                <h2 className="text-4xl font-bold text-foreground">
+                  {formatCurrency(payoutData.available_amount)}
+                </h2>
+                <span className="text-muted-foreground text-sm font-medium uppercase">
+                  {payoutData.currency}
+                </span>
+              </div>
+            </div>
+            <Button
+              onClick={handleInstantPayout}
+              disabled={!payoutData.eligible || payoutLoading}
+              className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-white font-bold h-12 px-8 shadow-lg shadow-primary/20"
+            >
+              {payoutLoading ? (
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+              ) : (
+                <Zap className="mr-2 h-5 w-5 fill-white" />
+              )}
+              Cash Out Now
+            </Button>
+          </div>
+          <div className="flex items-center gap-2 mt-4 text-[11px] text-muted-foreground bg-white/50 rounded-lg p-2 border border-border/40">
+            <AlertCircle className="h-3 w-3" />
+            <p>
+              Instant payouts require a linked <strong>Debit Card</strong>. 
+              Standard bank accounts take 1-2 business days.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* ------------------------------------------------------------------ */}
       {/* Period Filter Tabs                                                  */}

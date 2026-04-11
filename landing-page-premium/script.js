@@ -167,6 +167,11 @@
 
     let lastScrollY = window.scrollY;
     let ticking = false;
+    let cachedViewportHeight = window.innerHeight;
+
+    window.addEventListener('resize', () => {
+        cachedViewportHeight = window.innerHeight;
+    }, { passive: true });
 
     function onScroll() {
         const currentScrollY = window.scrollY;
@@ -183,8 +188,7 @@
             }
 
             // Hide on scroll down / show on scroll up (only past hero)
-            const heroHeight = window.innerHeight;
-            if (currentScrollY > heroHeight) {
+            if (currentScrollY > cachedViewportHeight) {
                 if (currentScrollY > lastScrollY) {
                     // Scrolling down — hide navbar
                     navbar.style.transform = 'translateY(-120%)';
@@ -199,9 +203,9 @@
         }
 
         // --- Parallax on hero background ---
-        if (currentScrollY < window.innerHeight) {
+        if (currentScrollY < cachedViewportHeight) {
             const offset = Math.round(currentScrollY * 0.3);
-            const transformValue = 'translateY(' + offset + 'px)';
+            const transformValue = `translate3d(0, ${offset}px, 0)`;
 
             if (heroVideo) {
                 heroVideo.style.transform = transformValue;

@@ -4,6 +4,7 @@ Stripe Connect: customer pays -> platform takes commission -> contractor gets pa
 """
 
 import os
+import time
 import logging
 from flask import Blueprint, request, jsonify, current_app
 from datetime import datetime, timezone, timedelta
@@ -228,6 +229,104 @@ def trigger_payout(user_id, job_id):
     db.session.commit()
 
     return jsonify({"success": True, "payment": payment.to_dict()}), 200
+
+
+@payments_bp.route("/payout/eligibility", methods=["GET"])
+@limiter.limit("5 per minute")
+@require_auth
+def get_payout_eligibility(user_id):
+    """Check balance available for instant payout on the contractor's Connect account."""
+    contractor = Contractor.query.filter_by(user_id=user_id).first()
+    if not contractor:
+        return jsonify({"error": "Contractor not found"}), 404
+    
+    if not contractor.stripe_connect_id:
+        return jsonify({
+            "eligible": False, 
+            "reason": "no_connect_account",
+            "available_amount": 0,
+            "currency": "usd"
+        })
+
+    stripe = _get_stripe()
+    stripe_key = os.environ.get("STRIPE_SECRET_KEY", "")
+
+    if not stripe_key or contractor.stripe_connect_id.startswith("acct_dev_"):
+        # Dev/Mock mode
+        return jsonify({
+            "eligible": True,
+            "available_amount": 125.50,
+            "currency": "usd",
+            "is_mock": True
+        })
+
+    try:
+        # Fetch balance from the CONNECT account
+        balance = stripe.Balance.retrieve(stripe_account=contractor.stripe_connect_id)
+        
+        # Instant payout pulls from 'available' balance
+        available = next((b.amount for b in balance.available if b.currency == 'usd'), 0)
+        
+        return jsonify({
+            "eligible": available >= 500, # Min $5 to payout
+            "available_amount": round(available / 100, 2),
+            "currency": "usd"
+        })
+    except Exception as e:
+        logger.exception("Failed to fetch Stripe balance for contractor %s", contractor.id)
+        return jsonify({"error": "Payment processing failed. Please try again."}), 502
+
+
+@payments_bp.route("/payout/instant", methods=["POST"])
+@limiter.limit("5 per minute")
+@require_auth
+def trigger_instant_payout(user_id):
+    """Trigger an instant payout from the Connect account to the contractor's external account."""
+    contractor = Contractor.query.filter_by(user_id=user_id).first()
+    if not contractor:
+        return jsonify({"error": "Contractor not found"}), 404
+
+    if not contractor.stripe_connect_id:
+        return jsonify({"error": "No Stripe Connect account found"}), 400
+
+    stripe = _get_stripe()
+    stripe_key = os.environ.get("STRIPE_SECRET_KEY", "")
+
+    if not stripe_key or contractor.stripe_connect_id.startswith("acct_dev_"):
+        # Dev/Mock mode
+        return jsonify({"success": True, "payout_id": "po_mock_123", "is_mock": True})
+
+    try:
+        # 1. Get available balance
+        balance = stripe.Balance.retrieve(stripe_account=contractor.stripe_connect_id)
+        available = next((b.amount for b in balance.available if b.currency == 'usd'), 0)
+        
+        if available < 500:
+            return jsonify({"error": "Insufficient balance for instant payout (Min $5.00)"}), 400
+
+        MAX_INSTANT_PAYOUT = 500000  # $5,000
+        if available > MAX_INSTANT_PAYOUT:
+            available = MAX_INSTANT_PAYOUT
+
+        # 2. Trigger Payout
+        payout = stripe.Payout.create(
+            amount=available,
+            currency="usd",
+            method="instant",
+            stripe_account=contractor.stripe_connect_id,
+            idempotency_key=f"payout_{contractor.id}_{int(time.time() // 60)}"
+        )
+        
+        logger.info("Instant payout triggered for contractor %s: %s", contractor.id, payout.id)
+        
+        return jsonify({
+            "success": True, 
+            "payout_id": payout.id,
+            "amount": round(available / 100, 2)
+        })
+    except Exception as e:
+        logger.exception("Stripe instant payout failed for contractor %s", contractor.id)
+        return jsonify({"error": "Payment processing failed. Please try again."}), 502
 
 
 @payments_bp.route("/create-intent-simple", methods=["POST"])

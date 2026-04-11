@@ -221,10 +221,13 @@ def list_jobs(user_id):
     """List all jobs with search, status filter, and date range."""
     status_filter = request.args.get("status")
     search = request.args.get("search", "").strip()
+    city = request.args.get("city", "").strip()
     date_from = request.args.get("date_from")
     date_to = request.args.get("date_to")
+    single_date = request.args.get("date")
     page = request.args.get("page", 1, type=int)
-    per_page = request.args.get("per_page", 20, type=int)
+    per_page = request.args.get("per_page") or request.args.get("limit") or 20
+    per_page = int(per_page)
 
     query = Job.query
     if status_filter:
@@ -242,19 +245,30 @@ def list_jobs(user_id):
             )
         )
 
-    if date_from:
-        try:
-            from_dt = datetime.fromisoformat(date_from.replace("Z", "+00:00"))
-            query = query.filter(Job.created_at >= from_dt)
-        except (ValueError, TypeError):
-            pass
+    if city:
+        query = query.filter(Job.address.ilike(f"%{city}%"))
 
-    if date_to:
+    if single_date and not date_from and not date_to:
         try:
-            to_dt = datetime.fromisoformat(date_to.replace("Z", "+00:00"))
-            query = query.filter(Job.created_at <= to_dt)
+            from_dt = datetime.fromisoformat(single_date + "T00:00:00")
+            to_dt = datetime.fromisoformat(single_date + "T23:59:59")
+            query = query.filter(Job.created_at >= from_dt, Job.created_at <= to_dt)
         except (ValueError, TypeError):
             pass
+    else:
+        if date_from:
+            try:
+                from_dt = datetime.fromisoformat(date_from.replace("Z", "+00:00"))
+                query = query.filter(Job.created_at >= from_dt)
+            except (ValueError, TypeError):
+                pass
+
+        if date_to:
+            try:
+                to_dt = datetime.fromisoformat(date_to.replace("Z", "+00:00"))
+                query = query.filter(Job.created_at <= to_dt)
+            except (ValueError, TypeError):
+                pass
 
     pagination = query.order_by(Job.created_at.desc()).paginate(page=page, per_page=per_page, error_out=False)
 
