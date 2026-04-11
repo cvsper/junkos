@@ -98,6 +98,10 @@
       "destination": "/sitemap.xml"
     },
     {
+      "source": "/junk-removal/:city/:service",
+      "destination": "/pages/junk-removal/:city/:service"
+    },
+    {
       "source": "/junk-removal/:city",
       "destination": "/pages/junk-removal/:city"
     },
@@ -124,6 +128,46 @@
     {
       "source": "/terms",
       "destination": "/terms"
+    },
+    {
+      "source": "/guides/:slug",
+      "destination": "/guides/:slug"
+    },
+    {
+      "source": "/commercial",
+      "destination": "/commercial/index.html"
+    },
+    {
+      "source": "/commercial/:slug",
+      "destination": "/commercial/:slug.html"
+    },
+    {
+      "source": "/services",
+      "destination": "/services/index.html"
+    },
+    {
+      "source": "/locations",
+      "destination": "/locations/index.html"
+    },
+    {
+      "source": "/guides",
+      "destination": "/guides/index.html"
+    },
+    {
+      "source": "/pricing",
+      "destination": "/pricing.html"
+    },
+    {
+      "source": "/text-quote",
+      "destination": "/text-quote.html"
+    },
+    {
+      "source": "/subscribe",
+      "destination": "/subscribe.html"
+    },
+    {
+      "source": "/partners/realtors",
+      "destination": "/partners/realtors.html"
     },
     {
       "source": "/(.*)",

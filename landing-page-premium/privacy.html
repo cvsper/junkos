@@ -3,11 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Umuve Privacy Policy - Learn how we collect, use, and protect your information.">
+    <meta name="description" content="Umuve Privacy Policy - Learn how we collect, use, and protect your personal information when using our junk removal services in South Florida.">
 
     <title>Privacy Policy — Umuve</title>
 
+    <link rel="canonical" href="https://goumuve.com/privacy">
     <link rel="icon" type="image/png" href="logo-icon.png">
+    <link rel="stylesheet" href="styles.css">
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -15,317 +17,532 @@
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        .policy-hero {
+            background: linear-gradient(135deg, #111111, #1a1a1a);
+            padding: 120px 0 60px;
+            text-align: center;
+        }
+        .policy-hero h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 42px;
+            font-weight: 800;
+            color: #fff;
+            margin-bottom: 12px;
+        }
+        .policy-hero .last-updated {
+            font-family: 'DM Sans', sans-serif;
+            font-size: 15px;
+            color: rgba(255, 255, 255, 0.5);
         }
 
-        body {
-            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            color: #1a1a1a;
-            background: #FFFFFF;
-            line-height: 1.6;
-        }
-
-        .container {
+        .policy-content {
             max-width: 800px;
             margin: 0 auto;
-            padding: 40px 20px;
+            padding: 60px 20px 80px;
         }
 
-        header {
-            text-align: center;
-            margin-bottom: 60px;
-            padding-bottom: 30px;
-            border-bottom: 2px solid #f0f0f0;
+        .policy-content p,
+        .policy-content li {
+            font-family: 'DM Sans', sans-serif;
+            font-size: 16px;
+            line-height: 1.75;
+            color: #333;
         }
 
-        .logo {
-            font-family: 'Outfit', sans-serif;
-            font-size: 32px;
-            font-weight: 800;
-            color: #DC2626;
-            margin-bottom: 10px;
-        }
-
-        .tagline {
-            font-size: 14px;
-            color: #666;
-            font-weight: 500;
-        }
-
-        h1 {
-            font-family: 'Outfit', sans-serif;
-            font-size: 36px;
-            font-weight: 700;
-            color: #1a1a1a;
-            margin-bottom: 10px;
-        }
-
-        .last-updated {
-            font-size: 14px;
-            color: #666;
-            margin-bottom: 40px;
-        }
-
-        h2 {
-            font-family: 'Outfit', sans-serif;
-            font-size: 24px;
-            font-weight: 600;
-            color: #DC2626;
-            margin-top: 40px;
+        .policy-content p {
             margin-bottom: 16px;
         }
 
-        h3 {
+        .policy-content h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 26px;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-top: 48px;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid rgba(220, 38, 38, 0.15);
+        }
+
+        .policy-content h3 {
             font-family: 'Outfit', sans-serif;
             font-size: 18px;
             font-weight: 600;
             color: #1a1a1a;
-            margin-top: 24px;
+            margin-top: 28px;
             margin-bottom: 12px;
         }
 
-        p {
-            font-size: 16px;
-            color: #333;
-            margin-bottom: 16px;
-        }
-
-        ul, ol {
+        .policy-content ul,
+        .policy-content ol {
             margin-left: 24px;
             margin-bottom: 16px;
         }
 
-        li {
-            font-size: 16px;
-            color: #333;
+        .policy-content li {
             margin-bottom: 8px;
         }
 
-        a {
+        .policy-content a {
             color: #DC2626;
             text-decoration: none;
             font-weight: 500;
         }
 
-        a:hover {
+        .policy-content a:hover {
             text-decoration: underline;
         }
 
+        .policy-content strong {
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+
         .contact-box {
-            background: #f8f8f8;
+            background: #F9FAFB;
             border-left: 4px solid #DC2626;
-            padding: 20px;
-            margin-top: 40px;
-            border-radius: 4px;
+            padding: 24px 28px;
+            margin-top: 48px;
+            border-radius: 0 8px 8px 0;
         }
 
         .contact-box h3 {
             margin-top: 0;
+            font-size: 20px;
+        }
+
+        .policy-toc {
+            background: #F9FAFB;
+            border-radius: 12px;
+            padding: 24px 28px;
+            margin-bottom: 40px;
+        }
+
+        .policy-toc h3 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 16px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin: 0 0 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .policy-toc ol {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .policy-toc li {
+            font-size: 15px;
+            margin-bottom: 6px;
+        }
+
+        .policy-toc a {
+            color: #5c5c5c;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .policy-toc a:hover {
+            color: #DC2626;
         }
 
         @media (max-width: 768px) {
-            .container {
-                padding: 30px 16px;
+            .policy-hero {
+                padding: 100px 0 40px;
             }
-
-            h1 {
-                font-size: 28px;
+            .policy-hero h1 {
+                font-size: 30px;
             }
-
-            h2 {
-                font-size: 20px;
+            .policy-content {
+                padding: 40px 16px 60px;
             }
-
-            .logo {
-                font-size: 24px;
+            .policy-content h2 {
+                font-size: 22px;
+                margin-top: 36px;
             }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <div class="logo">Umuve</div>
-            <div class="tagline">Hauling made simple.</div>
-        </header>
+    <!-- SVG Icon Sprite (minimal set for nav/footer) -->
+    <svg xmlns="http://www.w3.org/2000/svg" class="svg-sprite" style="display:none">
+        <symbol id="icon-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="4" x2="20" y1="12" y2="12"/>
+            <line x1="4" x2="20" y1="6" y2="6"/>
+            <line x1="4" x2="20" y1="18" y2="18"/>
+        </symbol>
+        <symbol id="icon-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 6 6 18"/>
+            <path d="m6 6 12 12"/>
+        </symbol>
+        <symbol id="icon-message" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z"/>
+        </symbol>
+    </svg>
 
-        <main>
-            <h1>Privacy Policy</h1>
-            <p class="last-updated">Last Updated: February 2026</p>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-content">
+                <div class="logo">
+                    <a href="/">
+                        <img src="logo-nav.png" alt="Umuve" style="height: 36px; width: auto;">
+                    </a>
+                </div>
 
-            <p>Welcome to Umuve. We respect your privacy and are committed to protecting your personal information. This Privacy Policy explains how we collect, use, share, and protect information when you use our mobile applications (Umuve customer app and Umuve Pro driver app) and website (goumuve.com).</p>
+                <!-- Hamburger Toggle (mobile only) -->
+                <button class="nav-toggle" aria-label="Toggle menu" aria-expanded="false">
+                    <svg class="icon nav-toggle-open"><use href="#icon-menu"/></svg>
+                    <svg class="icon nav-toggle-close"><use href="#icon-x"/></svg>
+                </button>
 
-            <h2>1. Information We Collect</h2>
-
-            <h3>Location Data</h3>
-            <p>We collect location information to provide our core services:</p>
-            <ul>
-                <li><strong>Pickup and delivery addresses</strong> you provide when booking a job</li>
-                <li><strong>Driver GPS location</strong> during active jobs for real-time tracking and navigation</li>
-                <li>Location data is only collected while you are using the app and only during active jobs for drivers</li>
-                <li>Precise location data is deleted after job completion and is not stored permanently</li>
-            </ul>
-
-            <h3>Photos</h3>
-            <p>You may optionally upload photos to help us estimate the volume of items to be hauled. Drivers also take photos as proof of job completion. Photo uploads are entirely optional for customers during the booking process.</p>
-
-            <h3>Contact Information</h3>
-            <ul>
-                <li><strong>Name and email</strong> via Apple Sign In (we do not have access to your Apple ID password)</li>
-                <li>Your email is used for booking confirmations, receipts, and important service communications</li>
-            </ul>
-
-            <h3>Payment Information</h3>
-            <ul>
-                <li>Payment information is processed by <strong>Stripe</strong>, our payment processor</li>
-                <li>We <strong>do not store</strong> your credit card numbers on our servers</li>
-                <li>We only store a tokenized reference provided by Stripe to process transactions</li>
-            </ul>
-
-            <h3>Device Information</h3>
-            <ul>
-                <li><strong>Push notification tokens</strong> to send you updates about your bookings and job status</li>
-                <li>Device type and operating system version for app compatibility and troubleshooting</li>
-            </ul>
-
-            <h3>Usage Data</h3>
-            <ul>
-                <li>Booking history, job details, and service preferences</li>
-                <li>Driver earnings history and payout information (for drivers)</li>
-                <li>App interaction data to improve our service</li>
-            </ul>
-
-            <h2>2. How We Use Information</h2>
-
-            <p>We use the information we collect to:</p>
-            <ul>
-                <li><strong>Provide junk removal and auto transport services</strong> you request</li>
-                <li><strong>Process bookings and payments</strong> securely through Stripe</li>
-                <li><strong>Match customers with nearby drivers</strong> for efficient service delivery</li>
-                <li><strong>Enable real-time job tracking</strong> so you can see your driver's location during active jobs</li>
-                <li><strong>Send notifications</strong> about job status, driver arrival, volume adjustments, and payment confirmations</li>
-                <li><strong>Improve service quality</strong> through analytics and user feedback</li>
-                <li><strong>Provide customer support</strong> and resolve disputes</li>
-                <li><strong>Comply with legal obligations</strong> and enforce our Terms of Service</li>
-            </ul>
-
-            <h2>3. Information Sharing</h2>
-
-            <p>We share information only as necessary to provide our services:</p>
-
-            <h3>With Service Providers (Drivers)</h3>
-            <ul>
-                <li>Drivers can see your pickup address, delivery address (if applicable), photos, and contact name to complete your job</li>
-                <li>Your payment information is <strong>never</strong> visible to drivers</li>
-            </ul>
-
-            <h3>With Payment Processors</h3>
-            <ul>
-                <li><strong>Stripe</strong> processes all payments and driver payouts securely</li>
-                <li>Stripe's privacy policy applies to payment data: <a href="https://stripe.com/privacy" target="_blank">stripe.com/privacy</a></li>
-            </ul>
-
-            <h3>With Cloud Service Providers</h3>
-            <ul>
-                <li>We use cloud hosting and storage services to operate our platform</li>
-                <li>All service providers are contractually required to protect your data</li>
-            </ul>
-
-            <h3>What We DO NOT Do</h3>
-            <ul>
-                <li>We <strong>do NOT sell</strong> your personal information to third parties</li>
-                <li>We <strong>do NOT share</strong> your data with advertisers or marketing companies</li>
-                <li>We <strong>do NOT use</strong> your data for tracking or targeted advertising</li>
-            </ul>
-
-            <h3>Legal Requirements</h3>
-            <p>We may disclose information if required by law, court order, or government regulation, or to protect the rights and safety of Umuve, our users, or the public.</p>
-
-            <h2>4. Data Retention</h2>
-
-            <ul>
-                <li><strong>Account data</strong> is retained while your account is active</li>
-                <li><strong>Job history</strong> is retained for 2 years for dispute resolution, support, and record-keeping</li>
-                <li><strong>Location data</strong> from GPS tracking is deleted after job completion and is not stored permanently</li>
-                <li><strong>Payment records</strong> are retained as required by financial regulations (typically 7 years)</li>
-                <li>When you delete your account, we remove your personal data within 30 days, except where retention is required by law</li>
-            </ul>
-
-            <h2>5. Your Rights</h2>
-
-            <p>You have the following rights regarding your personal information:</p>
-
-            <h3>Access Your Data</h3>
-            <p>You can request a copy of the personal information we hold about you by contacting <a href="mailto:support@goumuve.com">support@goumuve.com</a>.</p>
-
-            <h3>Request Deletion</h3>
-            <p>You can request deletion of your account and associated personal data. Note that some information may be retained for legal or operational reasons (e.g., payment records for tax purposes).</p>
-
-            <h3>Correct Information</h3>
-            <p>You can update your name and contact information in your account settings or by contacting support.</p>
-
-            <h3>Opt Out of Marketing</h3>
-            <p>You can opt out of promotional emails by clicking the unsubscribe link in any marketing email. Note that you cannot opt out of service-related emails (booking confirmations, receipts, important updates).</p>
-
-            <h3>Manage Location Permissions</h3>
-            <p>You can control location access through your device settings. Note that disabling location services will prevent you from using core features like real-time tracking and driver navigation.</p>
-
-            <h2>6. Data Security</h2>
-
-            <p>We implement industry-standard security measures to protect your information:</p>
-            <ul>
-                <li>All data transmitted between your device and our servers is <strong>encrypted using HTTPS/TLS</strong></li>
-                <li>Payment processing is handled by <strong>PCI-compliant Stripe</strong></li>
-                <li>Access to personal data is restricted to authorized personnel only</li>
-                <li>We regularly review and update our security practices</li>
-            </ul>
-
-            <p>However, no method of transmission over the internet is 100% secure. While we strive to protect your information, we cannot guarantee absolute security.</p>
-
-            <h2>7. Children's Privacy</h2>
-
-            <p>Our services are not intended for individuals under 18 years of age. We do not knowingly collect personal information from children. If you believe we have inadvertently collected information from a child, please contact us immediately at <a href="mailto:support@goumuve.com">support@goumuve.com</a>.</p>
-
-            <h2>8. Changes to This Policy</h2>
-
-            <p>We may update this Privacy Policy from time to time to reflect changes in our practices or legal requirements. We will notify you of significant changes by:</p>
-            <ul>
-                <li>Updating the "Last Updated" date at the top of this page</li>
-                <li>Sending an email notification for material changes</li>
-                <li>Displaying an in-app notification</li>
-            </ul>
-
-            <p>Your continued use of our services after changes are posted constitutes acceptance of the updated policy.</p>
-
-            <h2>9. International Data Transfers</h2>
-
-            <p>Umuve is based in the United States. If you are accessing our services from outside the U.S., your information may be transferred to, stored, and processed in the United States or other countries where our service providers operate. By using our services, you consent to this transfer.</p>
-
-            <h2>10. California Privacy Rights</h2>
-
-            <p>If you are a California resident, you have additional rights under the California Consumer Privacy Act (CCPA):</p>
-            <ul>
-                <li>Right to know what personal information is collected, used, shared, or sold</li>
-                <li>Right to delete personal information (with certain exceptions)</li>
-                <li>Right to opt out of the sale of personal information (note: we do not sell personal information)</li>
-                <li>Right to non-discrimination for exercising your CCPA rights</li>
-            </ul>
-
-            <p>To exercise these rights, contact us at <a href="mailto:support@goumuve.com">support@goumuve.com</a>.</p>
-
-            <div class="contact-box">
-                <h3>Contact Us</h3>
-                <p>If you have questions or concerns about this Privacy Policy or our data practices, please contact us:</p>
-                <p>
-                    <strong>Email:</strong> <a href="mailto:support@goumuve.com">support@goumuve.com</a><br>
-                    <strong>Website:</strong> <a href="https://goumuve.com">goumuve.com</a>
-                </p>
-                <p>We will respond to your inquiry within 30 days.</p>
+                <div class="nav-links">
+                    <a href="/#services" class="nav-link">Services</a>
+                    <a href="/#pricing" class="nav-link">Pricing</a>
+                    <a href="/#how-it-works" class="nav-link">How It Works</a>
+                    <a href="/#areas" class="nav-link">Service Areas</a>
+                    <a href="/#faq" class="nav-link">FAQ</a>
+                    <a href="https://app.goumuve.com/book" class="btn btn-glow" rel="noopener">
+                        <span>Book Now</span>
+                    </a>
+                </div>
             </div>
-        </main>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="policy-hero">
+        <div class="container">
+            <h1>Privacy Policy</h1>
+            <p class="last-updated">Last Updated: April 6, 2026</p>
+        </div>
+    </section>
+
+    <!-- Policy Content -->
+    <div class="policy-content">
+        <p>Welcome to Umuve ("we," "us," or "our"). We respect your privacy and are committed to protecting your personal information. This Privacy Policy explains how we collect, use, share, and protect information when you use our website (goumuve.com), mobile applications (Umuve and Umuve Pro), and related services (collectively, the "Services").</p>
+
+        <p>By using our Services, you agree to the collection and use of information as described in this policy. If you do not agree, please do not use our Services.</p>
+
+        <!-- Table of Contents -->
+        <nav class="policy-toc">
+            <h3>Contents</h3>
+            <ol>
+                <li><a href="#information-we-collect">Information We Collect</a></li>
+                <li><a href="#how-we-use">How We Use Your Information</a></li>
+                <li><a href="#third-party-services">Third-Party Services</a></li>
+                <li><a href="#information-sharing">Information Sharing</a></li>
+                <li><a href="#cookies-tracking">Cookies and Tracking Technologies</a></li>
+                <li><a href="#data-retention">Data Retention</a></li>
+                <li><a href="#data-security">Data Security</a></li>
+                <li><a href="#your-rights">Your Rights and Choices</a></li>
+                <li><a href="#california-privacy">California Privacy Rights (CCPA)</a></li>
+                <li><a href="#florida-privacy">Florida Privacy Rights</a></li>
+                <li><a href="#children">Children's Privacy</a></li>
+                <li><a href="#international">International Data Transfers</a></li>
+                <li><a href="#changes">Changes to This Policy</a></li>
+                <li><a href="#contact">Contact Us</a></li>
+            </ol>
+        </nav>
+
+        <!-- 1. Information We Collect -->
+        <h2 id="information-we-collect">1. Information We Collect</h2>
+
+        <h3>Personal Information You Provide</h3>
+        <p>When you use our Services, you may provide us with the following information:</p>
+        <ul>
+            <li><strong>Name</strong> — your first and last name, provided during account creation or booking</li>
+            <li><strong>Email address</strong> — used for account login, booking confirmations, receipts, and service communications</li>
+            <li><strong>Phone number</strong> — used for SMS updates about your booking, driver arrival notifications, and customer support</li>
+            <li><strong>Service address</strong> — the pickup location where junk removal will be performed</li>
+            <li><strong>Photos</strong> — images you optionally upload of items to be removed, used to generate accurate quotes</li>
+            <li><strong>Payment information</strong> — credit card, debit card, or Apple Pay details processed securely through Stripe (we never store your full card number)</li>
+        </ul>
+
+        <h3>Information Collected Automatically</h3>
+        <p>When you visit our website or use our apps, we may automatically collect:</p>
+        <ul>
+            <li><strong>Device information</strong> — device type, operating system, browser type, and version</li>
+            <li><strong>Usage data</strong> — pages visited, time spent on pages, click patterns, and referring URLs</li>
+            <li><strong>IP address</strong> — used for approximate location, security, and analytics</li>
+            <li><strong>Location data</strong> — GPS data from drivers during active jobs for real-time tracking; approximate location from customers for service area verification</li>
+            <li><strong>Cookies and similar technologies</strong> — see Section 5 for details</li>
+        </ul>
+
+        <h3>Information from Third Parties</h3>
+        <ul>
+            <li><strong>Apple Sign In</strong> — if you sign in with Apple, we receive your name and email (we never access your Apple ID password)</li>
+            <li><strong>Google Sign In</strong> — if you sign in with Google, we receive your name, email, and profile photo</li>
+        </ul>
+
+        <!-- 2. How We Use Your Information -->
+        <h2 id="how-we-use">2. How We Use Your Information</h2>
+
+        <p>We use the information we collect to:</p>
+
+        <h3>Provide and Improve Our Services</h3>
+        <ul>
+            <li>Process and fulfill junk removal bookings</li>
+            <li>Generate quotes based on photos and item descriptions</li>
+            <li>Match customers with nearby operators for efficient service</li>
+            <li>Enable real-time job tracking so you can see your operator's location</li>
+            <li>Process payments and issue receipts</li>
+            <li>Provide customer support and resolve disputes</li>
+        </ul>
+
+        <h3>Communication</h3>
+        <ul>
+            <li>Send booking confirmations, status updates, and receipts via email</li>
+            <li>Send SMS notifications about driver arrival, schedule changes, and job completion</li>
+            <li>Respond to your questions and support requests</li>
+        </ul>
+
+        <h3>Marketing (with your consent)</h3>
+        <ul>
+            <li>Send promotional offers, discounts, and service updates</li>
+            <li>Display relevant advertisements on social media platforms</li>
+            <li>Measure the effectiveness of our advertising campaigns</li>
+        </ul>
+        <p>You can opt out of marketing communications at any time (see Section 8).</p>
+
+        <h3>Safety and Security</h3>
+        <ul>
+            <li>Detect and prevent fraud, abuse, and unauthorized access</li>
+            <li>Enforce our Terms of Service</li>
+            <li>Comply with legal obligations</li>
+        </ul>
+
+        <!-- 3. Third-Party Services -->
+        <h2 id="third-party-services">3. Third-Party Services</h2>
+
+        <p>We use trusted third-party services to operate our platform. These providers only access your data as necessary to perform their functions and are contractually obligated to protect it.</p>
+
+        <h3>Stripe (Payment Processing)</h3>
+        <p>All payment transactions are processed by <a href="https://stripe.com/privacy" target="_blank" rel="noopener">Stripe</a>, a PCI-DSS compliant payment processor. We never store your full credit card number on our servers. Stripe receives your payment details to process charges and issue refunds.</p>
+
+        <h3>Twilio (SMS Communications)</h3>
+        <p><a href="https://www.twilio.com/legal/privacy" target="_blank" rel="noopener">Twilio</a> powers our SMS notifications. Your phone number is shared with Twilio to deliver booking confirmations, operator arrival alerts, and other service-related text messages. Standard messaging rates may apply.</p>
+
+        <h3>Google Analytics</h3>
+        <p>We use <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google Analytics</a> to understand how visitors interact with our website. Google Analytics collects anonymized data about page views, session duration, traffic sources, and user demographics. You can opt out using the <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener">Google Analytics Opt-out Browser Add-on</a>.</p>
+
+        <h3>Meta Pixel (Facebook)</h3>
+        <p>We use the <a href="https://www.facebook.com/privacy/policy/" target="_blank" rel="noopener">Meta Pixel</a> to measure the effectiveness of our advertising on Facebook and Instagram, and to show relevant ads to people who have visited our website. The pixel collects data about website visits, pages viewed, and actions taken. You can manage your ad preferences in your <a href="https://www.facebook.com/adpreferences" target="_blank" rel="noopener">Facebook Ad Settings</a>.</p>
+
+        <h3>Google Ads</h3>
+        <p>We use Google Ads conversion tracking to measure the effectiveness of our search advertising. This may involve cookies that track whether you completed a booking after clicking an ad.</p>
+
+        <h3>Cloud Hosting</h3>
+        <p>Our platform is hosted on cloud infrastructure providers that maintain industry-standard security certifications. All data is stored in the United States.</p>
+
+        <!-- 4. Information Sharing -->
+        <h2 id="information-sharing">4. Information Sharing</h2>
+
+        <h3>With Service Operators (Drivers)</h3>
+        <p>When you book a job, your operator receives your name, pickup address, item photos, and special instructions to complete the service. Your payment information is <strong>never</strong> shared with operators.</p>
+
+        <h3>What We Do NOT Do</h3>
+        <ul>
+            <li>We <strong>do NOT sell</strong> your personal information to third parties</li>
+            <li>We <strong>do NOT rent</strong> or lease your personal data</li>
+            <li>We <strong>do NOT share</strong> your information with data brokers</li>
+        </ul>
+
+        <h3>Legal Requirements</h3>
+        <p>We may disclose your information if required to do so by law, court order, or governmental regulation, or if we believe disclosure is necessary to protect the rights, property, or safety of Umuve, our users, or the public.</p>
+
+        <h3>Business Transfers</h3>
+        <p>If Umuve is involved in a merger, acquisition, or sale of assets, your personal information may be transferred as part of that transaction. We will notify you of any such change in ownership or control of your personal data.</p>
+
+        <!-- 5. Cookies and Tracking -->
+        <h2 id="cookies-tracking">5. Cookies and Tracking Technologies</h2>
+
+        <p>Our website uses cookies and similar technologies to enhance your experience and gather usage data.</p>
+
+        <h3>Types of Cookies We Use</h3>
+        <ul>
+            <li><strong>Essential cookies</strong> — required for core website functionality (e.g., maintaining your session during booking)</li>
+            <li><strong>Analytics cookies</strong> — help us understand how visitors use our site (Google Analytics)</li>
+            <li><strong>Advertising cookies</strong> — used to measure ad effectiveness and deliver relevant ads (Meta Pixel, Google Ads)</li>
+        </ul>
+
+        <h3>Managing Cookies</h3>
+        <p>You can control cookies through your browser settings. Most browsers allow you to block or delete cookies. However, disabling essential cookies may affect the functionality of our website. You can also use the following tools:</p>
+        <ul>
+            <li><a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener">Google Analytics Opt-out Add-on</a></li>
+            <li><a href="https://www.facebook.com/adpreferences" target="_blank" rel="noopener">Facebook Ad Preferences</a></li>
+            <li><a href="https://adssettings.google.com" target="_blank" rel="noopener">Google Ads Settings</a></li>
+        </ul>
+
+        <h3>Do Not Track</h3>
+        <p>Some browsers offer a "Do Not Track" (DNT) signal. Our website does not currently respond to DNT signals, as there is no industry-standard protocol for compliance. However, you can use the opt-out tools listed above to manage tracking preferences.</p>
+
+        <!-- 6. Data Retention -->
+        <h2 id="data-retention">6. Data Retention</h2>
+
+        <p>We retain your information only as long as necessary to fulfill the purposes described in this policy:</p>
+        <ul>
+            <li><strong>Account data</strong> — retained while your account is active, deleted within 30 days of account deletion request</li>
+            <li><strong>Booking and job history</strong> — retained for 3 years for dispute resolution, quality assurance, and record-keeping</li>
+            <li><strong>GPS location data</strong> — deleted after job completion; not stored permanently</li>
+            <li><strong>Payment records</strong> — retained for 7 years as required by financial regulations and tax law</li>
+            <li><strong>Support correspondence</strong> — retained for 2 years after last interaction</li>
+            <li><strong>Analytics data</strong> — retained in anonymized form for up to 26 months (per Google Analytics default settings)</li>
+            <li><strong>Marketing preferences</strong> — retained until you opt out or delete your account</li>
+        </ul>
+
+        <!-- 7. Data Security -->
+        <h2 id="data-security">7. Data Security</h2>
+
+        <p>We take the security of your personal information seriously and implement appropriate technical and organizational measures, including:</p>
+        <ul>
+            <li>All data transmitted between your device and our servers is <strong>encrypted using HTTPS/TLS</strong></li>
+            <li>Payment processing is handled by <strong>PCI-DSS compliant Stripe</strong></li>
+            <li>Access to personal data is restricted to authorized personnel on a need-to-know basis</li>
+            <li>We use secure cloud infrastructure with regular security audits</li>
+            <li>Passwords are hashed and never stored in plain text</li>
+        </ul>
+
+        <p>While we strive to protect your information using commercially reasonable measures, no method of transmission over the internet or electronic storage is 100% secure. We cannot guarantee absolute security.</p>
+
+        <!-- 8. Your Rights and Choices -->
+        <h2 id="your-rights">8. Your Rights and Choices</h2>
+
+        <h3>Access Your Data</h3>
+        <p>You can request a copy of the personal information we hold about you by emailing <a href="mailto:support@goumuve.com">support@goumuve.com</a>. We will respond within 30 days.</p>
+
+        <h3>Request Deletion</h3>
+        <p>You can request deletion of your account and associated personal data by contacting <a href="mailto:support@goumuve.com">support@goumuve.com</a>. We will process your request within 30 days. Note that some information may be retained where required by law (e.g., payment records for tax purposes).</p>
+
+        <h3>Correct Your Information</h3>
+        <p>You can update your name, email, and phone number in your account settings at any time, or by contacting our support team.</p>
+
+        <h3>Opt Out of Marketing</h3>
+        <ul>
+            <li><strong>Email</strong> — click the "Unsubscribe" link in any promotional email</li>
+            <li><strong>SMS</strong> — reply STOP to any marketing text message</li>
+            <li><strong>Push notifications</strong> — disable through your device settings</li>
+        </ul>
+        <p>Note: You cannot opt out of transactional messages related to active bookings (confirmations, receipts, job status updates).</p>
+
+        <h3>Manage Location Permissions</h3>
+        <p>You can control location access through your device's privacy settings. Disabling location services may limit core app features such as real-time tracking.</p>
+
+        <!-- 9. California Privacy Rights -->
+        <h2 id="california-privacy">9. California Privacy Rights (CCPA/CPRA)</h2>
+
+        <p>If you are a California resident, you have additional rights under the California Consumer Privacy Act (CCPA) and California Privacy Rights Act (CPRA):</p>
+        <ul>
+            <li><strong>Right to Know</strong> — you can request details about what personal information we collect, use, disclose, and sell</li>
+            <li><strong>Right to Delete</strong> — you can request deletion of your personal information, subject to certain exceptions</li>
+            <li><strong>Right to Opt Out of Sale</strong> — we do <strong>not sell</strong> your personal information, so no opt-out is necessary</li>
+            <li><strong>Right to Non-Discrimination</strong> — we will not deny you services, charge different prices, or provide a different quality of service for exercising your privacy rights</li>
+            <li><strong>Right to Correct</strong> — you can request correction of inaccurate personal information</li>
+            <li><strong>Right to Limit Use of Sensitive Information</strong> — you can direct us to limit the use of sensitive personal information to what is necessary to provide the services</li>
+        </ul>
+
+        <p>To exercise any of these rights, contact us at <a href="mailto:support@goumuve.com">support@goumuve.com</a> or call <a href="tel:+15619441636">(561) 944-1636</a>. We will verify your identity before processing your request and respond within 45 days.</p>
+
+        <!-- 10. Florida Privacy Rights -->
+        <h2 id="florida-privacy">10. Florida Privacy Rights</h2>
+
+        <p>If you are a Florida resident, you may have additional rights under applicable Florida privacy laws:</p>
+        <ul>
+            <li><strong>Right to Access</strong> — you can request access to the personal information we have collected about you</li>
+            <li><strong>Right to Deletion</strong> — you can request that we delete your personal data</li>
+            <li><strong>Right to Correct</strong> — you can request correction of inaccurate information</li>
+            <li><strong>Right to Opt Out</strong> — you can opt out of the processing of your personal data for targeted advertising, the sale of personal data, or profiling in furtherance of decisions that produce legal or significant effects</li>
+        </ul>
+
+        <p>We do not sell personal data or use it for automated profiling that produces legal effects. To exercise your rights, contact us at <a href="mailto:support@goumuve.com">support@goumuve.com</a> or call <a href="tel:+15619441636">(561) 944-1636</a>.</p>
+
+        <!-- 11. Children's Privacy -->
+        <h2 id="children">11. Children's Privacy</h2>
+
+        <p>Our Services are not directed to children under the age of 13, and we do not knowingly collect personal information from children under 13. If you are a parent or guardian and believe your child has provided us with personal information, please contact us immediately at <a href="mailto:support@goumuve.com">support@goumuve.com</a>. If we become aware that we have collected personal information from a child under 13 without verification of parental consent, we will take steps to delete that information promptly.</p>
+
+        <p>Additionally, users must be at least 18 years old to create an account and book services on Umuve.</p>
+
+        <!-- 12. International Data Transfers -->
+        <h2 id="international">12. International Data Transfers</h2>
+
+        <p>Umuve is based in Florida, United States. If you access our Services from outside the United States, your information may be transferred to, stored, and processed in the United States or other countries where our service providers operate. By using our Services, you consent to this transfer. We take appropriate measures to ensure your data is protected in accordance with this Privacy Policy, regardless of where it is processed.</p>
+
+        <!-- 13. Changes to This Policy -->
+        <h2 id="changes">13. Changes to This Policy</h2>
+
+        <p>We may update this Privacy Policy from time to time to reflect changes in our practices, technologies, legal requirements, or other factors. When we make changes:</p>
+        <ul>
+            <li>We will update the "Last Updated" date at the top of this page</li>
+            <li>For material changes, we will notify you by email or through an in-app notification</li>
+            <li>We encourage you to review this page periodically</li>
+        </ul>
+
+        <p>Your continued use of our Services after changes are posted constitutes acceptance of the updated policy.</p>
+
+        <!-- 14. Contact Us -->
+        <h2 id="contact">14. Contact Us</h2>
+
+        <div class="contact-box">
+            <h3>Questions About This Policy?</h3>
+            <p>If you have questions, concerns, or requests regarding this Privacy Policy or our data practices, please contact us:</p>
+            <p>
+                <strong>Email:</strong> <a href="mailto:support@goumuve.com">support@goumuve.com</a><br>
+                <strong>Phone:</strong> <a href="tel:+15619441636">(561) 944-1636</a><br>
+                <strong>Website:</strong> <a href="https://goumuve.com">goumuve.com</a><br>
+                <strong>Service Area:</strong> Palm Beach County &amp; Broward County, South Florida
+            </p>
+            <p>We will respond to all privacy-related inquiries within 30 days.</p>
+        </div>
     </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <div class="logo">
+                        <img src="logo-full.png" alt="Umuve" style="height: 36px; width: auto;" loading="lazy" width="120" height="36">
+                        <span class="logo-text">Umuve</span>
+                    </div>
+                    <p>South Florida's fastest junk removal service</p>
+                </div>
+
+                <div class="footer-links">
+                    <h4>Contact</h4>
+                    <a href="tel:+15619441636">(561) 944-1636</a>
+                    <a href="sms:+15619441636">Text Us</a>
+                    <a href="mailto:info@goumuve.com">info@goumuve.com</a>
+                </div>
+
+                <div class="footer-links">
+                    <h4>Hours</h4>
+                    <p>Mon-Sat: 7am-7pm</p>
+                    <p>Sun: 8am-5pm</p>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <p>&copy; 2026 Umuve. Licensed & Insured.</p>
+                <p>Serving Palm Beach & Broward County, Florida</p>
+                <p style="margin-top: 8px;"><a href="/privacy" style="color: rgba(255,255,255,0.7); text-decoration: none;">Privacy Policy</a> | <a href="/terms" style="color: rgba(255,255,255,0.7); text-decoration: none;">Terms of Service</a></p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Mobile nav toggle script -->
+    <script>
+        const toggle = document.querySelector('.nav-toggle');
+        if (toggle) {
+            toggle.addEventListener('click', () => {
+                const nav = document.querySelector('.nav-links');
+                const expanded = toggle.getAttribute('aria-expanded') === 'true';
+                toggle.setAttribute('aria-expanded', !expanded);
+                nav.classList.toggle('nav-open');
+            });
+        }
+    </script>
 </body>
 </html>

@@ -3,7 +3,16 @@
     "name": "Furniture Removal",
     "slug": "furniture-removal",
     "description": "Professional furniture removal service in South Florida. We haul away couches, mattresses, dressers, tables, chairs, and all types of household furniture.",
-    "items": ["Couches & Sofas", "Mattresses & Box Springs", "Dressers & Armoires", "Dining Tables & Chairs", "Office Desks", "Entertainment Centers", "Bookshelves", "Recliners & Loveseats"],
+    "items": [
+      "Couches & Sofas",
+      "Mattresses & Box Springs",
+      "Dressers & Armoires",
+      "Dining Tables & Chairs",
+      "Office Desks",
+      "Entertainment Centers",
+      "Bookshelves",
+      "Recliners & Loveseats"
+    ],
     "avgCost": 189,
     "minCost": 89,
     "maxCost": 499,
@@ -17,13 +26,32 @@
       "Do you donate usable furniture?"
     ],
     "disposal": "We partner with Habitat for Humanity, Goodwill, and local furniture banks to donate usable pieces. Damaged furniture is recycled for materials recovery.",
-    "process": "We'll assess your furniture, provide a quote, handle all lifting and loading, and ensure proper disposal or donation."
+    "process": "We'll assess your furniture, provide a quote, handle all lifting and loading, and ensure proper disposal or donation.",
+    "competitorPricing": {
+      "gotJunk": {
+        "min": 298,
+        "max": 558
+      },
+      "junkKing": {
+        "min": 249,
+        "max": 499
+      }
+    }
   },
   {
     "name": "Appliance Removal",
     "slug": "appliance-removal",
     "description": "Same-day appliance removal and disposal in Palm Beach and Broward County. Refrigerators, washers, dryers, stoves, and more.",
-    "items": ["Refrigerators & Freezers", "Washers & Dryers", "Dishwashers", "Stoves & Ovens", "Microwaves", "Water Heaters", "Air Conditioners", "Dehumidifiers"],
+    "items": [
+      "Refrigerators & Freezers",
+      "Washers & Dryers",
+      "Dishwashers",
+      "Stoves & Ovens",
+      "Microwaves",
+      "Water Heaters",
+      "Air Conditioners",
+      "Dehumidifiers"
+    ],
     "avgCost": 145,
     "minCost": 89,
     "maxCost": 299,
@@ -37,13 +65,32 @@
       "What happens to old appliances?"
     ],
     "disposal": "All appliances are taken to certified recycling facilities. Refrigerants are properly recovered per EPA guidelines. Metals, plastics, and electronics are separated for recycling.",
-    "process": "We'll disconnect appliances safely (if needed), remove them from your home, and transport them to appropriate recycling facilities."
+    "process": "We'll disconnect appliances safely (if needed), remove them from your home, and transport them to appropriate recycling facilities.",
+    "competitorPricing": {
+      "gotJunk": {
+        "min": 198,
+        "max": 398
+      },
+      "junkKing": {
+        "min": 179,
+        "max": 349
+      }
+    }
   },
   {
     "name": "Mattress Disposal",
     "slug": "mattress-disposal",
     "description": "Eco-friendly mattress and box spring removal in South Florida. Same-day pickup available. We recycle mattress components to keep them out of landfills.",
-    "items": ["Twin Mattresses", "Full/Double Mattresses", "Queen Mattresses", "King Mattresses", "California King", "Box Springs", "Memory Foam Mattresses", "Adjustable Beds"],
+    "items": [
+      "Twin Mattresses",
+      "Full/Double Mattresses",
+      "Queen Mattresses",
+      "King Mattresses",
+      "California King",
+      "Box Springs",
+      "Memory Foam Mattresses",
+      "Adjustable Beds"
+    ],
     "avgCost": 119,
     "minCost": 89,
     "maxCost": 199,
@@ -57,13 +104,32 @@
       "How do you recycle mattresses?"
     ],
     "disposal": "Mattresses are disassembled at recycling facilities. Steel springs are melted down, foam is repurposed for carpet padding, and fabric is processed into fiber.",
-    "process": "We'll remove your mattress and box spring from anywhere in your home, wrap them for transport, and deliver them to specialized mattress recycling facilities."
+    "process": "We'll remove your mattress and box spring from anywhere in your home, wrap them for transport, and deliver them to specialized mattress recycling facilities.",
+    "competitorPricing": {
+      "gotJunk": {
+        "min": 198,
+        "max": 358
+      },
+      "junkKing": {
+        "min": 149,
+        "max": 299
+      }
+    }
   },
   {
     "name": "Estate Cleanout",
     "slug": "estate-cleanout",
     "description": "Compassionate, professional estate cleanout services in South Florida. We handle entire homes, apartments, and storage units with care and respect.",
-    "items": ["Full Home Cleanouts", "Apartment Cleanouts", "Storage Unit Emptying", "Garage Clearing", "Attic & Basement Cleanouts", "Downsizing Assistance", "Hoarding Cleanouts", "Foreclosure Cleanouts"],
+    "items": [
+      "Full Home Cleanouts",
+      "Apartment Cleanouts",
+      "Storage Unit Emptying",
+      "Garage Clearing",
+      "Attic & Basement Cleanouts",
+      "Downsizing Assistance",
+      "Hoarding Cleanouts",
+      "Foreclosure Cleanouts"
+    ],
     "avgCost": 1240,
     "minCost": 399,
     "maxCost": 3500,
@@ -77,13 +143,32 @@
       "What items can you donate?"
     ],
     "disposal": "We work with local charities, donation centers, and recycling facilities to minimize waste. Valuable items can be set aside for families. We handle everything with dignity and care.",
-    "process": "We'll walk through the property with you, sort items for donation/disposal/keeping, handle all heavy lifting, and leave the space clean and ready."
+    "process": "We'll walk through the property with you, sort items for donation/disposal/keeping, handle all heavy lifting, and leave the space clean and ready.",
+    "competitorPricing": {
+      "gotJunk": {
+        "min": 998,
+        "max": 2998
+      },
+      "junkKing": {
+        "min": 899,
+        "max": 2499
+      }
+    }
   },
   {
     "name": "Construction Debris",
     "slug": "construction-debris",
     "description": "Construction debris removal for contractors and homeowners in South Florida. Drywall, lumber, tile, concrete, and renovation waste.",
-    "items": ["Drywall & Sheetrock", "Lumber & Wood Scraps", "Tile & Flooring", "Concrete & Masonry", "Carpet & Padding", "Cabinets & Countertops", "Bathroom Fixtures", "Doors & Windows"],
+    "items": [
+      "Drywall & Sheetrock",
+      "Lumber & Wood Scraps",
+      "Tile & Flooring",
+      "Concrete & Masonry",
+      "Carpet & Padding",
+      "Cabinets & Countertops",
+      "Bathroom Fixtures",
+      "Doors & Windows"
+    ],
     "avgCost": 325,
     "minCost": 149,
     "maxCost": 899,
@@ -97,13 +182,32 @@
       "Do you work with contractors?"
     ],
     "disposal": "Metal, wood, and concrete are separated for recycling. Drywall goes to specialized facilities. We do NOT accept asbestos, lead paint, or hazardous waste.",
-    "process": "We'll load all construction debris, separate recyclables, and haul everything to appropriate facilities. Perfect for renovation projects and contractor cleanups."
+    "process": "We'll load all construction debris, separate recyclables, and haul everything to appropriate facilities. Perfect for renovation projects and contractor cleanups.",
+    "competitorPricing": {
+      "gotJunk": {
+        "min": 398,
+        "max": 798
+      },
+      "junkKing": {
+        "min": 349,
+        "max": 699
+      }
+    }
   },
   {
     "name": "Hot Tub Removal",
     "slug": "hot-tub-removal",
     "description": "Professional hot tub and spa removal in Palm Beach and Broward County. We handle disconnection, demolition if needed, and complete removal.",
-    "items": ["Above-Ground Hot Tubs", "In-Ground Spas", "Jacuzzis", "Swim Spas", "Hot Tub Covers", "Spa Equipment", "Pool Heaters", "Sauna Units"],
+    "items": [
+      "Above-Ground Hot Tubs",
+      "In-Ground Spas",
+      "Jacuzzis",
+      "Swim Spas",
+      "Hot Tub Covers",
+      "Spa Equipment",
+      "Pool Heaters",
+      "Sauna Units"
+    ],
     "avgCost": 425,
     "minCost": 299,
     "maxCost": 799,
@@ -117,13 +221,32 @@
       "What about crane access?"
     ],
     "disposal": "Hot tubs are disassembled on-site. Acrylic shells are recycled, wood frames are processed as lumber, and electrical components are recycled as e-waste.",
-    "process": "We'll disconnect utilities (or coordinate with your electrician), cut the tub into manageable sections if needed, remove all debris, and clean up the area."
+    "process": "We'll disconnect utilities (or coordinate with your electrician), cut the tub into manageable sections if needed, remove all debris, and clean up the area.",
+    "competitorPricing": {
+      "gotJunk": {
+        "min": 598,
+        "max": 998
+      },
+      "junkKing": {
+        "min": 499,
+        "max": 899
+      }
+    }
   },
   {
     "name": "Yard Waste Removal",
     "slug": "yard-waste-removal",
     "description": "Yard waste and landscaping debris removal in South Florida. Tree branches, brush, leaves, sod, and green waste hauling.",
-    "items": ["Tree Branches & Limbs", "Brush & Shrubs", "Leaves & Grass Clippings", "Sod & Dirt", "Palm Fronds", "Hedge Trimmings", "Fallen Trees", "Landscaping Debris"],
+    "items": [
+      "Tree Branches & Limbs",
+      "Brush & Shrubs",
+      "Leaves & Grass Clippings",
+      "Sod & Dirt",
+      "Palm Fronds",
+      "Hedge Trimmings",
+      "Fallen Trees",
+      "Landscaping Debris"
+    ],
     "avgCost": 165,
     "minCost": 89,
     "maxCost": 499,
@@ -137,13 +260,32 @@
       "Do you compost yard waste?"
     ],
     "disposal": "All yard waste goes to composting facilities or is processed into mulch. Nothing goes to landfills. Perfect for post-storm cleanup and landscaping projects.",
-    "process": "We'll load all yard waste, including branches, leaves, and debris. Great for after landscaping work, tree removal, or storm cleanup."
+    "process": "We'll load all yard waste, including branches, leaves, and debris. Great for after landscaping work, tree removal, or storm cleanup.",
+    "competitorPricing": {
+      "gotJunk": {
+        "min": 198,
+        "max": 498
+      },
+      "junkKing": {
+        "min": 179,
+        "max": 449
+      }
+    }
   },
   {
     "name": "Electronics Recycling",
     "slug": "electronics-recycling",
     "description": "Certified electronics recycling and e-waste removal in South Florida. Secure data destruction and environmentally responsible disposal.",
-    "items": ["Computers & Laptops", "TVs & Monitors", "Printers & Scanners", "Cell Phones & Tablets", "Gaming Consoles", "Stereo Equipment", "Cables & Accessories", "Small Appliances"],
+    "items": [
+      "Computers & Laptops",
+      "TVs & Monitors",
+      "Printers & Scanners",
+      "Cell Phones & Tablets",
+      "Gaming Consoles",
+      "Stereo Equipment",
+      "Cables & Accessories",
+      "Small Appliances"
+    ],
     "avgCost": 125,
     "minCost": 89,
     "maxCost": 299,
@@ -157,13 +299,32 @@
       "Are you R2 certified?"
     ],
     "disposal": "All electronics go to R2-certified recycling facilities. Hard drives are wiped or destroyed. Precious metals, glass, and plastics are recovered. No e-waste goes to landfills.",
-    "process": "We'll collect all electronics, provide secure data destruction if needed, and transport everything to certified e-waste recycling facilities."
+    "process": "We'll collect all electronics, provide secure data destruction if needed, and transport everything to certified e-waste recycling facilities.",
+    "competitorPricing": {
+      "gotJunk": {
+        "min": 198,
+        "max": 358
+      },
+      "junkKing": {
+        "min": 149,
+        "max": 299
+      }
+    }
   },
   {
     "name": "Garage Cleanout",
     "slug": "garage-cleanout",
     "description": "Complete garage cleanout services in South Florida. We clear out single and double car garages, removing old storage, tools, sports gear, and everything that's piled up over the years.",
-    "items": ["Single Car Garage", "Double Car Garage", "Storage Shelves", "Tools & Equipment", "Sports Gear", "Holiday Decorations", "Paint Cans", "Boxes & Bins"],
+    "items": [
+      "Single Car Garage",
+      "Double Car Garage",
+      "Storage Shelves",
+      "Tools & Equipment",
+      "Sports Gear",
+      "Holiday Decorations",
+      "Paint Cans",
+      "Boxes & Bins"
+    ],
     "avgCost": 285,
     "minCost": 149,
     "maxCost": 699,
@@ -177,13 +338,32 @@
       "Do you sweep and clean the garage floor after?"
     ],
     "disposal": "We partner with local charities for usable items like tools and sports equipment. Hazardous materials such as paint and chemicals go to proper disposal facilities. Metals and recyclables are sent to recycling centers.",
-    "process": "We'll sort through everything in your garage, separate items for donation, recycling, and disposal, load it all up, haul it away, and leave your garage swept clean."
+    "process": "We'll sort through everything in your garage, separate items for donation, recycling, and disposal, load it all up, haul it away, and leave your garage swept clean.",
+    "competitorPricing": {
+      "gotJunk": {
+        "min": 398,
+        "max": 798
+      },
+      "junkKing": {
+        "min": 349,
+        "max": 699
+      }
+    }
   },
   {
     "name": "Office & Commercial Cleanout",
     "slug": "office-commercial-cleanout",
     "description": "Professional office and commercial cleanout services in Palm Beach and Broward County. We handle full office floors, retail spaces, and warehouses with minimal disruption to your business.",
-    "items": ["Office Desks & Chairs", "Cubicle Systems", "Filing Cabinets", "Computers & IT Equipment", "Conference Tables", "Break Room Furniture", "Warehouse Shelving", "Retail Fixtures"],
+    "items": [
+      "Office Desks & Chairs",
+      "Cubicle Systems",
+      "Filing Cabinets",
+      "Computers & IT Equipment",
+      "Conference Tables",
+      "Break Room Furniture",
+      "Warehouse Shelving",
+      "Retail Fixtures"
+    ],
     "avgCost": 895,
     "minCost": 299,
     "maxCost": 2500,
@@ -197,6 +377,172 @@
       "Do you work with property managers and landlords?"
     ],
     "disposal": "Office furniture is donated to nonprofits and community organizations. Electronics go to R2-certified recyclers for responsible processing. Sensitive documents receive secure shredding with certification available upon request.",
-    "process": "We'll start with a walk-through assessment of your space, schedule removal at a time that works for your business (often after hours), clear the full floor or area, and leave it broom-clean and move-out ready."
+    "process": "We'll start with a walk-through assessment of your space, schedule removal at a time that works for your business (often after hours), clear the full floor or area, and leave it broom-clean and move-out ready.",
+    "competitorPricing": {
+      "gotJunk": {
+        "min": 598,
+        "max": 1998
+      },
+      "junkKing": {
+        "min": 499,
+        "max": 1799
+      }
+    }
+  },
+  {
+    "name": "Couch Removal",
+    "slug": "couch-removal",
+    "description": "Same-day couch and sofa removal in South Florida. We haul away sectionals, loveseats, recliners, sleeper sofas, and all types of seating furniture.",
+    "items": [
+      "Sectional Sofas",
+      "Loveseats",
+      "Recliners",
+      "Sleeper Sofas",
+      "Futons",
+      "Chaise Lounges",
+      "Outdoor Couches",
+      "Sofa Beds"
+    ],
+    "avgCost": 139,
+    "minCost": 89,
+    "maxCost": 299,
+    "avgDuration": "30 minutes",
+    "ecoFriendly": "90% donated or recycled",
+    "jobsCompleted": 3640,
+    "commonQuestions": [
+      "Can you remove a sectional from upstairs?",
+      "What if my couch doesn't fit through the door?",
+      "Do you remove outdoor patio sofas?",
+      "Do you donate couches in good condition?"
+    ],
+    "disposal": "Gently used couches are donated to Habitat for Humanity, Salvation Army, and local shelters. Damaged sofas are broken down — wood frames are recycled, foam is repurposed, and fabric is processed into fiber.",
+    "process": "We'll navigate your couch out of any room, hallway, or staircase. If it doesn't fit through the door, we'll disassemble it on-site. All hauling, loading, and disposal included.",
+    "competitorPricing": {
+      "gotJunk": {
+        "min": 248,
+        "max": 458
+      },
+      "junkKing": {
+        "min": 199,
+        "max": 399
+      }
+    }
+  },
+  {
+    "name": "Refrigerator Disposal",
+    "slug": "refrigerator-disposal",
+    "description": "EPA-compliant refrigerator and freezer disposal in South Florida. We handle refrigerant recovery, disconnection, and environmentally responsible recycling.",
+    "items": [
+      "Side-by-Side Refrigerators",
+      "French Door Fridges",
+      "Top Freezer Models",
+      "Bottom Freezer Models",
+      "Mini Fridges",
+      "Chest Freezers",
+      "Upright Freezers",
+      "Wine Coolers"
+    ],
+    "avgCost": 149,
+    "minCost": 89,
+    "maxCost": 249,
+    "avgDuration": "30 minutes",
+    "ecoFriendly": "95% recycled (metals, plastics, refrigerants)",
+    "jobsCompleted": 2180,
+    "commonQuestions": [
+      "Do you handle Freon removal?",
+      "Can you disconnect the water line?",
+      "Is refrigerator disposal regulated in Florida?",
+      "What happens to old refrigerators?"
+    ],
+    "disposal": "All refrigerators go to EPA-certified facilities. Refrigerants (Freon, R-134a) are safely recovered per EPA Section 608 guidelines. Steel, copper, aluminum, and plastics are separated and recycled. Nothing goes to landfill.",
+    "process": "We'll disconnect your refrigerator (water line and power), carefully remove it from your kitchen, transport it to a certified recycling facility, and ensure all refrigerants are properly recovered.",
+    "competitorPricing": {
+      "gotJunk": {
+        "min": 248,
+        "max": 398
+      },
+      "junkKing": {
+        "min": 199,
+        "max": 349
+      }
+    }
+  },
+  {
+    "name": "TV Recycling & Disposal",
+    "slug": "tv-recycling",
+    "description": "Responsible TV and monitor recycling in South Florida. We properly dispose of flat screens, CRTs, projectors, and all display electronics with certified e-waste recycling.",
+    "items": [
+      "Flat Screen TVs",
+      "CRT Televisions",
+      "Computer Monitors",
+      "Projectors",
+      "Projection TVs",
+      "TV Stands & Mounts",
+      "Sound Systems",
+      "Streaming Devices"
+    ],
+    "avgCost": 119,
+    "minCost": 89,
+    "maxCost": 199,
+    "avgDuration": "20 minutes",
+    "ecoFriendly": "97% recycled (glass, metals, plastics)",
+    "jobsCompleted": 1840,
+    "commonQuestions": [
+      "Do you accept CRT TVs?",
+      "Can you unmount a wall-mounted TV?",
+      "Is it illegal to throw away TVs in Florida?",
+      "Do you recycle the TV or just dump it?"
+    ],
+    "disposal": "All TVs go to R2-certified e-waste recyclers. CRTs are processed for lead glass recovery. Flat screens yield precious metals, plastics, and glass. Florida law prohibits TVs in regular trash — we ensure full compliance.",
+    "process": "We'll carefully remove your TV (including wall-mount removal if needed), wrap it for safe transport, and deliver it to a certified electronics recycling facility. Data-bearing devices are wiped or destroyed.",
+    "competitorPricing": {
+      "gotJunk": {
+        "min": 198,
+        "max": 298
+      },
+      "junkKing": {
+        "min": 149,
+        "max": 249
+      }
+    }
+  },
+  {
+    "name": "Dumpster Alternative",
+    "slug": "dumpster-alternative",
+    "description": "Skip the dumpster rental — Umuve loads and hauls everything for you. No permits, no driveway damage, no waiting days for pickup. Same-day junk removal across South Florida.",
+    "items": [
+      "Renovation Debris",
+      "Garage Cleanouts",
+      "Yard Waste",
+      "Estate Cleanouts",
+      "Moving Leftovers",
+      "Storage Unit Cleanouts",
+      "Foreclosure Cleanups",
+      "Hoarding Cleanouts"
+    ],
+    "avgCost": 249,
+    "minCost": 149,
+    "maxCost": 599,
+    "avgDuration": "1-2 hours",
+    "ecoFriendly": "85% donated or recycled",
+    "jobsCompleted": 4210,
+    "commonQuestions": [
+      "Is Umuve cheaper than renting a dumpster?",
+      "Do I need a permit for junk removal?",
+      "How much can you haul in one trip?",
+      "Can you come the same day?"
+    ],
+    "disposal": "We sort everything on-site — recyclables go to recycling centers, usable items are donated, and only non-recoverable waste goes to licensed disposal facilities. You get a cleaner result than a dumpster with zero effort.",
+    "process": "Book online, we show up same-day, we do ALL the loading and hauling. No dumpster sitting in your driveway for days. No HOA complaints. No permit needed. We handle everything in one visit.",
+    "competitorPricing": {
+      "gotJunk": {
+        "min": 398,
+        "max": 698
+      },
+      "junkKing": {
+        "min": 349,
+        "max": 599
+      }
+    }
   }
 ]
