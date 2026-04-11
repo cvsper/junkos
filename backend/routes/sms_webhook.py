@@ -29,6 +29,7 @@ sms_webhook_bp = Blueprint("sms_webhook", __name__, url_prefix="/api/sms")
 def inbound_sms():
     """Handle inbound SMS/MMS from Twilio.
 
+    Router: photos → our AI quote engine, text-only → forward to Vapi.
     Twilio sends form-encoded data:
         From, To, Body, NumMedia, MediaUrl0, MediaContentType0, etc.
     """
@@ -38,7 +39,7 @@ def inbound_sms():
 
     logger.info("Inbound SMS from %s: body=%r media=%d", from_phone, body[:100], num_media)
 
-    # If there are images, run photo quoting
+    # If there are images, run photo quoting (handled by us)
     if num_media > 0:
         media_urls = []
         for i in range(num_media):
@@ -64,20 +65,36 @@ def inbound_sms():
                 "you'll get a quote in about 30 seconds."
             )
 
-    # Text-only message — check if it's a keyword
+    # No photo — forward to Vapi for conversational SMS handling
+    vapi_url = os.environ.get("VAPI_SMS_WEBHOOK", "https://api.vapi.ai/twilio/sms")
+    try:
+        import requests as http_requests
+        vapi_resp = http_requests.post(
+            vapi_url,
+            data=request.form.to_dict(),
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+            timeout=10,
+        )
+        if vapi_resp.status_code == 200 and vapi_resp.text.strip():
+            return Response(vapi_resp.text, mimetype="text/xml")
+        logger.warning("Vapi SMS forward returned %d", vapi_resp.status_code)
+    except Exception:
+        logger.exception("Failed to forward SMS to Vapi")
+
+    # Vapi fallback — handle locally if Vapi is down
     lower_body = body.lower()
 
     if any(w in lower_body for w in ["quote", "price", "how much", "estimate"]):
         return _twiml_response(
-            "Hey! For an instant quote, text us a photo of what you need removed "
-            "and we'll price it out in seconds. Or call us at (561) 944-1636!"
+            "For an instant quote, text us a photo of what you need removed "
+            "and we'll price it out in seconds. Or call (844) 435-6005!"
         )
 
     if any(w in lower_body for w in ["book", "schedule", "pickup"]):
         frontend_url = os.environ.get("FRONTEND_URL", "https://app.goumuve.com")
         return _twiml_response(
             "Book your pickup here: {}/book?ref=sms "
-            "Or call us at (561) 944-1636 and Maya will get you set up!".format(frontend_url)
+            "Or call (844) 435-6005 and Maya will get you set up!".format(frontend_url)
         )
 
     if any(w in lower_body for w in ["stop", "unsubscribe", "cancel"]):
@@ -86,7 +103,7 @@ def inbound_sms():
     # Default response
     return _twiml_response(
         "Thanks for texting Umuve! Text us a PHOTO of your junk for an instant quote, "
-        "or call (561) 944-1636. Book online: app.goumuve.com"
+        "or call (844) 435-6005. Book online: app.goumuve.com"
     )
 
 
@@ -114,7 +131,7 @@ def _process_photo_quote(app, phone, body_text, media_urls):
                 logger.warning("No ANTHROPIC_API_KEY or OPENAI_API_KEY — cannot process photo quote")
                 send_sms_async(phone,
                     "Sorry, our photo quoting is temporarily unavailable. "
-                    "Call us at (844) 435-6005 for an instant quote!"
+                    "Call (844) 435-6005 for an instant quote!"
                 )
                 return
 
@@ -165,8 +182,8 @@ def _process_photo_quote(app, phone, body_text, media_urls):
                 if not image_content:
                     logger.error("Could not fetch any images from Twilio")
                     send_sms_async(phone,
-                        "I had trouble loading your photo. Try sending it again or "
-                        "call (844) 435-6005 for a quick quote!"
+                        "I had trouble loading your photo. Try sending it again, "
+                        "or call (844) 435-6005 for a quick quote!"
                     )
                     return
 
@@ -264,7 +281,7 @@ def _process_photo_quote(app, phone, body_text, media_urls):
             if not items or not isinstance(items, list):
                 send_sms_async(phone,
                     "I couldn't identify any items in the photo. "
-                    "Try a clearer shot or call (561) 944-1636!"
+                    "Try a clearer shot or call (844) 435-6005!"
                 )
                 return
 
@@ -293,7 +310,7 @@ def _process_photo_quote(app, phone, body_text, media_urls):
                 "Estimated total: ${:.0f}\n"
                 "(includes 8% service fee{})\n\n"
                 "Book now: {}/book?ref=photo\n"
-                "Or call (561) 944-1636\n"
+                "Or call (844) 435-6005\n"
                 "Quote valid for 48 hours!"
             ).format(
                 items_text,
@@ -353,7 +370,7 @@ def _process_photo_quote(app, phone, body_text, media_urls):
             from sms_service import send_sms_async
             send_sms_async(phone,
                 "I had trouble with that photo. Try another angle or "
-                "call (561) 944-1636 for a quick quote!"
+                "call (844) 435-6005 for a quick quote!"
             )
         except Exception:
             logger.exception("Photo quote processing failed for %s", phone)
@@ -361,7 +378,7 @@ def _process_photo_quote(app, phone, body_text, media_urls):
                 from sms_service import send_sms_async
                 send_sms_async(phone,
                     "Something went wrong processing your photo. "
-                    "Call us at (561) 944-1636 — we'll get you a quote!"
+                    "Call (844) 435-6005 — we'll get you a quote!"
                 )
             except Exception:
                 pass
