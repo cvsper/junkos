@@ -104,7 +104,7 @@ def send_sms(to_phone, message):
 
         client = _get_twilio()
         if not client or not TWILIO_PHONE_NUMBER:
-            logger.info("[SMS-DEV] To %s: %s", formatted, message)
+            logger.warning("[SMS-DEV] No Twilio credentials — SMS NOT sent. To %s: %s", formatted, message[:50])
             return None
 
         msg = client.messages.create(

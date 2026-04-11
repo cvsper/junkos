@@ -55,8 +55,8 @@ def send_email(to_email, subject, html_content):
 
         client = _get_sg()
         if not client:
-            logger.info("[EMAIL-DEV] To: %s, Subject: %s", to_email, subject)
-            return True
+            logger.warning("[EMAIL-DEV] No SendGrid key — email NOT sent. To: %s, Subject: %s", to_email, subject)
+            return False
 
         from sendgrid.helpers.mail import Mail
         message = Mail(

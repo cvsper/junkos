@@ -70,7 +70,7 @@ def send_sms(to_number, body):
     try:
         client = _get_twilio()
         if not client or not TWILIO_FROM_NUMBER:
-            logger.info("[DEV] SMS to %s: %s", to_number, body)
+            logger.warning("[DEV] No Twilio credentials — SMS NOT sent. To %s: %s", to_number, body[:50])
             return None
 
         message = client.messages.create(
@@ -138,9 +138,9 @@ def _send_email_sync(to_email, subject, html_content):
             return _send_email_sendgrid(to_email, subject, html_content)
 
         # --- Dev mode: no email provider configured ---
-        logger.info(
-            "[DEV] Email to %s: %s — %s",
-            to_email, subject, html_content[:120],
+        logger.warning(
+            "[DEV] No email provider configured — email NOT sent. To %s: %s",
+            to_email, subject,
         )
         return None
     except Exception:

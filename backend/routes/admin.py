@@ -1284,3 +1284,29 @@ def cleanup_execute():
         "remaining_users": User.query.count(),
         "remaining_jobs": Job.query.count(),
     }), 200
+
+
+@admin_bp.route("/notifications/health", methods=["GET"])
+@require_admin
+def notifications_health(user_id):
+    """Check which notification services are configured."""
+    return jsonify({
+        "email": {
+            "resend": bool(os.environ.get("RESEND_API_KEY")),
+            "sendgrid": bool(os.environ.get("SENDGRID_API_KEY")),
+            "from": os.environ.get("EMAIL_FROM", os.environ.get("SENDGRID_FROM_EMAIL", "bookings@goumuve.com")),
+        },
+        "sms": {
+            "twilio_configured": bool(os.environ.get("TWILIO_ACCOUNT_SID") and os.environ.get("TWILIO_AUTH_TOKEN")),
+            "from_number": bool(os.environ.get("TWILIO_PHONE_NUMBER") or os.environ.get("TWILIO_FROM_NUMBER")),
+        },
+        "push": {
+            "apns_configured": bool(
+                os.environ.get("APNS_KEY_ID")
+                and os.environ.get("APNS_TEAM_ID")
+                and os.environ.get("APNS_AUTH_KEY_PATH")
+            ),
+        },
+        "operator_phone": bool(os.environ.get("OPERATOR_PHONE")),
+        "stripe": bool(os.environ.get("STRIPE_SECRET_KEY")),
+    }), 200
