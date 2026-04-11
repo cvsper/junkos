@@ -345,7 +345,7 @@ def _handle_service_area(args):
 
 
 def _handle_checkout_text(args, vapi_data):
-    """Send the customer a text with the checkout/confirmation link."""
+    """Send the customer a text with a Stripe Checkout link to pay."""
     from sms_service import send_sms_async
 
     phone = args.get("phone", "")
@@ -362,22 +362,67 @@ def _handle_checkout_text(args, vapi_data):
         return "I need a phone number to send the text."
 
     frontend_url = os.environ.get("FRONTEND_URL", "https://app.goumuve.com")
-    short_id = str(booking_id)[:8] if booking_id else ""
-    checkout_url = "{}/book?ref=phone".format(frontend_url)
-    if booking_id:
-        checkout_url = "{}/jobs/{}".format(frontend_url, booking_id)
+    checkout_url = "{}/book?ref=maya".format(frontend_url)
+
+    # If we have a booking with a price, create a Stripe Checkout Session
+    if booking_id and total:
+        try:
+            import stripe as stripe_lib
+            stripe_key = os.environ.get("STRIPE_SECRET_KEY", "")
+            if stripe_key:
+                stripe_lib.api_key = stripe_key
+
+                # Look up the job for details
+                job = Job.query.get(booking_id)
+                job_address = job.address if job else "your pickup"
+
+                session = stripe_lib.checkout.Session.create(
+                    payment_method_types=["card"],
+                    line_items=[{
+                        "price_data": {
+                            "currency": "usd",
+                            "unit_amount": int(float(total) * 100),
+                            "product_data": {
+                                "name": "Umuve Junk Removal",
+                                "description": "Pickup at {}".format(job_address),
+                            },
+                        },
+                        "quantity": 1,
+                    }],
+                    mode="payment",
+                    success_url="{}/book?ref=maya&paid=true".format(frontend_url),
+                    cancel_url="{}/book?ref=maya".format(frontend_url),
+                    metadata={
+                        "booking_id": booking_id,
+                        "source": "maya_phone",
+                    },
+                    expires_at=int(datetime.now(timezone.utc).timestamp()) + 86400,  # 24 hours
+                )
+                checkout_url = session.url
+
+                # Link the checkout session to the payment record
+                payment = Payment.query.filter_by(job_id=booking_id).first()
+                if payment:
+                    payment.stripe_payment_intent_id = session.payment_intent
+                    db.session.commit()
+
+                logger.info("Stripe Checkout created for job %s: %s", booking_id, session.id)
+        except Exception:
+            logger.exception("Failed to create Stripe Checkout Session")
+            # Fall back to generic booking page
+            checkout_url = "{}/book?ref=maya".format(frontend_url)
 
     greeting = "Hi {}! ".format(customer_name) if customer_name else ""
     msg = (
-        "{}Thanks for calling You-Move! "
-        "Here's your booking link to confirm & pay:\n\n"
+        "{}Thanks for calling Umuve! "
+        "Here's your secure payment link:\n\n"
         "{}\n\n"
         "Total: ${:.0f}\n"
-        "Questions? Just call us back at (561) 944-1636"
+        "Questions? Call us at (844) 435-6005"
     ).format(greeting, checkout_url, float(total) if total else 0)
 
     send_sms_async(phone, msg)
-    return "Text sent to {} with the checkout link.".format(phone)
+    return "Payment link sent to {} via text.".format(phone)
 
 
 def _handle_send_review_link(args, vapi_data):
@@ -399,7 +444,7 @@ def _handle_send_review_link(args, vapi_data):
     )
 
     msg = (
-        "Thanks for choosing You-Move! \U0001f64f "
+        "Thanks for choosing Umuve! \U0001f64f "
         "We'd love a quick Google review: {}\n"
         "It really helps us out!"
     ).format(google_review_url)
@@ -805,13 +850,13 @@ def _handle_end_of_call_report(message):
 
             if estimate_total:
                 warm_msg = (
-                    "{}Here's your You-Move quote: ${:.0f}. "
+                    "{}Here's your Umuve quote: ${:.0f}. "
                     "Book anytime: {}/book?ref=phone "
                     "-- price is good for 48 hours!"
                 ).format(greeting, estimate_total, frontend_url)
             else:
                 warm_msg = (
-                    "{}Thanks for calling You-Move! "
+                    "{}Thanks for calling Umuve! "
                     "Ready to book? {}/book?ref=phone "
                     "-- or call us back at (561) 944-1636!"
                 ).format(greeting, frontend_url)
@@ -832,7 +877,7 @@ def _handle_end_of_call_report(message):
         try:
             from sms_service import send_sms_async
             followup_msg = (
-                "Hey! Thanks for calling You-Move. Need a pickup? "
+                "Hey! Thanks for calling Umuve. Need a pickup? "
                 "Book online anytime at {}/book?ref=phone "
                 "or call us back at (561) 944-1636. "
                 "We're here 7 days a week!"
