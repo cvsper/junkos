@@ -60,10 +60,44 @@ def list_partners():
     """Admin endpoint to list all partners (no auth for now)."""
     try:
         partners = Partner.query.order_by(Partner.created_at.desc()).all()
-        return jsonify({
-            "success": True,
-            "count": len(partners),
-            "partners": [p.to_dict() for p in partners],
-        })
+        return jsonify([p.to_dict() for p in partners])
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+
+
+@partners_bp.route("/<partner_id>", methods=["PATCH"])
+def update_partner(partner_id):
+    """Update partner status or details."""
+    try:
+        partner = db.session.get(Partner, partner_id)
+        if not partner:
+            return jsonify({"error": "Partner not found"}), 404
+
+        data = request.json
+        if not data:
+            return jsonify({"error": "No data provided"}), 400
+
+        # Update status
+        if "status" in data:
+            new_status = data["status"]
+            if new_status not in ("pending", "approved", "rejected"):
+                return jsonify({"error": "Invalid status"}), 400
+            
+            partner.status = new_status
+            
+            # If approved, ensure they have a referral code
+            if new_status == "approved" and not partner.referral_code:
+                # Ensure uniqueness
+                for _ in range(10):
+                    code = generate_referral_code()
+                    existing = Partner.query.filter_by(referral_code=code).first()
+                    if not existing:
+                        partner.referral_code = code
+                        break
+
+        db.session.commit()
+        return jsonify(partner.to_dict()), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500

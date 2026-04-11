@@ -15,10 +15,13 @@ import {
   Check,
   X,
   Truck,
+  MapPin,
+  Calendar,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import {
   adminApi,
   type AdminJobRecord,
@@ -487,6 +490,8 @@ export default function AdminJobsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState("");
+  const [cityFilter, setCityFilter] = useState("");
+  const [dateFilter, setDateFilter] = useState("");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
@@ -501,6 +506,8 @@ export default function AdminJobsPage() {
     try {
       const filters: Record<string, string | number> = { page, limit: 20 };
       if (statusFilter) filters.status = statusFilter;
+      if (cityFilter) filters.city = cityFilter;
+      if (dateFilter) filters.date = dateFilter;
       const res = await adminApi.jobs(filters);
       setJobs(res.jobs || []);
       setTotalPages(res.pages || 1);
@@ -510,7 +517,7 @@ export default function AdminJobsPage() {
     } finally {
       setLoading(false);
     }
-  }, [statusFilter, page]);
+  }, [statusFilter, cityFilter, dateFilter, page]);
 
   useEffect(() => {
     fetchJobs();
@@ -569,23 +576,67 @@ export default function AdminJobsPage() {
       </div>
 
       {/* Status Filter Tabs */}
-      <div className="flex items-center gap-2 mb-6 flex-wrap">
-        {STATUS_TABS.map((tab) => (
-          <Button
-            key={tab.value}
-            variant={statusFilter === tab.value ? "default" : "outline"}
-            size="sm"
-            onClick={() => handleFilterChange(tab.value)}
-          >
-            {tab.label}
-          </Button>
-        ))}
-        {total > 0 && (
-          <span className="ml-auto text-sm text-muted-foreground">
-            {total} job{total !== 1 ? "s" : ""} found
-          </span>
-        )}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+        <div className="flex items-center gap-2 flex-wrap">
+          {STATUS_TABS.map((tab) => (
+            <Button
+              key={tab.value}
+              variant={statusFilter === tab.value ? "default" : "outline"}
+              size="sm"
+              onClick={() => handleFilterChange(tab.value)}
+            >
+              {tab.label}
+            </Button>
+          ))}
+        </div>
+
+        <div className="flex items-center gap-3">
+          <div className="relative w-full md:w-40">
+            <MapPin className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <Input
+              placeholder="Filter by city"
+              value={cityFilter}
+              onChange={(e) => {
+                setCityFilter(e.target.value);
+                setPage(1);
+              }}
+              className="pl-8 h-9 text-xs"
+            />
+          </div>
+          <div className="relative w-full md:w-40">
+            <Calendar className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <Input
+              type="date"
+              value={dateFilter}
+              onChange={(e) => {
+                setDateFilter(e.target.value);
+                setPage(1);
+              }}
+              className="pl-8 h-9 text-xs"
+            />
+          </div>
+          {(cityFilter || dateFilter) && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => {
+                setCityFilter("");
+                setDateFilter("");
+                setPage(1);
+              }}
+              className="h-9 px-2"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
       </div>
+
+      {total > 0 && (
+        <div className="mb-4 text-sm text-muted-foreground flex justify-end">
+          {total} job{total !== 1 ? "s" : ""} found
+        </div>
+      )}
 
       {/* Error State */}
       {error && (

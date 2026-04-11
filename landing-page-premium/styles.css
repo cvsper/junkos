@@ -1640,11 +1640,6 @@ a {
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
 @media (max-width: 768px) {
-    .logo img {
-        width: 80px;
-        height: auto;
-    }
-
     .nav-toggle {
         display: block;
     }
@@ -2152,90 +2147,3 @@ a {
         padding-bottom: var(--space-16);
     }
 }
-
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   Enhanced Components
-   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-
-.cta-wrapper {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--space-2);
-}
-
-.cta-note {
-    font-size: 0.8125rem;
-    color: rgba(255, 255, 255, 0.6);
-    letter-spacing: 0.02em;
-}
-
-.cta-note strong {
-    color: #ffffff;
-    font-weight: 700;
-}
-
-.definition-grid {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-6);
-    margin-bottom: var(--space-12);
-}
-
-.definition-item {
-    display: flex;
-    align-items: flex-start;
-    gap: var(--space-6);
-    padding: var(--space-6);
-    background: var(--color-bg);
-    border: 1px solid rgba(0, 0, 0, 0.04);
-    border-radius: var(--radius-xl);
-    transition: transform 0.3s var(--ease-out-expo), box-shadow 0.3s var(--ease-out-expo);
-}
-
-.definition-item:hover {
-    transform: translateX(8px);
-    box-shadow: var(--shadow-md);
-    border-color: var(--color-accent-border);
-}
-
-.definition-icon {
-    width: 48px;
-    height: 48px;
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--color-accent-subtle);
-    color: var(--color-accent);
-    border-radius: var(--radius-lg);
-}
-
-.definition-icon .icon {
-    width: 24px;
-    height: 24px;
-}
-
-.definition-text p {
-    font-size: 1.0625rem;
-    line-height: 1.6;
-    color: var(--color-text-secondary);
-}
-
-@media (max-width: 768px) {
-    .cta-wrapper {
-        width: 100%;
-    }
-    
-    .definition-item {
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-        padding: var(--space-8);
-    }
-
-    .definition-item:hover {
-        transform: translateY(-4px);
-    }
-}
-

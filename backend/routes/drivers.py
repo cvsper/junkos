@@ -500,8 +500,22 @@ def update_job_status(user_id, job_id):
             # Email + push to customer
             if customer:
                 if customer.email:
-                    send_job_completed_email(customer.email, customer.name, job.id, job.address,
-                                             total=job.total_price)
+                    from email_service import email_job_completed, schedule_email_follow_up
+                    # Extract item names for the receipt
+                    item_names = []
+                    if job.items:
+                        for item in job.items:
+                            if isinstance(item, dict):
+                                item_names.append(item.get("category", "Item").replace("_", " ").title())
+                    
+                    email_job_completed(
+                        customer.email, customer.name, job.id, 
+                        job.total_price, item_names
+                    )
+                    
+                    # Schedule follow-up 24h later
+                    schedule_email_follow_up(customer.email, customer.name)
+
                 send_push_notification(
                     customer.id, "Pickup Complete!",
                     "Pickup complete! Rate your experience",

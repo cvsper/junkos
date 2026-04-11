@@ -867,15 +867,14 @@ def create_booking(user_id):
     try:
         customer = db.session.get(User, user_id)
         if customer and customer.email:
-            from notifications import send_booking_confirmation_email
-            send_booking_confirmation_email(
+            from email_service import email_booking_confirmed
+            email_booking_confirmed(
                 to_email=customer.email,
-                customer_name=customer.name or "",
-                booking_id=job.id,
+                name=customer.name or "",
+                job_id=job.id,
+                date=str(job.scheduled_at.date()) if job.scheduled_at else "TBD",
+                time=job.scheduled_at.strftime("%I:%M %p") if job.scheduled_at else "TBD",
                 address=job.address or "",
-                scheduled_date=str(job.scheduled_at.date()) if job.scheduled_at else "TBD",
-                scheduled_time=job.scheduled_at.strftime("%H:%M") if job.scheduled_at else "",
-                total_amount=total,
             )
     except Exception:
         pass  # Notifications must never block the main flow

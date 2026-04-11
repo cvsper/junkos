@@ -30,13 +30,14 @@ import { Button } from "@/components/ui/button";
 import { useBookingStore, clearAbandonedBooking } from "@/stores/booking-store";
 import { bookingApi, paymentsApi, promosApi } from "@/lib/api";
 import { ReviewPrompt } from "@/components/review-prompt";
+import { ReferralPrompt } from "@/components/referral-prompt";
 
 // ---------------------------------------------------------------------------
 // Stripe singleton
 // ---------------------------------------------------------------------------
 
 const stripePromise = loadStripe(
-  process.env.NEXT_PUBLIC_STRIPE_KEY || ""
+  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || ""
 );
 
 // ---------------------------------------------------------------------------
@@ -576,6 +577,9 @@ function PaymentFormInner() {
           <span className="font-medium text-foreground">{email}</span>. Our team
           will contact you before your scheduled pickup.
         </p>
+
+        {/* Referral Prompt */}
+        <ReferralPrompt />
 
         {/* Review Prompt */}
         <ReviewPrompt bookingId={bookingId} />

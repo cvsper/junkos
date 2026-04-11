@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { jobsApi } from "@/lib/api";
+import { ReferralPrompt } from "@/components/referral-prompt";
 import { useAuthStore } from "@/stores/auth-store";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -957,6 +958,13 @@ function AuthenticatedDashboard() {
                             ))}
                           </div>
                         </div>
+
+                        {/* Referral Prompt for completed jobs */}
+                        {job.status === "completed" && (
+                          <div className="mt-6 flex justify-center">
+                            <ReferralPrompt />
+                          </div>
+                        )}
 
                         {/* View full details link */}
                         <div className="mt-4 pt-3 border-t border-border flex items-center gap-3">
