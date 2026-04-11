@@ -1,0 +1,49 @@
+/* Umuve SEO Service x City Pages — Shared Styles */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif; color: #1a1a1a; line-height: 1.6; padding-bottom: 80px; }
+.container { max-width: 1100px; margin: 0 auto; padding: 0 1.5rem; }
+h1, h2, h3 { font-family: 'Outfit', sans-serif; }
+.btn { display: inline-block; padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-weight: 700; text-decoration: none; font-size: 0.95rem; transition: all 0.2s; }
+.btn-primary { background: #DC2626; color: white; }
+.btn-primary:hover { background: #B91C1C; }
+.btn-secondary { background: #f3f4f6; color: #1a1a1a; }
+.btn-secondary:hover { background: #e5e7eb; }
+.btn-xl { font-size: 1.1rem; padding: 1rem 2rem; }
+.sticky-cta { position: fixed; bottom: 0; left: 0; right: 0; background: white; padding: 0.75rem 1rem; box-shadow: 0 -4px 20px rgba(0,0,0,0.1); z-index: 999; display: flex; gap: 0.75rem; justify-content: center; align-items: center; }
+.sticky-cta a { padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-weight: 700; text-decoration: none; font-size: 0.95rem; }
+.sticky-cta .book-btn { background: #DC2626; color: white; }
+.sticky-cta .book-btn:hover { background: #B91C1C; }
+.sticky-cta .sms-btn { background: #f3f4f6; color: #1a1a1a; }
+.faq-item { border: 1px solid rgba(0,0,0,0.08); border-radius: 0.75rem; margin-bottom: 1rem; overflow: hidden; }
+.faq-q { padding: 1.25rem 1.5rem; font-weight: 600; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: #fafafa; }
+.faq-q:hover { background: #f3f4f6; }
+.faq-a { padding: 0 1.5rem 1.25rem; color: #5c5c5c; line-height: 1.7; }
+.related-link { display: inline-block; padding: 0.5rem 1rem; background: #f9fafb; border: 1px solid rgba(0,0,0,0.08); border-radius: 0.5rem; text-decoration: none; color: #1a1a1a; font-weight: 500; transition: all 0.2s; margin: 0.25rem; }
+.related-link:hover { background: #DC2626; color: white; border-color: #DC2626; }
+.pricing-row { display: flex; justify-content: space-between; align-items: center; padding: 1.25rem 1.5rem; background: white; border: 1px solid rgba(0,0,0,0.08); border-radius: 0.75rem; }
+.pricing-row.popular { border: 2px solid #DC2626; }
+
+/* Competitor Comparison Table */
+.comparison-table { width: 100%; border-collapse: collapse; border-radius: 0.75rem; overflow: hidden; border: 1px solid rgba(0,0,0,0.08); }
+.comparison-table th,
+.comparison-table td { padding: 1rem 1.25rem; text-align: left; border-bottom: 1px solid rgba(0,0,0,0.06); font-size: 0.95rem; }
+.comparison-table thead th { background: #f9fafb; font-weight: 700; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.03em; color: #5c5c5c; }
+.comparison-table thead th:first-child { color: #1a1a1a; }
+.comparison-table .col-umuve { color: #DC2626; font-weight: 700; }
+.comparison-table .col-competitor { color: #8a8a8a; }
+.comparison-table tbody tr:last-child td { border-bottom: none; }
+.comparison-table .check { color: #16a34a; font-weight: 700; }
+
+/* Review Cards */
+.review-card { background: white; padding: 1.5rem; border-radius: 0.75rem; border: 1px solid rgba(0,0,0,0.06); }
+.review-stars { color: #f59e0b; font-size: 1.1rem; letter-spacing: 2px; margin-bottom: 0.75rem; }
+.review-text { color: #3a3a3a; line-height: 1.7; font-size: 0.95rem; margin-bottom: 1rem; }
+.review-author { font-weight: 700; font-size: 0.9rem; color: #1a1a1a; }
+.review-date { font-size: 0.8rem; color: #8a8a8a; margin-left: 0.5rem; }
+
+@media (max-width: 640px) {
+    .sticky-cta { flex-direction: column; }
+    .sticky-cta a { width: 100%; text-align: center; }
+    .comparison-table th,
+    .comparison-table td { padding: 0.75rem 0.5rem; font-size: 0.8rem; }
+}

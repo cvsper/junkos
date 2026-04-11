@@ -1,0 +1,37 @@
+{
+  "expert": {
+    "name": "Zim",
+    "title": "Lead Logistics & Sustainability Expert",
+    "bio": "Zim has overseen 12,000+ hauls across South Florida and is a certified expert in EPA-compliant refrigerant recovery and Florida waste diversion standards. He leads Umuve's 'Donate First' initiative, partnering with 20+ local charities to minimize landfill impact.",
+    "email": "zim@goumuve.com",
+    "yearsExperience": 12,
+    "image": "https://goumuve.com/images/experts/zim.jpg"
+  },
+  "countyStats": {
+    "Palm Beach": {
+      "diversionRate": "90%",
+      "totalMSW": "3.82M tons",
+      "leaderStatus": "State High"
+    },
+    "Broward": {
+      "diversionRate": "39%",
+      "totalMSW": "4.88M tons",
+      "leaderStatus": "Capacity Crisis"
+    },
+    "Miami-Dade": {
+      "diversionRate": "19%",
+      "totalMSW": "5.12M tons",
+      "leaderStatus": "Capacity Crisis"
+    },
+    "Martin": {
+      "diversionRate": "44%",
+      "totalMSW": "0.22M tons",
+      "leaderStatus": "High Compliance"
+    },
+    "St. Lucie": {
+      "diversionRate": "41%",
+      "totalMSW": "0.41M tons",
+      "leaderStatus": "Growth Active"
+    }
+  }
+}
