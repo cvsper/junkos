@@ -1,8 +1,9 @@
 """
 Partner registration API routes for Umuve.
-Handles realtor partnership program signups from goumuve.com/partners/realtors.
+Handles partnership program signups from goumuve.com/partners.
 """
 
+import logging
 from flask import Blueprint, request, jsonify, redirect
 
 import sys
@@ -11,9 +12,14 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from models import db, Partner, generate_uuid, generate_referral_code
 
+logger = logging.getLogger(__name__)
+
 partners_bp = Blueprint("partners", __name__, url_prefix="/api/partners")
 
-REDIRECT_BASE = "https://goumuve.com/partners/realtors"
+VALID_PARTNER_TYPES = (
+    "realtor", "property_manager", "contractor", "moving_company",
+    "storage_facility", "hoa", "other",
+)
 
 
 @partners_bp.route("/register", methods=["POST"])
@@ -23,36 +29,55 @@ def register_partner():
         name = request.form.get("name", "").strip()
         email = request.form.get("email", "").strip().lower()
         phone = request.form.get("phone", "").strip()
-        brokerage = request.form.get("brokerage", "").strip() or None
+        company = request.form.get("company", "").strip() or request.form.get("brokerage", "").strip() or None
+        partner_type = request.form.get("partner_type", "other").strip().lower()
         coverage_areas = request.form.getlist("coverage_area")
+        redirect_to = request.form.get("redirect_to", "https://goumuve.com/partners")
+
+        if partner_type not in VALID_PARTNER_TYPES:
+            partner_type = "other"
 
         # Validate required fields
         if not name or not email or not phone:
-            return redirect(f"{REDIRECT_BASE}?error=missing-fields")
+            return redirect("{}?error=missing-fields".format(redirect_to))
 
         # Check for duplicate email
         existing = Partner.query.filter_by(email=email).first()
         if existing:
-            return redirect(f"{REDIRECT_BASE}?error=duplicate")
+            return redirect("{}?error=duplicate".format(redirect_to))
 
         partner = Partner(
             name=name,
             email=email,
             phone=phone,
-            brokerage=brokerage,
+            brokerage=company,
             coverage_areas=coverage_areas if coverage_areas else None,
-            partner_type="realtor",
+            partner_type=partner_type,
         )
 
         db.session.add(partner)
         db.session.commit()
 
-        return redirect(f"{REDIRECT_BASE}?success=1")
+        logger.info("New partner registered: %s (%s) type=%s", name, email, partner_type)
+
+        # Notify operator
+        try:
+            operator_phone = os.environ.get("OPERATOR_PHONE", "")
+            if operator_phone:
+                from sms_service import send_sms_async
+                msg = "NEW PARTNER APPLICATION!\n{} ({})\n{}\nType: {}".format(
+                    name, email, company or "No company", partner_type,
+                )
+                send_sms_async(operator_phone, msg)
+        except Exception:
+            logger.exception("Failed to notify operator about new partner")
+
+        return redirect("{}?success=1".format(redirect_to))
 
     except Exception as e:
         db.session.rollback()
-        print(f"[partners] Registration error: {e}")
-        return redirect(f"{REDIRECT_BASE}?error=server")
+        logger.exception("Partner registration error")
+        return redirect("{}?error=server".format(redirect_to))
 
 
 @partners_bp.route("/list", methods=["GET"])
