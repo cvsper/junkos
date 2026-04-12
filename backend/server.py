@@ -83,6 +83,12 @@ else:
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///umuve.db"
 
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+    "pool_recycle": 280,      # Recycle connections before Render's 300s timeout
+    "pool_pre_ping": True,    # Test connections before use, discard stale ones
+    "pool_size": 5,
+    "max_overflow": 10,
+}
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16 MB max request body
 
 # ---------------------------------------------------------------------------
