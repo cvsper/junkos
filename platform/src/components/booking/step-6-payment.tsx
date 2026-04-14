@@ -808,10 +808,10 @@ function PaymentFormInner() {
         </div>
       </div>
 
-      {/* Promo Code */}
+      {/* Promo Code — above price summary for visibility */}
       <div className="space-y-3">
         <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider">
-          Promo Code
+          Have a discount code?
         </h3>
 
         {promoApplied ? (

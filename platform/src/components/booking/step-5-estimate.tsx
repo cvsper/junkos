@@ -232,10 +232,19 @@ export function Step5Estimate() {
             {usedFallback && (
               <div className="flex items-start gap-2 rounded-md bg-amber-50 border border-amber-200 p-3 dark:bg-amber-950/20 dark:border-amber-800">
                 <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
-                <p className="text-xs text-amber-700 dark:text-amber-400">
-                  Estimate based on standard pricing. Final price may vary based
-                  on actual volume.
-                </p>
+                <div className="flex-1">
+                  <p className="text-xs text-amber-700 dark:text-amber-400">
+                    Estimate based on standard pricing. Final price may vary based
+                    on actual volume.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => fetchEstimate()}
+                    className="text-xs font-medium text-amber-700 dark:text-amber-400 underline hover:no-underline mt-1"
+                  >
+                    Retry estimate
+                  </button>
+                </div>
               </div>
             )}
 

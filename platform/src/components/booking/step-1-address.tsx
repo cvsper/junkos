@@ -270,15 +270,15 @@ export function Step1Address() {
         </div>
       </div>
 
-      {/* Service Area Info */}
+      {/* Service Area Info + Social Proof */}
       <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 flex items-start gap-3">
         <MapPin className="h-5 w-5 text-primary mt-0.5 shrink-0" />
         <div>
           <p className="text-sm font-semibold text-foreground">
-            Service Area
+            2,450+ pickups completed in South Florida
           </p>
           <p className="text-sm text-muted-foreground mt-0.5">
-            We serve Palm Beach &amp; Broward County, South Florida
+            Serving Palm Beach &amp; Broward County
           </p>
         </div>
       </div>

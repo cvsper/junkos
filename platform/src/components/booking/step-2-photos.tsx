@@ -203,8 +203,8 @@ export function Step2Photos() {
       <div className="flex items-start gap-2 rounded-lg border border-border bg-muted/50 p-3">
         <ImageIcon className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
         <p className="text-xs text-muted-foreground">
-          Photos are optional but help us provide more accurate estimates. You
-          can skip this step if you prefer.
+          <span className="font-medium text-foreground">Upload 1-2 photos</span> and our AI auto-fills your items and pricing.
+          Skip this step to add items manually instead.
         </p>
       </div>
 
