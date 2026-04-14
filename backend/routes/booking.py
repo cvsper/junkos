@@ -953,6 +953,38 @@ def create_booking(user_id):
     except Exception:
         pass
 
+    # --- Trigger n8n booking confirmation + review request webhooks ---
+    try:
+        import urllib.request
+        import json as _json
+        n8n_base = os.environ.get("N8N_WEBHOOK_URL", "")
+        if n8n_base:
+            customer = db.session.get(User, user_id)
+            sched_str = scheduled_at.strftime("%B %d, %Y") if scheduled_at else "ASAP"
+            payload = _json.dumps({
+                "booking_id": job.confirmation_code or str(job.id)[:8],
+                "customer_name": customer.name if customer else "Customer",
+                "customer_email": customer.email if customer else "",
+                "scheduled_date": sched_str,
+                "estimated_cost": "{:.2f}".format(total),
+                "address": address or "",
+            }).encode()
+            headers = {"Content-Type": "application/json"}
+            # Booking confirmation
+            req = urllib.request.Request(
+                n8n_base + "/webhook/vnFFMeYDQOB8QIXa/webhook/booking-notification",
+                data=payload, headers=headers, method="POST",
+            )
+            urllib.request.urlopen(req, timeout=5)
+            # Review request (n8n waits 24h before sending)
+            req2 = urllib.request.Request(
+                n8n_base + "/webhook/uaxzeHYyyF2twCvH/webhook/review-request",
+                data=payload, headers=headers, method="POST",
+            )
+            urllib.request.urlopen(req2, timeout=5)
+    except Exception:
+        pass  # n8n webhooks must never block the booking flow
+
     return jsonify({
         "success": True,
         "job": job.to_dict(),

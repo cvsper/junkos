@@ -10,6 +10,7 @@ const META_PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID || "1432514091446263
  * - Google Ads: set NEXT_PUBLIC_GOOGLE_ADS_ID (e.g., "AW-XXXXXXXXXX")
  * - Meta Pixel: set NEXT_PUBLIC_META_PIXEL_ID (defaults to Umuve pixel)
  * - Plausible Analytics: set NEXT_PUBLIC_PLAUSIBLE_DOMAIN (e.g., "goumuve.com")
+ * - Umami Analytics: set NEXT_PUBLIC_UMAMI_WEBSITE_ID + NEXT_PUBLIC_UMAMI_URL
  *
  * If no env vars are set, this component renders nothing (safe for dev).
  */
@@ -17,6 +18,8 @@ export function Analytics() {
   const gaId = process.env.NEXT_PUBLIC_GA_ID;
   const gadsId = process.env.NEXT_PUBLIC_GOOGLE_ADS_ID;
   const plausibleDomain = process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN;
+  const umamiWebsiteId = process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID;
+  const umamiUrl = process.env.NEXT_PUBLIC_UMAMI_URL;
 
   // Use GA ID as the primary gtag config, but also load Ads tag if set
   const primaryTag = gaId || gadsId;
@@ -77,6 +80,16 @@ export function Analytics() {
           defer
           data-domain={plausibleDomain}
           src="https://plausible.io/js/script.js"
+          strategy="afterInteractive"
+        />
+      )}
+
+      {/* Umami Analytics */}
+      {umamiWebsiteId && umamiUrl && (
+        <Script
+          defer
+          data-website-id={umamiWebsiteId}
+          src={`${umamiUrl}/script.js`}
           strategy="afterInteractive"
         />
       )}
