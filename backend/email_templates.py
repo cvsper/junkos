@@ -39,7 +39,7 @@ def _footer():
         '<div style="text-align:center;margin-top:30px;padding-top:20px;border-top:1px solid #e5e7eb;color:#9ca3af;font-size:12px;line-height:1.6;">'
         '<p style="margin:0 0 4px;">Umuve &mdash; South Florida\'s Premium Junk Removal</p>'
         '<p style="margin:0 0 4px;">Palm Beach &amp; Broward County, FL</p>'
-        '<p style="margin:0;">(561) 944-1636 &middot; support@goumuve.com</p>'
+        '<p style="margin:0;">(561) 944-1636 &middot; contact@goumuve.com</p>'
         '</div>'
     )
 
@@ -285,6 +285,74 @@ def payment_receipt_html(customer_name, booking_id, amount, payment_method_last4
         'If you have billing questions, reply to this email or call '
         '<strong>(561) 944-1636</strong>.</p>'
     )
+
+    return _wrap(body)
+
+
+# ---------------------------------------------------------------------------
+# 5b. Quick-checkout payment receipt (for pay-link / invoice payments)
+# ---------------------------------------------------------------------------
+
+def quick_checkout_receipt_html(customer_name, customer_email, amount,
+                                 description, customer_company='',
+                                 customer_address='', payment_intent_id=''):
+    """Return HTML for a quick-checkout payment receipt email."""
+    name = _esc(str(customer_name)) if customer_name else 'there'
+    try:
+        amt_fmt = '${:.2f}'.format(float(amount))
+    except (TypeError, ValueError):
+        amt_fmt = '$0.00'
+
+    short_ref = _esc(str(payment_intent_id)[-8:]) if payment_intent_id else 'N/A'
+
+    body = (
+        '<div style="text-align:center;margin-bottom:24px;">'
+        '<div style="width:64px;height:64px;border-radius:50%;background:#f0fdf4;'
+        'display:inline-flex;align-items:center;justify-content:center;margin-bottom:16px;">'
+        '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#16a34a" '
+        'stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">'
+        '<path d="M20 6L9 17l-5-5"/></svg></div>'
+        '<h2 style="color:#111827;margin:0 0 8px;font-size:24px;">Payment Received</h2>'
+        '<p style="color:#6b7280;margin:0;font-size:15px;">Thank you for your payment, {name}!</p>'
+        '</div>'
+    ).format(name=name)
+
+    # Detail rows
+    rows = [('Service', _esc(str(description)))]
+    if customer_company:
+        rows.append(('Company', _esc(str(customer_company))))
+    if customer_address:
+        rows.append(('Pickup Location', _esc(str(customer_address))))
+    rows.append(('Reference', '#{}'.format(short_ref)))
+    rows.append(('Amount Paid', amt_fmt))
+
+    body += _detail_table(rows)
+
+    # What's included
+    body += (
+        '<div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;'
+        'padding:20px;margin:20px 0;">'
+        '<h3 style="color:#111827;margin:0 0 12px;font-size:15px;">What\'s Included</h3>'
+        '<div style="color:#4b5563;font-size:14px;line-height:2;">'
+        '&#10003; Loading &amp; Labor<br>'
+        '&#10003; Disposal &amp; Recycling<br>'
+        '&#10003; Same-Day / Next-Day Service<br>'
+        '&#10003; Licensed &amp; Insured</div>'
+        '</div>'
+    )
+
+    body += (
+        '<p style="color:#4b5563;line-height:1.6;font-size:14px;">'
+        'Our team will be in touch to confirm your pickup details. '
+        'If you have any questions, reply to this email or call us.</p>'
+    )
+
+    body += _button('tel:+15619441636', 'Call Us: (561) 944-1636')
+
+    body += (
+        '<p style="color:#6b7280;font-size:12px;line-height:1.6;text-align:center;margin-top:16px;">'
+        'This receipt was sent to {email}. Keep it for your records.</p>'
+    ).format(email=_esc(str(customer_email)))
 
     return _wrap(body)
 

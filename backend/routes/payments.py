@@ -1122,6 +1122,9 @@ def quick_checkout():
     amount_dollars = data.get("amount")
     description = data.get("description", "Junk Removal Service")
     customer_email = data.get("email")
+    customer_name = data.get("name", "")
+    customer_company = data.get("company", "")
+    customer_address = data.get("address", "")
 
     if not amount_dollars or not isinstance(amount_dollars, (int, float)) or amount_dollars < 1:
         return jsonify({"error": "Valid amount required (minimum $1)"}), 400
@@ -1148,6 +1151,9 @@ def quick_checkout():
             "metadata": {
                 "source": "quick-checkout",
                 "description": description,
+                "customer_name": customer_name[:200] if customer_name else "",
+                "customer_company": customer_company[:200] if customer_company else "",
+                "customer_address": customer_address[:500] if customer_address else "",
             },
         }
 
@@ -1165,3 +1171,89 @@ def quick_checkout():
     except Exception as e:
         logger.error("Quick checkout error: %s", str(e))
         return jsonify({"error": "Failed to create checkout session"}), 500
+
+
+# ---------------------------------------------------------------------------
+# POST /api/payments/webhook  (Stripe webhook — sends confirmation emails)
+# ---------------------------------------------------------------------------
+@payments_bp.route("/webhook", methods=["POST"])
+def stripe_webhook():
+    """Handle Stripe webhook events.
+
+    Listens for checkout.session.completed to send payment confirmation
+    emails for quick-checkout payments.
+    """
+    stripe = _get_stripe()
+    webhook_secret = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
+    payload = request.get_data(as_text=True)
+    sig_header = request.headers.get("Stripe-Signature", "")
+
+    if webhook_secret:
+        try:
+            event = stripe.Webhook.construct_event(payload, sig_header, webhook_secret)
+        except stripe.error.SignatureVerificationError:
+            logger.warning("Webhook signature verification failed")
+            return jsonify({"error": "Invalid signature"}), 400
+        except Exception as e:
+            logger.error("Webhook construct error: %s", str(e))
+            return jsonify({"error": "Webhook error"}), 400
+    else:
+        # No secret configured — parse raw (dev only)
+        import json as _json
+        try:
+            event = _json.loads(payload)
+        except Exception:
+            return jsonify({"error": "Invalid payload"}), 400
+
+    event_type = event.get("type") if isinstance(event, dict) else event.type
+
+    if event_type == "checkout.session.completed":
+        _handle_checkout_completed(event)
+
+    return jsonify({"received": True}), 200
+
+
+def _handle_checkout_completed(event):
+    """Process a completed checkout session — send receipt email."""
+    try:
+        session = event.get("data", {}).get("object", {}) if isinstance(event, dict) else event.data.object
+        metadata = session.get("metadata", {}) if isinstance(session, dict) else (session.metadata or {})
+
+        source = metadata.get("source", "")
+        if source != "quick-checkout":
+            return  # Only handle quick-checkout sessions
+
+        customer_email = session.get("customer_email") or session.get("customer_details", {}).get("email", "")
+        if not customer_email:
+            logger.warning("Checkout completed but no customer email — skipping receipt")
+            return
+
+        amount_total = session.get("amount_total", 0)  # in cents
+        amount_dollars = amount_total / 100.0 if amount_total else 0
+
+        customer_name = metadata.get("customer_name", "")
+        customer_company = metadata.get("customer_company", "")
+        customer_address = metadata.get("customer_address", "")
+        description = metadata.get("description", "Junk Removal Service")
+        payment_intent_id = session.get("payment_intent", "")
+
+        # Send branded receipt email
+        from notifications import send_email
+        from email_templates import quick_checkout_receipt_html
+
+        html = quick_checkout_receipt_html(
+            customer_name=customer_name,
+            customer_email=customer_email,
+            amount=amount_dollars,
+            description=description,
+            customer_company=customer_company,
+            customer_address=customer_address,
+            payment_intent_id=payment_intent_id,
+        )
+
+        subject = "Umuve Payment Receipt — ${:.2f}".format(amount_dollars)
+        send_email(customer_email, subject, html)
+        logger.info("Quick-checkout receipt sent to %s ($%.2f)", customer_email, amount_dollars)
+
+    except Exception:
+        logger.exception("Error handling checkout.session.completed")
