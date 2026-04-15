@@ -178,6 +178,10 @@
       "destination": "/pay-success.html"
     },
     {
+      "source": "/pay/success.html",
+      "destination": "/pay-success.html"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

@@ -1143,7 +1143,7 @@ def quick_checkout():
                 "quantity": 1,
             }],
             "mode": "payment",
-            "success_url": "https://goumuve.com/pay/success.html",
+            "success_url": "https://goumuve.com/pay/success",
             "cancel_url": "https://goumuve.com/pay/",
             "metadata": {
                 "source": "quick-checkout",
