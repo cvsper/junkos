@@ -170,6 +170,14 @@
       "destination": "/partners/realtors.html"
     },
     {
+      "source": "/pay",
+      "destination": "/pay.html"
+    },
+    {
+      "source": "/pay/success",
+      "destination": "/pay-success.html"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
