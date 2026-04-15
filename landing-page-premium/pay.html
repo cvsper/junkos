@@ -207,6 +207,7 @@
                     <div id="bill-to-block" style="display:none;">
                         <div class="detail-label">Bill To</div>
                         <div id="customer-name" style="font-weight:600; font-size:0.95rem;"></div>
+                        <div id="customer-company" style="font-size:0.85rem; color:#6b7280;"></div>
                     </div>
                     <div id="pickup-block" style="display:none;">
                         <div class="detail-label">Pickup Location</div>
@@ -355,13 +356,15 @@
         var desc = params.get('job') || params.get('desc') || 'Junk Removal Service';
         var customerName = params.get('name') || '';
         var pickupAddress = params.get('address') || '';
+        var companyName = params.get('company') || '';
 
-        // Show customer info section if name or address provided
-        if (customerName || pickupAddress) {
+        // Show customer info section if name, company, or address provided
+        if (customerName || pickupAddress || companyName) {
             document.getElementById('customer-info').style.display = 'block';
-            if (customerName) {
+            if (customerName || companyName) {
                 document.getElementById('bill-to-block').style.display = 'block';
-                document.getElementById('customer-name').textContent = customerName;
+                if (customerName) document.getElementById('customer-name').textContent = customerName;
+                if (companyName) document.getElementById('customer-company').textContent = companyName;
             }
             if (pickupAddress) {
                 document.getElementById('pickup-block').style.display = 'block';
