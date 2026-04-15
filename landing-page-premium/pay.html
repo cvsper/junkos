@@ -201,6 +201,20 @@
                 <div class="subtitle">Licensed &amp; Insured &middot; Serving South Florida</div>
             </div>
 
+            <!-- Bill To / Pickup -->
+            <div id="customer-info" style="display:none; padding:1.25rem 1.75rem; border-bottom:1px solid #f3f4f6;">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+                    <div id="bill-to-block" style="display:none;">
+                        <div class="detail-label">Bill To</div>
+                        <div id="customer-name" style="font-weight:600; font-size:0.95rem;"></div>
+                    </div>
+                    <div id="pickup-block" style="display:none;">
+                        <div class="detail-label">Pickup Location</div>
+                        <div id="pickup-address" style="font-size:0.9rem; color:#374151; line-height:1.4;"></div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Service details -->
             <div class="service-details">
                 <div class="detail-label">Service Details</div>
@@ -340,6 +354,20 @@
         var amount = parseFloat(params.get('amount')) || 0;
         var desc = params.get('job') || params.get('desc') || 'Junk Removal Service';
         var customerName = params.get('name') || '';
+        var pickupAddress = params.get('address') || '';
+
+        // Show customer info section if name or address provided
+        if (customerName || pickupAddress) {
+            document.getElementById('customer-info').style.display = 'block';
+            if (customerName) {
+                document.getElementById('bill-to-block').style.display = 'block';
+                document.getElementById('customer-name').textContent = customerName;
+            }
+            if (pickupAddress) {
+                document.getElementById('pickup-block').style.display = 'block';
+                document.getElementById('pickup-address').textContent = pickupAddress;
+            }
+        }
 
         function updateDisplay(a, d) {
             var formatted = a > 0 ? '$' + a.toFixed(2) : '$\u2014';
