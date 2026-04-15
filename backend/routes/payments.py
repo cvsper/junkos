@@ -1100,3 +1100,68 @@ def _handle_account_updated(account):
     # Status is derived from Stripe API calls in /connect/status endpoint
     # No model changes needed here — just log for debugging
     db.session.commit()
+
+
+# ---------------------------------------------------------------------------
+# POST /api/payments/quick-checkout  (PUBLIC — for sending payment links to customers)
+# ---------------------------------------------------------------------------
+@payments_bp.route("/quick-checkout", methods=["POST"])
+@limiter.limit("20 per hour")
+def quick_checkout():
+    """Create a Stripe Checkout Session for a quick invoice/payment link.
+
+    Public endpoint — no auth required. Rate-limited.
+    Used when operators send payment links to customers (e.g., phone bookings).
+    """
+    stripe = _get_stripe()
+    stripe_key = os.environ.get("STRIPE_SECRET_KEY", "")
+    if not stripe_key:
+        return jsonify({"error": "Payments not configured"}), 503
+
+    data = request.get_json() or {}
+    amount_dollars = data.get("amount")
+    description = data.get("description", "Junk Removal Service")
+    customer_email = data.get("email")
+
+    if not amount_dollars or not isinstance(amount_dollars, (int, float)) or amount_dollars < 1:
+        return jsonify({"error": "Valid amount required (minimum $1)"}), 400
+
+    amount_cents = int(round(float(amount_dollars) * 100))
+
+    try:
+        session_params = {
+            "payment_method_types": ["card"],
+            "line_items": [{
+                "price_data": {
+                    "currency": "usd",
+                    "product_data": {
+                        "name": description,
+                        "description": f"Umuve — Hauling Made Simple | ${amount_dollars:.2f}",
+                    },
+                    "unit_amount": amount_cents,
+                },
+                "quantity": 1,
+            }],
+            "mode": "payment",
+            "success_url": "https://goumuve.com/pay/success.html",
+            "cancel_url": "https://goumuve.com/pay/",
+            "metadata": {
+                "source": "quick-checkout",
+                "description": description,
+            },
+        }
+
+        if customer_email:
+            session_params["customer_email"] = customer_email
+
+        session = stripe.checkout.Session.create(**session_params)
+
+        return jsonify({
+            "success": True,
+            "checkout_url": session.url,
+            "session_id": session.id,
+        }), 200
+
+    except Exception as e:
+        logger.error("Quick checkout error: %s", str(e))
+        return jsonify({"error": "Failed to create checkout session"}), 500
