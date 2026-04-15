@@ -807,6 +807,9 @@ def stripe_webhook():
     elif event_type == "account.updated":
         _handle_account_updated(data_object)
 
+    elif event_type == "checkout.session.completed":
+        _handle_checkout_completed(event)
+
     return jsonify({"received": True}), 200
 
 
@@ -1171,46 +1174,6 @@ def quick_checkout():
     except Exception as e:
         logger.error("Quick checkout error: %s", str(e))
         return jsonify({"error": "Failed to create checkout session"}), 500
-
-
-# ---------------------------------------------------------------------------
-# POST /api/payments/webhook  (Stripe webhook — sends confirmation emails)
-# ---------------------------------------------------------------------------
-@payments_bp.route("/webhook", methods=["POST"])
-def stripe_webhook():
-    """Handle Stripe webhook events.
-
-    Listens for checkout.session.completed to send payment confirmation
-    emails for quick-checkout payments.
-    """
-    stripe = _get_stripe()
-    webhook_secret = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
-    payload = request.get_data(as_text=True)
-    sig_header = request.headers.get("Stripe-Signature", "")
-
-    if webhook_secret:
-        try:
-            event = stripe.Webhook.construct_event(payload, sig_header, webhook_secret)
-        except stripe.error.SignatureVerificationError:
-            logger.warning("Webhook signature verification failed")
-            return jsonify({"error": "Invalid signature"}), 400
-        except Exception as e:
-            logger.error("Webhook construct error: %s", str(e))
-            return jsonify({"error": "Webhook error"}), 400
-    else:
-        # No secret configured — parse raw (dev only)
-        import json as _json
-        try:
-            event = _json.loads(payload)
-        except Exception:
-            return jsonify({"error": "Invalid payload"}), 400
-
-    event_type = event.get("type") if isinstance(event, dict) else event.type
-
-    if event_type == "checkout.session.completed":
-        _handle_checkout_completed(event)
-
-    return jsonify({"received": True}), 200
 
 
 def _handle_checkout_completed(event):
