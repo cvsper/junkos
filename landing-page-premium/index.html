@@ -7,9 +7,9 @@
     <!-- Performance: preconnect and preloads -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preload" href="/logo-nav.png" as="image">
-    <link rel="preload" href="/hero-mobile.jpg" as="image" media="(max-width: 768px)">
-    <link rel="preload" href="/hero-poster.jpg" as="image" media="(min-width: 769px)">
+    <link rel="preload" href="/logo-nav.webp" as="image" type="image/webp">
+    <link rel="preload" href="/hero-mobile.webp" as="image" type="image/webp" media="(max-width: 768px)">
+    <link rel="preload" href="/hero-poster.webp" as="image" type="image/webp" media="(min-width: 769px)">
 
     <!-- Optimized Font Loading -->
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&family=Outfit:wght@700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
@@ -69,7 +69,7 @@
       "description": "Eco-friendly junk removal and hauling. We donate usable items to local charities first — landfill is always the last resort. Transparent pricing, instant photo estimates, same-day service.",
       "url": "https://goumuve.com",
       "telephone": "+1-561-944-1636",
-      "email": "support@goumuve.com",
+      "email": "contact@goumuve.com",
       "image": "https://goumuve.com/logo-full.png",
       "priceRange": "$$",
       "currenciesAccepted": "USD",
@@ -338,7 +338,7 @@
         <div class="container">
             <div class="nav-content">
                 <a href="/" class="logo" aria-label="Umuve Home">
-                    <img src="logo-nav.png" alt="Umuve Logo" width="120" height="36" style="height: 36px; width: auto;" fetchpriority="high">
+                    <picture><source srcset="logo-nav.webp" type="image/webp"><img src="logo-nav.png" alt="Umuve Logo" width="120" height="36" style="height: 36px; width: auto;" fetchpriority="high"></picture>
                 </a>
 
                 <!-- Hamburger Toggle (mobile only) -->
@@ -366,7 +366,7 @@
         <video class="hero-video" autoplay muted loop playsinline preload="metadata" poster="hero-poster.jpg" aria-hidden="true">
             <source src="hero-bg.mp4" type="video/mp4">
         </video>
-        <img class="hero-mobile-img" src="hero-mobile.jpg" alt="" aria-hidden="true" fetchpriority="high" width="768" height="1024">
+        <picture><source srcset="hero-mobile.webp" type="image/webp"><img class="hero-mobile-img" src="hero-mobile.jpg" alt="" aria-hidden="true" fetchpriority="high" width="768" height="1024"></picture>
         <div class="hero-overlay"></div>
 
         <div class="container">
@@ -1081,13 +1081,28 @@
         </div>
     </section>
 
+    <!-- Newsletter Signup -->
+    <section class="section" style="padding:3rem 0;background:#f9fafb;">
+        <div class="container">
+            <div style="max-width:520px;margin:0 auto;text-align:center;">
+                <h3 style="font-family:var(--font-display);font-size:1.5rem;font-weight:800;margin-bottom:.5rem;">Get Deals & Tips</h3>
+                <p style="color:var(--color-text-secondary);margin-bottom:1.25rem;font-size:.95rem;">Seasonal discounts, decluttering tips, and South Florida hauling news. No spam.</p>
+                <form id="subscribe-form" style="display:flex;gap:.5rem;max-width:440px;margin:0 auto;" onsubmit="return handleSubscribe(event)">
+                    <input type="email" id="subscribe-email" placeholder="your@email.com" required style="flex:1;padding:.75rem 1rem;border:1px solid #d1d5db;border-radius:.5rem;font-size:1rem;font-family:var(--font-body);outline:none;" aria-label="Email address">
+                    <button type="submit" class="btn btn-primary" id="subscribe-btn" style="padding:.75rem 1.5rem;font-size:.95rem;white-space:nowrap;">Subscribe</button>
+                </form>
+                <p id="subscribe-msg" style="margin-top:.75rem;font-size:.85rem;min-height:1.2em;" aria-live="polite"></p>
+            </div>
+        </div>
+    </section>
+
     <!-- Footer -->
     <footer class="footer">
         <div class="container">
             <div class="footer-grid">
                 <div class="footer-brand">
                     <a href="/" class="logo" aria-label="Umuve Home">
-                        <img src="logo-full.png" alt="Umuve Logo" style="height: 36px; width: auto;" loading="lazy" width="120" height="36">
+                        <picture><source srcset="logo-full.webp" type="image/webp"><img src="logo-full.png" alt="Umuve Logo" style="height: 36px; width: auto;" loading="lazy" width="120" height="36"></picture>
                         <span class="logo-text">Umuve</span>
                     </a>
                     <p>South Florida's fastest junk removal service</p>
@@ -1125,5 +1140,25 @@
     </div>
 
     <script src="script.js" defer></script>
+    <script>
+    function handleSubscribe(e){
+        e.preventDefault();
+        var btn=document.getElementById('subscribe-btn');
+        var msg=document.getElementById('subscribe-msg');
+        var email=document.getElementById('subscribe-email').value.trim();
+        if(!email)return false;
+        btn.disabled=true;btn.textContent='...';
+        fetch('https://junkos-backend.onrender.com/api/subscribe',{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({email:email,source:'website',list:'newsletter'})
+        }).then(function(r){return r.json()}).then(function(d){
+            if(d.error){msg.style.color='#DC2626';msg.textContent=d.error;}
+            else{msg.style.color='#16a34a';msg.textContent='You\'re in! Watch your inbox.';document.getElementById('subscribe-email').value='';}
+        }).catch(function(){msg.style.color='#DC2626';msg.textContent='Something went wrong. Try again.';})
+        .finally(function(){btn.disabled=false;btn.textContent='Subscribe';});
+        return false;
+    }
+    </script>
 </body>
 </html>

@@ -28,6 +28,7 @@ from .migration import migration_bp
 from .sms_webhook import sms_webhook_bp
 from .campaigns import campaigns_bp
 from .partners import partners_bp
+from .subscribe import subscribe_bp
 
 __all__ = [
     "drivers_bp",
@@ -58,4 +59,5 @@ __all__ = [
     "sms_webhook_bp",
     "campaigns_bp",
     "partners_bp",
+    "subscribe_bp",
 ]

@@ -1267,3 +1267,29 @@ class Partner(db.Model):
             "commission_rate": self.commission_rate,
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }
+
+
+# ---------------------------------------------------------------------------
+# Subscriber (newsletter / email list)
+# ---------------------------------------------------------------------------
+class Subscriber(db.Model):
+    __tablename__ = "subscribers"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    email = Column(String(255), unique=True, nullable=False, index=True)
+    name = Column(String(255), nullable=True)
+    source = Column(String(50), nullable=False, default="website")
+    list_name = Column(String(50), nullable=False, default="newsletter")
+    status = Column(String(20), nullable=False, default="active")
+    created_at = Column(DateTime, default=utcnow)
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "email": self.email,
+            "name": self.name,
+            "source": self.source,
+            "list_name": self.list_name,
+            "status": self.status,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
