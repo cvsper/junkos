@@ -989,6 +989,21 @@ from ops_supervisor_migrations import (
     NEW_TABLES_PG as _OPS_PG_ALL,
     NEW_TABLE_NAMES as _OPS_NAMES,
 )
+from portal_v1_migrations import (
+    NEW_TABLES_SQLITE as _PORTAL_V1_SQLITE,
+    NEW_TABLES_PG as _PORTAL_V1_PG,
+    NEW_TABLE_NAMES as _PORTAL_V1_NAMES,
+    COLUMN_MIGRATIONS as _PORTAL_V1_COLUMNS,
+    RLS_ORG_TABLES as _PORTAL_V1_RLS,
+)
+from ops_supervisor_v1_migrations import (
+    NEW_TABLES_SQLITE as _OPS_V1_SQLITE,
+    NEW_TABLES_PG as _OPS_V1_PG,
+    NEW_TABLE_NAMES as _OPS_V1_NAMES,
+    NEW_INDEXES_SQLITE as _OPS_V1_INDEXES_SQLITE,
+    NEW_INDEXES_PG as _OPS_V1_INDEXES_PG,
+)
+COLUMN_MIGRATIONS.extend(_PORTAL_V1_COLUMNS)
 # ops_supervisor_migrations interleaves CREATE INDEX statements; separate
 # them so the zip(NAMES, TABLES) alignment stays 1:1.
 def _split_tables_and_indexes(stmts):
@@ -1005,6 +1020,8 @@ _OPS_PG, _OPS_INDEXES_PG = _split_tables_and_indexes(_OPS_PG_ALL)
 
 NEW_TABLES_SQLITE.extend(_PARTNER_SQLITE)
 NEW_TABLES_SQLITE.extend(_OPS_SQLITE)
+NEW_TABLES_SQLITE.extend(_PORTAL_V1_SQLITE)
+NEW_TABLES_SQLITE.extend(_OPS_V1_SQLITE)
 
 NEW_TABLES_PG = [
     # referrals
@@ -1836,6 +1853,8 @@ NEW_TABLES_PG = [
 ]
 NEW_TABLES_PG.extend(_PARTNER_PG)
 NEW_TABLES_PG.extend(_OPS_PG)
+NEW_TABLES_PG.extend(_PORTAL_V1_PG)
+NEW_TABLES_PG.extend(_OPS_V1_PG)
 
 # Table names for the new tables (used for reporting)
 NEW_TABLE_NAMES = [
@@ -1893,6 +1912,8 @@ NEW_TABLE_NAMES = [
 ]
 NEW_TABLE_NAMES.extend(_PARTNER_NAMES)
 NEW_TABLE_NAMES.extend(_OPS_NAMES)
+NEW_TABLE_NAMES.extend(_PORTAL_V1_NAMES)
+NEW_TABLE_NAMES.extend(_OPS_V1_NAMES)
 
 # Tables that require Postgres Row-Level Security. On SQLite the app-layer
 # tenant_guard middleware is the sole enforcer. Spec 04 §3.
@@ -1906,6 +1927,7 @@ RLS_ORG_TABLES = [
     "portal_audit_logs",
     "portal_api_keys",
 ]
+RLS_ORG_TABLES.extend(_PORTAL_V1_RLS)
 
 
 # ---------------------------------------------------------------------------
@@ -1997,6 +2019,8 @@ def run_migrations(database_url=None):
         # ---- Ops Supervisor indexes (idempotent CREATE INDEX IF NOT EXISTS) ----
         for ddl in _OPS_INDEXES_SQLITE:
             cursor.execute(ddl)
+        for ddl in _OPS_V1_INDEXES_SQLITE:
+            cursor.execute(ddl)
 
         conn.commit()
         conn.close()
@@ -2033,6 +2057,8 @@ def run_migrations(database_url=None):
 
         # ---- Ops Supervisor indexes (idempotent) ----
         for ddl in _OPS_INDEXES_PG:
+            cursor.execute(ddl)
+        for ddl in _OPS_V1_INDEXES_PG:
             cursor.execute(ddl)
 
         # ---- Apply Row-Level Security to org-scoped tables (spec 04 §3) ----

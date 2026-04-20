@@ -87,3 +87,45 @@ def outreach_cmd(lead_id):
     url = "{}/partner/v1/internal/leads/{}/outreach".format(base, lead_id)
     resp = requests.post(url, headers={"X-Service-Token": token}, timeout=10)
     click.echo("{} {}".format(resp.status_code, resp.text))
+
+
+# ---------------------------------------------------------------------------
+# Spec 07 §9 v1 commands — multi-source scrapers + pipeline driver.
+# ---------------------------------------------------------------------------
+@partner_cli.command("scrape-all")
+@click.option("--city", default="Miami", show_default=True)
+@click.option("--limit", default=25, show_default=True, type=int,
+              help="Max listings per source.")
+def scrape_all_cmd(city, limit):
+    """Run every configured scraper (craigslist, fb_marketplace, thumbtack,
+    nextdoor DEFERRED, indeed) and print per-source counts. Does NOT ingest —
+    pair with `partner scrape` for Craigslist, or extend this command to
+    POST into the ingest endpoint once the new scrapers mature."""
+    from partner_scrapers import run_all_scrapers
+
+    rows = run_all_scrapers(city=city, limit_per_source=limit)
+    counts = {}
+    for r in rows:
+        counts[r.get("source", "?")] = counts.get(r.get("source", "?"), 0) + 1
+    click.echo("Found {} total listings across sources:".format(len(rows)))
+    for src in ("craigslist", "fb_marketplace", "thumbtack", "nextdoor", "indeed"):
+        click.echo("  {:<18} {}".format(src, counts.get(src, 0)))
+
+
+@partner_cli.command("pipeline-tick")
+@click.option("--lead-id", required=True)
+def pipeline_tick_cmd(lead_id):
+    """Advance one lead by one step of the LangGraph pipeline."""
+    from partner_langgraph import run_lead_pipeline
+    import json as _json
+
+    result = run_lead_pipeline(lead_id)
+    click.echo(_json.dumps(result, default=str, indent=2))
+
+
+@partner_cli.command("pipeline-tick-all")
+def pipeline_tick_all_cmd():
+    """Advance every eligible lead once."""
+    from partner_langgraph import run_lead_pipeline_all
+    counters = run_lead_pipeline_all()
+    click.echo("advanced={advanced} skipped={skipped} errors={errors}".format(**counters))

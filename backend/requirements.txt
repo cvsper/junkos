@@ -37,3 +37,13 @@ ortools>=9.7,<10
 
 # Partner Acquisition Agent (spec 07) — Craigslist scraper HTML parsing.
 beautifulsoup4>=4.12
+
+# B2B Commercial Portal v1 (spec 04 §9.6) — SSO via Authlib
+# (Google OpenID + Microsoft Entra).  Endpoints 503 gracefully if unset.
+authlib>=1.3
+
+# Ops Supervisor Agent v1 (spec 11 §9) — LangGraph workflow +
+# SqliteSaver checkpointer. Redis, anthropic, httpx already pinned above.
+langgraph>=0.2
+langgraph-checkpoint-sqlite>=1.0
+

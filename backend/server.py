@@ -213,6 +213,20 @@ except Exception as _p_exc:
     import logging as _logging
     _logging.getLogger(__name__).warning("portal_bp not registered: %s", _p_exc)
 
+# Portal v1 expansion (spec 04 §9) — Units, RecurringSchedule, ESG, SSO, audit
+try:
+    from routes.portal_v1 import portal_v1_bp
+    app.register_blueprint(portal_v1_bp)
+    from routes.portal_sso import portal_sso_bp
+    app.register_blueprint(portal_sso_bp)
+    import portal_recurring as _portal_recurring
+    import portal_invoicing as _portal_invoicing
+    _portal_recurring.register_cli(app)
+    _portal_invoicing.register_cli(app)
+except Exception as _pv1_exc:
+    import logging as _logging
+    _logging.getLogger(__name__).warning("portal_v1_bp not registered: %s", _pv1_exc)
+
 # Partner (Driver) Acquisition Agent (spec 07) — /partner/v1/*
 try:
     from routes.partner import partner_bp
@@ -223,6 +237,14 @@ except Exception as _pa_exc:
     import logging as _logging
     _logging.getLogger(__name__).warning("partner_bp not registered: %s", _pa_exc)
 
+# Partner v1 expansion (spec 07 §9) — scrapers, Claude outreach, Checkr, Stripe Connect, LangGraph
+try:
+    from routes.partner_v1 import partner_v1_bp
+    app.register_blueprint(partner_v1_bp)
+except Exception as _pav1_exc:
+    import logging as _logging
+    _logging.getLogger(__name__).warning("partner_v1_bp not registered: %s", _pav1_exc)
+
 # Ops Supervisor Agent (spec 11) — /ops-supervisor/v1/*
 try:
     from routes.ops_supervisor import ops_supervisor_bp
@@ -230,6 +252,16 @@ try:
 except Exception as _o_exc:
     import logging as _logging
     _logging.getLogger(__name__).warning("ops_supervisor_bp not registered: %s", _o_exc)
+
+# Ops Supervisor v1 expansion (spec 11 §9) — Haiku classifier, Opus agent, LangGraph, Redis, PagerDuty
+try:
+    from routes.ops_supervisor_v1 import ops_supervisor_v1_bp
+    app.register_blueprint(ops_supervisor_v1_bp)
+    from ops_worker_cli import register_worker_cli as _register_ops_worker
+    _register_ops_worker(app)
+except Exception as _ov1_exc:
+    import logging as _logging
+    _logging.getLogger(__name__).warning("ops_supervisor_v1_bp not registered: %s", _ov1_exc)
 
 # Dynamic Surge Pricing (spec 08-dynamic-surge-pricing.md)
 try:

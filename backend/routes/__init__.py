@@ -1,5 +1,10 @@
 """
 Umuve API Route Blueprints
+
+Imports are wrapped in try/except so that in-flight specs (quotes, voice,
+attach, surge, claims, resale, routing, leads) whose route modules haven't
+landed on disk yet don't take down the whole `routes` package. `server.py`
+already imports those optional blueprints behind their own try/except blocks.
 """
 from .drivers import drivers_bp
 from .pricing import pricing_bp
@@ -27,11 +32,27 @@ from .ai_analysis import ai_bp
 from .migration import migration_bp
 from .sms_webhook import sms_webhook_bp
 from .campaigns import campaigns_bp
-from .quotes import quotes_bp
-from .attach import attach_bp
-from .surge import surge_bp
-from .voice import voice_bp
 from .portal import portal_bp
+
+# In-flight spec blueprints — optional. `server.py` registers these behind
+# its own try/except so missing modules don't crash boot.
+_optional_names = ["quotes_bp", "attach_bp", "surge_bp", "voice_bp"]
+try:
+    from .quotes import quotes_bp  # noqa: F401
+except Exception:
+    quotes_bp = None  # type: ignore
+try:
+    from .attach import attach_bp  # noqa: F401
+except Exception:
+    attach_bp = None  # type: ignore
+try:
+    from .surge import surge_bp  # noqa: F401
+except Exception:
+    surge_bp = None  # type: ignore
+try:
+    from .voice import voice_bp  # noqa: F401
+except Exception:
+    voice_bp = None  # type: ignore
 
 __all__ = [
     "drivers_bp",
