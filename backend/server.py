@@ -489,11 +489,47 @@ def cli_portal_orgs_create(name, billing_email, owner_email, owner_name,
 
         import os as _os
         base = _os.environ.get("PORTAL_URL", "https://portal.goumuve.com")
+        invite_url = "{}/invite?token={}".format(base, invite)
         click.echo("Org created: {} (slug={}, id={})".format(
             name, slug_final, org.id
         ))
         click.echo("Owner: {} ({})".format(email, user.id))
-        click.echo("Invite URL: {}/invite?token={}".format(base, invite))
+        click.echo("Invite URL: {}".format(invite_url))
+
+        resend_key = _os.environ.get("RESEND_API_KEY")
+        if resend_key:
+            try:
+                import resend as _resend
+                _resend.api_key = resend_key
+                sender = _os.environ.get(
+                    "PORTAL_INVITE_FROM", "Umuve <portal@goumuve.com>"
+                )
+                _resend.Emails.send({
+                    "from": sender,
+                    "to": [email],
+                    "subject": "Your Umuve Commercial Portal invite",
+                    "html": (
+                        "<p>Hi,</p>"
+                        "<p>Your Umuve Commercial Portal account for "
+                        "<strong>{}</strong> is ready.</p>"
+                        "<p><a href=\"{}\">Click here to activate</a></p>"
+                        "<p>This link is single-use and expires after first "
+                        "login.</p>"
+                    ).format(name, invite_url),
+                })
+                click.echo("Invite email sent to {} via Resend".format(email))
+            except Exception as _email_exc:
+                click.echo(
+                    "Invite email FAILED (URL still valid): {}".format(
+                        _email_exc
+                    ),
+                    err=True,
+                )
+        else:
+            click.echo(
+                "RESEND_API_KEY not set; skipping email — share the URL manually.",
+                err=True,
+            )
 
 
 @cli_portal.command("bootstrap-stripe")
