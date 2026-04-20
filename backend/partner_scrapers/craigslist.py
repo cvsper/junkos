@@ -15,14 +15,15 @@ import requests
 
 from . import (
     EMAIL_RE,
-    FETCH_TIMEOUT_SEC,
     PHONE_RE,
     REQUEST_DELAY_SEC,
-    USER_AGENT,
     compute_dedupe_hash,
+    http_get,
+    pick_user_agent,
 )
 
 logger = logging.getLogger(__name__)
+_SOURCE = "craigslist"
 
 DEFAULT_QUERIES = ["junk+hauling", "hauler", "moving"]
 CITY_TO_SUBDOMAIN = {
@@ -37,15 +38,7 @@ CITY_TO_SUBDOMAIN = {
 
 
 def _fetch(session: requests.Session, url: str) -> Optional[str]:
-    try:
-        resp = session.get(url, timeout=FETCH_TIMEOUT_SEC)
-        if resp.status_code != 200:
-            logger.warning("craigslist fetch %s -> %s", url, resp.status_code)
-            return None
-        return resp.text
-    except Exception:
-        logger.exception("craigslist fetch failed for %s", url)
-        return None
+    return http_get(session, url, source=_SOURCE)
 
 
 def _parse_listings(html: str) -> List[Dict]:
@@ -114,7 +107,7 @@ def scrape(city: str = "Miami", limit: int = 25) -> List[Dict]:
     """
     sub = CITY_TO_SUBDOMAIN.get((city or "").strip().lower(), "miami")
     session = requests.Session()
-    session.headers.update({"User-Agent": USER_AGENT})
+    session.headers.update({"User-Agent": pick_user_agent()})
 
     all_rows: List[Dict] = []
     for query in DEFAULT_QUERIES:

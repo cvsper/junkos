@@ -17,15 +17,14 @@ from urllib.parse import quote_plus
 import requests
 
 from . import (
-    EMAIL_RE,
-    FETCH_TIMEOUT_SEC,
-    PHONE_RE,
     REQUEST_DELAY_SEC,
-    USER_AGENT,
     compute_dedupe_hash,
+    http_get,
+    pick_user_agent,
 )
 
 logger = logging.getLogger(__name__)
+_SOURCE = "indeed"
 
 SEARCH_URL = (
     "https://www.indeed.com/jobs?q={q}&l={l}"
@@ -34,15 +33,7 @@ DEFAULT_QUERY = "junk removal driver owner-operator"
 
 
 def _fetch(session: requests.Session, url: str) -> Optional[str]:
-    try:
-        resp = session.get(url, timeout=FETCH_TIMEOUT_SEC)
-        if resp.status_code != 200:
-            logger.warning("indeed fetch %s -> %s", url, resp.status_code)
-            return None
-        return resp.text
-    except Exception:
-        logger.exception("indeed fetch failed for %s", url)
-        return None
+    return http_get(session, url, source=_SOURCE)
 
 
 def _parse(html: str) -> List[Dict]:
@@ -89,14 +80,12 @@ def _parse(html: str) -> List[Dict]:
                 "notes": None,
             })
 
-    # Try to lift any phone/email that appear in the SERP body.
-    text = html or ""
-    phone_m = PHONE_RE.search(text)
-    email_m = EMAIL_RE.search(text)
-    if out and phone_m:
-        out[0]["phone"] = phone_m.group(0)
-    if out and email_m:
-        out[0]["email"] = email_m.group(0)
+    # NOTE: We deliberately do NOT lift phone/email from the SERP body and
+    # attach it to out[0] — that was a correctness bug in the v1 scaffold.
+    # A phone number appearing in the SERP chrome (e.g. Indeed's own support
+    # line) is not attributable to any specific listing. Contact extraction
+    # happens in the downstream outreach step when we actually load the
+    # viewjob detail page per listing.
 
     # Dedupe on external_id.
     seen = set()
@@ -116,7 +105,7 @@ def scrape(city: str = "Miami", limit: int = 25) -> List[Dict]:
     url = SEARCH_URL.format(q=q, l=l)
 
     session = requests.Session()
-    session.headers.update({"User-Agent": USER_AGENT})
+    session.headers.update({"User-Agent": pick_user_agent()})
     html = _fetch(session, url)
     time.sleep(REQUEST_DELAY_SEC)
     if not html:

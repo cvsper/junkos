@@ -21,14 +21,15 @@ import requests
 
 from . import (
     EMAIL_RE,
-    FETCH_TIMEOUT_SEC,
     PHONE_RE,
     REQUEST_DELAY_SEC,
-    USER_AGENT,
     compute_dedupe_hash,
+    http_get,
+    pick_user_agent,
 )
 
 logger = logging.getLogger(__name__)
+_SOURCE = "fb_marketplace"
 
 CITY_SLUG = {
     "miami": "miami",
@@ -47,20 +48,19 @@ SEARCH_URL_TMPL = (
 
 
 def _fetch(session: requests.Session, url: str) -> Optional[str]:
-    try:
-        resp = session.get(url, timeout=FETCH_TIMEOUT_SEC, allow_redirects=True)
-        if resp.status_code != 200:
-            logger.warning("fb_marketplace fetch %s -> %s", url, resp.status_code)
-            return None
-        # Login-gate heuristic: FB redirects to /login/ when the page is gated.
-        final = str(resp.url or "")
-        if "/login" in final or "login.php" in final:
-            logger.warning("fb_marketplace gated by login; skipping (%s)", final)
-            return None
-        return resp.text
-    except Exception:
-        logger.exception("fb_marketplace fetch failed for %s", url)
+    """Shared retry/backoff + FB-specific login-gate detection.
+
+    We can't see the final redirect URL from `http_get` (it returns body only),
+    so we do the gate check inline on the body: FB's login page has a stable
+    marker div `id="loginform"`.
+    """
+    body = http_get(session, url, source=_SOURCE)
+    if body is None:
         return None
+    if 'id="loginform"' in body or "login_form" in body:
+        logger.warning("fb_marketplace gated by login; skipping")
+        return None
+    return body
 
 
 def _extract_from_html(html: str) -> List[Dict]:
@@ -119,7 +119,7 @@ def scrape(city: str = "Miami", limit: int = 25) -> List[Dict]:
 
     session = requests.Session()
     session.headers.update({
-        "User-Agent": USER_AGENT,
+        "User-Agent": pick_user_agent(),
         "Accept": "text/html,application/xhtml+xml",
     })
 
