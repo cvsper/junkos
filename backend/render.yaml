@@ -16,8 +16,44 @@ services:
         fromDatabase:
           name: umuve-db
           property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: umuve-redis
+          property: connectionString
       - key: ENABLE_SCHEDULER
         value: "true"
+
+  # Portal v1 scheduled tasks (spec 04 §9):
+  #   * portal.recurring_tick   — every 5 min, generates Jobs for due schedules
+  #   * portal.invoice_monthly  — 02:00 UTC on the 1st, invoices prior month
+  # Worker + Beat run in one process (sufficient at MVP volume).
+  - type: worker
+    name: umuve-portal-beat
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: celery -A celery_app.celery worker -B --loglevel=info --concurrency=1
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: umuve-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: umuve-redis
+          property: connectionString
+      - key: SECRET_KEY
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+
+  - type: redis
+    name: umuve-redis
+    ipAllowList: []
+    plan: free
 
 databases:
   - name: umuve-db
