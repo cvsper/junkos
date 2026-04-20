@@ -1003,6 +1003,11 @@ from ops_supervisor_v1_migrations import (
     NEW_INDEXES_SQLITE as _OPS_V1_INDEXES_SQLITE,
     NEW_INDEXES_PG as _OPS_V1_INDEXES_PG,
 )
+from portal_sso_migrations import (
+    NEW_TABLES_SQLITE as _PORTAL_SSO_SQLITE,
+    NEW_TABLES_PG as _PORTAL_SSO_PG,
+    NEW_TABLE_NAMES as _PORTAL_SSO_NAMES,
+)
 COLUMN_MIGRATIONS.extend(_PORTAL_V1_COLUMNS)
 # ops_supervisor_migrations interleaves CREATE INDEX statements; separate
 # them so the zip(NAMES, TABLES) alignment stays 1:1.
@@ -1022,6 +1027,7 @@ NEW_TABLES_SQLITE.extend(_PARTNER_SQLITE)
 NEW_TABLES_SQLITE.extend(_OPS_SQLITE)
 NEW_TABLES_SQLITE.extend(_PORTAL_V1_SQLITE)
 NEW_TABLES_SQLITE.extend(_OPS_V1_SQLITE)
+NEW_TABLES_SQLITE.extend(_PORTAL_SSO_SQLITE)
 
 NEW_TABLES_PG = [
     # referrals
@@ -1855,6 +1861,7 @@ NEW_TABLES_PG.extend(_PARTNER_PG)
 NEW_TABLES_PG.extend(_OPS_PG)
 NEW_TABLES_PG.extend(_PORTAL_V1_PG)
 NEW_TABLES_PG.extend(_OPS_V1_PG)
+NEW_TABLES_PG.extend(_PORTAL_SSO_PG)
 
 # Table names for the new tables (used for reporting)
 NEW_TABLE_NAMES = [
@@ -1914,6 +1921,7 @@ NEW_TABLE_NAMES.extend(_PARTNER_NAMES)
 NEW_TABLE_NAMES.extend(_OPS_NAMES)
 NEW_TABLE_NAMES.extend(_PORTAL_V1_NAMES)
 NEW_TABLE_NAMES.extend(_OPS_V1_NAMES)
+NEW_TABLE_NAMES.extend(_PORTAL_SSO_NAMES)
 
 # Tables that require Postgres Row-Level Security. On SQLite the app-layer
 # tenant_guard middleware is the sole enforcer. Spec 04 §3.
