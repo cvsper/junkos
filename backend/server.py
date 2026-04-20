@@ -13,7 +13,7 @@ from database import Database
 from auth_routes import auth_bp, require_auth
 from models import db as sqlalchemy_db
 from socket_events import socketio
-from routes import drivers_bp, pricing_bp, ratings_bp, admin_bp, payments_bp, webhook_bp, booking_bp, upload_bp, jobs_bp, tracking_bp, driver_bp, operator_bp, push_bp, service_area_bp, recurring_bp, referrals_bp, support_bp, chat_bp, onboarding_bp, promos_bp, reviews_bp, operator_applications_bp, migration_bp, vapi_bp, sms_webhook_bp, campaigns_bp, partners_bp, subscribe_bp
+from routes import drivers_bp, pricing_bp, ratings_bp, admin_bp, payments_bp, webhook_bp, booking_bp, upload_bp, jobs_bp, tracking_bp, driver_bp, operator_bp, push_bp, service_area_bp, recurring_bp, referrals_bp, support_bp, chat_bp, onboarding_bp, promos_bp, reviews_bp, operator_applications_bp, migration_bp, vapi_bp, sms_webhook_bp, campaigns_bp
 
 # ---------------------------------------------------------------------------
 # Sentry error monitoring (optional -- only active when SENTRY_DSN is set)
@@ -83,12 +83,6 @@ else:
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///umuve.db"
 
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
-    "pool_recycle": 280,      # Recycle connections before Render's 300s timeout
-    "pool_pre_ping": True,    # Test connections before use, discard stale ones
-    "pool_size": 5,
-    "max_overflow": 10,
-}
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16 MB max request body
 
 # ---------------------------------------------------------------------------
@@ -192,8 +186,104 @@ app.register_blueprint(operator_applications_bp)
 app.register_blueprint(vapi_bp)
 app.register_blueprint(sms_webhook_bp)
 app.register_blueprint(campaigns_bp)
-app.register_blueprint(partners_bp)
-app.register_blueprint(subscribe_bp)
+
+# Vision-Based Binding Quote Engine (spec 01-vision-quote-engine.md)
+try:
+    from routes.quotes import quotes_bp
+    app.register_blueprint(quotes_bp)
+except Exception as _q_exc:
+    import logging as _logging
+    _logging.getLogger(__name__).warning("quotes_bp not registered: %s", _q_exc)
+
+# Voice AI Inbound v1 (spec 02-voice-ai-inbound.md) — /api/v1/voice/*
+try:
+    from routes.voice import voice_bp
+    app.register_blueprint(voice_bp)
+except Exception as _v_exc:
+    import logging as _logging
+    _logging.getLogger(__name__).warning("voice_bp not registered: %s", _v_exc)
+
+# B2B Commercial Portal (spec 04-commercial-b2b-portal.md) — /portal/v1/*
+try:
+    from routes.portal import portal_bp
+    app.register_blueprint(portal_bp)
+    from billing_portal import billing_portal_bp
+    app.register_blueprint(billing_portal_bp)
+except Exception as _p_exc:
+    import logging as _logging
+    _logging.getLogger(__name__).warning("portal_bp not registered: %s", _p_exc)
+
+# Partner (Driver) Acquisition Agent (spec 07) — /partner/v1/*
+try:
+    from routes.partner import partner_bp
+    app.register_blueprint(partner_bp)
+    from partner_cli import partner_cli
+    app.cli.add_command(partner_cli)
+except Exception as _pa_exc:
+    import logging as _logging
+    _logging.getLogger(__name__).warning("partner_bp not registered: %s", _pa_exc)
+
+# Ops Supervisor Agent (spec 11) — /ops-supervisor/v1/*
+try:
+    from routes.ops_supervisor import ops_supervisor_bp
+    app.register_blueprint(ops_supervisor_bp)
+except Exception as _o_exc:
+    import logging as _logging
+    _logging.getLogger(__name__).warning("ops_supervisor_bp not registered: %s", _o_exc)
+
+# Dynamic Surge Pricing (spec 08-dynamic-surge-pricing.md)
+try:
+    from routes.surge import surge_bp
+    app.register_blueprint(surge_bp)
+except Exception as _s_exc:
+    import logging as _logging
+    _logging.getLogger(__name__).warning("surge_bp not registered: %s", _s_exc)
+
+# Insurance Claims Pipeline (spec 10-insurance-claims-pipeline.md)
+# Umuve is a documentation-and-haul vendor, NOT a public adjuster (FL \u00a7626).
+try:
+    from routes.claims import claims_bp
+    app.register_blueprint(claims_bp)
+except Exception as _c_exc:
+    import logging as _logging
+    _logging.getLogger(__name__).warning("claims_bp not registered: %s", _c_exc)
+
+# Post-Haul Attach Upsell Engine (spec 09-post-haul-attach-engine.md)
+try:
+    from routes.attach import attach_bp
+    app.register_blueprint(attach_bp)
+except Exception as _a_exc:
+    import logging as _logging
+    _logging.getLogger(__name__).warning("attach_bp not registered: %s", _a_exc)
+
+# Donation / Resale Rescue Engine (spec 05-donation-resale-engine.md)
+try:
+    from routes.resale import resale_bp
+    app.register_blueprint(resale_bp)
+except Exception as _r_exc:
+    import logging as _logging
+    _logging.getLogger(__name__).warning("resale_bp not registered: %s", _r_exc)
+
+# Landfill Routing Optimizer (spec 06-landfill-routing-optimizer.md)
+# OR-Tools + OSRM (self-hosted). We explicitly reject Google Routes API
+# because it cannot encode tipping-fee constraints (see spec \u00a75).
+try:
+    from routes.routing import routing_bp
+    app.register_blueprint(routing_bp)
+except Exception as _rt_exc:
+    import logging as _logging
+    _logging.getLogger(__name__).warning("routing_bp not registered: %s", _rt_exc)
+
+# Life-Event Demand Trigger Engine (spec 03-life-event-triggers.md)
+# Umuve is a documentation-and-haul vendor, NOT a public adjuster (FL sec.
+# 626) and NOT a restoration contractor (FL sec. 489). Every outbound
+# contact is TCPA-gated by backend/tcpa.py.
+try:
+    from routes.leads import leads_bp
+    app.register_blueprint(leads_bp)
+except Exception as _l_exc:
+    import logging as _logging
+    _logging.getLogger(__name__).warning("leads_bp not registered: %s", _l_exc)
 
 # ---------------------------------------------------------------------------
 # Test endpoints DISABLED for security (were /api/test/seed-jobs,
@@ -262,6 +352,27 @@ with app.app_context():
     except Exception as exc:
         app.logger.warning("Auto-migration on startup skipped: %s", exc)
 
+    # Seed the Post-Haul Attach Upsell Engine offer catalog (idempotent)
+    try:
+        from attach_catalog import seed_catalog
+        seeded = seed_catalog(sqlalchemy_db, logger=app.logger)
+        if seeded:
+            app.logger.info("offer_catalog: seeded/updated %d rows", seeded)
+    except Exception as exc:
+        app.logger.warning("offer_catalog seeding skipped: %s", exc)
+
+    # Seed South Florida landfill facilities (spec 06, idempotent).
+    try:
+        from seed_landfills import seed_landfill_facilities
+        from models import LandfillFacility, TipFee, generate_uuid
+        seeded = seed_landfill_facilities(
+            sqlalchemy_db.session, LandfillFacility, TipFee, generate_uuid,
+        )
+        if seeded:
+            app.logger.info("landfill_facilities: seeded %d rows", seeded)
+    except Exception as exc:
+        app.logger.warning("landfill_facility seeding skipped: %s", exc)
+
 # ---------------------------------------------------------------------------
 # Background scheduler (recurring jobs, pickup reminders)
 # ---------------------------------------------------------------------------
@@ -284,6 +395,95 @@ def cli_db_migrate():
     for action in actions:
         click.echo("  -> {}".format(action))
     click.echo("Migration complete.")
+
+
+# ---------------------------------------------------------------------------
+# Flask CLI: portal (spec 04) — sales-team bootstrap
+# ---------------------------------------------------------------------------
+@app.cli.group("portal")
+def cli_portal():
+    """B2B Commercial Portal operations."""
+    pass
+
+
+@cli_portal.command("orgs-create")
+@click.option("--name", required=True, help="Company name")
+@click.option("--billing-email", required=True)
+@click.option("--owner-email", required=True)
+@click.option("--owner-name", default=None)
+@click.option(
+    "--tier",
+    type=click.Choice(("starter", "pro", "enterprise")),
+    default="starter",
+)
+@click.option("--slug", default=None)
+def cli_portal_orgs_create(name, billing_email, owner_email, owner_name,
+                           tier, slug):
+    """Provision a new org + initial owner. Prints invite URL."""
+    import secrets as _secrets
+    from models import db, User, Org, OrgMember
+    from routes.portal import _slugify, _unique_slug
+
+    with app.app_context():
+        slug_final = _unique_slug(_slugify(slug or name))
+        org = Org(
+            name=name,
+            slug=slug_final,
+            billing_email=billing_email.strip().lower(),
+            tier=tier,
+            net_terms_days=30 if tier == "enterprise" else 0,
+            status="trial",
+        )
+        db.session.add(org)
+        db.session.flush()
+
+        email = owner_email.strip().lower()
+        user = db.session.query(User).filter_by(email=email).first()
+        if user is None:
+            user = User(email=email, name=owner_name, role="customer")
+            db.session.add(user)
+            db.session.flush()
+
+        invite = _secrets.token_urlsafe(32)
+        member = OrgMember(
+            org_id=org.id,
+            user_id=user.id,
+            role="owner",
+            scopes=["*"],
+            invite_token=invite,
+        )
+        db.session.add(member)
+        db.session.commit()
+
+        import os as _os
+        base = _os.environ.get("PORTAL_URL", "https://portal.goumuve.com")
+        click.echo("Org created: {} (slug={}, id={})".format(
+            name, slug_final, org.id
+        ))
+        click.echo("Owner: {} ({})".format(email, user.id))
+        click.echo("Invite URL: {}/invite?token={}".format(base, invite))
+
+
+@cli_portal.command("bootstrap-stripe")
+def cli_portal_bootstrap_stripe():
+    """Create Stripe products + prices for all tiers (idempotent)."""
+    from billing_portal import bootstrap
+    cfg = bootstrap()
+    import json as _json
+    click.echo(_json.dumps(cfg, indent=2))
+
+
+@cli_portal.command("subscribe")
+@click.argument("org_id")
+@click.option("--tier", default=None,
+              type=click.Choice(("starter", "pro", "enterprise")))
+def cli_portal_subscribe(org_id, tier):
+    """Attach a Stripe subscription to an existing org."""
+    from billing_portal import subscribe_org
+    with app.app_context():
+        out = subscribe_org(org_id, tier)
+        import json as _json
+        click.echo(_json.dumps(out, indent=2))
 
 
 # ---------------------------------------------------------------------------

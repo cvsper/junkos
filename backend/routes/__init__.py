@@ -27,8 +27,11 @@ from .ai_analysis import ai_bp
 from .migration import migration_bp
 from .sms_webhook import sms_webhook_bp
 from .campaigns import campaigns_bp
-from .partners import partners_bp
-from .subscribe import subscribe_bp
+from .quotes import quotes_bp
+from .attach import attach_bp
+from .surge import surge_bp
+from .voice import voice_bp
+from .portal import portal_bp
 
 __all__ = [
     "drivers_bp",
@@ -58,6 +61,9 @@ __all__ = [
     "vapi_bp",
     "sms_webhook_bp",
     "campaigns_bp",
-    "partners_bp",
-    "subscribe_bp",
+    "quotes_bp",
+    "attach_bp",
+    "surge_bp",
+    "voice_bp",
+    "portal_bp",
 ]
