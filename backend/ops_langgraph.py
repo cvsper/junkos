@@ -576,6 +576,90 @@ def _run_linear(state: WorkflowState) -> WorkflowState:
 
 
 # ---------------------------------------------------------------------------
+# Dead-letter queue (7.4 edge cases)
+# ---------------------------------------------------------------------------
+#
+# Workflow runs can fail three ways beyond our normal "executed/failed"
+# outcome handling:
+#
+#   1. ``exception``         — an uncaught raise bubbles out of LangGraph or
+#                              the linear runner (e.g. DB connection died
+#                              mid-invocation).
+#   2. ``deadline_exceeded`` — the whole workflow took longer than
+#                              ``OPS_WORKFLOW_DEADLINE_SEC`` seconds, likely
+#                              because an LLM call hung. We record the
+#                              partial state and let a replay worker retry.
+#   3. ``no_event``          — caller passed an empty event_id.
+#
+# Dead-letter rows live in ``ops_workflow_dead_letters`` and can be replayed
+# with a simple SELECT... UPDATE workflow. The schema is owned by
+# ``ops_supervisor_v1_migrations`` (v1 additive).
+# ---------------------------------------------------------------------------
+DEFAULT_WORKFLOW_DEADLINE_SEC = 45
+
+
+def _workflow_deadline_sec() -> float:
+    raw = os.environ.get("OPS_WORKFLOW_DEADLINE_SEC")
+    if not raw:
+        return float(DEFAULT_WORKFLOW_DEADLINE_SEC)
+    try:
+        return max(1.0, float(raw))
+    except ValueError:
+        return float(DEFAULT_WORKFLOW_DEADLINE_SEC)
+
+
+def _write_dead_letter(
+    event_id: str,
+    thread_id: Optional[str],
+    reason: str,
+    error_message: Optional[str],
+    state_snapshot: Optional[Dict[str, Any]],
+) -> Optional[str]:
+    """Append a dead-letter row. Never raises — best-effort recovery."""
+    import json
+    import uuid
+    from sqlalchemy import text
+
+    dlq_id = str(uuid.uuid4())
+    try:
+        snapshot_json = None
+        if state_snapshot is not None:
+            try:
+                snapshot_json = json.dumps(
+                    state_snapshot, default=str, sort_keys=True,
+                )[:8000]  # cap to keep row sane
+            except Exception:
+                snapshot_json = None
+
+        db.session.execute(
+            text(
+                "INSERT INTO ops_workflow_dead_letters "
+                "(id, event_id, thread_id, reason, error_message, "
+                " state_snapshot, created_at) "
+                "VALUES (:id, :ev, :tid, :r, :err, :snap, :ts)"
+            ),
+            {
+                "id": dlq_id,
+                "ev": event_id,
+                "tid": thread_id,
+                "r": reason,
+                "err": (error_message or "")[:2000] or None,
+                "snap": snapshot_json,
+                "ts": datetime.now(tz=timezone.utc).replace(tzinfo=None),
+            },
+        )
+        db.session.commit()
+        return dlq_id
+    except Exception:
+        logger.exception("ops_langgraph: DLQ write failed (swallowing)")
+        try:
+            db.session.rollback()
+        except Exception:
+            pass
+        return None
+
+
+# ---------------------------------------------------------------------------
 # Public entry point
 # ---------------------------------------------------------------------------
 def run_situation_workflow(event_id: str, *, thread_id: Optional[str] = None) -> Dict[str, Any]:
@@ -584,8 +668,22 @@ def run_situation_workflow(event_id: str, *, thread_id: Optional[str] = None) ->
     Uses the LangGraph compiled app when available, else a straight-line
     runner. Always commits the DB session at the end so callers (route or
     worker) don't have to.
+
+    Dead-letter behaviour (v1 7.4 edge cases):
+      * If the workflow takes longer than ``OPS_WORKFLOW_DEADLINE_SEC``
+        seconds, the partial state is written to
+        ``ops_workflow_dead_letters`` with ``reason='deadline_exceeded'``
+        and a timeout error is returned (no exception).
+      * If an uncaught exception bubbles out, the state at call-time is
+        written with ``reason='exception'`` and the error is re-raised so
+        the caller sees the failure.
     """
     if not event_id:
+        _write_dead_letter(
+            event_id="", thread_id=thread_id,
+            reason="no_event", error_message="missing event_id",
+            state_snapshot=None,
+        )
         return {"error": "missing event_id"}
 
     initial: WorkflowState = {
@@ -598,6 +696,8 @@ def run_situation_workflow(event_id: str, *, thread_id: Optional[str] = None) ->
         "confidence": 0.0,
     }
 
+    deadline = _workflow_deadline_sec()
+    started_at = time.monotonic()
     compiled = get_compiled_graph()
     try:
         if compiled is not None:
@@ -606,11 +706,37 @@ def run_situation_workflow(event_id: str, *, thread_id: Optional[str] = None) ->
             final_state = compiled.invoke(initial, config=config)
         else:
             final_state = _run_linear(initial)
+
+        elapsed = time.monotonic() - started_at
+        if elapsed > deadline:
+            # Ran to completion but past the deadline — still record so the
+            # on-call can tune the budget.
+            _write_dead_letter(
+                event_id=event_id,
+                thread_id=thread_id,
+                reason="deadline_exceeded",
+                error_message="elapsed={:.1f}s deadline={:.1f}s".format(
+                    elapsed, deadline,
+                ),
+                state_snapshot=dict(final_state or {}),
+            )
+            logger.warning(
+                "ops_langgraph: event %s exceeded deadline (%.1fs > %.1fs)",
+                event_id, elapsed, deadline,
+            )
+
         db.session.commit()
         return dict(final_state or {})
-    except Exception:
+    except Exception as exc:
         db.session.rollback()
         logger.exception("ops_langgraph.run_situation_workflow failed")
+        _write_dead_letter(
+            event_id=event_id,
+            thread_id=thread_id,
+            reason="exception",
+            error_message=str(exc),
+            state_snapshot=dict(initial),
+        )
         raise
 
 

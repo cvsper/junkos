@@ -23,6 +23,7 @@ from textwrap import dedent
 NEW_TABLE_NAMES = [
     "langgraph_checkpoints",
     "langgraph_writes",
+    "ops_workflow_dead_letters",
 ]
 
 
@@ -58,11 +59,30 @@ NEW_TABLES_SQLITE = [
         value BLOB,
         PRIMARY KEY (thread_id, checkpoint_ns, checkpoint_id, task_id, idx)
     )"""),
+
+    # Dead-letter queue for workflow runs that either exceeded the wall-clock
+    # deadline or raised an exception the top-level driver couldn't recover
+    # from. Operators replay these manually via `flask ops-replay-dlq <id>`.
+    dedent("""\
+    CREATE TABLE IF NOT EXISTS ops_workflow_dead_letters (
+        id VARCHAR(36) PRIMARY KEY,
+        event_id VARCHAR(36) NOT NULL,
+        thread_id VARCHAR(80),
+        reason VARCHAR(32) NOT NULL,
+        error_message TEXT,
+        state_snapshot TEXT,
+        created_at DATETIME NOT NULL,
+        replayed_at DATETIME,
+        CONSTRAINT ck_ops_dlq_reason
+            CHECK (reason IN ('deadline_exceeded','exception','no_event'))
+    )"""),
 ]
 
 NEW_INDEXES_SQLITE = [
     "CREATE INDEX IF NOT EXISTS ix_langgraph_checkpoints_thread ON langgraph_checkpoints(thread_id)",
     "CREATE INDEX IF NOT EXISTS ix_langgraph_writes_thread ON langgraph_writes(thread_id)",
+    "CREATE INDEX IF NOT EXISTS ix_ops_dlq_event ON ops_workflow_dead_letters(event_id)",
+    "CREATE INDEX IF NOT EXISTS ix_ops_dlq_replayed ON ops_workflow_dead_letters(replayed_at)",
 ]
 
 
@@ -94,11 +114,27 @@ NEW_TABLES_PG = [
         value BYTEA,
         PRIMARY KEY (thread_id, checkpoint_ns, checkpoint_id, task_id, idx)
     )"""),
+
+    dedent("""\
+    CREATE TABLE IF NOT EXISTS ops_workflow_dead_letters (
+        id VARCHAR(36) PRIMARY KEY,
+        event_id VARCHAR(36) NOT NULL,
+        thread_id VARCHAR(80),
+        reason VARCHAR(32) NOT NULL,
+        error_message TEXT,
+        state_snapshot JSONB,
+        created_at TIMESTAMP NOT NULL,
+        replayed_at TIMESTAMP,
+        CONSTRAINT ck_ops_dlq_reason
+            CHECK (reason IN ('deadline_exceeded','exception','no_event'))
+    )"""),
 ]
 
 NEW_INDEXES_PG = [
     "CREATE INDEX IF NOT EXISTS ix_langgraph_checkpoints_thread ON langgraph_checkpoints(thread_id)",
     "CREATE INDEX IF NOT EXISTS ix_langgraph_writes_thread ON langgraph_writes(thread_id)",
+    "CREATE INDEX IF NOT EXISTS ix_ops_dlq_event ON ops_workflow_dead_letters(event_id)",
+    "CREATE INDEX IF NOT EXISTS ix_ops_dlq_replayed ON ops_workflow_dead_letters(replayed_at)",
 ]
 
 
