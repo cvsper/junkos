@@ -55,7 +55,7 @@ services:
   - type: redis
     name: umuve-redis
     ipAllowList: []
-    plan: free
+    plan: starter
 
 databases:
   - name: umuve-db
