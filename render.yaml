@@ -2,6 +2,7 @@ services:
   - type: web
     name: umuve-backend
     env: python
+    rootDir: backend
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn server:app --bind 0.0.0.0:$PORT --worker-class eventlet --workers 1 --timeout 120
     healthCheckPath: /api/health
@@ -31,6 +32,7 @@ services:
   - type: worker
     name: umuve-portal-beat
     env: python
+    rootDir: backend
     buildCommand: pip install -r requirements.txt
     startCommand: celery -A celery_app.celery worker -B --loglevel=info --concurrency=1
     envVars:
