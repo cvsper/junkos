@@ -119,6 +119,34 @@ def invoice_monthly(month=None, year=None):
 
 
 # ---------------------------------------------------------------------------
+# Customer-side scheduled tasks (migrated from Vivobook crontab 2026-05-04)
+# ---------------------------------------------------------------------------
+
+@celery.task(name="customer.drip_emails")
+def drip_emails():
+    """Process abandoned-booking drip emails (1h, 24h, 72h follow-ups)."""
+    from drip_scheduler import run_drip
+    return run_drip()
+
+
+@celery.task(name="customer.review_calls")
+def review_calls():
+    """Place post-job review calls and win-back calls via Vapi."""
+    from review_scheduler import run_review_calls, run_winback_calls
+    review_count = run_review_calls()
+    winback_count = run_winback_calls()
+    logger.info("customer.review_calls reviews=%d winbacks=%d", review_count, winback_count)
+    return {"review_calls": review_count, "winback_calls": winback_count}
+
+
+@celery.task(name="customer.reminders")
+def reminders():
+    """Place 24h pre-pickup reminder calls."""
+    from reminder_scheduler import run_reminders
+    return run_reminders()
+
+
+# ---------------------------------------------------------------------------
 # Beat schedule
 # ---------------------------------------------------------------------------
 celery.conf.beat_schedule = {
@@ -129,5 +157,19 @@ celery.conf.beat_schedule = {
     "portal-invoice-monthly-at-02utc-day1": {
         "task": "portal.invoice_monthly",
         "schedule": crontab(minute=0, hour=2, day_of_month=1),
+    },
+    # Customer-side schedulers (migrated from Vivobook cron 2026-05-04).
+    # Slight offsets so Celery doesn't fire all three at the same instant.
+    "customer-drip-emails-every-30min": {
+        "task": "customer.drip_emails",
+        "schedule": crontab(minute="0,30"),
+    },
+    "customer-review-calls-every-30min": {
+        "task": "customer.review_calls",
+        "schedule": crontab(minute="5,35"),
+    },
+    "customer-reminders-every-30min": {
+        "task": "customer.reminders",
+        "schedule": crontab(minute="10,40"),
     },
 }
