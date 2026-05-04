@@ -1249,6 +1249,19 @@ export const operatorApi = {
     apiFetch<{ success: boolean }>("/api/operator/notifications/read-all", {
       method: "PUT",
     }),
+
+  /** POST /api/operator/jobs/:id/volume — operator-side volume adjustment.
+   * Same semantics as driver: auto-approves price decrease; otherwise pings customer. */
+  proposeVolumeAdjustment: (jobId: string, actualVolume: number) =>
+    apiFetch<{
+      success: boolean;
+      auto_approved?: boolean;
+      new_price: number;
+      original_price?: number;
+    }>(`/api/operator/jobs/${jobId}/volume`, {
+      method: "POST",
+      body: JSON.stringify({ actual_volume: actualVolume }),
+    }),
 };
 
 // ---------------------------------------------------------------------------
@@ -1954,6 +1967,19 @@ export const driverApi = {
   markAllNotificationsRead: () =>
     apiFetch<{ success: boolean }>("/api/driver/notifications/read-all", {
       method: "PUT",
+    }),
+
+  /** POST /api/drivers/jobs/:id/volume — propose volume adjustment after arriving on-site.
+   * Auto-approves if new price <= original; otherwise pings the customer to accept. */
+  proposeVolumeAdjustment: (id: string, actualVolume: number) =>
+    apiFetch<{
+      success: boolean;
+      auto_approved?: boolean;
+      new_price: number;
+      original_price?: number;
+    }>(`/api/drivers/jobs/${id}/volume`, {
+      method: "POST",
+      body: JSON.stringify({ actual_volume: actualVolume }),
     }),
 };
 

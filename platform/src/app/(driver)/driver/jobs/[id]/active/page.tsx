@@ -344,6 +344,121 @@ function ConfirmModal({
 }
 
 // ---------------------------------------------------------------------------
+// Volume Adjustment Card — driver enters actual volume on-site, system auto-
+// approves a price drop or pings the customer to accept a price increase.
+// ---------------------------------------------------------------------------
+
+function VolumeAdjustmentCard({
+  job,
+  onAdjusted,
+  onError,
+}: {
+  job: DriverJob;
+  onAdjusted: (newPrice: number, autoApproved: boolean) => void;
+  onError: (msg: string) => void;
+}) {
+  const [volume, setVolume] = useState<string>("");
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState<
+    | { autoApproved: boolean; newPrice: number; originalPrice: number }
+    | null
+  >(null);
+
+  // If customer has already been pinged for an unresolved adjust, show that.
+  const pending = (job as DriverJob & { volume_adjustment_proposed?: boolean })
+    .volume_adjustment_proposed;
+
+  async function submit() {
+    const v = Number(volume);
+    if (!v || v <= 0) {
+      onError("Enter a positive cubic-yard number.");
+      return;
+    }
+    setBusy(true);
+    onError(""); // clear any prior error
+    try {
+      const res = await driverApi.proposeVolumeAdjustment(job.id, v);
+      const original = res.original_price ?? job.total_price;
+      setResult({
+        autoApproved: !!res.auto_approved,
+        newPrice: res.new_price,
+        originalPrice: original,
+      });
+      if (res.auto_approved) onAdjusted(res.new_price, true);
+      else onAdjusted(job.total_price, false); // price unchanged until customer approves
+    } catch (e) {
+      const msg = e instanceof ApiError
+        ? (e as ApiError & { data?: { error?: string } }).data?.error || e.message
+        : String(e);
+      onError(msg);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Card className="border-amber-200 bg-amber-50/40">
+      <CardHeader>
+        <CardTitle className="text-base font-semibold flex items-center gap-2">
+          <DollarSign className="w-4 h-4 text-amber-700" />
+          More stuff than booked? Adjust the price
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {pending && !result && (
+          <div className="text-sm rounded bg-white border border-amber-300 p-2 text-amber-800">
+            Customer has a pending price adjustment. Wait for them to accept or
+            decline.
+          </div>
+        )}
+        {!pending && !result && (
+          <>
+            <p className="text-xs text-muted-foreground">
+              Enter the actual volume you see (cubic yards). 4yd = quarter
+              truck, 8yd = half, 12yd = three-quarter, 16yd = full.
+            </p>
+            <div className="flex gap-2">
+              <input
+                type="number"
+                step="0.5"
+                min="0.5"
+                placeholder="cubic yards"
+                value={volume}
+                onChange={(e) => setVolume(e.target.value)}
+                className="flex-1 rounded border border-gray-300 px-3 py-2 text-sm"
+                disabled={busy}
+              />
+              <Button
+                onClick={submit}
+                disabled={busy || !volume}
+                className="bg-amber-600 hover:bg-amber-700 text-white"
+              >
+                {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Propose"}
+              </Button>
+            </div>
+          </>
+        )}
+        {result?.autoApproved && (
+          <div className="text-sm rounded bg-emerald-100 border border-emerald-300 p-2 text-emerald-800">
+            ✓ Auto-approved (price went down).
+            {" "}New: ${result.newPrice.toFixed(2)} (was ${result.originalPrice.toFixed(2)}).
+            Customer card will be charged the new amount.
+          </div>
+        )}
+        {result && !result.autoApproved && (
+          <div className="text-sm rounded bg-amber-100 border border-amber-300 p-2 text-amber-900">
+            Sent to customer for approval. Proposed:
+            {" "}${result.newPrice.toFixed(2)} (was ${result.originalPrice.toFixed(2)}).
+            They have to tap Approve in their app before you charge the diff.
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+
+// ---------------------------------------------------------------------------
 // Main Page Component
 // ---------------------------------------------------------------------------
 
@@ -822,6 +937,15 @@ export default function ActiveJobPage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Volume adjustment — only relevant in "arrived" status */}
+          <VolumeAdjustmentCard
+            job={job}
+            onAdjusted={(newPrice) =>
+              setJob((j) => (j ? { ...j, total_price: newPrice } : j))
+            }
+            onError={(msg) => setError(msg || null)}
+          />
 
           {/* Action: Start Job */}
           <Button

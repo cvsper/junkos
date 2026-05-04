@@ -41,6 +41,39 @@ export default function OperatorJobsPage() {
   const [delegateJob, setDelegateJob] = useState<OperatorJobRecord | null>(null);
   const [delegating, setDelegating] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [volumeJob, setVolumeJob] = useState<OperatorJobRecord | null>(null);
+  const [volumeInput, setVolumeInput] = useState("");
+  const [volumeBusy, setVolumeBusy] = useState(false);
+  const [volumeResult, setVolumeResult] = useState<
+    | { autoApproved: boolean; newPrice: number; originalPrice: number }
+    | { error: string }
+    | null
+  >(null);
+
+  const submitVolume = async () => {
+    if (!volumeJob) return;
+    const v = Number(volumeInput);
+    if (!v || v <= 0) {
+      setVolumeResult({ error: "Enter a positive cubic-yard number." });
+      return;
+    }
+    setVolumeBusy(true);
+    setVolumeResult(null);
+    try {
+      const res = await operatorApi.proposeVolumeAdjustment(volumeJob.id, v);
+      setVolumeResult({
+        autoApproved: !!res.auto_approved,
+        newPrice: res.new_price,
+        originalPrice: res.original_price ?? volumeJob.total_price ?? 0,
+      });
+      loadJobs();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      setVolumeResult({ error: msg });
+    } finally {
+      setVolumeBusy(false);
+    }
+  };
 
   const copyJobId = (jobId: string) => {
     navigator.clipboard.writeText(jobId);
@@ -203,6 +236,18 @@ export default function OperatorJobsPage() {
                           Delegate
                         </button>
                       )}
+                      {job.status === "arrived" && (
+                        <button
+                          onClick={() => {
+                            setVolumeJob(job);
+                            setVolumeInput("");
+                            setVolumeResult(null);
+                          }}
+                          className="text-xs bg-amber-100 text-amber-700 px-3 py-1.5 rounded-lg font-medium hover:bg-amber-200 transition-colors"
+                        >
+                          Adjust Volume
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))
@@ -304,6 +349,18 @@ export default function OperatorJobsPage() {
                     Delegate
                   </button>
                 )}
+                {job.status === "arrived" && (
+                  <button
+                    onClick={() => {
+                      setVolumeJob(job);
+                      setVolumeInput("");
+                      setVolumeResult(null);
+                    }}
+                    className="text-xs bg-amber-100 text-amber-700 px-3 py-1.5 rounded-lg font-medium hover:bg-amber-200 transition-colors"
+                  >
+                    Adjust Volume
+                  </button>
+                )}
               </div>
             </div>
           ))
@@ -394,6 +451,73 @@ export default function OperatorJobsPage() {
                 className="text-sm px-4 py-2 rounded-lg border border-border hover:bg-muted transition-colors"
               >
                 Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Volume Adjustment Modal */}
+      {volumeJob && (
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50"
+          onClick={() => setVolumeJob(null)}
+        >
+          <div
+            className="bg-white rounded-t-2xl sm:rounded-2xl w-full sm:max-w-md max-h-[90vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-5 py-4 border-b border-border">
+              <h3 className="font-semibold">Adjust volume on-site</h3>
+              <p className="text-xs text-muted-foreground mt-1">
+                Job at {volumeJob.address || "—"} · current ${volumeJob.total_price?.toFixed(2)}
+              </p>
+            </div>
+            <div className="px-5 py-4 space-y-3">
+              <p className="text-xs text-muted-foreground">
+                Enter the actual volume the driver sees (cubic yards). Auto-approves
+                if the new price drops; otherwise the customer is pinged to accept.
+              </p>
+              <input
+                type="number"
+                step="0.5"
+                min="0.5"
+                placeholder="cubic yards"
+                value={volumeInput}
+                onChange={(e) => setVolumeInput(e.target.value)}
+                className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                disabled={volumeBusy}
+              />
+              {volumeResult && "error" in volumeResult && (
+                <div className="text-sm rounded bg-red-50 border border-red-200 p-2 text-red-700">
+                  {volumeResult.error}
+                </div>
+              )}
+              {volumeResult && "autoApproved" in volumeResult && volumeResult.autoApproved && (
+                <div className="text-sm rounded bg-emerald-50 border border-emerald-300 p-2 text-emerald-800">
+                  ✓ Auto-approved. New: ${volumeResult.newPrice.toFixed(2)} (was ${volumeResult.originalPrice.toFixed(2)}).
+                </div>
+              )}
+              {volumeResult && "autoApproved" in volumeResult && !volumeResult.autoApproved && (
+                <div className="text-sm rounded bg-amber-50 border border-amber-300 p-2 text-amber-900">
+                  Sent to customer. Proposed ${volumeResult.newPrice.toFixed(2)} (was ${volumeResult.originalPrice.toFixed(2)}).
+                </div>
+              )}
+            </div>
+            <div className="px-5 py-3 border-t border-border flex justify-end gap-2">
+              <button
+                onClick={() => setVolumeJob(null)}
+                className="text-sm px-4 py-2 rounded-lg border border-border hover:bg-muted"
+              >
+                Close
+              </button>
+              <button
+                onClick={submitVolume}
+                disabled={volumeBusy || !volumeInput}
+                className="text-sm px-4 py-2 rounded-lg bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50 inline-flex items-center gap-2"
+              >
+                {volumeBusy && <Loader2 className="w-4 h-4 animate-spin" />}
+                {volumeBusy ? "Submitting…" : "Submit"}
               </button>
             </div>
           </div>
