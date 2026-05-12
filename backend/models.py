@@ -69,9 +69,19 @@ class User(db.Model):
         self.password_hash = generate_password_hash(password)
 
     def check_password(self, password):
+        """Verify password with Werkzeug and legacy sha256 fallback."""
         if not self.password_hash:
             return False
-        return check_password_hash(self.password_hash, password)
+        
+        # Werkzeug hash check
+        if ":" in self.password_hash:
+            return check_password_hash(self.password_hash, password)
+        
+        # Legacy sha256 fallback
+        import hashlib
+        import secrets
+        legacy_hash = hashlib.sha256(password.encode()).hexdigest()
+        return secrets.compare_digest(self.password_hash, legacy_hash)
 
     def to_dict(self, include_private=False):
         data = {

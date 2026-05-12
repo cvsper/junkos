@@ -13,6 +13,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from models import generate_uuid
 from auth_routes import require_auth
 from storage import save_file
+from extensions import limiter
 
 upload_bp = Blueprint("upload", __name__)
 
@@ -34,6 +35,7 @@ def _allowed_file(filename):
 # POST /api/upload/photos  (auth required)
 # ---------------------------------------------------------------------------
 @upload_bp.route("/api/upload/photos", methods=["POST"])
+@limiter.limit("5 per minute")
 @require_auth
 def upload_photos(user_id):
     """

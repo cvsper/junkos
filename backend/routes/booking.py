@@ -544,6 +544,7 @@ def _haversine(lat1, lng1, lat2, lng2):
 # POST /api/booking/estimate  (public -- no auth required)
 # ---------------------------------------------------------------------------
 @booking_bp.route("/estimate", methods=["POST"])
+@limiter.limit("20 per minute")
 def estimate():
     """
     Calculate a price estimate for the customer booking flow.
@@ -686,6 +687,7 @@ def get_pricing_info():
 # POST /api/booking  (auth required)
 # ---------------------------------------------------------------------------
 @booking_bp.route("", methods=["POST"])
+@limiter.limit("10 per minute")
 @optional_auth
 def create_booking(user_id):
     """

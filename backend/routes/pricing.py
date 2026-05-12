@@ -28,6 +28,7 @@ COMMISSION_RATE = 0.20
 
 
 @pricing_bp.route("/estimate", methods=["POST"])
+@limiter.limit("20 per minute")
 def get_estimate():
     """
     Calculate a price estimate using the v2 pricing engine.

@@ -59,13 +59,25 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ token, orgId, role });
     // Refresh the org in the background.
     portalFetch<Org>("/orgs/me")
-      .then((org) => set({ org }))
+      .then((org) => {
+        set({ org });
+        if (typeof window !== "undefined" && (window as any).elu && org.billing_email) {
+          // ELU Analytics: attach the signed-in user's email to their session so product
+          // analytics can attribute behavior to a real person instead of an anonymous
+          // device. Optional — safe to remove if you don't want to share email with
+          // analytics. See https://elu.dev for docs.
+          (window as any).elu.identify(org.billing_email, { email: org.billing_email });
+        }
+      })
       .catch(() => {});
   },
 
   signOut() {
     clearPortalAuth();
     set({ token: null, orgId: null, role: null, org: null });
-    if (typeof window !== "undefined") window.location.href = "/login";
+    if (typeof window !== "undefined") {
+      if ((window as any).elu) (window as any).elu.reset();
+      window.location.href = "/login";
+    }
   },
 }));

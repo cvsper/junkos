@@ -285,14 +285,15 @@ CORS(app, resources={r"/api/*": {"origins": "https://your-ios-app.com"}})
 
 ## Next Steps
 
-- [ ] Add Stripe payment integration
-- [ ] Implement user authentication (JWT)
-- [ ] Add photo upload endpoint
-- [ ] Email confirmations
-- [ ] Admin dashboard endpoints
+- [x] Add Stripe payment integration
+- [x] Implement user authentication (JWT)
+- [x] Add photo upload endpoint
+- [x] Admin dashboard endpoints
+- [ ] Implement robust input validation with schemas (e.g. Marshmallow or Pydantic)
+- [ ] Add rate limiting for all sensitive endpoints (partially done)
 - [ ] Real-time availability checking
-- [ ] Rate limiting
-- [ ] Input validation with schemas
+- [ ] Email confirmations (partially done)
+- [ ] Security hardening (audit in progress)
 
 ---
 

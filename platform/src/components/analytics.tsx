@@ -93,6 +93,13 @@ export function Analytics() {
           strategy="afterInteractive"
         />
       )}
+
+      {/* ELU Analytics */}
+      <Script
+        async
+        src="https://elu.dev/v1/elu_pk_live_Qkuq7zxzjj0bVbaxzcZObMoiA4.js"
+        strategy="afterInteractive"
+      />
     </>
   );
 }

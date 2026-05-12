@@ -21,13 +21,38 @@ export const useAuthStore = create<AuthState>()(
       token: null,
       isAuthenticated: false,
       isLoading: true,
-      setUser: (user) => set({ user, isAuthenticated: !!user }),
+      setUser: (user) => {
+        set({ user, isAuthenticated: !!user });
+        if (typeof window !== "undefined" && (window as any).elu) {
+          if (user?.email) {
+            // ELU Analytics: attach the signed-in user's email to their session so product
+            // analytics can attribute behavior to a real person instead of an anonymous
+            // device. Optional — safe to remove if you don't want to share email with
+            // analytics. See https://elu.dev for docs.
+            (window as any).elu.identify(user.email, { email: user.email });
+          } else if (!user) {
+            (window as any).elu.reset();
+          }
+        }
+      },
       setToken: (token) => set({ token }),
       setLoading: (isLoading) => set({ isLoading }),
-      login: (user, token) =>
-        set({ user, token, isAuthenticated: true, isLoading: false }),
-      logout: () =>
-        set({ user: null, token: null, isAuthenticated: false, isLoading: false }),
+      login: (user, token) => {
+        set({ user, token, isAuthenticated: true, isLoading: false });
+        if (typeof window !== "undefined" && (window as any).elu && user?.email) {
+          // ELU Analytics: attach the signed-in user's email to their session so product
+          // analytics can attribute behavior to a real person instead of an anonymous
+          // device. Optional — safe to remove if you don't want to share email with
+          // analytics. See https://elu.dev for docs.
+          (window as any).elu.identify(user.email, { email: user.email });
+        }
+      },
+      logout: () => {
+        set({ user: null, token: null, isAuthenticated: false, isLoading: false });
+        if (typeof window !== "undefined" && (window as any).elu) {
+          (window as any).elu.reset();
+        }
+      },
     }),
     {
       name: "umuve-auth",

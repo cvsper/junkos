@@ -131,16 +131,15 @@ def generate_verification_code():
     """Generate random 6-digit verification code"""
     return str(secrets.randbelow(900000) + 100000)
 
+from werkzeug.security import generate_password_hash, check_password_hash
+
 def hash_password(password):
-    """Simple password hashing (use bcrypt in production)"""
-    return hashlib.sha256(password.encode()).hexdigest()
+    """Secure password hashing using Werkzeug (scrypt/pbkdf2)"""
+    return generate_password_hash(password)
 
 
 def verify_password(stored_hash: str, provided_password: str) -> bool:
-    """Verify password against both legacy sha256 and Werkzeug hashes.
-
-    Some users were created with simple sha256 (driver endpoints), while others
-    may have Werkzeug hashes. Support both to avoid login regressions.
+    """Verify password against Werkzeug hashes with legacy sha256 fallback.
     """
     if not stored_hash or not provided_password:
         return False
@@ -152,8 +151,9 @@ def verify_password(stored_hash: str, provided_password: str) -> bool:
         except Exception:
             return False
 
-    # Legacy fallback: direct sha256 comparison
-    return secrets.compare_digest(stored_hash, hash_password(provided_password))
+    # Legacy fallback: direct sha256 comparison for old accounts
+    legacy_hash = hashlib.sha256(provided_password.encode()).hexdigest()
+    return secrets.compare_digest(stored_hash, legacy_hash)
 
 def generate_token(user_id):
     """Generate JWT token for user"""
@@ -264,7 +264,24 @@ def verify_code():
     
     # Code is valid - create or get user
     user_id = find_or_create_user_by_phone(phone)
-    user = users_db[user_id]
+    
+    # Get user details from DB or in-memory
+    db_user = db.session.get(User, user_id)
+    if db_user:
+        user_data = {
+            'id': db_user.id,
+            'name': db_user.name,
+            'email': db_user.email,
+            'phoneNumber': db_user.phone
+        }
+    else:
+        user = users_db.get(user_id)
+        user_data = {
+            'id': user['id'],
+            'name': user.get('name'),
+            'email': user.get('email'),
+            'phoneNumber': user.get('phoneNumber')
+        }
     
     # Clear verification code
     del verification_codes[phone]
@@ -275,12 +292,7 @@ def verify_code():
     return jsonify({
         'success': True,
         'token': token,
-        'user': {
-            'id': user['id'],
-            'name': user.get('name'),
-            'email': user.get('email'),
-            'phoneNumber': user['phoneNumber']
-        }
+        'user': user_data
     })
 
 # MARK: - Email Authentication Routes
