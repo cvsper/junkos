@@ -62,7 +62,7 @@ services:
 
   frontend:
     build:
-      context: ./customer-portal
+      context: ./customer-portal-react
       dockerfile: Dockerfile
     container_name: umuve-customer-portal
     environment:
@@ -78,7 +78,7 @@ services:
       dockerfile: Dockerfile
     container_name: umuve-dashboard
     environment:
-      REACT_APP_API_URL: ${REACT_APP_API_URL:-http://localhost/api}
+      VITE_API_URL: ${VITE_API_URL:-http://localhost/api}
     depends_on:
       - backend
     restart: unless-stopped

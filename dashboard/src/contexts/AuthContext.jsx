@@ -36,7 +36,11 @@ export const AuthProvider = ({ children }) => {
   const loadUser = async () => {
     try {
       const response = await authAPI.getCurrentUser()
-      setUser(response.data)
+      const user = response.data
+      setUser(user)
+      if (typeof window !== 'undefined' && window.elu && user?.email) {
+        window.elu.identify(user.email, { email: user.email });
+      }
     } catch (error) {
       console.error('Failed to load user:', error)
       logout()
@@ -71,6 +75,9 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('authToken')
     setToken(null)
     setUser(null)
+    if (typeof window !== 'undefined' && window.elu) {
+      window.elu.reset();
+    }
     wsService.disconnect()
   }
 
@@ -82,6 +89,28 @@ export const AuthProvider = ({ children }) => {
     const permissions = {
       admin: ['jobs:read', 'jobs:write', 'drivers:read', 'drivers:write', 'analytics:read'],
       dispatcher: ['jobs:read', 'jobs:write', 'drivers:read'],
+      driver: ['jobs:read'],
+    }
+    return permissions[user?.role]?.includes(permission) || false
+  }
+
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        token,
+        loading,
+        login,
+        logout,
+        hasRole,
+        hasPermission,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  )
+}
+, 'drivers:read'],
       driver: ['jobs:read'],
     }
     return permissions[user?.role]?.includes(permission) || false
