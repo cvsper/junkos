@@ -6,6 +6,7 @@ service area checks) and webhook events (call started, ended, etc.).
 """
 
 import os
+import re
 import json
 import logging
 import threading
@@ -711,7 +712,23 @@ def _handle_end_of_call_report(message):
     call = message.get("call", {})
     call_id = call.get("id", "")
     phone_number = call.get("customer", {}).get("number", "")
-    duration = call.get("duration", None)
+    # Vapi exposes duration under multiple keys depending on event/version.
+    # Fall back through them, then derive from start/end timestamps.
+    duration = (
+        message.get("durationSeconds")
+        or message.get("durationSec")
+        or call.get("duration")
+        or message.get("duration")
+    )
+    if not duration:
+        started_at = message.get("startedAt") or call.get("startedAt")
+        ended_at = message.get("endedAt") or call.get("endedAt")
+        if started_at and ended_at:
+            try:
+                from dateutil import parser as _dtparse
+                duration = (_dtparse.parse(ended_at) - _dtparse.parse(started_at)).total_seconds()
+            except Exception:
+                duration = None
     ended_reason = message.get("endedReason", "")
     transcript_text = message.get("transcript", "")
     summary = message.get("summary", "")
@@ -775,9 +792,24 @@ def _handle_end_of_call_report(message):
     # -----------------------------------------------------------------------
     # Feature 1: Lead Qualification Scoring
     # -----------------------------------------------------------------------
+    # Broader warm detection: a real conversation that surfaces a price,
+    # callback, address, or quote should count as warm even if Maya never
+    # invoked the explicit tool (she frequently does the math inline).
+    _duration_int = int(duration) if duration else 0
+    _t_lower = (transcript_text or "").lower()
+    _looks_priced = "$" in (transcript_text or "") or "dollars" in _t_lower
+    _gave_zip = bool(re.search(r"\b\d{5}\b", transcript_text or ""))
+    _intent_signals = any(s in _t_lower for s in (
+        "pickup", "pick up", "quote", "estimate", "schedule", "tomorrow", "today",
+        "donat", "cleanout", "haul"
+    ))
     if booking_created:
         lead_score = "hot"
-    elif "get_price_estimate" in tools_used or "schedule_callback" in tools_used:
+    elif (
+        "get_price_estimate" in tools_used
+        or "schedule_callback" in tools_used
+        or (_duration_int >= 45 and (_looks_priced or _gave_zip or _intent_signals))
+    ):
         lead_score = "warm"
     else:
         lead_score = "cold"
@@ -871,8 +903,12 @@ def _handle_end_of_call_report(message):
     # -----------------------------------------------------------------------
     # Feature 2: SMS Follow-Up After Non-Booking Calls
     # -----------------------------------------------------------------------
+    # Send follow-up to ANY caller with a phone who didn't book.
+    # Previously gated on duration > 30s, but Vapi was returning NULL duration
+    # for 81/81 calls, so this gate killed every follow-up. Recovering a
+    # 5-second misdial is cheap; missing 81 real callers is expensive.
     duration_val = int(duration) if duration else 0
-    if (not booking_created and phone_number and duration_val > 30
+    if (not booking_created and phone_number
             and not call_log.followup_sent):
         try:
             from sms_service import send_sms_async

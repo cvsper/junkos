@@ -41,6 +41,18 @@ SYSTEM_PROMPT = """You are the AI receptionist for Umuve, South Florida's premiu
 4. Book their pickup
 5. Answer FAQs
 
+## CRITICAL — Pricing Delivery Rules (highest priority)
+These rules exist because callers have hung up confused, thinking a single-item price was the all-in total.
+
+1. **NEVER quote a per-item price as your first number.** When the caller has more than one item, do not say things like "Bed frame, $75" before the total is on the table.
+2. **ALWAYS call the get_price_estimate tool BEFORE saying a dollar amount.** Do not do math in your head. Do not estimate. Pass the items list to the tool and read back the total it returns.
+3. **Lead with the all-in total.** Say: "Give me one second to add this up... Okay — for all [N] pieces, you're looking at [TOTAL] all-in, including taxes and the service fee. Want me to lock in a pickup time?"
+4. **Only break the price down if the caller asks** how it adds up. Then, and only then, walk them through it.
+5. **Confirm understanding before moving on.** After the total, pause. Listen. If they react with sticker shock, acknowledge it warmly and offer options (remove some items, defer some pieces, etc.) — do not just plow forward.
+
+## CRITICAL — Anti-Repetition Rule
+If you ever notice that you've started the same sentence you just said, STOP. Apologize briefly ("Sorry — let me try that again"), pause, and ask the caller to repeat their last message. Do not loop on the same phrase. A repetition loop will make us lose the customer.
+
 ## Pricing (quote these confidently)
 - Sofa: $89 | Sectional: $139 | Recliner: $79
 - Mattress: $75 | Box spring: $75 | Bed frame: $75 | Full bed set: $149
@@ -407,12 +419,49 @@ def buy_phone_number(assistant_id):
     return None
 
 
+def update_assistant(assistant_id):
+    """PATCH the live Vapi assistant with the latest config in this file."""
+    update_payload = {
+        "name": assistant_config["name"],
+        "model": assistant_config["model"],
+        "voice": assistant_config.get("voice"),
+        "firstMessage": assistant_config.get("firstMessage"),
+        "endCallMessage": assistant_config.get("endCallMessage"),
+        "endCallPhrases": assistant_config.get("endCallPhrases"),
+        "recordingEnabled": assistant_config.get("recordingEnabled"),
+        "silenceTimeoutSeconds": assistant_config.get("silenceTimeoutSeconds"),
+        "maxDurationSeconds": assistant_config.get("maxDurationSeconds"),
+        "backgroundSound": assistant_config.get("backgroundSound"),
+        "transcriber": assistant_config.get("transcriber"),
+        "serverUrl": assistant_config.get("serverUrl"),
+    }
+    update_payload = {k: v for k, v in update_payload.items() if v is not None}
+    resp = requests.patch(
+        "https://api.vapi.ai/assistant/{}".format(assistant_id),
+        headers=HEADERS,
+        json=update_payload,
+    )
+    if resp.status_code in (200, 201):
+        print("Assistant {} updated successfully.".format(assistant_id))
+        return resp.json()
+    print("Error updating assistant: {}".format(resp.status_code))
+    print(resp.text)
+    return None
+
+
 if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "buy-number":
         if len(sys.argv) < 3:
             print("Usage: python vapi_setup.py buy-number <assistant_id>")
             sys.exit(1)
         buy_phone_number(sys.argv[2])
+    elif len(sys.argv) > 1 and sys.argv[1] == "update":
+        asst_id = sys.argv[2] if len(sys.argv) > 2 else os.environ.get("VAPI_ASSISTANT_ID", "")
+        if not asst_id:
+            print("Usage: python vapi_setup.py update <assistant_id>")
+            print("  or set VAPI_ASSISTANT_ID env var")
+            sys.exit(1)
+        update_assistant(asst_id)
     else:
         result = create_assistant()
         if result:
