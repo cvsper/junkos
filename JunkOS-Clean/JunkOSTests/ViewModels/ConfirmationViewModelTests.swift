@@ -32,40 +32,21 @@ final class ConfirmationViewModelTests: XCTestCase {
         XCTAssertFalse(viewModel.showSuccess)
         XCTAssertFalse(viewModel.elementsVisible)
         XCTAssertEqual(viewModel.celebrationScale, 1.0)
-        XCTAssertNotNil(viewModel.priceBreakdown)
     }
-    
+
     // MARK: - Animation Tests
-    
+
     func testStartAnimations() {
         // Given
         XCTAssertFalse(viewModel.elementsVisible)
-        
+
         // When
         viewModel.startAnimations()
-        
+
         // Then
         XCTAssertTrue(viewModel.elementsVisible)
     }
-    
-    // MARK: - Price Breakdown Tests
-    
-    func testPriceBreakdownExists() {
-        // Then
-        XCTAssertNotNil(viewModel.priceBreakdown)
-        XCTAssertGreaterThan(viewModel.priceBreakdown.basePrice, 0)
-        XCTAssertGreaterThan(viewModel.priceBreakdown.total, 0)
-    }
-    
-    func testPriceBreakdownCalculation() {
-        // Given
-        let breakdown = viewModel.priceBreakdown
-        
-        // Then
-        let expectedTotal = breakdown.basePrice + breakdown.itemsCharge + breakdown.disposalFee
-        XCTAssertEqual(breakdown.total, expectedTotal, accuracy: 0.01)
-    }
-    
+
     // MARK: - Submit Booking Tests
     
     func testSubmitBookingStartsSubmitting() {

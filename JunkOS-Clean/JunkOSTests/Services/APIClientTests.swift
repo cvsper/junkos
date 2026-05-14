@@ -231,14 +231,109 @@ final class APIClientTests: XCTestCase {
         }
         """
         let data = jsonString.data(using: .utf8)!
-        
+
         // When
         let decoder = JSONDecoder()
         let error = try decoder.decode(APIError.self, from: data)
-        
+
         // Then
         XCTAssertEqual(error.error, "Invalid request")
         XCTAssertEqual(error.details, "Missing required field: address")
+    }
+
+    // MARK: - PricingEstimate Decoding Tests
+    //
+    // These guard the Phase 0 fix: the iOS PricingEstimate model previously
+    // required a `subtotal` field that the backend never returns, throwing
+    // DecodingError.keyNotFound on every estimate call and silently breaking
+    // payment. The struct now mirrors /api/pricing/estimate's actual shape
+    // (snake_case → camelCase via convertFromSnakeCase) with optional fields
+    // for everything except `total`.
+
+    private func pricingDecoder() -> JSONDecoder {
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        return decoder
+    }
+
+    func testPricingEstimateDecodesMinimalBackendResponse() throws {
+        // The smallest valid response — only `total` is non-optional in the
+        // Swift model, so this proves the decoder tolerates a sparse payload.
+        let json = """
+        { "total": 175.00 }
+        """.data(using: .utf8)!
+
+        let estimate = try pricingDecoder().decode(PricingEstimate.self, from: json)
+
+        XCTAssertEqual(estimate.total, 175.00, accuracy: 0.01)
+        XCTAssertNil(estimate.itemsSubtotal)
+        XCTAssertNil(estimate.surgeAmount)
+        // Convenience accessor falls back to `total` when no base price exists.
+        XCTAssertEqual(estimate.subtotal, 175.00, accuracy: 0.01)
+        XCTAssertEqual(estimate.estimatedDurationMinutes, 0)
+        XCTAssertEqual(estimate.recommendedTruck, "")
+    }
+
+    func testPricingEstimateDecodesFullBackendResponse() throws {
+        // A representative full response taken from
+        // backend/routes/booking.py:calculate_estimate(). If the backend
+        // adds an unknown field this still decodes (Codable ignores extras);
+        // if the backend ever renames `total` the test fails loudly.
+        let json = """
+        {
+            "items_subtotal": 200.00,
+            "items": [],
+            "volume_discount": 20.00,
+            "volume_discount_rate": 0.10,
+            "volume_discount_label": "10% off (5-9 items)",
+            "surge_multiplier": 1.25,
+            "surge_amount": 22.50,
+            "surge_reasons": ["High-demand zone (x1.25)"],
+            "base_price": 180.00,
+            "service_fee": 18.00,
+            "recycling_fees": 12.00,
+            "recycling_breakdown": [],
+            "labor_fee": 0.0,
+            "labor_fee_rate": 50.0,
+            "total": 232.50,
+            "minimum_applied": false,
+            "minimum_job_price": 89.0,
+            "estimated_duration": 45,
+            "truck_size": "1/2 Truck",
+            "total_quantity": 6
+        }
+        """.data(using: .utf8)!
+
+        let estimate = try pricingDecoder().decode(PricingEstimate.self, from: json)
+
+        XCTAssertEqual(estimate.total, 232.50, accuracy: 0.01)
+        XCTAssertEqual(estimate.itemsSubtotal, 200.00)
+        XCTAssertEqual(estimate.basePrice, 180.00)
+        XCTAssertEqual(estimate.volumeDiscount, 20.00)
+        XCTAssertEqual(estimate.volumeDiscountLabel, "10% off (5-9 items)")
+        XCTAssertEqual(estimate.surgeMultiplier, 1.25)
+        XCTAssertEqual(estimate.surgeAmount, 22.50)
+        XCTAssertEqual(estimate.surgeReasons?.first, "High-demand zone (x1.25)")
+        XCTAssertEqual(estimate.serviceFee, 18.00)
+        XCTAssertEqual(estimate.recyclingFees, 12.00)
+        XCTAssertEqual(estimate.estimatedDuration, 45)
+        XCTAssertEqual(estimate.truckSize, "1/2 Truck")
+        XCTAssertEqual(estimate.totalQuantity, 6)
+        // Convenience accessor prefers basePrice over itemsSubtotal.
+        XCTAssertEqual(estimate.subtotal, 180.00, accuracy: 0.01)
+        XCTAssertEqual(estimate.estimatedDurationMinutes, 45)
+        XCTAssertEqual(estimate.recommendedTruck, "1/2 Truck")
+    }
+
+    func testPricingEstimateRejectsResponseMissingTotal() {
+        // `total` is the only non-optional field — its absence must throw.
+        // This protects against the inverse of the Phase 0 bug: silently
+        // accepting a response with no total and showing $0.
+        let json = """
+        { "items_subtotal": 100.00 }
+        """.data(using: .utf8)!
+
+        XCTAssertThrowsError(try pricingDecoder().decode(PricingEstimate.self, from: json))
     }
     
     // MARK: - Integration Notes
