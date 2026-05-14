@@ -216,94 +216,6 @@ struct BookingReviewView: View {
         return dateString
     }
 
-    // MARK: - Service Summary Card (legacy, no longer rendered — kept until
-    // remaining callers in older review flows are dropped)
-
-    private var serviceSummaryCard: some View {
-        VStack(alignment: .leading, spacing: UmuveSpacing.normal) {
-            if let serviceType = bookingData.serviceType {
-                cardHeader(
-                    icon: serviceType.icon,
-                    title: serviceType.rawValue,
-                    accent: .categoryBlue
-                )
-
-                VStack(alignment: .leading, spacing: UmuveSpacing.tiny) {
-                    Text("\(bookingData.totalQuantity) item\(bookingData.totalQuantity == 1 ? "" : "s") · \(bookingData.currentTruckTier.label)")
-                        .font(UmuveTypography.bodyFont.weight(.medium))
-                        .foregroundColor(.umuveText)
-
-                    Text("~\(Int(bookingData.totalCuFt)) cu ft · ~\(Int(bookingData.totalLbs)) lbs")
-                        .font(UmuveTypography.bodySmallFont)
-                        .foregroundColor(.umuveTextMuted)
-                }
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(UmuveSpacing.normal)
-        .background(Color.umuveWhite)
-        .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.lg))
-        .overlay(
-            RoundedRectangle(cornerRadius: UmuveRadius.lg)
-                .strokeBorder(Color.umuveBorder, lineWidth: 1)
-        )
-        .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 4)
-        .padding(.horizontal, UmuveSpacing.large)
-    }
-
-    // MARK: - Location Card
-
-    private var locationCard: some View {
-        VStack(alignment: .leading, spacing: UmuveSpacing.normal) {
-            cardHeader(
-                icon: "mappin.and.ellipse",
-                title: "Pickup",
-                accent: .categoryBlue
-            )
-
-            addressRow(
-                label: "Address",
-                value: bookingData.address.fullAddress,
-                icon: "mappin.circle.fill",
-                accent: .categoryBlue
-            )
-
-            if let coordinate = bookingData.pickupCoordinate {
-                miniMap(for: coordinate)
-            }
-        }
-        .padding(UmuveSpacing.normal)
-        .background(Color.umuveWhite)
-        .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.lg))
-        .overlay(
-            RoundedRectangle(cornerRadius: UmuveRadius.lg)
-                .strokeBorder(Color.umuveBorder, lineWidth: 1)
-        )
-        .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 4)
-        .padding(.horizontal, UmuveSpacing.large)
-    }
-
-    private func addressRow(label: String, value: String, icon: String, accent: Color) -> some View {
-        HStack(spacing: UmuveSpacing.small) {
-            Image(systemName: icon)
-                .font(.system(size: 18))
-                .foregroundColor(accent)
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(label.uppercased())
-                    .font(UmuveTypography.smallFont)
-                    .tracking(0.5)
-                    .foregroundColor(.umuveTextMuted)
-
-                Text(value)
-                    .font(UmuveTypography.bodyFont)
-                    .foregroundColor(.umuveText)
-            }
-
-            Spacer()
-        }
-    }
-
     private func miniMap(for coordinate: CLLocationCoordinate2D) -> some View {
         Map(coordinateRegion: .constant(
             MKCoordinateRegion(
@@ -364,37 +276,6 @@ struct BookingReviewView: View {
         .padding(.horizontal, UmuveSpacing.large)
     }
 
-    // MARK: - Schedule Card
-
-    private var scheduleCard: some View {
-        VStack(alignment: .leading, spacing: UmuveSpacing.normal) {
-            cardHeader(icon: "calendar", title: "Schedule", accent: .categoryOrange)
-
-            if let date = bookingData.selectedDate {
-                VStack(alignment: .leading, spacing: UmuveSpacing.tiny) {
-                    Text(date, style: .date)
-                        .font(UmuveTypography.bodyFont.weight(.medium))
-                        .foregroundColor(.umuveText)
-
-                    if let timeSlot = bookingData.selectedTimeSlot {
-                        Text(timeSlot)
-                            .font(UmuveTypography.bodyFont)
-                            .foregroundColor(.umuveTextMuted)
-                    }
-                }
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(UmuveSpacing.normal)
-        .background(Color.umuveWhite)
-        .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.lg))
-        .overlay(
-            RoundedRectangle(cornerRadius: UmuveRadius.lg)
-                .strokeBorder(Color.umuveBorder, lineWidth: 1)
-        )
-        .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 4)
-        .padding(.horizontal, UmuveSpacing.large)
-    }
 
     // MARK: - Price Section
 
