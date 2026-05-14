@@ -16,45 +16,40 @@ struct OrdersView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: UmuveSpacing.large) {
-                // Header
-                VStack(spacing: UmuveSpacing.small) {
-                    Text("My Bookings")
-                        .font(UmuveTypography.h1Font)
-                        .foregroundColor(.umuveText)
+                if authManager.currentUser?.id == "guest" {
+                    GuestSignInPrompt(
+                        icon: "list.bullet.rectangle.portrait",
+                        title: "Sign in to see your bookings",
+                        message: "Create an account or sign in to track your jobs and access them from any device."
+                    ) {
+                        Task { await authManager.logout() }
+                    }
+                } else {
+                    // Header
+                    VStack(spacing: UmuveSpacing.small) {
+                        Text("My Bookings")
+                            .font(UmuveTypography.h1Font)
+                            .foregroundColor(.umuveText)
 
-                    if let user = authManager.currentUser {
-                        Text("Hi, \(user.name ?? "there")!")
-                            .font(UmuveTypography.bodyFont)
-                            .foregroundColor(.umuveTextMuted)
-
-                        if user.id == "guest" {
-                            HStack(spacing: 8) {
-                                Image(systemName: "exclamationmark.triangle.fill")
-                                    .foregroundColor(.umuveWarning)
-                                Text("Guest bookings aren't saved")
-                                    .font(UmuveTypography.bodySmallFont)
-                                    .foregroundColor(.umuveWarning)
-                            }
-                            .padding(.horizontal, UmuveSpacing.normal)
-                            .padding(.vertical, UmuveSpacing.small)
-                            .background(Color.umuveWarning.opacity(0.1))
-                            .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.sm))
+                        if let user = authManager.currentUser {
+                            Text("Hi, \(user.name ?? "there")!")
+                                .font(UmuveTypography.bodyFont)
+                                .foregroundColor(.umuveTextMuted)
                         }
                     }
-                }
-                .padding(.top, UmuveSpacing.xlarge)
+                    .padding(.top, UmuveSpacing.xlarge)
 
-                // Content
-                if isLoading {
-                    ProgressView()
-                        .tint(.umuvePrimary)
-                        .padding(UmuveSpacing.huge)
-                } else if let errorMessage {
-                    errorState(message: errorMessage)
-                } else if bookings.isEmpty {
-                    emptyState
-                } else {
-                    bookingsList
+                    if isLoading {
+                        ProgressView()
+                            .tint(.umuvePrimary)
+                            .padding(UmuveSpacing.huge)
+                    } else if let errorMessage {
+                        errorState(message: errorMessage)
+                    } else if bookings.isEmpty {
+                        emptyState
+                    } else {
+                        bookingsList
+                    }
                 }
             }
             .padding(.horizontal, UmuveSpacing.large)

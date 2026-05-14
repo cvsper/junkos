@@ -221,3 +221,50 @@ struct ProgressDots: View {
     }
 }
 
+/// Full-bleed prompt shown on identity-gated screens (Orders, Referral, Chat)
+/// when the active user is a guest. Tapping the CTA exits guest mode, which
+/// routes the user back to the auth flow.
+struct GuestSignInPrompt: View {
+    let icon: String
+    let title: String
+    let message: String
+    let onSignIn: () -> Void
+
+    var body: some View {
+        VStack(spacing: UmuveSpacing.large) {
+            ZStack {
+                Circle()
+                    .fill(Color.umuvePrimary.opacity(0.12))
+                    .frame(width: 120, height: 120)
+
+                Image(systemName: icon)
+                    .font(.system(size: 48, weight: .semibold))
+                    .foregroundColor(.umuvePrimary)
+            }
+            .padding(.top, UmuveSpacing.xxlarge)
+
+            Text(title)
+                .font(UmuveTypography.h2Font)
+                .foregroundColor(.umuveText)
+                .multilineTextAlignment(.center)
+
+            Text(message)
+                .font(UmuveTypography.bodyFont)
+                .foregroundColor(.umuveTextMuted)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, UmuveSpacing.xlarge)
+
+            Button {
+                onSignIn()
+            } label: {
+                Text("Sign In")
+                    .frame(maxWidth: 240)
+            }
+            .buttonStyle(UmuvePrimaryButtonStyle())
+            .padding(.top, UmuveSpacing.small)
+        }
+        .padding(.vertical, UmuveSpacing.xxlarge)
+        .frame(maxWidth: .infinity)
+    }
+}
+

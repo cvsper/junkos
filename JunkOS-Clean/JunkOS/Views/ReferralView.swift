@@ -21,23 +21,33 @@ struct ReferralView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: UmuveSpacing.xlarge) {
-                // Header illustration
-                headerSection
-
-                if isLoading {
-                    ProgressView()
-                        .padding(.vertical, UmuveSpacing.huge)
-                } else if let error = errorMessage {
-                    errorSection(error)
+                if authManager.currentUser?.id == "guest" {
+                    GuestSignInPrompt(
+                        icon: "gift.fill",
+                        title: "Sign in to refer friends",
+                        message: "Referral codes are tied to your account so we can credit your rewards when friends book."
+                    ) {
+                        Task { await authManager.logout() }
+                    }
                 } else {
-                    // Referral code card
-                    codeCard
+                    // Header illustration
+                    headerSection
 
-                    // Stats
-                    statsSection
+                    if isLoading {
+                        ProgressView()
+                            .padding(.vertical, UmuveSpacing.huge)
+                    } else if let error = errorMessage {
+                        errorSection(error)
+                    } else {
+                        // Referral code card
+                        codeCard
 
-                    // How it works
-                    howItWorksSection
+                        // Stats
+                        statsSection
+
+                        // How it works
+                        howItWorksSection
+                    }
                 }
             }
             .padding(.horizontal, UmuveSpacing.large)
@@ -48,6 +58,13 @@ struct ReferralView: View {
         .navigationTitle("Refer a Friend")
         .navigationBarTitleDisplayMode(.large)
         .task {
+            // Skip API call for guests — the screen shows a sign-in prompt
+            // instead. Without this guard the network call would 401 and the
+            // user would see an unhelpful error.
+            guard authManager.currentUser?.id != "guest" else {
+                isLoading = false
+                return
+            }
             await loadReferralCode()
         }
         .sheet(isPresented: $showShareSheet) {
