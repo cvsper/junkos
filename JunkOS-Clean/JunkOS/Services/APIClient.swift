@@ -283,7 +283,8 @@ class APIClient {
         scheduledTime: String,
         estimatedPrice: Double,
         volumeTier: String?,
-        distance: Double?
+        distance: Double?,
+        promoCode: String? = nil
     ) async throws -> JobCreationResponse {
         var requestBody: [String: Any] = [
             "service_type": serviceType,
@@ -298,6 +299,14 @@ class APIClient {
 
         if let volumeTier = volumeTier {
             requestBody["volume_tier"] = volumeTier
+        }
+
+        // Backend (server.py:1002) reads `promoCode` (camelCase) and applies
+        // the discount server-side, recording the credit on the booking row.
+        // Without this, customers see the discount in the Stripe charge but
+        // the booking record over-counts revenue.
+        if let promoCode, !promoCode.isEmpty {
+            requestBody["promoCode"] = promoCode
         }
 
         if let distance = distance {

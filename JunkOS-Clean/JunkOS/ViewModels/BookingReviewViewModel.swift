@@ -123,6 +123,10 @@ class BookingReviewViewModel: ObservableObject {
             // is derived from total cubic feet across the selected items,
             // so the operator side still sees the bucket they're used to
             // even though the iOS app now passes real item-level data.
+            // Promo code is forwarded so the backend can re-validate and
+            // record the discount against the booking row — without it the
+            // recorded `estimated_price` would over-count revenue compared
+            // to what Stripe actually charged.
             let response = try await APIClient.shared.createJob(
                 serviceType: serviceType.rawValue,
                 address: bookingData.address.fullAddress,
@@ -133,7 +137,8 @@ class BookingReviewViewModel: ObservableObject {
                 scheduledTime: selectedTimeSlot,
                 estimatedPrice: bookingData.estimatedPrice ?? 0,
                 volumeTier: bookingData.currentTruckTier.label,
-                distance: bookingData.estimatedDistance
+                distance: bookingData.estimatedDistance,
+                promoCode: bookingData.promoApplied ? bookingData.promoCode : nil
             )
 
             // Step 5: Handle success
