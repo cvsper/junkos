@@ -45,6 +45,10 @@ struct PhotoUploadView: View {
                     photoGrid
                 }
 
+                // AI analysis status — appears while the backend is
+                // analyzing or once it returns a result.
+                aiStatusBanner
+
                 // Action buttons
                 actionButtons
 
@@ -68,8 +72,107 @@ struct PhotoUploadView: View {
         .onAppear {
             viewModel.startAnimations()
         }
+        .onChange(of: bookingData.photos.count) { newCount in
+            // Trigger AI analysis whenever the photo count changes and
+            // we have at least one photo. Debounced via the analyzing
+            // flag so rapid additions don't fan out into multiple
+            // simultaneous requests.
+            guard newCount > 0, !bookingData.aiAnalyzing else { return }
+            Task { await runAIAnalysis() }
+        }
     }
-    
+
+    // MARK: - AI Analysis
+
+    private func runAIAnalysis() async {
+        await MainActor.run {
+            bookingData.aiAnalyzing = true
+            bookingData.aiAnalysis = nil
+        }
+
+        do {
+            let result = try await APIClient.shared.analyzePhotos(bookingData.photos)
+            await MainActor.run {
+                bookingData.aiAnalysis = result
+                bookingData.aiAnalyzing = false
+                HapticManager.shared.success()
+            }
+        } catch {
+            // Non-fatal — user can pick items manually on the next step.
+            // Don't surface backend errors; just silently end the
+            // analyzing state.
+            await MainActor.run {
+                bookingData.aiAnalyzing = false
+            }
+            print("[ai] photo analysis failed: \(error.localizedDescription)")
+        }
+    }
+
+    // MARK: - AI Status Banner
+
+    @ViewBuilder
+    private var aiStatusBanner: some View {
+        if bookingData.aiAnalyzing {
+            HStack(spacing: UmuveSpacing.normal) {
+                ProgressView()
+                    .tint(.umuvePrimary)
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "sparkles")
+                            .font(.system(size: 13, weight: .semibold))
+                        Text("Analyzing your photos…")
+                            .font(UmuveTypography.bodyFont.weight(.semibold))
+                    }
+                    .foregroundColor(.umuvePrimary)
+                    Text("Detecting items so we can pre-fill the next step")
+                        .font(UmuveTypography.bodySmallFont)
+                        .foregroundColor(.umuveTextMuted)
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(UmuveSpacing.normal)
+            .background(Color.umuvePrimary.opacity(0.06))
+            .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.md))
+            .overlay(
+                RoundedRectangle(cornerRadius: UmuveRadius.md)
+                    .strokeBorder(Color.umuvePrimary.opacity(0.18), lineWidth: 1)
+            )
+            .transition(.opacity.combined(with: .scale(scale: 0.97)))
+        } else if let analysis = bookingData.aiAnalysis, !analysis.items.isEmpty {
+            HStack(spacing: UmuveSpacing.normal) {
+                ZStack {
+                    Circle()
+                        .fill(Color.umuveSuccess.opacity(0.15))
+                        .frame(width: 40, height: 40)
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(.umuveSuccess)
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("AI detected \(detectedItemCount(analysis)) item\(detectedItemCount(analysis) == 1 ? "" : "s")")
+                        .font(UmuveTypography.bodyFont.weight(.semibold))
+                        .foregroundColor(.umuveText)
+                    Text("Pre-filled on the next step — you can edit anything")
+                        .font(UmuveTypography.bodySmallFont)
+                        .foregroundColor(.umuveTextMuted)
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(UmuveSpacing.normal)
+            .background(Color.umuveSuccess.opacity(0.08))
+            .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.md))
+            .overlay(
+                RoundedRectangle(cornerRadius: UmuveRadius.md)
+                    .strokeBorder(Color.umuveSuccess.opacity(0.3), lineWidth: 1)
+            )
+            .transition(.opacity.combined(with: .scale(scale: 0.97)))
+        }
+    }
+
+    private func detectedItemCount(_ analysis: AIPhotoAnalysis) -> Int {
+        analysis.items.reduce(0) { $0 + $1.quantity }
+    }
+
     // MARK: - Encouragement Message
     private var encouragementMessage: some View {
         HStack(alignment: .top, spacing: UmuveSpacing.normal) {

@@ -125,12 +125,12 @@ struct AccountView: View {
     // MARK: - App Footer (version + made-with chip)
 
     private var appFooter: some View {
-        VStack(spacing: UmuveSpacing.tiny) {
+        VStack(spacing: UmuveSpacing.small) {
             Image("UmuveLogo")
                 .resizable()
                 .scaledToFit()
-                .frame(height: 20)
-                .opacity(0.4)
+                .frame(height: 40)
+                .opacity(0.5)
             Text("Version 1.0.0 · Hauling made simple.")
                 .font(UmuveTypography.smallFont)
                 .foregroundColor(.umuveTextTertiary)
@@ -140,7 +140,9 @@ struct AccountView: View {
 
     private var profileSection: some View {
         VStack(spacing: UmuveSpacing.normal) {
-            // Avatar
+            // Avatar — shows initials when we have a name, otherwise a
+            // friendly SF Symbol placeholder. The previous behavior
+            // rendered "?" when no name was set, which read as broken.
             ZStack(alignment: .bottomTrailing) {
                 Circle()
                     .fill(
@@ -150,12 +152,9 @@ struct AccountView: View {
                             endPoint: .bottomTrailing
                         )
                     )
-                    .frame(width: 88, height: 88)
-                    .overlay(
-                        Text(initials)
-                            .font(.system(size: 34, weight: .bold, design: .rounded))
-                            .foregroundColor(.white)
-                    )
+                    .frame(width: 96, height: 96)
+                    .overlay(avatarContent)
+                    .shadow(color: Color.umuvePrimary.opacity(0.25), radius: 12, x: 0, y: 6)
 
                 if authManager.currentUser?.id == "guest" {
                     Text("GUEST")
@@ -293,15 +292,35 @@ struct AccountView: View {
         }
     }
 
-    private var initials: String {
-        guard let name = authManager.currentUser?.name else { return "?" }
+    /// Either the user's initials or a placeholder SF Symbol when the
+    /// user hasn't set a name yet (or is a guest). Keeps the avatar
+    /// circle visually intact without rendering a literal "?".
+    @ViewBuilder
+    private var avatarContent: some View {
+        if let initials = computedInitials {
+            Text(initials)
+                .font(.system(size: 38, weight: .bold, design: .rounded))
+                .foregroundColor(.white)
+        } else {
+            Image(systemName: "person.fill")
+                .font(.system(size: 46, weight: .semibold))
+                .foregroundColor(.white)
+        }
+    }
+
+    /// nil when there's no usable name to derive initials from.
+    private var computedInitials: String? {
+        guard let name = authManager.currentUser?.name?
+                .trimmingCharacters(in: .whitespaces),
+              !name.isEmpty else { return nil }
         let components = name.split(separator: " ")
         if components.count >= 2 {
             return String(components[0].prefix(1) + components[1].prefix(1)).uppercased()
-        } else if let first = components.first {
+        }
+        if let first = components.first {
             return String(first.prefix(1)).uppercased()
         }
-        return "?"
+        return nil
     }
 }
 

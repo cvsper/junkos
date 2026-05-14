@@ -254,6 +254,12 @@ class BookingData: ObservableObject {
     @Published var items: [BookingItem] = []
     @Published var notes: String = ""
 
+    // AI photo analysis result — populated after /api/ai/analyze-photos
+    // returns. ItemSelectionView consumes this to pre-fill categories +
+    // items so the user can review/edit instead of starting from scratch.
+    @Published var aiAnalysis: AIPhotoAnalysis?
+    @Published var aiAnalyzing: Bool = false
+
     // Location fields
     @Published var address: Address = Address()  // Pickup address
     @Published var pickupCoordinate: CLLocationCoordinate2D?
@@ -314,6 +320,8 @@ class BookingData: ObservableObject {
         serviceType = nil
         items = []
         notes = ""
+        aiAnalysis = nil
+        aiAnalyzing = false
         address = Address()
         pickupCoordinate = nil
         estimatedDistance = nil

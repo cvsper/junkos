@@ -272,6 +272,56 @@ struct APIError: Codable {
     let details: String?
 }
 
+// MARK: - AI Photo Analysis
+//
+// Mirrors /api/ai/analyze-photos (GPT-4o-mini Vision). The backend
+// returns a JSON envelope { success, analysis?, error? } so iOS can
+// distinguish "no AI configured" (HTTP 503) from a successful empty
+// result.
+
+struct AIDetectedItem: Codable, Identifiable {
+    /// Backend categories: furniture, appliances, electronics, yard_waste,
+    /// construction, general, mattress, hot_tub, other. iOS's ItemCategory
+    /// enum maps via AIDetectedItem.itemCategory().
+    let category: String
+    /// "small" | "medium" | "large"
+    let size: String?
+    let quantity: Int
+    let description: String?
+
+    var id: String { "\(category)-\(description ?? "")" }
+
+    /// Best-effort mapping to the iOS ItemCategory enum. mattress maps to
+    /// furniture; hot_tub maps to other. Unknown categories fall back to
+    /// generalJunk so the auto-fill still produces a usable item.
+    func itemCategory() -> ItemCategory {
+        switch category.lowercased() {
+        case "furniture", "mattress": return .furniture
+        case "appliances": return .appliances
+        case "electronics": return .electronics
+        case "yard_waste": return .yardWaste
+        case "construction": return .construction
+        case "hot_tub": return .other
+        case "general": return .generalJunk
+        default: return .generalJunk
+        }
+    }
+}
+
+struct AIPhotoAnalysis: Codable {
+    let items: [AIDetectedItem]
+    let estimatedVolume: Double?
+    let truckSize: String?
+    let confidence: Double?
+    let notes: String?
+}
+
+struct AIAnalysisEnvelope: Codable {
+    let success: Bool
+    let analysis: AIPhotoAnalysis?
+    let error: String?
+}
+
 // MARK: - Promo Validation Response
 //
 // Mirrors /api/promos/validate responses. The server returns the same shape

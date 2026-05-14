@@ -35,13 +35,52 @@ struct ItemSelectionView: View {
             stickyFooter
         }
         .onAppear {
-            // Auto-expand any category that already has items (e.g. coming
-            // back to this step from later in the flow).
+            bookingData.serviceType = .junkRemoval
+
+            // AI pre-fill: if photos were analyzed and the user hasn't
+            // added items yet, seed the cart with what the model
+            // detected. They can still edit/remove anything.
+            if bookingData.items.isEmpty,
+               let analysis = bookingData.aiAnalysis,
+               !analysis.items.isEmpty {
+                applyAIAnalysis(analysis)
+            }
+
+            // Auto-expand any category that has items (whether from AI
+            // pre-fill or a prior trip through this step).
             for item in bookingData.items {
                 expandedCategories.insert(item.category)
             }
-            bookingData.serviceType = .junkRemoval
         }
+    }
+
+    /// Map each AI-detected item to a BookingItem using the closest preset
+    /// from the matched category. Falls back to the first preset when the
+    /// description doesn't match any known preset name.
+    private func applyAIAnalysis(_ analysis: AIPhotoAnalysis) {
+        var seeded: [BookingItem] = []
+        for detected in analysis.items {
+            let category = detected.itemCategory()
+            let presets = category.presets
+            guard let preset = matchPreset(for: detected, in: presets) else { continue }
+            seeded.append(BookingItem(category: category, preset: preset, quantity: max(detected.quantity, 1)))
+        }
+        bookingData.items = seeded
+    }
+
+    private func matchPreset(for detected: AIDetectedItem, in presets: [ItemPreset]) -> ItemPreset? {
+        guard let description = detected.description?.lowercased(), !description.isEmpty else {
+            return presets.first
+        }
+        // Best-effort: pick the preset whose name shares the most words
+        // with the AI description. Falls back to the first preset.
+        let descWords = Set(description.split(separator: " ").map(String.init))
+        let best = presets.max { a, b in
+            let aHits = a.name.lowercased().split(separator: " ").reduce(0) { $0 + (descWords.contains(String($1)) ? 1 : 0) }
+            let bHits = b.name.lowercased().split(separator: " ").reduce(0) { $0 + (descWords.contains(String($1)) ? 1 : 0) }
+            return aHits < bHits
+        }
+        return best ?? presets.first
     }
 
     // MARK: - Header

@@ -212,6 +212,57 @@ class APIClient {
         return try await performRequest(request)
     }
     
+    // MARK: - AI Photo Analysis
+
+    /// Send uploaded photos to the GPT-4o-mini Vision endpoint for item
+    /// detection. Mirrors the web booking flow's Photos step. Result is
+    /// non-fatal — if the backend lacks an OpenAI key (503) or analysis
+    /// fails, we just skip the auto-fill and let the user pick items
+    /// manually on the next step.
+    func analyzePhotos(_ photos: [Data]) async throws -> AIPhotoAnalysis {
+        let boundary = UUID().uuidString
+
+        guard let url = URL(string: config.baseURL + "/api/ai/analyze-photos") else {
+            throw APIClientError.invalidURL
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        request.setValue(config.apiKey, forHTTPHeaderField: "X-API-Key")
+
+        if let token = KeychainHelper.loadString(forKey: "authToken") {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+
+        var body = Data()
+        for (index, photoData) in photos.enumerated() {
+            body.append("--\(boundary)\r\n".data(using: .utf8)!)
+            body.append("Content-Disposition: form-data; name=\"photos\"; filename=\"photo\(index).jpg\"\r\n".data(using: .utf8)!)
+            body.append("Content-Type: image/jpeg\r\n\r\n".data(using: .utf8)!)
+            body.append(photoData)
+            body.append("\r\n".data(using: .utf8)!)
+        }
+        body.append("--\(boundary)--\r\n".data(using: .utf8)!)
+        request.httpBody = body
+
+        let (data, response) = try await session.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIClientError.invalidResponse
+        }
+        guard httpResponse.statusCode == 200 else {
+            throw APIClientError.serverError("AI analysis returned \(httpResponse.statusCode)")
+        }
+
+        let decoder = JSONDecoder()
+        let envelope = try decoder.decode(AIAnalysisEnvelope.self, from: data)
+        guard envelope.success, let analysis = envelope.analysis else {
+            throw APIClientError.serverError(envelope.error ?? "AI analysis failed")
+        }
+        return analysis
+    }
+
     /// Upload photos (multipart form data) - Alternative method for photo upload
     func uploadPhotos(_ photos: [Data]) async throws -> [String] {
         // Create multipart form data request
