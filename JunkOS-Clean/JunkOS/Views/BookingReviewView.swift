@@ -43,10 +43,10 @@ struct BookingReviewView: View {
                     .padding(.horizontal, UmuveSpacing.large)
                     .padding(.top, UmuveSpacing.large)
 
-                    serviceSummaryCard
-                    locationCard
-                    photosCard
-                    scheduleCard
+                    bookingSummaryCard
+                    if !bookingData.photos.isEmpty {
+                        photosCard
+                    }
                     priceSection
                     ecoFootnote
                     promoSection
@@ -136,7 +136,88 @@ struct BookingReviewView: View {
         }
     }
 
-    // MARK: - Service Summary Card
+    // MARK: - Booking Summary Card (web Step 5 BOOKING SUMMARY parity)
+
+    private var bookingSummaryCard: some View {
+        VStack(alignment: .leading, spacing: UmuveSpacing.medium) {
+            Text("BOOKING SUMMARY")
+                .font(UmuveTypography.smallFont)
+                .tracking(1.2)
+                .foregroundColor(.umuveTextMuted)
+
+            summaryRow(
+                label: "Address",
+                value: bookingData.address.fullAddress.isEmpty ? "—" : bookingData.address.fullAddress
+            )
+
+            summaryRow(
+                label: "Schedule",
+                value: scheduleSummaryText
+            )
+
+            summaryRow(
+                label: "Items",
+                value: bookingData.hasItems
+                    ? "\(bookingData.totalQuantity) item\(bookingData.totalQuantity == 1 ? "" : "s") · \(bookingData.currentTruckTier.label)"
+                    : "—"
+            )
+
+            summaryRow(
+                label: "Est. Volume",
+                value: "~\(Int(bookingData.totalCuFt)) cu ft"
+            )
+
+            summaryRow(
+                label: "Est. Weight",
+                value: "~\(Int(bookingData.totalLbs)) lbs"
+            )
+
+            if let coordinate = bookingData.pickupCoordinate {
+                miniMap(for: coordinate)
+                    .padding(.top, UmuveSpacing.small)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(UmuveSpacing.normal)
+        .background(Color.umuveWhite)
+        .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.lg))
+        .overlay(
+            RoundedRectangle(cornerRadius: UmuveRadius.lg)
+                .strokeBorder(Color.umuveBorder, lineWidth: 1)
+        )
+        .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 4)
+        .padding(.horizontal, UmuveSpacing.large)
+    }
+
+    private func summaryRow(label: String, value: String) -> some View {
+        HStack(alignment: .top, spacing: UmuveSpacing.normal) {
+            Text(label)
+                .font(UmuveTypography.bodySmallFont)
+                .foregroundColor(.umuveTextMuted)
+                .frame(width: 96, alignment: .leading)
+            Text(value)
+                .font(UmuveTypography.bodyFont.weight(.medium))
+                .foregroundColor(.umuveText)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private var scheduleSummaryText: String {
+        guard let date = bookingData.selectedDate else { return "—" }
+        let formatter = DateFormatter()
+        formatter.dateFormat = "EEE, MMM d"
+        let dateString = formatter.string(from: date)
+        if let slot = bookingData.selectedTimeSlot {
+            let slotLabel = TimeSlot.slots.first(where: { $0.id == slot })?.time ?? slot
+            return "\(dateString) · \(slotLabel)"
+        }
+        return dateString
+    }
+
+    // MARK: - Service Summary Card (legacy, no longer rendered — kept until
+    // remaining callers in older review flows are dropped)
 
     private var serviceSummaryCard: some View {
         VStack(alignment: .leading, spacing: UmuveSpacing.normal) {
