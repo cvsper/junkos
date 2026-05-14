@@ -25,7 +25,17 @@ struct PaymentView: View {
     /// Resolved pricing estimate from the booking wizard. Falls back to zero
     /// when the API call has not yet returned (UI shows "Calculating…").
     private var estimate: PricingEstimate? { bookingData.priceBreakdown }
-    private var orderTotal: Double { estimate?.total ?? bookingData.estimatedPrice ?? 0 }
+    private var orderSubtotal: Double { estimate?.total ?? bookingData.estimatedPrice ?? 0 }
+    /// Subtotal minus any applied promo discount. This is what the user
+    /// actually pays — used everywhere we render or charge a total.
+    private var orderTotal: Double { max(0, orderSubtotal - bookingData.promoDiscount) }
+
+    // Promo input state — local to this view so dismissing PaymentView
+    // doesn't leave stale UI in flight. The applied result lives on
+    // bookingData so it survives navigation.
+    @State private var promoInput: String = ""
+    @State private var promoError: String?
+    @State private var promoValidating: Bool = false
 
     var body: some View {
         ZStack {
@@ -43,10 +53,14 @@ struct PaymentView: View {
                     orderTotalCard
                         .staggeredEntrance(index: 1, isVisible: viewModel.elementsVisible)
 
+                    // Promo code (web Step 6 parity)
+                    promoSection
+                        .staggeredEntrance(index: 2, isVisible: viewModel.elementsVisible)
+
                     // Apple Pay section
                     if viewModel.isApplePayAvailable {
                         applePaySection
-                            .staggeredEntrance(index: 2, isVisible: viewModel.elementsVisible)
+                            .staggeredEntrance(index: 3, isVisible: viewModel.elementsVisible)
                     }
 
                     // Divider with "or"
@@ -178,6 +192,30 @@ struct PaymentView: View {
 
                 Divider()
 
+                // Pre-promo subtotal — only render when a promo is applied,
+                // otherwise the row duplicates the "Total" row below.
+                if bookingData.promoApplied {
+                    HStack {
+                        Text("Subtotal")
+                            .font(UmuveTypography.bodyFont)
+                            .foregroundColor(.umuveTextMuted)
+                        Spacer()
+                        Text("$\(formatPrice(orderSubtotal))")
+                            .font(UmuveTypography.bodyFont)
+                            .foregroundColor(.umuveText)
+                    }
+
+                    HStack {
+                        Text("Promo \(bookingData.promoCode)")
+                            .font(UmuveTypography.bodyFont)
+                            .foregroundColor(.umuveSuccess)
+                        Spacer()
+                        Text("-$\(formatPrice(bookingData.promoDiscount))")
+                            .font(UmuveTypography.bodyFont)
+                            .foregroundColor(.umuveSuccess)
+                    }
+                }
+
                 HStack {
                     Text("Total")
                         .font(UmuveTypography.h2Font)
@@ -207,6 +245,131 @@ struct PaymentView: View {
     private func surgeLabel(from reasons: [String]?) -> String {
         guard let first = reasons?.first, !first.isEmpty else { return "Surge Pricing" }
         return first
+    }
+
+    // MARK: - Promo Section
+    // Mirrors web Step 6's promo flow: text input + Apply button, or an
+    // applied chip with a remove (X) button. Validation hits
+    // /api/promos/validate; success populates bookingData.promo* so the
+    // discount is reflected in the order total and ApplePay sheet amount.
+    @ViewBuilder
+    private var promoSection: some View {
+        if bookingData.promoApplied {
+            HStack(spacing: UmuveSpacing.small) {
+                Image(systemName: "checkmark.seal.fill")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(.umuveSuccess)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(bookingData.promoCode)
+                        .font(UmuveTypography.bodyFont.weight(.bold))
+                        .foregroundColor(.umuveText)
+                    Text("-$\(formatPrice(bookingData.promoDiscount)) applied")
+                        .font(UmuveTypography.bodySmallFont)
+                        .foregroundColor(.umuveSuccess)
+                }
+
+                Spacer()
+
+                Button {
+                    removePromo()
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 22))
+                        .foregroundColor(.umuveTextTertiary)
+                }
+                .accessibilityLabel("Remove promo code")
+            }
+            .padding(UmuveSpacing.normal)
+            .background(Color.umuveSuccess.opacity(0.08))
+            .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.md))
+            .overlay(
+                RoundedRectangle(cornerRadius: UmuveRadius.md)
+                    .strokeBorder(Color.umuveSuccess.opacity(0.3), lineWidth: 1)
+            )
+        } else {
+            VStack(alignment: .leading, spacing: UmuveSpacing.small) {
+                Text("Have a discount code?")
+                    .font(UmuveTypography.captionFont)
+                    .foregroundColor(.umuveTextMuted)
+                    .textCase(.uppercase)
+                    .tracking(0.8)
+
+                HStack(spacing: UmuveSpacing.small) {
+                    TextField("Promo code", text: $promoInput)
+                        .font(UmuveTypography.bodyFont)
+                        .textInputAutocapitalization(.characters)
+                        .autocorrectionDisabled()
+                        .padding(UmuveSpacing.medium)
+                        .background(Color.umuveWhite)
+                        .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.sm))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: UmuveRadius.sm)
+                                .strokeBorder(Color.umuveBorder, lineWidth: 1)
+                        )
+
+                    Button {
+                        Task { await applyPromo() }
+                    } label: {
+                        if promoValidating {
+                            ProgressView().tint(.white)
+                        } else {
+                            Text("Apply")
+                        }
+                    }
+                    .buttonStyle(UmuvePrimaryButtonStyle(isEnabled: !promoInput.trimmingCharacters(in: .whitespaces).isEmpty))
+                    .frame(width: 100)
+                    .disabled(promoInput.trimmingCharacters(in: .whitespaces).isEmpty || promoValidating)
+                }
+
+                if let promoError {
+                    Text(promoError)
+                        .font(UmuveTypography.smallFont)
+                        .foregroundColor(.umuveError)
+                }
+            }
+        }
+    }
+
+    @MainActor
+    private func applyPromo() async {
+        let trimmed = promoInput.trimmingCharacters(in: .whitespaces).uppercased()
+        guard !trimmed.isEmpty else { return }
+
+        promoValidating = true
+        promoError = nil
+
+        do {
+            let response = try await APIClient.shared.validatePromoCode(
+                trimmed,
+                orderAmount: orderSubtotal
+            )
+
+            promoValidating = false
+
+            if response.valid, let discount = response.discountAmount {
+                bookingData.promoCode = trimmed
+                bookingData.promoDiscount = discount
+                bookingData.promoApplied = true
+                promoInput = ""
+                HapticManager.shared.success()
+            } else {
+                promoError = response.error ?? "This code isn't valid."
+                HapticManager.shared.error()
+            }
+        } catch {
+            promoValidating = false
+            promoError = "Couldn't reach the server. Try again."
+            HapticManager.shared.error()
+        }
+    }
+
+    private func removePromo() {
+        HapticManager.shared.lightTap()
+        bookingData.promoCode = ""
+        bookingData.promoDiscount = 0
+        bookingData.promoApplied = false
+        promoError = nil
     }
 
     // MARK: - Apple Pay Section

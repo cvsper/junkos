@@ -272,6 +272,19 @@ struct APIError: Codable {
     let details: String?
 }
 
+// MARK: - Promo Validation Response
+//
+// Mirrors /api/promos/validate responses. The server returns the same shape
+// for valid (HTTP 200) and invalid (HTTP 400) — fields just differ:
+//   valid: true  → discountAmount + newTotal populated
+//   valid: false → error string populated
+struct PromoValidationResponse: Codable {
+    let valid: Bool
+    let discountAmount: Double?
+    let newTotal: Double?
+    let error: String?
+}
+
 // MARK: - Referral Code Response
 struct ReferralCodeResponse: Codable {
     let success: Bool

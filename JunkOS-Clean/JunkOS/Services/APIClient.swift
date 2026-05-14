@@ -409,6 +409,42 @@ class APIClient {
         return estimateResponse.estimate
     }
 
+    // MARK: - Promo Codes
+
+    /// Validate a promo code against an order amount. Mirrors web Step 6's
+    /// "Apply" button: POST /api/promos/validate { code, order_amount } →
+    /// { valid: Bool, discount_amount?: Double, new_total?: Double, error?: String }.
+    func validatePromoCode(_ code: String, orderAmount: Double) async throws -> PromoValidationResponse {
+        let body = try JSONSerialization.data(withJSONObject: [
+            "code": code,
+            "order_amount": orderAmount,
+        ])
+
+        let request = try createRequest(
+            endpoint: "/api/promos/validate",
+            method: "POST",
+            body: body
+        )
+
+        let (data, response) = try await session.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIClientError.invalidResponse
+        }
+
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+
+        // Both 200 (valid) and 400 (invalid) return the same JSON shape with
+        // `valid: false` + an `error` string. Decode either as a normal
+        // response rather than throwing — the UI surfaces the error inline.
+        if httpResponse.statusCode == 200 || httpResponse.statusCode == 400 {
+            return try decoder.decode(PromoValidationResponse.self, from: data)
+        }
+
+        throw APIClientError.serverError("Promo validation failed: \(httpResponse.statusCode)")
+    }
+
     // MARK: - Referrals
 
     /// Get the current user's referral code
