@@ -151,7 +151,8 @@ final class APIClientTests: XCTestCase {
             photos: ["base64encodedphoto"],
             scheduledDatetime: "2026-02-08T10:00:00",
             notes: "Test notes",
-            customer: customerInfo
+            customer: customerInfo,
+            referralCode: nil
         )
         
         // When

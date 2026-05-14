@@ -2,7 +2,12 @@
 //  ServiceSelectionViewModelTests.swift
 //  UmuveTests
 //
-//  Unit tests for ServiceSelectionViewModel
+//  ServiceSelectionViewModel was simplified after Auto Transport removal +
+//  the items+quantity refactor. The legacy test suite (toggleService,
+//  selectedServices, getSelectedServiceNames, etc.) was exercising methods
+//  that no longer exist on the VM. This file now covers the current,
+//  much smaller API surface — primarily `requestPricingEstimate(for:)`
+//  which sets `bookingData.estimatedPrice` based on the user's items.
 //
 
 import XCTest
@@ -10,161 +15,70 @@ import XCTest
 
 @MainActor
 final class ServiceSelectionViewModelTests: XCTestCase {
-    
+
     var viewModel: ServiceSelectionViewModel!
-    
+    var bookingData: BookingData!
+
     override func setUp() {
         super.setUp()
         viewModel = ServiceSelectionViewModel()
+        bookingData = BookingData()
     }
-    
+
     override func tearDown() {
         viewModel = nil
+        bookingData = nil
         super.tearDown()
     }
-    
-    // MARK: - Initialization Tests
-    
-    func testInitialization() {
-        // Then
+
+    // MARK: - Initialization
+
+    func testInitialState() {
         XCTAssertNotNil(viewModel)
-        XCTAssertTrue(viewModel.selectedServices.isEmpty)
-        XCTAssertEqual(viewModel.serviceDetails, "")
-        XCTAssertFalse(viewModel.hasSelectedServices)
+        XCTAssertFalse(viewModel.isLoading)
     }
-    
-    func testAvailableServicesNotEmpty() {
-        // Then
-        XCTAssertFalse(viewModel.availableServices.isEmpty)
-        XCTAssertEqual(viewModel.availableServices.count, Service.all.count)
-    }
-    
-    // MARK: - Service Selection Tests
-    
-    func testToggleServiceSelection() {
-        // Given
-        let serviceId = "furniture"
-        XCTAssertFalse(viewModel.isSelected(serviceId))
-        
+
+    // MARK: - requestPricingEstimate
+
+    func testRequestPricingEstimateSetsBookingEstimatedPrice() async {
+        // Given: a booking with junk-removal selected and one item — the
+        // placeholder pricing logic scales by the truck tier the items fit
+        // into, so we need at least one item for a non-zero result.
+        bookingData.serviceType = .junkRemoval
+        let preset = ItemCategory.furniture.presets[0]
+        bookingData.items = [BookingItem(category: .furniture, preset: preset)]
+
         // When
-        viewModel.toggleService(serviceId)
-        
-        // Then
-        XCTAssertTrue(viewModel.isSelected(serviceId))
-        XCTAssertTrue(viewModel.selectedServices.contains(serviceId))
-        XCTAssertTrue(viewModel.hasSelectedServices)
+        await viewModel.requestPricingEstimate(for: bookingData)
+
+        // Then: estimatedPrice populated and loading is back to false.
+        XCTAssertFalse(viewModel.isLoading)
+        XCTAssertNotNil(bookingData.estimatedPrice)
+        XCTAssertGreaterThan(bookingData.estimatedPrice ?? 0, 0)
+        // A placeholder breakdown is also surfaced so the UI has something
+        // to show even when the API hasn't returned yet.
+        XCTAssertNotNil(bookingData.priceBreakdown)
     }
-    
-    func testToggleServiceDeselection() {
-        // Given
-        let serviceId = "appliances"
-        viewModel.toggleService(serviceId)
-        XCTAssertTrue(viewModel.isSelected(serviceId))
-        
-        // When - toggle again to deselect
-        viewModel.toggleService(serviceId)
-        
-        // Then
-        XCTAssertFalse(viewModel.isSelected(serviceId))
-        XCTAssertFalse(viewModel.selectedServices.contains(serviceId))
-        XCTAssertFalse(viewModel.hasSelectedServices)
-    }
-    
-    func testMultipleServiceSelection() {
-        // Given
-        let service1 = "furniture"
-        let service2 = "appliances"
-        let service3 = "electronics"
-        
+
+    func testRequestPricingEstimateNoServiceType() async {
+        // Given: no service type selected. The VM should still complete
+        // without crashing — it just won't populate a price.
+        XCTAssertNil(bookingData.serviceType)
+
         // When
-        viewModel.toggleService(service1)
-        viewModel.toggleService(service2)
-        viewModel.toggleService(service3)
-        
+        await viewModel.requestPricingEstimate(for: bookingData)
+
         // Then
-        XCTAssertEqual(viewModel.selectedServices.count, 3)
-        XCTAssertTrue(viewModel.isSelected(service1))
-        XCTAssertTrue(viewModel.isSelected(service2))
-        XCTAssertTrue(viewModel.isSelected(service3))
-        XCTAssertTrue(viewModel.hasSelectedServices)
+        XCTAssertFalse(viewModel.isLoading)
     }
-    
-    func testDeselectService() {
-        // Given - select three services
-        viewModel.toggleService("furniture")
-        viewModel.toggleService("appliances")
-        viewModel.toggleService("electronics")
-        XCTAssertEqual(viewModel.selectedServices.count, 3)
-        
-        // When - deselect one
-        viewModel.toggleService("appliances")
-        
-        // Then - should have 2 services
-        XCTAssertEqual(viewModel.selectedServices.count, 2)
-        XCTAssertTrue(viewModel.isSelected("furniture"))
-        XCTAssertFalse(viewModel.isSelected("appliances"))
-        XCTAssertTrue(viewModel.isSelected("electronics"))
-    }
-    
-    // MARK: - Validation Tests
-    
-    func testHasSelectedServicesWhenEmpty() {
-        // Given - no services selected
-        
-        // Then
-        XCTAssertFalse(viewModel.hasSelectedServices)
-    }
-    
-    func testHasSelectedServicesWhenNotEmpty() {
-        // Given
-        viewModel.toggleService("furniture")
-        
-        // Then
-        XCTAssertTrue(viewModel.hasSelectedServices)
-    }
-    
-    // MARK: - Service Names Tests
-    
-    func testGetSelectedServiceNames() {
-        // Given
-        viewModel.toggleService("furniture")
-        viewModel.toggleService("appliances")
-        
-        // When
-        let serviceNames = viewModel.getSelectedServiceNames()
-        
-        // Then
-        XCTAssertEqual(serviceNames.count, 2)
-        XCTAssertTrue(serviceNames.contains("Furniture Removal"))
-        XCTAssertTrue(serviceNames.contains("Appliances"))
-    }
-    
-    func testGetSelectedServiceNamesEmpty() {
-        // Given - no services selected
-        
-        // When
-        let serviceNames = viewModel.getSelectedServiceNames()
-        
-        // Then
-        XCTAssertTrue(serviceNames.isEmpty)
-    }
-    
-    // MARK: - Service Query Tests
-    
-    func testIsSelectedForUnselectedService() {
-        // Given
-        let serviceId = "construction"
-        
-        // Then
-        XCTAssertFalse(viewModel.isSelected(serviceId))
-    }
-    
-    func testIsSelectedForSelectedService() {
-        // Given
-        let serviceId = "yard"
-        viewModel.toggleService(serviceId)
-        
-        // Then
-        XCTAssertTrue(viewModel.isSelected(serviceId))
+
+    // MARK: - isLoading
+
+    func testLoadingStateClearsAfterEstimate() async {
+        bookingData.serviceType = .junkRemoval
+
+        await viewModel.requestPricingEstimate(for: bookingData)
+
+        XCTAssertFalse(viewModel.isLoading, "isLoading should be cleared once the estimate request completes")
     }
 }

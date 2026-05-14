@@ -23,16 +23,19 @@ func XCTAssertAddressInvalid(_ address: Address, file: StaticString = #filePath,
     XCTAssertFalse(isValid, "Address should be invalid", file: file, line: line)
 }
 
-/// Assert that a BookingData object is complete and ready for submission
+/// Assert that a BookingData object is complete and ready for submission.
+/// "Complete" tracks the current wizard gates: a valid address, at least
+/// one selected item (replaces the legacy `hasSelectedServices`), and a
+/// chosen date+time slot.
 func XCTAssertBookingComplete(_ booking: BookingData, file: StaticString = #filePath, line: UInt = #line) {
     XCTAssertTrue(booking.isAddressValid, "Booking address should be valid", file: file, line: line)
-    XCTAssertTrue(booking.hasSelectedServices, "Booking should have selected services", file: file, line: line)
+    XCTAssertTrue(booking.hasItems, "Booking should have at least one item", file: file, line: line)
     XCTAssertTrue(booking.hasSelectedDateTime, "Booking should have selected date and time", file: file, line: line)
 }
 
 /// Assert that a BookingData object is incomplete
 func XCTAssertBookingIncomplete(_ booking: BookingData, file: StaticString = #filePath, line: UInt = #line) {
-    let isComplete = booking.isAddressValid && booking.hasSelectedServices && booking.hasSelectedDateTime
+    let isComplete = booking.isAddressValid && booking.hasItems && booking.hasSelectedDateTime
     XCTAssertFalse(isComplete, "Booking should be incomplete", file: file, line: line)
 }
 

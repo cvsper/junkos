@@ -11,13 +11,13 @@ import Combine
 
 // MARK: - API Client Protocol
 protocol APIClientProtocol {
-    func submitBooking(_ booking: BookingData) async throws -> BookingResponse
+    func submitBooking(_ booking: BookingData) async throws -> MockBookingResponse
     func uploadPhotos(_ photos: [Data]) async throws -> [String]
     func checkAvailability(date: Date, zipCode: String) async throws -> [TimeSlot]
 }
 
 // MARK: - Booking Response
-struct BookingResponse: Codable {
+struct MockBookingResponse: Codable {
     let id: String
     let confirmationNumber: String
     let status: String
@@ -28,7 +28,7 @@ struct BookingResponse: Codable {
 class MockAPIClient: APIClientProtocol {
     // MARK: - Mock Properties
     var shouldSucceed = true
-    var mockBookingResponse = BookingResponse(
+    var mockMockBookingResponse = MockBookingResponse(
         id: "booking-123",
         confirmationNumber: "JOS-2026-001",
         status: "confirmed",
@@ -48,12 +48,12 @@ class MockAPIClient: APIClientProtocol {
     var lastAvailabilityZipCode: String?
     
     // MARK: - API Methods
-    func submitBooking(_ booking: BookingData) async throws -> BookingResponse {
+    func submitBooking(_ booking: BookingData) async throws -> MockBookingResponse {
         submitBookingCalled = true
         lastSubmittedBooking = booking
         
         if shouldSucceed {
-            return mockBookingResponse
+            return mockMockBookingResponse
         } else {
             throw mockError ?? NSError(
                 domain: "MockAPIClient",
