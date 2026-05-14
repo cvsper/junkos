@@ -207,7 +207,7 @@ struct AccountView: View {
             }
             Divider().padding(.leading, 56)
             AccountMenuItem(icon: "doc.text.fill", title: "Terms & Privacy", color: .categoryPurple) {
-                if let url = URL(string: "https://landing-page-premium-five.vercel.app/terms") {
+                if let url = URL(string: "https://goumuve.com/terms") {
                     UIApplication.shared.open(url)
                 }
             }
