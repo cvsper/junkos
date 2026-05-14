@@ -65,6 +65,16 @@
 		E9EFC98AFA8643E28EACC354 /* BookingReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B62C6AE0CC2476CBA66EB5C /* BookingReviewView.swift */; };
 		EE6ED07F2A53D504E2E75373 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D09B14030B3F26192D37DF3 /* Config.swift */; };
 		KCH6273DDE75A8449FD9F693 /* KeychainHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = KCH1A95DDFA72D44911BFED2 /* KeychainHelper.swift */; };
+		V0000001 /* MockAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = U0000001 /* MockAPIClient.swift */; };
+		V0000002 /* MockLocationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = U0000002 /* MockLocationManager.swift */; };
+		V0000003 /* AddressInputViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = U0000003 /* AddressInputViewModelTests.swift */; };
+		V0000004 /* PhotoUploadViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = U0000004 /* PhotoUploadViewModelTests.swift */; };
+		V0000005 /* DateTimePickerViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = U0000005 /* DateTimePickerViewModelTests.swift */; };
+		V0000006 /* ServiceSelectionViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = U0000006 /* ServiceSelectionViewModelTests.swift */; };
+		V0000007 /* ConfirmationViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = U0000007 /* ConfirmationViewModelTests.swift */; };
+		V0000008 /* TestFixtures.swift in Sources */ = {isa = PBXBuildFile; fileRef = U0000008 /* TestFixtures.swift */; };
+		V0000009 /* TestHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = U0000009 /* TestHelpers.swift */; };
+		V0000010 /* APIClientTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = U0000010 /* APIClientTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -137,6 +147,18 @@
 		D4FFB908C7184F8F99358601 /* CameraPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraPickerView.swift; sourceTree = "<group>"; };
 		F35B7E9D88CC46B4A0D1E234 /* ServiceTypeSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceTypeSelectionView.swift; sourceTree = "<group>"; };
 		KCH1A95DDFA72D44911BFED2 /* KeychainHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainHelper.swift; sourceTree = "<group>"; };
+		T0000001 /* JunkOSTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = JunkOSTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		T0000002 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		U0000001 /* MockAPIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockAPIClient.swift; sourceTree = "<group>"; };
+		U0000002 /* MockLocationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockLocationManager.swift; sourceTree = "<group>"; };
+		U0000003 /* AddressInputViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressInputViewModelTests.swift; sourceTree = "<group>"; };
+		U0000004 /* PhotoUploadViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoUploadViewModelTests.swift; sourceTree = "<group>"; };
+		U0000005 /* DateTimePickerViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateTimePickerViewModelTests.swift; sourceTree = "<group>"; };
+		U0000006 /* ServiceSelectionViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceSelectionViewModelTests.swift; sourceTree = "<group>"; };
+		U0000007 /* ConfirmationViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfirmationViewModelTests.swift; sourceTree = "<group>"; };
+		U0000008 /* TestFixtures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestFixtures.swift; sourceTree = "<group>"; };
+		U0000009 /* TestHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestHelpers.swift; sourceTree = "<group>"; };
+		U0000010 /* APIClientTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClientTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -146,6 +168,13 @@
 			files = (
 				CF19A5882F40D68B007960A8 /* StripePaymentSheet in Frameworks */,
 				DCB6AC1F7668F776ABECD3E5 /* SocketIO in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		T0000010 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -223,8 +252,59 @@
 			isa = PBXGroup;
 			children = (
 				D0000002 /* JunkOS */,
+				T0000020 /* JunkOSTests */,
 				D0000003 /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		T0000020 /* JunkOSTests */ = {
+			isa = PBXGroup;
+			children = (
+				T0000021 /* Mocks */,
+				T0000022 /* ViewModels */,
+				T0000023 /* Utilities */,
+				T0000024 /* Services */,
+				T0000002 /* Info.plist */,
+			);
+			path = JunkOSTests;
+			sourceTree = "<group>";
+		};
+		T0000021 /* Mocks */ = {
+			isa = PBXGroup;
+			children = (
+				U0000001 /* MockAPIClient.swift */,
+				U0000002 /* MockLocationManager.swift */,
+			);
+			path = Mocks;
+			sourceTree = "<group>";
+		};
+		T0000022 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				U0000003 /* AddressInputViewModelTests.swift */,
+				U0000004 /* PhotoUploadViewModelTests.swift */,
+				U0000005 /* DateTimePickerViewModelTests.swift */,
+				U0000006 /* ServiceSelectionViewModelTests.swift */,
+				U0000007 /* ConfirmationViewModelTests.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		T0000023 /* Utilities */ = {
+			isa = PBXGroup;
+			children = (
+				U0000008 /* TestFixtures.swift */,
+				U0000009 /* TestHelpers.swift */,
+			);
+			path = Utilities;
+			sourceTree = "<group>";
+		};
+		T0000024 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				U0000010 /* APIClientTests.swift */,
+			);
+			path = Services;
 			sourceTree = "<group>";
 		};
 		D0000002 /* JunkOS */ = {
@@ -250,6 +330,7 @@
 			isa = PBXGroup;
 			children = (
 				B0000000 /* JunkOS.app */,
+				T0000001 /* JunkOSTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -395,6 +476,24 @@
 			productReference = B0000000 /* JunkOS.app */;
 			productType = "com.apple.product-type.application";
 		};
+		T0000030 /* JunkOSTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = T0000050 /* Build configuration list for PBXNativeTarget "JunkOSTests" */;
+			buildPhases = (
+				T0000011 /* Sources */,
+				T0000010 /* Frameworks */,
+				T0000012 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				T0000041 /* PBXTargetDependency */,
+			);
+			name = JunkOSTests;
+			productName = JunkOSTests;
+			productReference = T0000001 /* JunkOSTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -416,6 +515,10 @@
 							};
 						};
 					};
+					T0000030 = {
+						CreatedOnToolsVersion = 15.0;
+						TestTargetID = E0000001;
+					};
 				};
 			};
 			buildConfigurationList = G0000002 /* Build configuration list for PBXProject "JunkOS" */;
@@ -436,6 +539,7 @@
 			projectRoot = "";
 			targets = (
 				E0000001 /* JunkOS */,
+				T0000030 /* JunkOSTests */,
 			);
 		};
 /* End PBXProject section */
@@ -446,6 +550,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				A0000027 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		T0000012 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -514,7 +625,42 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		T0000011 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				V0000001 /* MockAPIClient.swift in Sources */,
+				V0000002 /* MockLocationManager.swift in Sources */,
+				V0000003 /* AddressInputViewModelTests.swift in Sources */,
+				V0000004 /* PhotoUploadViewModelTests.swift in Sources */,
+				V0000005 /* DateTimePickerViewModelTests.swift in Sources */,
+				V0000006 /* ServiceSelectionViewModelTests.swift in Sources */,
+				V0000007 /* ConfirmationViewModelTests.swift in Sources */,
+				V0000008 /* TestFixtures.swift in Sources */,
+				V0000009 /* TestHelpers.swift in Sources */,
+				V0000010 /* APIClientTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXContainerItemProxy section */
+		T0000040 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = G0000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E0000001;
+			remoteInfo = JunkOS;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXTargetDependency section */
+		T0000041 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E0000001 /* JunkOS */;
+			targetProxy = T0000040 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		H0000001 /* Debug */ = {
@@ -666,6 +812,7 @@
 				);
 				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.goumuve.app;
+				PRODUCT_MODULE_NAME = Umuve;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -697,10 +844,65 @@
 				);
 				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.goumuve.app;
+				PRODUCT_MODULE_NAME = Umuve;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		T0000051 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 24GH82AX9R;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = JunkOSTests/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.goumuve.app.JunkOSTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/JunkOS.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/JunkOS";
+			};
+			name = Debug;
+		};
+		T0000052 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 24GH82AX9R;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = JunkOSTests/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.goumuve.app.JunkOSTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/JunkOS.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/JunkOS";
 			};
 			name = Release;
 		};
@@ -721,6 +923,15 @@
 			buildConfigurations = (
 				H0000001 /* Debug */,
 				H0000002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		T0000050 /* Build configuration list for PBXNativeTarget "JunkOSTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				T0000051 /* Debug */,
+				T0000052 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
