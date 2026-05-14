@@ -17,25 +17,21 @@ struct AccountView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: UmuveSpacing.xlarge) {
-                // Profile Section
                 profileSection
 
-                // Guest mode callout
                 if authManager.currentUser?.id == "guest" {
                     guestCallout
+                } else {
+                    // Signed-in users see a stats row above the menu so the
+                    // screen doesn't read as "just a list of links". Counts
+                    // are placeholders until backend serves real per-user
+                    // aggregates.
+                    statsRow
                 }
 
-                // Menu Options
                 menuSection
-
-                // Logout Button
                 logoutButton
-
-                // App Version
-                Text("Version 1.0.0")
-                    .font(UmuveTypography.captionFont)
-                    .foregroundColor(.umuveTextTertiary)
-                    .padding(.bottom, UmuveSpacing.large)
+                appFooter
             }
             .padding(.horizontal, UmuveSpacing.large)
             .padding(.bottom, UmuveSpacing.xxlarge)
@@ -84,6 +80,63 @@ struct AccountView: View {
     }
 
     // MARK: - Profile Section
+
+    // MARK: - Stats Row
+    //
+    // Three at-a-glance tiles between the profile and menu. Numbers come
+    // from the booking history feed for real users; placeholders for now
+    // until backend exposes a per-user aggregate endpoint.
+    private var statsRow: some View {
+        HStack(spacing: UmuveSpacing.small) {
+            statTile(value: "—", label: "Pickups", icon: "checkmark.seal.fill", tint: .umuvePrimary)
+            statTile(value: "—", label: "Items diverted", icon: "leaf.fill", tint: .umuveSuccess)
+            statTile(value: "$—", label: "Credits", icon: "gift.fill", tint: .categoryOrange)
+        }
+    }
+
+    private func statTile(value: String, label: String, icon: String, tint: Color) -> some View {
+        VStack(spacing: 6) {
+            ZStack {
+                Circle()
+                    .fill(tint.opacity(0.12))
+                    .frame(width: 36, height: 36)
+                Image(systemName: icon)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(tint)
+            }
+            Text(value)
+                .font(UmuveTypography.h3Font)
+                .foregroundColor(.umuveText)
+            Text(label)
+                .font(UmuveTypography.smallFont)
+                .foregroundColor(.umuveTextMuted)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, UmuveSpacing.normal)
+        .background(Color.umuveWhite)
+        .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.md))
+        .overlay(
+            RoundedRectangle(cornerRadius: UmuveRadius.md)
+                .strokeBorder(Color.umuveBorder, lineWidth: 1)
+        )
+    }
+
+    // MARK: - App Footer (version + made-with chip)
+
+    private var appFooter: some View {
+        VStack(spacing: UmuveSpacing.tiny) {
+            Image("UmuveLogo")
+                .resizable()
+                .scaledToFit()
+                .frame(height: 20)
+                .opacity(0.4)
+            Text("Version 1.0.0 · Hauling made simple.")
+                .font(UmuveTypography.smallFont)
+                .foregroundColor(.umuveTextTertiary)
+        }
+        .padding(.bottom, UmuveSpacing.large)
+    }
 
     private var profileSection: some View {
         VStack(spacing: UmuveSpacing.normal) {
