@@ -47,18 +47,26 @@ struct OnboardingView: View {
             Color.umuveBackground.ignoresSafeArea()
 
             VStack(spacing: 0) {
-                // Skip button
+                // Brand header — logo on left, Skip on right
                 HStack {
+                    Image("UmuveLogo")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 28)
+                        .accessibilityLabel("Umuve")
+
                     Spacer()
+
                     Button("Skip") {
                         hasCompletedOnboarding = true
                     }
                     .font(UmuveTypography.bodyFont)
                     .foregroundColor(.umuveTextMuted)
-                    .padding()
                     .accessibilityLabel("Skip onboarding")
                     .accessibilityHint("Double tap to skip and go to sign in")
                 }
+                .padding(.horizontal, UmuveSpacing.large)
+                .padding(.top, UmuveSpacing.normal)
 
                 // Page content
                 TabView(selection: $currentPage) {
