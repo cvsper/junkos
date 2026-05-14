@@ -56,7 +56,7 @@
 		CF7C17CC2F37BF700083FF08 /* AuthenticationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF7C17CA2F37BF700083FF08 /* AuthenticationManager.swift */; };
 		D2D1D62684D24BC79EA47513 /* PaymentService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F0811DCB5C84EAA9DF1E741 /* PaymentService.swift */; };
 		DCB6AC1F7668F776ABECD3E5 /* SocketIO in Frameworks */ = {isa = PBXBuildFile; productRef = F49FDC8DF4FBA9B367D765BF /* SocketIO */; };
-		E42A8F1C99DD45A3B1C2F789 /* ServiceTypeSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F35B7E9D88CC46B4A0D1E234 /* ServiceTypeSelectionView.swift */; };
+		E42A8F1C99DD45A3B1C2F789 /* ItemSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F35B7E9D88CC46B4A0D1E234 /* ItemSelectionView.swift */; };
 		E9EFC98AFA8643E28EACC354 /* BookingReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B62C6AE0CC2476CBA66EB5C /* BookingReviewView.swift */; };
 		EE6ED07F2A53D504E2E75373 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D09B14030B3F26192D37DF3 /* Config.swift */; };
 		KCH6273DDE75A8449FD9F693 /* KeychainHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = KCH1A95DDFA72D44911BFED2 /* KeychainHelper.swift */; };
@@ -131,7 +131,7 @@
 		CF7C17CA2F37BF700083FF08 /* AuthenticationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthenticationManager.swift; sourceTree = "<group>"; };
 		CF8FEDE3A12D4A61A3A53F6B /* BookingWizardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookingWizardView.swift; sourceTree = "<group>"; };
 		D4FFB908C7184F8F99358601 /* CameraPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraPickerView.swift; sourceTree = "<group>"; };
-		F35B7E9D88CC46B4A0D1E234 /* ServiceTypeSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceTypeSelectionView.swift; sourceTree = "<group>"; };
+		F35B7E9D88CC46B4A0D1E234 /* ItemSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemSelectionView.swift; sourceTree = "<group>"; };
 		KCH1A95DDFA72D44911BFED2 /* KeychainHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainHelper.swift; sourceTree = "<group>"; };
 		T0000001 /* JunkOSTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = JunkOSTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		T0000002 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -202,7 +202,7 @@
 				CF19A58C2F41C60C007960A8 /* JobTrackingView.swift */,
 				CF8FEDE3A12D4A61A3A53F6B /* BookingWizardView.swift */,
 				6B62C6AE0CC2476CBA66EB5C /* BookingReviewView.swift */,
-				F35B7E9D88CC46B4A0D1E234 /* ServiceTypeSelectionView.swift */,
+				F35B7E9D88CC46B4A0D1E234 /* ItemSelectionView.swift */,
 				CF7C17A42F37BC810083FF08 /* Auth */,
 				C56BF1A9F44848D087CD2F71 /* Booking */,
 				CF7C17A52F37BC810083FF08 /* AccountView.swift */,
@@ -543,7 +543,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				B61D2F5F685941D8A9A1117E /* BookingWizardView.swift in Sources */,
-				E42A8F1C99DD45A3B1C2F789 /* ServiceTypeSelectionView.swift in Sources */,
+				E42A8F1C99DD45A3B1C2F789 /* ItemSelectionView.swift in Sources */,
 				9C7FD09841C54C99A29DA7A5 /* BookingWizardViewModel.swift in Sources */,
 				E9EFC98AFA8643E28EACC354 /* BookingReviewView.swift in Sources */,
 				5FF95075F663443EA6840FD2 /* BookingReviewViewModel.swift in Sources */,

@@ -1,11 +1,12 @@
 //
-//  ServiceTypeSelectionView.swift
+//  ItemSelectionView.swift
 //  Umuve
 //
-//  Filename preserved so the pbxproj reference stays valid; the file now
-//  hosts ItemSelectionView — the booking wizard's Items step, which
-//  replaces the legacy JunkVolumeSelectionView when iOS adopted the web
-//  booking flow's items+quantity model. Mirrors web Step 3.
+//  Booking wizard's Items step — seven category buttons (multi-select),
+//  collapsible per-category item rows with quantity steppers, a sticky
+//  footer showing truck-fill + estimated price + cu ft / lbs totals,
+//  plus an optional 500-char notes field. Mirrors the web booking
+//  flow's Step 3 layout.
 //
 
 import SwiftUI
