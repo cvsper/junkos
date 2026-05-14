@@ -122,15 +122,11 @@ class BookingReviewViewModel: ObservableObject {
                 address: bookingData.address.fullAddress,
                 lat: bookingData.pickupCoordinate?.latitude ?? 0,
                 lng: bookingData.pickupCoordinate?.longitude ?? 0,
-                dropoffAddress: bookingData.needsDropoff ? bookingData.dropoffAddress.fullAddress : nil,
-                dropoffLat: bookingData.dropoffCoordinate?.latitude,
-                dropoffLng: bookingData.dropoffCoordinate?.longitude,
                 photoUrls: photoUrls,
                 scheduledDate: scheduledDate,
                 scheduledTime: selectedTimeSlot,
                 estimatedPrice: bookingData.estimatedPrice ?? 0,
-                volumeTier: serviceType == .junkRemoval ? bookingData.volumeTier.rawValue : nil,
-                vehicleInfo: serviceType == .autoTransport ? buildVehicleInfo(bookingData) : nil,
+                volumeTier: bookingData.volumeTier.rawValue,
                 distance: bookingData.estimatedDistance
             )
 
@@ -159,16 +155,5 @@ class BookingReviewViewModel: ObservableObject {
         }
 
         isSubmitting = false
-    }
-
-    private func buildVehicleInfo(_ bookingData: BookingData) -> [String: String] {
-        var info: [String: String] = [
-            "make": bookingData.vehicleMake,
-            "model": bookingData.vehicleModel,
-            "year": bookingData.vehicleYear,
-            "running": bookingData.isVehicleRunning ? "yes" : "no",
-            "enclosed": bookingData.needsEnclosedTrailer ? "yes" : "no"
-        ]
-        return info
     }
 }

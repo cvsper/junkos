@@ -78,20 +78,6 @@ class BookingWizardViewModel: ObservableObject {
             switch serviceType {
             case .junkRemoval:
                 serviceTypeString = "Junk Removal"
-            case .autoTransport:
-                serviceTypeString = "Auto Transport"
-            }
-
-            // Prepare vehicle info for auto transport
-            var vehicleInfo: [String: Any]?
-            if serviceType == .autoTransport {
-                vehicleInfo = [
-                    "make": bookingData.vehicleMake,
-                    "model": bookingData.vehicleModel,
-                    "year": bookingData.vehicleYear,
-                    "is_running": bookingData.isVehicleRunning,
-                    "needs_enclosed_trailer": bookingData.needsEnclosedTrailer
-                ]
             }
 
             // Format scheduled date if available
@@ -104,12 +90,9 @@ class BookingWizardViewModel: ObservableObject {
 
             let estimate = try await APIClient.shared.getPricingEstimate(
                 serviceType: serviceTypeString,
-                volumeTier: serviceType == .junkRemoval ? bookingData.volumeTier.rawValue : nil,
-                vehicleInfo: vehicleInfo,
+                volumeTier: bookingData.volumeTier.rawValue,
                 pickupLat: bookingData.pickupCoordinate?.latitude,
                 pickupLng: bookingData.pickupCoordinate?.longitude,
-                dropoffLat: bookingData.dropoffCoordinate?.latitude,
-                dropoffLng: bookingData.dropoffCoordinate?.longitude,
                 scheduledDate: scheduledDateString
             )
 

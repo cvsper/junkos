@@ -490,12 +490,9 @@ struct ConfirmationView: View {
 
     private var confirmButton: some View {
         NavigationLink {
-            PaymentView(
-                priceBreakdown: viewModel.priceBreakdown,
-                onPaymentSuccess: {
-                    submitBookingAfterPayment()
-                }
-            )
+            PaymentView(onPaymentSuccess: {
+                submitBookingAfterPayment()
+            })
             .environmentObject(bookingData)
         } label: {
             Text("Continue to Payment")

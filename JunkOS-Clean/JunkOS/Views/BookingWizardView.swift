@@ -144,8 +144,8 @@ struct BookingWizardView: View {
         Group {
             switch wizardVM.currentStep {
             case 0:
-                // Service Selection
-                ServiceTypeSelectionView()
+                // Junk Removal volume selection
+                JunkVolumeSelectionView()
                     .environmentObject(bookingData)
                     .environmentObject(wizardVM)
 
@@ -234,18 +234,17 @@ struct BookingWizardView: View {
                     Divider()
 
                     priceLineItem("Subtotal", amount: breakdown.subtotal)
-                    priceLineItem("Service Fee", amount: breakdown.serviceFee)
 
-                    if breakdown.volumeDiscount < 0 {
-                        priceLineItem("Volume Discount", amount: breakdown.volumeDiscount, isDiscount: true)
+                    if let serviceFee = breakdown.serviceFee {
+                        priceLineItem("Service Fee", amount: serviceFee)
                     }
 
-                    if breakdown.timeSurge > 0 {
-                        priceLineItem("Time Surcharge", amount: breakdown.timeSurge)
+                    if let volumeDiscount = breakdown.volumeDiscount, volumeDiscount < 0 {
+                        priceLineItem("Volume Discount", amount: volumeDiscount, isDiscount: true)
                     }
 
-                    if breakdown.zoneSurge > 0 {
-                        priceLineItem("Zone Surcharge", amount: breakdown.zoneSurge)
+                    if let surgeAmount = breakdown.surgeAmount, surgeAmount > 0 {
+                        priceLineItem("Surcharge", amount: surgeAmount)
                     }
 
                     Divider()

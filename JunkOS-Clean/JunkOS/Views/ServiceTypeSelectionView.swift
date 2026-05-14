@@ -1,13 +1,13 @@
 //
-//  ServiceTypeSelectionView.swift
+//  JunkVolumeSelectionView.swift
 //  Umuve
 //
-//  Service type selection screen - first step of booking wizard
+//  Volume tier selection - first step of the junk removal booking wizard.
 //
 
 import SwiftUI
 
-struct ServiceTypeSelectionView: View {
+struct JunkVolumeSelectionView: View {
     @EnvironmentObject var bookingData: BookingData
     @EnvironmentObject var wizardVM: BookingWizardViewModel
     @StateObject private var viewModel = ServiceSelectionViewModel()
@@ -17,50 +17,29 @@ struct ServiceTypeSelectionView: View {
             VStack(alignment: .leading, spacing: UmuveSpacing.xlarge) {
                 // Header
                 VStack(alignment: .leading, spacing: UmuveSpacing.small) {
-                    Text("What do you need?")
+                    Text("Junk Removal")
                         .font(UmuveTypography.h1Font)
                         .foregroundColor(.umuveText)
 
-                    Text("Choose a service")
+                    Text("How much do you have?")
                         .font(UmuveTypography.bodyFont)
                         .foregroundColor(.umuveTextMuted)
                 }
 
-                // Service Type Cards
-                VStack(spacing: UmuveSpacing.normal) {
-                    serviceTypeCard(
-                        type: .junkRemoval,
-                        icon: "truck.box.fill",
-                        title: "Junk Removal",
-                        description: ServiceType.junkRemoval.description,
-                        accent: .categoryBlue,
-                        subItems: ["Furniture", "Appliances", "Electronics", "General Junk"],
-                        isSelected: bookingData.serviceType == .junkRemoval
-                    )
-
-                    serviceTypeCard(
-                        type: .autoTransport,
-                        icon: "car.fill",
-                        title: "Auto Transport",
-                        description: ServiceType.autoTransport.description,
-                        accent: .categoryOrange,
-                        subItems: ["Open Trailer", "Enclosed Trailer", "Running or Non-running", "Door-to-door"],
-                        isSelected: bookingData.serviceType == .autoTransport
-                    )
-                }
-
-                // Conditional Detail Section
-                if let serviceType = bookingData.serviceType {
-                    if serviceType == .junkRemoval {
-                        truckFillSelector
-                    } else if serviceType == .autoTransport {
-                        vehicleInfoSection
-                    }
-                }
+                truckFillSelector
             }
             .padding(.horizontal, UmuveSpacing.large)
             .padding(.top, UmuveSpacing.normal)
             .padding(.bottom, UmuveSpacing.xxlarge)
+        }
+        .onAppear {
+            // Junk Removal is the only service — set it as soon as the wizard opens.
+            if bookingData.serviceType != .junkRemoval {
+                bookingData.serviceType = .junkRemoval
+                Task {
+                    await viewModel.requestPricingEstimate(for: bookingData)
+                }
+            }
         }
         .safeAreaInset(edge: .bottom) {
             continueButton
@@ -70,100 +49,10 @@ struct ServiceTypeSelectionView: View {
         }
     }
 
-    // MARK: - Service Type Card
-
-    private func serviceTypeCard(
-        type: ServiceType,
-        icon: String,
-        title: String,
-        description: String,
-        accent: Color,
-        subItems: [String],
-        isSelected: Bool
-    ) -> some View {
-        Button {
-            withAnimation(.easeInOut(duration: 0.2)) {
-                bookingData.serviceType = type
-            }
-
-            Task {
-                await viewModel.requestPricingEstimate(for: bookingData)
-            }
-        } label: {
-            VStack(alignment: .leading, spacing: UmuveSpacing.normal) {
-                HStack(spacing: UmuveSpacing.normal) {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: UmuveRadius.md)
-                            .fill(accent.opacity(0.18))
-                            .frame(width: 60, height: 60)
-
-                        Image(systemName: icon)
-                            .font(.system(size: 28))
-                            .foregroundColor(accent)
-                    }
-
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(title)
-                            .font(UmuveTypography.h3Font)
-                            .foregroundColor(.umuveText)
-
-                        Text(description)
-                            .font(UmuveTypography.bodySmallFont)
-                            .foregroundColor(.umuveTextMuted)
-                            .multilineTextAlignment(.leading)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-
-                    Spacer(minLength: 0)
-
-                    if isSelected {
-                        Image(systemName: "checkmark.circle.fill")
-                            .font(.system(size: 24))
-                            .foregroundColor(.umuvePrimary)
-                    }
-                }
-
-                VStack(alignment: .leading, spacing: UmuveSpacing.small) {
-                    ForEach(subItems, id: \.self) { item in
-                        HStack(spacing: UmuveSpacing.small) {
-                            Image(systemName: "checkmark.circle.fill")
-                                .font(.system(size: 14))
-                                .foregroundColor(accent)
-
-                            Text(item)
-                                .font(UmuveTypography.bodySmallFont)
-                                .foregroundColor(.umuveTextMuted)
-                        }
-                    }
-                }
-                .padding(.horizontal, UmuveSpacing.small)
-            }
-            .padding(UmuveSpacing.normal)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: UmuveRadius.lg)
-                    .fill(isSelected ? Color.umuvePrimary.opacity(0.05) : Color.umuveWhite)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: UmuveRadius.lg)
-                    .strokeBorder(
-                        isSelected ? Color.umuvePrimary : Color.umuveBorder,
-                        lineWidth: isSelected ? 3 : 1
-                    )
-            )
-            .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 4)
-        }
-        .buttonStyle(PlainButtonStyle())
-    }
-
     // MARK: - Truck Fill Selector
 
     private var truckFillSelector: some View {
         VStack(alignment: .leading, spacing: UmuveSpacing.normal) {
-            Text("How much do you have?")
-                .font(UmuveTypography.h2Font)
-                .foregroundColor(.umuveText)
-
             LazyVGrid(columns: [
                 GridItem(.flexible(), spacing: UmuveSpacing.small),
                 GridItem(.flexible(), spacing: UmuveSpacing.small)
@@ -173,7 +62,6 @@ struct ServiceTypeSelectionView: View {
                 }
             }
         }
-        .transition(.opacity.combined(with: .move(edge: .top)))
     }
 
     private func volumeTierCard(tier: VolumeTier) -> some View {
@@ -184,22 +72,18 @@ struct ServiceTypeSelectionView: View {
                 bookingData.volumeTier = tier
             }
 
-            // Update pricing estimate
             Task {
                 await viewModel.requestPricingEstimate(for: bookingData)
             }
         } label: {
             VStack(spacing: UmuveSpacing.small) {
-                // Visual fill indicator
                 truckFillVisualization(for: tier)
                     .frame(height: 40)
 
-                // Tier name
                 Text(tier.rawValue)
                     .font(UmuveTypography.bodyFont.weight(.semibold))
                     .foregroundColor(.umuveText)
 
-                // Description
                 Text(tier.description)
                     .font(UmuveTypography.captionFont)
                     .foregroundColor(.umuveTextMuted)
@@ -236,112 +120,6 @@ struct ServiceTypeSelectionView: View {
         .frame(height: 40)
     }
 
-    // MARK: - Vehicle Info Section
-
-    private var vehicleInfoSection: some View {
-        VStack(alignment: .leading, spacing: UmuveSpacing.normal) {
-            Text("Vehicle Details")
-                .font(UmuveTypography.h2Font)
-                .foregroundColor(.umuveText)
-
-            VStack(spacing: UmuveSpacing.normal) {
-                // Vehicle Make
-                vehicleInputField(
-                    icon: "car.fill",
-                    placeholder: "Vehicle Make (e.g., Toyota)",
-                    text: $bookingData.vehicleMake
-                )
-
-                // Vehicle Model
-                vehicleInputField(
-                    icon: "car.side",
-                    placeholder: "Vehicle Model (e.g., Camry)",
-                    text: $bookingData.vehicleModel
-                )
-
-                // Vehicle Year
-                vehicleInputField(
-                    icon: "calendar",
-                    placeholder: "Vehicle Year (e.g., 2020)",
-                    text: $bookingData.vehicleYear
-                )
-                .keyboardType(.numberPad)
-
-                // Surcharge Toggles
-                VStack(spacing: UmuveSpacing.small) {
-                    Toggle(isOn: Binding(
-                        get: { !bookingData.isVehicleRunning },
-                        set: { bookingData.isVehicleRunning = !$0 }
-                    )) {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Vehicle is non-running")
-                                .font(UmuveTypography.bodyFont)
-                                .foregroundColor(.umuveText)
-
-                            if !bookingData.isVehicleRunning {
-                                Text("Non-running vehicle surcharge applies")
-                                    .font(UmuveTypography.captionFont)
-                                    .foregroundColor(.umuveTextMuted)
-                            }
-                        }
-                    }
-                    .tint(.umuvePrimary)
-                    .padding(UmuveSpacing.normal)
-                    .background(Color.umuveWhite)
-                    .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.md))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: UmuveRadius.md)
-                            .strokeBorder(Color.umuveBorder, lineWidth: 1)
-                    )
-
-                    Toggle(isOn: $bookingData.needsEnclosedTrailer) {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Needs enclosed trailer")
-                                .font(UmuveTypography.bodyFont)
-                                .foregroundColor(.umuveText)
-
-                            if bookingData.needsEnclosedTrailer {
-                                Text("Enclosed trailer surcharge applies")
-                                    .font(UmuveTypography.captionFont)
-                                    .foregroundColor(.umuveTextMuted)
-                            }
-                        }
-                    }
-                    .tint(.umuvePrimary)
-                    .padding(UmuveSpacing.normal)
-                    .background(Color.umuveWhite)
-                    .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.md))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: UmuveRadius.md)
-                            .strokeBorder(Color.umuveBorder, lineWidth: 1)
-                    )
-                }
-            }
-        }
-        .transition(.opacity.combined(with: .move(edge: .top)))
-    }
-
-    private func vehicleInputField(icon: String, placeholder: String, text: Binding<String>) -> some View {
-        HStack(spacing: UmuveSpacing.normal) {
-            Image(systemName: icon)
-                .font(.system(size: 18))
-                .foregroundColor(.umuveTextMuted)
-                .frame(width: 24)
-
-            TextField(placeholder, text: text)
-                .font(UmuveTypography.bodyFont)
-                .foregroundColor(.umuveText)
-                .autocapitalization(.words)
-        }
-        .padding(UmuveSpacing.normal)
-        .background(Color.umuveWhite)
-        .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.md))
-        .overlay(
-            RoundedRectangle(cornerRadius: UmuveRadius.md)
-                .strokeBorder(Color.umuveBorder, lineWidth: 1)
-        )
-    }
-
     // MARK: - Continue Button
 
     private var continueButton: some View {
@@ -357,7 +135,7 @@ struct ServiceTypeSelectionView: View {
 
 #Preview {
     NavigationStack {
-        ServiceTypeSelectionView()
+        JunkVolumeSelectionView()
             .environmentObject(BookingData())
             .environmentObject(BookingWizardViewModel())
     }

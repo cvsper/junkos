@@ -98,16 +98,6 @@ struct HomeView: View {
                 )
             }
             .buttonStyle(.plain)
-
-            // Auto Transport Card
-            NavigationLink {
-                BookingWizardView()
-            } label: {
-                ServiceTypeCard(
-                    serviceType: .autoTransport
-                )
-            }
-            .buttonStyle(.plain)
         }
     }
 

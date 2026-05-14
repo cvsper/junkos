@@ -209,7 +209,7 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
                 return
             }
 
-            if httpResponse.statusCode == 200 {
+            if (200..<300).contains(httpResponse.statusCode) {
                 UserDefaults.standard.set(true, forKey: "pushTokenRegistered")
                 print("Notification token registered successfully")
             } else {

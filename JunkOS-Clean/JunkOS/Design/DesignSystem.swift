@@ -16,38 +16,38 @@ extension Color {
     static let umuveSecondary = Color(hex: "EF4444")
     static let umuveCTA = Color(hex: "DC2626")
 
-    // Backgrounds
-    static let umuveBackground = Color(hex: "FEF2F2")
-    static let umuveSurface = Color.white
-    static let umuveSurfaceElevated = Color(hex: "FEE2E2")
+    // Backgrounds — neutral whites/grays matching web (goumuve.com)
+    static let umuveBackground = Color.white                    // page background
+    static let umuveSurface = Color.white                       // card surface
+    static let umuveSurfaceElevated = Color(hex: "F9FAFB")      // subtle section bg (gray-50)
 
-    // Aliases for legacy references
+    // Aliases kept for back-compat (legacy file references); intentionally red.
     static let loadUpGreen = Color(hex: "DC2626")
     static let loadUpGreenLight = Color(hex: "EF4444")
     static let loadUpGreenDark = Color(hex: "B91C1C")
 
-    // Category card colors
+    // Category accents (used sparingly for visual differentiation)
     static let categoryBlue = Color(hex: "3B82F6")
-    static let categoryYellow = Color(hex: "FBBF24")
+    static let categoryYellow = Color(hex: "F59E0B")
     static let categoryPink = Color(hex: "EC4899")
-    static let categoryGreen = Color(hex: "DC2626")
+    static let categoryGreen = Color(hex: "10B981")
     static let categoryPurple = Color(hex: "8B5CF6")
     static let categoryOrange = Color(hex: "F97316")
 
-    // Text colors
-    static let umuveText = Color(hex: "0F172A")
-    static let umuveTextMuted = Color(hex: "64748B")
-    static let umuveTextTertiary = Color(hex: "94A3B8")
+    // Text — neutral grayscale (matches web's gray-900/600/500)
+    static let umuveText = Color(hex: "171717")
+    static let umuveTextMuted = Color(hex: "4B5563")
+    static let umuveTextTertiary = Color(hex: "6B7280")
 
     // Semantic
-    static let umuveSuccess = Color(hex: "22C55E")
+    static let umuveSuccess = Color(hex: "10B981")
     static let umuveWarning = Color(hex: "F59E0B")
-    static let umuveError = Color(hex: "EF4444")
+    static let umuveError = Color(hex: "DC2626")
     static let umuveInfo = Color(hex: "3B82F6")
 
     // UI colors
-    static let umuveBorder = Color(hex: "E2E8F0")
-    static let umuveDivider = Color(hex: "F1F5F9")
+    static let umuveBorder = Color(hex: "E5E7EB")
+    static let umuveDivider = Color(hex: "F3F4F6")
     static let umuveWhite = Color.white
 
     // Helper for hex colors
@@ -77,7 +77,11 @@ extension Color {
 }
 
 // MARK: - Typography
+// Brand-bold + Apple-clean: heavy display weights for hero/headline moments
+// (mirrors web's Outfit 800/900), neutral SF Pro for body text, SF Pro Rounded
+// reserved for prominent headings to keep the friendly Umuve feel.
 struct UmuveTypography {
+    static let heroFont = Font.system(size: 40, weight: .heavy, design: .rounded)
     static let displayFont = Font.system(size: 34, weight: .bold, design: .rounded)
     static let h1Font = Font.system(size: 28, weight: .bold, design: .rounded)
     static let h2Font = Font.system(size: 22, weight: .semibold, design: .rounded)
@@ -86,7 +90,7 @@ struct UmuveTypography {
     static let bodySmallFont = Font.system(size: 14, weight: .regular)
     static let captionFont = Font.system(size: 13, weight: .medium)
     static let smallFont = Font.system(size: 11, weight: .medium)
-    static let priceFont = Font.system(size: 24, weight: .bold, design: .rounded)
+    static let priceFont = Font.system(size: 28, weight: .heavy, design: .rounded)
 }
 
 // MARK: - Spacing

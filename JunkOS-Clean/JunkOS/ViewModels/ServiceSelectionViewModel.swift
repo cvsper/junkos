@@ -34,19 +34,6 @@ class ServiceSelectionViewModel: ObservableObject {
                 let basePrice: Double = 150.0
                 let tierMultiplier: Double = bookingData.volumeTier.fillLevel
                 estimatedPrice = basePrice * (0.5 + tierMultiplier * 1.5) // Range: $75 - $375
-
-            case .autoTransport:
-                // Base price for auto transport
-                estimatedPrice = 500.0
-
-                // Add surcharges
-                if !bookingData.isVehicleRunning {
-                    estimatedPrice += 150.0 // Non-running vehicle surcharge
-                }
-
-                if bookingData.needsEnclosedTrailer {
-                    estimatedPrice += 200.0 // Enclosed trailer surcharge
-                }
             }
         }
 
@@ -55,14 +42,22 @@ class ServiceSelectionViewModel: ObservableObject {
 
         // Create placeholder pricing breakdown
         let breakdown = PricingEstimate(
-            subtotal: estimatedPrice * 0.85,
-            serviceFee: estimatedPrice * 0.10,
-            volumeDiscount: 0.0,
-            timeSurge: 0.0,
-            zoneSurge: estimatedPrice * 0.05,
             total: estimatedPrice,
-            estimatedDurationMinutes: 90,
-            recommendedTruck: "Standard Pickup"
+            itemsSubtotal: nil,
+            basePrice: estimatedPrice * 0.85,
+            volumeDiscount: 0.0,
+            volumeDiscountLabel: nil,
+            surgeMultiplier: nil,
+            surgeAmount: estimatedPrice * 0.05,
+            surgeReasons: nil,
+            serviceFee: estimatedPrice * 0.10,
+            recyclingFees: nil,
+            laborFee: nil,
+            minimumApplied: nil,
+            minimumJobPrice: nil,
+            estimatedDuration: 90,
+            truckSize: "Standard Pickup",
+            totalQuantity: nil
         )
 
         bookingData.priceBreakdown = breakdown

@@ -10,46 +10,31 @@ import MapKit
 import CoreLocation
 import Combine
 
-// MARK: - Search Mode
-enum SearchMode {
-    case pickup
-    case dropoff
-}
-
 // MARK: - AddressInputViewModel
 class AddressInputViewModel: NSObject, ObservableObject {
     // MARK: - Published Properties
 
     // Search queries
     @Published var pickupSearchQuery = ""
-    @Published var dropoffSearchQuery = ""
 
     // Autocomplete results
     @Published var pickupCompletions: [MKLocalSearchCompletion] = []
-    @Published var dropoffCompletions: [MKLocalSearchCompletion] = []
 
     // UI state
     @Published var isSearching = false
     @Published var pickupSelected = false
-    @Published var dropoffSelected = false
 
     // Map regions
     @Published var pickupRegion = MKCoordinateRegion(
         center: CLLocationCoordinate2D(latitude: 37.7749, longitude: -122.4194), // US center
         span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
     )
-    @Published var dropoffRegion = MKCoordinateRegion(
-        center: CLLocationCoordinate2D(latitude: 37.7749, longitude: -122.4194),
-        span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
-    )
 
-    // Calculation results
-    @Published var calculatedDistance: Double?
+    // Results
     @Published var locationError: String?
 
     // MARK: - Private Properties
     private let completer = MKLocalSearchCompleter()
-    private var searchMode: SearchMode = .pickup
     private var cancellables = Set<AnyCancellable>()
     private let locationManager = CLLocationManager()
 
@@ -66,35 +51,19 @@ class AddressInputViewModel: NSObject, ObservableObject {
             .debounce(for: .milliseconds(300), scheduler: DispatchQueue.main)
             .removeDuplicates()
             .sink { [weak self] query in
-                self?.updateCompleterQuery(query: query, mode: .pickup)
-            }
-            .store(in: &cancellables)
-
-        // Setup debounced search for dropoff
-        $dropoffSearchQuery
-            .debounce(for: .milliseconds(300), scheduler: DispatchQueue.main)
-            .removeDuplicates()
-            .sink { [weak self] query in
-                self?.updateCompleterQuery(query: query, mode: .dropoff)
+                self?.updateCompleterQuery(query: query)
             }
             .store(in: &cancellables)
     }
 
     // MARK: - Private Methods
 
-    /// Update completer query based on search mode
-    private func updateCompleterQuery(query: String, mode: SearchMode) {
-        searchMode = mode
-
+    /// Update completer query
+    private func updateCompleterQuery(query: String) {
         // Clear completions if query is empty
         guard !query.isEmpty else {
             DispatchQueue.main.async { [weak self] in
-                switch mode {
-                case .pickup:
-                    self?.pickupCompletions = []
-                case .dropoff:
-                    self?.dropoffCompletions = []
-                }
+                self?.pickupCompletions = []
             }
             return
         }
@@ -148,48 +117,6 @@ class AddressInputViewModel: NSObject, ObservableObject {
         }
     }
 
-    /// Select dropoff address from autocomplete
-    func selectDropoffAddress(_ completion: MKLocalSearchCompletion, bookingData: BookingData) {
-        geocodeCompletion(completion) { [weak self] result in
-            guard let self = self else { return }
-
-            switch result {
-            case .success(let placemark):
-                DispatchQueue.main.async {
-                    // Update dropoff address
-                    bookingData.dropoffAddress.street = [
-                        placemark.subThoroughfare,
-                        placemark.thoroughfare
-                    ].compactMap { $0 }.joined(separator: " ")
-                    bookingData.dropoffAddress.city = placemark.locality ?? ""
-                    bookingData.dropoffAddress.state = placemark.administrativeArea ?? "FL"
-                    bookingData.dropoffAddress.zipCode = placemark.postalCode ?? ""
-
-                    // Update coordinate
-                    bookingData.dropoffCoordinate = placemark.location?.coordinate
-
-                    // Update map region
-                    if let coordinate = placemark.location?.coordinate {
-                        self.dropoffRegion = MKCoordinateRegion(
-                            center: coordinate,
-                            span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
-                        )
-                    }
-
-                    // Mark as selected
-                    self.dropoffSelected = true
-                    self.dropoffCompletions = []
-                    self.locationError = nil
-                }
-
-            case .failure(let error):
-                DispatchQueue.main.async {
-                    self.locationError = "Could not geocode address: \(error.localizedDescription)"
-                }
-            }
-        }
-    }
-
     /// Geocode a completion to get full address and coordinates
     private func geocodeCompletion(_ completion: MKLocalSearchCompletion, handler: @escaping (Result<CLPlacemark, Error>) -> Void) {
         let searchRequest = MKLocalSearch.Request(completion: completion)
@@ -214,28 +141,6 @@ class AddressInputViewModel: NSObject, ObservableObject {
 
             handler(.success(placemark))
         }
-    }
-
-    /// Calculate distance between pickup and dropoff
-    func calculateDistance(bookingData: BookingData) {
-        guard let pickupCoord = bookingData.pickupCoordinate,
-              let dropoffCoord = bookingData.dropoffCoordinate else {
-            locationError = "Both addresses required for distance calculation"
-            return
-        }
-
-        let pickupLocation = CLLocation(latitude: pickupCoord.latitude, longitude: pickupCoord.longitude)
-        let dropoffLocation = CLLocation(latitude: dropoffCoord.latitude, longitude: dropoffCoord.longitude)
-
-        // Calculate distance in meters
-        let distanceMeters = pickupLocation.distance(from: dropoffLocation)
-
-        // Convert to miles
-        let distanceMiles = distanceMeters / 1609.34
-
-        // Update bookingData and local state
-        bookingData.estimatedDistance = distanceMiles
-        calculatedDistance = distanceMiles
     }
 
     /// Detect current location and set as pickup address
@@ -292,11 +197,6 @@ class AddressInputViewModel: NSObject, ObservableObject {
             }
         }
     }
-
-    /// Set active search mode (for manual control if needed)
-    func setSearchMode(_ mode: SearchMode) {
-        searchMode = mode
-    }
 }
 
 // MARK: - MKLocalSearchCompleterDelegate
@@ -306,14 +206,7 @@ extension AddressInputViewModel: MKLocalSearchCompleterDelegate {
             guard let self = self else { return }
 
             self.isSearching = false
-
-            // Update appropriate completions array based on current search mode
-            switch self.searchMode {
-            case .pickup:
-                self.pickupCompletions = completer.results
-            case .dropoff:
-                self.dropoffCompletions = completer.results
-            }
+            self.pickupCompletions = completer.results
         }
     }
 

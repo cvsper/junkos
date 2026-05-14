@@ -143,29 +143,12 @@ struct BookingReviewView: View {
                 cardHeader(
                     icon: serviceType.icon,
                     title: serviceType.rawValue,
-                    accent: serviceType == .autoTransport ? .categoryOrange : .categoryBlue
+                    accent: .categoryBlue
                 )
 
-                if serviceType == .junkRemoval {
-                    Text("\(bookingData.volumeTier.rawValue) — \(bookingData.volumeTier.description)")
-                        .font(UmuveTypography.bodySmallFont)
-                        .foregroundColor(.umuveTextMuted)
-                }
-
-                if serviceType == .autoTransport {
-                    Text("\(bookingData.vehicleYear) \(bookingData.vehicleMake) \(bookingData.vehicleModel)")
-                        .font(UmuveTypography.bodySmallFont)
-                        .foregroundColor(.umuveTextMuted)
-
-                    HStack(spacing: UmuveSpacing.tiny) {
-                        if !bookingData.isVehicleRunning {
-                            badge(text: "Non-running", color: .orange)
-                        }
-                        if bookingData.needsEnclosedTrailer {
-                            badge(text: "Enclosed", color: .blue)
-                        }
-                    }
-                }
+                Text("\(bookingData.volumeTier.rawValue) — \(bookingData.volumeTier.description)")
+                    .font(UmuveTypography.bodySmallFont)
+                    .foregroundColor(.umuveTextMuted)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -186,12 +169,12 @@ struct BookingReviewView: View {
         VStack(alignment: .leading, spacing: UmuveSpacing.normal) {
             cardHeader(
                 icon: "mappin.and.ellipse",
-                title: bookingData.needsDropoff ? "Pickup & Dropoff" : "Pickup",
+                title: "Pickup",
                 accent: .categoryBlue
             )
 
             addressRow(
-                label: bookingData.needsDropoff ? "Pickup" : "Address",
+                label: "Address",
                 value: bookingData.address.fullAddress,
                 icon: "mappin.circle.fill",
                 accent: .categoryBlue
@@ -199,34 +182,6 @@ struct BookingReviewView: View {
 
             if let coordinate = bookingData.pickupCoordinate {
                 miniMap(for: coordinate)
-            }
-
-            if bookingData.needsDropoff {
-                Divider()
-                    .padding(.vertical, UmuveSpacing.tiny)
-
-                addressRow(
-                    label: "Dropoff",
-                    value: bookingData.dropoffAddress.fullAddress,
-                    icon: "flag.checkered",
-                    accent: .categoryOrange
-                )
-
-                if let coordinate = bookingData.dropoffCoordinate {
-                    miniMap(for: coordinate)
-                }
-
-                if let distance = bookingData.estimatedDistance {
-                    HStack(spacing: UmuveSpacing.tiny) {
-                        Image(systemName: "arrow.left.and.right")
-                            .font(.system(size: 12))
-                            .foregroundColor(.umuveTextMuted)
-
-                        Text("Distance: \(String(format: "%.1f", distance)) miles")
-                            .font(UmuveTypography.bodySmallFont)
-                            .foregroundColor(.umuveTextMuted)
-                    }
-                }
             }
         }
         .padding(UmuveSpacing.normal)
@@ -405,18 +360,17 @@ struct BookingReviewView: View {
                             .padding(.vertical, UmuveSpacing.tiny)
 
                         priceLineItem("Base Fee", amount: breakdown.subtotal)
-                        priceLineItem("Service Fee", amount: breakdown.serviceFee)
 
-                        if breakdown.volumeDiscount < 0 {
-                            priceLineItem("Volume Discount", amount: breakdown.volumeDiscount, isDiscount: true)
+                        if let serviceFee = breakdown.serviceFee {
+                            priceLineItem("Service Fee", amount: serviceFee)
                         }
 
-                        if breakdown.timeSurge > 0 {
-                            priceLineItem("Time Surcharge", amount: breakdown.timeSurge)
+                        if let volumeDiscount = breakdown.volumeDiscount, volumeDiscount < 0 {
+                            priceLineItem("Volume Discount", amount: volumeDiscount, isDiscount: true)
                         }
 
-                        if breakdown.zoneSurge > 0 {
-                            priceLineItem("Zone Surcharge", amount: breakdown.zoneSurge)
+                        if let surgeAmount = breakdown.surgeAmount, surgeAmount > 0 {
+                            priceLineItem("Surcharge", amount: surgeAmount)
                         }
 
                         Divider()
@@ -587,17 +541,6 @@ struct BookingReviewView: View {
         }
     }
 
-    // MARK: - Helper Views
-
-    private func badge(text: String, color: Color) -> some View {
-        Text(text)
-            .font(UmuveTypography.smallFont)
-            .foregroundColor(color)
-            .padding(.horizontal, UmuveSpacing.small)
-            .padding(.vertical, 4)
-            .background(color.opacity(0.1))
-            .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.sm))
-    }
 }
 
 // MARK: - Map Annotation Helper

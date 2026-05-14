@@ -278,15 +278,11 @@ class APIClient {
         address: String,
         lat: Double,
         lng: Double,
-        dropoffAddress: String?,
-        dropoffLat: Double?,
-        dropoffLng: Double?,
         photoUrls: [String],
         scheduledDate: String,
         scheduledTime: String,
         estimatedPrice: Double,
         volumeTier: String?,
-        vehicleInfo: [String: String]?,
         distance: Double?
     ) async throws -> JobCreationResponse {
         var requestBody: [String: Any] = [
@@ -300,25 +296,8 @@ class APIClient {
             "estimated_price": estimatedPrice
         ]
 
-        // Add optional fields
-        if let dropoffAddress = dropoffAddress {
-            requestBody["dropoff_address"] = dropoffAddress
-        }
-
-        if let dropoffLat = dropoffLat {
-            requestBody["dropoff_lat"] = dropoffLat
-        }
-
-        if let dropoffLng = dropoffLng {
-            requestBody["dropoff_lng"] = dropoffLng
-        }
-
         if let volumeTier = volumeTier {
             requestBody["volume_tier"] = volumeTier
-        }
-
-        if let vehicleInfo = vehicleInfo {
-            requestBody["vehicle_info"] = vehicleInfo
         }
 
         if let distance = distance {
@@ -365,11 +344,8 @@ class APIClient {
     func getPricingEstimate(
         serviceType: String,
         volumeTier: String?,
-        vehicleInfo: [String: Any]?,
         pickupLat: Double?,
         pickupLng: Double?,
-        dropoffLat: Double?,
-        dropoffLng: Double?,
         scheduledDate: String?
     ) async throws -> PricingEstimate {
         var requestBody: [String: Any] = ["service_type": serviceType]
@@ -388,18 +364,9 @@ class APIClient {
             requestBody["items"] = [["category": "general", "quantity": quantity, "size": "medium"]]
         }
 
-        // For Auto Transport: include vehicle info
-        if serviceType == "Auto Transport", let vehicle = vehicleInfo {
-            requestBody["vehicle_info"] = vehicle
-        }
-
         // Include address coordinates if available
         if let lat = pickupLat, let lng = pickupLng {
             requestBody["pickup_address"] = ["lat": lat, "lng": lng]
-        }
-
-        if let lat = dropoffLat, let lng = dropoffLng {
-            requestBody["dropoff_address"] = ["lat": lat, "lng": lng]
         }
 
         // Include scheduled date if available

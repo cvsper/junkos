@@ -19,11 +19,13 @@ struct PaymentView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var navigateToSuccess = false
 
-    /// The price breakdown passed from the confirmation step
-    let priceBreakdown: PriceBreakdown
-
     /// Called when payment succeeds — the parent can show the success animation
     var onPaymentSuccess: (() -> Void)?
+
+    /// Resolved pricing estimate from the booking wizard. Falls back to zero
+    /// when the API call has not yet returned (UI shows "Calculating…").
+    private var estimate: PricingEstimate? { bookingData.priceBreakdown }
+    private var orderTotal: Double { estimate?.total ?? bookingData.estimatedPrice ?? 0 }
 
     var body: some View {
         ZStack {
@@ -76,9 +78,10 @@ struct PaymentView: View {
             .navigationBarTitleDisplayMode(.inline)
             .safeAreaInset(edge: .bottom) {
                 payButton
+                    .ignoresSafeArea(.keyboard, edges: .bottom)
             }
             .onAppear {
-                viewModel.configure(amount: priceBreakdown.total)
+                viewModel.configure(amount: orderTotal)
             }
 
             // Processing overlay
@@ -103,7 +106,7 @@ struct PaymentView: View {
         }
         .sheet(isPresented: $viewModel.showApplePaySheet) {
             ApplePayViewControllerRepresentable(
-                amount: priceBreakdown.total,
+                amount: orderTotal,
                 onSuccess: { viewModel.handleApplePaySuccess() },
                 onFailure: { error in viewModel.handleApplePayFailure(error: error) },
                 onCancel: { viewModel.handleApplePayCancel() }
@@ -113,7 +116,7 @@ struct PaymentView: View {
         .navigationDestination(isPresented: $navigateToSuccess) {
             BookingSuccessView(
                 customerEmail: bookingData.customerEmail,
-                totalAmount: priceBreakdown.total,
+                totalAmount: orderTotal,
                 scheduledDate: formattedScheduledDate,
                 scheduledTime: formattedScheduledTime
             )
@@ -138,57 +141,38 @@ struct PaymentView: View {
 
                 Divider()
 
-                HStack {
-                    Text("Base Service")
-                        .font(UmuveTypography.bodyFont)
-                        .foregroundColor(.umuveTextMuted)
-                    Spacer()
-                    Text("$\(formatPrice(priceBreakdown.basePrice))")
-                        .font(UmuveTypography.bodyFont)
-                        .foregroundColor(.umuveText)
-                }
+                if let estimate {
+                    summaryLine("Subtotal", value: estimate.subtotal)
 
-                HStack {
-                    Text("Items Charge")
-                        .font(UmuveTypography.bodyFont)
-                        .foregroundColor(.umuveTextMuted)
-                    Spacer()
-                    Text("$\(formatPrice(priceBreakdown.itemsCharge))")
-                        .font(UmuveTypography.bodyFont)
-                        .foregroundColor(.umuveText)
-                }
-
-                HStack {
-                    Text("Disposal Fee")
-                        .font(UmuveTypography.bodyFont)
-                        .foregroundColor(.umuveTextMuted)
-                    Spacer()
-                    Text("$\(formatPrice(priceBreakdown.disposalFee))")
-                        .font(UmuveTypography.bodyFont)
-                        .foregroundColor(.umuveText)
-                }
-
-                if priceBreakdown.tierDiscount > 0 {
-                    HStack {
-                        Text("\(priceBreakdown.serviceTier.rawValue) Discount")
-                            .font(UmuveTypography.bodyFont)
-                            .foregroundColor(.umuveSuccess)
-                        Spacer()
-                        Text("-$\(formatPrice(priceBreakdown.tierDiscount))")
-                            .font(UmuveTypography.bodyFont)
-                            .foregroundColor(.umuveSuccess)
+                    if let discount = estimate.volumeDiscount, discount > 0 {
+                        summaryLine(
+                            estimate.volumeDiscountLabel ?? "Volume Discount",
+                            value: -discount,
+                            tint: .umuveSuccess
+                        )
                     }
-                }
 
-                if priceBreakdown.commercialDiscount > 0 {
+                    if let surge = estimate.surgeAmount, surge > 0 {
+                        summaryLine(
+                            surgeLabel(from: estimate.surgeReasons),
+                            value: surge
+                        )
+                    }
+
+                    if let serviceFee = estimate.serviceFee, serviceFee > 0 {
+                        summaryLine("Service Fee", value: serviceFee)
+                    }
+
+                    if let recycling = estimate.recyclingFees, recycling > 0 {
+                        summaryLine("Recycling & Disposal", value: recycling)
+                    }
+                } else {
                     HStack {
-                        Text("Commercial Discount")
+                        Text("Calculating your estimate…")
                             .font(UmuveTypography.bodyFont)
-                            .foregroundColor(.umuveSuccess)
+                            .foregroundColor(.umuveTextMuted)
                         Spacer()
-                        Text("-$\(formatPrice(priceBreakdown.commercialDiscount))")
-                            .font(UmuveTypography.bodyFont)
-                            .foregroundColor(.umuveSuccess)
+                        ProgressView()
                     }
                 }
 
@@ -199,13 +183,30 @@ struct PaymentView: View {
                         .font(UmuveTypography.h2Font)
                         .foregroundColor(.umuveText)
                     Spacer()
-                    Text("$\(formatPrice(priceBreakdown.total))")
+                    Text("$\(formatPrice(orderTotal))")
                         .font(UmuveTypography.priceFont)
                         .foregroundColor(.umuveCTA)
                 }
             }
             .padding(UmuveSpacing.large)
         }
+    }
+
+    private func summaryLine(_ label: String, value: Double, tint: Color = .umuveText) -> some View {
+        HStack {
+            Text(label)
+                .font(UmuveTypography.bodyFont)
+                .foregroundColor(.umuveTextMuted)
+            Spacer()
+            Text("\(value < 0 ? "-$" : "$")\(formatPrice(abs(value)))")
+                .font(UmuveTypography.bodyFont)
+                .foregroundColor(tint)
+        }
+    }
+
+    private func surgeLabel(from reasons: [String]?) -> String {
+        guard let first = reasons?.first, !first.isEmpty else { return "Surge Pricing" }
+        return first
     }
 
     // MARK: - Apple Pay Section
@@ -420,7 +421,7 @@ struct PaymentView: View {
                         .progressViewStyle(CircularProgressViewStyle(tint: .white))
                         .padding(.trailing, UmuveSpacing.small)
                 }
-                Text(viewModel.isProcessing ? "Processing..." : "Pay $\(formatPrice(priceBreakdown.total))")
+                Text(viewModel.isProcessing ? "Processing..." : "Pay $\(formatPrice(orderTotal))")
             }
         }
         .buttonStyle(UmuvePrimaryButtonStyle(isEnabled: viewModel.isCardFormValid && !viewModel.isProcessing))
@@ -814,13 +815,8 @@ struct ApplePayViewControllerRepresentable: UIViewControllerRepresentable {
 struct PaymentView_Previews: PreviewProvider {
     static var previews: some View {
         NavigationView {
-            PaymentView(
-                priceBreakdown: PriceBreakdown(
-                    serviceTier: .fullService,
-                    isCommercial: false
-                )
-            )
-            .environmentObject(BookingData())
+            PaymentView()
+                .environmentObject(BookingData())
         }
     }
 }

@@ -2,7 +2,7 @@
 //  AddressInputView.swift
 //  Umuve
 //
-//  Address input screen with MapKit autocomplete, mini-map preview, and conditional dropoff
+//  Address input screen with MapKit autocomplete and mini-map preview.
 //
 
 import SwiftUI
@@ -20,14 +20,6 @@ struct AddressInputView: View {
                 headerSection
 
                 pickupSection
-
-                if bookingData.needsDropoff {
-                    dropoffSection
-                }
-
-                if bookingData.needsDropoff && viewModel.pickupSelected && viewModel.dropoffSelected {
-                    distanceDisplay
-                }
             }
             .padding(.horizontal, UmuveSpacing.large)
             .padding(.top, UmuveSpacing.normal)
@@ -39,6 +31,7 @@ struct AddressInputView: View {
                 .padding(.horizontal, UmuveSpacing.large)
                 .padding(.vertical, UmuveSpacing.normal)
                 .background(Color.umuveBackground)
+                .ignoresSafeArea(.keyboard, edges: .bottom)
         }
     }
 
@@ -46,11 +39,11 @@ struct AddressInputView: View {
 
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: UmuveSpacing.small) {
-            Text(bookingData.needsDropoff ? "Pickup & Dropoff" : "Where's the pickup?")
+            Text("Where's the pickup?")
                 .font(UmuveTypography.h1Font)
                 .foregroundColor(.umuveText)
 
-            Text(bookingData.needsDropoff ? "Enter both pickup and delivery addresses" : "Enter the pickup location")
+            Text("Enter the pickup location")
                 .font(UmuveTypography.bodyFont)
                 .foregroundColor(.umuveTextMuted)
         }
@@ -77,28 +70,6 @@ struct AddressInputView: View {
                 )
 
                 currentLocationButton
-            }
-        }
-    }
-
-    // MARK: - Dropoff Section
-
-    private var dropoffSection: some View {
-        VStack(alignment: .leading, spacing: UmuveSpacing.normal) {
-            sectionLabel(icon: "flag.checkered", title: "Dropoff Address", accent: .categoryOrange)
-
-            if viewModel.dropoffSelected {
-                dropoffMiniMap
-            } else {
-                searchField(
-                    query: $viewModel.dropoffSearchQuery,
-                    completions: viewModel.dropoffCompletions,
-                    placeholder: "Search dropoff address...",
-                    accent: .categoryOrange,
-                    onSelect: { completion in
-                        viewModel.selectDropoffAddress(completion, bookingData: bookingData)
-                    }
-                )
             }
         }
     }
@@ -261,42 +232,6 @@ struct AddressInputView: View {
         }
     }
 
-    // MARK: - Dropoff Mini-Map
-
-    private var dropoffMiniMap: some View {
-        UmuveCard {
-            VStack(spacing: UmuveSpacing.small) {
-                // Map
-                Map(coordinateRegion: $viewModel.dropoffRegion, annotationItems: dropoffAnnotations) { annotation in
-                    MapPin(coordinate: annotation.coordinate, tint: .red)
-                }
-                .frame(height: 150)
-                .cornerRadius(UmuveRadius.sm)
-
-                // Address text
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(bookingData.dropoffAddress.fullAddress)
-                        .font(UmuveTypography.bodySmallFont)
-                        .foregroundColor(.umuveText)
-                        .lineLimit(2)
-
-                    // Change button
-                    Button {
-                        viewModel.dropoffSelected = false
-                        viewModel.dropoffSearchQuery = ""
-                    } label: {
-                        Text("Change")
-                            .font(UmuveTypography.bodySmallFont)
-                            .foregroundColor(.umuvePrimary)
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, UmuveSpacing.small)
-                .padding(.bottom, UmuveSpacing.tiny)
-            }
-        }
-    }
-
     // MARK: - Current Location Button
 
     private var currentLocationButton: some View {
@@ -321,88 +256,23 @@ struct AddressInputView: View {
         }
     }
 
-    // MARK: - Distance Display
-
-    private var distanceDisplay: some View {
-        HStack(spacing: UmuveSpacing.normal) {
-            ZStack {
-                RoundedRectangle(cornerRadius: UmuveRadius.sm)
-                    .fill(Color.umuvePrimary.opacity(0.15))
-                    .frame(width: 44, height: 44)
-
-                Image(systemName: "car.fill")
-                    .font(.system(size: 20))
-                    .foregroundColor(.umuvePrimary)
-            }
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Distance")
-                    .font(UmuveTypography.captionFont)
-                    .foregroundColor(.umuveTextMuted)
-
-                if let distance = viewModel.calculatedDistance {
-                    Text("\(String(format: "%.1f", distance)) miles")
-                        .font(UmuveTypography.h3Font)
-                        .foregroundColor(.umuveText)
-                } else {
-                    Text("Calculating…")
-                        .font(UmuveTypography.bodyFont)
-                        .foregroundColor(.umuveTextMuted)
-                }
-            }
-
-            Spacer()
-        }
-        .padding(UmuveSpacing.normal)
-        .background(Color.umuveWhite)
-        .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.lg))
-        .overlay(
-            RoundedRectangle(cornerRadius: UmuveRadius.lg)
-                .strokeBorder(Color.umuvePrimary.opacity(0.25), lineWidth: 1)
-        )
-        .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 4)
-        .onAppear {
-            viewModel.calculateDistance(bookingData: bookingData)
-        }
-    }
-
     // MARK: - Continue Button
 
     private var continueButton: some View {
         Button {
-            if bookingData.needsDropoff {
-                viewModel.calculateDistance(bookingData: bookingData)
-            }
             wizardVM.completeCurrentStep()
         } label: {
             Text("Continue")
         }
-        .buttonStyle(UmuvePrimaryButtonStyle(isEnabled: continueButtonEnabled))
-        .disabled(!continueButtonEnabled)
+        .buttonStyle(UmuvePrimaryButtonStyle(isEnabled: viewModel.pickupSelected))
+        .disabled(!viewModel.pickupSelected)
     }
 
     // MARK: - Computed Properties
 
-    private var continueButtonEnabled: Bool {
-        // Pickup must be selected
-        guard viewModel.pickupSelected else { return false }
-
-        // If Auto Transport, dropoff must also be selected
-        if bookingData.needsDropoff {
-            return viewModel.dropoffSelected
-        }
-
-        return true
-    }
-
     private var pickupAnnotations: [MapAnnotation] {
         guard let coordinate = bookingData.pickupCoordinate else { return [] }
         return [MapAnnotation(id: "pickup", coordinate: coordinate)]
-    }
-
-    private var dropoffAnnotations: [MapAnnotation] {
-        guard let coordinate = bookingData.dropoffCoordinate else { return [] }
-        return [MapAnnotation(id: "dropoff", coordinate: coordinate)]
     }
 }
 

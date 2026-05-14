@@ -12,14 +12,11 @@ import CoreLocation
 // MARK: - Service Type
 enum ServiceType: String, CaseIterable {
     case junkRemoval = "Junk Removal"
-    case autoTransport = "Auto Transport"
 
     var description: String {
         switch self {
         case .junkRemoval:
             return "Furniture, appliances, yard waste — we haul it all"
-        case .autoTransport:
-            return "Vehicle pickup and delivery anywhere"
         }
     }
 
@@ -27,8 +24,6 @@ enum ServiceType: String, CaseIterable {
         switch self {
         case .junkRemoval:
             return "truck.box.fill"
-        case .autoTransport:
-            return "car.fill"
         }
     }
 }
@@ -81,15 +76,32 @@ enum VolumeTier: String, CaseIterable {
 }
 
 // MARK: - Pricing Estimate
+// Mirrors the /api/pricing/estimate response (snake_case → camelCase via
+// JSONDecoder.keyDecodingStrategy = .convertFromSnakeCase). Most fields are
+// optional because the backend may omit them when irrelevant (e.g. no surge).
 struct PricingEstimate: Codable {
-    let subtotal: Double
-    let serviceFee: Double
-    let volumeDiscount: Double
-    let timeSurge: Double
-    let zoneSurge: Double
     let total: Double
-    let estimatedDurationMinutes: Int
-    let recommendedTruck: String
+    let itemsSubtotal: Double?
+    let basePrice: Double?
+    let volumeDiscount: Double?
+    let volumeDiscountLabel: String?
+    let surgeMultiplier: Double?
+    let surgeAmount: Double?
+    let surgeReasons: [String]?
+    let serviceFee: Double?
+    let recyclingFees: Double?
+    let laborFee: Double?
+    let minimumApplied: Bool?
+    let minimumJobPrice: Double?
+    let estimatedDuration: Int?
+    let truckSize: String?
+    let totalQuantity: Int?
+
+    // Convenience accessors used by views — fall back gracefully when the
+    // backend omits an optional field.
+    var subtotal: Double { basePrice ?? itemsSubtotal ?? total }
+    var estimatedDurationMinutes: Int { estimatedDuration ?? 0 }
+    var recommendedTruck: String { truckSize ?? "" }
 }
 
 // MARK: - Booking Data
@@ -100,18 +112,9 @@ class BookingData: ObservableObject {
     // Junk Removal fields
     @Published var volumeTier: VolumeTier = .half
 
-    // Auto Transport fields
-    @Published var vehicleMake: String = ""
-    @Published var vehicleModel: String = ""
-    @Published var vehicleYear: String = ""
-    @Published var isVehicleRunning: Bool = true
-    @Published var needsEnclosedTrailer: Bool = false
-
     // Location fields
     @Published var address: Address = Address()  // Pickup address
     @Published var pickupCoordinate: CLLocationCoordinate2D?
-    @Published var dropoffAddress: Address = Address()  // Auto Transport only
-    @Published var dropoffCoordinate: CLLocationCoordinate2D?
 
     // Pricing fields
     @Published var estimatedDistance: Double?  // miles
@@ -167,13 +170,7 @@ class BookingData: ObservableObject {
         switch serviceType {
         case .junkRemoval:
             return true  // volumeTier always has default
-        case .autoTransport:
-            return !vehicleMake.isEmpty && !vehicleModel.isEmpty && !vehicleYear.isEmpty
         }
-    }
-
-    var needsDropoff: Bool {
-        serviceType == .autoTransport
     }
 
     // MARK: - Methods
@@ -181,15 +178,8 @@ class BookingData: ObservableObject {
     func reset() {
         serviceType = nil
         volumeTier = .half
-        vehicleMake = ""
-        vehicleModel = ""
-        vehicleYear = ""
-        isVehicleRunning = true
-        needsEnclosedTrailer = false
         address = Address()
         pickupCoordinate = nil
-        dropoffAddress = Address()
-        dropoffCoordinate = nil
         estimatedDistance = nil
         estimatedPrice = nil
         priceBreakdown = nil
