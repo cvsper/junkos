@@ -39,10 +39,21 @@ def get_my_code(user_id):
         else:
             return jsonify({"error": "Failed to generate unique referral code"}), 500
 
+    # Include rollup stats so clients can render the referral card in a single
+    # request (avoids a second round-trip to /stats just to populate counts).
+    referrals = Referral.query.filter_by(referrer_id=user_id).all()
+    total_referrals = len(referrals)
+    credits_earned = round(
+        sum(r.reward_amount for r in referrals if r.status in ("completed", "rewarded")),
+        2,
+    )
+
     return jsonify({
         "success": True,
         "referral_code": user.referral_code,
         "share_url": "/book?ref={}".format(user.referral_code),
+        "total_referrals": total_referrals,
+        "credits_earned": credits_earned,
     }), 200
 
 

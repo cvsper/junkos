@@ -69,7 +69,7 @@ def register_token(user_id):
     db.session.commit()
 
     logger.info("Device token registered: user=%s platform=%s token=%s...", user_id, platform, token[:12])
-    return jsonify({"success": True, "device_token": dt.to_dict()}), 201
+    return jsonify({"success": True, "device_token": dt.to_dict()}), 200
 
 
 # ---------------------------------------------------------------------------
