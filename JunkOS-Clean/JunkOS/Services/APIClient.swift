@@ -341,27 +341,30 @@ class APIClient {
     }
 
     /// Get pricing estimate
+    ///
+    /// Items are sent in the v2 format the backend expects:
+    ///   [ { "category": "furniture", "quantity": 3, "size": "medium" }, ... ]
+    /// The previous signature took a single "volumeTier" string (1/4 Truck,
+    /// etc.) and mapped it to one general-category line with a synthetic
+    /// quantity. That was a placeholder until the iOS app had a real items
+    /// step. Now that ItemSelectionView captures real items, we pass them
+    /// directly so the backend can compute a proper category-aware estimate.
     func getPricingEstimate(
-        serviceType: String,
-        volumeTier: String?,
+        items: [BookingItem],
         pickupLat: Double?,
         pickupLng: Double?,
         scheduledDate: String?
     ) async throws -> PricingEstimate {
-        var requestBody: [String: Any] = ["service_type": serviceType]
+        var requestBody: [String: Any] = ["service_type": "Junk Removal"]
 
-        // For Junk Removal: map volumeTier to items array approximation
-        if serviceType == "Junk Removal", let tier = volumeTier {
-            let quantity: Int
-            switch tier {
-            case "1/4 Truck": quantity = 2
-            case "1/2 Truck": quantity = 5
-            case "3/4 Truck": quantity = 10
-            case "Full Truck": quantity = 16
-            default: quantity = 5
+        if !items.isEmpty {
+            requestBody["items"] = items.map { item in
+                [
+                    "category": item.category.apiKey,
+                    "quantity": item.quantity,
+                    "size": "medium",
+                ] as [String: Any]
             }
-
-            requestBody["items"] = [["category": "general", "quantity": quantity, "size": "medium"]]
         }
 
         // Include address coordinates if available

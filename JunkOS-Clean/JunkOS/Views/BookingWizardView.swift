@@ -166,32 +166,31 @@ struct BookingWizardView: View {
 
     @ViewBuilder
     private var stepContent: some View {
+        // Step order mirrors the web booking flow (platform/src/components/
+        // booking/progress-bar.tsx) so iOS and web present the same six
+        // questions in the same order: Address → Photos → Items → Schedule
+        // → Estimate (review) → Payment.
         Group {
             switch wizardVM.currentStep {
             case 0:
-                // Junk Removal volume selection
-                JunkVolumeSelectionView()
-                    .environmentObject(bookingData)
-                    .environmentObject(wizardVM)
-
-            case 1:
-                // Address Input - completed in Plan 03
                 AddressInputView()
 
-            case 2:
-                // Photo Upload
+            case 1:
                 PhotoUploadView()
                     .environmentObject(bookingData)
                     .environmentObject(wizardVM)
 
+            case 2:
+                ItemSelectionView()
+                    .environmentObject(bookingData)
+                    .environmentObject(wizardVM)
+
             case 3:
-                // Schedule
                 DateTimePickerView()
                     .environmentObject(bookingData)
                     .environmentObject(wizardVM)
 
             case 4:
-                // Review & Confirm
                 BookingReviewView()
                     .environmentObject(bookingData)
                     .environmentObject(wizardVM)

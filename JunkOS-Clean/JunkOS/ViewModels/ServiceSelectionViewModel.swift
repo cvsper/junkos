@@ -27,14 +27,11 @@ class ServiceSelectionViewModel: ObservableObject {
         // Calculate placeholder price based on service type
         var estimatedPrice: Double = 0.0
 
-        if let serviceType = bookingData.serviceType {
-            switch serviceType {
-            case .junkRemoval:
-                // Base price varies by volume tier
-                let basePrice: Double = 150.0
-                let tierMultiplier: Double = bookingData.volumeTier.fillLevel
-                estimatedPrice = basePrice * (0.5 + tierMultiplier * 1.5) // Range: $75 - $375
-            }
+        if bookingData.serviceType != nil {
+            // Placeholder pricing: scale with the truck tier the user's
+            // selected items fall into. Real pricing flows through
+            // BookingWizardViewModel.refreshPricing → /api/pricing/estimate.
+            estimatedPrice = bookingData.currentTruckTier.basePrice
         }
 
         // Update booking data with estimate

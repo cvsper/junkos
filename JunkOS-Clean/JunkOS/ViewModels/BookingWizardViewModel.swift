@@ -48,14 +48,15 @@ class BookingWizardViewModel: ObservableObject {
         currentStep == stepCount - 1
     }
 
-    /// Get the title for a specific step
+    /// Get the title for a specific step. Order matches the web booking
+    /// flow's progress bar: Address → Photos → Items → Schedule → Estimate.
     func stepTitle(for index: Int) -> String {
         switch index {
-        case 0: return "Service"
-        case 1: return "Address"
-        case 2: return "Photos"
+        case 0: return "Address"
+        case 1: return "Photos"
+        case 2: return "Items"
         case 3: return "Schedule"
-        case 4: return "Review"
+        case 4: return "Estimate"
         default: return ""
         }
     }
@@ -67,20 +68,17 @@ class BookingWizardViewModel: ObservableObject {
 
     // MARK: - Pricing
 
-    /// Refresh pricing estimate based on current booking data
+    /// Refresh pricing estimate based on the current items list.
+    ///
+    /// No-op when the user hasn't added any items yet — the backend would
+    /// happily return the $89 minimum, but that would mis-set
+    /// `estimatedPrice` on the Address/Photos screens and surface a phantom
+    /// "Estimated Total" pill before the user has done anything.
     @MainActor
     func refreshPricing(bookingData: BookingData) async {
-        // Only call API if we have at least service type
-        guard let serviceType = bookingData.serviceType else { return }
+        guard bookingData.hasItems else { return }
 
         do {
-            let serviceTypeString: String
-            switch serviceType {
-            case .junkRemoval:
-                serviceTypeString = "Junk Removal"
-            }
-
-            // Format scheduled date if available
             var scheduledDateString: String?
             if let date = bookingData.selectedDate, let timeSlot = bookingData.selectedTimeSlot {
                 let dateFormatter = DateFormatter()
@@ -89,8 +87,7 @@ class BookingWizardViewModel: ObservableObject {
             }
 
             let estimate = try await APIClient.shared.getPricingEstimate(
-                serviceType: serviceTypeString,
-                volumeTier: bookingData.volumeTier.rawValue,
+                items: bookingData.items,
                 pickupLat: bookingData.pickupCoordinate?.latitude,
                 pickupLng: bookingData.pickupCoordinate?.longitude,
                 scheduledDate: scheduledDateString
@@ -100,7 +97,8 @@ class BookingWizardViewModel: ObservableObject {
             bookingData.priceBreakdown = estimate
         } catch {
             print("[pricing] Error: \(error)")
-            // Don't show error to user — pricing updates are best-effort
+            // Pricing updates are best-effort — the Estimate step has its
+            // own fallback calc if the API is unreachable.
         }
     }
 }

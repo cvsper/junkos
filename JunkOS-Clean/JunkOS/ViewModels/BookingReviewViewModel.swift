@@ -116,7 +116,10 @@ class BookingReviewViewModel: ObservableObject {
             dateFormatter.dateFormat = "yyyy-MM-dd"
             let scheduledDate = dateFormatter.string(from: selectedDate)
 
-            // Step 4: Create job with all booking data
+            // Step 4: Create job with all booking data. The truck-tier label
+            // is derived from total cubic feet across the selected items,
+            // so the operator side still sees the bucket they're used to
+            // even though the iOS app now passes real item-level data.
             let response = try await APIClient.shared.createJob(
                 serviceType: serviceType.rawValue,
                 address: bookingData.address.fullAddress,
@@ -126,7 +129,7 @@ class BookingReviewViewModel: ObservableObject {
                 scheduledDate: scheduledDate,
                 scheduledTime: selectedTimeSlot,
                 estimatedPrice: bookingData.estimatedPrice ?? 0,
-                volumeTier: bookingData.volumeTier.rawValue,
+                volumeTier: bookingData.currentTruckTier.label,
                 distance: bookingData.estimatedDistance
             )
 

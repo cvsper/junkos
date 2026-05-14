@@ -146,9 +146,15 @@ struct BookingReviewView: View {
                     accent: .categoryBlue
                 )
 
-                Text("\(bookingData.volumeTier.rawValue) — \(bookingData.volumeTier.description)")
-                    .font(UmuveTypography.bodySmallFont)
-                    .foregroundColor(.umuveTextMuted)
+                VStack(alignment: .leading, spacing: UmuveSpacing.tiny) {
+                    Text("\(bookingData.totalQuantity) item\(bookingData.totalQuantity == 1 ? "" : "s") · \(bookingData.currentTruckTier.label)")
+                        .font(UmuveTypography.bodyFont.weight(.medium))
+                        .foregroundColor(.umuveText)
+
+                    Text("~\(Int(bookingData.totalCuFt)) cu ft · ~\(Int(bookingData.totalLbs)) lbs")
+                        .font(UmuveTypography.bodySmallFont)
+                        .foregroundColor(.umuveTextMuted)
+                }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -553,7 +559,9 @@ struct ReviewMapPin: Identifiable {
 #Preview {
     let bookingData = BookingData()
     bookingData.serviceType = .junkRemoval
-    bookingData.volumeTier = .half
+    bookingData.items = [
+        BookingItem(category: .furniture, preset: ItemCategory.furniture.presets[0], quantity: 1)
+    ]
     bookingData.address = Address(street: "123 Main St", city: "Miami", state: "FL", zipCode: "33101")
     bookingData.selectedDate = Date()
     bookingData.selectedTimeSlot = "8:00 AM - 10:00 AM"
