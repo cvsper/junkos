@@ -95,6 +95,22 @@ struct OrdersView: View {
                 .foregroundColor(.umuveTextMuted)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, UmuveSpacing.xlarge)
+
+            // Direct path back to Home — posts a notification MainTabView
+            // listens for. Avoids forcing this view to know about the
+            // parent's selectedTab binding.
+            Button {
+                HapticManager.shared.lightTap()
+                NotificationCenter.default.post(name: .switchToHomeTab, object: nil)
+            } label: {
+                HStack {
+                    Image(systemName: "house.fill")
+                    Text("Book Your First Pickup")
+                }
+                .frame(maxWidth: 280)
+            }
+            .buttonStyle(UmuvePrimaryButtonStyle())
+            .padding(.top, UmuveSpacing.normal)
         }
         .padding(.vertical, UmuveSpacing.xxlarge)
     }

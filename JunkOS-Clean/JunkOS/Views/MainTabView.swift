@@ -49,6 +49,9 @@ struct MainTabView: View {
                 bookingData.reset()
             }
         }
+        .onReceive(NotificationCenter.default.publisher(for: .switchToHomeTab)) { _ in
+            selectedTab = 0
+        }
         .onChange(of: notificationManager.pendingDeepLink) { deepLink in
             guard let deepLink else { return }
             switch deepLink {
@@ -68,4 +71,11 @@ struct MainTabView: View {
     MainTabView()
         .environmentObject(BookingData())
         .environmentObject(AuthenticationManager())
+}
+
+extension Notification.Name {
+    /// Posted by leaf views (e.g. OrdersView's empty state CTA) to ask
+    /// MainTabView to switch back to the Home tab. Avoids having to thread
+    /// a selectedTab binding through every NavigationStack.
+    static let switchToHomeTab = Notification.Name("com.goumuve.umuve.switchToHomeTab")
 }
