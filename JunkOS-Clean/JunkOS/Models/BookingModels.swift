@@ -422,11 +422,16 @@ struct TimeSlot: Identifiable {
     let isAvailable: Bool
 
     static let slots: [TimeSlot] = [
-        TimeSlot(id: "morning", time: "8:00 AM - 10:00 AM", isRecommended: true, isAvailable: true),
-        TimeSlot(id: "midmorning", time: "10:00 AM - 12:00 PM", isRecommended: true, isAvailable: true),
-        TimeSlot(id: "afternoon", time: "12:00 PM - 2:00 PM", isRecommended: false, isAvailable: true),
-        TimeSlot(id: "midafternoon", time: "2:00 PM - 4:00 PM", isRecommended: false, isAvailable: false),
-        TimeSlot(id: "evening", time: "4:00 PM - 6:00 PM", isRecommended: false, isAvailable: true)
+        // Slot labels match the web booking flow's Schedule step verbatim:
+        // 8-10 AM, 10 AM-12 PM, 12-2 PM, 2-4 PM, 4-6 PM. IDs encode the
+        // start/end hours in 24-hour form so the parser in
+        // DateTimePickerViewModel.formattedScheduledDateTime can derive
+        // a canonical "HH:00" string for the API.
+        TimeSlot(id: "8-10", time: "8-10 AM", isRecommended: true, isAvailable: true),
+        TimeSlot(id: "10-12", time: "10 AM-12 PM", isRecommended: true, isAvailable: true),
+        TimeSlot(id: "12-14", time: "12-2 PM", isRecommended: false, isAvailable: true),
+        TimeSlot(id: "14-16", time: "2-4 PM", isRecommended: false, isAvailable: true),
+        TimeSlot(id: "16-18", time: "4-6 PM", isRecommended: false, isAvailable: true)
     ]
 }
 

@@ -20,18 +20,17 @@ struct PhotoUploadView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: UmuveSpacing.xxlarge) {
-                // Header (no progress bar - wizard handles that)
-                VStack(spacing: UmuveSpacing.small) {
-                    Text("Take Photos")
+                // Header — web parity copy
+                VStack(alignment: .leading, spacing: UmuveSpacing.small) {
+                    Text("Upload Photos")
                         .font(UmuveTypography.h1Font)
                         .foregroundColor(.umuveText)
 
-                    Text("Help us understand what needs to go")
+                    Text("Show us what needs to go. This helps us give you an accurate estimate.")
                         .font(UmuveTypography.bodyFont)
                         .foregroundColor(.umuveTextMuted)
-                        .multilineTextAlignment(.center)
                 }
-                .frame(maxWidth: .infinity)
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.top, UmuveSpacing.normal)
 
                 // Encouragement message when no photos
@@ -85,11 +84,11 @@ struct PhotoUploadView: View {
             }
 
             VStack(alignment: .leading, spacing: 4) {
-                Text("Why photos?")
+                Text("Skip this step? You can.")
                     .font(UmuveTypography.bodyFont.weight(.semibold))
                     .foregroundColor(.umuveText)
 
-                Text("Help us quote you accurately. You can skip — we just recommend at least one.")
+                Text("Upload 1–2 photos to help us prep the right truck. You can also add items manually on the next step.")
                     .font(UmuveTypography.bodySmallFont)
                     .foregroundColor(.umuveTextMuted)
                     .fixedSize(horizontal: false, vertical: true)

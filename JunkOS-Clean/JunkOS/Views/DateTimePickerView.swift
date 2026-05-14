@@ -37,17 +37,16 @@ struct DateTimePickerView: View {
         ScrollView {
             LazyVStack(spacing: UmuveSpacing.xxlarge) {
                 // Header (no progress bar - wizard handles that)
-                VStack(spacing: UmuveSpacing.small) {
-                    Text("Choose Date & Time")
+                VStack(alignment: .leading, spacing: UmuveSpacing.small) {
+                    Text("Pick a Date & Time")
                         .font(UmuveTypography.h1Font)
                         .foregroundColor(.umuveText)
 
-                    Text("When should we come?")
+                    Text("Choose when you would like us to come pick up your items.")
                         .font(UmuveTypography.bodyFont)
                         .foregroundColor(.umuveTextMuted)
-                        .multilineTextAlignment(.center)
                 }
-                .frame(maxWidth: .infinity)
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.top, UmuveSpacing.normal)
 
                 // Empty state if nothing selected

@@ -106,18 +106,24 @@ class DateTimePickerViewModel: ObservableObject {
     /// Get formatted date time for API
     func getFormattedDateTime() -> String? {
         guard let date = selectedDate,
-              let timeSlotId = selectedTimeSlot,
-              let timeSlot = getTimeSlot(by: timeSlotId) else {
+              let timeSlotId = selectedTimeSlot else {
             return nil
         }
-        
-        // Parse time from slot (e.g., "8:00 AM - 10:00 AM" -> "08:00")
-        let timeString = timeSlot.time.components(separatedBy: " - ").first ?? "09:00"
-        
+
+        // Slot IDs encode the start hour (24-h) before the dash:
+        //   "8-10"  → "08:00"
+        //   "10-12" → "10:00"
+        //   "12-14" → "12:00"
+        //   "14-16" → "14:00"
+        //   "16-18" → "16:00"
+        let startHourPart = timeSlotId.components(separatedBy: "-").first ?? "9"
+        let startHour = Int(startHourPart) ?? 9
+        let timeString = String(format: "%02d:00", startHour)
+
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd"
         let dateString = dateFormatter.string(from: date)
-        
+
         return "\(dateString) \(timeString)"
     }
 }
