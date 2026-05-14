@@ -54,12 +54,10 @@
 		CF7C17BE2F37BC810083FF08 /* VerificationCodeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF7C17A22F37BC810083FF08 /* VerificationCodeView.swift */; };
 		CF7C17BF2F37BC810083FF08 /* AddressInputView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF7C17A62F37BC810083FF08 /* AddressInputView.swift */; };
 		CF7C17C02F37BC810083FF08 /* WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF7C17B22F37BC810083FF08 /* WelcomeView.swift */; };
-		CF7C17C12F37BC810083FF08 /* EnhancedWelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF7C17A92F37BC810083FF08 /* EnhancedWelcomeView.swift */; };
 		CF7C17C22F37BC810083FF08 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF7C17AA2F37BC810083FF08 /* HomeView.swift */; };
 		CF7C17C32F37BC810083FF08 /* EmailLoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF7C179F2F37BC810083FF08 /* EmailLoginView.swift */; };
 		CF7C17C42F37BC810083FF08 /* MapAddressPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF7C17AC2F37BC810083FF08 /* MapAddressPickerView.swift */; };
 		CF7C17C52F37BC810083FF08 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF7C17AB2F37BC810083FF08 /* MainTabView.swift */; };
-		CF7C17C62F37BC810083FF08 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF7C17AF2F37BC810083FF08 /* ProfileView.swift */; };
 		CF7C17CC2F37BF700083FF08 /* AuthenticationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF7C17CA2F37BF700083FF08 /* AuthenticationManager.swift */; };
 		D2D1D62684D24BC79EA47513 /* PaymentService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F0811DCB5C84EAA9DF1E741 /* PaymentService.swift */; };
 		DCB6AC1F7668F776ABECD3E5 /* SocketIO in Frameworks */ = {isa = PBXBuildFile; productRef = F49FDC8DF4FBA9B367D765BF /* SocketIO */; };
@@ -113,9 +111,7 @@
 		B0000030 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		B0000031 /* MapAddressPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapAddressPickerView.swift; sourceTree = "<group>"; };
 		B0000032 /* OrdersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrdersView.swift; sourceTree = "<group>"; };
-		B0000033 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
 		B0000034 /* ServiceSelectionRedesignView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceSelectionRedesignView.swift; sourceTree = "<group>"; };
-		B0000035 /* EnhancedWelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnhancedWelcomeView.swift; sourceTree = "<group>"; };
 		BBFF00112233445566778899 /* ReferralView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReferralView.swift; sourceTree = "<group>"; };
 		C773B1D98EDF410CBD206EED /* BookingReviewViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookingReviewViewModel.swift; sourceTree = "<group>"; };
 		CF19A58C2F41C60C007960A8 /* JobTrackingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobTrackingView.swift; sourceTree = "<group>"; };
@@ -128,13 +124,11 @@
 		CF7C17A62F37BC810083FF08 /* AddressInputView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressInputView.swift; sourceTree = "<group>"; };
 		CF7C17A72F37BC810083FF08 /* ConfirmationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfirmationView.swift; sourceTree = "<group>"; };
 		CF7C17A82F37BC810083FF08 /* DateTimePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateTimePickerView.swift; sourceTree = "<group>"; };
-		CF7C17A92F37BC810083FF08 /* EnhancedWelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnhancedWelcomeView.swift; sourceTree = "<group>"; };
 		CF7C17AA2F37BC810083FF08 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		CF7C17AB2F37BC810083FF08 /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
 		CF7C17AC2F37BC810083FF08 /* MapAddressPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapAddressPickerView.swift; sourceTree = "<group>"; };
 		CF7C17AD2F37BC810083FF08 /* OrdersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrdersView.swift; sourceTree = "<group>"; };
 		CF7C17AE2F37BC810083FF08 /* PhotoUploadView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoUploadView.swift; sourceTree = "<group>"; };
-		CF7C17AF2F37BC810083FF08 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
 		CF7C17B02F37BC810083FF08 /* ServiceSelectionRedesignView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceSelectionRedesignView.swift; sourceTree = "<group>"; };
 		CF7C17B12F37BC810083FF08 /* ServiceSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceSelectionView.swift; sourceTree = "<group>"; };
 		CF7C17B22F37BC810083FF08 /* WelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeView.swift; sourceTree = "<group>"; };
@@ -203,13 +197,11 @@
 				CF7C17A62F37BC810083FF08 /* AddressInputView.swift */,
 				CF7C17A72F37BC810083FF08 /* ConfirmationView.swift */,
 				CF7C17A82F37BC810083FF08 /* DateTimePickerView.swift */,
-				CF7C17A92F37BC810083FF08 /* EnhancedWelcomeView.swift */,
 				CF7C17AA2F37BC810083FF08 /* HomeView.swift */,
 				CF7C17AB2F37BC810083FF08 /* MainTabView.swift */,
 				CF7C17AC2F37BC810083FF08 /* MapAddressPickerView.swift */,
 				CF7C17AD2F37BC810083FF08 /* OrdersView.swift */,
 				CF7C17AE2F37BC810083FF08 /* PhotoUploadView.swift */,
-				CF7C17AF2F37BC810083FF08 /* ProfileView.swift */,
 				BBFF00112233445566778899 /* ReferralView.swift */,
 				CF7C17B02F37BC810083FF08 /* ServiceSelectionRedesignView.swift */,
 				CF7C17B12F37BC810083FF08 /* ServiceSelectionView.swift */,
@@ -292,9 +284,7 @@
 				B0000030 /* HomeView.swift */,
 				B0000031 /* MapAddressPickerView.swift */,
 				B0000032 /* OrdersView.swift */,
-				B0000033 /* ProfileView.swift */,
 				B0000034 /* ServiceSelectionRedesignView.swift */,
-				B0000035 /* EnhancedWelcomeView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -491,12 +481,10 @@
 				CF7C17BE2F37BC810083FF08 /* VerificationCodeView.swift in Sources */,
 				CF7C17BF2F37BC810083FF08 /* AddressInputView.swift in Sources */,
 				CF7C17C02F37BC810083FF08 /* WelcomeView.swift in Sources */,
-				CF7C17C12F37BC810083FF08 /* EnhancedWelcomeView.swift in Sources */,
 				CF7C17C22F37BC810083FF08 /* HomeView.swift in Sources */,
 				CF7C17C32F37BC810083FF08 /* EmailLoginView.swift in Sources */,
 				CF7C17C42F37BC810083FF08 /* MapAddressPickerView.swift in Sources */,
 				CF7C17C52F37BC810083FF08 /* MainTabView.swift in Sources */,
-				CF7C17C62F37BC810083FF08 /* ProfileView.swift in Sources */,
 				A0000003 /* BookingModels.swift in Sources */,
 				A0000010 /* WelcomeViewModel.swift in Sources */,
 				A0000011 /* ServiceSelectionViewModel.swift in Sources */,
