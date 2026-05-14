@@ -27,34 +27,19 @@ struct HomeView: View {
 
     // MARK: - Header Section
     private var headerSection: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Umuve")
-                    .font(UmuveTypography.h1Font)
-                    .foregroundColor(.umuveText)
-
-                Text("Professional junk removal")
-                    .font(UmuveTypography.bodyFont)
-                    .foregroundColor(.umuveTextMuted)
-            }
+        HStack(alignment: .center) {
+            Image("UmuveLogo")
+                .resizable()
+                .scaledToFit()
+                .frame(height: 36)
+                .accessibilityLabel("Umuve")
 
             Spacer()
 
-            ZStack {
-                Circle()
-                    .fill(
-                        LinearGradient(
-                            colors: [Color.umuvePrimary, Color.umuvePrimaryDark],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .frame(width: 50, height: 50)
-
-                Image(systemName: "leaf.fill")
-                    .font(.system(size: 22))
-                    .foregroundColor(.white)
-            }
+            Text("Professional junk removal")
+                .font(UmuveTypography.bodySmallFont)
+                .foregroundColor(.umuveTextMuted)
+                .multilineTextAlignment(.trailing)
         }
         .padding(.top, UmuveSpacing.normal)
     }

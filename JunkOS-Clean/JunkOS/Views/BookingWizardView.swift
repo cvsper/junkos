@@ -45,6 +45,18 @@ struct BookingWizardView: View {
         }
         .background(Color.umuveBackground.ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
+        // Suppress the system back button — we ship a custom leading
+        // chevron below that steps backward within the wizard rather than
+        // popping the whole flow. Without this, both arrows render.
+        .navigationBarBackButtonHidden(true)
+        // Lock the navigation-bar background to the page color in both the
+        // scrolled and at-top states. Otherwise iOS 15+ switches between
+        // its translucent blur (when content scrolls under) and a
+        // transparent edge appearance (at top), which made the back-button
+        // tint appear to "change colors" as the user scrolled.
+        .toolbarBackground(Color.umuveBackground, for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
+        .tint(.umuvePrimary)
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
                 if wizardVM.canGoBack {
@@ -55,6 +67,7 @@ struct BookingWizardView: View {
                             .foregroundColor(.umuvePrimary)
                             .font(.system(size: 16, weight: .semibold))
                     }
+                    .accessibilityLabel("Back to previous step")
                 }
             }
 
@@ -72,6 +85,7 @@ struct BookingWizardView: View {
                         .foregroundColor(.umuveTextMuted)
                         .font(.system(size: 14, weight: .semibold))
                 }
+                .accessibilityLabel("Close booking")
             }
         }
         .environmentObject(bookingData)

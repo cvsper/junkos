@@ -20,29 +20,20 @@ struct WelcomeAuthView: View {
             VStack(spacing: UmuveSpacing.xxlarge) {
                 Spacer()
 
-                // Logo and branding
-                VStack(spacing: UmuveSpacing.large) {
-                    Image(systemName: "trash.circle.fill")
-                        .font(.system(size: 120))
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: [Color.umuvePrimary, Color.umuvePrimaryDark],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .shadow(color: Color.umuvePrimary.opacity(0.3), radius: 20, x: 0, y: 10)
+                // Logo and tagline — the wordmark already says "Umuve",
+                // no need for a separate Text("Umuve") label below it.
+                VStack(spacing: UmuveSpacing.medium) {
+                    Image("UmuveLogo")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 80)
+                        .accessibilityLabel("Umuve")
+                        .shadow(color: Color.umuvePrimary.opacity(0.15), radius: 12, x: 0, y: 6)
 
-                    VStack(spacing: UmuveSpacing.small) {
-                        Text("Umuve")
-                            .font(.system(size: 48, weight: .bold))
-                            .foregroundColor(.umuvePrimary)
-
-                        Text("Hauling made simple.")
-                            .font(UmuveTypography.bodyFont)
-                            .foregroundColor(.umuveTextMuted)
-                            .multilineTextAlignment(.center)
-                    }
+                    Text("Hauling made simple.")
+                        .font(UmuveTypography.bodyFont)
+                        .foregroundColor(.umuveTextMuted)
+                        .multilineTextAlignment(.center)
                 }
 
                 Spacer()

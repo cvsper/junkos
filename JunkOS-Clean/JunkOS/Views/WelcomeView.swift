@@ -75,31 +75,17 @@ struct WelcomeView: View {
     
     // MARK: - Logo Section
     private var logoSection: some View {
-        VStack(spacing: UmuveSpacing.medium) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 24)
-                    .fill(
-                        LinearGradient(
-                            colors: [Color.umuvePrimary, Color.umuvePrimaryDark],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .frame(width: 100, height: 100)
-                    .shadow(color: Color.umuvePrimary.opacity(0.35), radius: 16, x: 0, y: 8)
-
-                Image(systemName: "truck.box.fill")
-                    .font(.system(size: 46, weight: .semibold))
-                    .foregroundColor(.white)
-            }
-
-            Text("Umuve")
-                .font(UmuveTypography.displayFont)
-                .foregroundColor(.umuvePrimary)
-        }
-        .opacity(viewModel.isAnimating ? 1 : 0)
-        .offset(y: viewModel.isAnimating ? 0 : -20)
-        .padding(.top, UmuveSpacing.xlarge)
+        // Brand wordmark — the horizontal red-U + black "muve" lockup. The
+        // image is the entire brand mark, so no accompanying "Umuve" Text
+        // (would duplicate the word).
+        Image("UmuveLogo")
+            .resizable()
+            .scaledToFit()
+            .frame(height: 64)
+            .accessibilityLabel("Umuve")
+            .padding(.top, UmuveSpacing.xlarge)
+            .opacity(viewModel.isAnimating ? 1 : 0)
+            .offset(y: viewModel.isAnimating ? 0 : -20)
     }
     
     // MARK: - Hero Section
