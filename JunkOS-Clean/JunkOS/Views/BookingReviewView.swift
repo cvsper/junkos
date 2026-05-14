@@ -48,6 +48,7 @@ struct BookingReviewView: View {
                     photosCard
                     scheduleCard
                     priceSection
+                    ecoFootnote
                     promoSection
                     acceptCheckbox
 
@@ -555,6 +556,26 @@ struct BookingReviewView: View {
         bookingData.promoDiscount = 0
         bookingData.promoApplied = false
         promoError = nil
+    }
+
+    // MARK: - Eco Footnote (web brand-pillar reminder)
+
+    private var ecoFootnote: some View {
+        HStack(alignment: .top, spacing: UmuveSpacing.small) {
+            Image(systemName: "leaf.fill")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundColor(.umuveSuccess)
+                .padding(.top, 2)
+            Text("We donate & recycle first — landfill is always the last resort.")
+                .font(UmuveTypography.bodySmallFont)
+                .foregroundColor(.umuveTextMuted)
+                .multilineTextAlignment(.leading)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(UmuveSpacing.normal)
+        .background(Color.umuveSuccess.opacity(0.06))
+        .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.md))
+        .padding(.horizontal, UmuveSpacing.large)
     }
 
     // MARK: - Accept Checkbox (web Step 5 parity)
