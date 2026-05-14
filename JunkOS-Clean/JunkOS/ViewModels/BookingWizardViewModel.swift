@@ -13,7 +13,18 @@ class BookingWizardViewModel: ObservableObject {
     @Published var completedSteps: Set<Int> = []
 
     // MARK: - Constants
+    //
+    // `stepCount` is how many in-wizard pages the user navigates through:
+    // Address → Photos → Items → Schedule → Estimate. Five real steps that
+    // BookingWizardView's stepContent switch routes to.
+    //
+    // `displayedStepCount` is what the progress indicator renders. The web
+    // shows six dots because Payment is its own page; on iOS the Stripe
+    // Payment Sheet appears as a modal sheet after Estimate, so it's still
+    // a perceived step from the user's POV but not a wizard page. We render
+    // six dots to match the web's progress treatment.
     let stepCount: Int = 5
+    let displayedStepCount: Int = 6
 
     // MARK: - Step Navigation
 
@@ -49,7 +60,12 @@ class BookingWizardViewModel: ObservableObject {
     }
 
     /// Get the title for a specific step. Order matches the web booking
-    /// flow's progress bar: Address → Photos → Items → Schedule → Estimate.
+    /// flow's progress bar verbatim: Address → Photos → Items → Schedule →
+    /// Estimate → Payment.
+    /// Step 5 ("Payment") is rendered for the progress indicator only —
+    /// the user reaches that surface via the Stripe Payment Sheet modal
+    /// triggered from step 4's "Pay" button, not via the wizard's
+    /// stepContent router.
     func stepTitle(for index: Int) -> String {
         switch index {
         case 0: return "Address"
@@ -57,6 +73,7 @@ class BookingWizardViewModel: ObservableObject {
         case 2: return "Items"
         case 3: return "Schedule"
         case 4: return "Estimate"
+        case 5: return "Payment"
         default: return ""
         }
     }

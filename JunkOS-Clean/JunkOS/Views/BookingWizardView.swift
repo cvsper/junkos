@@ -111,7 +111,7 @@ struct BookingWizardView: View {
         VStack(spacing: UmuveSpacing.small) {
             // Progress dots with connecting lines
             HStack(spacing: 0) {
-                ForEach(0..<wizardVM.stepCount, id: \.self) { step in
+                ForEach(0..<wizardVM.displayedStepCount, id: \.self) { step in
                     VStack(spacing: 4) {
                         // Dot
                         ZStack {
@@ -150,7 +150,7 @@ struct BookingWizardView: View {
                     .frame(maxWidth: .infinity)
 
                     // Connecting line (except after last step)
-                    if step < wizardVM.stepCount - 1 {
+                    if step < wizardVM.displayedStepCount - 1 {
                         Rectangle()
                             .fill(lineColor(from: step, to: step + 1))
                             .frame(height: 2)
