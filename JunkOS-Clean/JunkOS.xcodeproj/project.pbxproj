@@ -17,7 +17,6 @@
 		A0000002 /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000002 /* DesignSystem.swift */; };
 		A0000003 /* BookingModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000003 /* BookingModels.swift */; };
 		A0000010 /* WelcomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000010 /* WelcomeViewModel.swift */; };
-		A0000011 /* ServiceSelectionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000011 /* ServiceSelectionViewModel.swift */; };
 		A0000012 /* DateTimePickerViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000012 /* DateTimePickerViewModel.swift */; };
 		A0000013 /* AddressInputViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000013 /* AddressInputViewModel.swift */; };
 		A0000014 /* PhotoUploadViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000014 /* PhotoUploadViewModel.swift */; };
@@ -45,7 +44,6 @@
 		CF7C17B72F37BC810083FF08 /* PhotoUploadView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF7C17AE2F37BC810083FF08 /* PhotoUploadView.swift */; };
 		CF7C17B82F37BC810083FF08 /* LoginOptionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF7C17A02F37BC810083FF08 /* LoginOptionsView.swift */; };
 		CF7C17B92F37BC810083FF08 /* DateTimePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF7C17A82F37BC810083FF08 /* DateTimePickerView.swift */; };
-		CF7C17BB2F37BC810083FF08 /* ServiceSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF7C17B12F37BC810083FF08 /* ServiceSelectionView.swift */; };
 		CF7C17BC2F37BC810083FF08 /* PhoneSignUpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF7C17A12F37BC810083FF08 /* PhoneSignUpView.swift */; };
 		CF7C17BD2F37BC810083FF08 /* WelcomeAuthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF7C17A32F37BC810083FF08 /* WelcomeAuthView.swift */; };
 		CF7C17BE2F37BC810083FF08 /* VerificationCodeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF7C17A22F37BC810083FF08 /* VerificationCodeView.swift */; };
@@ -67,7 +65,6 @@
 		V0000003 /* AddressInputViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = U0000003 /* AddressInputViewModelTests.swift */; };
 		V0000004 /* PhotoUploadViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = U0000004 /* PhotoUploadViewModelTests.swift */; };
 		V0000005 /* DateTimePickerViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = U0000005 /* DateTimePickerViewModelTests.swift */; };
-		V0000006 /* ServiceSelectionViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = U0000006 /* ServiceSelectionViewModelTests.swift */; };
 		V0000008 /* TestFixtures.swift in Sources */ = {isa = PBXBuildFile; fileRef = U0000008 /* TestFixtures.swift */; };
 		V0000009 /* TestHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = U0000009 /* TestHelpers.swift */; };
 		V0000010 /* APIClientTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = U0000010 /* APIClientTests.swift */; };
@@ -88,12 +85,10 @@
 		B0000002 /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
 		B0000003 /* BookingModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookingModels.swift; sourceTree = "<group>"; };
 		B0000004 /* WelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeView.swift; sourceTree = "<group>"; };
-		B0000005 /* ServiceSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceSelectionView.swift; sourceTree = "<group>"; };
 		B0000006 /* DateTimePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateTimePickerView.swift; sourceTree = "<group>"; };
 		B0000007 /* AddressInputView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressInputView.swift; sourceTree = "<group>"; };
 		B0000008 /* PhotoUploadView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoUploadView.swift; sourceTree = "<group>"; };
 		B0000010 /* WelcomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeViewModel.swift; sourceTree = "<group>"; };
-		B0000011 /* ServiceSelectionViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceSelectionViewModel.swift; sourceTree = "<group>"; };
 		B0000012 /* DateTimePickerViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateTimePickerViewModel.swift; sourceTree = "<group>"; };
 		B0000013 /* AddressInputViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressInputViewModel.swift; sourceTree = "<group>"; };
 		B0000014 /* PhotoUploadViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoUploadViewModel.swift; sourceTree = "<group>"; };
@@ -132,7 +127,6 @@
 		CF7C17AD2F37BC810083FF08 /* OrdersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrdersView.swift; sourceTree = "<group>"; };
 		CF7C17AE2F37BC810083FF08 /* PhotoUploadView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoUploadView.swift; sourceTree = "<group>"; };
 		CF7C17B02F37BC810083FF08 /* ServiceSelectionRedesignView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceSelectionRedesignView.swift; sourceTree = "<group>"; };
-		CF7C17B12F37BC810083FF08 /* ServiceSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceSelectionView.swift; sourceTree = "<group>"; };
 		CF7C17B22F37BC810083FF08 /* WelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeView.swift; sourceTree = "<group>"; };
 		CF7C17CA2F37BF700083FF08 /* AuthenticationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthenticationManager.swift; sourceTree = "<group>"; };
 		CF8FEDE3A12D4A61A3A53F6B /* BookingWizardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookingWizardView.swift; sourceTree = "<group>"; };
@@ -146,7 +140,6 @@
 		U0000003 /* AddressInputViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressInputViewModelTests.swift; sourceTree = "<group>"; };
 		U0000004 /* PhotoUploadViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoUploadViewModelTests.swift; sourceTree = "<group>"; };
 		U0000005 /* DateTimePickerViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateTimePickerViewModelTests.swift; sourceTree = "<group>"; };
-		U0000006 /* ServiceSelectionViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceSelectionViewModelTests.swift; sourceTree = "<group>"; };
 		U0000008 /* TestFixtures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestFixtures.swift; sourceTree = "<group>"; };
 		U0000009 /* TestHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestHelpers.swift; sourceTree = "<group>"; };
 		U0000010 /* APIClientTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClientTests.swift; sourceTree = "<group>"; };
@@ -222,7 +215,6 @@
 				CF7C17AE2F37BC810083FF08 /* PhotoUploadView.swift */,
 				BBFF00112233445566778899 /* ReferralView.swift */,
 				CF7C17B02F37BC810083FF08 /* ServiceSelectionRedesignView.swift */,
-				CF7C17B12F37BC810083FF08 /* ServiceSelectionView.swift */,
 				CF7C17B22F37BC810083FF08 /* WelcomeView.swift */,
 			);
 			path = Views;
@@ -273,7 +265,6 @@
 				U0000003 /* AddressInputViewModelTests.swift */,
 				U0000004 /* PhotoUploadViewModelTests.swift */,
 				U0000005 /* DateTimePickerViewModelTests.swift */,
-				U0000006 /* ServiceSelectionViewModelTests.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -344,7 +335,6 @@
 			isa = PBXGroup;
 			children = (
 				B0000004 /* WelcomeView.swift */,
-				B0000005 /* ServiceSelectionView.swift */,
 				B0000006 /* DateTimePickerView.swift */,
 				B0000007 /* AddressInputView.swift */,
 				B0000008 /* PhotoUploadView.swift */,
@@ -363,7 +353,6 @@
 				19D768CA0F8C43A6BD9AC939 /* BookingWizardViewModel.swift */,
 				C773B1D98EDF410CBD206EED /* BookingReviewViewModel.swift */,
 				B0000010 /* WelcomeViewModel.swift */,
-				B0000011 /* ServiceSelectionViewModel.swift */,
 				B0000012 /* DateTimePickerViewModel.swift */,
 				B0000013 /* AddressInputViewModel.swift */,
 				B0000014 /* PhotoUploadViewModel.swift */,
@@ -570,7 +559,6 @@
 				CF7C17B82F37BC810083FF08 /* LoginOptionsView.swift in Sources */,
 				CF7C17B92F37BC810083FF08 /* DateTimePickerView.swift in Sources */,
 				CF7C17CC2F37BF700083FF08 /* AuthenticationManager.swift in Sources */,
-				CF7C17BB2F37BC810083FF08 /* ServiceSelectionView.swift in Sources */,
 				CF7C17BC2F37BC810083FF08 /* PhoneSignUpView.swift in Sources */,
 				CF7C17BD2F37BC810083FF08 /* WelcomeAuthView.swift in Sources */,
 				CF7C17BE2F37BC810083FF08 /* VerificationCodeView.swift in Sources */,
@@ -582,7 +570,6 @@
 				CF7C17C52F37BC810083FF08 /* MainTabView.swift in Sources */,
 				A0000003 /* BookingModels.swift in Sources */,
 				A0000010 /* WelcomeViewModel.swift in Sources */,
-				A0000011 /* ServiceSelectionViewModel.swift in Sources */,
 				A0000012 /* DateTimePickerViewModel.swift in Sources */,
 				A0000013 /* AddressInputViewModel.swift in Sources */,
 				A0000014 /* PhotoUploadViewModel.swift in Sources */,
@@ -617,7 +604,6 @@
 				V0000003 /* AddressInputViewModelTests.swift in Sources */,
 				V0000004 /* PhotoUploadViewModelTests.swift in Sources */,
 				V0000005 /* DateTimePickerViewModelTests.swift in Sources */,
-				V0000006 /* ServiceSelectionViewModelTests.swift in Sources */,
 				V0000008 /* TestFixtures.swift in Sources */,
 				V0000009 /* TestHelpers.swift in Sources */,
 				V0000010 /* APIClientTests.swift in Sources */,

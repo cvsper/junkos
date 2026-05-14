@@ -39,7 +39,6 @@ struct TestFixtures {
     static func createBookingData(
         address: Address = validAddress,
         photos: [Data] = [],
-        selectedServices: Set<String> = ["furniture", "appliances"],
         serviceDetails: String = "Large couch and refrigerator",
         selectedDate: Date? = Date(),
         selectedTimeSlot: String? = "morning"
@@ -47,29 +46,26 @@ struct TestFixtures {
         let booking = BookingData()
         booking.address = address
         booking.photos = photos
-        booking.selectedServices = selectedServices
         booking.serviceDetails = serviceDetails
         booking.selectedDate = selectedDate
         booking.selectedTimeSlot = selectedTimeSlot
         return booking
     }
-    
+
     static var completeBooking: BookingData {
         createBookingData(
             address: validAddress,
             photos: [samplePhotoData],
-            selectedServices: ["furniture", "appliances"],
             serviceDetails: "Large items for removal",
             selectedDate: Date(),
             selectedTimeSlot: "morning"
         )
     }
-    
+
     static var incompleteBooking: BookingData {
         createBookingData(
             address: invalidAddress,
             photos: [],
-            selectedServices: [],
             serviceDetails: "",
             selectedDate: nil,
             selectedTimeSlot: nil
@@ -85,11 +81,6 @@ struct TestFixtures {
     static var multiplePhotos: [Data] {
         return [samplePhotoData, samplePhotoData, samplePhotoData]
     }
-    
-    // MARK: - Service Fixtures
-    static let popularServices = Service.all.filter { $0.isPopular }
-    static let allServices = Service.all
-    static let singleService = Service.all.first!
     
     // MARK: - TimeSlot Fixtures
     static let availableTimeSlots = TimeSlot.slots.filter { $0.isAvailable }

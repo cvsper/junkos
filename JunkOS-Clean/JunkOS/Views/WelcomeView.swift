@@ -26,9 +26,6 @@ struct WelcomeView: View {
                 // LoadUp Feature #3: Eco-Friendly Badge
                 ecoFriendlyBadge
                 
-                // LoadUp Feature #4: Commercial Booking Toggle
-                commercialToggle
-                
                 // Live bookings counter
                 HStack {
                     Spacer()
@@ -191,31 +188,6 @@ struct WelcomeView: View {
         .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 4)
         .opacity(viewModel.isAnimating ? 1 : 0)
         .animation(.easeInOut(duration: 0.6).delay(0.3), value: viewModel.isAnimating)
-    }
-    
-    // MARK: - LoadUp Feature #4: Commercial Toggle
-    private var commercialToggle: some View {
-        UmuveCard {
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Business Account")
-                        .font(UmuveTypography.h3Font)
-                        .foregroundColor(.umuveText)
-                    
-                    Text("Bulk discounts & recurring pickups available")
-                        .font(UmuveTypography.bodySmallFont)
-                        .foregroundColor(.umuveTextMuted)
-                }
-                
-                Spacer()
-                
-                Toggle("", isOn: $bookingData.isCommercialBooking)
-                    .labelsHidden()
-            }
-            .padding(UmuveSpacing.normal)
-        }
-        .opacity(viewModel.isAnimating ? 1 : 0)
-        .animation(.easeInOut(duration: 0.6).delay(0.35), value: viewModel.isAnimating)
     }
     
     // MARK: - LoadUp Feature #7: Trust & Coverage Badges

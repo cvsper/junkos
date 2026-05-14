@@ -24,10 +24,14 @@ class AddressInputViewModel: NSObject, ObservableObject {
     @Published var isSearching = false
     @Published var pickupSelected = false
 
-    // Map regions
+    // Default region centers on South Florida (roughly Boca Raton) so the
+    // map preview and autocomplete biasing land in the actual service area
+    // before the user picks an address. The old default (37.77, -122.41,
+    // commented "US center") was actually San Francisco — wrong on both
+    // counts.
     @Published var pickupRegion = MKCoordinateRegion(
-        center: CLLocationCoordinate2D(latitude: 37.7749, longitude: -122.4194), // US center
-        span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+        center: CLLocationCoordinate2D(latitude: 26.3683, longitude: -80.1289),
+        span: MKCoordinateSpan(latitudeDelta: 0.5, longitudeDelta: 0.5)
     )
 
     // Results

@@ -28,53 +28,6 @@ enum ServiceType: String, CaseIterable {
     }
 }
 
-// MARK: - Volume Tier
-enum VolumeTier: String, CaseIterable {
-    case quarter = "1/4 Truck"
-    case half = "1/2 Truck"
-    case threeQuarter = "3/4 Truck"
-    case full = "Full Truck"
-
-    var fillLevel: Double {
-        switch self {
-        case .quarter:
-            return 0.25
-        case .half:
-            return 0.5
-        case .threeQuarter:
-            return 0.75
-        case .full:
-            return 1.0
-        }
-    }
-
-    var description: String {
-        switch self {
-        case .quarter:
-            return "A few items"
-        case .half:
-            return "Small room"
-        case .threeQuarter:
-            return "Large room"
-        case .full:
-            return "Whole house"
-        }
-    }
-
-    var icon: String {
-        switch self {
-        case .quarter:
-            return "square.stack.fill"
-        case .half:
-            return "cube.fill"
-        case .threeQuarter:
-            return "shippingbox.fill"
-        case .full:
-            return "truck.box.fill"
-        }
-    }
-}
-
 // MARK: - Pricing Estimate
 // Mirrors the /api/pricing/estimate response (snake_case → camelCase via
 // JSONDecoder.keyDecodingStrategy = .convertFromSnakeCase). Most fields are
@@ -334,26 +287,6 @@ class BookingData: ObservableObject {
     var currentTruckTier: TruckLoadTier { TruckLoadTier.tier(forCuFt: totalCuFt) }
     var hasItems: Bool { !items.isEmpty }
 
-    // MARK: - Legacy Properties (TEMPORARY - Phase 2 refactor)
-    // TODO: Phase 2 refactor - Remove once old views (WelcomeView, PaymentView, ConfirmationView) are refactored
-    @Published var isCommercialBooking: Bool = false
-    @Published var customerEmail: String = ""
-    @Published var customerName: String = ""
-    @Published var customerPhone: String = ""
-    @Published var serviceTier: ServiceTier = .fullService
-    @Published var selectedServices: Set<String> = []
-    @Published var dontNeedToBeHome: Bool = false
-    @Published var outdoorPlacementInstructions: String = ""
-    @Published var loaderNotes: String = ""
-    @Published var businessName: String = ""
-    @Published var isRecurringPickup: Bool = false
-    @Published var recurringFrequency: RecurringFrequency = .weekly
-    @Published var referralCode: String = ""
-    @Published var cleanoutType: CleanoutType = .estate
-    @Published var selectedRooms: Set<String> = []
-    @Published var selectedItems: Set<String> = []
-    @Published var estimatedWeight: WeightCategory = .medium
-
     // MARK: - Computed Properties
 
     var isAddressValid: Bool {
@@ -435,8 +368,9 @@ struct TimeSlot: Identifiable {
     ]
 }
 
-// MARK: - Legacy Types
-
+// MARK: - Service
+// Local model returned by APIService.toService() — used by services screens to
+// render API-provided service catalogs.
 struct Service: Identifiable, Hashable {
     let id: String
     let name: String
@@ -445,78 +379,4 @@ struct Service: Identifiable, Hashable {
     let isPopular: Bool
 
     static let all: [Service] = []
-}
-
-enum ServiceTier: String, CaseIterable {
-    case fullService = "Full-Service"
-    case curbside = "Curbside Pickup"
-
-    var description: String {
-        switch self {
-        case .fullService:
-            return "We load everything for you"
-        case .curbside:
-            return "You place items curbside"
-        }
-    }
-}
-
-enum RecurringFrequency: String, CaseIterable {
-    case weekly = "Weekly"
-    case biweekly = "Bi-weekly"
-    case monthly = "Monthly"
-}
-
-// MARK: - Legacy Types for ServiceSelectionView (deprecated, kept for compilation)
-enum CleanoutType: String, CaseIterable {
-    case estate = "Estate"
-    case foreclosure = "Foreclosure"
-    case hoarder = "Hoarder"
-
-    var icon: String {
-        switch self {
-        case .estate: return "house.fill"
-        case .foreclosure: return "building.2.fill"
-        case .hoarder: return "shippingbox.fill"
-        }
-    }
-}
-
-struct RoomOption: Identifiable {
-    let id: String
-    let name: String
-    let icon: String
-
-    static let all: [RoomOption] = [
-        RoomOption(id: "living", name: "Living", icon: "sofa.fill"),
-        RoomOption(id: "bedroom", name: "Bedroom", icon: "bed.double.fill"),
-        RoomOption(id: "kitchen", name: "Kitchen", icon: "fork.knife")
-    ]
-}
-
-struct ItemOption: Identifiable {
-    let id: String
-    let name: String
-    let icon: String
-    let estimatedWeight: String
-
-    static let all: [ItemOption] = [
-        ItemOption(id: "couch", name: "Couch", icon: "sofa.fill", estimatedWeight: "150 lbs"),
-        ItemOption(id: "fridge", name: "Fridge", icon: "refrigerator", estimatedWeight: "200 lbs"),
-        ItemOption(id: "mattress", name: "Mattress", icon: "bed.double.fill", estimatedWeight: "80 lbs")
-    ]
-}
-
-enum WeightCategory: String, CaseIterable {
-    case light = "Light\n< 500 lbs"
-    case medium = "Medium\n500-1500 lbs"
-    case heavy = "Heavy\n> 1500 lbs"
-
-    var icon: String {
-        switch self {
-        case .light: return "cube.fill"
-        case .medium: return "shippingbox.fill"
-        case .heavy: return "truck.box.fill"
-        }
-    }
 }

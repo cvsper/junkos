@@ -95,12 +95,22 @@ final class DateTimePickerViewModelTests: XCTestCase {
     }
     
     func testRejectUnavailableTimeSlot() {
-        // Given - unavailable time slot
-        let unavailableSlot = TimeSlot.slots.first(where: { !$0.isAvailable })!
-        
+        // The default TimeSlot.slots list now has every slot available
+        // (the previous "mid-afternoon unavailable" placeholder was retired
+        // when the labels matched the web's), so we can't pluck one from
+        // the static list. Instead, inject an unavailable slot directly
+        // onto the VM and verify it gets rejected.
+        let unavailableSlot = TimeSlot(
+            id: "test-unavailable",
+            time: "2-4 AM",
+            isRecommended: false,
+            isAvailable: false
+        )
+        viewModel.availableTimeSlots = viewModel.availableTimeSlots + [unavailableSlot]
+
         // When
         viewModel.selectTimeSlot(unavailableSlot.id)
-        
+
         // Then - should not be selected
         XCTAssertNil(viewModel.selectedTimeSlot)
         XCTAssertFalse(viewModel.isTimeSlotSelected(unavailableSlot.id))
