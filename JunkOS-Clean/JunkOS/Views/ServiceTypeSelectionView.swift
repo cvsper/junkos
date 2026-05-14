@@ -33,6 +33,8 @@ struct ServiceTypeSelectionView: View {
                         icon: "truck.box.fill",
                         title: "Junk Removal",
                         description: ServiceType.junkRemoval.description,
+                        accent: .categoryBlue,
+                        subItems: ["Furniture", "Appliances", "Electronics", "General Junk"],
                         isSelected: bookingData.serviceType == .junkRemoval
                     )
 
@@ -41,6 +43,8 @@ struct ServiceTypeSelectionView: View {
                         icon: "car.fill",
                         title: "Auto Transport",
                         description: ServiceType.autoTransport.description,
+                        accent: .categoryOrange,
+                        subItems: ["Open Trailer", "Enclosed Trailer", "Running or Non-running", "Door-to-door"],
                         isSelected: bookingData.serviceType == .autoTransport
                     )
                 }
@@ -68,50 +72,71 @@ struct ServiceTypeSelectionView: View {
 
     // MARK: - Service Type Card
 
-    private func serviceTypeCard(type: ServiceType, icon: String, title: String, description: String, isSelected: Bool) -> some View {
+    private func serviceTypeCard(
+        type: ServiceType,
+        icon: String,
+        title: String,
+        description: String,
+        accent: Color,
+        subItems: [String],
+        isSelected: Bool
+    ) -> some View {
         Button {
             withAnimation(.easeInOut(duration: 0.2)) {
                 bookingData.serviceType = type
             }
 
-            // Request initial pricing estimate
             Task {
                 await viewModel.requestPricingEstimate(for: bookingData)
             }
         } label: {
-            HStack(spacing: UmuveSpacing.normal) {
-                // Icon
-                ZStack {
-                    Circle()
-                        .fill(isSelected ? Color.umuvePrimary.opacity(0.1) : Color.umuveBorder.opacity(0.2))
-                        .frame(width: 60, height: 60)
+            VStack(alignment: .leading, spacing: UmuveSpacing.normal) {
+                HStack(spacing: UmuveSpacing.normal) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: UmuveRadius.md)
+                            .fill(accent.opacity(0.18))
+                            .frame(width: 60, height: 60)
 
-                    Image(systemName: icon)
-                        .font(.system(size: 28))
-                        .foregroundColor(isSelected ? .umuvePrimary : .umuveTextMuted)
+                        Image(systemName: icon)
+                            .font(.system(size: 28))
+                            .foregroundColor(accent)
+                    }
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(title)
+                            .font(UmuveTypography.h3Font)
+                            .foregroundColor(.umuveText)
+
+                        Text(description)
+                            .font(UmuveTypography.bodySmallFont)
+                            .foregroundColor(.umuveTextMuted)
+                            .multilineTextAlignment(.leading)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    Spacer(minLength: 0)
+
+                    if isSelected {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 24))
+                            .foregroundColor(.umuvePrimary)
+                    }
                 }
 
-                // Text content
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(title)
-                        .font(UmuveTypography.h2Font)
-                        .foregroundColor(.umuveText)
+                VStack(alignment: .leading, spacing: UmuveSpacing.small) {
+                    ForEach(subItems, id: \.self) { item in
+                        HStack(spacing: UmuveSpacing.small) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.system(size: 14))
+                                .foregroundColor(accent)
 
-                    Text(description)
-                        .font(UmuveTypography.bodySmallFont)
-                        .foregroundColor(.umuveTextMuted)
-                        .multilineTextAlignment(.leading)
-                        .fixedSize(horizontal: false, vertical: true)
+                            Text(item)
+                                .font(UmuveTypography.bodySmallFont)
+                                .foregroundColor(.umuveTextMuted)
+                        }
+                    }
                 }
-
-                Spacer()
-
-                // Checkmark
-                if isSelected {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 24))
-                        .foregroundColor(.umuvePrimary)
-                }
+                .padding(.horizontal, UmuveSpacing.small)
             }
             .padding(UmuveSpacing.normal)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -126,6 +151,7 @@ struct ServiceTypeSelectionView: View {
                         lineWidth: isSelected ? 3 : 1
                     )
             )
+            .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 4)
         }
         .buttonStyle(PlainButtonStyle())
     }
