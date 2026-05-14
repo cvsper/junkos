@@ -101,7 +101,24 @@ class PaymentService: ObservableObject {
 
     /// Configure Stripe SDK with publishable key. Call once at app startup or lazily on first use.
     static func configureStripe() {
-        STPAPIClient.shared.publishableKey = Config.shared.stripePublishableKey
+        let key = Config.shared.stripePublishableKey
+        STPAPIClient.shared.publishableKey = key
+
+        // Loud, unmissable runtime warning when the placeholder key is in
+        // use — Stripe will reject every PaymentIntent + Payment Sheet
+        // attempt with this value, so debugging the symptom ("payment
+        // failed" with no clear reason) tends to lead here. Set the
+        // `StripePublishableKey` Info.plist value to your real
+        // pk_live_… / pk_test_… key to silence this.
+        if key.contains("PLACEHOLDER") {
+            print("""
+            ⚠️ ⚠️ ⚠️ STRIPE NOT CONFIGURED ⚠️ ⚠️ ⚠️
+            Config.shared.stripePublishableKey = "\(key)"
+            All payment attempts will fail until this is replaced with a
+            real Stripe publishable key. Set `StripePublishableKey` in
+            Info.plist (recommended) or edit Config.swift directly.
+            """)
+        }
     }
 
     // MARK: - Apple Pay Availability

@@ -41,8 +41,24 @@ enum APIEnvironment {
         }
     }
 
+    /// Stripe publishable key.
+    ///
+    /// Looked up in this order so the real key never has to live in source
+    /// control:
+    ///   1. `StripePublishableKey` in Info.plist (recommended — set per
+    ///      build configuration via an xcconfig file or Build Settings →
+    ///      User-Defined → STRIPE_PUBLISHABLE_KEY).
+    ///   2. Hardcoded placeholder (only for new clones that haven't been
+    ///      provisioned yet). PaymentService.configureStripe() prints a
+    ///      runtime warning when the placeholder is used so the
+    ///      misconfiguration is visible in the Xcode console.
     var stripePublishableKey: String {
-        // User will replace PLACEHOLDER with real Stripe keys
+        if let key = Bundle.main.object(forInfoDictionaryKey: "StripePublishableKey") as? String,
+           !key.isEmpty,
+           !key.contains("PLACEHOLDER") {
+            return key
+        }
+
         switch self {
         case .development:
             return "pk_test_PLACEHOLDER"
