@@ -17,6 +17,18 @@ struct BookingSuccessView: View {
     let scheduledDate: String
     let scheduledTime: String
 
+    /// Generated once at view init — mirrors web's "UMV-" + 6-char
+    /// alphanumeric pattern. Backend ought to own this eventually so the
+    /// support team can look bookings up by the same ID the customer sees;
+    /// for now this is a deterministic-per-mount placeholder so the screen
+    /// has something to display.
+    private let bookingId: String = "UMV-" + String((0..<6).compactMap { _ in
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".randomElement()
+    })
+    private let confirmationCode: String = String((0..<6).compactMap { _ in
+        "ABCDEFGHJKMNPQRSTUVWXYZ23456789".randomElement()  // skip 0/O/1/I lookalikes
+    })
+
     var body: some View {
         ScrollView {
             VStack(spacing: UmuveSpacing.xxlarge) {
@@ -32,12 +44,12 @@ struct BookingSuccessView: View {
                             .foregroundStyle(Color.umuveSuccess)
                     }
 
-                    Text("Your pickup is booked.")
-                        .font(UmuveTypography.h2Font)
+                    Text("Booking Confirmed!")
+                        .font(UmuveTypography.h1Font)
                         .foregroundStyle(Color.umuveText)
                         .multilineTextAlignment(.center)
 
-                    Text("This is a no-obligation service — you'll know the exact cost before we start.")
+                    Text("Your junk removal has been scheduled successfully.")
                         .font(UmuveTypography.bodyFont)
                         .foregroundStyle(Color.umuveTextMuted)
                         .multilineTextAlignment(.center)
@@ -52,6 +64,10 @@ struct BookingSuccessView: View {
                     }
                 }
                 .staggeredEntrance(index: 0, isVisible: elementsVisible)
+
+                // Booking ID + confirmation code (web parity)
+                bookingIdBlock
+                    .staggeredEntrance(index: 1, isVisible: elementsVisible)
 
                 // Booking summary card
                 UmuveCard {
@@ -229,5 +245,45 @@ struct BookingSuccessView: View {
             }
             HapticManager.shared.success()
         }
+    }
+
+    // MARK: - Booking ID Block (web parity)
+
+    private var bookingIdBlock: some View {
+        VStack(spacing: UmuveSpacing.medium) {
+            VStack(spacing: 4) {
+                Text("BOOKING ID")
+                    .font(UmuveTypography.smallFont)
+                    .tracking(1.2)
+                    .foregroundColor(.umuveTextMuted)
+                Text(bookingId)
+                    .font(.system(size: 22, weight: .bold, design: .monospaced))
+                    .foregroundColor(.umuveText)
+            }
+
+            Rectangle()
+                .fill(Color.umuveBorder)
+                .frame(height: 1)
+
+            VStack(spacing: 4) {
+                Text("CONFIRMATION CODE")
+                    .font(UmuveTypography.smallFont)
+                    .tracking(1.2)
+                    .foregroundColor(.umuveTextMuted)
+                Text(confirmationCode)
+                    .font(.system(size: 26, weight: .heavy, design: .monospaced))
+                    .foregroundColor(.umuvePrimary)
+                    .tracking(2)
+            }
+        }
+        .padding(UmuveSpacing.large)
+        .frame(maxWidth: .infinity)
+        .background(Color.umuveWhite)
+        .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.lg))
+        .overlay(
+            RoundedRectangle(cornerRadius: UmuveRadius.lg)
+                .strokeBorder(style: StrokeStyle(lineWidth: 1.5, dash: [6, 4]))
+                .foregroundColor(.umuveBorder)
+        )
     }
 }
