@@ -170,6 +170,10 @@ struct BookingWizardView: View {
         // booking/progress-bar.tsx) so iOS and web present the same six
         // questions in the same order: Address → Photos → Items → Schedule
         // → Estimate (review) → Payment.
+        //
+        // Wrapping the step content in a transition + id-keyed view triggers
+        // a horizontal slide whenever wizardVM.currentStep changes. Respects
+        // accessibilityReduceMotion via .smooth() default (system handles it).
         Group {
             switch wizardVM.currentStep {
             case 0:
@@ -199,6 +203,12 @@ struct BookingWizardView: View {
                 EmptyView()
             }
         }
+        .id(wizardVM.currentStep)
+        .transition(.asymmetric(
+            insertion: .move(edge: .trailing).combined(with: .opacity),
+            removal: .move(edge: .leading).combined(with: .opacity)
+        ))
+        .animation(.smooth(duration: 0.35), value: wizardVM.currentStep)
     }
 
     // MARK: - Price Estimate Bar
