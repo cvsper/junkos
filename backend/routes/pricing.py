@@ -11,6 +11,7 @@ import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from extensions import limiter
 from models import db, PricingRule, SurgeZone
 from routes.booking import (
     calculate_estimate,
