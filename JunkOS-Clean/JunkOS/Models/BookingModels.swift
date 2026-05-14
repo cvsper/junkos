@@ -223,26 +223,7 @@ struct TimeSlot: Identifiable {
     ]
 }
 
-// MARK: - Legacy Types (TEMPORARY - Phase 2 refactor)
-// TODO: Phase 2 refactor - Remove once PaymentView, ServiceSelectionView, ConfirmationViewModel, and APIModels are refactored
-
-struct PriceBreakdown {
-    let basePrice: Double = 89.00
-    let itemsCharge: Double = 45.00
-    let disposalFee: Double = 15.00
-    let serviceTier: ServiceTier
-    let isCommercial: Bool
-
-    init(serviceTier: ServiceTier = .fullService, isCommercial: Bool = false) {
-        self.serviceTier = serviceTier
-        self.isCommercial = isCommercial
-    }
-
-    var subtotal: Double { basePrice + itemsCharge + disposalFee }
-    var tierDiscount: Double { 0.0 }
-    var commercialDiscount: Double { 0.0 }
-    var total: Double { subtotal }
-}
+// MARK: - Legacy Types
 
 struct Service: Identifiable, Hashable {
     let id: String

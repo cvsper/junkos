@@ -18,21 +18,15 @@ class ConfirmationViewModel: ObservableObject {
     @Published var bookingResponse: BookingResponse?
     
     // MARK: - Properties
-    @Published var priceBreakdown = PriceBreakdown()
     private let apiClient = APIClient.shared
-    
+
     // MARK: - Public Methods
-    
+
     /// Start entrance animations
     func startAnimations() {
         withAnimation(AnimationConstants.smoothSpring) {
             elementsVisible = true
         }
-    }
-    
-    /// Update price breakdown with service tier and commercial discount
-    func updatePriceBreakdown(serviceTier: ServiceTier, isCommercial: Bool) {
-        priceBreakdown = PriceBreakdown(serviceTier: serviceTier, isCommercial: isCommercial)
     }
     
     /// Submit booking to API

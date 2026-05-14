@@ -75,10 +75,6 @@ struct ConfirmationView: View {
             }
             .onAppear {
                 viewModel.startAnimations()
-                viewModel.updatePriceBreakdown(
-                    serviceTier: bookingData.serviceTier,
-                    isCommercial: bookingData.isCommercialBooking
-                )
                 // Pre-fill from auth if available
                 if let user = authManager.currentUser, user.id != "guest" {
                     customerName = user.name ?? ""
@@ -386,76 +382,52 @@ struct ConfirmationView: View {
     private var priceSection: some View {
         UmuveCard {
             VStack(spacing: UmuveSpacing.normal) {
-                HStack {
-                    Text("Base Service")
-                        .font(UmuveTypography.bodyFont)
-                        .foregroundColor(.umuveText)
-                    Spacer()
-                    Text("$\(viewModel.formatPrice(viewModel.priceBreakdown.basePrice))")
-                        .font(UmuveTypography.bodyFont)
-                        .foregroundColor(.umuveText)
-                }
-                
-                HStack {
-                    Text("Items Charge")
-                        .font(UmuveTypography.bodyFont)
-                        .foregroundColor(.umuveText)
-                    Spacer()
-                    Text("$\(viewModel.formatPrice(viewModel.priceBreakdown.itemsCharge))")
-                        .font(UmuveTypography.bodyFont)
-                        .foregroundColor(.umuveText)
-                }
-                
-                HStack {
-                    Text("Disposal Fee")
-                        .font(UmuveTypography.bodyFont)
-                        .foregroundColor(.umuveText)
-                    Spacer()
-                    Text("$\(viewModel.formatPrice(viewModel.priceBreakdown.disposalFee))")
-                        .font(UmuveTypography.bodyFont)
-                        .foregroundColor(.umuveText)
-                }
-                
-                // LoadUp Feature #1: Service Tier Discount
-                if viewModel.priceBreakdown.tierDiscount > 0 {
+                if let estimate = bookingData.priceBreakdown {
+                    priceLine("Subtotal", value: estimate.subtotal)
+
+                    if let discount = estimate.volumeDiscount, discount > 0 {
+                        priceLine(
+                            estimate.volumeDiscountLabel ?? "Volume Discount",
+                            value: -discount,
+                            tint: .umuveSuccess
+                        )
+                    }
+
+                    if let surge = estimate.surgeAmount, surge > 0 {
+                        priceLine(estimate.surgeReasons?.first ?? "Surge Pricing", value: surge)
+                    }
+
+                    if let serviceFee = estimate.serviceFee, serviceFee > 0 {
+                        priceLine("Service Fee", value: serviceFee)
+                    }
+
+                    if let recycling = estimate.recyclingFees, recycling > 0 {
+                        priceLine("Recycling & Disposal", value: recycling)
+                    }
+
+                    Divider()
+                        .padding(.vertical, UmuveSpacing.small)
+
                     HStack {
-                        Text("\(bookingData.serviceTier.rawValue) Discount")
-                            .font(UmuveTypography.bodyFont)
-                            .foregroundColor(.umuveSuccess)
+                        Text("Estimated Total")
+                            .font(UmuveTypography.h3Font)
+                            .foregroundColor(.umuveText)
                         Spacer()
-                        Text("-$\(viewModel.formatPrice(viewModel.priceBreakdown.tierDiscount))")
+                        Text("$\(viewModel.formatPrice(estimate.total))")
+                            .font(UmuveTypography.h2Font)
+                            .foregroundColor(.umuveCTA)
+                    }
+                } else {
+                    HStack {
+                        Text("Calculating your estimate…")
                             .font(UmuveTypography.bodyFont)
-                            .foregroundColor(.umuveSuccess)
+                            .foregroundColor(.umuveTextMuted)
+                        Spacer()
+                        ProgressView()
                     }
                 }
-                
-                // LoadUp Feature #4: Commercial Discount
-                if viewModel.priceBreakdown.commercialDiscount > 0 {
-                    HStack {
-                        Text("Commercial Discount")
-                            .font(UmuveTypography.bodyFont)
-                            .foregroundColor(.umuveSuccess)
-                        Spacer()
-                        Text("-$\(viewModel.formatPrice(viewModel.priceBreakdown.commercialDiscount))")
-                            .font(UmuveTypography.bodyFont)
-                            .foregroundColor(.umuveSuccess)
-                    }
-                }
-                
-                Divider()
-                    .padding(.vertical, UmuveSpacing.small)
-                
-                HStack {
-                    Text("Estimated Total")
-                        .font(UmuveTypography.h3Font)
-                        .foregroundColor(.umuveText)
-                    Spacer()
-                    Text("$\(viewModel.formatPrice(viewModel.priceBreakdown.total))")
-                        .font(UmuveTypography.h2Font)
-                        .foregroundColor(.umuveCTA)
-                }
-                
-                Text("*Final price determined after on-site inspection")
+
+                Text("*Final price determined after on-site inspection. We donate & recycle first — landfill is always the last resort.")
                     .font(UmuveTypography.bodySmallFont)
                     .foregroundColor(.umuveTextMuted)
                     .multilineTextAlignment(.center)
@@ -465,6 +437,18 @@ struct ConfirmationView: View {
         }
     }
     
+    private func priceLine(_ label: String, value: Double, tint: Color = .umuveText) -> some View {
+        HStack {
+            Text(label)
+                .font(UmuveTypography.bodyFont)
+                .foregroundColor(.umuveTextMuted)
+            Spacer()
+            Text("\(value < 0 ? "-$" : "$")\(viewModel.formatPrice(abs(value)))")
+                .font(UmuveTypography.bodyFont)
+                .foregroundColor(tint)
+        }
+    }
+
     // MARK: - What's Next Section
     private var whatsNextSection: some View {
         UmuveCard {
