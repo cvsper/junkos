@@ -8,10 +8,21 @@
 import SwiftUI
 
 struct BookingWizardView: View {
-    @StateObject private var bookingData = BookingData()
+    @StateObject private var bookingData: BookingData
     @StateObject private var wizardVM = BookingWizardViewModel()
     @Environment(\.dismiss) private var dismiss
     @State private var isPriceExpanded = false
+
+    /// Initialize the wizard, optionally pre-seeding the service the caller
+    /// (e.g. a Home card) already knows the user wants. Without this, the
+    /// wizard silently dropped any selection made on the prior screen.
+    init(prefilledService: ServiceType? = nil) {
+        let data = BookingData()
+        if let service = prefilledService {
+            data.serviceType = service
+        }
+        _bookingData = StateObject(wrappedValue: data)
+    }
 
     var body: some View {
         VStack(spacing: 0) {

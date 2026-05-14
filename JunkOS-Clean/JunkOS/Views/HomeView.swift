@@ -9,24 +9,13 @@ import SwiftUI
 
 struct HomeView: View {
     @EnvironmentObject var bookingData: BookingData
-    @State private var searchText = ""
 
     var body: some View {
         ScrollView {
             VStack(spacing: UmuveSpacing.xlarge) {
-                // Header
                 headerSection
-
-                // Search bar
-                searchBar
-
-                // Service category cards
                 serviceCategoriesSection
-
-                // Trust badges
                 trustBadgesSection
-
-                // How it works
                 howItWorksSection
             }
             .padding(.horizontal, UmuveSpacing.large)
@@ -70,34 +59,18 @@ struct HomeView: View {
         .padding(.top, UmuveSpacing.normal)
     }
 
-    // MARK: - Search Bar
-    private var searchBar: some View {
-        HStack(spacing: UmuveSpacing.small) {
-            Image(systemName: "magnifyingglass")
-                .foregroundColor(.umuveTextMuted)
-
-            TextField("What do you need removed?", text: $searchText)
-                .font(UmuveTypography.bodyFont)
-                .foregroundColor(.umuveText)
-        }
-        .padding(UmuveSpacing.normal)
-        .background(Color.white)
-        .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.md))
-        .shadow(color: .black.opacity(0.06), radius: 4, x: 0, y: 2)
-    }
-
     // MARK: - Service Categories
     private var serviceCategoriesSection: some View {
         VStack(spacing: UmuveSpacing.medium) {
-            // Junk Removal Card
             NavigationLink {
-                BookingWizardView()
+                BookingWizardView(prefilledService: .junkRemoval)
             } label: {
-                ServiceTypeCard(
-                    serviceType: .junkRemoval
-                )
+                ServiceTypeCard(serviceType: .junkRemoval)
             }
             .buttonStyle(.plain)
+            .simultaneousGesture(TapGesture().onEnded {
+                HapticManager.shared.lightTap()
+            })
         }
     }
 

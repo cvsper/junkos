@@ -49,6 +49,8 @@ struct OrdersView: View {
                     ProgressView()
                         .tint(.umuvePrimary)
                         .padding(UmuveSpacing.huge)
+                } else if let errorMessage {
+                    errorState(message: errorMessage)
                 } else if bookings.isEmpty {
                     emptyState
                 } else {
@@ -111,14 +113,57 @@ struct OrdersView: View {
         }
     }
 
+    // MARK: - Error State
+    // Distinct from emptyState so a network/auth failure isn't presented to
+    // the user as "you have no bookings" — which previously silently masked
+    // real backend errors.
+    private func errorState(message: String) -> some View {
+        VStack(spacing: UmuveSpacing.large) {
+            ZStack {
+                Circle()
+                    .fill(Color.umuveError.opacity(0.1))
+                    .frame(width: 96, height: 96)
+
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.system(size: 36))
+                    .foregroundColor(.umuveError)
+            }
+            .padding(.top, UmuveSpacing.xxlarge)
+
+            Text("Couldn't load your bookings")
+                .font(UmuveTypography.h2Font)
+                .foregroundColor(.umuveText)
+
+            Text(message)
+                .font(UmuveTypography.bodyFont)
+                .foregroundColor(.umuveTextMuted)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, UmuveSpacing.xlarge)
+
+            Button {
+                loadBookings()
+            } label: {
+                Text("Try Again")
+                    .frame(maxWidth: 200)
+            }
+            .buttonStyle(UmuvePrimaryButtonStyle())
+            .padding(.top, UmuveSpacing.small)
+        }
+        .padding(.vertical, UmuveSpacing.xxlarge)
+    }
+
     // MARK: - API Call
     private func loadBookings() {
         guard let user = authManager.currentUser,
               let email = user.email,
               user.id != "guest" else {
             isLoading = false
+            errorMessage = nil
             return
         }
+
+        isLoading = true
+        errorMessage = nil
 
         Task {
             do {
