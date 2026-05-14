@@ -77,20 +77,24 @@ struct WelcomeView: View {
     private var logoSection: some View {
         VStack(spacing: UmuveSpacing.medium) {
             ZStack {
-                RoundedRectangle(cornerRadius: 20)
-                    .fill(Color.umuveWhite)
+                RoundedRectangle(cornerRadius: 24)
+                    .fill(
+                        LinearGradient(
+                            colors: [Color.umuvePrimary, Color.umuvePrimaryDark],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
                     .frame(width: 100, height: 100)
-                    .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
-                
-                // SF Symbol: wrench.and.screwdriver - represents tools/service
-                // https://developer.apple.com/design/human-interface-guidelines/sf-symbols
-                Image(systemName: "wrench.and.screwdriver")
-                    .font(.system(size: 50))
-                    .foregroundColor(.umuvePrimary)
+                    .shadow(color: Color.umuvePrimary.opacity(0.35), radius: 16, x: 0, y: 8)
+
+                Image(systemName: "truck.box.fill")
+                    .font(.system(size: 46, weight: .semibold))
+                    .foregroundColor(.white)
             }
-            
+
             Text("Umuve")
-                .font(UmuveTypography.h1Font)
+                .font(UmuveTypography.displayFont)
                 .foregroundColor(.umuvePrimary)
         }
         .opacity(viewModel.isAnimating ? 1 : 0)
@@ -169,25 +173,36 @@ struct WelcomeView: View {
     // MARK: - LoadUp Feature #3: Eco-Friendly Badge
     private var ecoFriendlyBadge: some View {
         HStack(spacing: UmuveSpacing.normal) {
-            Image(systemName: "leaf.fill")
-                .font(.system(size: 30))
-                .foregroundColor(.green)
-            
+            ZStack {
+                RoundedRectangle(cornerRadius: UmuveRadius.md)
+                    .fill(Color.umuveSuccess.opacity(0.18))
+                    .frame(width: 52, height: 52)
+
+                Image(systemName: "leaf.fill")
+                    .font(.system(size: 24))
+                    .foregroundColor(.umuveSuccess)
+            }
+
             VStack(alignment: .leading, spacing: 4) {
                 Text("We Recycle & Donate")
                     .font(UmuveTypography.h3Font)
                     .foregroundColor(.umuveText)
-                
+
                 Text("Eco-friendly disposal of your items")
                     .font(UmuveTypography.bodySmallFont)
                     .foregroundColor(.umuveTextMuted)
             }
-            
-            Spacer()
+
+            Spacer(minLength: 0)
         }
         .padding(UmuveSpacing.normal)
-        .background(Color.green.opacity(0.1))
-        .cornerRadius(12)
+        .background(Color.umuveWhite)
+        .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.lg))
+        .overlay(
+            RoundedRectangle(cornerRadius: UmuveRadius.lg)
+                .strokeBorder(Color.umuveBorder, lineWidth: 1)
+        )
+        .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 4)
         .opacity(viewModel.isAnimating ? 1 : 0)
         .animation(.easeInOut(duration: 0.6).delay(0.3), value: viewModel.isAnimating)
     }
@@ -287,32 +302,39 @@ struct FeatureCard: View {
     let step: Int
     let title: String
     let description: String
-    
+
+    private var accent: Color {
+        switch step {
+        case 1: return .categoryBlue
+        case 2: return .categoryOrange
+        case 3: return .categoryYellow
+        default: return .umuvePrimary
+        }
+    }
+
     var body: some View {
         UmuveCard {
             HStack(spacing: UmuveSpacing.normal) {
-                // Step badge
                 ZStack {
-                    Circle()
-                        .fill(Color.umuvePrimary.opacity(0.1))
-                        .frame(width: 50, height: 50)
-                    
+                    RoundedRectangle(cornerRadius: UmuveRadius.md)
+                        .fill(accent.opacity(0.18))
+                        .frame(width: 52, height: 52)
+
                     Text("\(step)")
                         .font(UmuveTypography.h2Font)
-                        .foregroundColor(.umuvePrimary)
+                        .foregroundColor(accent)
                 }
-                
-                // Content
+
                 VStack(alignment: .leading, spacing: 4) {
                     Text(title)
                         .font(UmuveTypography.h3Font)
                         .foregroundColor(.umuveText)
-                    
+
                     Text(description)
                         .font(UmuveTypography.bodySmallFont)
                         .foregroundColor(.umuveTextMuted)
                 }
-                
+
                 Spacer()
             }
             .padding(UmuveSpacing.normal)
@@ -324,19 +346,25 @@ struct EnhancedTrustBadge: View {
     let icon: String
     let title: String
     let subtitle: String
-    
+
     var body: some View {
         UmuveCard {
             VStack(spacing: UmuveSpacing.small) {
-                Image(systemName: icon)
-                    .font(.system(size: 24))
-                    .foregroundColor(.umuvePrimary)
-                
+                ZStack {
+                    RoundedRectangle(cornerRadius: UmuveRadius.md)
+                        .fill(Color.umuvePrimary.opacity(0.12))
+                        .frame(width: 48, height: 48)
+
+                    Image(systemName: icon)
+                        .font(.system(size: 22))
+                        .foregroundColor(.umuvePrimary)
+                }
+
                 Text(title)
                     .font(UmuveTypography.bodyFont.weight(.semibold))
                     .foregroundColor(.umuveText)
                     .multilineTextAlignment(.center)
-                
+
                 Text(subtitle)
                     .font(UmuveTypography.captionFont)
                     .foregroundColor(.umuveTextMuted)

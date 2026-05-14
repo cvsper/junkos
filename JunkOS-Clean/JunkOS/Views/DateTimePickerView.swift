@@ -95,13 +95,32 @@ struct DateTimePickerView: View {
         }
     }
     
-    // MARK: - Date Selector
-    private var dateSelector: some View {
-        VStack(alignment: .leading, spacing: UmuveSpacing.medium) {
-            Text("Select Date")
+    // MARK: - Section Label
+    private func sectionLabel(icon: String, title: String, accent: Color) -> some View {
+        HStack(spacing: UmuveSpacing.small) {
+            ZStack {
+                RoundedRectangle(cornerRadius: UmuveRadius.sm)
+                    .fill(accent.opacity(0.18))
+                    .frame(width: 32, height: 32)
+
+                Image(systemName: icon)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(accent)
+            }
+
+            Text(title)
                 .font(UmuveTypography.h3Font)
                 .foregroundColor(.umuveText)
-            
+
+            Spacer()
+        }
+    }
+
+    // MARK: - Date Selector
+    private var dateSelector: some View {
+        VStack(alignment: .leading, spacing: UmuveSpacing.normal) {
+            sectionLabel(icon: "calendar", title: "Select Date", accent: .categoryBlue)
+
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(spacing: UmuveSpacing.medium) {
                     ForEach(viewModel.getAvailableDates(), id: \.self) { date in
@@ -115,17 +134,16 @@ struct DateTimePickerView: View {
                         }
                     }
                 }
+                .padding(.vertical, UmuveSpacing.tiny)
             }
         }
     }
-    
+
     // MARK: - Time Slot Section
     private var timeSlotSection: some View {
-        VStack(alignment: .leading, spacing: UmuveSpacing.medium) {
-            Text("Select Time")
-                .font(UmuveTypography.h3Font)
-                .foregroundColor(.umuveText)
-            
+        VStack(alignment: .leading, spacing: UmuveSpacing.normal) {
+            sectionLabel(icon: "clock.fill", title: "Select Time", accent: .categoryOrange)
+
             LazyVStack(spacing: UmuveSpacing.medium) {
                 ForEach(viewModel.availableTimeSlots) { slot in
                     TimeSlotCard(
@@ -140,31 +158,40 @@ struct DateTimePickerView: View {
             }
         }
     }
-    
+
     // MARK: - Help Tip
     private var helpTip: some View {
-        HStack(alignment: .top, spacing: UmuveSpacing.medium) {
-            // SF Symbol: clock.fill for time
-            // https://developer.apple.com/design/human-interface-guidelines/sf-symbols
-            Image(systemName: "clock.fill")
-                .font(.system(size: 24))
-                .foregroundColor(.umuveCTA)
-            
+        HStack(alignment: .top, spacing: UmuveSpacing.normal) {
+            ZStack {
+                RoundedRectangle(cornerRadius: UmuveRadius.sm)
+                    .fill(Color.categoryYellow.opacity(0.22))
+                    .frame(width: 40, height: 40)
+
+                Image(systemName: "clock.fill")
+                    .font(.system(size: 18))
+                    .foregroundColor(.categoryYellow)
+            }
+
             VStack(alignment: .leading, spacing: 4) {
                 Text("Pick a time slot")
                     .font(UmuveTypography.bodyFont.weight(.semibold))
                     .foregroundColor(.umuveText)
-                
+
                 Text("Morning slots are most popular")
                     .font(UmuveTypography.bodySmallFont)
                     .foregroundColor(.umuveTextMuted)
             }
-            
-            Spacer()
+
+            Spacer(minLength: 0)
         }
         .padding(UmuveSpacing.normal)
-        .background(Color.umuveCTA.opacity(0.1))
-        .cornerRadius(12)
+        .background(Color.umuveWhite)
+        .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.lg))
+        .overlay(
+            RoundedRectangle(cornerRadius: UmuveRadius.lg)
+                .strokeBorder(Color.umuveBorder, lineWidth: 1)
+        )
+        .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 4)
     }
     
     // MARK: - Continue Button
@@ -187,26 +214,44 @@ struct DateCard: View {
     let date: Date
     let isSelected: Bool
     let onTap: () -> Void
-    
+
     var body: some View {
         Button(action: onTap) {
-            VStack(spacing: UmuveSpacing.small) {
-                Text(dayFormatter.string(from: date))
-                    .font(UmuveTypography.bodySmallFont)
-                    .foregroundColor(isSelected ? .white : .umuveTextMuted)
-                
+            VStack(spacing: UmuveSpacing.tiny) {
+                Text(dayFormatter.string(from: date).uppercased())
+                    .font(UmuveTypography.smallFont)
+                    .tracking(0.5)
+                    .foregroundColor(isSelected ? .white.opacity(0.9) : .umuveTextMuted)
+
                 Text(dateFormatter.string(from: date))
                     .font(UmuveTypography.h2Font)
                     .foregroundColor(isSelected ? .white : .umuveText)
             }
-            .frame(width: 70, height: 80)
-            .background(isSelected ? Color.umuvePrimary : Color.umuveWhite)
-            .cornerRadius(12)
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(isSelected ? Color.umuvePrimary : Color.umuveBorder, lineWidth: 2)
+            .frame(width: 64, height: 84)
+            .background(
+                Group {
+                    if isSelected {
+                        LinearGradient(
+                            colors: [Color.umuvePrimary, Color.umuvePrimaryDark],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    } else {
+                        Color.umuveWhite
+                    }
+                }
             )
-            // OPTIMIZATION: Animation only on selection, not during scroll
+            .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.md))
+            .overlay(
+                RoundedRectangle(cornerRadius: UmuveRadius.md)
+                    .strokeBorder(isSelected ? Color.clear : Color.umuveBorder, lineWidth: 1)
+            )
+            .shadow(
+                color: isSelected ? Color.umuvePrimary.opacity(0.3) : .black.opacity(0.06),
+                radius: isSelected ? 10 : 6,
+                x: 0,
+                y: isSelected ? 6 : 3
+            )
             .scaleEffect(isSelected ? 1.02 : 1.0)
         }
         .buttonStyle(PlainButtonStyle())
@@ -218,40 +263,51 @@ struct TimeSlotCard: View {
     let slot: TimeSlot
     let isSelected: Bool
     let onTap: () -> Void
-    
+
     var body: some View {
         Button(action: {
             if slot.isAvailable {
                 onTap()
             }
         }) {
-            HStack {
+            HStack(spacing: UmuveSpacing.normal) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: UmuveRadius.sm)
+                        .fill(slot.isAvailable ? Color.umuvePrimary.opacity(0.12) : Color.umuveBorder.opacity(0.3))
+                        .frame(width: 44, height: 44)
+
+                    Image(systemName: "clock")
+                        .font(.system(size: 18, weight: .medium))
+                        .foregroundColor(slot.isAvailable ? .umuvePrimary : .umuveTextTertiary)
+                }
+
                 VStack(alignment: .leading, spacing: 4) {
-                    HStack {
+                    HStack(spacing: UmuveSpacing.small) {
                         Text(slot.time)
                             .font(UmuveTypography.bodyFont.weight(.semibold))
                             .foregroundColor(slot.isAvailable ? .umuveText : .umuveTextMuted)
-                        
+
                         if slot.isRecommended && slot.isAvailable {
                             Text("RECOMMENDED")
                                 .font(UmuveTypography.smallFont)
+                                .tracking(0.5)
                                 .foregroundColor(.white)
                                 .padding(.horizontal, 8)
-                                .padding(.vertical, 4)
+                                .padding(.vertical, 3)
                                 .background(Color.umuveCTA)
-                                .cornerRadius(8)
+                                .clipShape(Capsule())
                         }
                     }
-                    
+
                     if !slot.isAvailable {
                         Text("Not available")
                             .font(UmuveTypography.bodySmallFont)
                             .foregroundColor(.umuveTextMuted)
                     }
                 }
-                
+
                 Spacer()
-                
+
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.system(size: 24))
@@ -260,12 +316,15 @@ struct TimeSlotCard: View {
             }
             .padding(UmuveSpacing.normal)
             .background(slot.isAvailable ? Color.umuveWhite : Color.umuveWhite.opacity(0.5))
-            .cornerRadius(12)
+            .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.lg))
             .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(isSelected ? Color.umuvePrimary : Color.umuveBorder, lineWidth: 2)
+                RoundedRectangle(cornerRadius: UmuveRadius.lg)
+                    .strokeBorder(
+                        isSelected ? Color.umuvePrimary : Color.umuveBorder,
+                        lineWidth: isSelected ? 2 : 1
+                    )
             )
-            // OPTIMIZATION: Simple scale animation only on selection
+            .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 4)
             .scaleEffect(isSelected ? 1.02 : 1.0)
         }
         .buttonStyle(PlainButtonStyle())

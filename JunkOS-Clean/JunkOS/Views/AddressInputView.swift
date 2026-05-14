@@ -15,32 +15,31 @@ struct AddressInputView: View {
     @StateObject private var viewModel = AddressInputViewModel()
 
     var body: some View {
-        VStack(spacing: 0) {
-            ScrollView {
-                VStack(spacing: UmuveSpacing.large) {
-                    // Header
-                    headerSection
+        ScrollView {
+            VStack(alignment: .leading, spacing: UmuveSpacing.xlarge) {
+                headerSection
 
-                    // Pickup Address Section
-                    pickupSection
+                pickupSection
 
-                    // Dropoff Address Section (Auto Transport only)
-                    if bookingData.needsDropoff {
-                        dropoffSection
-                    }
-
-                    // Distance Display (Auto Transport only, after both addresses selected)
-                    if bookingData.needsDropoff && viewModel.pickupSelected && viewModel.dropoffSelected {
-                        distanceDisplay
-                    }
+                if bookingData.needsDropoff {
+                    dropoffSection
                 }
-                .padding(UmuveSpacing.large)
-            }
 
-            // Continue Button
-            continueButton
+                if bookingData.needsDropoff && viewModel.pickupSelected && viewModel.dropoffSelected {
+                    distanceDisplay
+                }
+            }
+            .padding(.horizontal, UmuveSpacing.large)
+            .padding(.top, UmuveSpacing.normal)
+            .padding(.bottom, UmuveSpacing.xxlarge)
         }
         .background(Color.umuveBackground.ignoresSafeArea())
+        .safeAreaInset(edge: .bottom) {
+            continueButton
+                .padding(.horizontal, UmuveSpacing.large)
+                .padding(.vertical, UmuveSpacing.normal)
+                .background(Color.umuveBackground)
+        }
     }
 
     // MARK: - Header Section
@@ -48,7 +47,7 @@ struct AddressInputView: View {
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: UmuveSpacing.small) {
             Text(bookingData.needsDropoff ? "Pickup & Dropoff" : "Where's the pickup?")
-                .font(UmuveTypography.h2Font)
+                .font(UmuveTypography.h1Font)
                 .foregroundColor(.umuveText)
 
             Text(bookingData.needsDropoff ? "Enter both pickup and delivery addresses" : "Enter the pickup location")
@@ -62,25 +61,21 @@ struct AddressInputView: View {
 
     private var pickupSection: some View {
         VStack(alignment: .leading, spacing: UmuveSpacing.normal) {
-            Text("Pickup Address")
-                .font(UmuveTypography.bodyFont.weight(.semibold))
-                .foregroundColor(.umuveText)
+            sectionLabel(icon: "mappin.and.ellipse", title: "Pickup Address", accent: .categoryBlue)
 
             if viewModel.pickupSelected {
-                // Mini-map preview
                 pickupMiniMap
             } else {
-                // Search field
                 searchField(
                     query: $viewModel.pickupSearchQuery,
                     completions: viewModel.pickupCompletions,
                     placeholder: "Search pickup address...",
+                    accent: .categoryBlue,
                     onSelect: { completion in
                         viewModel.selectPickupAddress(completion, bookingData: bookingData)
                     }
                 )
 
-                // "Use Current Location" button
                 currentLocationButton
             }
         }
@@ -90,24 +85,43 @@ struct AddressInputView: View {
 
     private var dropoffSection: some View {
         VStack(alignment: .leading, spacing: UmuveSpacing.normal) {
-            Text("Dropoff Address")
-                .font(UmuveTypography.bodyFont.weight(.semibold))
-                .foregroundColor(.umuveText)
+            sectionLabel(icon: "flag.checkered", title: "Dropoff Address", accent: .categoryOrange)
 
             if viewModel.dropoffSelected {
-                // Mini-map preview
                 dropoffMiniMap
             } else {
-                // Search field
                 searchField(
                     query: $viewModel.dropoffSearchQuery,
                     completions: viewModel.dropoffCompletions,
                     placeholder: "Search dropoff address...",
+                    accent: .categoryOrange,
                     onSelect: { completion in
                         viewModel.selectDropoffAddress(completion, bookingData: bookingData)
                     }
                 )
             }
+        }
+    }
+
+    // MARK: - Section Label
+
+    private func sectionLabel(icon: String, title: String, accent: Color) -> some View {
+        HStack(spacing: UmuveSpacing.small) {
+            ZStack {
+                RoundedRectangle(cornerRadius: UmuveRadius.sm)
+                    .fill(accent.opacity(0.18))
+                    .frame(width: 32, height: 32)
+
+                Image(systemName: icon)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(accent)
+            }
+
+            Text(title)
+                .font(UmuveTypography.h3Font)
+                .foregroundColor(.umuveText)
+
+            Spacer()
         }
     }
 
@@ -117,12 +131,13 @@ struct AddressInputView: View {
         query: Binding<String>,
         completions: [MKLocalSearchCompletion],
         placeholder: String,
+        accent: Color,
         onSelect: @escaping (MKLocalSearchCompletion) -> Void
     ) -> some View {
-        VStack(spacing: 0) {
-            // Text field
-            HStack {
+        VStack(spacing: UmuveSpacing.small) {
+            HStack(spacing: UmuveSpacing.small) {
                 Image(systemName: "magnifyingglass")
+                    .font(.system(size: 16, weight: .medium))
                     .foregroundColor(.umuveTextMuted)
 
                 TextField(placeholder, text: query)
@@ -139,29 +154,36 @@ struct AddressInputView: View {
                     }
                 }
             }
-            .padding(UmuveSpacing.normal)
+            .padding(.horizontal, UmuveSpacing.normal)
+            .padding(.vertical, UmuveSpacing.normal)
             .background(Color.umuveWhite)
-            .cornerRadius(UmuveRadius.md)
+            .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.lg))
             .overlay(
-                RoundedRectangle(cornerRadius: UmuveRadius.md)
-                    .stroke(Color.umuveBorder, lineWidth: 2)
+                RoundedRectangle(cornerRadius: UmuveRadius.lg)
+                    .strokeBorder(Color.umuveBorder, lineWidth: 1)
             )
+            .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 4)
 
-            // Autocomplete suggestions
             if !completions.isEmpty {
                 VStack(spacing: 0) {
                     ForEach(completions.prefix(5), id: \.self) { completion in
                         Button {
                             onSelect(completion)
                         } label: {
-                            HStack(alignment: .top, spacing: UmuveSpacing.small) {
-                                Image(systemName: "mappin.circle.fill")
-                                    .foregroundColor(.umuvePrimary)
-                                    .font(.system(size: 16))
+                            HStack(spacing: UmuveSpacing.normal) {
+                                ZStack {
+                                    RoundedRectangle(cornerRadius: UmuveRadius.sm)
+                                        .fill(accent.opacity(0.18))
+                                        .frame(width: 36, height: 36)
+
+                                    Image(systemName: "mappin.circle.fill")
+                                        .font(.system(size: 18))
+                                        .foregroundColor(accent)
+                                }
 
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(completion.title)
-                                        .font(UmuveTypography.bodyFont)
+                                        .font(UmuveTypography.bodyFont.weight(.medium))
                                         .foregroundColor(.umuveText)
                                         .lineLimit(1)
 
@@ -174,26 +196,31 @@ struct AddressInputView: View {
                                 }
 
                                 Spacer()
+
+                                Image(systemName: "arrow.up.left")
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundColor(.umuveTextTertiary)
                             }
-                            .padding(UmuveSpacing.normal)
+                            .padding(.horizontal, UmuveSpacing.normal)
+                            .padding(.vertical, UmuveSpacing.medium)
+                            .contentShape(Rectangle())
                             .background(Color.umuveWhite)
                         }
                         .buttonStyle(.plain)
 
                         if completion != completions.prefix(5).last {
                             Divider()
-                                .padding(.leading, UmuveSpacing.normal)
+                                .padding(.leading, 60)
                         }
                     }
                 }
                 .background(Color.umuveWhite)
-                .cornerRadius(UmuveRadius.md)
+                .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.lg))
                 .overlay(
-                    RoundedRectangle(cornerRadius: UmuveRadius.md)
-                        .stroke(Color.umuveBorder, lineWidth: 1)
+                    RoundedRectangle(cornerRadius: UmuveRadius.lg)
+                        .strokeBorder(Color.umuveBorder, lineWidth: 1)
                 )
-                .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
-                .padding(.top, UmuveSpacing.tiny)
+                .shadow(color: .black.opacity(0.08), radius: 10, x: 0, y: 4)
             }
         }
     }
@@ -276,48 +303,65 @@ struct AddressInputView: View {
         Button {
             viewModel.detectCurrentLocation(bookingData: bookingData)
         } label: {
-            HStack {
+            HStack(spacing: UmuveSpacing.small) {
                 Image(systemName: "location.fill")
+                    .font(.system(size: 16, weight: .semibold))
                 Text("Use Current Location")
+                    .font(UmuveTypography.bodyFont.weight(.semibold))
             }
-            .font(UmuveTypography.bodyFont)
             .foregroundColor(.umuvePrimary)
             .frame(maxWidth: .infinity)
             .padding(.vertical, UmuveSpacing.normal)
-            .background(Color.umuvePrimary.opacity(0.1))
-            .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.md))
+            .background(Color.umuvePrimary.opacity(0.08))
+            .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.lg))
+            .overlay(
+                RoundedRectangle(cornerRadius: UmuveRadius.lg)
+                    .strokeBorder(Color.umuvePrimary.opacity(0.25), lineWidth: 1)
+            )
         }
     }
 
     // MARK: - Distance Display
 
     private var distanceDisplay: some View {
-        HStack(spacing: UmuveSpacing.small) {
-            Image(systemName: "car.fill")
-                .foregroundColor(.umuvePrimary)
-                .font(.system(size: 18))
+        HStack(spacing: UmuveSpacing.normal) {
+            ZStack {
+                RoundedRectangle(cornerRadius: UmuveRadius.sm)
+                    .fill(Color.umuvePrimary.opacity(0.15))
+                    .frame(width: 44, height: 44)
 
-            if let distance = viewModel.calculatedDistance {
-                Text("Distance: \(String(format: "%.1f", distance)) miles")
-                    .font(UmuveTypography.bodyFont.weight(.semibold))
-                    .foregroundColor(.umuveText)
-            } else {
-                Text("Calculating distance...")
-                    .font(UmuveTypography.bodyFont)
+                Image(systemName: "car.fill")
+                    .font(.system(size: 20))
+                    .foregroundColor(.umuvePrimary)
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Distance")
+                    .font(UmuveTypography.captionFont)
                     .foregroundColor(.umuveTextMuted)
+
+                if let distance = viewModel.calculatedDistance {
+                    Text("\(String(format: "%.1f", distance)) miles")
+                        .font(UmuveTypography.h3Font)
+                        .foregroundColor(.umuveText)
+                } else {
+                    Text("Calculating…")
+                        .font(UmuveTypography.bodyFont)
+                        .foregroundColor(.umuveTextMuted)
+                }
             }
 
             Spacer()
         }
         .padding(UmuveSpacing.normal)
         .background(Color.umuveWhite)
-        .cornerRadius(UmuveRadius.md)
+        .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.lg))
         .overlay(
-            RoundedRectangle(cornerRadius: UmuveRadius.md)
-                .stroke(Color.umuvePrimary.opacity(0.3), lineWidth: 2)
+            RoundedRectangle(cornerRadius: UmuveRadius.lg)
+                .strokeBorder(Color.umuvePrimary.opacity(0.25), lineWidth: 1)
         )
+        .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 4)
         .onAppear {
-            // Calculate distance when both addresses are selected
             viewModel.calculateDistance(bookingData: bookingData)
         }
     }
@@ -326,23 +370,15 @@ struct AddressInputView: View {
 
     private var continueButton: some View {
         Button {
-            // Calculate distance for Auto Transport before continuing
             if bookingData.needsDropoff {
                 viewModel.calculateDistance(bookingData: bookingData)
             }
             wizardVM.completeCurrentStep()
         } label: {
             Text("Continue")
-                .font(UmuveTypography.bodyFont.weight(.semibold))
-                .foregroundColor(.white)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, UmuveSpacing.normal)
-                .background(continueButtonEnabled ? Color.umuvePrimary : Color.umuveTextMuted)
-                .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.md))
         }
+        .buttonStyle(UmuvePrimaryButtonStyle(isEnabled: continueButtonEnabled))
         .disabled(!continueButtonEnabled)
-        .padding(UmuveSpacing.large)
-        .background(Color.umuveBackground)
     }
 
     // MARK: - Computed Properties

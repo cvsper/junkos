@@ -113,54 +113,70 @@ struct BookingReviewView: View {
         )
     }
 
+    // MARK: - Card Header Helper
+
+    private func cardHeader(icon: String, title: String, accent: Color) -> some View {
+        HStack(spacing: UmuveSpacing.small) {
+            ZStack {
+                RoundedRectangle(cornerRadius: UmuveRadius.sm)
+                    .fill(accent.opacity(0.18))
+                    .frame(width: 36, height: 36)
+
+                Image(systemName: icon)
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(accent)
+            }
+
+            Text(title)
+                .font(UmuveTypography.h3Font)
+                .foregroundColor(.umuveText)
+
+            Spacer()
+        }
+    }
+
     // MARK: - Service Summary Card
 
     private var serviceSummaryCard: some View {
         VStack(alignment: .leading, spacing: UmuveSpacing.normal) {
-            HStack(spacing: UmuveSpacing.small) {
-                if let serviceType = bookingData.serviceType {
-                    Image(systemName: serviceType.icon)
-                        .font(.system(size: 24))
-                        .foregroundColor(.umuvePrimary)
+            if let serviceType = bookingData.serviceType {
+                cardHeader(
+                    icon: serviceType.icon,
+                    title: serviceType.rawValue,
+                    accent: serviceType == .autoTransport ? .categoryOrange : .categoryBlue
+                )
 
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(serviceType.rawValue)
-                            .font(UmuveTypography.h3Font)
-                            .foregroundColor(.umuveText)
+                if serviceType == .junkRemoval {
+                    Text("\(bookingData.volumeTier.rawValue) — \(bookingData.volumeTier.description)")
+                        .font(UmuveTypography.bodySmallFont)
+                        .foregroundColor(.umuveTextMuted)
+                }
 
-                        // Volume tier for Junk Removal
-                        if serviceType == .junkRemoval {
-                            Text("\(bookingData.volumeTier.rawValue) — \(bookingData.volumeTier.description)")
-                                .font(UmuveTypography.bodySmallFont)
-                                .foregroundColor(.umuveTextMuted)
+                if serviceType == .autoTransport {
+                    Text("\(bookingData.vehicleYear) \(bookingData.vehicleMake) \(bookingData.vehicleModel)")
+                        .font(UmuveTypography.bodySmallFont)
+                        .foregroundColor(.umuveTextMuted)
+
+                    HStack(spacing: UmuveSpacing.tiny) {
+                        if !bookingData.isVehicleRunning {
+                            badge(text: "Non-running", color: .orange)
                         }
-
-                        // Vehicle info for Auto Transport
-                        if serviceType == .autoTransport {
-                            Text("\(bookingData.vehicleYear) \(bookingData.vehicleMake) \(bookingData.vehicleModel)")
-                                .font(UmuveTypography.bodySmallFont)
-                                .foregroundColor(.umuveTextMuted)
-
-                            // Surcharge badges
-                            HStack(spacing: UmuveSpacing.tiny) {
-                                if !bookingData.isVehicleRunning {
-                                    badge(text: "Non-running", color: .orange)
-                                }
-                                if bookingData.needsEnclosedTrailer {
-                                    badge(text: "Enclosed", color: .blue)
-                                }
-                            }
+                        if bookingData.needsEnclosedTrailer {
+                            badge(text: "Enclosed", color: .blue)
                         }
                     }
                 }
-
-                Spacer()
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(UmuveSpacing.normal)
         .background(Color.umuveWhite)
-        .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.md))
-        .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
+        .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.lg))
+        .overlay(
+            RoundedRectangle(cornerRadius: UmuveRadius.lg)
+                .strokeBorder(Color.umuveBorder, lineWidth: 1)
+        )
+        .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 4)
         .padding(.horizontal, UmuveSpacing.large)
     }
 
@@ -168,59 +184,38 @@ struct BookingReviewView: View {
 
     private var locationCard: some View {
         VStack(alignment: .leading, spacing: UmuveSpacing.normal) {
-            // Pickup
-            HStack(spacing: UmuveSpacing.small) {
-                Image(systemName: "mappin.circle.fill")
-                    .font(.system(size: 20))
-                    .foregroundColor(.umuvePrimary)
+            cardHeader(
+                icon: "mappin.and.ellipse",
+                title: bookingData.needsDropoff ? "Pickup & Dropoff" : "Pickup",
+                accent: .categoryBlue
+            )
 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Pickup")
-                        .font(UmuveTypography.bodySmallFont.weight(.semibold))
-                        .foregroundColor(.umuveTextMuted)
+            addressRow(
+                label: bookingData.needsDropoff ? "Pickup" : "Address",
+                value: bookingData.address.fullAddress,
+                icon: "mappin.circle.fill",
+                accent: .categoryBlue
+            )
 
-                    Text(bookingData.address.fullAddress)
-                        .font(UmuveTypography.bodyFont)
-                        .foregroundColor(.umuveText)
-                }
-
-                Spacer()
-            }
-
-            // Pickup mini-map
             if let coordinate = bookingData.pickupCoordinate {
                 miniMap(for: coordinate)
             }
 
-            // Dropoff (Auto Transport only)
             if bookingData.needsDropoff {
                 Divider()
                     .padding(.vertical, UmuveSpacing.tiny)
 
-                HStack(spacing: UmuveSpacing.small) {
-                    Image(systemName: "mappin.circle.fill")
-                        .font(.system(size: 20))
-                        .foregroundColor(.umuvePrimary)
+                addressRow(
+                    label: "Dropoff",
+                    value: bookingData.dropoffAddress.fullAddress,
+                    icon: "flag.checkered",
+                    accent: .categoryOrange
+                )
 
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Dropoff")
-                            .font(UmuveTypography.bodySmallFont.weight(.semibold))
-                            .foregroundColor(.umuveTextMuted)
-
-                        Text(bookingData.dropoffAddress.fullAddress)
-                            .font(UmuveTypography.bodyFont)
-                            .foregroundColor(.umuveText)
-                    }
-
-                    Spacer()
-                }
-
-                // Dropoff mini-map
                 if let coordinate = bookingData.dropoffCoordinate {
                     miniMap(for: coordinate)
                 }
 
-                // Distance
                 if let distance = bookingData.estimatedDistance {
                     HStack(spacing: UmuveSpacing.tiny) {
                         Image(systemName: "arrow.left.and.right")
@@ -236,9 +231,34 @@ struct BookingReviewView: View {
         }
         .padding(UmuveSpacing.normal)
         .background(Color.umuveWhite)
-        .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.md))
-        .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
+        .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.lg))
+        .overlay(
+            RoundedRectangle(cornerRadius: UmuveRadius.lg)
+                .strokeBorder(Color.umuveBorder, lineWidth: 1)
+        )
+        .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 4)
         .padding(.horizontal, UmuveSpacing.large)
+    }
+
+    private func addressRow(label: String, value: String, icon: String, accent: Color) -> some View {
+        HStack(spacing: UmuveSpacing.small) {
+            Image(systemName: icon)
+                .font(.system(size: 18))
+                .foregroundColor(accent)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(label.uppercased())
+                    .font(UmuveTypography.smallFont)
+                    .tracking(0.5)
+                    .foregroundColor(.umuveTextMuted)
+
+                Text(value)
+                    .font(UmuveTypography.bodyFont)
+                    .foregroundColor(.umuveText)
+            }
+
+            Spacer()
+        }
     }
 
     private func miniMap(for coordinate: CLLocationCoordinate2D) -> some View {
@@ -259,24 +279,13 @@ struct BookingReviewView: View {
 
     private var photosCard: some View {
         VStack(alignment: .leading, spacing: UmuveSpacing.normal) {
-            HStack(spacing: UmuveSpacing.small) {
-                Image(systemName: "camera.fill")
-                    .font(.system(size: 20))
-                    .foregroundColor(.umuvePrimary)
-
-                Text("Photos")
-                    .font(UmuveTypography.h3Font)
-                    .foregroundColor(.umuveText)
-
-                Spacer()
-            }
+            cardHeader(icon: "camera.fill", title: "Photos", accent: .categoryYellow)
 
             if bookingData.photos.isEmpty {
                 Text("No photos added")
                     .font(UmuveTypography.bodyFont)
                     .foregroundColor(.umuveTextMuted)
             } else {
-                // Photo thumbnails
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: UmuveSpacing.small) {
                         ForEach(0..<bookingData.photos.count, id: \.self) { index in
@@ -285,7 +294,11 @@ struct BookingReviewView: View {
                                     .resizable()
                                     .scaledToFill()
                                     .frame(width: 80, height: 80)
-                                    .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.sm))
+                                    .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.md))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: UmuveRadius.md)
+                                            .strokeBorder(Color.umuveBorder, lineWidth: 1)
+                                    )
                             }
                         }
                     }
@@ -296,10 +309,15 @@ struct BookingReviewView: View {
                     .foregroundColor(.umuveTextMuted)
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(UmuveSpacing.normal)
         .background(Color.umuveWhite)
-        .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.md))
-        .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
+        .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.lg))
+        .overlay(
+            RoundedRectangle(cornerRadius: UmuveRadius.lg)
+                .strokeBorder(Color.umuveBorder, lineWidth: 1)
+        )
+        .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 4)
         .padding(.horizontal, UmuveSpacing.large)
     }
 
@@ -307,17 +325,7 @@ struct BookingReviewView: View {
 
     private var scheduleCard: some View {
         VStack(alignment: .leading, spacing: UmuveSpacing.normal) {
-            HStack(spacing: UmuveSpacing.small) {
-                Image(systemName: "calendar")
-                    .font(.system(size: 20))
-                    .foregroundColor(.umuvePrimary)
-
-                Text("Schedule")
-                    .font(UmuveTypography.h3Font)
-                    .foregroundColor(.umuveText)
-
-                Spacer()
-            }
+            cardHeader(icon: "calendar", title: "Schedule", accent: .categoryOrange)
 
             if let date = bookingData.selectedDate {
                 VStack(alignment: .leading, spacing: UmuveSpacing.tiny) {
@@ -333,10 +341,15 @@ struct BookingReviewView: View {
                 }
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(UmuveSpacing.normal)
         .background(Color.umuveWhite)
-        .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.md))
-        .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
+        .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.lg))
+        .overlay(
+            RoundedRectangle(cornerRadius: UmuveRadius.lg)
+                .strokeBorder(Color.umuveBorder, lineWidth: 1)
+        )
+        .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 4)
         .padding(.horizontal, UmuveSpacing.large)
     }
 
@@ -346,14 +359,23 @@ struct BookingReviewView: View {
         VStack(alignment: .leading, spacing: UmuveSpacing.normal) {
             // Total prominently displayed
             if let price = bookingData.estimatedPrice {
-                VStack(alignment: .leading, spacing: UmuveSpacing.tiny) {
-                    Text("Estimated Total")
-                        .font(UmuveTypography.bodyFont)
-                        .foregroundColor(.umuveTextMuted)
+                HStack(alignment: .firstTextBaseline, spacing: UmuveSpacing.small) {
+                    VStack(alignment: .leading, spacing: UmuveSpacing.tiny) {
+                        Text("Estimated Total")
+                            .font(UmuveTypography.captionFont)
+                            .tracking(0.5)
+                            .foregroundColor(.umuveTextMuted)
 
-                    Text("$\(String(format: "%.2f", price))")
-                        .font(UmuveTypography.h1Font)
-                        .foregroundColor(.umuvePrimary)
+                        Text("$\(String(format: "%.2f", price))")
+                            .font(UmuveTypography.displayFont)
+                            .foregroundColor(.umuvePrimary)
+                    }
+
+                    Spacer()
+
+                    Image(systemName: "creditcard.fill")
+                        .font(.system(size: 28))
+                        .foregroundColor(.umuvePrimary.opacity(0.5))
                 }
             }
 
@@ -422,10 +444,20 @@ struct BookingReviewView: View {
                 .foregroundColor(.umuveTextMuted)
                 .padding(.top, UmuveSpacing.tiny)
         }
-        .padding(UmuveSpacing.normal)
-        .background(Color.umuveWhite)
-        .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.md))
-        .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
+        .padding(UmuveSpacing.large)
+        .background(
+            LinearGradient(
+                colors: [Color.umuveWhite, Color.umuvePrimary.opacity(0.04)],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        )
+        .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.lg))
+        .overlay(
+            RoundedRectangle(cornerRadius: UmuveRadius.lg)
+                .strokeBorder(Color.umuvePrimary.opacity(0.2), lineWidth: 1)
+        )
+        .shadow(color: Color.umuvePrimary.opacity(0.1), radius: 12, x: 0, y: 6)
         .padding(.horizontal, UmuveSpacing.large)
     }
 
@@ -451,20 +483,35 @@ struct BookingReviewView: View {
                 await viewModel.confirmAndPay(bookingData: bookingData)
             }
         } label: {
-            HStack {
+            HStack(spacing: UmuveSpacing.small) {
                 if viewModel.isPreparingPayment || viewModel.isSubmitting {
                     ProgressView()
                         .progressViewStyle(CircularProgressViewStyle(tint: .white))
                 } else {
+                    Image(systemName: "lock.fill")
+                        .font(.system(size: 15, weight: .semibold))
                     Text("Confirm & Pay")
                         .font(UmuveTypography.bodyFont.weight(.semibold))
-                        .foregroundColor(.white)
                 }
             }
+            .foregroundColor(.white)
             .frame(maxWidth: .infinity)
             .padding(.vertical, UmuveSpacing.normal)
-            .background((viewModel.isPreparingPayment || viewModel.isSubmitting) ? Color.umuveTextMuted : Color.umuvePrimary)
-            .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.md))
+            .background(
+                Group {
+                    if viewModel.isPreparingPayment || viewModel.isSubmitting {
+                        Color.umuveTextMuted
+                    } else {
+                        LinearGradient(
+                            colors: [Color.umuvePrimary, Color.umuvePrimaryDark],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    }
+                }
+            )
+            .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.lg))
+            .shadow(color: Color.umuvePrimary.opacity(0.3), radius: 10, x: 0, y: 6)
         }
         .disabled(viewModel.isPreparingPayment || viewModel.isSubmitting)
     }

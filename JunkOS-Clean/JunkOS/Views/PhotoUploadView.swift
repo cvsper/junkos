@@ -73,21 +73,38 @@ struct PhotoUploadView: View {
     
     // MARK: - Encouragement Message
     private var encouragementMessage: some View {
-        HStack(alignment: .top, spacing: UmuveSpacing.medium) {
-            Image(systemName: "info.circle.fill")
-                .font(.system(size: 24))
-                .foregroundColor(.umuveCTA)
+        HStack(alignment: .top, spacing: UmuveSpacing.normal) {
+            ZStack {
+                RoundedRectangle(cornerRadius: UmuveRadius.sm)
+                    .fill(Color.categoryBlue.opacity(0.18))
+                    .frame(width: 40, height: 40)
 
-            Text("Photos help us provide accurate pricing. You can skip this step, but we recommend at least 1 photo.")
-                .font(UmuveTypography.bodySmallFont)
-                .foregroundColor(.umuveTextMuted)
-                .fixedSize(horizontal: false, vertical: true)
+                Image(systemName: "info.circle.fill")
+                    .font(.system(size: 20))
+                    .foregroundColor(.categoryBlue)
+            }
 
-            Spacer()
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Why photos?")
+                    .font(UmuveTypography.bodyFont.weight(.semibold))
+                    .foregroundColor(.umuveText)
+
+                Text("Help us quote you accurately. You can skip — we just recommend at least one.")
+                    .font(UmuveTypography.bodySmallFont)
+                    .foregroundColor(.umuveTextMuted)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer(minLength: 0)
         }
         .padding(UmuveSpacing.normal)
-        .background(Color.umuveCTA.opacity(0.1))
-        .cornerRadius(12)
+        .background(Color.umuveWhite)
+        .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.lg))
+        .overlay(
+            RoundedRectangle(cornerRadius: UmuveRadius.lg)
+                .strokeBorder(Color.umuveBorder, lineWidth: 1)
+        )
+        .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 4)
     }
 
     // MARK: - Empty State
@@ -101,31 +118,36 @@ struct PhotoUploadView: View {
     // MARK: - Photo Grid
     private var photoGrid: some View {
         LazyVGrid(columns: [
-            GridItem(.flexible(), spacing: UmuveSpacing.medium),
-            GridItem(.flexible(), spacing: UmuveSpacing.medium),
-            GridItem(.flexible(), spacing: UmuveSpacing.medium)
-        ], spacing: UmuveSpacing.medium) {
+            GridItem(.flexible(), spacing: UmuveSpacing.normal),
+            GridItem(.flexible(), spacing: UmuveSpacing.normal),
+            GridItem(.flexible(), spacing: UmuveSpacing.normal)
+        ], spacing: UmuveSpacing.normal) {
             ForEach(Array(bookingData.photos.enumerated()), id: \.offset) { index, photoData in
                 ZStack(alignment: .topTrailing) {
                     if let uiImage = UIImage(data: photoData) {
                         Image(uiImage: uiImage)
                             .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .frame(width: 100, height: 100)
-                            .clipped()
-                            .cornerRadius(12)
+                            .aspectRatio(1, contentMode: .fill)
+                            .frame(maxWidth: .infinity)
+                            .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.md))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: UmuveRadius.md)
+                                    .strokeBorder(Color.umuveBorder, lineWidth: 1)
+                            )
+                            .shadow(color: .black.opacity(0.08), radius: 6, x: 0, y: 3)
                     }
-                    
-                    // Remove button (with haptic)
+
                     Button(action: {
                         viewModel.removePhoto(at: index, from: &bookingData.photos)
                     }) {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 24))
+                        Image(systemName: "xmark")
+                            .font(.system(size: 12, weight: .bold))
                             .foregroundColor(.white)
-                            .background(Circle().fill(Color.red))
+                            .padding(6)
+                            .background(Circle().fill(Color.umuvePrimary))
+                            .shadow(color: .black.opacity(0.2), radius: 3, x: 0, y: 1)
                     }
-                    .offset(x: 8, y: -8)
+                    .offset(x: 6, y: -6)
                 }
             }
         }
@@ -134,59 +156,86 @@ struct PhotoUploadView: View {
     // MARK: - Action Buttons
     private var actionButtons: some View {
         HStack(spacing: UmuveSpacing.normal) {
-            // SF Symbol: photo.on.rectangle for photo gallery
             PhotosPicker(
                 selection: $viewModel.selectedItems,
                 maxSelectionCount: 10,
                 matching: .images
             ) {
-                HStack {
-                    Image(systemName: "photo.on.rectangle")
-                    Text("Gallery")
-                }
+                photoActionLabel(icon: "photo.on.rectangle.angled", title: "Gallery", accent: .categoryBlue)
             }
-            .buttonStyle(UmuveSecondaryButtonStyle())
             .onChange(of: viewModel.selectedItems) { items in
                 loadPhotos(items)
             }
-            
-            // SF Symbol: camera for camera
-            Button(action: {
+
+            Button {
                 showCamera = true
-            }) {
-                HStack {
-                    Image(systemName: "camera")
-                    Text("Camera")
-                }
+            } label: {
+                photoActionLabel(icon: "camera.fill", title: "Camera", accent: .categoryOrange)
             }
-            .buttonStyle(UmuveSecondaryButtonStyle())
         }
+        .buttonStyle(.plain)
     }
-    
+
+    private func photoActionLabel(icon: String, title: String, accent: Color) -> some View {
+        VStack(spacing: UmuveSpacing.small) {
+            ZStack {
+                RoundedRectangle(cornerRadius: UmuveRadius.md)
+                    .fill(accent.opacity(0.18))
+                    .frame(width: 56, height: 56)
+
+                Image(systemName: icon)
+                    .font(.system(size: 26))
+                    .foregroundColor(accent)
+            }
+
+            Text(title)
+                .font(UmuveTypography.bodyFont.weight(.semibold))
+                .foregroundColor(.umuveText)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, UmuveSpacing.normal)
+        .background(Color.umuveWhite)
+        .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.lg))
+        .overlay(
+            RoundedRectangle(cornerRadius: UmuveRadius.lg)
+                .strokeBorder(Color.umuveBorder, lineWidth: 1)
+        )
+        .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 4)
+    }
+
     // MARK: - Tip Box
     private var tipBox: some View {
-        HStack(alignment: .top, spacing: UmuveSpacing.medium) {
-            // SF Symbol: lightbulb.fill for tips/ideas
-            // https://developer.apple.com/design/human-interface-guidelines/sf-symbols
-            Image(systemName: "lightbulb.fill")
-                .font(.system(size: 24))
-                .foregroundColor(.umuveCTA)
-            
+        HStack(alignment: .top, spacing: UmuveSpacing.normal) {
+            ZStack {
+                RoundedRectangle(cornerRadius: UmuveRadius.sm)
+                    .fill(Color.categoryYellow.opacity(0.22))
+                    .frame(width: 40, height: 40)
+
+                Image(systemName: "lightbulb.fill")
+                    .font(.system(size: 18))
+                    .foregroundColor(.categoryYellow)
+            }
+
             VStack(alignment: .leading, spacing: 4) {
-                Text("Tip")
+                Text("Pro tip")
                     .font(UmuveTypography.bodyFont.weight(.semibold))
                     .foregroundColor(.umuveText)
-                
+
                 Text("More photos = more accurate quotes")
                     .font(UmuveTypography.bodySmallFont)
                     .foregroundColor(.umuveTextMuted)
             }
-            
-            Spacer()
+
+            Spacer(minLength: 0)
         }
         .padding(UmuveSpacing.normal)
-        .background(Color.umuvePrimary.opacity(0.1))
-        .cornerRadius(12)
+        .background(Color.umuveWhite)
+        .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.lg))
+        .overlay(
+            RoundedRectangle(cornerRadius: UmuveRadius.lg)
+                .strokeBorder(Color.umuveBorder, lineWidth: 1)
+        )
+        .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 4)
     }
     
     // MARK: - Continue Button
