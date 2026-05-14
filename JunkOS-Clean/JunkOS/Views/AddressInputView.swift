@@ -14,12 +14,27 @@ struct AddressInputView: View {
     @EnvironmentObject var wizardVM: BookingWizardViewModel
     @StateObject private var viewModel = AddressInputViewModel()
 
+    // Rotating placeholder mirroring the web's 5-address cycle on Step 1.
+    private static let placeholderExamples: [String] = [
+        "123 Main St, Boca Raton, FL",
+        "456 Ocean Blvd, Fort Lauderdale, FL",
+        "789 Glades Rd, Delray Beach, FL",
+        "321 Atlantic Ave, West Palm Beach, FL",
+        "654 University Dr, Coral Springs, FL",
+    ]
+    @State private var placeholderIndex: Int = 0
+    private let placeholderTimer = Timer.publish(every: 3, on: .main, in: .common).autoconnect()
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: UmuveSpacing.xlarge) {
                 headerSection
-
                 pickupSection
+
+                if !viewModel.pickupSelected {
+                    trustCallout
+                    trustIndicators
+                }
             }
             .padding(.horizontal, UmuveSpacing.large)
             .padding(.top, UmuveSpacing.normal)
@@ -33,17 +48,22 @@ struct AddressInputView: View {
                 .background(Color.umuveBackground)
                 .ignoresSafeArea(.keyboard, edges: .bottom)
         }
+        .onReceive(placeholderTimer) { _ in
+            withAnimation(.easeInOut(duration: 0.3)) {
+                placeholderIndex = (placeholderIndex + 1) % Self.placeholderExamples.count
+            }
+        }
     }
 
-    // MARK: - Header Section
+    // MARK: - Header Section (web parity copy)
 
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: UmuveSpacing.small) {
-            Text("Where's the pickup?")
+            Text("Where should we pick up?")
                 .font(UmuveTypography.h1Font)
                 .foregroundColor(.umuveText)
 
-            Text("Enter the pickup location")
+            Text("Enter the address where your junk needs to be removed.")
                 .font(UmuveTypography.bodyFont)
                 .foregroundColor(.umuveTextMuted)
         }
@@ -62,7 +82,7 @@ struct AddressInputView: View {
                 searchField(
                     query: $viewModel.pickupSearchQuery,
                     completions: viewModel.pickupCompletions,
-                    placeholder: "Search pickup address...",
+                    placeholder: Self.placeholderExamples[placeholderIndex],
                     accent: .categoryBlue,
                     onSelect: { completion in
                         viewModel.selectPickupAddress(completion, bookingData: bookingData)
@@ -71,6 +91,83 @@ struct AddressInputView: View {
 
                 currentLocationButton
             }
+        }
+    }
+
+    // MARK: - Trust Callout (web Step 1 social proof box)
+
+    private var trustCallout: some View {
+        VStack(alignment: .leading, spacing: UmuveSpacing.tiny) {
+            HStack(spacing: UmuveSpacing.small) {
+                Image(systemName: "checkmark.seal.fill")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(.umuvePrimary)
+                Text("2,450+ pickups completed in South Florida")
+                    .font(UmuveTypography.bodyFont.weight(.semibold))
+                    .foregroundColor(.umuveText)
+            }
+
+            Text("Serving Palm Beach & Broward County")
+                .font(UmuveTypography.bodySmallFont)
+                .foregroundColor(.umuveTextMuted)
+                .padding(.leading, 26)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(UmuveSpacing.normal)
+        .background(Color.umuvePrimary.opacity(0.06))
+        .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.md))
+        .overlay(
+            RoundedRectangle(cornerRadius: UmuveRadius.md)
+                .strokeBorder(Color.umuvePrimary.opacity(0.18), lineWidth: 1)
+        )
+    }
+
+    // MARK: - Trust Indicators (web Step 1 three-cell row)
+
+    private var trustIndicators: some View {
+        VStack(spacing: UmuveSpacing.medium) {
+            trustIndicator(
+                icon: "bolt.fill",
+                title: "Same-Day Available",
+                subtitle: "Book today, we pick up today",
+                tint: .umuveSuccess
+            )
+            trustIndicator(
+                icon: "dollarsign.circle.fill",
+                title: "Starting at $89",
+                subtitle: "Transparent pricing, no hidden fees",
+                tint: .umuvePrimary
+            )
+            trustIndicator(
+                icon: "leaf.fill",
+                title: "Eco-Friendly Disposal",
+                subtitle: "We recycle & donate first",
+                tint: .categoryGreen
+            )
+        }
+    }
+
+    private func trustIndicator(icon: String, title: String, subtitle: String, tint: Color) -> some View {
+        HStack(spacing: UmuveSpacing.normal) {
+            ZStack {
+                Circle()
+                    .fill(tint.opacity(0.15))
+                    .frame(width: 44, height: 44)
+                Image(systemName: icon)
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(tint)
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(UmuveTypography.bodyFont.weight(.semibold))
+                    .foregroundColor(.umuveText)
+                Text(subtitle)
+                    .font(UmuveTypography.bodySmallFont)
+                    .foregroundColor(.umuveTextMuted)
+            }
+
+            Spacer()
         }
     }
 

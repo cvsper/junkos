@@ -41,8 +41,11 @@ class BookingReviewViewModel: ObservableObject {
         errorMessage = nil
 
         do {
-            // Prepare Payment Sheet with estimated price
-            let amount = bookingData.estimatedPrice ?? 0
+            // Prepare Payment Sheet with the promo-adjusted total — without
+            // subtracting the discount, the charge would silently ignore the
+            // user's applied promo code.
+            let baseAmount = bookingData.estimatedPrice ?? 0
+            let amount = max(0, baseAmount - bookingData.promoDiscount)
             let sheet = try await PaymentService.shared.preparePaymentSheet(
                 amountInDollars: amount,
                 bookingDescription: "Umuve \(serviceType.rawValue)"

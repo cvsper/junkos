@@ -18,17 +18,24 @@ struct BookingReviewView: View {
     @State private var showSuccessOverlay = false
     @State private var showPaymentSheet = false
 
+    // Promo code UI state — kept local so dismissing the screen doesn't
+    // leave a half-typed input in flight. The applied result lives on
+    // bookingData so it persists across navigation.
+    @State private var promoInput: String = ""
+    @State private var promoError: String?
+    @State private var promoValidating: Bool = false
+
     var body: some View {
         ZStack {
             ScrollView {
                 VStack(spacing: UmuveSpacing.normal) {
-                    // Header
+                    // Header (web parity copy)
                     VStack(alignment: .leading, spacing: UmuveSpacing.tiny) {
-                        Text("Review Your Booking")
+                        Text("Review Your Estimate")
                             .font(UmuveTypography.h1Font)
                             .foregroundColor(.umuveText)
 
-                        Text("Everything look good?")
+                        Text("Check the details below and accept the estimate to continue.")
                             .font(UmuveTypography.bodyFont)
                             .foregroundColor(.umuveTextMuted)
                     }
@@ -36,24 +43,17 @@ struct BookingReviewView: View {
                     .padding(.horizontal, UmuveSpacing.large)
                     .padding(.top, UmuveSpacing.large)
 
-                    // Service Summary Card
                     serviceSummaryCard
-
-                    // Location Card
                     locationCard
-
-                    // Photos Card
                     photosCard
-
-                    // Schedule Card
                     scheduleCard
-
-                    // Price Section
                     priceSection
+                    promoSection
+                    acceptCheckbox
 
                     // Spacing for button
                     Spacer()
-                        .frame(height: 80)
+                        .frame(height: 100)
                 }
             }
 
@@ -435,10 +435,171 @@ struct BookingReviewView: View {
         }
     }
 
+    // MARK: - Promo Section (web Step 6 parity)
+
+    @ViewBuilder
+    private var promoSection: some View {
+        if bookingData.promoApplied {
+            HStack(spacing: UmuveSpacing.small) {
+                Image(systemName: "checkmark.seal.fill")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(.umuveSuccess)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(bookingData.promoCode)
+                        .font(UmuveTypography.bodyFont.weight(.bold))
+                        .foregroundColor(.umuveText)
+                    Text("-$\(String(format: "%.2f", bookingData.promoDiscount)) applied")
+                        .font(UmuveTypography.bodySmallFont)
+                        .foregroundColor(.umuveSuccess)
+                }
+
+                Spacer()
+
+                Button {
+                    removePromo()
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 22))
+                        .foregroundColor(.umuveTextTertiary)
+                }
+                .accessibilityLabel("Remove promo code")
+            }
+            .padding(UmuveSpacing.normal)
+            .background(Color.umuveSuccess.opacity(0.08))
+            .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.md))
+            .overlay(
+                RoundedRectangle(cornerRadius: UmuveRadius.md)
+                    .strokeBorder(Color.umuveSuccess.opacity(0.3), lineWidth: 1)
+            )
+            .padding(.horizontal, UmuveSpacing.large)
+        } else {
+            VStack(alignment: .leading, spacing: UmuveSpacing.small) {
+                Text("Have a discount code?")
+                    .font(UmuveTypography.captionFont)
+                    .foregroundColor(.umuveTextMuted)
+                    .textCase(.uppercase)
+                    .tracking(0.8)
+
+                HStack(spacing: UmuveSpacing.small) {
+                    TextField("Promo code", text: $promoInput)
+                        .font(UmuveTypography.bodyFont)
+                        .textInputAutocapitalization(.characters)
+                        .autocorrectionDisabled()
+                        .padding(UmuveSpacing.medium)
+                        .background(Color.umuveWhite)
+                        .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.sm))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: UmuveRadius.sm)
+                                .strokeBorder(Color.umuveBorder, lineWidth: 1)
+                        )
+
+                    Button {
+                        Task { await applyPromo() }
+                    } label: {
+                        if promoValidating {
+                            ProgressView().tint(.white)
+                        } else {
+                            Text("Apply")
+                        }
+                    }
+                    .buttonStyle(UmuvePrimaryButtonStyle(isEnabled: !promoInput.trimmingCharacters(in: .whitespaces).isEmpty))
+                    .frame(width: 90)
+                    .disabled(promoInput.trimmingCharacters(in: .whitespaces).isEmpty || promoValidating)
+                }
+
+                if let promoError {
+                    Text(promoError)
+                        .font(UmuveTypography.smallFont)
+                        .foregroundColor(.umuveError)
+                }
+            }
+            .padding(.horizontal, UmuveSpacing.large)
+        }
+    }
+
+    @MainActor
+    private func applyPromo() async {
+        let trimmed = promoInput.trimmingCharacters(in: .whitespaces).uppercased()
+        guard !trimmed.isEmpty else { return }
+
+        promoValidating = true
+        promoError = nil
+
+        let orderAmount = bookingData.estimatedPrice ?? bookingData.priceBreakdown?.total ?? 0
+
+        do {
+            let response = try await APIClient.shared.validatePromoCode(trimmed, orderAmount: orderAmount)
+            promoValidating = false
+
+            if response.valid, let discount = response.discountAmount {
+                bookingData.promoCode = trimmed
+                bookingData.promoDiscount = discount
+                bookingData.promoApplied = true
+                promoInput = ""
+                HapticManager.shared.success()
+            } else {
+                promoError = response.error ?? "This code isn't valid."
+                HapticManager.shared.error()
+            }
+        } catch {
+            promoValidating = false
+            promoError = "Couldn't reach the server. Try again."
+            HapticManager.shared.error()
+        }
+    }
+
+    private func removePromo() {
+        HapticManager.shared.lightTap()
+        bookingData.promoCode = ""
+        bookingData.promoDiscount = 0
+        bookingData.promoApplied = false
+        promoError = nil
+    }
+
+    // MARK: - Accept Checkbox (web Step 5 parity)
+
+    private var acceptCheckbox: some View {
+        Button {
+            HapticManager.shared.lightTap()
+            bookingData.estimateAccepted.toggle()
+        } label: {
+            HStack(alignment: .top, spacing: UmuveSpacing.small) {
+                Image(systemName: bookingData.estimateAccepted ? "checkmark.square.fill" : "square")
+                    .font(.system(size: 22, weight: .semibold))
+                    .foregroundColor(bookingData.estimateAccepted ? .umuvePrimary : .umuveTextMuted)
+                    .frame(width: 28)
+
+                Text("I understand this is an estimate and accept the pricing. Final price will be confirmed after on-site assessment.")
+                    .font(UmuveTypography.bodySmallFont)
+                    .foregroundColor(.umuveText)
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+        .buttonStyle(.plain)
+        .padding(UmuveSpacing.normal)
+        .background(Color.umuveWhite)
+        .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.md))
+        .overlay(
+            RoundedRectangle(cornerRadius: UmuveRadius.md)
+                .strokeBorder(
+                    bookingData.estimateAccepted ? Color.umuvePrimary : Color.umuveBorder,
+                    lineWidth: bookingData.estimateAccepted ? 1.5 : 1
+                )
+        )
+        .padding(.horizontal, UmuveSpacing.large)
+    }
+
     // MARK: - Confirm Button
 
     private var confirmButton: some View {
-        Button {
+        let canSubmit = bookingData.estimateAccepted
+            && !viewModel.isPreparingPayment
+            && !viewModel.isSubmitting
+        let total = max(0, (bookingData.estimatedPrice ?? bookingData.priceBreakdown?.total ?? 0) - bookingData.promoDiscount)
+
+        return Button {
             Task {
                 await viewModel.confirmAndPay(bookingData: bookingData)
             }
@@ -450,7 +611,7 @@ struct BookingReviewView: View {
                 } else {
                     Image(systemName: "lock.fill")
                         .font(.system(size: 15, weight: .semibold))
-                    Text("Confirm & Pay")
+                    Text(total > 0 ? "Pay $\(String(format: "%.2f", total))" : "Confirm & Pay")
                         .font(UmuveTypography.bodyFont.weight(.semibold))
                 }
             }
@@ -459,7 +620,7 @@ struct BookingReviewView: View {
             .padding(.vertical, UmuveSpacing.normal)
             .background(
                 Group {
-                    if viewModel.isPreparingPayment || viewModel.isSubmitting {
+                    if !canSubmit {
                         Color.umuveTextMuted
                     } else {
                         LinearGradient(
@@ -471,9 +632,9 @@ struct BookingReviewView: View {
                 }
             )
             .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.lg))
-            .shadow(color: Color.umuvePrimary.opacity(0.3), radius: 10, x: 0, y: 6)
+            .shadow(color: Color.umuvePrimary.opacity(canSubmit ? 0.3 : 0), radius: 10, x: 0, y: 6)
         }
-        .disabled(viewModel.isPreparingPayment || viewModel.isSubmitting)
+        .disabled(!canSubmit)
     }
 
     // MARK: - Success Overlay
