@@ -349,8 +349,144 @@ Reviewer flagged seven gaps after Phase 0. Status reflects work in the follow-up
 
 ### 12.2 Follow-up commits planned
 
-1. `feat(ios): wire home → booking selection, remove dead search, surface orders errors` — this commit
-2. `chore(ios): delete dead screens (EnhancedWelcomeView, ProfileView) + pbxproj prune` — Phase 1.1
-3. `test(ios): align tests with Phase 0 PricingEstimate shape` — Phase 1.1
-4. `feat(ios): guest mode policy enforcement (Orders/Referral/Chat)` — pending product call
+1. `feat(ios): wire home → booking selection, remove dead search, surface orders errors` — landed (d8bfb47)
+2. `chore(ios): delete dead screens (EnhancedWelcomeView, ProfileView) + pbxproj prune` — landed (1a8d3d6)
+3. `test(ios): align tests with Phase 0 PricingEstimate shape` — landed (4e77177, then expanded in 573c582 with full xcodebuild test passing)
+4. `feat(ios): guest mode policy enforcement (Orders/Referral/Chat)` — landed (5df943a)
+
+---
+
+## 13. Build 19 — Full Web Parity (2026-05-14)
+
+Subsequent work after the Codex review brought the iOS booking flow to
+substantive parity with goumuve.com's customer journey. Build 19 shipped
+to TestFlight 2026-05-14.
+
+### 13.1 What landed (commit range `dd0d7dc..76160b2`)
+
+**Wizard step model** — `Address → Photos → Items → Schedule → Estimate
+→ Payment`, mirroring `platform/src/stores/booking-store.ts` exactly.
+The 6th step ("Payment") is the Stripe Payment Sheet modal that
+appears after tapping the Estimate's "Pay $X" button — the progress
+indicator renders six dots so the perceived flow matches the web.
+
+**New ItemSelectionView** (commit b3c4876 + 76160b2 rename)
+- 7 category buttons in a 2-col grid (Furniture, Appliances,
+  Electronics, Construction Debris, Yard Waste, General Junk, Other)
+- Collapsible per-category sections with item presets (~6–10 per
+  category, with cu ft + lbs estimates pulled from the web's preset
+  data)
+- ± quantity steppers (1–20 max), Menu picker for preset, remove (X)
+  per row
+- Sticky footer with truck-fill bar (green→yellow→orange→red),
+  current truck tier label, estimated price, cu ft + lbs totals
+- Optional 500-char notes field with live counter
+- Pricing info note matching web's copy verbatim
+- File renamed from `ServiceTypeSelectionView.swift` (the legacy
+  filename was a misnomer after the items refactor)
+
+**Address step** (commit 31c01f4)
+- Header copy verbatim from web: "Where should we pick up?" / "Enter
+  the address where your junk needs to be removed."
+- Rotating placeholder cycling through 5 Florida example addresses
+  every 3s
+- Trust callout: "2,450+ pickups completed in South Florida" +
+  "Serving Palm Beach & Broward County"
+- 3 trust indicators (Same-Day, $89 starting, Eco-Friendly) below the
+  callout
+
+**Estimate step (BookingReviewView)** (commits 31c01f4 + a941643 +
+72f65c3 + 19412a7)
+- Single compact `bookingSummaryCard` (5-row layout: Address,
+  Schedule, Items, Est. Volume, Est. Weight) replacing the previous
+  4-card stack
+- Eco footnote: "We donate & recycle first — landfill is always the
+  last resort."
+- Promo code section with Apply button → green chip with remove (X);
+  hits `/api/promos/validate`; promo discount carries through to
+  Stripe Payment Sheet charge amount
+- Accept checkbox: "I understand this is an estimate and accept the
+  pricing." Gates the Confirm & Pay button.
+- Confirm button reads "Pay $X.XX" when total is known, falls back to
+  "Confirm & Pay" otherwise
+
+**Booking Success** (commit b7f73e4)
+- "Booking Confirmed!" + "Your junk removal has been scheduled
+  successfully."
+- Dashed-border BOOKING ID block: monospace `UMV-XX0X0X`
+- CONFIRMATION CODE monospace heavy + 2pt tracking, brand red, char
+  set deliberately omitting 0/O/1/I lookalikes for clean
+  read-aloud-over-phone fidelity
+
+**Photos step** (commit 960c80e)
+- Web parity headline + subhead
+- Encouragement message reframed: "Skip this step? You can." +
+  "Upload 1–2 photos to help us prep the right truck. You can also
+  add items manually on the next step."
+
+**Schedule step** (commit 960c80e)
+- "Pick a Date & Time" / "Choose when you would like us to come pick
+  up your items."
+- 5 time slot labels condensed to "8-10 AM", "10 AM-12 PM", "12-2 PM",
+  "2-4 PM", "4-6 PM" verbatim from web
+- Slot IDs encode 24-h start hours ("8-10", "10-12", …) so the API
+  payload is stable regardless of label changes
+
+**Wizard transitions** (commits e44c52d + d9ab2f6)
+- Slide transition between steps: `.move(edge: .trailing/.leading)`
+  combined with `.opacity()`, using `.smooth(duration: 0.35)` so
+  reduce-motion users get an instant cut
+- Progress indicator now 6 dots: `displayedStepCount = 6` (with
+  Payment as the 6th label) while `stepCount = 5` keeps the
+  navigation contract honest
+
+**Codebase health**
+- ~1,500 lines deleted across 4 cleanup commits (1a8d3d6, caf0ef3,
+  19412a7, 50dd16a)
+- Dead screens removed: EnhancedWelcomeView, ProfileView, PaymentView,
+  ConfirmationView, ServiceSelectionView
+- 17 legacy `@Published` fields and 5 enums (VolumeTier, ServiceTier,
+  RecurringFrequency, CleanoutType, WeightCategory) removed from
+  BookingData
+- Test target restored (commit e02540f) + tests aligned to current
+  API (573c582 + the cleanup follow-ups); `xcodebuild test` now runs
+  every suite green: APIClientTests, AddressInputViewModelTests,
+  DateTimePickerViewModelTests, PhotoUploadViewModelTests
+
+**Logo wiring**
+- Brand wordmark replaced SF Symbol placeholders on WelcomeView,
+  HomeView header, WelcomeAuthView, and OnboardingView header
+- Asset bundled as `UmuveLogo` in `Assets.xcassets` (1x/2x/3x)
+
+**Backend fixes** (commits 9ff8737 + 4bbd8ae)
+- `/api/push/register-token` now returns 200 (was 201, iOS treated as failure)
+- `/api/referrals/my-code` includes `total_referrals` + `credits_earned` inline
+- `routes/pricing.py` missing `from extensions import limiter` import added — backend had been crashing on startup since the first push
+
+**Infrastructure**
+- Stripe publishable key wired via Info.plist `StripePublishableKey`
+  (commits 27df462 + af19217); Config.swift looks it up at runtime
+  with a loud console warning if the value contains "PLACEHOLDER"
+- `ExportOptions.plist` now pins `signingCertificate = "Apple
+  Distribution"` for stable CLI exports
+
+### 13.2 What's deferred (out of scope, no blockers)
+
+- **AI photo analysis** — web auto-fills items from photo content via
+  `/api/photos/analyze`. iOS PhotoUploadView doesn't trigger this and
+  Items step doesn't show an "AI detected N items" callout. Pending
+  backend AI endpoint confirmation.
+- **Dark mode audit** — every screen renders in light mode; dark mode
+  is theoretically supported via design tokens but each screen needs
+  visual verification.
+- **Apple Sign In real-device verification** — simulator throws
+  AKAuthenticationError -7022 / error 1000, which is the expected
+  simulator behavior. Needs validation on a TestFlight install.
+- **6th progress dot lighting up during Stripe sheet** — currently
+  stays "future/muted" because the wizard doesn't observe Stripe
+  sheet presentation state. Cosmetic.
+- **Auth flow consolidation** — 5 screens (WelcomeAuthView,
+  LoginOptionsView, EmailLoginView, PhoneSignUpView,
+  VerificationCodeView) → ideally 2 (welcome + verification). Phase
+  3 from §6.
 
