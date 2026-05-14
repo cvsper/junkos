@@ -38,7 +38,7 @@ struct HomeView: View {
             Image("UmuveLogo")
                 .resizable()
                 .scaledToFit()
-                .frame(height: 36)
+                .frame(height: 72)
                 .accessibilityLabel("Umuve")
             Spacer()
         }

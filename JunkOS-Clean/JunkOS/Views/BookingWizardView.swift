@@ -45,6 +45,13 @@ struct BookingWizardView: View {
         }
         .background(Color.umuveBackground.ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
+        // Hide the MainTabView tab bar while the wizard is on screen.
+        // Otherwise the bottom-pinned Confirm & Pay button on the
+        // Estimate step gets visually overlapped by the tab bar
+        // (multiple users reported this as "the button is being
+        // covered by the menu"). A focused multi-step flow shouldn't
+        // expose the parent tab bar anyway.
+        .toolbar(.hidden, for: .tabBar)
         // Suppress the system back button — we ship a custom leading
         // chevron below that steps backward within the wizard rather than
         // popping the whole flow. Without this, both arrows render.
@@ -106,58 +113,108 @@ struct BookingWizardView: View {
     }
 
     // MARK: - Progress Indicator
+    //
+    // Two-row treatment:
+    //   • Top row — six SF Symbol icons connected by a track whose red
+    //     fill animates between steps. Current step's icon scales up
+    //     and pulses subtly with a symbol effect; completed steps fill
+    //     solid; future steps are muted grey.
+    //   • Bottom row — "Step X of 6 — Title" so the user always knows
+    //     where they are without the screen having to render 6 cramped
+    //     labels.
+    // Word labels under every dot were causing the squished look on
+    // small screens; the icons + step counter convey the same info
+    // with way more breathing room and a touch of motion.
+
+    private static let stepIcons: [String] = [
+        "mappin.and.ellipse",   // Address
+        "camera.fill",          // Photos
+        "shippingbox.fill",     // Items
+        "calendar",             // Schedule
+        "doc.text.magnifyingglass", // Estimate
+        "creditcard.fill",      // Payment
+    ]
 
     private var progressIndicator: some View {
         VStack(spacing: UmuveSpacing.small) {
-            // Progress dots with connecting lines
-            HStack(spacing: 0) {
-                ForEach(0..<wizardVM.displayedStepCount, id: \.self) { step in
-                    VStack(spacing: 4) {
-                        // Dot
-                        ZStack {
-                            Circle()
-                                .strokeBorder(lineWidth: 2)
-                                .foregroundColor(dotColor(for: step))
-                                .frame(width: 12, height: 12)
-                                .background(
-                                    Circle()
-                                        .fill(dotFillColor(for: step))
-                                )
+            GeometryReader { geo in
+                let count = wizardVM.displayedStepCount
+                // Width consumed by the 6 circles themselves, evenly distributed
+                let trackWidth = geo.size.width
+                // Fill ratio = progress through steps. Step 0 = 0/5 etc.
+                let progress = count > 1
+                    ? min(CGFloat(wizardVM.currentStep) / CGFloat(count - 1), 1)
+                    : 0
 
-                            // Ring for current step
-                            if step == wizardVM.currentStep {
-                                Circle()
-                                    .strokeBorder(lineWidth: 2)
-                                    .foregroundColor(.umuvePrimary.opacity(0.3))
-                                    .frame(width: 20, height: 20)
-                            }
+                ZStack(alignment: .leading) {
+                    // Background track
+                    Capsule()
+                        .fill(Color.umuveBorder)
+                        .frame(height: 4)
+
+                    // Animated red fill
+                    Capsule()
+                        .fill(Color.umuvePrimary)
+                        .frame(width: trackWidth * progress, height: 4)
+                        .animation(.smooth(duration: 0.45), value: progress)
+
+                    // Six icons evenly distributed on top of the track
+                    HStack(spacing: 0) {
+                        ForEach(0..<count, id: \.self) { step in
+                            progressIcon(for: step)
+                                .frame(maxWidth: .infinity)
                         }
-                        .onTapGesture {
-                            if wizardVM.isStepAccessible(step) {
-                                wizardVM.goToStep(step)
-                            }
-                        }
-
-                        // Step label
-                        Text(wizardVM.stepTitle(for: step))
-                            .font(UmuveTypography.smallFont)
-                            .foregroundColor(
-                                step == wizardVM.currentStep ? .umuvePrimary :
-                                wizardVM.completedSteps.contains(step) ? .umuveText :
-                                .umuveTextMuted
-                            )
-                    }
-                    .frame(maxWidth: .infinity)
-
-                    // Connecting line (except after last step)
-                    if step < wizardVM.displayedStepCount - 1 {
-                        Rectangle()
-                            .fill(lineColor(from: step, to: step + 1))
-                            .frame(height: 2)
-                            .frame(maxWidth: .infinity)
-                            .offset(y: -8)
                     }
                 }
+            }
+            .frame(height: 32)
+
+            // Step counter — "Step X of 6 — Items"
+            HStack(spacing: 4) {
+                Text("Step \(wizardVM.currentStep + 1) of \(wizardVM.displayedStepCount)")
+                    .font(UmuveTypography.smallFont)
+                    .foregroundColor(.umuveTextMuted)
+                Text("·")
+                    .font(UmuveTypography.smallFont)
+                    .foregroundColor(.umuveTextTertiary)
+                Text(wizardVM.stepTitle(for: wizardVM.currentStep))
+                    .font(UmuveTypography.smallFont.weight(.bold))
+                    .foregroundColor(.umuvePrimary)
+            }
+            .animation(.smooth(duration: 0.3), value: wizardVM.currentStep)
+        }
+    }
+
+    @ViewBuilder
+    private func progressIcon(for step: Int) -> some View {
+        let isCurrent = step == wizardVM.currentStep
+        let isCompleted = wizardVM.completedSteps.contains(step) || step < wizardVM.currentStep
+        let isFilled = isCurrent || isCompleted
+        let iconName = Self.stepIcons[min(step, Self.stepIcons.count - 1)]
+
+        ZStack {
+            Circle()
+                .fill(isFilled ? Color.umuvePrimary : Color.umuveBackground)
+                .frame(width: isCurrent ? 32 : 26, height: isCurrent ? 32 : 26)
+                .overlay(
+                    Circle()
+                        .strokeBorder(
+                            isFilled ? Color.umuvePrimary : Color.umuveBorder,
+                            lineWidth: 2
+                        )
+                )
+                .shadow(color: isCurrent ? Color.umuvePrimary.opacity(0.35) : .clear, radius: 6, x: 0, y: 2)
+                .animation(.smooth(duration: 0.35), value: isCurrent)
+
+            Image(systemName: iconName)
+                .font(.system(size: isCurrent ? 14 : 11, weight: .bold))
+                .foregroundColor(isFilled ? .white : .umuveTextTertiary)
+                .scaleEffect(isCurrent ? 1.0 : 0.95)
+                .animation(.smooth(duration: 0.3), value: isCurrent)
+        }
+        .onTapGesture {
+            if wizardVM.isStepAccessible(step) {
+                wizardVM.goToStep(step)
             }
         }
     }

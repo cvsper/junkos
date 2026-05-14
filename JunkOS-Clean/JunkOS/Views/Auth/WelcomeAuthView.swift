@@ -26,9 +26,9 @@ struct WelcomeAuthView: View {
                     Image("UmuveLogo")
                         .resizable()
                         .scaledToFit()
-                        .frame(height: 80)
+                        .frame(height: 160)
                         .accessibilityLabel("Umuve")
-                        .shadow(color: Color.umuvePrimary.opacity(0.15), radius: 12, x: 0, y: 6)
+                        .shadow(color: Color.umuvePrimary.opacity(0.15), radius: 16, x: 0, y: 8)
 
                     Text("Hauling made simple.")
                         .font(UmuveTypography.bodyFont)
