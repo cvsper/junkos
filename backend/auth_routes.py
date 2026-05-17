@@ -182,8 +182,13 @@ def require_auth(f):
         if not user_id:
             return jsonify({'error': 'Unauthorized'}), 401
         # Verify user exists in either in-memory or SQLAlchemy store
-        if user_id not in users_db and not db.session.get(User, user_id):
+        db_user = db.session.get(User, user_id)
+        if user_id not in users_db and not db_user:
             return jsonify({'error': 'Unauthorized'}), 401
+        # Reject tokens belonging to deleted accounts — Apple 5.1.1(v):
+        # once the user requests deletion, prior JWTs must stop working.
+        if db_user is not None and getattr(db_user, 'status', None) == 'deleted':
+            return jsonify({'error': 'Account deleted'}), 401
         return f(user_id=user_id, *args, **kwargs)
     return decorated_function
 
@@ -683,17 +688,46 @@ def change_password(user_id):
 @auth_bp.route('/me', methods=['DELETE'])
 @require_auth
 def delete_account(user_id):
-    """Soft-delete the current user account (set status to deactivated)"""
+    """Permanently delete the current user account.
+
+    Anonymizes all personally identifiable info (email, phone, name,
+    apple_id, password, avatar, referral code, Stripe customer link)
+    and marks status='deleted'. The row stays for foreign-key integrity
+    on historical jobs, ratings, and audit trails — but the user can
+    no longer log in, no notifications go out, and prior JWTs are
+    rejected on the next request.
+
+    Apple Guideline 5.1.1(v): a real deletion, not a deactivation.
+    Once this returns success the user is unrecoverable from the
+    client's perspective — they would have to sign up fresh.
+    """
     db_user = db.session.get(User, user_id)
     if not db_user:
         return jsonify({'error': 'User not found'}), 404
 
-    db_user.status = 'deactivated'
+    db_user.email = None
+    db_user.phone = None
+    db_user.name = None
+    db_user.password_hash = None
+    db_user.apple_id = None
+    db_user.avatar_url = None
+    db_user.stripe_customer_id = None
+    db_user.referral_code = None
+    db_user.status = 'deleted'
+
+    # Revoke push tokens — no more notifications to a deleted account.
+    try:
+        for dt in list(db_user.device_tokens):
+            db.session.delete(dt)
+    except Exception:
+        # device_tokens relationship may not exist on legacy rows; ignore.
+        pass
+
     db.session.commit()
 
     return jsonify({
         'success': True,
-        'message': 'Account deactivated successfully'
+        'message': 'Account deleted'
     })
 
 
