@@ -1,3 +1,12 @@
+# IMPORTANT: eventlet monkey-patching must happen BEFORE any other imports
+# (especially Flask/werkzeug/pydantic). gunicorn loads server:app with the
+# `eventlet` worker class, and if patching runs after those modules are
+# imported it fails with "Working outside of request context" and
+# "Pydantic models should inherit from BaseModel" as eventlet traverses
+# already-bound proxy objects. Doing it here, first, makes the worker boot.
+import eventlet
+eventlet.monkey_patch()
+
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from functools import wraps
