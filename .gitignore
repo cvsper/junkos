@@ -49,3 +49,14 @@ temp/
 customer-portal/
 .vercel
 .env*.local
+
+# Xcode per-user state (UI/scheme state — churns every session, not shared)
+**/xcuserdata/
+
+# Internal/sensitive — never publish to this public repo
+JunkOS-Clean/WHAT-SEVS-DOES.md
+marketing/outreach/send-50.csv
+marketing/outreach/send-ready.csv
+marketing/outreach/send_log_phase1.csv
+marketing/outreach/scrape_haulers.py
+marketing/outreach/send_resend_phase1.py
