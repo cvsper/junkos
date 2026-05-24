@@ -13,7 +13,7 @@ const SMS = '(844) 435-6005';
 const BOOK_URL = 'https://app.goumuve.com/book';
 const SITE = 'https://goumuve.com';
 const GA4 = 'G-CLGPJ5TS3G';
-const PIXEL = '1432514091446263';
+const PIXEL = '1785795592383973';
 const DATE = 'April 2026';
 const DATE_ISO = '2026-04-06';
 

@@ -1,6 +1,6 @@
 import Script from "next/script";
 
-const META_PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID || "1432514091446263";
+const META_PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID || "1785795592383973";
 
 /**
  * Analytics component that conditionally renders tracking scripts.
