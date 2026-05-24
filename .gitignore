@@ -61,3 +61,4 @@ marketing/outreach/send_log_phase1.csv
 marketing/outreach/scrape_haulers.py
 marketing/outreach/send_resend_phase1.py
 marketing/outreach/pb-haulers.csv
+marketing/outreach/pbc-targets.csv
