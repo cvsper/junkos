@@ -12,7 +12,7 @@ import Foundation
 struct AppleSignInRequest: Codable {
     let identityToken: String?
     let nonce: String?
-    let userIdentifier: String
+    let userIdentifier: String?
     let email: String?
     let name: String?
     let role: String
@@ -24,6 +24,22 @@ struct AppleSignInRequest: Codable {
         case email
         case name
         case role
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(role, forKey: .role)
+        if let identityToken { try c.encode(identityToken, forKey: .identityToken) }
+        if let nonce { try c.encode(nonce, forKey: .nonce) }
+        if let email { try c.encode(email, forKey: .email) }
+        if let name { try c.encode(name, forKey: .name) }
+        // Intentionally omit userIdentifier when an identityToken is present —
+        // backend derives the apple user id from the verified JWT's `sub`
+        // claim. Sending it explicitly let the backend bypass JWT validation
+        // and matched the wrong (existing customer) account.
+        if identityToken == nil, let userIdentifier {
+            try c.encode(userIdentifier, forKey: .userIdentifier)
+        }
     }
 }
 

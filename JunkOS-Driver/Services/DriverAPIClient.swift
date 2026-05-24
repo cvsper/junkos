@@ -128,7 +128,7 @@ actor DriverAPIClient {
     func appleSignIn(
         identityToken: String,
         nonce: String?,
-        userIdentifier: String,
+        userIdentifier: String?,
         email: String?,
         name: String?
     ) async throws -> AuthResponse {

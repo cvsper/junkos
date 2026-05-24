@@ -64,6 +64,7 @@ final class AuthenticationManager {
                 // Retry logic: up to 3 attempts
                 var attempts = 0
                 let maxAttempts = 3
+                var lastError: Error?
 
                 while attempts < maxAttempts {
                     do {
@@ -79,6 +80,8 @@ final class AuthenticationManager {
                         isLoading = false
                         return
                     } catch {
+                        lastError = error
+                        print("🔴 Apple Sign In attempt \(attempts + 1) failed: \(error.localizedDescription)")
                         attempts += 1
                         if attempts < maxAttempts {
                             try? await Task.sleep(nanoseconds: 1_000_000_000) // 1 second delay
@@ -86,9 +89,16 @@ final class AuthenticationManager {
                     }
                 }
 
-                // All retries failed
+                // All retries failed — surface the actual error so the user
+                // (and we, looking at logs) can tell what broke.
                 currentNonce = nil
-                errorMessage = "Something went wrong. Try again."
+                if let err = lastError as? APIError {
+                    errorMessage = err.errorDescription ?? "Apple Sign In failed."
+                } else if let err = lastError {
+                    errorMessage = err.localizedDescription
+                } else {
+                    errorMessage = "Apple Sign In failed. Try again."
+                }
                 isLoading = false
             }
         case .failure(let error):

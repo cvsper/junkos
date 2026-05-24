@@ -166,7 +166,7 @@ struct RatingView: View {
                     Image(systemName: star <= viewModel.stars ? "star.fill" : "star")
                         .font(.system(size: 44))
                         .foregroundColor(star <= viewModel.stars ? .driverPrimary : .driverBorder)
-                        .scaleEffect(star <= viewModel.stars ? 1.1 : 1.0)
+                        .scaleEffect(star <= viewModel.stars ? CGFloat(1.1) : CGFloat(1.0))
                         .animation(AnimationConstants.bouncySpring, value: viewModel.stars)
                 }
                 .buttonStyle(.plain)
