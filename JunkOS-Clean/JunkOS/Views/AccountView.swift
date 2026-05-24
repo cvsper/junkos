@@ -13,6 +13,10 @@ struct AccountView: View {
     @State private var showEditProfile = false
     @State private var showPaymentMethods = false
     @State private var showReferral = false
+    @State private var showDeleteAccountSheet = false
+    @State private var showDeleteAccountFinalAlert = false
+    @State private var isDeletingAccount = false
+    @State private var deleteAccountError: String?
 
     var body: some View {
         ScrollView {
@@ -31,6 +35,9 @@ struct AccountView: View {
 
                 menuSection
                 logoutButton
+                if authManager.currentUser?.id != "guest" {
+                    deleteAccountButton
+                }
                 appFooter
             }
             .padding(.horizontal, UmuveSpacing.large)
@@ -76,6 +83,27 @@ struct AccountView: View {
             Text(authManager.currentUser?.id == "guest"
                 ? "Exit guest mode and return to sign in?"
                 : "Are you sure you want to log out?")
+        }
+        .sheet(isPresented: $showDeleteAccountSheet) {
+            deleteAccountSheet
+        }
+        .alert("Delete account?", isPresented: $showDeleteAccountFinalAlert) {
+            Button("Cancel", role: .cancel) {}
+            Button("Delete Forever", role: .destructive) {
+                Task {
+                    isDeletingAccount = true
+                    deleteAccountError = nil
+                    let err = await authManager.deleteAccount()
+                    isDeletingAccount = false
+                    if let err {
+                        deleteAccountError = err
+                    } else {
+                        showDeleteAccountSheet = false
+                    }
+                }
+            }
+        } message: {
+            Text("This permanently removes your Umuve account and your personal info. Bookings and history will be anonymized. You will be signed out.")
         }
     }
 
@@ -289,6 +317,147 @@ struct AccountView: View {
             .padding(.vertical, UmuveSpacing.normal)
             .background(Color.umuveError.opacity(0.08))
             .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.md))
+        }
+    }
+
+    // MARK: - Delete Account
+
+    /// Subtle, low-volume entry point so people don't tap it by accident.
+    /// Mandatory per Apple Guideline 5.1.1(v).
+    private var deleteAccountButton: some View {
+        Button(action: {
+            deleteAccountError = nil
+            showDeleteAccountSheet = true
+        }) {
+            Text("Delete Account")
+                .font(UmuveTypography.bodySmallFont.weight(.medium))
+                .foregroundColor(.umuveTextTertiary)
+                .underline()
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.top, UmuveSpacing.small)
+    }
+
+    /// Two-step delete flow: an info sheet that explains what
+    /// permanent deletion means, then a destructive confirmation alert.
+    /// Apple wants people to be unable to delete accidentally.
+    private var deleteAccountSheet: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: UmuveSpacing.large) {
+                    VStack(alignment: .leading, spacing: UmuveSpacing.normal) {
+                        HStack(spacing: UmuveSpacing.small) {
+                            ZStack {
+                                Circle()
+                                    .fill(Color.umuveError.opacity(0.12))
+                                    .frame(width: 52, height: 52)
+                                Image(systemName: "trash.fill")
+                                    .font(.system(size: 22, weight: .semibold))
+                                    .foregroundColor(.umuveError)
+                            }
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Delete your account")
+                                    .font(UmuveTypography.h2Font)
+                                    .foregroundColor(.umuveText)
+                                Text("This cannot be undone.")
+                                    .font(UmuveTypography.bodySmallFont)
+                                    .foregroundColor(.umuveTextMuted)
+                            }
+                        }
+                    }
+                    .padding(.top, UmuveSpacing.normal)
+
+                    VStack(alignment: .leading, spacing: UmuveSpacing.normal) {
+                        deleteRow(icon: "person.crop.circle.badge.xmark",
+                                  title: "Your profile is removed",
+                                  body: "Email, phone, name, and photo are erased from our systems.")
+                        deleteRow(icon: "lock.shield.fill",
+                                  title: "You're signed out everywhere",
+                                  body: "Existing sessions and saved logins are revoked immediately.")
+                        deleteRow(icon: "doc.text.magnifyingglass",
+                                  title: "Past bookings are anonymized",
+                                  body: "Job history is kept in anonymized form for accounting and tax records.")
+                        deleteRow(icon: "envelope.badge.fill",
+                                  title: "No more notifications",
+                                  body: "Push, SMS, and email notifications stop right away.")
+                    }
+
+                    if let err = deleteAccountError {
+                        Text(err)
+                            .font(UmuveTypography.bodySmallFont)
+                            .foregroundColor(.umuveError)
+                            .multilineTextAlignment(.leading)
+                            .padding(UmuveSpacing.normal)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Color.umuveError.opacity(0.08))
+                            .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.md))
+                    }
+
+                    Button(action: {
+                        showDeleteAccountFinalAlert = true
+                    }) {
+                        HStack(spacing: UmuveSpacing.small) {
+                            if isDeletingAccount {
+                                ProgressView().tint(.white)
+                            } else {
+                                Image(systemName: "trash.fill")
+                                Text("Delete My Account")
+                                    .font(UmuveTypography.bodyFont.weight(.semibold))
+                            }
+                        }
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, UmuveSpacing.normal)
+                        .background(Color.umuveError)
+                        .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.md))
+                    }
+                    .disabled(isDeletingAccount)
+
+                    Button("Keep My Account") {
+                        showDeleteAccountSheet = false
+                    }
+                    .font(UmuveTypography.bodyFont.weight(.semibold))
+                    .foregroundColor(.umuvePrimary)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, UmuveSpacing.normal)
+
+                    Text("Questions? Email support@goumuve.com")
+                        .font(UmuveTypography.captionFont)
+                        .foregroundColor(.umuveTextTertiary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, UmuveSpacing.small)
+                }
+                .padding(.horizontal, UmuveSpacing.large)
+                .padding(.bottom, UmuveSpacing.xlarge)
+            }
+            .background(Color.umuveBackground.ignoresSafeArea())
+            .navigationTitle("Delete Account")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Close") { showDeleteAccountSheet = false }
+                        .foregroundColor(.umuvePrimary)
+                }
+            }
+        }
+    }
+
+    private func deleteRow(icon: String, title: String, body: String) -> some View {
+        HStack(alignment: .top, spacing: UmuveSpacing.normal) {
+            Image(systemName: icon)
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundColor(.umuvePrimary)
+                .frame(width: 24)
+                .padding(.top, 2)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(UmuveTypography.bodyFont.weight(.semibold))
+                    .foregroundColor(.umuveText)
+                Text(body)
+                    .font(UmuveTypography.bodySmallFont)
+                    .foregroundColor(.umuveTextMuted)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
     }
 

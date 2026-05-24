@@ -8,6 +8,7 @@
 import SwiftUI
 import MapKit
 import Combine
+import PassKit
 import StripePaymentSheet
 
 struct BookingReviewView: View {
@@ -61,17 +62,22 @@ struct BookingReviewView: View {
             // Confirm Button (safeAreaInset bottom)
             VStack {
                 Spacer()
-                confirmButton
-                    .padding(.horizontal, UmuveSpacing.large)
-                    .padding(.bottom, UmuveSpacing.normal)
-                    .background(
-                        LinearGradient(
-                            colors: [.clear, Color.umuveBackground.opacity(0.95)],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                        .frame(height: 120)
+                VStack(spacing: UmuveSpacing.small) {
+                    if PaymentService.shared.isApplePayAvailable {
+                        applePayButton
+                    }
+                    confirmButton
+                }
+                .padding(.horizontal, UmuveSpacing.large)
+                .padding(.bottom, UmuveSpacing.normal)
+                .background(
+                    LinearGradient(
+                        colors: [.clear, Color.umuveBackground.opacity(0.95)],
+                        startPoint: .top,
+                        endPoint: .bottom
                     )
+                    .frame(height: 160)
+                )
             }
             .ignoresSafeArea(edges: .bottom)
 
@@ -572,6 +578,27 @@ struct BookingReviewView: View {
                 )
         )
         .padding(.horizontal, UmuveSpacing.large)
+    }
+
+    // MARK: - Apple Pay Button
+
+    private var applePayButton: some View {
+        let canSubmit = bookingData.estimateAccepted
+            && !viewModel.isPreparingPayment
+            && !viewModel.isSubmitting
+
+        return PayWithApplePayButton(.buy) {
+            Task {
+                await viewModel.confirmAndPay(bookingData: bookingData)
+            }
+        }
+        .payWithApplePayButtonStyle(.black)
+        .frame(maxWidth: .infinity)
+        .frame(height: 50)
+        .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.lg))
+        .opacity(canSubmit ? 1.0 : 0.5)
+        .disabled(!canSubmit)
+        .accessibilityLabel("Pay with Apple Pay")
     }
 
     // MARK: - Confirm Button

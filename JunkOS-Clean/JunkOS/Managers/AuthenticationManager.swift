@@ -326,6 +326,52 @@ class AuthenticationManager: ObservableObject {
         KeychainHelper.delete(forKey: "userId")
     }
 
+    /// Permanently delete the current user's account.
+    ///
+    /// Required by Apple Guideline 5.1.1(v) — apps that support
+    /// account creation must offer in-app account deletion. The
+    /// backend anonymizes all PII and invalidates the JWT; we then
+    /// clear local state and route back to auth.
+    ///
+    /// Returns `nil` on success or a human-readable error message.
+    @MainActor
+    func deleteAccount() async -> String? {
+        guard let token = KeychainHelper.loadString(forKey: "authToken"),
+              !token.isEmpty else {
+            // No session — just clear local state and treat as success.
+            await logout()
+            return nil
+        }
+        guard let url = URL(string: "\(baseURL)/api/auth/me") else {
+            return "Couldn't reach the server."
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue(apiKey, forHTTPHeaderField: "X-API-Key")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard let http = response as? HTTPURLResponse else {
+                return "No response from server."
+            }
+            if (200...299).contains(http.statusCode) {
+                await logout()
+                HapticManager.shared.success()
+                return nil
+            }
+            if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+               let err = json["error"] as? String {
+                return err
+            }
+            return "Couldn't delete account (status \(http.statusCode))."
+        } catch {
+            return error.localizedDescription
+        }
+    }
+
     // MARK: - Email Authentication
 
     /// Login with email and password via POST /api/auth/login
