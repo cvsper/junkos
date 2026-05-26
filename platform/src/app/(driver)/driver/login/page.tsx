@@ -40,7 +40,7 @@ export default function DriverLoginPage() {
       // Check if user has driver access
       if (mappedUser.role !== "driver") {
         setError(
-          "This account does not have driver access. Sign up as a driver at goumuve.com/drivers"
+          "This account does not have driver access. Sign up as a driver at goumuve.com/operators"
         );
         setLoading(false);
         return;
@@ -172,7 +172,7 @@ export default function DriverLoginPage() {
         {/* Footer Links */}
         <div className="mt-4 text-center space-y-2">
           <Link
-            href="https://goumuve.com/drivers"
+            href="https://goumuve.com/operators"
             className="block text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             Learn about driving for Umuve

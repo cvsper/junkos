@@ -283,7 +283,7 @@ function SignupForm() {
         {/* Footer Links */}
         <div className="mt-4 text-center space-y-2">
           <Link
-            href="https://goumuve.com/drivers"
+            href="https://goumuve.com/operators"
             className="block text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             Learn about driving for Umuve
