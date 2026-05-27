@@ -61,6 +61,101 @@ def get_tracking_info(job_id):
     return jsonify({"success": True, "tracking": result}), 200
 
 
+# ---------------------------------------------------------------------------
+# Public customer tracking by confirmation code  (Tier 3-H)
+# ---------------------------------------------------------------------------
+# Customers should never see internal UUIDs. The booking confirmation email
+# includes the 8-char ``confirmation_code`` (e.g. #1F96FC1A). The /code/<code>
+# endpoint maps that to a customer-friendly status snapshot — stage names
+# they understand, hauler first-name only, no internal IDs leaked.
+
+# Internal status → customer-facing stage label + short copy
+_STAGE_MAP = {
+    "pending":      ("waiting",   "We're confirming a hauler for your pickup."),
+    "confirmed":    ("waiting",   "We're confirming a hauler for your pickup."),
+    "accepted":     ("assigned",  "A hauler has been assigned and will arrive at your scheduled time."),
+    "assigned":     ("assigned",  "A hauler has been assigned and will arrive at your scheduled time."),
+    "in_progress":  ("en_route",  "Your hauler is on the way."),
+    "started":      ("on_site",   "Your hauler has arrived and is loading up."),
+    "completed":    ("complete",  "Pickup complete. Thanks for choosing umuve!"),
+    "cancelled":    ("cancelled", "This booking was cancelled."),
+    "no_show":      ("issue",     "We're sorting out a hauler — please check your texts."),
+}
+
+
+@tracking_bp.route("/code/<code>", methods=["GET"])
+def get_tracking_by_code(code):
+    """Public tracking by confirmation code — no auth, customer-friendly fields only.
+
+    Returns a minimal, safe shape suitable for a public /track/<code> page on
+    the frontend. Never leaks contractor phone, internal IDs, or pricing
+    breakdowns; just the stage, scheduled time, address (short), and
+    hauler's first name + truck info.
+    """
+    if not code:
+        return jsonify({"error": "tracking code required"}), 400
+
+    # Normalize — codes are stored uppercase
+    code_norm = code.strip().upper()
+    job = Job.query.filter_by(confirmation_code=code_norm).first()
+    if not job:
+        return jsonify({"error": "No booking found for that code"}), 404
+
+    stage, message = _STAGE_MAP.get(
+        (job.status or "").lower(),
+        ("unknown", "Booking status pending."),
+    )
+
+    hauler = None
+    if job.driver_id or job.operator_id:
+        contractor_id = job.driver_id or job.operator_id
+        contractor = db.session.get(Contractor, contractor_id)
+        if contractor:
+            full_name = contractor.user.name if contractor.user else ""
+            first_name = full_name.split()[0] if full_name else "your hauler"
+            hauler = {
+                "first_name": first_name,
+                "truck_type": contractor.truck_type,
+                "avg_rating": contractor.avg_rating,
+            }
+
+    return jsonify({
+        "success": True,
+        "tracking": {
+            "code": code_norm,
+            "stage": stage,                 # waiting | assigned | en_route | on_site | complete | cancelled | issue
+            "message": message,
+            "scheduled_at": job.scheduled_at.isoformat() if job.scheduled_at else None,
+            "address_short": (job.address or "").split(",")[0] if job.address else None,
+            "hauler": hauler,
+            # Items as count + first 3 categories — enough for "yes this is my booking"
+            "items_summary": _summarize_items(job.items),
+        },
+    }), 200
+
+
+def _summarize_items(items):
+    """Compact human label for items: '3 items: sofa, mattress, +1 more'."""
+    if not items or not isinstance(items, list):
+        return ""
+    cats = []
+    total_qty = 0
+    for it in items:
+        cat = (it or {}).get("category") if isinstance(it, dict) else None
+        qty = (it or {}).get("quantity", 1) if isinstance(it, dict) else 1
+        try:
+            total_qty += int(qty)
+        except (TypeError, ValueError):
+            total_qty += 1
+        if cat and cat not in cats:
+            cats.append(cat)
+    head = ", ".join(cats[:3])
+    rest = " +{} more".format(len(cats) - 3) if len(cats) > 3 else ""
+    return "{} item{}: {}{}".format(
+        total_qty, "" if total_qty == 1 else "s", head, rest,
+    )
+
+
 @tracking_bp.route("/<job_id>/driver-location", methods=["GET"])
 def get_driver_location(job_id):
     """

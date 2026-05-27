@@ -736,6 +736,108 @@ def create_booking(user_id):
         except (TypeError, ValueError):
             pass  # Invalid coords -- skip check, let downstream handle it
 
+    # --- Coverage check: do we actually have a hauler near this address? ---
+    # The geofence above only confirms the county is in scope. This second gate
+    # confirms an approved contractor's last-known location is within range. If
+    # not, NEVER charge — capture the lead, alert admin, and tell the customer
+    # we'll text a confirmed time. This is what kept us from missing booking
+    # #1f96fc1a in Weston and refunding $116.64.
+    if lat is not None and lng is not None:
+        try:
+            from dispatcher import has_active_coverage, _notify_admin_no_coverage_lead
+
+            if not has_active_coverage(float(lat), float(lng)):
+                # Resolve customer contact (authed user or guest fields in body)
+                customer_email = ""
+                customer_phone = ""
+                customer_name = ""
+                try:
+                    if user_id:
+                        user_obj = db.session.get(User, user_id)
+                        if user_obj:
+                            customer_email = (user_obj.email or "").strip().lower()
+                            customer_phone = user_obj.phone or ""
+                            customer_name = user_obj.name or ""
+                    if not customer_email:
+                        customer_email = (
+                            data.get("email") or data.get("guest_email") or ""
+                        ).strip().lower()
+                    if not customer_phone:
+                        customer_phone = (data.get("phone") or "").strip()
+                    if not customer_name:
+                        customer_name = (data.get("name") or "").strip()
+                except Exception:
+                    pass
+
+                # Capture as a waitlist lead if we have an email (for drip / follow-up)
+                if customer_email:
+                    try:
+                        existing = AbandonedBooking.query.filter_by(
+                            email=customer_email, converted=False
+                        ).first()
+                        if existing:
+                            existing.address = address or existing.address
+                            existing.phone = customer_phone or existing.phone
+                            existing.name = customer_name or existing.name
+                            existing.items = data.get("items") or existing.items
+                            existing.estimated_price = (
+                                data.get("estimated_price") or existing.estimated_price
+                            )
+                            existing.lead_source = "no_coverage_waitlist"
+                            existing.step = 99
+                        else:
+                            db.session.add(AbandonedBooking(
+                                email=customer_email,
+                                phone=customer_phone or None,
+                                name=customer_name or None,
+                                address=address,
+                                items=data.get("items"),
+                                estimated_price=data.get("estimated_price"),
+                                lead_source="no_coverage_waitlist",
+                                step=99,
+                            ))
+                        db.session.commit()
+                    except Exception:
+                        db.session.rollback()
+                        import logging
+                        logging.getLogger(__name__).exception(
+                            "Failed to capture no-coverage waitlist lead for %s",
+                            customer_email,
+                        )
+
+                # Fire the admin alert immediately (never blocks the response)
+                try:
+                    _notify_admin_no_coverage_lead(
+                        address=address, lat=lat, lng=lng,
+                        customer_email=customer_email,
+                        customer_phone=customer_phone,
+                        customer_name=customer_name,
+                        items=data.get("items"),
+                        estimated_price=data.get("estimated_price"),
+                    )
+                except Exception:
+                    import logging
+                    logging.getLogger(__name__).exception(
+                        "Failed to alert admin about no-coverage lead at %s",
+                        address,
+                    )
+
+                return jsonify({
+                    "error": (
+                        "We don't have a hauler available at this address yet, "
+                        "but your area is in our service zone. We've saved your "
+                        "request and our team will text you a confirmed time "
+                        "within 2 hours. No charge has been made."
+                    ),
+                    "status": "waitlist",
+                }), 400
+        except Exception:
+            # Coverage check itself failed — fail open, let booking proceed
+            import logging
+            logging.getLogger(__name__).exception(
+                "Coverage check failed unexpectedly — allowing booking to proceed",
+            )
+
     items = data.get("items")
     if not items or not isinstance(items, list):
         return jsonify({"error": "items array is required"}), 400

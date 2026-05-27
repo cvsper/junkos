@@ -282,6 +282,10 @@ class Job(db.Model):
     review_requested = Column(Boolean, default=False)
     review_call_id = Column(String(255), nullable=True)
 
+    # No-show watchdog flags — set when each alert fires so we don't double-fire
+    noshow_t30_alerted = Column(Boolean, default=False)
+    noshow_late_alerted = Column(Boolean, default=False)
+
     volume_adjustment_proposed = Column(Boolean, default=False)
     adjusted_volume = Column(Float, nullable=True)
     adjusted_price = Column(Float, nullable=True)
@@ -341,6 +345,8 @@ class Job(db.Model):
             "reminder_call_id": self.reminder_call_id,
             "review_requested": self.review_requested or False,
             "review_call_id": self.review_call_id,
+            "noshow_t30_alerted": self.noshow_t30_alerted or False,
+            "noshow_late_alerted": self.noshow_late_alerted or False,
             "volume_adjustment_proposed": self.volume_adjustment_proposed,
             "adjusted_volume": self.adjusted_volume,
             "adjusted_price": self.adjusted_price,
