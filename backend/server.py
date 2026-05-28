@@ -644,6 +644,70 @@ def run_migrate_endpoint(secret):
         return jsonify({"error": "Migration failed"}), 500
 
 
+@app.route("/api/admin/test-alert/<secret>", methods=["POST", "GET"])
+@limiter.exempt
+def test_alert_endpoint(secret):
+    """Fire a test SMS + email to the configured admin contacts.
+
+    Verifies the operator-alert delivery chain end-to-end (Twilio + email +
+    ADMIN_PHONE/ADMIN_EMAIL config) without needing a real booking or payment.
+    Secured by the same ADMIN_SEED_SECRET env var as the migrate endpoint.
+
+    Returns which channels are configured and whether each send was attempted,
+    so a missing env var or provider misconfig is visible in the response.
+    """
+    expected = os.environ.get("ADMIN_SEED_SECRET", "")
+    if not expected or secret != expected:
+        return jsonify({"error": "Forbidden"}), 403
+
+    admin_phone = os.environ.get("ADMIN_PHONE", "")
+    admin_email = os.environ.get("ADMIN_EMAIL", "")
+
+    result = {
+        "admin_phone_configured": bool(admin_phone),
+        "admin_email_configured": bool(admin_email),
+        "sms_attempted": False,
+        "email_attempted": False,
+        "errors": [],
+    }
+
+    if not admin_phone and not admin_email:
+        result["errors"].append(
+            "Neither ADMIN_PHONE nor ADMIN_EMAIL is set — no alert can be delivered."
+        )
+        return jsonify(result), 200
+
+    if admin_phone:
+        try:
+            from sms_service import send_sms_async
+            send_sms_async(
+                admin_phone,
+                "umuve alert test ✅ — if you got this, your SMS alert chain is "
+                "live. (No action needed.)",
+            )
+            result["sms_attempted"] = True
+        except Exception as exc:
+            result["errors"].append("SMS send failed: {}".format(exc))
+            app.logger.exception("test-alert SMS failed")
+
+    if admin_email:
+        try:
+            from email_service import send_email_async
+            send_email_async(
+                admin_email,
+                "✅ umuve alert test",
+                "<h2>Alert chain is live</h2><p>If you're reading this, the "
+                "email alert path (ADMIN_EMAIL + email service) is working. "
+                "No action needed — this was a manual test ping.</p>",
+            )
+            result["email_attempted"] = True
+        except Exception as exc:
+            result["errors"].append("Email send failed: {}".format(exc))
+            app.logger.exception("test-alert email failed")
+
+    return jsonify(result), 200
+
+
 @app.route("/api/services", methods=["GET"])
 @require_api_key
 def get_services():
