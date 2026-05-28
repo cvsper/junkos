@@ -87,6 +87,22 @@ if database_url:
     if database_url.startswith("postgres://"):
         database_url = database_url.replace("postgres://", "postgresql://", 1)
     app.config["SQLALCHEMY_DATABASE_URI"] = database_url
+
+    # Connection-pool hardening for Render Postgres.
+    # Render closes idle DB connections (~5 min) and spins web services down
+    # when idle; without pre-ping, SQLAlchemy hands out a dead pooled
+    # connection on the next request and the query dies with
+    # "SSL SYSCALL error: EOF detected". pool_pre_ping issues a cheap
+    # liveness check (and transparently reconnects) before every checkout;
+    # pool_recycle proactively retires connections before Render's idle
+    # cutoff. This fixes intermittent 500s app-wide, not just one endpoint.
+    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+        "pool_pre_ping": True,
+        "pool_recycle": 280,
+        "pool_size": 5,
+        "max_overflow": 5,
+        "pool_timeout": 30,
+    }
 else:
     # Fallback to SQLite for local development
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///umuve.db"
