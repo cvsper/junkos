@@ -110,6 +110,10 @@ COLUMN_MIGRATIONS = [
     ("jobs", "review_requested", "BOOLEAN", "BOOLEAN", "FALSE"),
     ("jobs", "review_call_id", "VARCHAR(255)", "VARCHAR(255)", "NULL"),
 
+    # No-show watchdog flags (added 2026-05-27)
+    ("jobs", "noshow_t30_alerted", "BOOLEAN", "BOOLEAN", "FALSE"),
+    ("jobs", "noshow_late_alerted", "BOOLEAN", "BOOLEAN", "FALSE"),
+
     # User win-back fields (added 2026-03-24)
     ("users", "winback_called", "BOOLEAN", "BOOLEAN", "FALSE"),
     ("users", "last_winback_at", "DATETIME", "TIMESTAMP", "NULL"),

@@ -179,3 +179,74 @@ def _point_to_segment_distance(px, py, ax, ay, bx, by):
     closest_lng = ay + t * aby
 
     return _haversine(px, py, closest_lat, closest_lng)
+
+
+# ---------------------------------------------------------------------------
+# Dynamic coverage — Tier 3-G of the airtight stack
+# ---------------------------------------------------------------------------
+# The static polygon above says "we serve these 3 counties in principle."
+# The dynamic coverage below says "right now, here is where we actually have
+# a hauler in range." Both matter — static gates the booking funnel at the
+# county level (so out-of-region traffic is rejected outright), dynamic
+# gates payment at the address level (so we never charge for an address
+# we can't fulfill — wired in routes/booking.py via has_active_coverage).
+#
+# This function exposes the dynamic state for frontend display so customers
+# can see if their address is covered, and so sevs can debug "why was that
+# booking blocked / let through" questions visually.
+
+DEFAULT_COVERAGE_RADIUS_MILES = 30.0
+
+
+def get_dynamic_coverage_summary(radius_miles=DEFAULT_COVERAGE_RADIUS_MILES):
+    """Return contractor-derived coverage data for frontend / debugging.
+
+    Returns:
+        {
+            "contractor_count": int,
+            "radius_miles": float,
+            "circles": [{"lat": float, "lng": float, "radius_miles": float}],
+            # Bounding box around all contractor centers (handy for map fit)
+            "bounds": {"north": float, "south": float, "east": float, "west": float} | None,
+        }
+
+    Fails open on any DB error (returns an empty summary).
+    """
+    summary = {
+        "contractor_count": 0,
+        "radius_miles": radius_miles,
+        "circles": [],
+        "bounds": None,
+    }
+
+    try:
+        from models import Contractor
+        contractors = Contractor.query.filter_by(approval_status="approved").all()
+
+        lats = []
+        lngs = []
+        for c in contractors:
+            if c.current_lat is None or c.current_lng is None:
+                continue
+            summary["circles"].append({
+                "lat": float(c.current_lat),
+                "lng": float(c.current_lng),
+                "radius_miles": radius_miles,
+            })
+            lats.append(float(c.current_lat))
+            lngs.append(float(c.current_lng))
+
+        summary["contractor_count"] = len(summary["circles"])
+
+        if lats and lngs:
+            summary["bounds"] = {
+                "north": max(lats),
+                "south": min(lats),
+                "east": max(lngs),
+                "west": min(lngs),
+            }
+    except Exception:
+        # Fail open — never break frontend rendering on a DB hiccup
+        pass
+
+    return summary

@@ -31,9 +31,10 @@ MAX_RADIUS_MILES = 30.0
 SCHEDULE_CONFLICT_HOURS = 2  # hours around scheduled_at to check for conflicts
 EXPERIENCE_CAP = 500  # total_jobs at which experience score = 1.0
 
-# Admin notification phone (set via env var)
+# Admin notification contacts (set via env vars)
 import os
 ADMIN_PHONE = os.environ.get("ADMIN_PHONE", "")
+ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "")
 
 
 # ---------------------------------------------------------------------------
@@ -521,28 +522,298 @@ def _sms_operator_assigned(contractor, job):
 
 
 def _notify_admin_no_operators(job):
-    """SMS admin when no operators are available for a job.
+    """Alert admin (SMS + email) when no operators are available for a job.
+
+    Fires on every configured channel (ADMIN_PHONE, ADMIN_EMAIL) so a single
+    misconfiguration or provider hiccup can't swallow the alert silently. If
+    NOTHING is configured, logs at error level so the gap is visible.
 
     Never raises.
     """
+    short_id = str(job.id)[:8]
+
+    # --- Gather actionable detail (all guarded; the alert must fire even if sparse) ---
+    address = getattr(job, "address", None) or "unknown address"
+    code = getattr(job, "confirmation_code", None) or short_id
     try:
-        if not ADMIN_PHONE:
-            logger.warning(
-                "No ADMIN_PHONE configured — cannot notify about unassigned job %s",
-                job.id,
+        amount = "${:.2f}".format(float(job.total_price)) if getattr(job, "total_price", None) else "unknown"
+    except (TypeError, ValueError):
+        amount = "unknown"
+    sched = (
+        job.scheduled_at.strftime("%b %d at %I:%M %p")
+        if getattr(job, "scheduled_at", None) else "ASAP/TBD"
+    )
+
+    customer_name = ""
+    customer_phone = ""
+    try:
+        customer = getattr(job, "customer", None)
+        if customer is not None:
+            customer_name = getattr(customer, "name", "") or ""
+            customer_phone = getattr(customer, "phone", "") or ""
+    except Exception:
+        pass
+
+    if not ADMIN_PHONE and not ADMIN_EMAIL:
+        logger.error(
+            "UNASSIGNED PAID JOB #%s (%s, %s) but NO ADMIN_PHONE/ADMIN_EMAIL "
+            "configured — alert cannot be delivered. Set one in the environment.",
+            code, address, amount,
+        )
+        return
+
+    # --- SMS channel ---
+    if ADMIN_PHONE:
+        try:
+            from sms_service import send_sms_async
+            sms_body = (
+                "umuve ALERT: No operator for job #{} ({}). {} — {}. "
+                "Scramble a hauler or refund."
+            ).format(code, address, amount, sched)
+            send_sms_async(ADMIN_PHONE, sms_body)
+        except Exception:
+            logger.exception("Failed to SMS admin about unassigned job %s", job.id)
+
+    # --- Email channel ---
+    if ADMIN_EMAIL:
+        try:
+            from email_service import send_email_async
+            subject = "⚠️ Unassigned job #{} — no operator available".format(code)
+            html = (
+                "<h2>No operator available for a paid booking</h2>"
+                "<p>A customer booked and paid, but no approved/online contractor "
+                "could be assigned. Manual action needed — scramble a hauler or "
+                "refund before they get frustrated.</p>"
+                "<table cellpadding='6' style='font-family:sans-serif;font-size:14px'>"
+                "<tr><td><b>Booking</b></td><td>#{code}</td></tr>"
+                "<tr><td><b>Amount</b></td><td>{amount}</td></tr>"
+                "<tr><td><b>Address</b></td><td>{address}</td></tr>"
+                "<tr><td><b>Scheduled</b></td><td>{sched}</td></tr>"
+                "<tr><td><b>Customer</b></td><td>{cname} {cphone}</td></tr>"
+                "</table>"
+            ).format(
+                code=code, amount=amount, address=address, sched=sched,
+                cname=customer_name, cphone=customer_phone,
             )
-            return
+            send_email_async(ADMIN_EMAIL, subject, html)
+        except Exception:
+            logger.exception("Failed to email admin about unassigned job %s", job.id)
 
-        from sms_service import send_sms_async
 
-        short_id = str(job.id)[:8]
-        body = (
-            "ALERT: No operators available for job {} at {}. "
-            "Manual assignment needed."
-        ).format(short_id, job.address or "unknown address")
+# ---------------------------------------------------------------------------
+# Coverage-aware booking gate (used pre-payment by routes/booking.py)
+# ---------------------------------------------------------------------------
+def has_active_coverage(lat, lng, radius_miles=MAX_RADIUS_MILES):
+    """Return True if any approved contractor's last-known location is within
+    ``radius_miles`` of ``(lat, lng)``.
 
-        send_sms_async(ADMIN_PHONE, body)
+    Used pre-payment to decide whether a booking has any chance of being
+    fulfilled. Independent of ``is_online`` — an offline-but-approved
+    contractor who serves the area still counts as coverage (signals supply
+    exists, even if not broadcasting right now). The runtime auto-assigner
+    separately handles whether a contractor is reachable *at this moment*.
+
+    Fails open (returns True) on any error — better to risk one missed-coverage
+    edge case than to break the entire booking funnel.
+    """
+    try:
+        if lat is None or lng is None:
+            return True
+        try:
+            lat_f = float(lat)
+            lng_f = float(lng)
+        except (TypeError, ValueError):
+            return True
+
+        from models import Contractor
+        contractors = Contractor.query.filter_by(approval_status="approved").all()
+        for c in contractors:
+            if c.current_lat is None or c.current_lng is None:
+                continue
+            if haversine(lat_f, lng_f, c.current_lat, c.current_lng) <= radius_miles:
+                return True
+        return False
     except Exception:
         logger.exception(
-            "Failed to send admin notification for job %s", job.id
+            "has_active_coverage check failed for (%s, %s) — failing open",
+            lat, lng,
         )
+        return True
+
+
+def _notify_admin_no_coverage_lead(
+    address, lat=None, lng=None,
+    customer_email="", customer_phone="", customer_name="",
+    items=None, estimated_price=None,
+):
+    """Alert admin (SMS + email) when a pre-payment lead lands in an uncovered area.
+
+    Counterpart to ``_notify_admin_no_operators`` for the waitlist case: no Job
+    record exists, no charge has happened, and the customer has been told
+    we'll text them a confirmed time within 2 hours.
+
+    Never raises.
+    """
+    if not ADMIN_PHONE and not ADMIN_EMAIL:
+        logger.error(
+            "NO-COVERAGE LEAD at %s (%s, %s) but NO ADMIN_PHONE/ADMIN_EMAIL "
+            "configured — alert cannot be delivered. Set one in the environment.",
+            address, lat, lng,
+        )
+        return
+
+    try:
+        amount_str = (
+            "${:.2f}".format(float(estimated_price))
+            if estimated_price else "estimate pending"
+        )
+    except (TypeError, ValueError):
+        amount_str = "estimate pending"
+
+    contact = " / ".join(
+        c for c in [customer_name, customer_phone, customer_email] if c
+    ) or "unknown"
+
+    # --- SMS channel ---
+    if ADMIN_PHONE:
+        try:
+            from sms_service import send_sms_async
+            sms_body = (
+                "umuve WAITLIST: lead in uncovered area. {} (no contractor in "
+                "range). Est {}. Contact: {}. No charge — reach out within 2hrs "
+                "or refer."
+            ).format(address, amount_str, contact)
+            send_sms_async(ADMIN_PHONE, sms_body)
+        except Exception:
+            logger.exception(
+                "Failed to SMS admin about no-coverage lead at %s", address,
+            )
+
+    # --- Email channel ---
+    if ADMIN_EMAIL:
+        try:
+            from email_service import send_email_async
+            subject = "⚠️ No-coverage waitlist lead — {}".format(
+                (address or "unknown")[:60]
+            )
+            html = (
+                "<h2>Customer tried to book in an area we don't have a hauler for</h2>"
+                "<p><b>No charge was made.</b> Customer has been told we'll text "
+                "them a confirmed time within 2 hours. Action: reach out, refer "
+                "to a partner, or scramble a contractor.</p>"
+                "<table cellpadding='6' style='font-family:sans-serif;font-size:14px'>"
+                "<tr><td><b>Address</b></td><td>{address}</td></tr>"
+                "<tr><td><b>Estimate</b></td><td>{amount}</td></tr>"
+                "<tr><td><b>Customer</b></td><td>{contact}</td></tr>"
+                "<tr><td><b>Items</b></td><td>{items}</td></tr>"
+                "</table>"
+            ).format(
+                address=address or "unknown",
+                amount=amount_str,
+                contact=contact,
+                items=str(items or "—"),
+            )
+            send_email_async(ADMIN_EMAIL, subject, html)
+        except Exception:
+            logger.exception(
+                "Failed to email admin about no-coverage lead at %s", address,
+            )
+
+
+def _notify_admin_late_job(job, minutes_late):
+    """Alert admin when a scheduled job is past its start time with no progress.
+
+    Counterpart to ``_notify_admin_no_operators`` for the post-scheduled-time
+    case: the job had an assignment (or didn't, doesn't matter), but the
+    real-world status hasn't moved to "started" / "completed". Almost always
+    means the contractor is silently no-showing.
+
+    Channels: SMS (OPERATOR_PHONE → ADMIN_PHONE fallback) + email (ADMIN_EMAIL).
+    Never raises.
+    """
+    short_id = str(getattr(job, "id", ""))[:8]
+    code = getattr(job, "confirmation_code", None) or short_id
+    address = getattr(job, "address", None) or "unknown address"
+
+    try:
+        amount = (
+            "${:.2f}".format(float(job.total_price))
+            if getattr(job, "total_price", None) else "unknown"
+        )
+    except (TypeError, ValueError):
+        amount = "unknown"
+
+    sched = (
+        job.scheduled_at.strftime("%b %d at %I:%M %p")
+        if getattr(job, "scheduled_at", None) else "unknown time"
+    )
+
+    # Try to surface the assigned contractor (if any) so sevs knows who to chase.
+    assigned_label = "unassigned"
+    try:
+        if getattr(job, "driver_id", None) or getattr(job, "operator_id", None):
+            assigned_label = "assigned (driver={} / operator={})".format(
+                getattr(job, "driver_id", None) or "—",
+                getattr(job, "operator_id", None) or "—",
+            )
+    except Exception:
+        pass
+
+    customer_name = ""
+    customer_phone = ""
+    try:
+        customer = getattr(job, "customer", None)
+        if customer is not None:
+            customer_name = getattr(customer, "name", "") or ""
+            customer_phone = getattr(customer, "phone", "") or ""
+    except Exception:
+        pass
+
+    if not ADMIN_PHONE and not ADMIN_EMAIL:
+        logger.error(
+            "LATE JOB #%s (%s, %d min late, %s) but NO ADMIN_PHONE/ADMIN_EMAIL "
+            "configured — alert cannot be delivered.",
+            code, address, minutes_late, assigned_label,
+        )
+        return
+
+    if ADMIN_PHONE:
+        try:
+            from sms_service import send_sms_async
+            sms_body = (
+                "🚨 umuve LATE JOB #{} — {} min past scheduled "
+                "({}). {} — {}. Status={}. Scramble or call the hauler now."
+            ).format(
+                code, minutes_late, sched, address, amount, assigned_label,
+            )
+            send_sms_async(ADMIN_PHONE, sms_body)
+        except Exception:
+            logger.exception("Failed to SMS admin about late job %s", job.id)
+
+    if ADMIN_EMAIL:
+        try:
+            from email_service import send_email_async
+            subject = "🚨 LATE JOB #{} — {} min past scheduled".format(
+                code, minutes_late,
+            )
+            html = (
+                "<h2>Job is past its scheduled start with no progress</h2>"
+                "<p>Customer has been auto-texted a reassurance message, but the "
+                "clock is on — call the assigned hauler or scramble a backup now.</p>"
+                "<table cellpadding='6' style='font-family:sans-serif;font-size:14px'>"
+                "<tr><td><b>Booking</b></td><td>#{code}</td></tr>"
+                "<tr><td><b>Minutes late</b></td><td>{mins}</td></tr>"
+                "<tr><td><b>Scheduled</b></td><td>{sched}</td></tr>"
+                "<tr><td><b>Amount</b></td><td>{amount}</td></tr>"
+                "<tr><td><b>Address</b></td><td>{address}</td></tr>"
+                "<tr><td><b>Customer</b></td><td>{cname} {cphone}</td></tr>"
+                "<tr><td><b>Assignment</b></td><td>{assigned}</td></tr>"
+                "</table>"
+            ).format(
+                code=code, mins=minutes_late, sched=sched, amount=amount,
+                address=address, cname=customer_name, cphone=customer_phone,
+                assigned=assigned_label,
+            )
+            send_email_async(ADMIN_EMAIL, subject, html)
+        except Exception:
+            logger.exception("Failed to email admin about late job %s", job.id)

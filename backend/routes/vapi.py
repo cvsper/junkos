@@ -488,10 +488,20 @@ def _handle_transfer_with_context(args):
 
 
 def _handle_schedule_callback(args, vapi_data):
-    """Schedule a callback for the customer."""
+    """Schedule a callback for the customer.
+
+    Also fires a multi-channel alert (SMS + email) so a complaint or urgent
+    issue captured by Maya reaches the owner even if a transfer fails or the
+    call drops afterward. For ``urgency="high"`` (complaints, missed
+    appointments, refund requests, frustrated callers) the alert is prefixed
+    and re-emphasized, and the caller is reassured the owner is being
+    notified immediately rather than at a scheduled time.
+    """
     customer_name = args.get("customer_name", "")
     phone = args.get("phone", "")
     callback_time = args.get("callback_time", "")
+    urgency = (args.get("urgency") or "normal").lower()
+    reason = args.get("reason", "") or ""
 
     # Get caller phone from Vapi if not provided
     if not phone:
@@ -530,21 +540,97 @@ def _handle_schedule_callback(args, vapi_data):
     db.session.add(callback)
     db.session.commit()
 
-    # Notify operator
+    # Multi-channel alert: SMS + email so a single misconfig or provider hiccup
+    # can't silently swallow a complaint. urgency="high" gets a louder header.
+    is_urgent = urgency == "high"
+    sms_prefix = "🚨 URGENT CALLBACK" if is_urgent else "CALLBACK REQUESTED"
+    name_str = customer_name or "Unknown"
+
+    # --- SMS channel ---
     try:
         from sms_service import send_sms_async
-        operator_phone = os.environ.get("OPERATOR_PHONE", "")
+        # OPERATOR_PHONE is the legacy default; ADMIN_PHONE is the new unified key.
+        operator_phone = (
+            os.environ.get("OPERATOR_PHONE", "")
+            or os.environ.get("ADMIN_PHONE", "")
+        )
         if operator_phone:
-            msg = (
-                "CALLBACK REQUESTED\n"
-                "Name: {}\n"
-                "Phone: {}\n"
-                "When: {}"
-            ).format(customer_name or "Unknown", phone, callback_time)
-            send_sms_async(operator_phone, msg)
+            sms_body = (
+                "{prefix}\n"
+                "Name: {name}\n"
+                "Phone: {phone}\n"
+                "When: {when}\n"
+                "Reason: {reason}"
+            ).format(
+                prefix=sms_prefix,
+                name=name_str,
+                phone=phone,
+                when=callback_time,
+                reason=reason or "(none provided)",
+            )
+            send_sms_async(operator_phone, sms_body)
+        else:
+            logger.error(
+                "No OPERATOR_PHONE/ADMIN_PHONE configured — callback for %s "
+                "(urgency=%s) could not be SMS-alerted.",
+                name_str, urgency,
+            )
     except Exception:
         logger.exception("Failed to send callback notification SMS")
 
+    # --- Email channel ---
+    try:
+        admin_email = os.environ.get("ADMIN_EMAIL", "")
+        if admin_email:
+            from email_service import send_email_async
+            subject = (
+                "🚨 URGENT — callback request from {}".format(name_str)
+                if is_urgent
+                else "Callback request from {}".format(name_str)
+            )
+            html = (
+                "<h2>{header}</h2>"
+                "<p>Captured by Maya on the support line. {urgent_note}</p>"
+                "<table cellpadding='6' style='font-family:sans-serif;font-size:14px'>"
+                "<tr><td><b>Customer</b></td><td>{name}</td></tr>"
+                "<tr><td><b>Phone</b></td><td>{phone}</td></tr>"
+                "<tr><td><b>Requested time</b></td><td>{when}</td></tr>"
+                "<tr><td><b>Urgency</b></td><td>{urgency}</td></tr>"
+                "<tr><td><b>Reason</b></td><td>{reason}</td></tr>"
+                "<tr><td><b>Vapi call ID</b></td><td>{call_id}</td></tr>"
+                "</table>"
+            ).format(
+                header=(
+                    "🚨 URGENT callback — likely complaint or service issue"
+                    if is_urgent
+                    else "Callback request"
+                ),
+                urgent_note=(
+                    "<b>This is flagged as urgent — likely a complaint, "
+                    "missed-appointment, refund request, or frustrated caller. "
+                    "Reach out as soon as you can.</b>"
+                    if is_urgent
+                    else "Reach out at the requested time."
+                ),
+                name=name_str,
+                phone=phone,
+                when=callback_time,
+                urgency=urgency,
+                reason=reason or "(none provided)",
+                call_id=call_id or "—",
+            )
+            send_email_async(admin_email, subject, html)
+    except Exception:
+        logger.exception("Failed to send callback notification email")
+
+    # Customer-facing response — urgent callers need different reassurance
+    if is_urgent:
+        return (
+            "I've flagged this as urgent and our owner is being notified right "
+            "now with your number and what happened. He will personally reach "
+            "back out as soon as he can. I'm really sorry for the trouble — "
+            "is there anything else I can help with while we're on the line?"
+        )
     return "Got it! We'll give you a call back {}. Talk soon!".format(callback_time)
 
 

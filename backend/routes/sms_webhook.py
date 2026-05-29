@@ -39,6 +39,28 @@ def inbound_sms():
 
     logger.info("Inbound SMS from %s: body=%r media=%d", from_phone, body[:100], num_media)
 
+    # --- Support detection (Tier 1-B): bypass Vapi for customers in trouble ---
+    # Check BEFORE the photo/Vapi paths so a "where is my hauler" text doesn't
+    # get auto-quoted or lost in the AI line. Photos are still photos — only
+    # text-only messages route through the support detector.
+    if num_media == 0 and body:
+        try:
+            from support_router import is_support_request, forward_to_admin
+            if is_support_request(body, from_phone):
+                forward_to_admin(from_phone, body)
+                logger.info(
+                    "Support-text fast-path: forwarded inbound from %s to admin",
+                    from_phone,
+                )
+                return _twiml_response(
+                    "Got your message — the owner has been notified directly "
+                    "and will personally reach out to you shortly. We're sorry "
+                    "for the trouble."
+                )
+        except Exception:
+            # Never let support detection break the normal SMS flow
+            logger.exception("Support-router check failed; falling through")
+
     # If there are images, run photo quoting (handled by us)
     if num_media > 0:
         media_urls = []

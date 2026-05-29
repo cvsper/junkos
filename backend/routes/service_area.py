@@ -27,6 +27,24 @@ def service_area_info():
 
 
 # ---------------------------------------------------------------------------
+# GET /api/service-area/dynamic  (Tier 3-G: contractor-derived live coverage)
+# ---------------------------------------------------------------------------
+@service_area_bp.route("/dynamic", methods=["GET"])
+def dynamic_coverage():
+    """Return live contractor-derived coverage for frontend map overlay.
+
+    Lets the booking UI show customers a real "where we actually have a hauler"
+    layer on top of the static county polygon — and lets sevs visualize why a
+    booking was/wasn't accepted into the waitlist gate.
+    """
+    from geofencing import get_dynamic_coverage_summary
+    return jsonify({
+        "success": True,
+        "coverage": get_dynamic_coverage_summary(),
+    }), 200
+
+
+# ---------------------------------------------------------------------------
 # POST /api/service-area/check  (public)
 # ---------------------------------------------------------------------------
 @service_area_bp.route("/check", methods=["POST"])
