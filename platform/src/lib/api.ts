@@ -1415,7 +1415,23 @@ export const referralsApi = {
       success: boolean;
       referral_code: string;
       share_url: string;
+      total_referrals?: number;
+      credits_earned?: number;
     }>("/api/referrals/my-code"),
+
+  /**
+   * POST /api/referrals/contractor/apply -- a new hauler claims a referring
+   * hauler's code. Pays both parties a bonus on the new hauler's first job.
+   */
+  applyContractorReferral: (referralCode: string) =>
+    apiFetch<{
+      success: boolean;
+      message: string;
+      referral: ReferralRecord;
+    }>("/api/referrals/contractor/apply", {
+      method: "POST",
+      body: JSON.stringify({ referral_code: referralCode }),
+    }),
 
   /** GET /api/referrals/stats -- get referral statistics */
   getStats: () =>
