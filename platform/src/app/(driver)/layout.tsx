@@ -20,12 +20,14 @@ import {
   AlertCircle,
   RefreshCw,
   Loader2,
+  Gift,
 } from "lucide-react";
 
 const sidebarLinks = [
   { href: "/driver", label: "Dashboard", icon: LayoutDashboard },
   { href: "/driver/jobs", label: "Jobs", icon: Briefcase },
   { href: "/driver/earnings", label: "Earnings", icon: DollarSign },
+  { href: "/driver/referral", label: "Refer & Earn", icon: Gift },
   { href: "/driver/profile", label: "Profile", icon: UserCircle },
 ];
 
