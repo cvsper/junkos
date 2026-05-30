@@ -114,6 +114,9 @@ COLUMN_MIGRATIONS = [
     ("jobs", "noshow_t30_alerted", "BOOLEAN", "BOOLEAN", "FALSE"),
     ("jobs", "noshow_late_alerted", "BOOLEAN", "BOOLEAN", "FALSE"),
 
+    # Contractor-referral discriminator (added 2026-05-29)
+    ("referrals", "referral_type", "VARCHAR(20)", "VARCHAR(20)", "'customer'"),
+
     # User win-back fields (added 2026-03-24)
     ("users", "winback_called", "BOOLEAN", "BOOLEAN", "FALSE"),
     ("users", "last_winback_at", "DATETIME", "TIMESTAMP", "NULL"),

@@ -735,6 +735,9 @@ class Referral(db.Model):
     referral_code = Column(String(8), nullable=False, index=True)
     status = Column(String(20), nullable=False, default="pending")
     reward_amount = Column(Float, default=10.00)
+    # 'customer' = rider-to-rider; 'contractor' = hauler refers a new hauler
+    # (supply growth — pays out on the new hauler's first completed job).
+    referral_type = Column(String(20), nullable=False, default="customer")
     created_at = Column(DateTime, default=utcnow)
     completed_at = Column(DateTime, nullable=True)
 
@@ -756,6 +759,7 @@ class Referral(db.Model):
             "referral_code": self.referral_code,
             "status": self.status,
             "reward_amount": self.reward_amount,
+            "referral_type": self.referral_type or "customer",
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "completed_at": self.completed_at.isoformat() if self.completed_at else None,
             "referrer_name": self.referrer.name if self.referrer else None,

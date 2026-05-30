@@ -421,6 +421,42 @@ def update_job_status(user_id, job_id):
         except Exception as e:
             logger.warning("Failed to update referral on job completion: %s", e)
 
+        # --- Contractor referral: pay both haulers on the new hauler's first job ---
+        try:
+            c_referral = Referral.query.filter_by(
+                referee_id=contractor.user_id,
+                referral_type="contractor",
+                status="signed_up",
+            ).first()
+            if c_referral:
+                c_referral.status = "completed"
+                c_referral.completed_at = utcnow()
+                bonus = c_referral.reward_amount or 0.0
+                logger.info(
+                    "Contractor referral %s completed: referrer %s + new hauler %s "
+                    "each earn $%.2f (first job %s done)",
+                    c_referral.id, c_referral.referrer_id, contractor.user_id, bonus, job.id,
+                )
+                # Notify both parties; bonus is tracked as a credit for sevs to pay out.
+                for uid, msg in (
+                    (c_referral.referrer_id,
+                     "Your referred hauler just completed their first job — "
+                     "${:.0f} referral bonus earned!".format(bonus)),
+                    (contractor.user_id,
+                     "First job complete! Your ${:.0f} referral bonus is earned.".format(bonus)),
+                ):
+                    if uid:
+                        db.session.add(Notification(
+                            id=generate_uuid(),
+                            user_id=uid,
+                            type="payment",
+                            title="Referral Bonus Earned",
+                            body=msg,
+                            data={"referral_id": c_referral.id, "amount": bonus},
+                        ))
+        except Exception as e:
+            logger.warning("Failed to update contractor referral on job completion: %s", e)
+
         # --- Reset win-back flag so customer can be called again next cycle ---
         try:
             customer_user = User.query.get(job.customer_id)
