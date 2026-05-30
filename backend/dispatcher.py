@@ -36,6 +36,35 @@ import os
 ADMIN_PHONE = os.environ.get("ADMIN_PHONE", "")
 ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "")
 
+# ---------------------------------------------------------------------------
+# Dispatch mode (marketplace broadcast vs single auto-assign)
+# ---------------------------------------------------------------------------
+# "assign"    -> legacy: pick the single best operator and assign them (one
+#                hauler can silently ghost the booking — the Sy failure mode).
+# "broadcast" -> marketplace: offer the job to every eligible hauler in range,
+#                first to tap the SMS accept link wins. No single point of
+#                failure; scales as supply grows. Flip with DISPATCH_MODE env.
+DISPATCH_MODE = os.environ.get("DISPATCH_MODE", "assign").strip().lower()
+
+# Platform take on each job. Contractor payout = total_price * (1 - take).
+# Conservative default; tune per market. Operators (fleets) use their own
+# operator_commission_rate elsewhere — this governs independent haulers.
+try:
+    PLATFORM_TAKE_RATE = float(os.environ.get("PLATFORM_TAKE_RATE", "0.20"))
+except (TypeError, ValueError):
+    PLATFORM_TAKE_RATE = 0.20
+
+# How long a broadcast offer stays acceptable before it's considered stale.
+try:
+    OFFER_EXPIRY_MINUTES = int(os.environ.get("OFFER_EXPIRY_MINUTES", "20"))
+except (TypeError, ValueError):
+    OFFER_EXPIRY_MINUTES = 20
+
+# Public base URL for the hauler-facing accept link in broadcast SMS.
+PUBLIC_API_URL = os.environ.get(
+    "PUBLIC_API_URL", "https://junkos-backend.onrender.com"
+).rstrip("/")
+
 
 # ---------------------------------------------------------------------------
 # Haversine
@@ -300,6 +329,11 @@ def auto_assign_job(job_id, app=None):
 
     Never raises.
     """
+    # Marketplace mode: broadcast to all eligible haulers instead of assigning
+    # a single one. Keeps the same call sites (payment success, booking) working.
+    if DISPATCH_MODE == "broadcast":
+        return broadcast_job(job_id, app)
+
     try:
         from models import db, Job, Notification, generate_uuid, utcnow
 
@@ -817,3 +851,335 @@ def _notify_admin_late_job(job, minutes_late):
             send_email_async(ADMIN_EMAIL, subject, html)
         except Exception:
             logger.exception("Failed to email admin about late job %s", job.id)
+
+
+# ===========================================================================
+# Marketplace broadcast / first-to-accept dispatch
+# ===========================================================================
+def _contractor_payout(job):
+    """Estimate a contractor's take-home for a job. Never raises."""
+    try:
+        total = float(getattr(job, "total_price", 0) or 0)
+        return round(total * (1.0 - PLATFORM_TAKE_RATE), 2)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def find_eligible_operators(job):
+    """Like find_best_operator, but returns ALL eligible contractors (not the
+    top 3) so the job can be broadcast to every hauler who could take it.
+
+    Returns a list of {"contractor", "distance_miles"} dicts sorted nearest
+    first. Empty list if none qualify. Never raises.
+    """
+    try:
+        from models import Contractor, Job as JobModel
+
+        query = Contractor.query.filter_by(
+            is_online=True,
+            approval_status="approved",
+        )
+        if job.operator_id:
+            query = query.filter_by(operator_id=job.operator_id)
+        else:
+            query = query.filter(
+                Contractor.is_operator.is_(False),
+                Contractor.operator_id.is_(None),
+            )
+
+        eligible = []
+        for c in query.all():
+            if _has_schedule_conflict(c, job.scheduled_at, JobModel):
+                continue
+
+            dist = None
+            if (
+                job.lat is not None and job.lng is not None
+                and c.current_lat is not None and c.current_lng is not None
+            ):
+                dist = haversine(c.current_lat, c.current_lng, job.lat, job.lng)
+                if dist > MAX_RADIUS_MILES:
+                    continue
+
+            # Capacity hard-disqualify (truck too small for the load)
+            if _capacity_score(c.truck_capacity, job.volume_estimate) == 0.0:
+                continue
+
+            eligible.append({
+                "contractor": c,
+                "distance_miles": round(dist, 1) if dist is not None else None,
+            })
+
+        # Nearest first (unknown distance sorts last)
+        eligible.sort(key=lambda e: e["distance_miles"] if e["distance_miles"] is not None else 1e9)
+        logger.info(
+            "Broadcast eligibility for job %s: %d hauler(s)",
+            job.id, len(eligible),
+        )
+        return eligible
+    except Exception:
+        logger.exception("find_eligible_operators failed for job %s", job.id)
+        return []
+
+
+def broadcast_job(job_id, app=None):
+    """Offer a job to every eligible hauler in range (first-to-accept wins).
+
+    Creates one JobOffer per eligible contractor and SMSes each an accept link.
+    If nobody is eligible, falls back to the existing no-operator admin alert so
+    the booking is never silently dropped. Never raises.
+    """
+    try:
+        from models import db, Job, JobOffer, generate_uuid, utcnow
+
+        def _do_broadcast():
+            job = db.session.get(Job, job_id)
+            if not job:
+                logger.warning("broadcast_job: job %s not found", job_id)
+                return
+            if job.driver_id:
+                logger.info("broadcast_job: job %s already assigned, skipping", job_id)
+                return
+            if job.status not in ("confirmed", "pending"):
+                logger.info(
+                    "broadcast_job: job %s status '%s', skipping", job_id, job.status
+                )
+                return
+
+            eligible = find_eligible_operators(job)
+            if not eligible:
+                logger.warning(
+                    "broadcast_job: no eligible haulers for job %s at %s",
+                    job_id, job.address,
+                )
+                _notify_admin_no_operators(job)
+                return
+
+            payout = _contractor_payout(job)
+            expires = utcnow() + timedelta(minutes=OFFER_EXPIRY_MINUTES)
+            offers = []
+            for e in eligible:
+                offer = JobOffer(
+                    id=generate_uuid(),
+                    job_id=job.id,
+                    contractor_id=e["contractor"].id,
+                    status="sent",
+                    accept_token=generate_uuid(),
+                    distance_miles=e["distance_miles"],
+                    payout_amount=payout,
+                    expires_at=expires,
+                )
+                db.session.add(offer)
+                offers.append((offer, e["contractor"]))
+
+            # Mark the job as broadcasting so the watchdog / UI can tell it's
+            # live in the marketplace but not yet claimed.
+            job.status = "broadcasting"
+            job.updated_at = utcnow()
+            db.session.commit()
+
+            logger.info(
+                "BROADCAST: job %s offered to %d haulers (payout=$%.2f, expires %dmin)",
+                job.id, len(offers), payout, OFFER_EXPIRY_MINUTES,
+            )
+
+            for offer, contractor in offers:
+                _sms_broadcast_offer(offer, contractor, job)
+
+        if app:
+            with app.app_context():
+                _do_broadcast()
+        else:
+            _do_broadcast()
+    except Exception:
+        logger.exception("broadcast_job failed for job %s", job_id)
+
+
+def broadcast_job_async(job_id, app):
+    """Fire broadcast_job in a background thread. Never raises."""
+    try:
+        t = threading.Thread(target=broadcast_job, args=(job_id, app), daemon=True)
+        t.start()
+        logger.info("Dispatched background broadcast thread for job %s", job_id)
+        return t
+    except Exception:
+        logger.exception("Failed to start broadcast thread for job %s", job_id)
+        return None
+
+
+def _sms_broadcast_offer(offer, contractor, job):
+    """SMS one hauler a job offer with an accept link. Never raises."""
+    try:
+        from sms_service import send_sms_async
+
+        phone = contractor.user.phone if contractor.user else None
+        if not phone:
+            logger.info(
+                "No phone for contractor %s, skipping broadcast SMS", contractor.id
+            )
+            return
+
+        date_str = (
+            job.scheduled_at.strftime("%b %d at %I:%M %p")
+            if job.scheduled_at else "ASAP"
+        )
+        dist_str = (
+            "~{:.0f} mi away".format(offer.distance_miles)
+            if offer.distance_miles is not None else "in your area"
+        )
+        payout_str = (
+            "${:.2f}".format(offer.payout_amount)
+            if offer.payout_amount else "see app"
+        )
+        link = "{}/o/{}".format(PUBLIC_API_URL, offer.accept_token)
+
+        body = (
+            "umuve JOB: {payout} take-home — {addr} ({dist}), {when}. "
+            "First to accept gets it: {link} (expires {mins}min)"
+        ).format(
+            payout=payout_str,
+            addr=(job.address or "address in app")[:60],
+            dist=dist_str,
+            when=date_str,
+            link=link,
+            mins=OFFER_EXPIRY_MINUTES,
+        )
+        send_sms_async(phone, body)
+    except Exception:
+        logger.exception(
+            "Failed to send broadcast SMS to contractor %s for job %s",
+            contractor.id, job.id,
+        )
+
+
+def accept_offer(token):
+    """First-to-accept claim of a broadcast offer. Atomic and idempotent.
+
+    Returns a dict: {"ok": bool, "status": str, "message": str, "job": <dict or None>}
+      status one of: accepted | already_yours | taken | expired | invalid | error
+
+    The race is resolved with a conditional UPDATE on the job row: only the
+    transaction that flips ``driver_id`` from NULL wins. Never raises.
+    """
+    try:
+        from models import db, Job, JobOffer, Contractor, utcnow
+
+        offer = JobOffer.query.filter_by(accept_token=token).first()
+        if not offer:
+            return {"ok": False, "status": "invalid",
+                    "message": "This job offer link is not valid.", "job": None}
+
+        job = db.session.get(Job, offer.job_id)
+        if not job:
+            return {"ok": False, "status": "invalid",
+                    "message": "This job no longer exists.", "job": None}
+
+        # Already claimed?
+        if job.driver_id:
+            if job.driver_id == offer.contractor_id:
+                return {"ok": True, "status": "already_yours",
+                        "message": "This job is already yours. See you there!",
+                        "job": job.to_dict()}
+            return {"ok": False, "status": "taken",
+                    "message": "Sorry — another hauler grabbed this job first.",
+                    "job": None}
+
+        # Expired?
+        if offer.expires_at and utcnow() > offer.expires_at:
+            offer.status = "expired"
+            offer.responded_at = utcnow()
+            db.session.commit()
+            return {"ok": False, "status": "expired",
+                    "message": "This offer has expired.", "job": None}
+
+        # --- Atomic claim: only succeeds if driver_id is still NULL ---
+        claimed = (
+            Job.__table__.update()
+            .where(Job.id == job.id)
+            .where(Job.driver_id.is_(None))
+            .values(driver_id=offer.contractor_id, status="assigned", updated_at=utcnow())
+        )
+        result = db.session.execute(claimed)
+        if result.rowcount != 1:
+            # Lost the race between the read above and this update.
+            db.session.rollback()
+            return {"ok": False, "status": "taken",
+                    "message": "Sorry — another hauler grabbed this job first.",
+                    "job": None}
+
+        offer.status = "accepted"
+        offer.responded_at = utcnow()
+        # Supersede all sibling offers for this job.
+        JobOffer.query.filter(
+            JobOffer.job_id == job.id,
+            JobOffer.id != offer.id,
+            JobOffer.status == "sent",
+        ).update({"status": "superseded", "responded_at": utcnow()},
+                 synchronize_session=False)
+        db.session.commit()
+
+        db.session.refresh(job)
+        contractor = db.session.get(Contractor, offer.contractor_id)
+        logger.info(
+            "OFFER ACCEPTED: job %s claimed by contractor %s", job.id, offer.contractor_id
+        )
+        if contractor:
+            _notify_assignment(job, contractor)
+
+        return {"ok": True, "status": "accepted",
+                "message": "Job accepted! Details are in your umuve app.",
+                "job": job.to_dict()}
+    except Exception:
+        logger.exception("accept_offer failed for token %s", token)
+        try:
+            from models import db
+            db.session.rollback()
+        except Exception:
+            pass
+        return {"ok": False, "status": "error",
+                "message": "Something went wrong. Please try again.", "job": None}
+
+
+def _notify_assignment(job, contractor):
+    """Post-assignment side effects shared by the broadcast accept path:
+    customer notification + email + socket events. Never raises.
+    """
+    try:
+        from models import db, Notification, User, generate_uuid
+
+        notification_cust = Notification(
+            id=generate_uuid(),
+            user_id=job.customer_id,
+            type="job_update",
+            title="Driver Assigned",
+            body="A driver has accepted your job and is on the way list.",
+            data={"job_id": job.id, "status": "assigned"},
+        )
+        db.session.add(notification_cust)
+        db.session.commit()
+
+        try:
+            customer = db.session.get(User, job.customer_id)
+            if customer and customer.email:
+                from notifications import send_driver_assigned_email
+                send_driver_assigned_email(
+                    customer.email,
+                    customer.name,
+                    contractor.user.name if contractor.user else "Your driver",
+                    job.address,
+                    truck_type=contractor.truck_type,
+                )
+        except Exception:
+            logger.exception("Failed to send assignment email for job %s", job.id)
+
+        try:
+            from socket_events import socketio
+            socketio.emit(
+                "job:status",
+                {"job_id": job.id, "status": "assigned", "driver_id": contractor.id},
+                room=job.id,
+            )
+        except Exception:
+            logger.exception("Failed to emit socket events for job %s", job.id)
+    except Exception:
+        logger.exception("_notify_assignment failed for job %s", getattr(job, "id", "?"))

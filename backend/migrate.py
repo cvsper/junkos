@@ -114,6 +114,9 @@ COLUMN_MIGRATIONS = [
     ("jobs", "noshow_t30_alerted", "BOOLEAN", "BOOLEAN", "FALSE"),
     ("jobs", "noshow_late_alerted", "BOOLEAN", "BOOLEAN", "FALSE"),
 
+    # Contractor-referral discriminator (added 2026-05-29)
+    ("referrals", "referral_type", "VARCHAR(20)", "VARCHAR(20)", "'customer'"),
+
     # User win-back fields (added 2026-03-24)
     ("users", "winback_called", "BOOLEAN", "BOOLEAN", "FALSE"),
     ("users", "last_winback_at", "DATETIME", "TIMESTAMP", "NULL"),
@@ -1926,6 +1929,43 @@ NEW_TABLE_NAMES.extend(_OPS_NAMES)
 NEW_TABLE_NAMES.extend(_PORTAL_V1_NAMES)
 NEW_TABLE_NAMES.extend(_OPS_V1_NAMES)
 NEW_TABLE_NAMES.extend(_PORTAL_SSO_NAMES)
+
+# ---------------------------------------------------------------------------
+# job_offers — marketplace broadcast / first-to-accept (Growth-1)
+# ---------------------------------------------------------------------------
+_JOB_OFFERS_SQLITE = dedent("""\
+    CREATE TABLE IF NOT EXISTS job_offers (
+        id VARCHAR(36) PRIMARY KEY,
+        job_id VARCHAR(36) NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+        contractor_id VARCHAR(36) NOT NULL REFERENCES contractors(id) ON DELETE CASCADE,
+        status VARCHAR(20) NOT NULL DEFAULT 'sent',
+        accept_token VARCHAR(36) UNIQUE NOT NULL,
+        distance_miles FLOAT,
+        payout_amount FLOAT,
+        sent_at DATETIME,
+        responded_at DATETIME,
+        expires_at DATETIME,
+        created_at DATETIME,
+        CONSTRAINT ck_job_offer_status CHECK (status IN ('sent','accepted','declined','expired','superseded'))
+    )""")
+_JOB_OFFERS_PG = dedent("""\
+    CREATE TABLE IF NOT EXISTS job_offers (
+        id VARCHAR(36) PRIMARY KEY,
+        job_id VARCHAR(36) NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+        contractor_id VARCHAR(36) NOT NULL REFERENCES contractors(id) ON DELETE CASCADE,
+        status VARCHAR(20) NOT NULL DEFAULT 'sent',
+        accept_token VARCHAR(36) UNIQUE NOT NULL,
+        distance_miles DOUBLE PRECISION,
+        payout_amount DOUBLE PRECISION,
+        sent_at TIMESTAMP,
+        responded_at TIMESTAMP,
+        expires_at TIMESTAMP,
+        created_at TIMESTAMP,
+        CONSTRAINT ck_job_offer_status CHECK (status IN ('sent','accepted','declined','expired','superseded'))
+    )""")
+NEW_TABLES_SQLITE.append(_JOB_OFFERS_SQLITE)
+NEW_TABLES_PG.append(_JOB_OFFERS_PG)
+NEW_TABLE_NAMES.append("job_offers")
 
 # Tables that require Postgres Row-Level Security. On SQLite the app-layer
 # tenant_guard middleware is the sole enforcer. Spec 04 §3.

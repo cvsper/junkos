@@ -15,6 +15,31 @@ from datetime import datetime, timezone, timedelta
 logger = logging.getLogger(__name__)
 
 
+def _sweep_pending_payouts(app):
+    """Retry payouts that were deferred because the contractor hadn't connected
+    a Stripe account yet (payout_status='pending_connect'). Idempotent.
+
+    Lets a hauler who completes a job *then* finishes Stripe onboarding still
+    get paid automatically, instead of the payout being lost.
+    """
+    with app.app_context():
+        from models import db, Payment
+        from routes.payments import attempt_payout
+
+        pending = Payment.query.filter_by(payout_status="pending_connect").all()
+        retried = paid = 0
+        for p in pending:
+            retried += 1
+            try:
+                result = attempt_payout(p.job_id)
+                if result.get("status") == "paid":
+                    paid += 1
+            except Exception:
+                logger.exception("Pending payout retry failed for job %s", p.job_id)
+        if retried:
+            logger.info("Pending-payout sweep: %d retried, %d now paid", retried, paid)
+
+
 def _generate_recurring_jobs(app):
     """Create Job records from active recurring bookings that are due."""
     with app.app_context():
@@ -293,8 +318,18 @@ def init_scheduler(app):
             name="Send customer winback emails",
         )
 
+        # Retry deferred (pending_connect) hauler payouts every 6 hours
+        scheduler.add_job(
+            _sweep_pending_payouts,
+            "interval",
+            hours=6,
+            args=[app],
+            id="sweep_pending_payouts",
+            name="Retry deferred contractor payouts",
+        )
+
         scheduler.start()
-        logger.info("Background scheduler started with 4 jobs")
+        logger.info("Background scheduler started with 5 jobs")
         return scheduler
     except ImportError:
         logger.warning("APScheduler not installed — scheduler disabled")

@@ -421,6 +421,42 @@ def update_job_status(user_id, job_id):
         except Exception as e:
             logger.warning("Failed to update referral on job completion: %s", e)
 
+        # --- Contractor referral: pay both haulers on the new hauler's first job ---
+        try:
+            c_referral = Referral.query.filter_by(
+                referee_id=contractor.user_id,
+                referral_type="contractor",
+                status="signed_up",
+            ).first()
+            if c_referral:
+                c_referral.status = "completed"
+                c_referral.completed_at = utcnow()
+                bonus = c_referral.reward_amount or 0.0
+                logger.info(
+                    "Contractor referral %s completed: referrer %s + new hauler %s "
+                    "each earn $%.2f (first job %s done)",
+                    c_referral.id, c_referral.referrer_id, contractor.user_id, bonus, job.id,
+                )
+                # Notify both parties; bonus is tracked as a credit for sevs to pay out.
+                for uid, msg in (
+                    (c_referral.referrer_id,
+                     "Your referred hauler just completed their first job — "
+                     "${:.0f} referral bonus earned!".format(bonus)),
+                    (contractor.user_id,
+                     "First job complete! Your ${:.0f} referral bonus is earned.".format(bonus)),
+                ):
+                    if uid:
+                        db.session.add(Notification(
+                            id=generate_uuid(),
+                            user_id=uid,
+                            type="payment",
+                            title="Referral Bonus Earned",
+                            body=msg,
+                            data={"referral_id": c_referral.id, "amount": bonus},
+                        ))
+        except Exception as e:
+            logger.warning("Failed to update contractor referral on job completion: %s", e)
+
         # --- Reset win-back flag so customer can be called again next cycle ---
         try:
             customer_user = User.query.get(job.customer_id)
@@ -430,6 +466,7 @@ def update_job_status(user_id, job_id):
                             job.customer_id, job.id)
         except Exception as e:
             logger.warning("Failed to reset winback flag on job completion: %s", e)
+
 
     if data.get("before_photos"):
         job.before_photos = data["before_photos"]
@@ -446,6 +483,18 @@ def update_job_status(user_id, job_id):
     )
     db.session.add(notification)
     db.session.commit()
+
+    # --- Auto-payout the hauler the moment the job is completed ---
+    # Job completion is already committed above, so a payout hiccup can never
+    # roll it back. attempt_payout is idempotent and never raises; if the
+    # contractor hasn't connected Stripe yet it's marked pending_connect.
+    if new_status == "completed":
+        try:
+            from routes.payments import attempt_payout
+            payout_result = attempt_payout(job.id)
+            logger.info("Auto-payout for job %s: %s", job.id, payout_result.get("status"))
+        except Exception as e:
+            logger.warning("Auto-payout hook failed for job %s: %s", job.id, e)
 
     # --- Email / SMS / Push notifications for key status changes ---
     driver_name = contractor.user.name if contractor.user else None
