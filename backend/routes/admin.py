@@ -16,7 +16,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from models import (
     db, User, Contractor, Job, Payment, PricingRule, SurgeZone, Notification,
-    PricingConfig, Review, Rating, DeviceToken, generate_uuid, utcnow,
+    PricingConfig, Review, Rating, DeviceToken, AbandonedBooking,
+    generate_uuid, utcnow,
 )
 from auth_routes import require_auth
 
@@ -585,6 +586,140 @@ def analytics(user_id):
             "busiest_hours": busiest_hours_list,
             "avg_job_value": avg_job_value,
         },
+    }), 200
+
+
+@admin_bp.route("/funnel", methods=["GET"])
+@require_admin
+def conversion_funnel(user_id):
+    """Conversion funnel: where demand leaks on its way to revenue.
+
+    Query param ?days=N (default 30) sets the window. Stages:
+        started  -> booking_created -> paid -> assigned -> completed
+    'started' = booking forms begun = abandoned (didn't finish) + jobs created.
+    Also returns per-stage drop-off %, abandoned-recovery rate, and a
+    lead_source breakdown so sevs can see which channels actually convert.
+    """
+    try:
+        days = request.args.get("days", default=30, type=int) or 30
+        days = max(1, min(days, 365))
+    except Exception:
+        days = 30
+    since = utcnow() - timedelta(days=days)
+
+    # --- Stage counts (all scoped to the window) ---
+    abandoned = (
+        db.session.query(func.count(AbandonedBooking.id))
+        .filter(AbandonedBooking.created_at >= since)
+        .scalar()
+    ) or 0
+    abandoned_recovered = (
+        db.session.query(func.count(AbandonedBooking.id))
+        .filter(AbandonedBooking.created_at >= since,
+                AbandonedBooking.converted.is_(True))
+        .scalar()
+    ) or 0
+
+    jobs_created = (
+        db.session.query(func.count(Job.id))
+        .filter(Job.created_at >= since)
+        .scalar()
+    ) or 0
+
+    paid = (
+        db.session.query(func.count(func.distinct(Payment.job_id)))
+        .filter(Payment.created_at >= since,
+                Payment.payment_status == "succeeded")
+        .scalar()
+    ) or 0
+
+    assigned = (
+        db.session.query(func.count(Job.id))
+        .filter(Job.created_at >= since, Job.driver_id.isnot(None))
+        .scalar()
+    ) or 0
+
+    completed = (
+        db.session.query(func.count(Job.id))
+        .filter(Job.created_at >= since, Job.status == "completed")
+        .scalar()
+    ) or 0
+
+    started = abandoned + jobs_created
+
+    def _rate(num, denom):
+        return round(100.0 * num / denom, 1) if denom else 0.0
+
+    funnel = [
+        {"stage": "started", "count": started, "label": "Booking form started"},
+        {"stage": "booking_created", "count": jobs_created,
+         "label": "Completed booking form", "from_prev_pct": _rate(jobs_created, started)},
+        {"stage": "paid", "count": paid,
+         "label": "Payment succeeded", "from_prev_pct": _rate(paid, jobs_created)},
+        {"stage": "assigned", "count": assigned,
+         "label": "Hauler assigned", "from_prev_pct": _rate(assigned, paid)},
+        {"stage": "completed", "count": completed,
+         "label": "Job completed", "from_prev_pct": _rate(completed, assigned)},
+    ]
+
+    # --- Biggest leak (largest absolute drop between adjacent stages) ---
+    biggest_leak = None
+    worst_drop = -1
+    for i in range(1, len(funnel)):
+        drop = funnel[i - 1]["count"] - funnel[i]["count"]
+        if drop > worst_drop:
+            worst_drop = drop
+            biggest_leak = {
+                "between": "{} -> {}".format(funnel[i - 1]["stage"], funnel[i]["stage"]),
+                "lost": drop,
+                "kept_pct": funnel[i].get("from_prev_pct", 0.0),
+            }
+
+    # --- Lead-source breakdown (created vs completed vs revenue) ---
+    src_created = dict(
+        db.session.query(func.coalesce(Job.lead_source, "unknown"), func.count(Job.id))
+        .filter(Job.created_at >= since)
+        .group_by(Job.lead_source).all()
+    )
+    src_completed = dict(
+        db.session.query(func.coalesce(Job.lead_source, "unknown"), func.count(Job.id))
+        .filter(Job.created_at >= since, Job.status == "completed")
+        .group_by(Job.lead_source).all()
+    )
+    src_revenue = dict(
+        db.session.query(
+            func.coalesce(Job.lead_source, "unknown"),
+            func.coalesce(func.sum(Payment.amount), 0.0),
+        )
+        .join(Payment, Payment.job_id == Job.id)
+        .filter(Job.created_at >= since, Payment.payment_status == "succeeded")
+        .group_by(Job.lead_source).all()
+    )
+    by_lead_source = []
+    for src in sorted(set(src_created) | set(src_completed) | set(src_revenue)):
+        created = src_created.get(src, 0)
+        comp = src_completed.get(src, 0)
+        by_lead_source.append({
+            "lead_source": src,
+            "booked": created,
+            "completed": comp,
+            "completion_pct": _rate(comp, created),
+            "revenue": round(float(src_revenue.get(src, 0.0)), 2),
+        })
+    by_lead_source.sort(key=lambda r: r["revenue"], reverse=True)
+
+    return jsonify({
+        "success": True,
+        "window_days": days,
+        "funnel": funnel,
+        "biggest_leak": biggest_leak,
+        "abandoned": {
+            "count": abandoned,
+            "recovered": abandoned_recovered,
+            "recovery_pct": _rate(abandoned_recovered, abandoned),
+        },
+        "by_lead_source": by_lead_source,
+        "overall_conversion_pct": _rate(completed, started),
     }), 200
 
 
