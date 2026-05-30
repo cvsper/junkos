@@ -175,60 +175,122 @@ def confirm_payment(user_id):
     return jsonify({"success": True, "payment": payment.to_dict()}), 200
 
 
+def attempt_payout(job_id):
+    """Core Stripe Connect payout for a completed job. Idempotent, never raises.
+
+    Shared by the manual ``/payout/<job_id>`` route and the auto-payout hook
+    that fires when a driver marks a job completed. Returns a dict:
+        {"ok": bool, "status": str, "message": str, "amount": float}
+      status one of: paid | already_paid | not_payable | no_connect | failed | error
+
+    ``no_connect`` (contractor hasn't finished Stripe onboarding) is NOT a hard
+    failure — the payout is marked ``pending_connect`` so a later sweep can
+    retry once they connect, and the job completion is never blocked.
+    """
+    try:
+        job = db.session.get(Job, job_id)
+        if not job:
+            return {"ok": False, "status": "not_payable",
+                    "message": "Job not found", "amount": 0.0}
+
+        payment = job.payment
+        if not payment:
+            return {"ok": False, "status": "not_payable",
+                    "message": "No payment record", "amount": 0.0}
+        if payment.payment_status != "succeeded":
+            return {"ok": False, "status": "not_payable",
+                    "message": "Payment has not succeeded", "amount": 0.0}
+        if payment.payout_status == "paid":
+            return {"ok": True, "status": "already_paid",
+                    "message": "Payout already completed",
+                    "amount": payment.driver_payout_amount or 0.0}
+        if not job.driver_id:
+            return {"ok": False, "status": "not_payable",
+                    "message": "No driver assigned", "amount": 0.0}
+
+        contractor = db.session.get(Contractor, job.driver_id)
+        if not contractor:
+            return {"ok": False, "status": "not_payable",
+                    "message": "Contractor not found", "amount": 0.0}
+
+        amount = payment.driver_payout_amount or 0.0
+        stripe_key = os.environ.get("STRIPE_SECRET_KEY", "")
+
+        # Contractor hasn't connected a payout account yet — defer, don't fail.
+        if not contractor.stripe_connect_id:
+            payment.payout_status = "pending_connect"
+            payment.updated_at = utcnow()
+            db.session.commit()
+            logger.info(
+                "Payout for job %s deferred: contractor %s has no Stripe Connect account",
+                job_id, contractor.id,
+            )
+            return {"ok": False, "status": "no_connect",
+                    "message": "Contractor has not connected a payout account",
+                    "amount": amount}
+
+        if stripe_key:
+            try:
+                stripe = _get_stripe()
+                stripe.Transfer.create(
+                    amount=int(amount * 100),
+                    currency="usd",
+                    destination=contractor.stripe_connect_id,
+                    metadata={"job_id": job_id},
+                )
+            except Exception as e:
+                payment.payout_status = "failed"
+                payment.updated_at = utcnow()
+                db.session.commit()
+                logger.exception("Stripe payout failed for job %s", job_id)
+                return {"ok": False, "status": "failed",
+                        "message": "Stripe payout error: {}".format(e),
+                        "amount": amount}
+
+        payment.payout_status = "paid"
+        payment.updated_at = utcnow()
+        db.session.add(Notification(
+            id=generate_uuid(),
+            user_id=contractor.user_id,
+            type="payment",
+            title="Payout Sent",
+            body="${:.2f} has been sent to your account.".format(amount),
+            data={"job_id": job_id, "amount": amount},
+        ))
+        db.session.commit()
+        logger.info("Payout of $%.2f sent for job %s -> contractor %s",
+                    amount, job_id, contractor.id)
+        return {"ok": True, "status": "paid",
+                "message": "Payout sent", "amount": amount}
+    except Exception:
+        logger.exception("attempt_payout crashed for job %s", job_id)
+        try:
+            db.session.rollback()
+        except Exception:
+            pass
+        return {"ok": False, "status": "error",
+                "message": "Internal payout error", "amount": 0.0}
+
+
 @payments_bp.route("/payout/<job_id>", methods=["POST"])
 @require_auth
 def trigger_payout(user_id, job_id):
     """Trigger Stripe Connect payout to the contractor for a completed job."""
-    job = db.session.get(Job, job_id)
-    if not job:
-        return jsonify({"error": "Job not found"}), 404
+    result = attempt_payout(job_id)
+    if result["ok"]:
+        job = db.session.get(Job, job_id)
+        return jsonify({
+            "success": True,
+            "status": result["status"],
+            "payment": job.payment.to_dict() if job and job.payment else None,
+        }), 200
 
-    payment = job.payment
-    if not payment:
-        return jsonify({"error": "No payment record for this job"}), 404
-    if payment.payment_status != "succeeded":
-        return jsonify({"error": "Payment has not succeeded yet"}), 409
-    if payment.payout_status == "paid":
-        return jsonify({"error": "Payout already completed"}), 409
-
-    if not job.driver_id:
-        return jsonify({"error": "No driver assigned to this job"}), 400
-
-    contractor = db.session.get(Contractor, job.driver_id)
-    if not contractor:
-        return jsonify({"error": "Contractor not found"}), 404
-
-    stripe = _get_stripe()
-    stripe_key = os.environ.get("STRIPE_SECRET_KEY", "")
-
-    if stripe_key and contractor.stripe_connect_id:
-        try:
-            stripe.Transfer.create(
-                amount=int(payment.driver_payout_amount * 100),
-                currency="usd",
-                destination=contractor.stripe_connect_id,
-                metadata={"job_id": job_id},
-            )
-        except Exception as e:
-            payment.payout_status = "failed"
-            db.session.commit()
-            return jsonify({"error": "Stripe payout error: {}".format(str(e))}), 502
-
-    payment.payout_status = "paid"
-    payment.updated_at = utcnow()
-
-    notification = Notification(
-        id=generate_uuid(),
-        user_id=contractor.user_id,
-        type="payment",
-        title="Payout Sent",
-        body="${:.2f} has been sent to your account.".format(payment.driver_payout_amount),
-        data={"job_id": job_id, "amount": payment.driver_payout_amount},
-    )
-    db.session.add(notification)
-    db.session.commit()
-
-    return jsonify({"success": True, "payment": payment.to_dict()}), 200
+    code = {
+        "no_connect": 409,
+        "failed": 502,
+        "error": 500,
+    }.get(result["status"], 409)
+    return jsonify({"error": result["message"], "status": result["status"]}), code
 
 
 @payments_bp.route("/payout/eligibility", methods=["GET"])

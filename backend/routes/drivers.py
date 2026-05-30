@@ -431,6 +431,7 @@ def update_job_status(user_id, job_id):
         except Exception as e:
             logger.warning("Failed to reset winback flag on job completion: %s", e)
 
+
     if data.get("before_photos"):
         job.before_photos = data["before_photos"]
     if data.get("after_photos"):
@@ -446,6 +447,18 @@ def update_job_status(user_id, job_id):
     )
     db.session.add(notification)
     db.session.commit()
+
+    # --- Auto-payout the hauler the moment the job is completed ---
+    # Job completion is already committed above, so a payout hiccup can never
+    # roll it back. attempt_payout is idempotent and never raises; if the
+    # contractor hasn't connected Stripe yet it's marked pending_connect.
+    if new_status == "completed":
+        try:
+            from routes.payments import attempt_payout
+            payout_result = attempt_payout(job.id)
+            logger.info("Auto-payout for job %s: %s", job.id, payout_result.get("status"))
+        except Exception as e:
+            logger.warning("Auto-payout hook failed for job %s: %s", job.id, e)
 
     # --- Email / SMS / Push notifications for key status changes ---
     driver_name = contractor.user.name if contractor.user else None
