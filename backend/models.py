@@ -356,6 +356,64 @@ class Job(db.Model):
 
 
 # ---------------------------------------------------------------------------
+# JobOffer  (marketplace broadcast / first-to-accept)
+# ---------------------------------------------------------------------------
+class JobOffer(db.Model):
+    """A single job broadcast to one contractor.
+
+    When a job is dispatched in broadcast mode, one JobOffer row is created per
+    eligible contractor. Each carries an unguessable ``accept_token`` used in the
+    SMS accept link. The first contractor to accept wins the job atomically; all
+    sibling offers are flipped to ``superseded``. This replaces the single
+    auto-assign that let one hauler silently ghost a booking (the Sy failure).
+    """
+
+    __tablename__ = "job_offers"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    job_id = Column(String(36), ForeignKey("jobs.id", ondelete="CASCADE"), nullable=False, index=True)
+    contractor_id = Column(String(36), ForeignKey("contractors.id", ondelete="CASCADE"), nullable=False, index=True)
+
+    # sent -> accepted | declined | expired | superseded
+    status = Column(String(20), nullable=False, default="sent", index=True)
+    accept_token = Column(String(36), unique=True, nullable=False, default=generate_uuid, index=True)
+
+    distance_miles = Column(Float, nullable=True)   # contractor -> job at send time
+    payout_amount = Column(Float, nullable=True)     # contractor take-home for this job
+
+    sent_at = Column(DateTime, default=utcnow)
+    responded_at = Column(DateTime, nullable=True)
+    expires_at = Column(DateTime, nullable=True)
+
+    created_at = Column(DateTime, default=utcnow)
+
+    job = relationship("Job", backref="offers", foreign_keys=[job_id])
+    contractor = relationship("Contractor", foreign_keys=[contractor_id])
+
+    __table_args__ = (
+        Index("ix_job_offers_job_status", "job_id", "status"),
+        CheckConstraint(
+            "status IN ('sent', 'accepted', 'declined', 'expired', 'superseded')",
+            name="ck_job_offer_status",
+        ),
+    )
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "job_id": self.job_id,
+            "contractor_id": self.contractor_id,
+            "status": self.status,
+            "distance_miles": self.distance_miles,
+            "payout_amount": self.payout_amount,
+            "sent_at": self.sent_at.isoformat() if self.sent_at else None,
+            "responded_at": self.responded_at.isoformat() if self.responded_at else None,
+            "expires_at": self.expires_at.isoformat() if self.expires_at else None,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
+
+
+# ---------------------------------------------------------------------------
 # Rating
 # ---------------------------------------------------------------------------
 class Rating(db.Model):
