@@ -152,6 +152,26 @@ def submit_operator_application():
     except Exception:
         logger.exception("Failed to send admin notification email for application %s", application.id)
 
+    # Instant SMS to the admin phone — supply is the bottleneck, so a new
+    # hauler lead is the most time-sensitive signal we get. Don't let it sit in
+    # an inbox. Mirrors the dual-channel alert pattern from the dispatcher.
+    try:
+        admin_phone = os.environ.get("ADMIN_PHONE", "")
+        if admin_phone:
+            from sms_service import send_sms_async
+            send_sms_async(
+                admin_phone,
+                "umuve NEW HAULER: {name} in {city} ({phone}). "
+                "Trucks: {trucks}. Call fast — supply is the bottleneck.".format(
+                    name=applicant_name,
+                    city=application.city,
+                    phone=application.phone,
+                    trucks=application.trucks or "n/a",
+                ),
+            )
+    except Exception:
+        logger.exception("Failed to SMS admin about new hauler application %s", application.id)
+
     return jsonify({
         "success": True,
         "message": "Application submitted successfully",
