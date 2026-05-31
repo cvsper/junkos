@@ -47,3 +47,7 @@ authlib>=1.3
 langgraph>=0.2
 langgraph-checkpoint-sqlite>=1.0
 
+# Used directly by mystery_shop.py and twilio_health.py (also a transitive
+# Twilio SDK dep). Pinned explicitly so the monitors never break on a resolve.
+requests>=2.31
+
