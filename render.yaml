@@ -24,6 +24,11 @@ services:
           property: connectionString
       - key: ENABLE_SCHEDULER
         value: "true"
+      # Marketplace dispatch: broadcast a job to every eligible hauler
+      # (first-to-accept) instead of single auto-assign. Set to "assign" to
+      # revert instantly. See dispatcher.DISPATCH_MODE.
+      - key: DISPATCH_MODE
+        value: "broadcast"
 
   # Portal v1 scheduled tasks (spec 04 §9):
   #   * portal.recurring_tick   — every 5 min, generates Jobs for due schedules
