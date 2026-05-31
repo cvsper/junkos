@@ -247,16 +247,34 @@ def _section_system_health(now):
              "funnel/payment outage</b></span>"
     )
 
+    # SMS channel health — a Twilio suspension silently kills every alert/text.
+    try:
+        from twilio_health import check_twilio_health
+        t = check_twilio_health()
+        if not t["configured"]:
+            sms_signal = "<span style='color:#888'>— not configured</span>"
+        elif t["ok"]:
+            sms_signal = "<span style='color:#070'>✅ Twilio active</span>"
+        else:
+            sms_signal = (
+                "<span style='color:#c00'><b>🚨 SMS DOWN — {} "
+                "(all texts silently failing)</b></span>"
+            ).format(t["message"])
+    except Exception:
+        sms_signal = "<span style='color:#888'>(health check errored)</span>"
+
     return (
         "<h2 style='margin-bottom:4px'>🩺 System health</h2>"
         "<table cellpadding='6' style='font-family:sans-serif;font-size:14px'>"
         "<tr><td>Bookings in last 24h</td><td>{n} — {signal}</td></tr>"
+        "<tr><td>SMS channel (Twilio)</td><td>{sms}</td></tr>"
         "<tr><td>ADMIN_PHONE configured</td><td>{phone}</td></tr>"
         "<tr><td>ADMIN_EMAIL configured</td><td>{email}</td></tr>"
         "</table>"
     ).format(
         n=bookings_24h,
         signal=booking_signal,
+        sms=sms_signal,
         phone="✅" if os.environ.get("ADMIN_PHONE") else "<b style='color:#c00'>❌ NOT SET</b>",
         email="✅" if os.environ.get("ADMIN_EMAIL") else "<b style='color:#c00'>❌ NOT SET</b>",
     )

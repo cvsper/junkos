@@ -15,6 +15,19 @@ from datetime import datetime, timezone, timedelta
 logger = logging.getLogger(__name__)
 
 
+def _check_twilio_health(app):
+    """Probe Twilio; email-alert if the account is down (e.g. billing suspension
+    → all SMS silently failing). Email-only alert, so it survives a Twilio
+    outage. See twilio_health.py.
+    """
+    with app.app_context():
+        try:
+            from twilio_health import run_twilio_health_check
+            run_twilio_health_check(alert=True)
+        except Exception:
+            logger.exception("Twilio health check job failed")
+
+
 def _sweep_pending_payouts(app):
     """Retry payouts that were deferred because the contractor hadn't connected
     a Stripe account yet (payout_status='pending_connect'). Idempotent.
@@ -328,8 +341,19 @@ def init_scheduler(app):
             name="Retry deferred contractor payouts",
         )
 
+        # Twilio account health — catch billing suspensions before they
+        # silently kill all SMS for days (every 6 hours).
+        scheduler.add_job(
+            _check_twilio_health,
+            "interval",
+            hours=6,
+            args=[app],
+            id="check_twilio_health",
+            name="Twilio account health probe",
+        )
+
         scheduler.start()
-        logger.info("Background scheduler started with 5 jobs")
+        logger.info("Background scheduler started with 6 jobs")
         return scheduler
     except ImportError:
         logger.warning("APScheduler not installed — scheduler disabled")
