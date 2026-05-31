@@ -951,6 +951,25 @@ def _handle_payment_succeeded(intent):
 
     db.session.commit()
 
+    # --- Meta Conversions API: server-side Purchase (deduped vs browser pixel) ---
+    # Fires only if META_PIXEL_ID + META_CAPI_ACCESS_TOKEN are set; otherwise a
+    # silent no-op. event_id 'purchase_<job_id>' matches the browser pixel's id
+    # so Meta counts the conversion once with clean attribution. Never raises.
+    if job:
+        try:
+            from meta_capi import track_purchase
+            cust = db.session.get(User, job.customer_id)
+            track_purchase(
+                job_id=job.id,
+                value=payment.amount,
+                currency="USD",
+                email=cust.email if cust else None,
+                phone=cust.phone if cust else None,
+                event_source_url="https://app.goumuve.com/book",
+            )
+        except Exception:
+            logger.exception("Meta CAPI purchase hook failed for job %s", job.id)
+
     # --- Auto-dispatch best operator in background ---
     if job and not job.driver_id and job.status in ("confirmed", "assigned"):
         try:
