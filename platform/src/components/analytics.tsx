@@ -174,16 +174,41 @@ export function trackBookingConversion(params: {
     });
   }
 
-  // Meta Pixel purchase conversion
+  // Meta Pixel purchase conversion.
+  // eventID matches the server-side Conversions API event ("purchase_<id>") so
+  // Meta deduplicates the browser + server events into one conversion.
   const fbq = (window as unknown as Record<string, unknown>).fbq as
     | ((...args: unknown[]) => void)
     | undefined;
   if (fbq) {
-    fbq("track", "Purchase", {
-      value: params.value,
-      currency: params.currency || "USD",
-      content_ids: [params.bookingId],
-      content_type: "product",
+    fbq(
+      "track",
+      "Purchase",
+      {
+        value: params.value,
+        currency: params.currency || "USD",
+        content_ids: [params.bookingId],
+        content_type: "product",
+      },
+      { eventID: `purchase_${params.bookingId}` }
+    );
+  }
+}
+
+/**
+ * Fire Meta InitiateCheckout — the early optimization event the ad campaign
+ * uses before Purchase volume is high enough (see palm-beach-meta-launch.md).
+ * Call when the customer reaches the payment step of the booking funnel.
+ */
+export function trackInitiateCheckout(params?: { value?: number; currency?: string }) {
+  if (typeof window === "undefined") return;
+  const fbq = (window as unknown as Record<string, unknown>).fbq as
+    | ((...args: unknown[]) => void)
+    | undefined;
+  if (fbq) {
+    fbq("track", "InitiateCheckout", {
+      value: params?.value ?? 0,
+      currency: params?.currency || "USD",
     });
   }
 }

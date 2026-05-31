@@ -6,7 +6,7 @@ import { ArrowLeft, ArrowRight, Gift, RotateCcw, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useBookingStore } from "@/stores/booking-store";
 import { referralsApi } from "@/lib/api";
-import { trackBookingStep, trackLead } from "@/components/analytics";
+import { trackBookingStep, trackLead, trackInitiateCheckout } from "@/components/analytics";
 import { ProgressBar } from "@/components/booking/progress-bar";
 import { Step1Address } from "@/components/booking/step-1-address";
 import { Step2Photos } from "@/components/booking/step-2-photos";
@@ -129,6 +129,11 @@ function BookPageInner() {
   // --- Track booking funnel step in GA4 ---
   useEffect(() => {
     trackBookingStep(step);
+    // Step 6 = payment. Fire Meta InitiateCheckout — the campaign's early
+    // optimization event before Purchase volume is high enough.
+    if (step === 6) {
+      trackInitiateCheckout();
+    }
   }, [step]);
 
   // --- Lead source auto-detection ---
