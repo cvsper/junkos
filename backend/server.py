@@ -832,6 +832,124 @@ def seed_demo_driver_endpoint(secret):
         return jsonify({"error": "Seed failed: {}".format(exc)}), 500
 
 
+@app.route("/api/admin/provision-hauler/<secret>", methods=["POST"])
+@limiter.exempt
+def provision_hauler_endpoint(secret):
+    """Idempotently provision a REAL independent hauler (driver) and approve them.
+
+    One-shot supply onboarding: creates the login account + an APPROVED contractor
+    profile so the hauler can log in, go online, and receive jobs. Used to sign up
+    haulers we've recruited directly (e.g. the Palm Beach launch hauler) without
+    needing an admin JWT or the dashboard.
+
+    Secured by ADMIN_SEED_SECRET. Re-running is safe (updates the existing row).
+
+    POST JSON:
+      email       (required)  login email
+      name        (required)  hauler's full name
+      phone       (required)  E.164 preferred; normalized to +1 if 10 digits
+      truck_type  (required)  pickup | cargo_van | box_truck | dump_trailer | flatbed
+      password    (optional)  temp password; a secure one is generated if omitted
+      truck_capacity (optional, cubic ft)
+      lat, lng    (optional)  initial last-known location (defaults to West Palm Beach
+                              so the coverage gate opens for PBC before first GPS ping)
+
+    Returns the login credentials (incl. the generated temp password) to hand off.
+    """
+    expected = os.environ.get("ADMIN_SEED_SECRET", "")
+    if not expected or secret != expected:
+        return jsonify({"error": "Forbidden"}), 403
+
+    import secrets as _secrets
+    import re as _re
+    from flask import request as _req
+    from models import db, User, Contractor, generate_uuid
+
+    data = _req.get_json(silent=True) or {}
+    email = (data.get("email") or "").strip().lower()
+    name = (data.get("name") or "").strip()
+    phone_raw = (data.get("phone") or "").strip()
+    truck_type = (data.get("truck_type") or "").strip().lower().replace(" ", "_")
+
+    if not email or not name or not phone_raw or not truck_type:
+        return jsonify({"error": "email, name, phone, and truck_type are all required"}), 400
+
+    valid_trucks = {"pickup", "cargo_van", "box_truck", "dump_trailer", "flatbed"}
+    if truck_type not in valid_trucks:
+        return jsonify({"error": "truck_type must be one of {}".format(sorted(valid_trucks))}), 400
+
+    # Normalize phone to E.164 (+1) when given as 10 US digits.
+    digits = _re.sub(r"\D", "", phone_raw)
+    if phone_raw.startswith("+"):
+        phone = "+" + digits
+    elif len(digits) == 10:
+        phone = "+1" + digits
+    elif len(digits) == 11 and digits.startswith("1"):
+        phone = "+" + digits
+    else:
+        return jsonify({"error": "phone must be a valid US number (10 digits) or E.164 (+1...)"}), 400
+
+    password = data.get("password") or ("Umuve-" + _secrets.token_urlsafe(6))
+    generated_password = not data.get("password")
+
+    try:
+        existing_email = User.query.filter_by(email=email).first()
+        user = existing_email
+        created_user = False
+        if not user:
+            user = User(id=generate_uuid(), email=email, name=name, phone=phone, role="driver")
+            db.session.add(user)
+            created_user = True
+        user.name = name or user.name
+        user.phone = phone
+        user.role = "driver"
+        user.set_password(password)  # always set so the handoff creds are known
+        db.session.flush()
+
+        contractor = Contractor.query.filter_by(user_id=user.id).first()
+        created_contractor = False
+        if not contractor:
+            contractor = Contractor(id=generate_uuid(), user_id=user.id)
+            db.session.add(contractor)
+            created_contractor = True
+        contractor.approval_status = "approved"
+        contractor.is_operator = False
+        # Seed last-known location so the supply/coverage gate sees PBC covered
+        # before the hauler's first live GPS ping. Real location overwrites this
+        # the moment he goes online in the app.
+        if contractor.current_lat is None or data.get("lat") is not None:
+            contractor.current_lat = float(data.get("lat", 26.7153))  # West Palm Beach
+            contractor.current_lng = float(data.get("lng", -80.0534))
+        contractor.truck_type = truck_type
+        if data.get("truck_capacity") is not None:
+            contractor.truck_capacity = float(data["truck_capacity"])
+        # Hauler controls his own availability — start offline, he toggles online.
+        contractor.is_online = bool(contractor.is_online)
+
+        db.session.commit()
+
+        return jsonify({
+            "success": True,
+            "created": {"user": created_user, "contractor": created_contractor},
+            "contractor_id": contractor.id,
+            "approval_status": contractor.approval_status,
+            "login": {
+                "email": email,
+                "password": password,
+                "password_was_generated": generated_password,
+            },
+            "next_steps": [
+                "Send the hauler these credentials; have him change the password on first login.",
+                "He logs in (Umuve Pro app or driver web), completes Stripe Connect to get paid, then toggles ONLINE to receive jobs.",
+                "DISPATCH_MODE=assign: jobs auto-assign to approved+online contractors near the job.",
+            ],
+        }), 200
+    except Exception as exc:
+        db.session.rollback()
+        app.logger.exception("provision-hauler failed")
+        return jsonify({"error": "Provision failed: {}".format(exc)}), 500
+
+
 @app.route("/api/services", methods=["GET"])
 @require_api_key
 def get_services():
