@@ -725,6 +725,113 @@ def test_alert_endpoint(secret):
     return jsonify(result), 200
 
 
+@app.route("/api/admin/seed-demo-driver/<secret>", methods=["POST", "GET"])
+@limiter.exempt
+def seed_demo_driver_endpoint(secret):
+    """Idempotently create the App Store reviewer demo account for Umuve Pro.
+
+    Apple rejects a contractor app without working demo credentials. This seeds:
+      - driver-test@goumuve.com  (role=driver, APPROVED contractor, online)
+      - a demo customer + one demo Job ASSIGNED to that driver, so the reviewer
+        can walk accept -> navigate -> complete.
+
+    Secured by ADMIN_SEED_SECRET. Re-running is safe (fetches existing rows).
+    Pass ?password=... to set the login password (default below). Returns the
+    exact credentials to paste into App Store Connect → App Review Information.
+    """
+    expected = os.environ.get("ADMIN_SEED_SECRET", "")
+    if not expected or secret != expected:
+        return jsonify({"error": "Forbidden"}), 403
+
+    from datetime import timedelta as _td
+    from flask import request as _req
+    from models import db, User, Contractor, Job, generate_uuid, utcnow
+
+    password = _req.args.get("password") or "ReviewDemo2026!"
+    created = {"user": False, "contractor": False, "customer": False, "job": False}
+
+    try:
+        # --- Driver user ---
+        driver = User.query.filter_by(email="driver-test@goumuve.com").first()
+        if not driver:
+            driver = User(id=generate_uuid(), email="driver-test@goumuve.com",
+                          name="Demo Driver", phone="+15615550100", role="driver")
+            db.session.add(driver)
+            created["user"] = True
+        driver.role = "driver"
+        driver.set_password(password)  # always reset so creds are known
+
+        # --- Approved, online contractor profile ---
+        contractor = Contractor.query.filter_by(user_id=driver.id).first()
+        if not contractor:
+            contractor = Contractor(id=generate_uuid(), user_id=driver.id)
+            db.session.add(contractor)
+            created["contractor"] = True
+        contractor.approval_status = "approved"
+        contractor.onboarding_status = "approved"
+        contractor.background_check_status = "passed"
+        contractor.is_online = True
+        contractor.truck_type = "Box Truck"
+        contractor.truck_capacity = 600.0
+        contractor.avg_rating = 4.9
+        contractor.total_jobs = 27
+        contractor.current_lat = 26.7153
+        contractor.current_lng = -80.0534
+
+        # --- Demo customer (so the job has a real name/address to show) ---
+        customer = User.query.filter_by(email="demo-customer@goumuve.com").first()
+        if not customer:
+            customer = User(id=generate_uuid(), email="demo-customer@goumuve.com",
+                            name="Jordan Reviewer", phone="+15615550111", role="customer")
+            db.session.add(customer)
+            created["customer"] = True
+        db.session.flush()
+
+        # --- One demo job assigned to the driver (fixed code = idempotent) ---
+        job = Job.query.filter_by(confirmation_code="DEMO0001").first()
+        if not job:
+            job = Job(
+                id=generate_uuid(),
+                customer_id=customer.id,
+                driver_id=contractor.id,
+                status="assigned",
+                address="120 S Olive Ave, West Palm Beach, FL 33401",
+                lat=26.7128, lng=-80.0527,
+                items=[{"category": "Sofa", "quantity": 1},
+                       {"category": "Mattress", "quantity": 1},
+                       {"category": "Boxes", "quantity": 8}],
+                volume_estimate=180.0,
+                scheduled_at=utcnow() + _td(days=1),
+                base_price=129.00, total_price=129.00,
+                confirmation_code="DEMO0001",
+                notes="App Store reviewer demo job — safe to ignore operationally.",
+            )
+            db.session.add(job)
+            created["job"] = True
+        else:
+            job.driver_id = contractor.id
+            job.status = "assigned"
+
+        db.session.commit()
+
+        return jsonify({
+            "success": True,
+            "created": created,
+            "credentials_for_apple_review": {
+                "email": "driver-test@goumuve.com",
+                "password": password,
+            },
+            "contractor_id": contractor.id,
+            "demo_job_code": "DEMO0001",
+            "note": "Paste these into App Store Connect → App Review Information. "
+                    "Account is approved + online with one assigned demo job.",
+        }), 200
+    except Exception as exc:
+        db.session.rollback()
+        app.logger.exception("seed-demo-driver failed")
+        return jsonify({"error": "Seed failed: {}".format(exc)}), 500
+
+
 @app.route("/api/services", methods=["GET"])
 @require_api_key
 def get_services():
