@@ -1336,6 +1336,7 @@ class Quote(db.Model):
     zone = Column(String(32), nullable=False)  # 'miami-dade' | 'broward' | 'palm-beach'
     status = Column(String(20), nullable=False, default="draft", index=True)
     # status values: draft, pending_review, binding, buffered, accepted, booked, expired, voided
+    origin = Column(String(16), nullable=False, default="vision")  # 'vision' | 'rules'
     price_cents = Column(Integer, nullable=False)              # final binding price
     price_floor_cents = Column(Integer, nullable=True)          # range for pending_review
     price_ceiling_cents = Column(Integer, nullable=True)

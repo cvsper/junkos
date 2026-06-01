@@ -143,6 +143,12 @@ COLUMN_MIGRATIONS = [
     # B2B Commercial Portal (spec 04) — stamp jobs with originating org.
     # NULL = one-off residential; set = booked via portal.goumuve.com.
     ("jobs", "org_id", "VARCHAR(36)", "VARCHAR(36)", "NULL"),
+
+    # Vision Quote Engine (spec 01) — origin of the estimate.
+    # 'vision' = produced by a cloud vision model; 'rules' = heuristic fallback
+    # when no vision key is configured.  Added so the feature degrades gracefully
+    # on deployments where the quotes table already exists without this column.
+    ("quotes", "origin", "VARCHAR(16)", "VARCHAR(16)", "'vision'"),
 ]
 
 
@@ -295,6 +301,7 @@ NEW_TABLES_SQLITE = [
         zip_code VARCHAR(10) NOT NULL,
         zone VARCHAR(32) NOT NULL,
         status VARCHAR(20) NOT NULL DEFAULT 'draft',
+        origin VARCHAR(16) NOT NULL DEFAULT 'vision',
         price_cents INTEGER NOT NULL,
         price_floor_cents INTEGER,
         price_ceiling_cents INTEGER,
@@ -1177,6 +1184,7 @@ NEW_TABLES_PG = [
         zip_code VARCHAR(10) NOT NULL,
         zone VARCHAR(32) NOT NULL,
         status VARCHAR(20) NOT NULL DEFAULT 'draft',
+        origin VARCHAR(16) NOT NULL DEFAULT 'vision',
         price_cents INTEGER NOT NULL,
         price_floor_cents INTEGER,
         price_ceiling_cents INTEGER,

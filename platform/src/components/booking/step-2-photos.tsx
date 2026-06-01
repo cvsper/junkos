@@ -1,22 +1,24 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import { Upload, X, ImageIcon, AlertCircle, Sparkles, Loader2 } from "lucide-react";
+import { Upload, X, ImageIcon, AlertCircle, Sparkles, Loader2, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useBookingStore } from "@/stores/booking-store";
 import { cn } from "@/lib/utils";
 import { aiApi } from "@/lib/api";
+import { InstantQuote } from "@/components/booking/instant-quote";
 
 const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const MAX_FILES = 10;
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 export function Step2Photos() {
-  const { photos, photoPreviewUrls, addPhotos, removePhoto, aiAnalysis, aiAnalyzing, setAiAnalysis, setAiAnalyzing } =
+  const { photos, photoPreviewUrls, addPhotos, removePhoto, aiAnalysis, aiAnalyzing, setAiAnalysis, setAiAnalyzing, address, scheduledDate } =
     useBookingStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState("");
+  const [showInstantQuote, setShowInstantQuote] = useState(false);
 
   const validateAndAddFiles = useCallback(
     (files: FileList | File[]) => {
@@ -225,6 +227,32 @@ export function Step2Photos() {
           </p>
         </div>
       )}
+
+      {/* Instant photo -> price quote (Vision Quote Engine) */}
+      <div className="rounded-lg border border-border">
+        <button
+          type="button"
+          onClick={() => setShowInstantQuote((v) => !v)}
+          className="flex w-full items-center gap-2 p-4 text-left"
+          aria-expanded={showInstantQuote}
+        >
+          <Zap className="h-4 w-4 shrink-0 text-primary" />
+          <span className="text-sm font-semibold text-foreground">
+            Get an instant price from photos
+          </span>
+          <span className="ml-auto text-xs text-muted-foreground">
+            {showInstantQuote ? "Hide" : "Try it"}
+          </span>
+        </button>
+        {showInstantQuote && (
+          <div className="border-t border-border p-4">
+            <InstantQuote
+              zipCode={address?.zip}
+              scheduledDate={scheduledDate || undefined}
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
