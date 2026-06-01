@@ -1174,10 +1174,20 @@ def _notify_assignment(job, contractor):
 
         try:
             from socket_events import socketio
+            # Customer room: status update.
             socketio.emit(
                 "job:status",
                 {"job_id": job.id, "status": "assigned", "driver_id": contractor.id},
                 room=job.id,
+            )
+            # Winning driver's room: the app listens for "job:assigned" — without
+            # this, a driver who claimed a broadcast offer (e.g. via the web
+            # accept link) gets no live update in the native app and the job
+            # wouldn't surface until a manual refresh.
+            socketio.emit(
+                "job:assigned",
+                {"job_id": job.id, "contractor_id": contractor.id},
+                room="driver:{}".format(contractor.id),
             )
         except Exception:
             logger.exception("Failed to emit socket events for job %s", job.id)
