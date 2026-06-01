@@ -88,7 +88,7 @@ final class EarningsViewModel {
                 return EarningsEntry(
                     id: entry.id,
                     jobId: entry.jobId,
-                    address: entry.address,
+                    address: entry.address ?? "Completed job",
                     amount: entry.amount,  // Already driver's 80% take from backend
                     date: date,
                     payoutStatus: payoutStatus

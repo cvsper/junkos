@@ -125,7 +125,7 @@ private struct EarningsRow: View {
     var body: some View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: DriverSpacing.xxxs) {
-                Text(entry.address)
+                Text(entry.address ?? "Completed job")
                     .font(DriverTypography.subheadline)
                     .foregroundStyle(Color.driverText)
                     .lineLimit(1)

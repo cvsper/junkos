@@ -371,7 +371,8 @@ struct EarningsHistoryResponse: Codable {
     struct EarningsEntryResponse: Codable {
         let id: String
         let jobId: String
-        let address: String
+        let address: String?    // backend sends null when the job row is gone;
+                                // non-optional here failed the WHOLE earnings decode
         let amount: Double      // driver_payout_amount (80% take)
         let date: String?       // ISO 8601 date string
         let payoutStatus: String // "pending", "processing", "paid"

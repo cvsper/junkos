@@ -30,6 +30,16 @@ final class AuthenticationManager {
     ]
 
     init() {
+        // Optimistic restore: if a non-expired token is in the Keychain, treat
+        // the user as authenticated IMMEDIATELY — before the network round-trip.
+        // Otherwise a Render cold-start (profile fetch slower than the ~2s
+        // splash) bounces a logged-in driver to the login screen, and any
+        // restore error used to wipe the token entirely. Validation still runs
+        // in restoreSession(); it only downgrades on a definitive 401.
+        if let token = KeychainHelper.loadString(forKey: "authToken"),
+           !token.isEmpty, !isTokenExpired(token) {
+            isAuthenticated = true
+        }
         Task { await restoreSession() }
     }
 
@@ -273,27 +283,36 @@ final class AuthenticationManager {
                     return
                 }
             } catch {
+                // Only log out if the server DEFINITIVELY rejected us (401).
+                // A network/timeout error (e.g. Render cold start) must NOT wipe
+                // the session — keep the token and let the next request retry.
                 print("❌ Token refresh error: \(error.localizedDescription)")
-                logout()
+                if case APIError.unauthorized = error { logout() }
                 return
             }
         }
 
-        // Now try to restore session with valid token
+        // Now validate the session with the (valid) token.
         do {
             let profileResponse = try await api.getContractorProfile()
             if let user = profileResponse.contractor.user {
                 currentUser = user
-                isAuthenticated = true
-                print("✅ Session restored successfully")
             }
-        } catch {
-            print("❌ Session restore failed: \(error.localizedDescription)")
-            // Only clear if the token hasn't been replaced by a fresh login
-            let currentToken = KeychainHelper.loadString(forKey: "authToken")
-            if currentToken == savedToken {
+            isAuthenticated = true
+            print("✅ Session restored successfully")
+        } catch APIError.unauthorized {
+            // Definitive auth failure — token is dead. Clear it (unless a fresh
+            // login already replaced it).
+            print("❌ Session restore: token rejected (401)")
+            if KeychainHelper.loadString(forKey: "authToken") == savedToken {
                 logout()
             }
+        } catch {
+            // Network / timeout / 404 (authed-but-unregistered) / 5xx: do NOT
+            // log out. We're already optimistically authenticated from init();
+            // the registration gate handles a missing contractor profile, and a
+            // transient error must never wipe a valid session.
+            print("⚠️ Session restore non-fatal error (keeping session): \(error.localizedDescription)")
         }
     }
 

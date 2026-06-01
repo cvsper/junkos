@@ -1105,7 +1105,9 @@ def driver_signup():
 def driver_login():
     """Login as a driver with email/phone and password"""
     data = request.get_json(silent=True) or {}
-    email = (data.get('email') or '').strip()
+    # Lowercase to match signup, which stores email as .strip().lower().
+    # Without this, a mixed-case login ("John@x.com") fails to find the user.
+    email = (data.get('email') or '').strip().lower()
     phone = (data.get('phone') or data.get('phoneNumber') or '').strip()
     password = data.get('password')
 
