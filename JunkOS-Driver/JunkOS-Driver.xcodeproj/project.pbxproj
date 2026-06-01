@@ -51,6 +51,7 @@
 		4F219CCBF09D2A91F8C8A08F /* DriverDesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 803F2EDEBF20C6218ADFA2CB /* DriverDesignSystem.swift */; };
 		51871BDB30F8368F3F8EC867 /* MapboxNavigationUIKit in Frameworks */ = {isa = PBXBuildFile; productRef = 99F9BA012822441FBAC1A4F8 /* MapboxNavigationUIKit */; };
 		543AED3BD6981E51E3034CAC /* RatingViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3A12FA1C9524EEC52BAF42 /* RatingViewModel.swift */; };
+		58C0B72A685306C4D5832E87 /* AppStore-Metadata.md in Resources */ = {isa = PBXBuildFile; fileRef = B643D7BCC5D49EAF752C3A62 /* AppStore-Metadata.md */; };
 		5C4180CB8AE424D51E75FF1F /* HapticManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FCB1498666015B9BBBC1DF1 /* HapticManager.swift */; };
 		5E9FA33210F489FBB5632E05 /* SocketIOManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF8D49E5C00DA1F5B18B2699 /* SocketIOManager.swift */; };
 		60FCA470DEE7BC6DF3C2D582 /* ContractorRegistrationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3650D5429433D4FB66AA8423 /* ContractorRegistrationView.swift */; };
@@ -175,6 +176,7 @@
 		B38475343119CF6E9F5585E9 /* ProfileViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileViewModel.swift; sourceTree = "<group>"; };
 		B3E547968623BAF24419FBF8 /* DriverNavigationViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriverNavigationViewController.swift; sourceTree = "<group>"; };
 		B635EA21FAAB5E8F8AC182AA /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
+		B643D7BCC5D49EAF752C3A62 /* AppStore-Metadata.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "AppStore-Metadata.md"; sourceTree = "<group>"; };
 		B6B51D6BBCBBEA9C72F356FB /* EarningsModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EarningsModels.swift; sourceTree = "<group>"; };
 		B93BC8AD3F170098B98B239B /* NavigationOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationOverlay.swift; sourceTree = "<group>"; };
 		BEAD9400F04B3D94D21E5F2A /* JobDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobDetailView.swift; sourceTree = "<group>"; };
@@ -492,6 +494,7 @@
 		EB3CE005A3A57E4814D88B56 /* Docs */ = {
 			isa = PBXGroup;
 			children = (
+				B643D7BCC5D49EAF752C3A62 /* AppStore-Metadata.md */,
 				2941CDE9C0C7E0D3A739F0A1 /* MapboxNavigationREADME.md */,
 			);
 			path = Docs;
@@ -620,6 +623,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				58C0B72A685306C4D5832E87 /* AppStore-Metadata.md in Resources */,
 				BAD93C9DACE562D75D564204 /* Assets.xcassets in Resources */,
 				10EA98CF33FB08CD7BD0F885 /* ExportOptions.plist in Resources */,
 				A782AA636BD36D70CE7B9F71 /* MapboxNavigationREADME.md in Resources */,
@@ -766,6 +770,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 24GH82AX9R;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "build/UmuvePro.xcarchive/Products/Applications/JunkOS-Driver.app/Starscream_Starscream.bundle/Info.plist";
 				INFOPLIST_GENERATION_MODE = GeneratedFile;
 				INFOPLIST_KEY_CFBundleDisplayName = "Umuve Pro";
 				INFOPLIST_KEY_CFBundleIconName = AppIcon;
@@ -800,6 +805,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 24GH82AX9R;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "build/UmuvePro.xcarchive/Products/Applications/JunkOS-Driver.app/Starscream_Starscream.bundle/Info.plist";
 				INFOPLIST_GENERATION_MODE = GeneratedFile;
 				INFOPLIST_KEY_CFBundleDisplayName = "Umuve Pro";
 				INFOPLIST_KEY_CFBundleIconName = AppIcon;
