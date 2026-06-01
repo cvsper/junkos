@@ -6,12 +6,25 @@
 
 ## 🚦 Gate — do NOT launch until ALL true
 
-- [ ] **≥1 committed hauler** can fulfill PBC jobs (from the call list / Sequence D)
-- [ ] **Vercel `NEXT_PUBLIC_META_PIXEL_ID = 1785795592383973`** (or unset) — verified, redeployed
-- [ ] **Events Manager** shows `Lead`/`InitiateCheckout`/`Purchase` firing from a live test booking
-- [ ] **Stripe checkout** completes end-to-end on the PBC landing/booking flow
-
 Spending before a truck exists = paying to disappoint customers. Hold the line.
+
+### Verified in code (2026-06-01)
+
+- [x] **Browser pixel id correct** — `analytics.tsx` hardcoded fallback is `1785795592383973` (env `NEXT_PUBLIC_META_PIXEL_ID` overrides). ✅
+- [x] **Server-side CAPI wired** — `backend/meta_capi.py` posts Purchase/Lead to the Graph API; `payments.py` fires `track_purchase(job_id=job.id, …)` from the Stripe webhook. Env-gated (`META_PIXEL_ID` + `META_CAPI_ACCESS_TOKEN`); silent no-op if unset. ✅
+- [x] **Purchase dedup verified** — browser sends `eventID = purchase_<job.id>` (`trackBookingConversion`, where `bookingId = rawResult.job.id`); server sends `event_id = purchase_<job.id>`. **They match** → Meta dedupes browser + server Purchase into one conversion. ✅
+  - ⚠️ Edge case: frontend falls back to `bookingResult.id || generateBookingId()` if `rawResult.job.id` is absent; in that degraded path the browser id would NOT match the server's real `job.id`. Normal path is fine.
+- [x] **InitiateCheckout fires (browser)** — `book/page.tsx` calls `trackInitiateCheckout()` on reaching step 6 (payment). No server-side IC (browser-only is fine for IC). ✅
+- [x] **Lead fires (browser)** — `book/page.tsx` calls `trackLead()` on funnel mount. ⚠️ Gaps: (a) browser `Lead` has **no `eventID`**, and there is **no server-side Lead call** in the booking flow, so Lead isn't deduped — acceptable since there's only one (browser) source today. (b) `meta_capi.track_lead()` exists but is **never called** from any route.
+- [x] **capi-status health endpoint live** — `GET/POST /api/admin/capi-status/<secret>` added (gated by `ADMIN_SEED_SECRET`); reports `has_pixel_id`/`has_access_token`/`has_test_event_code` booleans + `meta_capi.status()`, never echoes secrets. `?test=1` fires a test Lead event.
+
+### Verify in dashboard (outside repo)
+
+- [ ] **≥1 committed hauler** can fulfill PBC jobs (from the call list / Sequence D)
+- [ ] **Vercel `NEXT_PUBLIC_META_PIXEL_ID = 1785795592383973`** (or unset) — verified, redeployed — *verify in Vercel dashboard*
+- [ ] **Render env** `META_PIXEL_ID` + `META_CAPI_ACCESS_TOKEN` set (+ optional `META_TEST_EVENT_CODE`) — hit `/api/admin/capi-status/<secret>` to confirm booleans — *verify in Render dashboard*
+- [ ] **Events Manager** shows `Lead`/`InitiateCheckout`/`Purchase` firing from a live test booking, and Purchase shows **"Processed via both Browser and Server" / deduplicated** — *verify in Meta Events Manager*
+- [ ] **Stripe checkout** completes end-to-end on the PBC landing/booking flow — *verify in dashboard/live test*
 
 ## Campaign structure (keep it boring)
 
