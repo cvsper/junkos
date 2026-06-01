@@ -3,12 +3,15 @@ Recurring Booking API routes for Umuve.
 Allows customers to set up recurring/scheduled junk removal pickups.
 """
 
+import logging
 from flask import Blueprint, request, jsonify
 from datetime import datetime, timezone, timedelta
 from dateutil.relativedelta import relativedelta
 
 import sys
 import os
+
+logger = logging.getLogger(__name__)
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from models import (
@@ -391,12 +394,30 @@ def generate_next_jobs(user_id):
         recurring.total_bookings_created += 1
         _advance_next_scheduled(recurring)
 
-        created_jobs.append(job.to_dict())
+        created_jobs.append(job)
 
     db.session.commit()
 
+    # Dispatch each materialized job to haulers (respects DISPATCH_MODE).
+    # Done after commit so the rows exist when the dispatcher loads them.
+    # Never let a dispatch failure abort the response — the Jobs are persisted.
+    from flask import current_app
+    dispatched = []
+    try:
+        from dispatcher import auto_assign_job_async
+        app_obj = current_app._get_current_object()
+        for job in created_jobs:
+            try:
+                auto_assign_job_async(job.id, app_obj)
+            except Exception:
+                logger.exception("Recurring dispatch failed for job %s", job.id)
+            dispatched.append(job.to_dict())
+    except Exception:
+        logger.exception("Could not import dispatcher for recurring jobs")
+        dispatched = [j.to_dict() for j in created_jobs]
+
     return jsonify({
         "success": True,
-        "jobs_created": len(created_jobs),
-        "jobs": created_jobs,
+        "jobs_created": len(dispatched),
+        "jobs": dispatched,
     }), 200

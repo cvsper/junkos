@@ -54,7 +54,16 @@ def _sweep_pending_payouts(app):
 
 
 def _generate_recurring_jobs(app):
-    """Create Job records from active recurring bookings that are due."""
+    """Create Job records from active recurring bookings that are due, then
+    dispatch each one to haulers.
+
+    Recurring bookings are the B2B recurring-demand backbone (property
+    managers, apartment turnovers, HOAs, office cleanouts). Materializing a
+    Job is not enough — without a dispatch step the Job sits in ``pending``
+    with no contractor ever notified. We mirror the live booking flow
+    (routes/payments.py) by calling ``auto_assign_job_async`` after commit,
+    which respects ``DISPATCH_MODE`` (assign vs. broadcast).
+    """
     with app.app_context():
         from models import db, Job, Payment, RecurringBooking, generate_uuid
         from routes.recurring import _advance_next_scheduled
@@ -65,7 +74,7 @@ def _generate_recurring_jobs(app):
             RecurringBooking.next_scheduled_at <= now,
         ).all()
 
-        count = 0
+        created_job_ids = []
         for recurring in due:
             try:
                 job = Job(
@@ -91,15 +100,34 @@ def _generate_recurring_jobs(app):
 
                 recurring.total_bookings_created += 1
                 _advance_next_scheduled(recurring)
-                count += 1
+                created_job_ids.append(job.id)
             except Exception:
                 logger.exception(
                     "Failed to generate job for recurring booking %s", recurring.id
                 )
 
-        if count > 0:
+        if created_job_ids:
             db.session.commit()
-            logger.info("Scheduler: created %d jobs from recurring bookings", count)
+            logger.info(
+                "Scheduler: created %d jobs from recurring bookings",
+                len(created_job_ids),
+            )
+
+            # Dispatch each materialized job to haulers. Done after commit so
+            # the rows exist when the (possibly threaded) dispatcher loads them.
+            # Never let a dispatch failure abort the sweep — the Job is already
+            # persisted and the daily morning brief surfaces unassigned jobs.
+            try:
+                from dispatcher import auto_assign_job_async
+                for job_id in created_job_ids:
+                    try:
+                        auto_assign_job_async(job_id, app)
+                    except Exception:
+                        logger.exception(
+                            "Recurring dispatch failed for job %s", job_id
+                        )
+            except Exception:
+                logger.exception("Could not import dispatcher for recurring jobs")
 
 
 def _send_pickup_reminders(app):
