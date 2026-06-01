@@ -13,6 +13,9 @@ struct LiveMapView: View {
     @Bindable var appState: AppState
     @State private var mapVM = LiveMapViewModel()
     @State private var navigationCoordinator = NavigationCoordinator()
+    // Once the driver arrives, hand off to the canonical ActiveJobView
+    // (before/after photos + completion + rating). One job lifecycle, not two.
+    @State private var showJobFlow = false
 
     private var driverCoordinate: CLLocationCoordinate2D {
         appState.locationManager.currentLocation?.coordinate
@@ -220,6 +223,15 @@ struct LiveMapView: View {
             DriverNavigationContainerView(coordinator: navigationCoordinator)
                 .ignoresSafeArea()
         }
+        // Canonical active-job flow (arrived → photos → started → photos → complete → rating).
+        // Presented on arrival; the map keeps the route/navigation phase below it.
+        .fullScreenCover(isPresented: $showJobFlow) {
+            if let job = mapVM.acceptedJob ?? appState.activeJob {
+                NavigationStack {
+                    ActiveJobView(appState: appState, jobId: job.id)
+                }
+            }
+        }
         .onAppear {
             mapVM.startPolling()
             mapVM.todayJobsCount = appState.contractorProfile?.totalJobs ?? 0
@@ -228,6 +240,10 @@ struct LiveMapView: View {
             // If driver already has an active job, show it on map immediately
             if let existingJob = appState.activeJob {
                 mapVM.acceptedJob = existingJob
+                // Already arrived/working? Resume the canonical flow, not the map overlay.
+                if existingJob.jobStatus == .arrived || existingJob.jobStatus == .started {
+                    showJobFlow = true
+                }
                 // Calculate route to job location
                 if let lat = existingJob.lat, let lng = existingJob.lng {
                     Task {
@@ -254,8 +270,9 @@ struct LiveMapView: View {
         .onChange(of: appState.activeJob?.id) { _, newJobId in
             // When active job changes (accepted from Jobs tab), calculate route
             guard let job = appState.activeJob else {
-                // Job cleared - clear route
+                // Job cleared (e.g. completion "Back to Dashboard") - tear down everything
                 mapVM.clearAcceptedJob()
+                showJobFlow = false
                 return
             }
             // Sync with map view model
@@ -273,9 +290,13 @@ struct LiveMapView: View {
         }
         .onChange(of: appState.activeJob?.status) { oldStatus, newStatus in
             // Auto-start navigation when status changes to en_route
-            guard newStatus == "en_route", !mapVM.isNavigating, mapVM.route != nil else { return }
-            if let activeJob = appState.activeJob {
+            if newStatus == "en_route", !mapVM.isNavigating, mapVM.route != nil,
+               let activeJob = appState.activeJob {
                 Task { await startNavigation(for: activeJob) }
+            }
+            // Hand off to the canonical flow once arrived/working.
+            if newStatus == "arrived" || newStatus == "started" {
+                showJobFlow = true
             }
         }
         .onChange(of: mapVM.isNavigating) { _, isNavigating in
@@ -297,11 +318,15 @@ struct LiveMapView: View {
         case .accepted:
             await mapVM.markEnRoute()
         case .enRoute:
+            // Mark arrived, then hand off to the canonical ActiveJobView for the
+            // photo-gated start/complete + rating flow. No photoless map path.
             await mapVM.markArrived()
-        case .arrived:
-            await mapVM.markStarted()
-        case .started:
-            await mapVM.markCompleted()
+            appState.activeJob = mapVM.acceptedJob
+            showJobFlow = true
+        case .arrived, .started:
+            // Already past navigation — drive everything through ActiveJobView.
+            appState.activeJob = mapVM.acceptedJob
+            showJobFlow = true
         default:
             break
         }

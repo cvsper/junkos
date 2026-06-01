@@ -245,37 +245,11 @@ final class LiveMapViewModel {
         isUpdatingStatus = false
     }
 
-    func markStarted() async {
-        guard let job = acceptedJob else { return }
-        isUpdatingStatus = true
-        do {
-            let response = try await api.updateJobStatus(jobId: job.id, status: "started")
-            acceptedJob = response.job
-            HapticManager.shared.success()
-        } catch {
-            errorMessage = error.localizedDescription
-            HapticManager.shared.error()
-        }
-        isUpdatingStatus = false
-    }
-
-    func markCompleted() async {
-        guard let job = acceptedJob else { return }
-        isUpdatingStatus = true
-        do {
-            let response = try await api.updateJobStatus(jobId: job.id, status: "completed")
-            acceptedJob = response.job
-            acceptedJob = nil
-            route = nil
-            routeETA = nil
-            stopNavigation()
-            HapticManager.shared.success()
-        } catch {
-            errorMessage = error.localizedDescription
-            HapticManager.shared.error()
-        }
-        isUpdatingStatus = false
-    }
+    // NOTE: started/completed transitions are intentionally NOT handled here.
+    // Once the driver arrives, LiveMapView hands off to ActiveJobView, which owns
+    // the photo-gated start/complete + completion/rating flow (single source of
+    // truth). A photoless map-side complete would skip required photos and the
+    // earnings/rating screen — that divergence is exactly what was unified away.
 
     // MARK: - Navigation
 
