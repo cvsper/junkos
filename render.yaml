@@ -24,11 +24,15 @@ services:
           property: connectionString
       - key: ENABLE_SCHEDULER
         value: "true"
-      # Marketplace dispatch: broadcast a job to every eligible hauler
-      # (first-to-accept) instead of single auto-assign. Set to "assign" to
-      # revert instantly. See dispatcher.DISPATCH_MODE.
+      # Marketplace dispatch mode. "assign" = single best-hauler auto-assign;
+      # "broadcast" = offer to every eligible hauler, first-to-accept.
+      # HELD AT "assign": the native driver app cannot yet claim broadcast
+      # JobOffers (offer-accept API/UI not shipped — see task #26), so in
+      # broadcast mode an app-only hauler (e.g. the Palm Beach launch hauler)
+      # can't accept jobs except via the SMS /o/<token> link. Flip to
+      # "broadcast" only after the app ships offer support.
       - key: DISPATCH_MODE
-        value: "broadcast"
+        value: "assign"
 
   # Portal v1 scheduled tasks (spec 04 §9):
   #   * portal.recurring_tick   — every 5 min, generates Jobs for due schedules
