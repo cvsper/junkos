@@ -69,6 +69,7 @@
 		96A96F5462782462AEBCEBB0 /* SplashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 228E7D7E7644F745D1DAAFED /* SplashView.swift */; };
 		9A5BFFFC91CD7B2DB16403A5 /* NavigationOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = B93BC8AD3F170098B98B239B /* NavigationOverlay.swift */; };
 		9A935658ADCF82A0A67E6CC0 /* EarningsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED5DECECC5344F008D376847 /* EarningsView.swift */; };
+		9B847BC10273270680F2A31E /* archive-and-upload.sh in Resources */ = {isa = PBXBuildFile; fileRef = B42C35F057DC0132348BA134 /* archive-and-upload.sh */; };
 		9E123249BC3A8E7EA11DF942 /* StatusBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABD336317A641FD03A7F918D /* StatusBadge.swift */; };
 		A2D1189B766041112EFD97FD /* AuthenticationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DEA402F6CECE2DD4CC76A0F /* AuthenticationManager.swift */; };
 		A782AA636BD36D70CE7B9F71 /* MapboxNavigationREADME.md in Resources */ = {isa = PBXBuildFile; fileRef = 2941CDE9C0C7E0D3A739F0A1 /* MapboxNavigationREADME.md */; };
@@ -81,6 +82,7 @@
 		BAD93C9DACE562D75D564204 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1FBC43CAFF78869678C21C3F /* Assets.xcassets */; };
 		BF70D9F10BFA3C3DE51E7908 /* PayoutSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24F8F8ADE1A72C73B582B02B /* PayoutSettingsView.swift */; };
 		C185F7208CF4AD483FB0D267 /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B635EA21FAAB5E8F8AC182AA /* NotificationManager.swift */; };
+		C1EAD15110BEEE057E987950 /* LiveMapViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F3471B07A44B406BF687ECA /* LiveMapViewModelTests.swift */; };
 		C440DD69A4F80D82F7D54855 /* StripeConnectViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6372D0ABD935A4BA919F1C8 /* StripeConnectViewModel.swift */; };
 		C934F4E73453A391EA7AC996 /* add_file_to_xcode.sh in Resources */ = {isa = PBXBuildFile; fileRef = 2FDEC7E1081F9701F0D2C131 /* add_file_to_xcode.sh */; };
 		CA6F8AF4C32EBC5160BC3494 /* NavigationCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8B6BDEF51AB3AAF0BBE344D /* NavigationCoordinator.swift */; };
@@ -128,6 +130,7 @@
 		228E7D7E7644F745D1DAAFED /* SplashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplashView.swift; sourceTree = "<group>"; };
 		24F8F8ADE1A72C73B582B02B /* PayoutSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PayoutSettingsView.swift; sourceTree = "<group>"; };
 		2941CDE9C0C7E0D3A739F0A1 /* MapboxNavigationREADME.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = MapboxNavigationREADME.md; sourceTree = "<group>"; };
+		2F3471B07A44B406BF687ECA /* LiveMapViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveMapViewModelTests.swift; sourceTree = "<group>"; };
 		2FDEC7E1081F9701F0D2C131 /* add_file_to_xcode.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = add_file_to_xcode.sh; sourceTree = "<group>"; };
 		33D37AECF43BA2E3014E74E6 /* ChatViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatViewModel.swift; sourceTree = "<group>"; };
 		344C45FBFECAA97F6CB507F5 /* ActiveJobMapOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveJobMapOverlay.swift; sourceTree = "<group>"; };
@@ -175,6 +178,7 @@
 		B2EEE2DA4D07D3F191694A55 /* JobCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobCardView.swift; sourceTree = "<group>"; };
 		B38475343119CF6E9F5585E9 /* ProfileViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileViewModel.swift; sourceTree = "<group>"; };
 		B3E547968623BAF24419FBF8 /* DriverNavigationViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriverNavigationViewController.swift; sourceTree = "<group>"; };
+		B42C35F057DC0132348BA134 /* archive-and-upload.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "archive-and-upload.sh"; sourceTree = "<group>"; };
 		B635EA21FAAB5E8F8AC182AA /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
 		B643D7BCC5D49EAF752C3A62 /* AppStore-Metadata.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "AppStore-Metadata.md"; sourceTree = "<group>"; };
 		B6B51D6BBCBBEA9C72F356FB /* EarningsModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EarningsModels.swift; sourceTree = "<group>"; };
@@ -228,6 +232,7 @@
 			isa = PBXGroup;
 			children = (
 				590A28D68129D58B9E85ED9E /* JobAcceptHandlerTests.swift */,
+				2F3471B07A44B406BF687ECA /* LiveMapViewModelTests.swift */,
 				F92CE47D4AD772AB0E015CB4 /* MapboxConfigTests.swift */,
 			);
 			path = Tests;
@@ -358,6 +363,7 @@
 			children = (
 				2FDEC7E1081F9701F0D2C131 /* add_file_to_xcode.sh */,
 				C5E3F3D403E2B18000445A56 /* add_navigation_file.sh */,
+				B42C35F057DC0132348BA134 /* archive-and-upload.sh */,
 				1FBC43CAFF78869678C21C3F /* Assets.xcassets */,
 				48870C02A80F4EF1D4CDD4DF /* ExportOptions.plist */,
 				8D74268D761171C093876799 /* JunkOS-Driver.entitlements */,
@@ -629,6 +635,7 @@
 				A782AA636BD36D70CE7B9F71 /* MapboxNavigationREADME.md in Resources */,
 				C934F4E73453A391EA7AC996 /* add_file_to_xcode.sh in Resources */,
 				4546C91F88B3DC9BDB3E58D4 /* add_navigation_file.sh in Resources */,
+				9B847BC10273270680F2A31E /* archive-and-upload.sh in Resources */,
 				75A86652BC37583EC879374B /* red_truck.glb in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -641,6 +648,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				1D9CED63F0E498502A126B1D /* JobAcceptHandlerTests.swift in Sources */,
+				C1EAD15110BEEE057E987950 /* LiveMapViewModelTests.swift in Sources */,
 				3B02F055C4F4D3E42AE321BF /* MapboxConfigTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -770,7 +778,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 24GH82AX9R;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "build/UmuvePro.xcarchive/Products/Applications/JunkOS-Driver.app/Starscream_Starscream.bundle/Info.plist";
+				INFOPLIST_FILE = ".spm-cache/artifacts/mapbox-common-ios/MapboxCommon/MapboxCommon.xcframework/ios-arm64_x86_64-simulator/MapboxCommon.framework/Info.plist";
 				INFOPLIST_GENERATION_MODE = GeneratedFile;
 				INFOPLIST_KEY_CFBundleDisplayName = "Umuve Pro";
 				INFOPLIST_KEY_CFBundleIconName = AppIcon;
@@ -805,7 +813,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 24GH82AX9R;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "build/UmuvePro.xcarchive/Products/Applications/JunkOS-Driver.app/Starscream_Starscream.bundle/Info.plist";
+				INFOPLIST_FILE = ".spm-cache/artifacts/mapbox-common-ios/MapboxCommon/MapboxCommon.xcframework/ios-arm64_x86_64-simulator/MapboxCommon.framework/Info.plist";
 				INFOPLIST_GENERATION_MODE = GeneratedFile;
 				INFOPLIST_KEY_CFBundleDisplayName = "Umuve Pro";
 				INFOPLIST_KEY_CFBundleIconName = AppIcon;
