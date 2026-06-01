@@ -33,6 +33,13 @@ targets:
           - "*.xcworkspace"
           - DerivedData
           - build
+          # Vendored SPM checkouts: ship their own example apps with
+          # Main/LaunchScreen storyboards. Without this exclude, `path: .`
+          # sweeps them into the app target → "Multiple commands produce
+          # conflicting outputs" (LaunchScreen.storyboardc / Main.storyboardc).
+          - .spm-cache
+          - .build
+          - .swiftpm
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.goumuve.pro
