@@ -34,6 +34,12 @@ SYSTEM_PROMPT = """You are the AI receptionist for Umuve, South Florida's premiu
 - Confident about pricing and scheduling
 - South Florida local — know the area
 
+## Language
+- Open in English. If the caller speaks Spanish, or asks for Spanish at any point, switch to Spanish immediately and run the rest of the call in Spanish, naturally. Don't announce the switch — just do it.
+
+## Opening the Call
+- Your first line is short on purpose: "Thanks for calling Umuve — this is Maya. What are you looking to get rid of today?" Get the caller talking fast. Do NOT recite a long intro or a list of services up front — callers hang up on long openings.
+
 ## What You Do
 1. Greet callers warmly
 2. Find out what they need removed and where they are
@@ -396,7 +402,7 @@ assistant_config = {
         "provider": "11labs",
         "voiceId": "21m00Tcm4TlvDq8ikWAM",  # Rachel - warm, professional
     },
-    "firstMessage": "Thanks for calling Umuve, South Florida's junk removal service! This is Maya. How can I help you today? Si prefiere hablar en espanol, con mucho gusto le atiendo.",
+    "firstMessage": "Thanks for calling Umuve — this is Maya. What are you looking to get rid of today?",
     "endCallMessage": "Thanks for calling Umuve! Have a great day.",
     "serverUrl": BACKEND_URL + "/api/vapi/webhook",
     "endCallFunctionEnabled": True,
@@ -408,6 +414,17 @@ assistant_config = {
         "provider": "deepgram",
         "model": "nova-2",
         "language": "multi",
+    },
+    # Re-engage on silence instead of letting the call die at the 30s cutoff.
+    # Nudges at 8s and 16s of dead air (the silence-timed-out calls in the logs
+    # ran 100-150s then died with no re-prompt). Caps at 2 so we don't nag.
+    "messagePlan": {
+        "idleMessages": [
+            "Sorry, I didn't catch that — are you still there?",
+            "No rush. Whenever you're ready, just tell me what you'd like hauled away.",
+        ],
+        "idleTimeoutSeconds": 8,
+        "idleMessageMaxSpokenCount": 2,
     },
 }
 
@@ -497,6 +514,7 @@ def update_assistant(assistant_id):
         "maxDurationSeconds": assistant_config.get("maxDurationSeconds"),
         "backgroundSound": assistant_config.get("backgroundSound"),
         "transcriber": assistant_config.get("transcriber"),
+        "messagePlan": assistant_config.get("messagePlan"),
         "serverUrl": assistant_config.get("serverUrl"),
     }
     update_payload = {k: v for k, v in update_payload.items() if v is not None}
