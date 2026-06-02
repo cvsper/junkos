@@ -950,6 +950,76 @@ def provision_hauler_endpoint(secret):
         return jsonify({"error": "Provision failed: {}".format(exc)}), 500
 
 
+@app.route("/api/admin/capi-status/<secret>", methods=["GET", "POST"])
+@limiter.exempt
+def capi_status_endpoint(secret):
+    """Report Meta Conversions API config + optionally fire a test event.
+
+    Before flipping on paid ads we need to verify, from prod, that the
+    server-side Conversions API is actually wired: pixel id present, access
+    token present, and (optionally) that a test event reaches Events Manager.
+    Secured by ADMIN_SEED_SECRET — same gate as the other /api/admin endpoints.
+
+    NEVER echoes the access token or pixel id value — only booleans. Pass
+    ?test=1 to fire a deduplicatable test 'Lead' event; it uses
+    META_TEST_EVENT_CODE (if set) so it lands in the Events Manager
+    "Test Events" tab without polluting live data. The response shows whether
+    the send was accepted.
+    """
+    expected = os.environ.get("ADMIN_SEED_SECRET", "")
+    if not expected or secret != expected:
+        return jsonify({"error": "Forbidden"}), 403
+
+    from flask import request as _req
+
+    result = {
+        "has_pixel_id": bool(
+            os.environ.get("META_PIXEL_ID") or os.environ.get("NEXT_PUBLIC_META_PIXEL_ID")
+        ),
+        "has_access_token": bool(os.environ.get("META_CAPI_ACCESS_TOKEN")),
+        "has_test_event_code": bool(os.environ.get("META_TEST_EVENT_CODE")),
+        "test_event": None,
+    }
+
+    try:
+        import meta_capi
+        # meta_capi.status() is the authoritative readout (it reflects the
+        # module-level config actually loaded at import time).
+        result["capi_status"] = meta_capi.status()
+    except Exception as exc:
+        app.logger.exception("capi-status: failed to read meta_capi.status()")
+        result["capi_status"] = {"error": str(exc)}
+
+    # Optional: fire a no-op-safe test event to confirm the send path works.
+    if _req.args.get("test") in ("1", "true", "yes"):
+        try:
+            import time as _time
+            import meta_capi
+            test_event_id = "capi_test_{}".format(int(_time.time()))
+            sent = meta_capi.send_event(
+                "Lead",
+                test_event_id,
+                meta_capi._build_user_data(email="capi-test@goumuve.com"),
+                custom_data={"currency": "USD", "value": 0},
+                event_source_url="https://app.goumuve.com/",
+            )
+            result["test_event"] = {
+                "attempted": True,
+                "accepted": bool(sent),
+                "event_id": test_event_id,
+                "note": (
+                    "Sent with META_TEST_EVENT_CODE — check Events Manager > "
+                    "Test Events." if result["has_test_event_code"]
+                    else "No META_TEST_EVENT_CODE set — this hit LIVE data."
+                ),
+            }
+        except Exception as exc:
+            app.logger.exception("capi-status: test event failed")
+            result["test_event"] = {"attempted": True, "accepted": False, "error": str(exc)}
+
+    return jsonify(result), 200
+
+
 @app.route("/api/services", methods=["GET"])
 @require_api_key
 def get_services():
