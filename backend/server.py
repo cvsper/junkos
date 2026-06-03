@@ -1121,6 +1121,76 @@ def backfill_approval_emails_endpoint(secret):
     }), 200
 
 
+@app.route("/api/admin/void-job/<secret>", methods=["POST"])
+@limiter.exempt
+def void_job_endpoint(secret):
+    """Cancel or delete a job by confirmation_code or job_id — for clearing test
+    / junk bookings out of the pipeline. ADMIN_SEED_SECRET-gated.
+
+    POST JSON: {"confirmation_code": "LEHIPLLG"}  or  {"job_id": "..."}
+    Default  -> soft cancel (status='cancelled', payment cancelled) — safe, keeps the row.
+    ?hard=1  -> fully delete the Job + its Payment/JobOffer rows and detach any Quote.
+    """
+    expected = os.environ.get("ADMIN_SEED_SECRET", "")
+    if not expected or secret != expected:
+        return jsonify({"error": "Forbidden"}), 403
+
+    from flask import request as _req
+    from models import db, Job, Payment, utcnow
+
+    data = _req.get_json(silent=True) or {}
+    code = (data.get("confirmation_code") or "").strip()
+    job_id = (data.get("job_id") or "").strip()
+    hard = _req.args.get("hard") == "1"
+    if not code and not job_id:
+        return jsonify({"error": "confirmation_code or job_id required"}), 400
+
+    try:
+        job = db.session.get(Job, job_id) if job_id else None
+        if job is None and code:
+            job = Job.query.filter_by(confirmation_code=code).first()
+        if not job:
+            return jsonify({"error": "Job not found"}), 404
+
+        jid = job.id
+        summary = {
+            "job_id": jid,
+            "confirmation_code": job.confirmation_code,
+            "prev_status": job.status,
+            "total_price": job.total_price,
+        }
+
+        if hard:
+            Payment.query.filter_by(job_id=jid).delete(synchronize_session=False)
+            try:
+                from models import Quote
+                Quote.query.filter_by(booking_id=jid).update(
+                    {"booking_id": None, "status": "voided"}, synchronize_session=False
+                )
+            except Exception:
+                pass
+            try:
+                from models import JobOffer
+                JobOffer.query.filter_by(job_id=jid).delete(synchronize_session=False)
+            except Exception:
+                pass
+            db.session.delete(job)
+            db.session.commit()
+            return jsonify({"success": True, "action": "deleted", "job": summary}), 200
+
+        job.status = "cancelled"
+        job.cancelled_at = utcnow()
+        Payment.query.filter_by(job_id=jid).update(
+            {"payment_status": "cancelled"}, synchronize_session=False
+        )
+        db.session.commit()
+        return jsonify({"success": True, "action": "cancelled", "job": summary}), 200
+    except Exception as exc:
+        db.session.rollback()
+        app.logger.exception("void-job failed")
+        return jsonify({"error": "Void failed: {}".format(exc)}), 500
+
+
 @app.route("/api/services", methods=["GET"])
 @require_api_key
 def get_services():
