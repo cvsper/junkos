@@ -30,11 +30,33 @@ from routes import drivers_bp, pricing_bp, ratings_bp, admin_bp, payments_bp, we
 _sentry_dsn = os.environ.get("SENTRY_DSN")
 if _sentry_dsn:
     import sentry_sdk
+    import re as _re
     from sentry_sdk.integrations.flask import FlaskIntegration
+
+    # Secret-gated admin endpoints take the secret as a URL PATH segment, and
+    # Sentry logs full URLs -- so the secret leaks into stored events + alert
+    # emails. Redact the secret segment before any event is sent.
+    _SECRET_URL_RE = _re.compile(
+        r"(/api/(?:admin/(?:provision-hauler|capi-status|backfill-approval-emails|test-alert|seed-demo-driver)|run-migrate))/[^/?#]+"
+    )
+
+    def _scrub_secret_urls(event, hint):
+        try:
+            req = event.get("request")
+            if isinstance(req, dict) and isinstance(req.get("url"), str):
+                req["url"] = _SECRET_URL_RE.sub(r"\1/[redacted]", req["url"])
+            tags = event.get("tags")
+            if isinstance(tags, dict) and isinstance(tags.get("url"), str):
+                tags["url"] = _SECRET_URL_RE.sub(r"\1/[redacted]", tags["url"])
+        except Exception:
+            pass
+        return event
+
     sentry_sdk.init(
         dsn=_sentry_dsn,
         integrations=[FlaskIntegration()],
         traces_sample_rate=0.1,
+        before_send=_scrub_secret_urls,
     )
 
 # ---------------------------------------------------------------------------
@@ -151,10 +173,13 @@ socketio.init_app(
     async_mode="threading",  # Threading mode is fully compatible with Socket.IO v4
     logger=False,
     engineio_logger=False,
-    # Explicitly support both Socket.IO v2.x and v4.x protocols
-    allow_upgrades=True,
-    # Enable both polling and websocket transports
-    transports=['polling', 'websocket'],
+    # Polling-only. Under the gunicorn eventlet worker, threading-mode WebSocket
+    # upgrades raise an unhandled StopIteration (Sentry noise) and fall back to
+    # polling anyway. Disabling upgrades stops the failing WS handshake with no
+    # functional change. Re-enable via a tested async_mode="eventlet" migration
+    # when real WebSockets are wanted for performance.
+    allow_upgrades=False,
+    transports=['polling'],
     # Mobile connections behind Render can stall briefly; use less aggressive
     # heartbeat settings to avoid flapping between connected/reconnecting.
     ping_interval=25,
