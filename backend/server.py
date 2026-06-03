@@ -1020,6 +1020,70 @@ def capi_status_endpoint(secret):
     return jsonify(result), 200
 
 
+@app.route("/api/admin/backfill-approval-emails/<secret>", methods=["POST"])
+@limiter.exempt
+def backfill_approval_emails_endpoint(secret):
+    """Send the branded approval email to already-approved haulers who may have
+    missed it (e.g. approved before the email existed, or the old email lacked
+    the next-step instructions).
+
+    Secured by ADMIN_SEED_SECRET. **DRY-RUN BY DEFAULT** -- returns the list of
+    who WOULD be emailed without sending anything. Pass ?send=1 to actually send.
+    ?role=operator (default) | driver | all.
+    """
+    expected = os.environ.get("ADMIN_SEED_SECRET", "")
+    if not expected or secret != expected:
+        return jsonify({"error": "Forbidden"}), 403
+
+    from flask import request as _req
+    from models import db, User, Contractor
+    from notifications import (
+        send_email,
+        render_driver_approval_email,
+        render_operator_approval_email,
+    )
+
+    role = (_req.args.get("role") or "operator").strip().lower()
+    do_send = _req.args.get("send") == "1"
+
+    query = Contractor.query.filter_by(approval_status="approved")
+    if role == "operator":
+        query = query.filter(Contractor.is_operator.is_(True))
+    elif role == "driver":
+        query = query.filter(Contractor.is_operator.is_(False))
+    # role == "all" -> no is_operator filter
+
+    recipients = []
+    sent = 0
+    try:
+        for c in query.all():
+            user = db.session.get(User, c.user_id)
+            if not user or not user.email:
+                continue
+            kind = "operator" if c.is_operator else "driver"
+            recipients.append({"email": user.email, "name": user.name, "role": kind})
+            if do_send:
+                if c.is_operator:
+                    subject, html = render_operator_approval_email(user.name)
+                else:
+                    subject, html = render_driver_approval_email(user.name)
+                send_email(to_email=user.email, subject=subject, html_content=html)
+                sent += 1
+    except Exception as exc:
+        app.logger.exception("backfill-approval-emails failed")
+        return jsonify({"error": "Backfill failed: {}".format(exc)}), 500
+
+    return jsonify({
+        "dry_run": not do_send,
+        "role_filter": role,
+        "matched": len(recipients),
+        "sent": sent,
+        "recipients": recipients,
+        "note": ("DRY-RUN — no emails sent. Re-run with ?send=1 to actually send."
+                 if not do_send else "Emails queued for sending."),
+    }), 200
+
+
 @app.route("/api/services", methods=["GET"])
 @require_api_key
 def get_services():

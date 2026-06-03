@@ -16,7 +16,7 @@ from models import (
     db, User, Contractor, OperatorApplication, generate_uuid, utcnow,
 )
 from auth_routes import require_auth
-from notifications import send_email
+from notifications import send_email, render_operator_approval_email
 
 logger = logging.getLogger(__name__)
 
@@ -284,29 +284,10 @@ def review_operator_application(user_id, app_id):
             )
             db.session.add(contractor)
 
-        # Send approval email
+        # Send approval email (branded template shared with the driver flow + backfill)
         try:
-            send_email(
-                to_email=application.email,
-                subject="Welcome to Umuve - Application Approved!",
-                html_content=(
-                    '<div style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px;">'
-                    '<h2 style="color: #111; margin-bottom: 16px;">You are Approved!</h2>'
-                    '<p style="color: #444; line-height: 1.6;">Hi {name},</p>'
-                    '<p style="color: #444; line-height: 1.6;">'
-                    'Great news! Your Umuve operator application has been approved. '
-                    'You can now log in and start managing your fleet.'
-                    '</p>'
-                    '<p style="color: #444; line-height: 1.6;">'
-                    'Download the Umuve app or visit our platform to get started. '
-                    'If you have any questions, just reply to this email.'
-                    '</p>'
-                    '<p style="color: #888; font-size: 14px; margin-top: 32px;">'
-                    '&mdash; The Umuve Team'
-                    '</p>'
-                    '</div>'
-                ).format(name=application.first_name),
-            )
+            subject, html = render_operator_approval_email(application.first_name)
+            send_email(to_email=application.email, subject=subject, html_content=html)
         except Exception:
             logger.exception("Failed to send approval email to %s", application.email)
 
