@@ -3,7 +3,7 @@ Admin API routes for Umuve.
 Protected by role-based access (admin only).
 """
 
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 from functools import wraps
 from datetime import datetime, timezone, timedelta
 from collections import defaultdict
@@ -20,6 +20,7 @@ from models import (
     generate_uuid, utcnow,
 )
 from auth_routes import require_auth
+from notifications import send_email
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/api/admin")
 
@@ -153,6 +154,39 @@ def approve_contractor(user_id, contractor_id):
     )
     db.session.add(notification)
     db.session.commit()
+
+    # Email the driver so approval isn't silent (mirrors the operator approval
+    # flow). Includes the 3 steps to actually start earning -- crucially the
+    # Stripe payment setup, without which payouts silently defer. Non-fatal:
+    # a mail failure must never block the approval itself.
+    try:
+        driver = db.session.get(User, contractor.user_id)
+        if driver and driver.email:
+            first_name = (driver.name or "there").split()[0]
+            send_email(
+                to_email=driver.email,
+                subject="You're approved to drive with Umuve!",
+                html_content=(
+                    '<div style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px;">'
+                    '<h2 style="color: #111; margin-bottom: 16px;">You\'re Approved!</h2>'
+                    '<p style="color: #444; line-height: 1.6;">Hi {name},</p>'
+                    '<p style="color: #444; line-height: 1.6;">'
+                    'Great news &mdash; your Umuve driver application is approved. Three quick steps and jobs start coming to you:'
+                    '</p>'
+                    '<ol style="color: #444; line-height: 1.8;">'
+                    '<li><strong>Log in</strong> to the Umuve Pro app.</li>'
+                    '<li><strong>Finish your payment setup</strong> so you get paid the moment a job is done.</li>'
+                    '<li><strong>Go Online</strong> &mdash; that flips you live to receive nearby jobs.</li>'
+                    '</ol>'
+                    '<p style="color: #444; line-height: 1.6;">Questions? Just reply to this email.</p>'
+                    '<p style="color: #888; font-size: 14px; margin-top: 32px;">&mdash; The Umuve Team</p>'
+                    '</div>'
+                ).format(name=first_name),
+            )
+    except Exception:
+        current_app.logger.exception(
+            "Failed to send approval email to contractor %s", contractor_id
+        )
 
     return jsonify({"success": True, "contractor": contractor.to_dict()}), 200
 
