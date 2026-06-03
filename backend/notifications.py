@@ -174,6 +174,114 @@ def send_email_sync(to_email, subject, html_content):
     return _send_email_sync(to_email, subject, html_content)
 
 
+# ---------------------------------------------------------------------------
+# Branded approval emails (driver + operator onboarding)
+# ---------------------------------------------------------------------------
+# Email-client-safe: table layout, inline styles, web-font with fallbacks.
+# Built with plain string .replace() (no f-string/.format) so the HTML can
+# contain braces/percent/quotes freely. Brand: red #DC2626, Outfit + DM Sans.
+import html as _html
+
+_APPROVAL_LOGO = "https://goumuve.com/logo-full.png"
+
+_APPROVAL_STEP = """<tr>
+<td width="44" valign="top" style="padding-bottom:__PB__;">
+<div style="width:34px;height:34px;background:#DC2626;border-radius:50%;color:#ffffff;font-family:'Outfit',Arial,sans-serif;font-size:16px;font-weight:700;text-align:center;line-height:34px;">__N__</div>
+</td>
+<td valign="top" style="padding-bottom:__PB__;font-family:'DM Sans',-apple-system,'Segoe UI',Arial,sans-serif;">
+<div style="font-size:16px;font-weight:600;color:#141414;">__TITLE__</div>
+<div style="font-size:14px;color:#777;line-height:1.55;margin-top:3px;">__DESC__</div>
+</td></tr>"""
+
+_APPROVAL_SHELL = """<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+</head><body style="margin:0;padding:0;background:#f1f1f4;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f1f1f4;"><tr><td align="center" style="padding:36px 12px;">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:600px;max-width:600px;background:#ffffff;border-radius:18px;overflow:hidden;border:1px solid #e8e8ec;">
+<tr><td style="height:6px;background:#DC2626;font-size:0;line-height:0;">&nbsp;</td></tr>
+<tr><td style="padding:28px 44px 0 44px;"><img src="__LOGO__" alt="Umuve" height="30" style="height:30px;display:block;border:0;"></td></tr>
+<tr><td style="padding:26px 44px 0 44px;">
+<div style="font-family:'Outfit','Segoe UI',Arial,sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;color:#DC2626;text-transform:uppercase;">__EYEBROW__</div>
+<div style="font-family:'Outfit','Segoe UI',Arial,sans-serif;font-size:32px;line-height:1.12;font-weight:800;color:#141414;margin-top:10px;letter-spacing:-0.5px;">__HEADING__</div>
+<div style="font-family:'DM Sans',-apple-system,'Segoe UI',Arial,sans-serif;font-size:16px;line-height:1.6;color:#555;margin-top:14px;">__INTRO__</div>
+</td></tr>
+<tr><td style="padding:28px 44px 8px 44px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0">__STEPS__</table></td></tr>
+<tr><td style="padding:18px 44px 4px 44px;"><table role="presentation" cellpadding="0" cellspacing="0"><tr><td bgcolor="#DC2626" style="border-radius:12px;"><a href="__CTA_URL__" style="display:inline-block;padding:15px 34px;font-family:'Outfit','Segoe UI',Arial,sans-serif;font-size:16px;font-weight:700;color:#ffffff;border-radius:12px;">__CTA_LABEL__ &nbsp;&rarr;</a></td></tr></table></td></tr>
+<tr><td style="padding:22px 44px 0 44px;"><div style="font-family:'DM Sans',-apple-system,'Segoe UI',Arial,sans-serif;font-size:14px;color:#777;line-height:1.6;">Questions? Just reply to this email &mdash; a real person reads these.</div></td></tr>
+<tr><td style="padding:26px 44px 0 44px;"><div style="border-top:1px solid #eeeef1;font-size:0;line-height:0;">&nbsp;</div></td></tr>
+<tr><td style="padding:18px 44px 34px 44px;"><div style="font-family:'Outfit','Segoe UI',Arial,sans-serif;font-size:13px;font-weight:700;color:#141414;letter-spacing:0.5px;">UMUVE</div><div style="font-family:'DM Sans',-apple-system,'Segoe UI',Arial,sans-serif;font-size:12px;color:#9a9aa2;line-height:1.6;margin-top:4px;">Premium junk removal &middot; South Florida<br>__FOOTER__</div></td></tr>
+</table></td></tr></table></body></html>"""
+
+
+def _render_steps(steps):
+    rows = []
+    total = len(steps)
+    for idx, (title, desc) in enumerate(steps, 1):
+        pb = "0" if idx == total else "22px"
+        rows.append(
+            _APPROVAL_STEP
+            .replace("__PB__", pb)
+            .replace("__N__", str(idx))
+            .replace("__TITLE__", title)
+            .replace("__DESC__", desc)
+        )
+    return "".join(rows)
+
+
+def _build_approval_email(eyebrow, heading, intro, steps, cta_label, cta_url, footer):
+    return (
+        _APPROVAL_SHELL
+        .replace("__LOGO__", _APPROVAL_LOGO)
+        .replace("__STEPS__", _render_steps(steps))
+        .replace("__EYEBROW__", eyebrow)
+        .replace("__HEADING__", heading)
+        .replace("__INTRO__", intro)
+        .replace("__CTA_LABEL__", cta_label)
+        .replace("__CTA_URL__", cta_url)
+        .replace("__FOOTER__", footer)
+    )
+
+
+def render_driver_approval_email(name):
+    """Return (subject, html_content) for an approved driver."""
+    first = _html.escape((name or "there").split()[0] or "there")
+    html = _build_approval_email(
+        eyebrow="Driver Approved &nbsp;&#10003;",
+        heading="You're in, " + first + ".",
+        intro="Welcome to Umuve &mdash; South Florida's premium junk-removal network. Three quick steps and jobs start coming straight to you.",
+        steps=[
+            ("Log in to Umuve Pro", "Sign in at app.goumuve.com/driver/login (or the Umuve Pro app) with this email."),
+            ("Finish your payment setup", "Connect your bank so you get paid the moment a job is done. <strong style=\"color:#DC2626;\">Don't skip this</strong> &mdash; no payouts without it."),
+            ("Go Online", "Flip yourself live and nearby jobs start coming to you."),
+        ],
+        cta_label="Log in to Umuve Pro",
+        cta_url="https://app.goumuve.com/driver/login",
+        footer="You're receiving this because your hauler application was approved.",
+    )
+    return ("You're approved to drive with Umuve!", html)
+
+
+def render_operator_approval_email(name):
+    """Return (subject, html_content) for an approved operator."""
+    first = _html.escape((name or "there").split()[0] or "there")
+    html = _build_approval_email(
+        eyebrow="Operator Approved &nbsp;&#10003;",
+        heading="Welcome aboard, " + first + ".",
+        intro="Your operator account is live on Umuve &mdash; South Florida's premium junk-removal network. Here's how to get your fleet earning.",
+        steps=[
+            ("Log in to your operator dashboard", "Sign in at app.goumuve.com/operator with this email to manage your fleet and jobs."),
+            ("Finish your payment setup", "Connect your bank so your fleet earnings &amp; commission pay out. <strong style=\"color:#DC2626;\">Required before any payouts.</strong>"),
+            ("Invite your drivers", "Send your haulers an invite code from the dashboard &mdash; once they're approved, jobs flow to them and you earn your cut."),
+        ],
+        cta_label="Open your dashboard",
+        cta_url="https://app.goumuve.com/operator",
+        footer="You're receiving this because your operator application was approved.",
+    )
+    return ("Welcome to Umuve — Operator Approved!", html)
+
+
 def _send_email_resend(to_email, subject, html_content):
     """Send via the Resend API. Returns the response id or None."""
     try:
