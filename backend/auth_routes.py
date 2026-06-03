@@ -436,7 +436,9 @@ def apple_signin():
     identity_token = data.get('identity_token')
     nonce = data.get('nonce')
     user_identifier = data.get('userIdentifier')
-    email = data.get('email')
+    # Normalize email the same way email/password signup does (stored lowercased),
+    # so the by-email lookup below actually matches an existing account.
+    email = (data.get('email') or '').strip().lower() or None
     name = data.get('name')
     role = data.get('role', 'customer')  # Default to customer if not specified
 
@@ -498,6 +500,34 @@ def apple_signin():
                 'role': db_user.role
             }
 
+    # Match by email — the account may already exist from a prior email/password
+    # signup or a guest record created during a booking. Link the Apple ID to it
+    # instead of inserting a duplicate (the unique-email IntegrityError in Sentry).
+    if not user and email:
+        db_user = User.query.filter_by(email=email).first()
+        if db_user:
+            if db_user.role and db_user.role != role:
+                if role == 'customer':
+                    return jsonify({'error': 'This account is registered as a driver. Please use the driver app.'}), 403
+                elif role == 'driver':
+                    return jsonify({'error': 'This account is registered as a customer. Please use the customer app.'}), 403
+            if not db_user.apple_id:
+                db_user.apple_id = user_identifier
+            if not db_user.role:
+                db_user.role = role
+            if name and not db_user.name:
+                db_user.name = name
+            db.session.commit()
+            user_id = db_user.id
+            user = {
+                'id': db_user.id,
+                'apple_id': db_user.apple_id,
+                'email': db_user.email,
+                'name': db_user.name,
+                'phoneNumber': db_user.phone,
+                'role': db_user.role,
+            }
+
     # Create new user if not found
     if not user:
         user_id = secrets.token_hex(16)
@@ -522,7 +552,21 @@ def apple_signin():
             )
             db.session.add(contractor)
 
-        db.session.commit()
+        try:
+            db.session.commit()
+        except Exception:
+            # Defensive: an email collision slipped past the checks (e.g. a race).
+            # Recover by linking the Apple ID to the existing account instead of
+            # 500-ing the sign-in.
+            db.session.rollback()
+            _auth_logger.exception("apple_signin: user create failed, recovering by email")
+            existing = User.query.filter_by(email=email).first() if email else None
+            if not existing:
+                return jsonify({'error': 'Could not complete Apple Sign In. Please try again.'}), 500
+            if not existing.apple_id:
+                existing.apple_id = user_identifier
+                db.session.commit()
+            user_id = existing.id
 
         user = {
             'id': user_id,
