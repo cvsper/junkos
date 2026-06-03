@@ -1035,10 +1035,11 @@ def backfill_approval_emails_endpoint(secret):
     if not expected or secret != expected:
         return jsonify({"error": "Forbidden"}), 403
 
+    import time as _time
     from flask import request as _req
     from models import db, User, Contractor
     from notifications import (
-        send_email,
+        send_email_sync,
         render_driver_approval_email,
         render_operator_approval_email,
     )
@@ -1055,32 +1056,43 @@ def backfill_approval_emails_endpoint(secret):
 
     recipients = []
     sent = 0
-    try:
-        for c in query.all():
-            user = db.session.get(User, c.user_id)
-            if not user or not user.email:
-                continue
-            kind = "operator" if c.is_operator else "driver"
-            recipients.append({"email": user.email, "name": user.name, "role": kind})
-            if do_send:
-                if c.is_operator:
-                    subject, html = render_operator_approval_email(user.name)
-                else:
-                    subject, html = render_driver_approval_email(user.name)
-                send_email(to_email=user.email, subject=subject, html_content=html)
+    failed = []
+    for c in query.all():
+        user = db.session.get(User, c.user_id)
+        if not user or not user.email:
+            continue
+        kind = "operator" if c.is_operator else "driver"
+        recipients.append({"email": user.email, "name": user.name, "role": kind})
+        if not do_send:
+            continue
+        try:
+            if c.is_operator:
+                subject, html = render_operator_approval_email(user.name)
+            else:
+                subject, html = render_driver_approval_email(user.name)
+            # Synchronous + paced: Resend caps at 5 requests/sec. Async fan-out
+            # bursts past that and silently drops recipients (see Sentry
+            # ResendError). One send every 250ms (~4/sec) stays under the limit
+            # and lets us report real per-recipient success/failure.
+            result = send_email_sync(to_email=user.email, subject=subject, html_content=html)
+            if result:
                 sent += 1
-    except Exception as exc:
-        app.logger.exception("backfill-approval-emails failed")
-        return jsonify({"error": "Backfill failed: {}".format(exc)}), 500
+            else:
+                failed.append(user.email)
+            _time.sleep(0.25)
+        except Exception:
+            app.logger.exception("backfill email failed for %s", user.email)
+            failed.append(user.email)
 
     return jsonify({
         "dry_run": not do_send,
         "role_filter": role,
         "matched": len(recipients),
         "sent": sent,
+        "failed": failed,
         "recipients": recipients,
         "note": ("DRY-RUN — no emails sent. Re-run with ?send=1 to actually send."
-                 if not do_send else "Emails queued for sending."),
+                 if not do_send else "Done: {} sent, {} failed.".format(sent, len(failed))),
     }), 200
 
 
