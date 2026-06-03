@@ -140,6 +140,7 @@ export interface BookingFormData {
   estimatedPrice: number;
   promo_code?: string;
   lead_source?: string;
+  quote_id?: string | null;
   customerName?: string;
   customerEmail?: string;
   customerPhone?: string;

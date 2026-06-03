@@ -13,7 +13,7 @@ const MAX_FILES = 10;
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 export function Step2Photos() {
-  const { photos, photoPreviewUrls, addPhotos, removePhoto, aiAnalysis, aiAnalyzing, setAiAnalysis, setAiAnalyzing, address, scheduledDate } =
+  const { photos, photoPreviewUrls, addPhotos, removePhoto, aiAnalysis, aiAnalyzing, setAiAnalysis, setAiAnalyzing, address, scheduledDate, setQuoteId, setEstimatedPrice } =
     useBookingStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -249,6 +249,15 @@ export function Step2Photos() {
             <InstantQuote
               zipCode={address?.zip}
               scheduledDate={scheduledDate || undefined}
+              onQuote={(q) => {
+                // Carry the quote into the booking so the backend honors its
+                // locked price. Only mirror the price into the UI when it's a
+                // binding quote (the backend recomputes non-binding ones).
+                setQuoteId(q.id);
+                if (q.binding && typeof q.price === "number") {
+                  setEstimatedPrice(q.price);
+                }
+              }}
             />
           </div>
         )}

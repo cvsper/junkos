@@ -12,6 +12,7 @@ interface BookingState {
   scheduledTimeSlot: string;
   notes: string;
   estimatedPrice: number;
+  quoteId: string | null;
   isSubmitting: boolean;
   leadSource: string;
 
@@ -53,6 +54,7 @@ interface BookingState {
   // Misc actions
   setNotes: (notes: string) => void;
   setEstimatedPrice: (price: number) => void;
+  setQuoteId: (quoteId: string | null) => void;
   setIsSubmitting: (isSubmitting: boolean) => void;
   setLeadSource: (leadSource: string) => void;
 
@@ -79,6 +81,7 @@ const initialState = {
   scheduledTimeSlot: "",
   notes: "",
   estimatedPrice: 0,
+  quoteId: null,
   isSubmitting: false,
   leadSource: "",
   promoCode: "",
@@ -137,6 +140,7 @@ export const useBookingStore = create<BookingState>((set, get) => ({
   // Misc
   setNotes: (notes) => set({ notes }),
   setEstimatedPrice: (estimatedPrice) => set({ estimatedPrice }),
+  setQuoteId: (quoteId) => set({ quoteId }),
   setIsSubmitting: (isSubmitting) => set({ isSubmitting }),
   setLeadSource: (leadSource) => set({ leadSource }),
 

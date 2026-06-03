@@ -138,6 +138,7 @@ function PaymentFormInner() {
     applyPromo,
     clearPromo,
     leadSource,
+    quoteId,
   } = useBookingStore();
 
   // Contact info
@@ -252,6 +253,7 @@ function PaymentFormInner() {
           estimatedPrice: finalPrice,
           ...(promoApplied ? { promo_code: appliedPromoCode } : {}),
           ...(leadSource ? { lead_source: leadSource } : {}),
+          ...(quoteId ? { quote_id: quoteId } : {}),
           customerName: payerName,
           customerEmail: payerEmail,
           customerPhone: payerPhone,
@@ -430,6 +432,7 @@ function PaymentFormInner() {
         estimatedPrice: finalPrice,
         ...(promoApplied ? { promo_code: appliedPromoCode } : {}),
         ...(leadSource ? { lead_source: leadSource } : {}),
+        ...(quoteId ? { quote_id: quoteId } : {}),
         customerName: name.trim(),
         customerEmail: email.trim(),
         customerPhone: phone.trim(),
