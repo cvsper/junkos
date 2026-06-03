@@ -236,6 +236,59 @@ def main():
         check("Payout is idempotent (second call = already_paid)",
               attempt_payout(job.id)["status"] == "already_paid")
 
+        # Independent assignment must NOT carry an operator (no commission).
+        check("Independent job has operator_id = NULL (no commission cut)",
+              job.operator_id is None)
+
+        print("\n=== 5. Operator fleet geo-routing (Joshua's 3-metro fleet) ===")
+        # Take Nathan offline so the fleet driver is the unambiguous candidate.
+        nathan.is_online = False
+        db.session.commit()
+
+        # Operator 'Joshua' manages a fleet and does NOT haul himself.
+        jo_user = User(id=generate_uuid(), email="joshua@example.test",
+                       name="Joshua", phone="+18135550100", role="operator")
+        db.session.add(jo_user)
+        db.session.flush()
+        joshua = Contractor(
+            id=generate_uuid(), user_id=jo_user.id, truck_type="Box Truck",
+            truck_capacity=None, is_online=True, approval_status="approved",
+            current_lat=CUSTOMER[0], current_lng=CUSTOMER[1],
+            avg_rating=0.0, total_jobs=0, is_operator=True, operator_id=None,
+            operator_commission_rate=0.15,
+        )
+        db.session.add(joshua)
+        db.session.flush()
+        # One of Joshua's fleet drivers, in range of the customer.
+        fd_user = User(id=generate_uuid(), email="fleetdave@example.test",
+                       name="Fleet Dave", phone="+18135550111", role="driver")
+        db.session.add(fd_user)
+        db.session.flush()
+        fleet_driver = Contractor(
+            id=generate_uuid(), user_id=fd_user.id, truck_type="Box Truck",
+            truck_capacity=None, is_online=True, approval_status="approved",
+            current_lat=CUSTOMER[0], current_lng=CUSTOMER[1],
+            avg_rating=0.0, total_jobs=0, is_operator=False,
+            operator_id=joshua.id, stripe_connect_id="acct_dev_fleet",
+        )
+        db.session.add(fleet_driver)
+        db.session.commit()
+
+        job3 = make_paid_job(*CUSTOMER)
+        cand_ids = [c["contractor"].id for c in dispatcher.find_best_operator(job3)]
+        check("Operator account itself is NOT a candidate (operators don't haul)",
+              joshua.id not in cand_ids)
+        check("Fleet driver IS now a dispatch candidate (geo-routing)",
+              fleet_driver.id in cand_ids,
+              "{} candidate(s)".format(len(cand_ids)))
+
+        dispatcher.auto_assign_job(job3.id, app=None)
+        db.session.refresh(job3)
+        check("Fleet job assigned to the fleet driver", job3.driver_id == fleet_driver.id)
+        check("Job attributed to operator Joshua (so his commission pays out)",
+              job3.operator_id == joshua.id,
+              "operator_id={}".format(job3.operator_id))
+
     # --- Summary ---
     passed = sum(1 for _, ok, _ in _results if ok)
     total = len(_results)
