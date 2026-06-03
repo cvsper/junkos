@@ -210,11 +210,12 @@ def find_best_operator(job):
         if job.operator_id:
             query = query.filter_by(operator_id=job.operator_id)
         else:
-            # Independent contractors (not operators themselves, not in a fleet)
-            query = query.filter(
-                Contractor.is_operator.is_(False),
-                Contractor.operator_id.is_(None),
-            )
+            # Eligible to do jobs = independent contractors AND operator fleet
+            # drivers (geo-routing). Exclude only the operator accounts
+            # themselves -- they manage a fleet, they don't haul. A fleet
+            # driver who wins gets the job attributed to their operator for
+            # commission (see auto_assign_job).
+            query = query.filter(Contractor.is_operator.is_(False))
 
         contractors = query.all()
 
@@ -373,6 +374,12 @@ def auto_assign_job(job_id, app=None):
             job.driver_id = contractor.id
             job.status = "assigned"
             job.updated_at = utcnow()
+            # Fleet driver -> attribute the job to their operator so the
+            # operator's commission pays out (payments.py keys off operator_id).
+            # Independent contractors have operator_id=None, so this is a no-op
+            # for them.
+            if contractor.operator_id:
+                job.operator_id = contractor.operator_id
 
             # Log the dispatch decision
             logger.info(
@@ -882,10 +889,9 @@ def find_eligible_operators(job):
         if job.operator_id:
             query = query.filter_by(operator_id=job.operator_id)
         else:
-            query = query.filter(
-                Contractor.is_operator.is_(False),
-                Contractor.operator_id.is_(None),
-            )
+            # Independent contractors AND operator fleet drivers (geo-routing);
+            # exclude only operator accounts (they manage, don't haul).
+            query = query.filter(Contractor.is_operator.is_(False))
 
         eligible = []
         for c in query.all():
@@ -1093,11 +1099,23 @@ def accept_offer(token):
                     "message": "This offer has expired.", "job": None}
 
         # --- Atomic claim: only succeeds if driver_id is still NULL ---
+        # Attribute the job to the accepting hauler's operator (if any) in the
+        # same atomic update, so the operator's commission pays out and we avoid
+        # an ORM write-back race on the raw update.
+        from models import Contractor as _Contractor
+        _accepting = db.session.get(_Contractor, offer.contractor_id)
+        _claim_values = {
+            "driver_id": offer.contractor_id,
+            "status": "assigned",
+            "updated_at": utcnow(),
+        }
+        if _accepting and _accepting.operator_id:
+            _claim_values["operator_id"] = _accepting.operator_id
         claimed = (
             Job.__table__.update()
             .where(Job.id == job.id)
             .where(Job.driver_id.is_(None))
-            .values(driver_id=offer.contractor_id, status="assigned", updated_at=utcnow())
+            .values(**_claim_values)
         )
         result = db.session.execute(claimed)
         if result.rowcount != 1:
