@@ -473,9 +473,15 @@ def estimate_quote():
         created_at=now,
     )
     db.session.add(log)
-    quote.raw_inference_id = log.id
 
     try:
+        # Flush FIRST with quote.raw_inference_id still NULL, so rows insert in a
+        # clean dependency order (quote -> items -> log). THEN back-fill the
+        # pointer as an UPDATE, now that the vision_inference_logs row exists.
+        # Setting it before the flush makes the circular FK
+        # (fk_quotes_raw_inference -> vision_inference_logs.id) violate on insert.
+        db.session.flush()
+        quote.raw_inference_id = log.id
         db.session.commit()
     except Exception as exc:  # noqa: BLE001
         db.session.rollback()
