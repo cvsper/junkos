@@ -364,6 +364,118 @@ export const aiApi = {
 };
 
 // ---------------------------------------------------------------------------
+// Vision Quote Engine API (spec 01) — instant photo -> binding price
+// ---------------------------------------------------------------------------
+
+export interface QuoteItem {
+  category: string;
+  display_name: string;
+  count: number;
+  volume_cubic_feet: number;
+  hazmat: boolean;
+}
+
+export interface VisionQuote {
+  id: string;
+  status: string;          // 'binding' | 'pending_review' | ...
+  origin: string;          // 'vision' | 'rules'
+  binding: boolean;
+  price: number;
+  price_cents: number;
+  price_floor: number | null;
+  price_ceiling: number | null;
+  estimated_volume_cubic_yards: number;
+  confidence: number;
+  hazmat: boolean;
+  model_version: string;
+  expires_at: string | null;
+  items: QuoteItem[];
+  pricing_breakdown: {
+    items_subtotal?: number;
+    volume_discount?: number;
+    surge_amount?: number;
+    surge_reasons?: string[];
+    service_fee?: number;
+    minimum_applied?: boolean;
+    total?: number;
+  };
+}
+
+interface VisionQuoteResponse {
+  success: boolean;
+  quote?: VisionQuote;
+  error?: string;
+}
+
+interface QuoteEstimateOptions {
+  zipCode?: string;
+  zone?: string;
+  scheduledDate?: string;
+  guestPhone?: string;
+  guestEmail?: string;
+}
+
+/** Read a File as a base64 data URI (data:<mime>;base64,...). */
+function fileToDataUri(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
+
+export const quotesApi = {
+  /**
+   * POST /api/v1/quotes/estimate — instant binding quote from photos.
+   * Sends photos as base64 data URIs. Returns a persisted, priced quote.
+   * Falls back to a rules-based estimate server-side if no vision key is set
+   * (origin === 'rules', binding === false).
+   */
+  estimateFromPhotos: async (
+    files: File[],
+    opts: QuoteEstimateOptions = {}
+  ): Promise<VisionQuote | null> => {
+    try {
+      const images_base64 = await Promise.all(files.slice(0, 6).map(fileToDataUri));
+      const res = await fetch(`${API_BASE_URL}/api/v1/quotes/estimate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          images_base64,
+          zip_code: opts.zipCode,
+          zone: opts.zone,
+          scheduledDate: opts.scheduledDate,
+          guest_phone: opts.guestPhone,
+          guest_email: opts.guestEmail,
+        }),
+      });
+      const data: VisionQuoteResponse = await res.json();
+      if (data.success && data.quote) {
+        return data.quote;
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  },
+
+  /** GET /api/v1/quotes/:id — fetch a persisted quote. */
+  get: async (id: string): Promise<VisionQuote | null> => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/v1/quotes/${encodeURIComponent(id)}`);
+      const data: VisionQuoteResponse = await res.json();
+      if (data.success && data.quote) {
+        return data.quote;
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  },
+};
+
+// ---------------------------------------------------------------------------
 // Payments API
 // ---------------------------------------------------------------------------
 
