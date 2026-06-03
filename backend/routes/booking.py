@@ -882,6 +882,39 @@ def create_booking(user_id):
     surge_multiplier = est["surge_multiplier"]
     item_total = est["items_subtotal"]
 
+    # --- Honor a binding vision quote if this booking came from one ---
+    # Additive + defensive: a customer who got an instant photo quote should
+    # pay the LOCKED price they were shown, not a recomputed one. Any problem
+    # here falls back to the recomputed price and never blocks the booking.
+    quote_to_convert = None
+    quote_id = (data.get("quote_id") or data.get("quoteId") or "").strip()
+    if quote_id:
+        try:
+            from models import Quote
+            q = db.session.get(Quote, quote_id)
+            if q and q.status not in ("booked", "voided"):
+                q_email = (q.guest_email or "").strip().lower()
+                req_email = (data.get("customerEmail") or "").strip().lower()
+                owns = (
+                    (user_id and q.user_id == user_id)
+                    or (q.user_id is None and (not q_email or q_email == req_email))
+                )
+                exp = q.expires_at
+                if exp is not None and exp.tzinfo is None:
+                    exp = exp.replace(tzinfo=timezone.utc)
+                not_expired = exp is None or exp > datetime.now(timezone.utc)
+                if owns:
+                    quote_to_convert = q
+                    if q.binding and not_expired and q.price_cents:
+                        total = round(q.price_cents / 100.0, 2)
+                        item_total = total
+        except Exception:
+            import logging
+            logging.getLogger(__name__).exception(
+                "quote->booking: failed to apply quote %s", quote_id
+            )
+            quote_to_convert = None
+
     # --- Apply promo code if provided ---
     promo_code_str = data.get("promo_code", "").strip()
     promo_code_id = None
@@ -951,6 +984,11 @@ def create_booking(user_id):
         confirmation_code=generate_referral_code(),
     )
     db.session.add(job)
+
+    # Link the converted quote to this booking (binding price already honored).
+    if quote_to_convert is not None:
+        quote_to_convert.booking_id = job.id
+        quote_to_convert.status = "booked"
 
     # --- Create Payment record ---
     payment = Payment(
