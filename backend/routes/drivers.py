@@ -12,8 +12,9 @@ import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from models import db, User, Contractor, Job, Notification, OperatorInvite, Referral, generate_uuid, utcnow
+from models import db, User, Contractor, Job, Notification, OperatorInvite, Referral, generate_uuid, utcnow, apply_payment_split
 from auth_routes import require_auth
+from pricing_constants import REQUIRE_COMPLETION_PHOTOS
 
 drivers_bp = Blueprint("drivers", __name__, url_prefix="/api/drivers")
 
@@ -381,6 +382,16 @@ def update_job_status(user_id, job_id):
             "allowed": allowed,
         }), 409
 
+    # Hard proof gate: a job cannot be marked complete without arrival (before)
+    # photos of the load. The before-photo is the record of what was actually
+    # hauled — the anti-under-declaration backstop — and completion is what
+    # triggers payout, so this blocks paying out an unverified job.
+    if new_status == "completed" and REQUIRE_COMPLETION_PHOTOS and not job.before_photos:
+        return jsonify({
+            "error": "Add arrival (before) photos of the load before completing the job.",
+            "code": "proof_required",
+        }), 422
+
     job.status = new_status
     job.updated_at = utcnow()
 
@@ -390,19 +401,11 @@ def update_job_status(user_id, job_id):
         job.completed_at = utcnow()
         contractor.total_jobs = (contractor.total_jobs or 0) + 1
 
-        # Warn if proof photos have not been submitted
-        has_before = bool(job.before_photos)
-        has_after = bool(job.after_photos)
-        if not has_before or not has_after:
-            missing = []
-            if not has_before:
-                missing.append("before_photos")
-            if not has_after:
-                missing.append("after_photos")
+        # before_photos are now hard-gated above; after_photos stay a warning.
+        if not job.after_photos:
             logger.warning(
-                "Job %s completed without proof photos (missing: %s). "
-                "Driver: %s",
-                job.id, ", ".join(missing), contractor.id,
+                "Job %s completed without after_photos. Driver: %s",
+                job.id, contractor.id,
             )
 
         # --- Referral completion: check if this customer was referred ---
@@ -489,6 +492,18 @@ def update_job_status(user_id, job_id):
     # roll it back. attempt_payout is idempotent and never raises; if the
     # contractor hasn't connected Stripe yet it's marked pending_connect.
     if new_status == "completed":
+        # Auth-and-capture: capture the volume-verified final amount BEFORE
+        # paying out. No-op unless PAYMENT_AUTH_CAPTURE_ENABLED and the intent
+        # is an authorized hold; otherwise the immediate-capture path already
+        # charged at booking.
+        try:
+            from routes.payments import capture_job_payment
+            cap_result = capture_job_payment(job.id)
+            if cap_result.get("status") not in ("skipped",):
+                logger.info("Auth-capture for job %s: %s", job.id, cap_result.get("status"))
+        except Exception as e:
+            logger.warning("Auth-capture hook failed for job %s: %s", job.id, e)
+
         try:
             from routes.payments import attempt_payout
             payout_result = attempt_payout(job.id)
@@ -721,15 +736,24 @@ def propose_volume_adjustment(user_id, job_id):
     try:
         items = [{"category": "general", "quantity": quantity}]
         result = calculate_estimate(items, scheduled_date=None, lat=None, lng=None)
-        new_price = result["grand_total"]
+        new_price = round(result["total"], 2)
     except Exception as e:
         logger.exception("Failed to calculate new price for volume adjustment")
         return jsonify({"error": "Failed to calculate new price"}), 500
 
-    # Auto-approve if price decreased or stayed the same
-    if new_price <= job.total_price:
+    old_price = round(job.total_price or 0.0, 2)
+
+    # Price decrease / same: apply, but NEVER silently. A downward adjustment is
+    # the operator-skim vector (claim less volume, settle the rest in cash), so
+    # we record who made it, always notify the customer, and lean on the hard
+    # completion photo-gate (no before-photos -> no completion -> no payout) as
+    # the proof backstop. (Photos can't be required here: this fires at
+    # "arrived", but the driver app uploads before-photos at the "started"
+    # transition that comes next.)
+    if new_price <= old_price:
         job.total_price = new_price
         job.volume_estimate = actual_volume
+        job.adjusted_by = "driver:{}".format(contractor.id)
         job.updated_at = utcnow()
 
         # Update Stripe PaymentIntent if it exists
@@ -740,12 +764,27 @@ def propose_volume_adjustment(user_id, job_id):
                     amount=int(new_price * 100)
                 )
                 job.payment.amount = new_price
-                job.payment.commission = new_price * 0.20
-                job.payment.driver_payout_amount = new_price * 0.80
+                apply_payment_split(job, new_price)
         except Exception as e:
-            logger.warning("Failed to update Stripe PaymentIntent for auto-approved volume adjustment: %s", e)
+            logger.warning("Failed to update Stripe PaymentIntent for volume decrease: %s", e)
 
         db.session.commit()
+
+        # Notify the customer of the decrease (was previously silent).
+        try:
+            send_push_notification(
+                job.customer_id,
+                "Your price was lowered",
+                "Based on the actual load, your price is now ${:.2f} (was ${:.2f}).".format(new_price, old_price),
+                data={
+                    "job_id": job_id,
+                    "new_price": str(new_price),
+                    "original_price": str(old_price),
+                    "type": "volume_adjustment_decrease",
+                },
+            )
+        except Exception as e:
+            logger.warning("Failed to send volume-decrease push notification: %s", e)
 
         # Emit socket event
         try:
@@ -753,19 +792,21 @@ def propose_volume_adjustment(user_id, job_id):
         except Exception as e:
             logger.warning("Failed to emit volume:approved socket event: %s", e)
 
-        logger.info("Volume adjustment auto-approved for job %s (price decreased: $%.2f -> $%.2f)",
-                   job_id, job.total_price, new_price)
+        logger.info("Volume decrease applied for job %s ($%.2f -> $%.2f) by driver:%s",
+                   job_id, old_price, new_price, contractor.id)
 
         return jsonify({
             "success": True,
             "auto_approved": True,
-            "new_price": new_price
+            "new_price": new_price,
+            "original_price": old_price,
         }), 200
 
     # Price increased - require customer approval
     job.volume_adjustment_proposed = True
     job.adjusted_volume = actual_volume
     job.adjusted_price = new_price
+    job.adjusted_by = "driver:{}".format(contractor.id)
     job.updated_at = utcnow()
     db.session.commit()
 
@@ -774,11 +815,11 @@ def propose_volume_adjustment(user_id, job_id):
         send_push_notification(
             job.customer_id,
             "Price Adjustment Required",
-            f"Volume increased. New price: ${new_price:.2f} (was ${job.total_price:.2f})",
+            f"Volume increased. New price: ${new_price:.2f} (was ${old_price:.2f})",
             data={
                 "job_id": job_id,
                 "new_price": str(new_price),
-                "original_price": str(job.total_price),
+                "original_price": str(old_price),
                 "type": "volume_adjustment"
             },
             category="VOLUME_ADJUSTMENT"

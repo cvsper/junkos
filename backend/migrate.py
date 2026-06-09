@@ -84,6 +84,7 @@ COLUMN_MIGRATIONS = [
     ("jobs", "volume_adjustment_proposed", "BOOLEAN", "BOOLEAN", "FALSE"),
     ("jobs", "adjusted_volume", "FLOAT", "FLOAT", "NULL"),
     ("jobs", "adjusted_price", "FLOAT", "FLOAT", "NULL"),
+    ("jobs", "adjusted_by", "VARCHAR(64)", "VARCHAR(64)", "NULL"),  # audit: who changed volume/price
     ("jobs", "volume_estimate", "FLOAT", "FLOAT", "NULL"),
     ("jobs", "volume_price", "FLOAT", "FLOAT", "0.0"),
     ("jobs", "item_total", "FLOAT", "FLOAT", "0.0"),

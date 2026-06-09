@@ -11,7 +11,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from datetime import datetime, timezone, timedelta
 from werkzeug.utils import secure_filename
 
-from models import db, Job, Contractor, Rating, Payment, User, Notification, generate_uuid, utcnow
+from models import db, Job, Contractor, Rating, Payment, User, Notification, generate_uuid, utcnow, apply_payment_split
 from auth_routes import require_auth
 from notifications import send_push_notification
 from storage import save_file
@@ -669,8 +669,7 @@ def approve_volume_adjustment(user_id, job_id):
             )
             # Update payment record
             job.payment.amount = job.adjusted_price
-            job.payment.commission = job.adjusted_price * 0.20
-            job.payment.driver_payout_amount = job.adjusted_price * 0.80
+            apply_payment_split(job, job.adjusted_price)
     except Exception as e:
         logger.warning("Failed to update Stripe PaymentIntent for approved volume adjustment: %s", e)
 
@@ -722,10 +721,10 @@ def decline_volume_adjustment(user_id, job_id):
                 job.payment.stripe_payment_intent_id,
                 amount=int(TRIP_FEE * 100)
             )
-            # Update payment record
+            # Update payment record (canonical split — keeps service fee and
+            # any operator cut consistent with the rest of the payment flow)
             job.payment.amount = TRIP_FEE
-            job.payment.commission = TRIP_FEE * 0.20
-            job.payment.driver_payout_amount = TRIP_FEE * 0.80
+            apply_payment_split(job, TRIP_FEE)
     except Exception as e:
         logger.warning("Failed to update Stripe PaymentIntent for declined volume adjustment: %s", e)
 

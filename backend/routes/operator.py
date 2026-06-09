@@ -14,7 +14,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from models import (
     db, User, Contractor, Job, Payment, Notification, OperatorInvite,
-    generate_uuid, utcnow,
+    generate_uuid, utcnow, apply_payment_split,
 )
 from auth_routes import require_auth
 
@@ -648,15 +648,20 @@ def operator_propose_volume_adjustment(user_id, operator, job_id):
     try:
         items = [{"category": "general", "quantity": quantity}]
         result = calculate_estimate(items, scheduled_date=None, lat=None, lng=None)
-        new_price = result["grand_total"]
+        new_price = round(result["total"], 2)
     except Exception:
         log.exception("Failed to calculate new price for volume adjustment")
         return jsonify({"error": "Failed to calculate new price"}), 500
 
-    if new_price <= job.total_price:
-        original_price = job.total_price
+    original_price = round(job.total_price or 0.0, 2)
+
+    if new_price <= original_price:
+        # Downward adjustment = operator-skim vector. Record who made it and
+        # always notify the customer; the hard completion photo-gate is the
+        # proof backstop (no before-photos -> no completion -> no payout).
         job.total_price = new_price
         job.volume_estimate = actual_volume
+        job.adjusted_by = "operator:{}".format(operator.id)
         job.updated_at = utcnow()
         try:
             if job.payment and job.payment.stripe_payment_intent_id:
@@ -665,11 +670,24 @@ def operator_propose_volume_adjustment(user_id, operator, job_id):
                     amount=int(new_price * 100)
                 )
                 job.payment.amount = new_price
-                job.payment.commission = new_price * 0.20
-                job.payment.driver_payout_amount = new_price * 0.80
+                apply_payment_split(job, new_price)
         except Exception as e:
             log.warning("Stripe modify failed on operator volume adjust: %s", e)
         db.session.commit()
+        try:
+            send_push_notification(
+                job.customer_id,
+                "Your price was lowered",
+                "Based on the actual load, your price is now ${:.2f} (was ${:.2f}).".format(new_price, original_price),
+                data={
+                    "job_id": job_id,
+                    "new_price": str(new_price),
+                    "original_price": str(original_price),
+                    "type": "volume_adjustment_decrease",
+                },
+            )
+        except Exception as e:
+            log.warning("Failed to send volume-decrease push notification: %s", e)
         try:
             if job.driver_id:
                 socketio.emit("volume:approved", {"job_id": job_id}, room=f"driver:{job.driver_id}")
@@ -686,6 +704,7 @@ def operator_propose_volume_adjustment(user_id, operator, job_id):
     job.volume_adjustment_proposed = True
     job.adjusted_volume = actual_volume
     job.adjusted_price = new_price
+    job.adjusted_by = "operator:{}".format(operator.id)
     job.updated_at = utcnow()
     db.session.commit()
 
@@ -693,11 +712,11 @@ def operator_propose_volume_adjustment(user_id, operator, job_id):
         send_push_notification(
             job.customer_id,
             "Price Adjustment Required",
-            f"Volume increased. New price: ${new_price:.2f} (was ${job.total_price:.2f})",
+            f"Volume increased. New price: ${new_price:.2f} (was ${original_price:.2f})",
             data={
                 "job_id": job_id,
                 "new_price": str(new_price),
-                "original_price": str(job.total_price),
+                "original_price": str(original_price),
                 "type": "volume_adjustment",
             },
             category="VOLUME_ADJUSTMENT",

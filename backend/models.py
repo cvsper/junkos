@@ -33,6 +33,29 @@ def generate_referral_code():
     return ''.join(random.choices(chars, k=8))
 
 
+def apply_payment_split(job, amount):
+    """Write the canonical commission split onto ``job.payment`` for ``amount``.
+
+    Single home for the split so the create-intent, webhook, and every on-site
+    adjustment path (driver/operator volume change, trip fee) stay in lock-step.
+    Resolves the fleet-operator cut from the job's operator when present. No-op
+    if the job has no payment record. See pricing_constants.compute_payment_split.
+    """
+    from pricing_constants import compute_payment_split
+    if not getattr(job, "payment", None):
+        return
+    operator_rate = 0.0
+    if getattr(job, "operator_id", None):
+        op = db.session.get(Contractor, job.operator_id)
+        if op:
+            operator_rate = op.operator_commission_rate or 0.15
+    split = compute_payment_split(amount, operator_rate=operator_rate)
+    job.payment.commission = split["commission"]
+    job.payment.service_fee = split["service_fee"]
+    job.payment.operator_payout_amount = split["operator_payout"]
+    job.payment.driver_payout_amount = split["driver_payout"]
+
+
 # ---------------------------------------------------------------------------
 # User
 # ---------------------------------------------------------------------------
@@ -289,6 +312,7 @@ class Job(db.Model):
     volume_adjustment_proposed = Column(Boolean, default=False)
     adjusted_volume = Column(Float, nullable=True)
     adjusted_price = Column(Float, nullable=True)
+    adjusted_by = Column(String(64), nullable=True)  # audit: "driver:<id>" / "operator:<id>" who last changed volume/price
 
     drip_stage = Column(Integer, default=0)  # 0=none, 1=reminder, 2=incentive, 3=final
 
@@ -350,6 +374,7 @@ class Job(db.Model):
             "volume_adjustment_proposed": self.volume_adjustment_proposed,
             "adjusted_volume": self.adjusted_volume,
             "adjusted_price": self.adjusted_price,
+            "adjusted_by": self.adjusted_by,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }

@@ -22,8 +22,16 @@ payments_bp = Blueprint("payments", __name__, url_prefix="/api/payments")
 
 _stripe = None
 
-PLATFORM_COMMISSION = 0.20
-SERVICE_FEE_RATE = 0.08  # 8% of amount – matches booking.py
+# Single source of truth for the platform split (see backend/pricing_constants.py).
+# Re-exported here so existing `from routes.payments import PLATFORM_COMMISSION`
+# call sites keep working.
+from pricing_constants import (
+    PLATFORM_COMMISSION,
+    SERVICE_FEE_RATE,
+    compute_payment_split,
+    PAYMENT_AUTH_CAPTURE_ENABLED,
+    PAYMENT_AUTH_BUFFER_PCT,
+)
 
 
 def _get_stripe():
@@ -63,9 +71,10 @@ def create_payment_intent(user_id):
         return jsonify({"error": "Job is already paid"}), 409
 
     amount = round(job.total_price + tip_amount, 2)
-    commission = round(amount * PLATFORM_COMMISSION, 2)
-    service_fee = round(amount * SERVICE_FEE_RATE, 2)
-    driver_payout = max(0, round(amount - commission - service_fee, 2))
+    split = compute_payment_split(amount)
+    commission = split["commission"]
+    service_fee = split["service_fee"]
+    driver_payout = split["driver_payout"]
 
     stripe = _get_stripe()
     stripe_key = os.environ.get("STRIPE_SECRET_KEY", "")
@@ -75,11 +84,21 @@ def create_payment_intent(user_id):
 
     if stripe_key:
         try:
-            intent = stripe.PaymentIntent.create(
-                amount=int(amount * 100),
-                currency="usd",
-                metadata={"job_id": job_id, "user_id": user_id},
-            )
+            intent_kwargs = {
+                "amount": int(amount * 100),
+                "currency": "usd",
+                "metadata": {"job_id": job_id, "user_id": user_id},
+            }
+            if PAYMENT_AUTH_CAPTURE_ENABLED:
+                # Authorize a hold (estimate + buffer) instead of charging now;
+                # the volume-verified final amount is captured at completion.
+                intent_kwargs["capture_method"] = "manual"
+                intent_kwargs["amount"] = int(
+                    round(amount * (1.0 + PAYMENT_AUTH_BUFFER_PCT), 2) * 100
+                )
+                intent_kwargs["metadata"]["estimate_amount"] = "{:.2f}".format(amount)
+                intent_kwargs["metadata"]["auth_capture"] = "1"
+            intent = stripe.PaymentIntent.create(**intent_kwargs)
             intent_id = intent.id
             client_secret = intent.client_secret
         except Exception as e:
@@ -133,11 +152,26 @@ def confirm_payment(user_id):
     if not payment:
         return jsonify({"error": "Payment not found"}), 404
 
-    payment.payment_status = "succeeded"
+    # Under auth-and-capture the customer confirming the card only places a HOLD
+    # (Stripe status "requires_capture") — the funds aren't captured until the
+    # job completes with verified volume. Mark such payments "authorized" so the
+    # payout gate (which requires "succeeded") can't fire early; capture_job_payment
+    # flips it to "succeeded" at completion.
+    is_hold = False
+    if PAYMENT_AUTH_CAPTURE_ENABLED and not intent_id.startswith("pi_dev_"):
+        try:
+            stripe = _get_stripe()
+            intent = stripe.PaymentIntent.retrieve(intent_id)
+            is_hold = getattr(intent, "status", None) == "requires_capture"
+        except Exception as e:
+            logger.warning("Could not retrieve intent %s on confirm: %s", intent_id, e)
+
+    payment.payment_status = "authorized" if is_hold else "succeeded"
     payment.updated_at = utcnow()
 
+    # Only notify the hauler of money received once funds are actually captured.
     job = db.session.get(Job, payment.job_id)
-    if job and job.driver_id:
+    if not is_hold and job and job.driver_id:
         contractor = db.session.get(Contractor, job.driver_id)
         if contractor:
             notification = Notification(
@@ -173,6 +207,55 @@ def confirm_payment(user_id):
         pass  # Notifications must never block the main flow
 
     return jsonify({"success": True, "payment": payment.to_dict()}), 200
+
+
+def capture_job_payment(job_id):
+    """Capture the volume-verified final amount for an auth-and-capture job.
+
+    No-op (returns ``skipped``) unless ``PAYMENT_AUTH_CAPTURE_ENABLED`` is on and
+    the job's PaymentIntent is an authorized hold (status ``requires_capture``).
+    Called at job completion *before* payout, so the platform captures exactly
+    the verified ``job.total_price`` — never more than was authorized, and never
+    the inflated/under-reported claim of either party. Idempotent, never raises.
+    """
+    if not PAYMENT_AUTH_CAPTURE_ENABLED:
+        return {"status": "skipped", "reason": "auth_capture_disabled"}
+
+    job = db.session.get(Job, job_id)
+    if not job or not job.payment or not job.payment.stripe_payment_intent_id:
+        return {"status": "skipped", "reason": "no_payment_intent"}
+
+    intent_id = job.payment.stripe_payment_intent_id
+    if intent_id.startswith("pi_dev_"):
+        # Dev/no-Stripe path: just mark it captured.
+        job.payment.payment_status = "succeeded"
+        job.payment.updated_at = utcnow()
+        db.session.commit()
+        return {"status": "captured", "dev": True}
+
+    try:
+        from payment_auth_capture import capture_authorized_intent
+        stripe = _get_stripe()
+        intent = stripe.PaymentIntent.retrieve(intent_id)
+        if getattr(intent, "status", None) != "requires_capture":
+            # Already captured, or never an auth-only hold — leave it alone.
+            return {"status": "skipped", "reason": "not_capturable",
+                    "intent_status": getattr(intent, "status", None)}
+
+        final_cents = int(round(float(job.total_price or 0.0), 2) * 100)
+        captured = capture_authorized_intent(intent_id, amount_cents=final_cents)
+        if captured is None:
+            return {"status": "error", "reason": "capture_failed"}
+
+        job.payment.amount = round(float(job.total_price or 0.0), 2)
+        job.payment.payment_status = "succeeded"
+        job.payment.updated_at = utcnow()
+        db.session.commit()
+        logger.info("Captured auth-hold for job %s at $%.2f", job_id, job.total_price or 0.0)
+        return {"status": "captured", "amount": job.payment.amount}
+    except Exception as e:
+        logger.warning("capture_job_payment failed for job %s: %s", job_id, e)
+        return {"status": "error", "reason": str(e)}
 
 
 def attempt_payout(job_id):
@@ -885,22 +968,20 @@ def _handle_payment_succeeded(intent):
     payment.payment_status = "succeeded"
     payment.updated_at = utcnow()
 
-    # Recalculate commission split (platform 20%, operator commission from remainder)
+    # Recalculate commission split via the single source of truth.
     amount = payment.amount or 0.0
-    platform_commission = round(amount * PLATFORM_COMMISSION, 2)
-    driver_gross = round(amount - platform_commission - (payment.service_fee or 0.0), 2)
-
     job = db.session.get(Job, payment.job_id)
-    operator_payout = 0.0
+    operator_rate = 0.0
     if job and job.operator_id:
         op = db.session.get(Contractor, job.operator_id)
         if op:
-            rate = op.operator_commission_rate or 0.15
-            operator_payout = round(driver_gross * rate, 2)
+            operator_rate = op.operator_commission_rate or 0.15
 
-    payment.commission = platform_commission
-    payment.operator_payout_amount = operator_payout
-    payment.driver_payout_amount = max(0, round(driver_gross - operator_payout, 2))
+    split = compute_payment_split(amount, operator_rate=operator_rate)
+    payment.commission = split["commission"]
+    payment.service_fee = split["service_fee"]
+    payment.operator_payout_amount = split["operator_payout"]
+    payment.driver_payout_amount = split["driver_payout"]
 
     if job:
         # Move job from pending to confirmed now that payment succeeded
