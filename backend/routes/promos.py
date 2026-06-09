@@ -5,32 +5,16 @@ Admin: CRUD promo codes.
 """
 
 from flask import Blueprint, request, jsonify
-from functools import wraps
 from datetime import datetime, timezone
 
 import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from models import db, User, PromoCode, generate_uuid, utcnow
-from auth_routes import require_auth
+from models import db, User, PromoCode, PromoRedemption, generate_uuid, utcnow
+from auth_routes import require_auth, require_admin
 
 promos_bp = Blueprint("promos", __name__)
-
-
-# ---------------------------------------------------------------------------
-# Admin guard (same pattern as admin.py)
-# ---------------------------------------------------------------------------
-def require_admin(f):
-    """Wrap require_auth and additionally check that the user has admin role."""
-    @wraps(f)
-    @require_auth
-    def wrapper(user_id, *args, **kwargs):
-        user = db.session.get(User, user_id)
-        if not user or user.role != "admin":
-            return jsonify({"error": "Admin access required"}), 403
-        return f(user_id=user_id, *args, **kwargs)
-    return wrapper
 
 
 # ---------------------------------------------------------------------------
@@ -64,8 +48,17 @@ def compute_discount(promo, order_amount):
 # ---------------------------------------------------------------------------
 # Helper: validate a promo code and return error or (promo, discount)
 # ---------------------------------------------------------------------------
-def validate_promo_code(code, order_amount):
+def validate_promo_code(code, order_amount, user_id=None, email=None):
     """Validate a promo code string against business rules.
+
+    Parameters
+    ----------
+    code : str
+    order_amount : float
+    user_id, email : optional caller identity. When supplied, enforce the
+        per-customer redemption cap (``promo.per_user_limit``). When both are
+        ``None`` (e.g. the anonymous ``/api/promos/validate`` preview call) the
+        per-customer check is skipped — the global cap still applies.
 
     Returns
     -------
@@ -92,6 +85,23 @@ def validate_promo_code(code, order_amount):
     if promo.max_uses is not None and promo.use_count >= promo.max_uses:
         return None, 0, "This promo code has reached its usage limit."
 
+    # --- Per-customer cap (only when we know who is redeeming) ---
+    per_user_limit = getattr(promo, "per_user_limit", None)
+    if per_user_limit is not None and (user_id or email):
+        email_norm = (email or "").strip().lower() or None
+        ident = []
+        if user_id:
+            ident.append(PromoRedemption.user_id == user_id)
+        if email_norm:
+            ident.append(PromoRedemption.email == email_norm)
+        used = PromoRedemption.query.filter(
+            PromoRedemption.promo_code_id == promo.id,
+            PromoRedemption.status == "confirmed",
+            db.or_(*ident),
+        ).count()
+        if used >= per_user_limit:
+            return None, 0, "You've already used this promo code."
+
     if promo.min_order_amount and order_amount < promo.min_order_amount:
         return None, 0, "Minimum order of ${:.2f} required for this promo code.".format(
             promo.min_order_amount
@@ -99,6 +109,28 @@ def validate_promo_code(code, order_amount):
 
     discount = compute_discount(promo, order_amount)
     return promo, discount, None
+
+
+def confirm_promo_redemption(job):
+    """Mark a job's reserved promo redemption as confirmed and bump use_count.
+
+    Called once a payment succeeds (job -> "confirmed"). Idempotent: a second
+    call for the same job is a no-op. Counting usage here — rather than at
+    booking creation — means abandoned/unpaid bookings never burn a code, and
+    the global ``use_count`` reflects only paid redemptions.
+    """
+    if job is None:
+        return
+    redemption = PromoRedemption.query.filter_by(
+        job_id=job.id, status="reserved"
+    ).first()
+    if not redemption:
+        return
+    redemption.status = "confirmed"
+    redemption.redeemed_at = utcnow()
+    promo = db.session.get(PromoCode, redemption.promo_code_id)
+    if promo is not None:
+        promo.use_count = (promo.use_count or 0) + 1
 
 
 # ============================================================================
@@ -184,7 +216,8 @@ def create_promo(user_id):
         discount_value: float
         min_order_amount: float (optional, default 0)
         max_discount: float (optional, null = no cap)
-        max_uses: int (optional, null = unlimited)
+        max_uses: int (optional, null = unlimited global cap)
+        per_user_limit: int (optional, default 1; null = unlimited per customer)
         expires_at: str (optional ISO datetime)
         is_active: bool (optional, default true)
     """
@@ -232,6 +265,9 @@ def create_promo(user_id):
         min_order_amount=float(data.get("min_order_amount", 0)),
         max_discount=float(data["max_discount"]) if data.get("max_discount") is not None else None,
         max_uses=int(data["max_uses"]) if data.get("max_uses") is not None else None,
+        per_user_limit=(
+            int(data["per_user_limit"]) if data.get("per_user_limit") is not None else 1
+        ),
         expires_at=expires_at,
         is_active=data.get("is_active", True),
         created_by=user_id,

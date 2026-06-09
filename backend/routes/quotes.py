@@ -28,6 +28,7 @@ import json
 import logging
 import os
 import sys
+import threading
 import time
 from datetime import timedelta
 
@@ -84,6 +85,107 @@ DEFAULT_ITEM_CU_FT = 10.0
 _OPENAI_IN_CENTS_PER_1K = 0.015
 _OPENAI_OUT_CENTS_PER_1K = 0.060
 _GEMINI_FLASH_CENTS_PER_1K = 0.0075  # blended, very rough
+
+# ---------------------------------------------------------------------------
+# Cost-leakage guards (the estimate endpoint is unauthenticated and bills a
+# paid vision call, so it must be defended against runaway spend / abuse).
+# ---------------------------------------------------------------------------
+# Hard daily ceiling on paid vision spend. Once today's logged spend reaches
+# this, new estimates fall back to the (free) rules heuristic instead of
+# billing a provider. Override via env.
+VISION_DAILY_BUDGET_CENTS = float(os.environ.get("VISION_DAILY_BUDGET_CENTS", "500"))
+
+# Short-lived dedupe so a double-submitted photo set returns the first quote
+# instead of billing a second vision call. Backed by Redis when REDIS_URL is
+# set (shared across workers), else an in-process dict (single worker).
+_DEDUPE_TTL_SECONDS = 600
+_DEDUPE_PREFIX = "vq:dedupe:"
+_dedupe_lock = threading.Lock()
+_dedupe_cache = {}  # img_hash -> (quote_id, epoch_ts)
+_redis_client = None
+_redis_init = False
+
+
+def _get_redis():
+    """Return a Redis client if REDIS_URL is configured, else None (cached)."""
+    global _redis_client, _redis_init
+    if _redis_init:
+        return _redis_client
+    _redis_init = True
+    url = os.environ.get("REDIS_URL")
+    if url:
+        try:
+            import redis  # dependency already pinned in requirements.txt
+            _redis_client = redis.Redis.from_url(url, socket_timeout=1)
+        except Exception:
+            logger.warning("vision dedupe: Redis unavailable — using in-process cache")
+            _redis_client = None
+    return _redis_client
+
+
+def _images_hash(images):
+    """Stable sha256 over the normalized image set (URLs + inline bytes)."""
+    h = hashlib.sha256()
+    for img in images:
+        h.update(b"\x00")
+        h.update((img.get("kind") or "").encode("utf-8"))
+        h.update(b"\x01")
+        h.update((img.get("value") or "").encode("utf-8"))
+    return h.hexdigest()
+
+
+def _dedupe_get(img_hash):
+    """Return a still-fresh quote_id previously produced for this image set."""
+    r = _get_redis()
+    if r is not None:
+        try:
+            val = r.get(_DEDUPE_PREFIX + img_hash)
+            return val.decode() if isinstance(val, bytes) else val
+        except Exception:
+            return None
+    now = time.time()
+    with _dedupe_lock:
+        entry = _dedupe_cache.get(img_hash)
+        if not entry:
+            return None
+        quote_id, ts = entry
+        if now - ts > _DEDUPE_TTL_SECONDS:
+            _dedupe_cache.pop(img_hash, None)
+            return None
+        return quote_id
+
+
+def _dedupe_put(img_hash, quote_id):
+    r = _get_redis()
+    if r is not None:
+        try:
+            r.setex(_DEDUPE_PREFIX + img_hash, _DEDUPE_TTL_SECONDS, quote_id)
+            return
+        except Exception:
+            pass
+    now = time.time()
+    with _dedupe_lock:
+        if len(_dedupe_cache) > 1000:  # bound memory: drop expired entries
+            for k, (_, ts) in list(_dedupe_cache.items()):
+                if now - ts > _DEDUPE_TTL_SECONDS:
+                    _dedupe_cache.pop(k, None)
+        _dedupe_cache[img_hash] = (quote_id, now)
+
+
+def _vision_spend_today_cents():
+    """Sum today's (UTC) logged vision spend. Used to enforce the daily cap."""
+    from datetime import datetime, timezone
+    midnight = datetime.now(timezone.utc).replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )
+    try:
+        total = db.session.query(
+            db.func.coalesce(db.func.sum(VisionInferenceLog.cost_cents), 0.0)
+        ).filter(VisionInferenceLog.created_at >= midnight).scalar()
+        return float(total or 0.0)
+    except Exception:
+        logger.exception("vision budget: failed to sum today's spend")
+        return 0.0
 
 # ---------------------------------------------------------------------------
 # Vision prompt (shared across providers)
@@ -330,7 +432,7 @@ def _rules_fallback_items(images):
 # Route: POST /api/v1/quotes/estimate
 # ---------------------------------------------------------------------------
 @quotes_bp.route("/estimate", methods=["POST"])
-@limiter.limit("15 per minute")
+@limiter.limit("5 per minute;40 per day")
 def estimate_quote():
     """Photo -> binding price. See module docstring."""
     data = request.get_json(silent=True) or {}
@@ -342,6 +444,19 @@ def estimate_quote():
             "error": "At least one image is required (photo_urls or images_base64).",
         }), 400
 
+    # --- Dedupe: an identical photo set submitted again within the TTL returns
+    # the first quote instead of billing a second paid vision call. ---
+    img_hash = _images_hash(images)
+    cached_id = _dedupe_get(img_hash)
+    if cached_id:
+        cached = db.session.get(Quote, cached_id)
+        if cached is not None:
+            return jsonify({
+                "success": True,
+                "quote": _serialize_persisted_quote(cached),
+                "deduped": True,
+            }), 200
+
     zip_code = str(data.get("zip_code") or data.get("zipCode") or "").strip()[:10]
     zone = str(data.get("zone") or "palm-beach").strip().lower()[:32]
     scheduled_date = data.get("scheduledDate") or data.get("scheduled_date")
@@ -351,16 +466,26 @@ def estimate_quote():
 
     provider, api_key, model_name = _select_provider()
 
+    # --- Daily spend cap: if today's vision spend is at/over budget, skip the
+    # paid provider and serve a free rules-based quote instead. ---
+    over_budget = False
+    if provider and _vision_spend_today_cents() >= VISION_DAILY_BUDGET_CENTS:
+        over_budget = True
+        logger.warning(
+            "vision daily budget reached (>= %.0f cents) — serving rules fallback",
+            VISION_DAILY_BUDGET_CENTS,
+        )
+
     # --- Run vision (or fall back) ---
     started = time.time()
     origin = "rules"
-    vision_error = None
+    vision_error = "daily budget exceeded" if over_budget else None
     in_tok = out_tok = 0
     raw_text = ""
     parsed = {}
     confidence = 0.55  # default for rules fallback
 
-    if provider:
+    if provider and not over_budget:
         try:
             if provider == "openai":
                 parsed, in_tok, out_tok, raw_text = _call_openai(api_key, model_name, images)
@@ -488,6 +613,9 @@ def estimate_quote():
         logger.error("Failed to persist quote: %s", exc)
         return jsonify({"success": False, "error": "Could not save quote."}), 500
 
+    # Record for dedupe so an immediate re-submit of the same photos is free.
+    _dedupe_put(img_hash, quote_id)
+
     return jsonify({
         "success": True,
         "quote": _serialize_quote(quote, items, breakdown),
@@ -548,12 +676,8 @@ def _serialize_quote(quote, items, breakdown):
 # ---------------------------------------------------------------------------
 # Route: GET /api/v1/quotes/<quote_id>
 # ---------------------------------------------------------------------------
-@quotes_bp.route("/<quote_id>", methods=["GET"])
-def get_quote(quote_id):
-    quote = db.session.get(Quote, quote_id)
-    if quote is None:
-        return jsonify({"success": False, "error": "Quote not found."}), 404
-
+def _serialize_persisted_quote(quote):
+    """Rebuild the estimate response payload from a stored Quote + its items."""
     items = [
         {
             "category": it.label,
@@ -566,7 +690,16 @@ def get_quote(quote_id):
     ]
     pricing_items = [{"category": it.label, "quantity": it.count} for it in quote.items]
     breakdown = calculate_estimate(pricing_items)
+    return _serialize_quote(quote, items, breakdown)
+
+
+@quotes_bp.route("/<quote_id>", methods=["GET"])
+def get_quote(quote_id):
+    quote = db.session.get(Quote, quote_id)
+    if quote is None:
+        return jsonify({"success": False, "error": "Quote not found."}), 404
+
     return jsonify({
         "success": True,
-        "quote": _serialize_quote(quote, items, breakdown),
+        "quote": _serialize_persisted_quote(quote),
     }), 200

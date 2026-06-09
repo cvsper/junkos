@@ -189,6 +189,24 @@ SAME_DAY_SURGE  = 0.25   # +25 %
 NEXT_DAY_SURGE  = 0.10   # +10 %
 WEEKEND_SURGE   = 0.15   # +15 %
 
+# ---------------------------------------------------------------------------
+# Demand-based auto-surge configuration.
+# Surge from live supply/demand near the pickup: count online+approved drivers
+# vs open jobs within a radius, then map the demand:supply ratio to a
+# multiplier. OFF by default (opt-in via PricingConfig) so existing behaviour
+# is unchanged until ops enables it.
+# ---------------------------------------------------------------------------
+DEMAND_SURGE_ENABLED = False
+DEMAND_SURGE_RADIUS_MILES = 15.0
+DEMAND_SURGE_MAX = 1.5
+# (ratio_threshold, multiplier) -- first tier whose threshold the ratio meets,
+# scanned high-to-low. ratio = open_jobs / max(online_drivers, 1).
+DEMAND_SURGE_TIERS = [
+    (3.0, 1.50),
+    (2.0, 1.30),
+    (1.0, 1.15),
+]
+
 EARTH_RADIUS_KM = 6371.0
 NEARBY_CONTRACTOR_RADIUS_KM = 50.0
 
@@ -240,6 +258,30 @@ def _get_time_surge_rates():
 
 def _get_service_fee_rate():
     return float(_load_config("service_fee_rate", SERVICE_FEE_RATE))
+
+
+def _get_demand_surge_config():
+    """Return demand-surge settings, preferring DB overrides.
+
+    Returns ``(enabled, radius_miles, max_multiplier, tiers)`` where ``tiers``
+    is a list of ``(ratio_threshold, multiplier)`` sorted high-to-low.
+    """
+    enabled = bool(_load_config("demand_surge_enabled", DEMAND_SURGE_ENABLED))
+    radius = float(_load_config("demand_surge_radius_miles", DEMAND_SURGE_RADIUS_MILES))
+    max_mult = float(_load_config("demand_surge_max", DEMAND_SURGE_MAX))
+    raw = _load_config("demand_surge_tiers", None)
+    if raw and isinstance(raw, list):
+        try:
+            tiers = sorted(
+                ((float(t["ratio"]), float(t["multiplier"])) for t in raw),
+                key=lambda t: t[0],
+                reverse=True,
+            )
+        except (KeyError, TypeError, ValueError):
+            tiers = DEMAND_SURGE_TIERS
+    else:
+        tiers = DEMAND_SURGE_TIERS
+    return enabled, radius, max_mult, tiers
 
 
 # ============================================================================
@@ -333,6 +375,90 @@ def _active_surge_multiplier(lat=None, lng=None):
             max_surge = zone.surge_multiplier
 
     return max_surge
+
+
+# ============================================================================
+# Helpers -- demand-based auto-surge (new)
+# ============================================================================
+def _demand_surge(lat=None, lng=None):
+    """Return ``(multiplier, reason_or_None)`` from live supply/demand.
+
+    Counts online+approved drivers vs open jobs within a radius of the pickup
+    and maps the ``open_jobs / drivers`` ratio to a surge multiplier. Returns
+    ``(1.0, None)`` (and does no DB work) when the feature is disabled or when
+    coordinates are missing.
+    """
+    if lat is None or lng is None:
+        return 1.0, None
+
+    enabled, radius_miles, max_mult, tiers = _get_demand_surge_config()
+    if not enabled:
+        return 1.0, None
+
+    try:
+        lat = float(lat)
+        lng = float(lng)
+    except (TypeError, ValueError):
+        return 1.0, None
+
+    # Coarse bounding box for a cheap prefilter (~69 mi per degree lat).
+    deg_lat = radius_miles / 69.0
+    deg_lng = radius_miles / (69.0 * max(cos(radians(lat)), 0.01))
+    lat_lo, lat_hi = lat - deg_lat, lat + deg_lat
+    lng_lo, lng_hi = lng - deg_lng, lng + deg_lng
+
+    # _haversine returns kilometres; convert the radius for the precise filter.
+    radius_km = radius_miles * 1.60934
+
+    try:
+        # --- Supply: online, approved drivers within radius ---
+        drivers = Contractor.query.filter(
+            Contractor.is_online.is_(True),
+            Contractor.approval_status == "approved",
+            Contractor.current_lat.isnot(None),
+            Contractor.current_lng.isnot(None),
+            Contractor.current_lat.between(lat_lo, lat_hi),
+            Contractor.current_lng.between(lng_lo, lng_hi),
+        ).all()
+        supply = sum(
+            1 for c in drivers
+            if _haversine(lat, lng, c.current_lat, c.current_lng) <= radius_km
+        )
+
+        # --- Demand: open jobs within radius ---
+        open_jobs = Job.query.filter(
+            Job.status.in_(("pending", "confirmed", "assigned")),
+            Job.lat.isnot(None),
+            Job.lng.isnot(None),
+            Job.lat.between(lat_lo, lat_hi),
+            Job.lng.between(lng_lo, lng_hi),
+        ).all()
+        demand = sum(
+            1 for j in open_jobs
+            if _haversine(lat, lng, j.lat, j.lng) <= radius_km
+        )
+    except Exception:
+        import logging
+        logging.getLogger(__name__).exception(
+            "demand surge: supply/demand query failed — skipping surge"
+        )
+        return 1.0, None
+
+    ratio = demand / max(supply, 1)
+    multiplier = 1.0
+    for threshold, mult in tiers:
+        if ratio >= threshold:
+            multiplier = mult
+            break
+    multiplier = min(multiplier, max_mult)
+
+    if multiplier <= 1.0:
+        return 1.0, None
+
+    reason = "High demand (x{} — {} jobs / {} drivers nearby)".format(
+        round(multiplier, 2), demand, supply
+    )
+    return multiplier, reason
 
 
 # ============================================================================
@@ -477,16 +603,26 @@ def calculate_estimate(items, scheduled_date=None, lat=None, lng=None):
     # --- Zone-based surge multiplier ---
     zone_surge = _active_surge_multiplier(lat, lng)
 
+    # --- Demand-based auto-surge (opt-in) ---
+    demand_mult, demand_reason = _demand_surge(lat, lng)
+
+    # Location surge is the GREATER of the manual zone surge and live demand
+    # surge -- max(), not product, so the two never stack into a runaway price.
+    location_surge = max(zone_surge, demand_mult)
+
     # --- Time-based surge ---
     time_surge_pct, surge_reasons = _time_based_surge(scheduled_date)
 
-    # Combined: zone multiplier is multiplicative, time surge is additive on top
-    combined_multiplier = zone_surge * (1.0 + time_surge_pct)
+    # Combined: location multiplier is multiplicative, time surge is additive on top
+    combined_multiplier = location_surge * (1.0 + time_surge_pct)
 
     surged_subtotal = round(items_subtotal * combined_multiplier, 2)
     surge_amount = round(surged_subtotal - items_subtotal, 2)
 
-    if zone_surge > 1.0:
+    # Surface the reason for whichever location surge actually applied.
+    if demand_mult >= zone_surge and demand_reason:
+        surge_reasons.insert(0, demand_reason)
+    elif zone_surge > 1.0:
         surge_reasons.insert(0, "High-demand zone (x{})".format(round(zone_surge, 2)))
 
     # --- Service fee (admin-overridable) ---
@@ -922,14 +1058,20 @@ def create_booking(user_id):
 
     if promo_code_str:
         from routes.promos import validate_promo_code
-        promo, discount, promo_error = validate_promo_code(promo_code_str, total)
+        promo, discount, promo_error = validate_promo_code(
+            promo_code_str, total,
+            user_id=user_id,
+            email=data.get("customerEmail"),
+        )
         if promo_error:
             return jsonify({"error": promo_error}), 400
         promo_code_id = promo.id
         discount_amount = discount
         total = round(total - discount, 2)
-        # Increment use count
-        promo.use_count = (promo.use_count or 0) + 1
+        # NOTE: use_count is intentionally NOT incremented here. A reserved
+        # PromoRedemption is created after the Job exists (below) and is only
+        # confirmed — bumping use_count — once payment succeeds. This stops
+        # abandoned bookings from burning a code and enforces per-customer caps.
 
     # --- Resolve customer (auth user or guest) ---
     if not user_id:
@@ -984,6 +1126,18 @@ def create_booking(user_id):
         confirmation_code=generate_referral_code(),
     )
     db.session.add(job)
+
+    # --- Reserve the promo redemption (confirmed at payment success) ---
+    if promo_code_id:
+        from models import PromoRedemption
+        db.session.add(PromoRedemption(
+            id=generate_uuid(),
+            promo_code_id=promo_code_id,
+            user_id=user_id,
+            email=(data.get("customerEmail") or "").strip().lower() or None,
+            job_id=job.id,
+            status="reserved",
+        ))
 
     # Link the converted quote to this booking (binding price already honored).
     if quote_to_convert is not None:
