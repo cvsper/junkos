@@ -53,6 +53,84 @@ def _sweep_pending_payouts(app):
             logger.info("Pending-payout sweep: %d retried, %d now paid", retried, paid)
 
 
+def _sweep_abandoned_holds(app):
+    """Void authorized-but-uncaptured PaymentIntents for dead bookings.
+
+    Under auth-and-capture (PAYMENT_AUTH_CAPTURE_ENABLED) a booking places a HOLD
+    on the customer's card and only captures the verified amount at completion. If
+    a job is cancelled, expires, or sits unassigned past VOID_HOLD_AFTER_HOURS, the
+    hold must be released so the customer isn't left with a lingering charge (and
+    so we control the release instead of waiting on Stripe's ~7-day auto-expiry).
+
+    Conservative by construction: skips any job in an active or completed state,
+    and re-checks the live Stripe status — only intents still in "requires_capture"
+    are voided. Idempotent, never raises.
+    """
+    from pricing_constants import PAYMENT_AUTH_CAPTURE_ENABLED
+    if not PAYMENT_AUTH_CAPTURE_ENABLED:
+        return
+
+    void_after_hours = float(os.environ.get("VOID_HOLD_AFTER_HOURS", "6"))
+
+    # Never touch a hold for a job that's being fulfilled or already done.
+    ACTIVE_OR_DONE = {
+        "accepted", "assigned", "arrived", "en_route", "started",
+        "broadcasting", "confirmed", "completed",
+    }
+
+    with app.app_context():
+        from models import db, Job, Payment, utcnow
+        from payment_auth_capture import void_authorized_intent
+
+        now = datetime.now(timezone.utc)
+        cutoff = now - timedelta(hours=void_after_hours)
+
+        holds = Payment.query.filter_by(payment_status="authorized").all()
+        voided = 0
+        for p in holds:
+            job = db.session.get(Job, p.job_id)
+            if not job or job.status in ACTIVE_OR_DONE:
+                continue
+
+            # Dead states release immediately; an unassigned "pending" job only
+            # after it's sat past the cutoff with no hauler.
+            dead = job.status in ("cancelled", "expired")
+            stale_pending = job.status == "pending" and (
+                job.created_at is None or job.created_at <= cutoff
+            )
+            if not (dead or stale_pending):
+                continue
+
+            intent_id = p.stripe_payment_intent_id or ""
+            if not intent_id or intent_id.startswith("pi_dev_"):
+                p.payment_status = "voided"
+                p.updated_at = utcnow()
+                if stale_pending:
+                    job.status = "expired"
+                voided += 1
+                continue
+
+            try:
+                from routes.payments import _get_stripe
+                stripe = _get_stripe()
+                intent = stripe.PaymentIntent.retrieve(intent_id)
+                if getattr(intent, "status", None) != "requires_capture":
+                    continue  # already captured/cancelled — leave it
+                if void_authorized_intent(intent_id) is None:
+                    continue
+                p.payment_status = "voided"
+                p.updated_at = utcnow()
+                if stale_pending:
+                    job.status = "expired"
+                voided += 1
+            except Exception:
+                logger.exception("Abandoned-hold void failed for job %s", p.job_id)
+
+        if voided:
+            db.session.commit()
+            logger.info("Abandoned-hold sweep: voided %d uncaptured hold(s)", voided)
+
+
 def _generate_recurring_jobs(app):
     """Create Job records from active recurring bookings that are due, then
     dispatch each one to haulers.
@@ -380,8 +458,19 @@ def init_scheduler(app):
             name="Twilio account health probe",
         )
 
+        # Release abandoned auth-and-capture holds every 30 minutes (no-op
+        # unless PAYMENT_AUTH_CAPTURE_ENABLED).
+        scheduler.add_job(
+            _sweep_abandoned_holds,
+            "interval",
+            minutes=30,
+            args=[app],
+            id="sweep_abandoned_holds",
+            name="Void abandoned payment holds",
+        )
+
         scheduler.start()
-        logger.info("Background scheduler started with 6 jobs")
+        logger.info("Background scheduler started with 7 jobs")
         return scheduler
     except ImportError:
         logger.warning("APScheduler not installed — scheduler disabled")
