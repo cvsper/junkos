@@ -117,7 +117,16 @@ VALID_CATEGORIES = set(CATEGORY_CU_FT.keys())
 # Provider selection
 # ---------------------------------------------------------------------------
 def _select_provider():
-    """Return ('openai'|'gemini'|None, api_key|None, model_name)."""
+    """Return ('local'|'openai'|'gemini'|None, api_key|None, model_name).
+
+    Local (self-hosted Ollama vision) is preferred when LOCAL_VISION_URL is
+    set — zero marginal cost per quote. It is env-gated and therefore inert
+    on Render prod (which cannot reach LAN hosts); cloud keys remain the
+    fallback chain there.
+    """
+    local_url = os.environ.get("LOCAL_VISION_URL")
+    if local_url:
+        return "local", None, os.environ.get("LOCAL_VISION_MODEL", "qwen2.5vl:7b")
     openai_key = os.environ.get("OPENAI_API_KEY")
     if openai_key:
         return "openai", openai_key, "gpt-4o-mini"
@@ -209,6 +218,41 @@ def _call_openai(api_key, model, images):
     in_tok = getattr(usage, "prompt_tokens", 0) or 0
     out_tok = getattr(usage, "completion_tokens", 0) or 0
     return _parse_vision_json(raw_text), in_tok, out_tok, raw_text
+
+
+def _call_local_vision(base_url, model, images):
+    """Self-hosted Ollama vision (e.g. qwen2.5vl on zinos). Returns
+    (parsed, in_tok, out_tok, raw_text) like the cloud callers. Zero cost."""
+    import requests
+    b64s = []
+    for img in images:
+        _, payload = _image_to_inline(img)
+        if payload:
+            b64s.append(payload)
+    if not b64s:
+        raise RuntimeError("no usable images for local vision")
+    resp = requests.post(
+        base_url.rstrip("/") + "/api/chat",
+        json={
+            "model": model,
+            "stream": False,
+            "format": "json",
+            "options": {"num_predict": 700, "temperature": 0.1},
+            "messages": [{
+                "role": "user",
+                "content": VISION_SYSTEM_PROMPT,
+                "images": b64s,
+            }],
+        },
+        timeout=120,
+    )
+    resp.raise_for_status()
+    body = resp.json()
+    raw_text = (body.get("message") or {}).get("content", "") or ""
+    parsed = _parse_vision_json(raw_text)
+    in_tok = int(body.get("prompt_eval_count") or 0)
+    out_tok = int(body.get("eval_count") or 0)
+    return parsed, in_tok, out_tok, raw_text
 
 
 def _call_gemini(api_key, model, images):
@@ -362,7 +406,24 @@ def estimate_quote():
 
     if provider:
         try:
-            if provider == "openai":
+            if provider == "local":
+                try:
+                    parsed, in_tok, out_tok, raw_text = _call_local_vision(
+                        os.environ["LOCAL_VISION_URL"], model_name, images)
+                except Exception as local_exc:  # noqa: BLE001
+                    # Local box down/slow -> fall through to the cloud chain.
+                    logger.warning("Local vision failed (%s); trying cloud", local_exc)
+                    openai_key = os.environ.get("OPENAI_API_KEY")
+                    gemini_key = os.environ.get("GEMINI_API_KEY")
+                    if openai_key:
+                        provider, model_name = "openai", "gpt-4o-mini"
+                        parsed, in_tok, out_tok, raw_text = _call_openai(openai_key, model_name, images)
+                    elif gemini_key:
+                        provider, model_name = "gemini", "gemini-1.5-flash"
+                        parsed, in_tok, out_tok, raw_text = _call_gemini(gemini_key, model_name, images)
+                    else:
+                        raise
+            elif provider == "openai":
                 parsed, in_tok, out_tok, raw_text = _call_openai(api_key, model_name, images)
             else:
                 parsed, in_tok, out_tok, raw_text = _call_gemini(api_key, model_name, images)
