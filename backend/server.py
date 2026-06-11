@@ -7,7 +7,7 @@
 import eventlet
 eventlet.monkey_patch()
 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, url_for
 from flask_cors import CORS
 from functools import wraps
 from datetime import datetime, timedelta
@@ -1041,6 +1041,76 @@ def capi_status_endpoint(secret):
         except Exception as exc:
             app.logger.exception("capi-status: test event failed")
             result["test_event"] = {"attempted": True, "accepted": False, "error": str(exc)}
+
+    return jsonify(result), 200
+
+
+@app.route("/api/admin/social-status/<secret>", methods=["GET"])
+@limiter.exempt
+def social_status_endpoint(secret):
+    """Report social-posting (IG/FB Graph API) readiness from prod.
+
+    The social-poster automation needs META_ACCESS_TOKEN (page token with
+    pages_manage_posts + instagram_content_publish), META_PAGE_ID, and the
+    page-linked IG business account. This endpoint shows what is present and
+    live-probes the token's granted scopes + IG link so setup gaps are
+    obvious without anyone pasting tokens around. Secured by
+    ADMIN_SEED_SECRET. NEVER echoes the token — only booleans, scope names,
+    and ids (page/IG ids are not secrets).
+    """
+    expected = os.environ.get("ADMIN_SEED_SECRET", "")
+    if not expected or secret != expected:
+        return jsonify({"error": "Forbidden"}), 403
+
+    token = os.environ.get("META_ACCESS_TOKEN", "")
+    page_id = os.environ.get("META_PAGE_ID", "")
+    result = {
+        "has_access_token": bool(token),
+        "has_page_id": bool(page_id),
+        "has_ig_user_id": bool(os.environ.get("IG_USER_ID")),
+        "sample_asset_url": url_for(
+            "static", filename="marketing/umuve-pbc-trustlocal-9x16.png", _external=True
+        ),
+        "granted_scopes": None,
+        "instagram_business_account": None,
+        "can_post_fb": False,
+        "can_post_ig": False,
+    }
+
+    if token:
+        try:
+            import requests as _requests
+
+            perms = _requests.get(
+                "https://graph.facebook.com/v23.0/me/permissions",
+                params={"access_token": token},
+                timeout=10,
+            ).json()
+            scopes = [
+                p["permission"]
+                for p in perms.get("data", [])
+                if p.get("status") == "granted"
+            ]
+            result["granted_scopes"] = scopes
+            result["can_post_fb"] = "pages_manage_posts" in scopes
+            if page_id:
+                page = _requests.get(
+                    "https://graph.facebook.com/v23.0/{}".format(page_id),
+                    params={
+                        "fields": "instagram_business_account,name",
+                        "access_token": token,
+                    },
+                    timeout=10,
+                ).json()
+                ig = (page.get("instagram_business_account") or {}).get("id")
+                result["instagram_business_account"] = ig
+                result["page_name"] = page.get("name")
+                result["can_post_ig"] = bool(
+                    ig and "instagram_content_publish" in scopes
+                )
+        except Exception as exc:
+            app.logger.exception("social-status: Graph API probe failed")
+            result["probe_error"] = str(exc)
 
     return jsonify(result), 200
 
