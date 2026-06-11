@@ -1,0 +1,13 @@
+{
+  "prompt": {
+    "1": {"class_type": "UNETLoader", "inputs": {"unet_name": "flux1-schnell-fp8-e4m3fn.safetensors", "weight_dtype": "fp8_e4m3fn"}},
+    "2": {"class_type": "DualCLIPLoader", "inputs": {"clip_name1": "t5xxl_fp8_e4m3fn.safetensors", "clip_name2": "clip_l.safetensors", "type": "flux"}},
+    "3": {"class_type": "VAELoader", "inputs": {"vae_name": "ae.safetensors"}},
+    "4": {"class_type": "CLIPTextEncode", "inputs": {"clip": ["2", 0], "text": "Editorial advertising photograph, golden hour in a palm-lined South Florida suburban driveway: two friendly professional movers in matching plain dark-teal t-shirts and work gloves carefully loading an old beige sofa onto a clean white box truck, one mover smiling toward the other. Warm low sunlight, long soft shadows, deep teal dusk sky above, cinematic color grade of deep coastal teal and warm sand cream with a single bold red accent stripe on the truck side. Photorealistic, 35mm, shallow depth of field, premium brand campaign look, no text, no logos, no lettering."}},
+    "5": {"class_type": "CLIPTextEncode", "inputs": {"clip": ["2", 0], "text": ""}},
+    "6": {"class_type": "EmptySD3LatentImage", "inputs": {"width": 1024, "height": 1024, "batch_size": 1}},
+    "7": {"class_type": "KSampler", "inputs": {"model": ["1", 0], "positive": ["4", 0], "negative": ["5", 0], "latent_image": ["6", 0], "seed": 611001, "steps": 4, "cfg": 1.0, "sampler_name": "euler", "scheduler": "simple", "denoise": 1.0}},
+    "8": {"class_type": "VAEDecode", "inputs": {"samples": ["7", 0], "vae": ["3", 0]}},
+    "9": {"class_type": "SaveImage", "inputs": {"images": ["8", 0], "filename_prefix": "umuve-pbc-trustcrew-1x1"}}
+  }
+}

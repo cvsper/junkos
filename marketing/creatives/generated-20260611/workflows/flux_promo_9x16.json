@@ -1,0 +1,13 @@
+{
+  "prompt": {
+    "1": {"class_type": "UNETLoader", "inputs": {"unet_name": "flux1-schnell-fp8-e4m3fn.safetensors", "weight_dtype": "fp8_e4m3fn"}},
+    "2": {"class_type": "DualCLIPLoader", "inputs": {"clip_name1": "t5xxl_fp8_e4m3fn.safetensors", "clip_name2": "clip_l.safetensors", "type": "flux"}},
+    "3": {"class_type": "VAELoader", "inputs": {"vae_name": "ae.safetensors"}},
+    "4": {"class_type": "CLIPTextEncode", "inputs": {"clip": ["2", 0], "text": "Vertical cinematic advertising photograph at warm golden dusk: a clean white box truck with a bold red accent stripe parked in a South Florida suburban driveway, three-quarter view, rear door open showing a neatly loaded old sofa and dresser, warm amber porch lights and a glowing teal-to-orange sunset sky behind silhouetted palm trees. Bright, rich premium color grade of deep coastal teal sky, warm sand-cream highlights and confident red accents, well-lit and inviting. Truck occupies the upper two thirds; the lower third is smooth, uncluttered driveway in soft teal shadow forming clean negative space for typography. Photorealistic, 35mm, crisp detail, premium brand campaign aesthetic, no text, no logos, no lettering, no people."}},
+    "5": {"class_type": "CLIPTextEncode", "inputs": {"clip": ["2", 0], "text": ""}},
+    "6": {"class_type": "EmptySD3LatentImage", "inputs": {"width": 832, "height": 1216, "batch_size": 1}},
+    "7": {"class_type": "KSampler", "inputs": {"model": ["1", 0], "positive": ["4", 0], "negative": ["5", 0], "latent_image": ["6", 0], "seed": 611002, "steps": 4, "cfg": 1.0, "sampler_name": "euler", "scheduler": "simple", "denoise": 1.0}},
+    "8": {"class_type": "VAEDecode", "inputs": {"samples": ["7", 0], "vae": ["3", 0]}},
+    "9": {"class_type": "SaveImage", "inputs": {"images": ["8", 0], "filename_prefix": "umuve-pbc-promo25-9x16"}}
+  }
+}

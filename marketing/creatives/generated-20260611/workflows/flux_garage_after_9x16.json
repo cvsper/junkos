@@ -1,0 +1,13 @@
+{
+  "prompt": {
+    "1": {"class_type": "UNETLoader", "inputs": {"unet_name": "flux1-schnell-fp8-e4m3fn.safetensors", "weight_dtype": "fp8_e4m3fn"}},
+    "2": {"class_type": "DualCLIPLoader", "inputs": {"clip_name1": "t5xxl_fp8_e4m3fn.safetensors", "clip_name2": "clip_l.safetensors", "type": "flux"}},
+    "3": {"class_type": "VAELoader", "inputs": {"vae_name": "ae.safetensors"}},
+    "4": {"class_type": "CLIPTextEncode", "inputs": {"clip": ["2", 0], "text": "Vertical premium real-estate photograph of a spotless suburban two-car garage interior just after a professional cleanout: clean swept light-gray concrete floor, bare uncluttered walls in warm cream paint, a single row of tidy deep-navy storage bins on a steel shelf along one wall, soft golden morning sunlight streaming through the wide-open garage door, view out to a green Florida lawn, driveway and a palm tree in gentle haze, one warm red-orange detail of a coiled garden hose hanging near the door, airy, calm, satisfying minimalist order, photorealistic, premium advertising aesthetic, clean negative space of empty floor in the lower third, no text, no logos, no lettering, no people."}},
+    "5": {"class_type": "CLIPTextEncode", "inputs": {"clip": ["2", 0], "text": ""}},
+    "6": {"class_type": "EmptySD3LatentImage", "inputs": {"width": 832, "height": 1216, "batch_size": 1}},
+    "7": {"class_type": "KSampler", "inputs": {"model": ["1", 0], "positive": ["4", 0], "negative": ["5", 0], "latent_image": ["6", 0], "seed": 611102, "steps": 4, "cfg": 1.0, "sampler_name": "euler", "scheduler": "simple", "denoise": 1.0}},
+    "8": {"class_type": "VAEDecode", "inputs": {"samples": ["7", 0], "vae": ["3", 0]}},
+    "9": {"class_type": "SaveImage", "inputs": {"images": ["8", 0], "filename_prefix": "umuve-pbc-garage-after-9x16"}}
+  }
+}

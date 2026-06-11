@@ -1,0 +1,103 @@
+{
+ "prompt": {
+  "1": {
+   "class_type": "UNETLoader",
+   "inputs": {
+    "unet_name": "flux1-schnell-fp8-e4m3fn.safetensors",
+    "weight_dtype": "fp8_e4m3fn"
+   }
+  },
+  "2": {
+   "class_type": "DualCLIPLoader",
+   "inputs": {
+    "clip_name1": "t5xxl_fp8_e4m3fn.safetensors",
+    "clip_name2": "clip_l.safetensors",
+    "type": "flux"
+   }
+  },
+  "3": {
+   "class_type": "VAELoader",
+   "inputs": {
+    "vae_name": "ae.safetensors"
+   }
+  },
+  "4": {
+   "class_type": "CLIPTextEncode",
+   "inputs": {
+    "clip": [
+     "2",
+     0
+    ],
+    "text": "Square premium advertising photograph: a clean white box truck with its rear ramp down parked at the curb of a sunny South Florida home, two professional movers in plain deep-navy t-shirts seen from behind carrying a cream-colored armchair up the ramp into the truck, faces turned away from camera, bright late-morning sunlight, lush palm trees and tropical landscaping behind them, deep navy-blue shadow tones, warm cream highlights, a single red-orange accent stripe along the truck's lower trim, crisp photorealistic detail, 35mm commercial photography, premium brand campaign aesthetic, generous negative space of smooth pavement in the lower quarter of the frame, no text, no logos, no lettering, no face masks."
+   }
+  },
+  "5": {
+   "class_type": "CLIPTextEncode",
+   "inputs": {
+    "clip": [
+     "2",
+     0
+    ],
+    "text": ""
+   }
+  },
+  "6": {
+   "class_type": "EmptySD3LatentImage",
+   "inputs": {
+    "width": 1024,
+    "height": 1024,
+    "batch_size": 1
+   }
+  },
+  "7": {
+   "class_type": "KSampler",
+   "inputs": {
+    "model": [
+     "1",
+     0
+    ],
+    "positive": [
+     "4",
+     0
+    ],
+    "negative": [
+     "5",
+     0
+    ],
+    "latent_image": [
+     "6",
+     0
+    ],
+    "seed": 611103,
+    "steps": 4,
+    "cfg": 1.0,
+    "sampler_name": "euler",
+    "scheduler": "simple",
+    "denoise": 1.0
+   }
+  },
+  "8": {
+   "class_type": "VAEDecode",
+   "inputs": {
+    "samples": [
+     "7",
+     0
+    ],
+    "vae": [
+     "3",
+     0
+    ]
+   }
+  },
+  "9": {
+   "class_type": "SaveImage",
+   "inputs": {
+    "images": [
+     "8",
+     0
+    ],
+    "filename_prefix": "umuve-pbc-lifestyle-truckcrew-1x1-v2"
+   }
+  }
+ }
+}
