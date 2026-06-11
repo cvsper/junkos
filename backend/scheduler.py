@@ -15,6 +15,23 @@ from datetime import datetime, timezone, timedelta
 logger = logging.getLogger(__name__)
 
 
+def _run_noshow_watchdog():
+    """No-show watchdog pass: T-30 unassigned + T+15 late-start alerts.
+
+    run_t30_check/run_late_check push their own app context, so no app arg.
+    Idempotent per job via noshow_t30_alerted / noshow_late_alerted flags.
+    """
+    try:
+        from noshow_watchdog import run_t30_check, run_late_check
+
+        t30 = run_t30_check()
+        late = run_late_check()
+        if t30 or late:
+            logger.info("No-show watchdog fired: t30=%d late=%d", t30, late)
+    except Exception:
+        logger.exception("No-show watchdog pass failed")
+
+
 def _check_twilio_health(app):
     """Probe Twilio; email-alert if the account is down (e.g. billing suspension
     → all SMS silently failing). Email-only alert, so it survives a Twilio
@@ -380,8 +397,18 @@ def init_scheduler(app):
             name="Twilio account health probe",
         )
 
+        # No-show watchdog: T-30 unassigned + T+15 late-start alerts.
+        # Checks push their own app context (also runnable standalone).
+        scheduler.add_job(
+            _run_noshow_watchdog,
+            "interval",
+            minutes=5,
+            id="noshow_watchdog",
+            name="No-show watchdog (T-30 unassigned, T+15 late-start)",
+        )
+
         scheduler.start()
-        logger.info("Background scheduler started with 6 jobs")
+        logger.info("Background scheduler started with 7 jobs")
         return scheduler
     except ImportError:
         logger.warning("APScheduler not installed — scheduler disabled")
