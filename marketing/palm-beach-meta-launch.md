@@ -121,7 +121,7 @@ Build per "Campaign structure" above: Sales objective, optimize `InitiateCheckou
 **Dommo cannot arm the campaign** (Meta Ads Manager = sevs's account + payment method + ads_management access). This is the paste-ready spec + the gates that MUST be green before clicking Publish.
 
 ### Pre-flight — clear these FIRST (red until done)
-- [ ] **B** PBC25 → `min_order_amount: 75` (admin dashboard → Promos, or PUT /api/admin/promos/5d03ed49-4e86-40c7-99a5-c0377094f5fb). Re-check: validate at $60 → `valid:false`.
+- [x] **B** PBC25 min_order_amount = $200 (set + verified live 2026-06-14: $200 valid, $199 blocked). DONE.
 - [ ] **C1** `/api/admin/test-alert/<secret>` → phone and/or email `configured:true` AND you receive it. If not → set ADMIN_PHONE/ADMIN_EMAIL on Render.
 - [ ] **C2** `/api/admin/capi-status/<secret>` → `has_pixel_id` + `has_access_token` true.
 - [ ] **D** ≥1 approved operator **Online** in WPB (admin → Contractors shows online ≥1). ← the long pole; text Nathan/Joshua.
@@ -140,7 +140,7 @@ Build per "Campaign structure" above: Sales objective, optimize `InitiateCheckou
 - **Primary text:** pain-led ("Garage you can't park in?") + speed/transparent price + CTA "Get your quote"
 - **Destination:** PBC booking funnel (not homepage)
 - **UTM:** `utm_source=meta&utm_campaign=pbc_launch&utm_content={creative}`
-- **Offer in copy:** "$25 off your first pickup" (PBC25)
+- **Offer in copy:** "$25 off your first cleanout" (PBC25) — code floor is now $200 min_order (set 2026-06-14), so copy says "cleanout" not "pickup" to match the floor and avoid a checkout surprise on small jobs.
 
 ### After publish
 D1–4 hands-off (learning). D5 kill any creative <1% CTR / 0 IC. D7 decision: cost-per-booking healthy → +20–30% on the winner; else new angle, same structure.
