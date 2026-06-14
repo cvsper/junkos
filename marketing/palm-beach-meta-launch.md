@@ -122,8 +122,8 @@ Build per "Campaign structure" above: Sales objective, optimize `InitiateCheckou
 
 ### Pre-flight — clear these FIRST (red until done)
 - [x] **B** PBC25 min_order_amount = $200 (set + verified live 2026-06-14: $200 valid, $199 blocked). DONE.
-- [ ] **C1** `/api/admin/test-alert/<secret>` → phone and/or email `configured:true` AND you receive it. If not → set ADMIN_PHONE/ADMIN_EMAIL on Render.
-- [ ] **C2** `/api/admin/capi-status/<secret>` → `has_pixel_id` + `has_access_token` true.
+- [x] **C1** Alert chain VERIFIED live 2026-06-14: ADMIN_PHONE + ADMIN_EMAIL both configured, SMS+email both fired, 0 errors. (sevs to confirm receipt.) DONE.
+- [x] **C2** CAPI VERIFIED live 2026-06-14: enabled=true, has_pixel_id + has_access_token true, test_mode=false. DONE.
 - [ ] **D** ≥1 approved operator **Online** in WPB (admin → Contractors shows online ≥1). ← the long pole; text Nathan/Joshua.
 - [ ] **E** one real test booking → Meta shows deduped Purchase → job **dispatches to the operator** → void the test job.
 
