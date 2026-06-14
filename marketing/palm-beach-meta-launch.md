@@ -113,3 +113,34 @@ Runbook (needs D done first — an operator online in WPB):
 Build per "Campaign structure" above: Sales objective, optimize `InitiateCheckout`, **$25/day ABO, 1 ad set**, WPB +12 mi, 35–65 all, broad + Advantage+ ON, 3–5 creatives (assets in `marketing/creatives/`), UTM `utm_source=meta&utm_campaign=pbc_launch&utm_content={creative}`, land on the PBC booking funnel. Hands-off D1–4.
 
 **Critical path: B → C → D → E → F.** A/no-show watchdog already done.
+
+---
+
+## 📅 MONDAY 2026-06-15 GO-LIVE — locked plan
+
+**Dommo cannot arm the campaign** (Meta Ads Manager = sevs's account + payment method + ads_management access). This is the paste-ready spec + the gates that MUST be green before clicking Publish.
+
+### Pre-flight — clear these FIRST (red until done)
+- [ ] **B** PBC25 → `min_order_amount: 75` (admin dashboard → Promos, or PUT /api/admin/promos/5d03ed49-4e86-40c7-99a5-c0377094f5fb). Re-check: validate at $60 → `valid:false`.
+- [ ] **C1** `/api/admin/test-alert/<secret>` → phone and/or email `configured:true` AND you receive it. If not → set ADMIN_PHONE/ADMIN_EMAIL on Render.
+- [ ] **C2** `/api/admin/capi-status/<secret>` → `has_pixel_id` + `has_access_token` true.
+- [ ] **D** ≥1 approved operator **Online** in WPB (admin → Contractors shows online ≥1). ← the long pole; text Nathan/Joshua.
+- [ ] **E** one real test booking → Meta shows deduped Purchase → job **dispatches to the operator** → void the test job.
+
+### Ad set — paste into Ads Manager (only after all 5 above are checked)
+- **Campaign objective:** Sales
+- **Conversion event:** InitiateCheckout (switch to Purchase at ~15–20/wk)
+- **Budget:** $25/day · **ABO** (ad-set budget), not CBO
+- **Schedule:** **Start Mon 2026-06-15**, run **continuously 7 days** (optional end Mon 2026-06-22). **No dayparting** — daily budget can't daypart, and the learning phase needs continuous signal; revisit day/hour scheduling at D7 with data.
+- **Ad sets:** 1
+- **Geo:** WPB +12 mi (match the online operator's range)
+- **Age/gender:** 35–65, all
+- **Targeting:** broad + Advantage+ audience ON
+- **Creatives:** 3–5 from `marketing/creatives/` (before/after, UGC truck, instant-quote, trust/local) — 9:16 + 1:1
+- **Primary text:** pain-led ("Garage you can't park in?") + speed/transparent price + CTA "Get your quote"
+- **Destination:** PBC booking funnel (not homepage)
+- **UTM:** `utm_source=meta&utm_campaign=pbc_launch&utm_content={creative}`
+- **Offer in copy:** "$25 off your first pickup" (PBC25)
+
+### After publish
+D1–4 hands-off (learning). D5 kill any creative <1% CTR / 0 IC. D7 decision: cost-per-booking healthy → +20–30% on the winner; else new angle, same structure.
