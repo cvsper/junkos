@@ -100,7 +100,14 @@ Or set it in the admin dashboard → Promos. Re-verify: `POST /api/promos/valida
 ≥1 approved operator with `is_online=True` and a GPS ping within 30 mi of the target WPB radius. Operator: install Umuve Pro → log in → **Go Online** (sets token + `is_online` + GPS in one step). Confirm via admin dashboard → Contractors (online count ≥1 in WPB).
 
 ### E. E2E test booking (do this BEFORE ads)
-Real booking on the PBC funnel → Stripe test/live → confirm in Meta Events Manager that `Lead` / `InitiateCheckout` / `Purchase` fire and Purchase shows **deduplicated (browser+server)** → confirm the job **dispatched to the online operator** (not the no-operator alert). One clean loop = green light.
+**Funnel backend VERIFIED live 2026-06-14** (read-only `/api/booking/estimate`, WPB coords 26.7153,-80.0534): a couch+mattress+5 boxes job quotes **$310.63**, and **PBC25 applies cleanly → $285.63** (−$25). Pricing/serviceability for PBC works; only payment + dispatch + Meta tracking remain to prove.
+
+Runbook (needs D done first — an operator online in WPB):
+1. On a phone/incognito, open the **PBC booking funnel** (not homepage). Book a small real job to a real WPB address, apply **PBC25**.
+2. Pay through **Stripe** (real card, small job — you can refund/void after via the admin void-job endpoint).
+3. **Meta Events Manager** (live): confirm `Lead` → `InitiateCheckout` → `Purchase` fire, and Purchase reads **"Processed via Browser and Server / deduplicated"** (eventID `purchase_<job.id>` matches both sides).
+4. **Admin dashboard → Jobs**: the job goes `confirmed` → **assigned to the online operator** (NOT the no-operator alert). That is the whole loop.
+5. Refund/void the test job. One clean loop = green light for F.
 
 ### F. Ads on (your Meta account)
 Build per "Campaign structure" above: Sales objective, optimize `InitiateCheckout`, **$25/day ABO, 1 ad set**, WPB +12 mi, 35–65 all, broad + Advantage+ ON, 3–5 creatives (assets in `marketing/creatives/`), UTM `utm_source=meta&utm_campaign=pbc_launch&utm_content={creative}`, land on the PBC booking funnel. Hands-off D1–4.
