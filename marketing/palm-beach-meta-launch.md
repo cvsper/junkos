@@ -72,3 +72,37 @@ Launch promo — **"$25 off your first pickup"** or a fixed **single-item from $
 ## North star
 
 One paid booking → fulfilled by your hauler → **5-star review + before/after photo.** That review/photo becomes your best ad creative *and* your SEO/GBP social proof. The first loop funds the flywheel.
+
+---
+
+## 🚀 GO-LIVE EXECUTION (verified 2026-06-14)
+
+Plan above is complete. These are the *execution gates*, in order. Verified-in-code items are ✅; the rest are yours (dashboards / texts / Meta account).
+
+### A. Dispatch pipeline — VERIFIED IN CODE ✅
+Payment confirmed → job `confirmed` → `auto_assign_job_async` (background) → eligibility filter:
+`is_online=True` AND `approval_status="approved"` AND `is_operator≠True` AND ≤30 mi AND truck_capacity≥volume AND no ±2h conflict. Default `DISPATCH_MODE="assign"` (top-3 score: distance .40 / rating .25 / capacity .20 / experience .15). No-show watchdog shipped (T-30 unassigned + T+15 late, every 5 min). **The dispatch path runs on Render and is independent of the server-side `umuve-booking-cascade.service` automation** (that unit failed 2026-06-14 04:08 UTC — triage separately; it does NOT block paid-booking dispatch).
+
+### B. PBC25 promo — LIVE, ONE FIX NEEDED ⚠️
+Validated against prod: `$25 fixed off, is_active=true, valid`. **BUT `min_order_amount=0.0`** — a small job nets near-free while you pay operator + Meta CAC. Tighten to $75 before spend (promo_id `5d03ed49-4e86-40c7-99a5-c0377094f5fb`):
+```
+PUT /api/admin/promos/5d03ed49-4e86-40c7-99a5-c0377094f5fb   (admin JWT)
+{ "min_order_amount": 75 }
+```
+Or set it in the admin dashboard → Promos. Re-verify: `POST /api/promos/validate {"code":"PBC25","order_amount":60}` should then return `valid:false` (below min).
+
+### C. Live config to verify (your dashboards / secret)
+1. **No-operator alert chain** — `GET /api/admin/test-alert/<ADMIN_SEED_SECRET>` → expect `admin_phone_configured:true` AND/OR `admin_email_configured:true`, and you receive the test SMS/email. If both false → set `ADMIN_PHONE`/`ADMIN_EMAIL` on Render first (else paid bookings with no operator fail silently).
+2. **CAPI** — `GET /api/admin/capi-status/<ADMIN_SEED_SECRET>` → `has_pixel_id` + `has_access_token` true.
+3. **Vercel** `NEXT_PUBLIC_META_PIXEL_ID = 1785795592383973` (or unset).
+
+### D. Supply online (your texts)
+≥1 approved operator with `is_online=True` and a GPS ping within 30 mi of the target WPB radius. Operator: install Umuve Pro → log in → **Go Online** (sets token + `is_online` + GPS in one step). Confirm via admin dashboard → Contractors (online count ≥1 in WPB).
+
+### E. E2E test booking (do this BEFORE ads)
+Real booking on the PBC funnel → Stripe test/live → confirm in Meta Events Manager that `Lead` / `InitiateCheckout` / `Purchase` fire and Purchase shows **deduplicated (browser+server)** → confirm the job **dispatched to the online operator** (not the no-operator alert). One clean loop = green light.
+
+### F. Ads on (your Meta account)
+Build per "Campaign structure" above: Sales objective, optimize `InitiateCheckout`, **$25/day ABO, 1 ad set**, WPB +12 mi, 35–65 all, broad + Advantage+ ON, 3–5 creatives (assets in `marketing/creatives/`), UTM `utm_source=meta&utm_campaign=pbc_launch&utm_content={creative}`, land on the PBC booking funnel. Hands-off D1–4.
+
+**Critical path: B → C → D → E → F.** A/no-show watchdog already done.
