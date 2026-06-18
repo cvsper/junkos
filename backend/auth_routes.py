@@ -205,6 +205,23 @@ def optional_auth(f):
         return f(user_id=user_id, *args, **kwargs)
     return decorated_function
 
+
+def require_admin(f):
+    """Decorator requiring an authenticated user with the ``admin`` role.
+
+    Wraps :func:`require_auth` and additionally enforces that the resolved
+    user has ``role == "admin"``. Lives here (next to require_auth) so any
+    blueprint can import a single shared admin guard.
+    """
+    @wraps(f)
+    @require_auth
+    def wrapper(user_id, *args, **kwargs):
+        user = db.session.get(User, user_id)
+        if not user or user.role != 'admin':
+            return jsonify({'error': 'Admin access required'}), 403
+        return f(user_id=user_id, *args, **kwargs)
+    return wrapper
+
 # MARK: - Phone Authentication Routes
 
 @auth_bp.route('/send-code', methods=['POST'])

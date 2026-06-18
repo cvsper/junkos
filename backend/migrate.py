@@ -149,6 +149,10 @@ COLUMN_MIGRATIONS = [
     # when no vision key is configured.  Added so the feature degrades gracefully
     # on deployments where the quotes table already exists without this column.
     ("quotes", "origin", "VARCHAR(16)", "VARCHAR(16)", "'vision'"),
+
+    # Promo per-customer cap (anti-leakage). NULL = unlimited per customer;
+    # default 1 = a code can be redeemed once per customer.
+    ("promo_codes", "per_user_limit", "INTEGER", "INTEGER", "1"),
 ]
 
 
@@ -236,12 +240,26 @@ NEW_TABLES_SQLITE = [
         min_order_amount FLOAT DEFAULT 0.0,
         max_discount FLOAT,
         max_uses INTEGER,
+        per_user_limit INTEGER DEFAULT 1,
         use_count INTEGER DEFAULT 0,
         expires_at DATETIME,
         is_active BOOLEAN DEFAULT 1,
         created_at DATETIME,
         created_by VARCHAR(36),
         CONSTRAINT ck_promo_discount_type CHECK (discount_type IN ('percentage', 'fixed'))
+    )"""),
+    # promo_redemptions (anti-leakage: per-customer cap + paid-only use_count)
+    dedent("""\
+    CREATE TABLE IF NOT EXISTS promo_redemptions (
+        id VARCHAR(36) PRIMARY KEY,
+        promo_code_id VARCHAR(36) NOT NULL,
+        user_id VARCHAR(36),
+        email VARCHAR(255),
+        job_id VARCHAR(36),
+        status VARCHAR(20) NOT NULL DEFAULT 'reserved',
+        created_at DATETIME,
+        redeemed_at DATETIME,
+        CONSTRAINT ck_promo_redemption_status CHECK (status IN ('reserved', 'confirmed'))
     )"""),
     # chat_messages
     dedent("""\
@@ -1120,12 +1138,26 @@ NEW_TABLES_PG = [
         min_order_amount FLOAT DEFAULT 0.0,
         max_discount FLOAT,
         max_uses INTEGER,
+        per_user_limit INTEGER DEFAULT 1,
         use_count INTEGER DEFAULT 0,
         expires_at TIMESTAMP,
         is_active BOOLEAN DEFAULT TRUE,
         created_at TIMESTAMP,
         created_by VARCHAR(36),
         CONSTRAINT ck_promo_discount_type CHECK (discount_type IN ('percentage', 'fixed'))
+    )"""),
+    # promo_redemptions (anti-leakage: per-customer cap + paid-only use_count)
+    dedent("""\
+    CREATE TABLE IF NOT EXISTS promo_redemptions (
+        id VARCHAR(36) PRIMARY KEY,
+        promo_code_id VARCHAR(36) NOT NULL,
+        user_id VARCHAR(36),
+        email VARCHAR(255),
+        job_id VARCHAR(36),
+        status VARCHAR(20) NOT NULL DEFAULT 'reserved',
+        created_at TIMESTAMP,
+        redeemed_at TIMESTAMP,
+        CONSTRAINT ck_promo_redemption_status CHECK (status IN ('reserved', 'confirmed'))
     )"""),
     # chat_messages
     dedent("""\
@@ -1886,6 +1918,7 @@ NEW_TABLE_NAMES = [
     "pricing_config",
     "operator_invites",
     "promo_codes",
+    "promo_redemptions",
     "chat_messages",
     "reviews",
     "refunds",

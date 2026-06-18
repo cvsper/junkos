@@ -502,6 +502,13 @@ def confirm_simple_payment():
         job.status = "confirmed"
         job.updated_at = utcnow()
 
+        # Confirm any reserved promo redemption (bumps use_count once paid).
+        try:
+            from routes.promos import confirm_promo_redemption
+            confirm_promo_redemption(job)
+        except Exception:
+            logger.exception("Failed to confirm promo redemption for job %s", job.id)
+
         # Broadcast status update via SocketIO
         from socket_events import broadcast_job_status
         broadcast_job_status(job.id, job.status)
@@ -907,6 +914,15 @@ def _handle_payment_succeeded(intent):
         if job.status == "pending":
             job.status = "confirmed"
             job.updated_at = utcnow()
+
+            # Confirm any reserved promo redemption (bumps use_count once paid).
+            try:
+                from routes.promos import confirm_promo_redemption
+                confirm_promo_redemption(job)
+            except Exception:
+                logger.exception(
+                    "Failed to confirm promo redemption for job %s", job.id
+                )
 
         # Notify assigned contractor if one exists
         if job.driver_id:

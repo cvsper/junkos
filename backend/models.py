@@ -194,7 +194,8 @@ class PromoCode(db.Model):
     discount_value = Column(Float, nullable=False)  # e.g., 20 for 20% or 20 for $20
     min_order_amount = Column(Float, default=0.0)
     max_discount = Column(Float, nullable=True)  # cap for percentage discounts
-    max_uses = Column(Integer, nullable=True)  # null = unlimited
+    max_uses = Column(Integer, nullable=True)  # null = unlimited (global cap)
+    per_user_limit = Column(Integer, nullable=True, default=1)  # null = unlimited per customer
     use_count = Column(Integer, default=0)
     expires_at = Column(DateTime, nullable=True)
     is_active = Column(Boolean, default=True)
@@ -217,11 +218,59 @@ class PromoCode(db.Model):
             "min_order_amount": self.min_order_amount or 0.0,
             "max_discount": self.max_discount,
             "max_uses": self.max_uses,
+            "per_user_limit": self.per_user_limit,
             "use_count": self.use_count or 0,
             "expires_at": self.expires_at.isoformat() if self.expires_at else None,
             "is_active": self.is_active,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "created_by": self.created_by,
+        }
+
+
+# ---------------------------------------------------------------------------
+# PromoRedemption -- one row per (code, customer, job) redemption.
+# Created "reserved" at booking time, flipped to "confirmed" when the payment
+# succeeds. Enables a per-customer redemption cap and makes use_count reflect
+# only paid redemptions (abandoned bookings never burn a code).
+# ---------------------------------------------------------------------------
+class PromoRedemption(db.Model):
+    __tablename__ = "promo_redemptions"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    promo_code_id = Column(
+        String(36), ForeignKey("promo_codes.id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+    user_id = Column(
+        String(36), ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True, index=True,
+    )
+    email = Column(String(255), nullable=True, index=True)  # lowercased
+    job_id = Column(
+        String(36), ForeignKey("jobs.id", ondelete="CASCADE"),
+        nullable=True, index=True,
+    )
+    status = Column(String(20), nullable=False, default="reserved", index=True)
+    created_at = Column(DateTime, default=utcnow)
+    redeemed_at = Column(DateTime, nullable=True)
+
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('reserved', 'confirmed')",
+            name="ck_promo_redemption_status",
+        ),
+    )
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "promo_code_id": self.promo_code_id,
+            "user_id": self.user_id,
+            "email": self.email,
+            "job_id": self.job_id,
+            "status": self.status,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "redeemed_at": self.redeemed_at.isoformat() if self.redeemed_at else None,
         }
 
 

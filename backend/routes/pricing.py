@@ -12,6 +12,7 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from extensions import limiter
+from auth_routes import require_admin
 from models import db, PricingRule, SurgeZone
 from routes.booking import (
     calculate_estimate,
@@ -21,6 +22,8 @@ from routes.booking import (
     SAME_DAY_SURGE,
     NEXT_DAY_SURGE,
     WEEKEND_SURGE,
+    _get_service_fee_rate,
+    _get_demand_surge_config,
 )
 
 pricing_bp = Blueprint("pricing", __name__, url_prefix="/api/pricing")
@@ -78,8 +81,9 @@ def get_estimate():
 
 
 @pricing_bp.route("/rules", methods=["GET"])
-def get_rules():
-    """Return all active pricing rules."""
+@require_admin
+def get_rules(user_id):
+    """Return all active pricing rules (admin only — raw internal config)."""
     active_only = request.args.get("active", "true").lower() == "true"
     query = PricingRule.query
     if active_only:
@@ -93,8 +97,9 @@ def get_rules():
 
 
 @pricing_bp.route("/surge", methods=["GET"])
-def get_surge_zones():
-    """Return all active surge zones."""
+@require_admin
+def get_surge_zones(user_id):
+    """Return all active surge zones (admin only — raw internal config)."""
     zones = SurgeZone.query.filter_by(is_active=True).all()
     return jsonify({
         "success": True,
@@ -136,8 +141,9 @@ def get_categories():
 
 @pricing_bp.route("/config", methods=["GET"])
 def get_pricing_config():
-    """Return the full pricing configuration so the frontend / admin panel
-    can display current tiers, surge rates, and minimum price."""
+    """Return the CUSTOMER-FACING pricing configuration (tiers, surge rates,
+    minimum price). Internal economics (commission, fee rate) are excluded —
+    see the admin-only ``/config/economics`` endpoint."""
     return jsonify({
         "success": True,
         "config": {
@@ -151,6 +157,26 @@ def get_pricing_config():
                 "next_day": NEXT_DAY_SURGE,
                 "weekend": WEEKEND_SURGE,
             },
+        },
+    }), 200
+
+
+@pricing_bp.route("/config/economics", methods=["GET"])
+@require_admin
+def get_pricing_economics(user_id):
+    """Admin-only: internal pricing economics that must NOT be public —
+    platform commission, service-fee rate, and demand-surge configuration."""
+    enabled, radius, max_mult, tiers = _get_demand_surge_config()
+    return jsonify({
+        "success": True,
+        "economics": {
             "commission_rate": COMMISSION_RATE,
+            "service_fee_rate": _get_service_fee_rate(),
+            "demand_surge": {
+                "enabled": enabled,
+                "radius_miles": radius,
+                "max_multiplier": max_mult,
+                "tiers": [{"ratio": r, "multiplier": m} for r, m in tiers],
+            },
         },
     }), 200
