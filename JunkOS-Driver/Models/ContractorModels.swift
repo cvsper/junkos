@@ -160,6 +160,10 @@ struct AvailabilityResponse: Codable {
     let contractor: ContractorProfile
 }
 
+struct DeleteAccountResponse: Codable {
+    let message: String?
+}
+
 // MARK: - Location Update
 
 struct LocationUpdateRequest: Codable {

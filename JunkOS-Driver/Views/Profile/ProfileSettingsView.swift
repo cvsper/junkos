@@ -10,6 +10,7 @@ import SwiftUI
 struct ProfileSettingsView: View {
     @Bindable var appState: AppState
     @State private var showLogoutConfirm = false
+    @State private var showDeleteConfirm = false
 
     private var profile: ContractorProfile? { appState.contractorProfile }
 
@@ -324,6 +325,17 @@ struct ProfileSettingsView: View {
                         .buttonStyle(DriverDestructiveButtonStyle())
                         .padding(.horizontal, DriverSpacing.xl)
 
+                        // Delete account — required by Apple 5.1.1(v). Understated
+                        // (not a primary CTA) but always reachable from settings.
+                        Button("Delete Account") {
+                            showDeleteConfirm = true
+                        }
+                        .buttonStyle(.plain)
+                        .font(DriverTypography.caption2)
+                        .foregroundStyle(Color.driverTextTertiary)
+                        .padding(.top, DriverSpacing.md)
+                        .padding(.horizontal, DriverSpacing.xl)
+
                         // Version
                         Text("Umuve Pro v1.0.0")
                             .font(DriverTypography.caption2)
@@ -342,6 +354,19 @@ struct ProfileSettingsView: View {
                 Button("Cancel", role: .cancel) {}
             } message: {
                 Text("You'll need to sign in again to accept jobs.")
+            }
+            .alert("Delete Account?", isPresented: $showDeleteConfirm) {
+                Button("Delete", role: .destructive) {
+                    Task {
+                        // Even if the network call fails, sign the user out locally
+                        // so the account is gone from this device immediately.
+                        _ = try? await DriverAPIClient.shared.deleteAccount()
+                        appState.auth.logout()
+                    }
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("This permanently deletes your operator account, profile, and job history. This can't be undone.")
             }
         }
     }

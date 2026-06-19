@@ -10,7 +10,7 @@ settings:
   base:
     SWIFT_VERSION: "5.9"
     MARKETING_VERSION: "1.0.0"
-    CURRENT_PROJECT_VERSION: 31
+    CURRENT_PROJECT_VERSION: 36
 
 packages:
   SocketIO:
@@ -48,6 +48,12 @@ targets:
         CODE_SIGN_ENTITLEMENTS: JunkOS-Driver.entitlements
         GENERATE_INFOPLIST_FILE: true
         INFOPLIST_GENERATION_MODE: GeneratedFile
+        # Force Xcode to GENERATE the Info.plist from the INFOPLIST_KEY_* values
+        # below. Without this empty override, xcodegen's `path: .` scan auto-picks
+        # a stray Info.plist from .spm-cache/artifacts (a Mapbox *simulator*
+        # framework plist) → app stamped iphonesimulator → "Generic Xcode Archive"
+        # → Distribute disabled. Empty + GENERATE_INFOPLIST_FILE = correct plist.
+        INFOPLIST_FILE: ""
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: true
         INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: true
         INFOPLIST_KEY_UILaunchScreen_Generation: true
@@ -61,7 +67,7 @@ targets:
         INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription: "Umuve Pro needs continuous location access to track your position during active jobs."
         INFOPLIST_KEY_NSCameraUsageDescription: "Umuve Pro needs camera access to take before and after photos of job sites."
         INFOPLIST_KEY_NSPhotoLibraryUsageDescription: "Umuve Pro needs photo library access to upload job site photos."
-        INFOPLIST_KEY_UIBackgroundModes: "audio location"
+        INFOPLIST_KEY_UIBackgroundModes: "location"
     dependencies:
       - package: SocketIO
         product: SocketIO

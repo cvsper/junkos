@@ -215,6 +215,12 @@ actor DriverAPIClient {
         try await request("/api/drivers/profile")
     }
 
+    /// Permanently delete the signed-in operator's account (Apple 5.1.1(v)).
+    /// Backend: DELETE /api/auth/me — revokes the account + push tokens.
+    func deleteAccount() async throws -> DeleteAccountResponse {
+        try await request("/api/auth/me", method: "DELETE")
+    }
+
     // MARK: - Availability & Location
 
     func updateAvailability(isOnline: Bool) async throws -> AvailabilityResponse {

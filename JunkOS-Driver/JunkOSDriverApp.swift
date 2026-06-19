@@ -103,6 +103,15 @@ struct UmuveProApp: App {
                     }
                 }
             }
+            .onChange(of: appState.auth.isAuthenticated) { wasAuthed, isAuthed in
+                // Just signed in → re-run the splash so the contractor profile
+                // loads BEFORE routing. Without this, isRegistered is false for a
+                // beat and an already-registered operator gets sent through the
+                // registration/"signup" flow until they relaunch (the reported bug).
+                if isAuthed && !wasAuthed {
+                    showingSplash = true
+                }
+            }
         }
     }
 }

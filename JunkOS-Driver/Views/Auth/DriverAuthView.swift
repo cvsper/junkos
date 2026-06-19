@@ -36,15 +36,14 @@ struct DriverAuthView: View {
             VStack(spacing: 0) {
                 Spacer()
 
-                // Hero
+                // Hero — real Umuve brand logo (matches the customer app), with
+                // an operator tag so it reads as the Pro app.
                 VStack(spacing: DriverSpacing.md) {
-                    Image(systemName: "truck.box.fill")
-                        .font(.system(size: 64))
-                        .foregroundStyle(Color.driverPrimary)
-
-                    Text("Umuve Pro")
-                        .font(DriverTypography.title)
-                        .foregroundStyle(Color.driverText)
+                    Image("UmuveLogo")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 128)
+                        .accessibilityLabel("Umuve")
 
                     Text("Earn money hauling junk on your schedule.\nBe your own boss.")
                         .font(DriverTypography.body)

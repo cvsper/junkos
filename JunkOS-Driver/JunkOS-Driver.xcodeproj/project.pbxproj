@@ -100,6 +100,7 @@
 		E5D3735C98C318A48111C440 /* JobModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC27DA7E685BE7675B0FB1 /* JobModels.swift */; };
 		E846E81BACDA70840792507E /* ActiveJobViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A445038901808240328233C0 /* ActiveJobViewModel.swift */; };
 		E8806EA1AE37848938F8D70C /* DriverAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AC42610087364CBEADF1B33 /* DriverAPIClient.swift */; };
+		EA63EE40248E95C85FB7DB8C /* LISTING.md in Resources */ = {isa = PBXBuildFile; fileRef = 6435DBB99FF002F6D0B69FB3 /* LISTING.md */; };
 		EFF5C17CB3686BD2C855518D /* JobFeedViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F5425951FF88727F63532BA /* JobFeedViewModel.swift */; };
 		F361D5D58D022CB9B931D03E /* PriceBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B159DA9208AE40B64BFAC73 /* PriceBadge.swift */; };
 		FD39D911FE97C3F7209D09C8 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B085FF75904906904989D302 /* AppState.swift */; };
@@ -153,6 +154,7 @@
 		590A28D68129D58B9E85ED9E /* JobAcceptHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobAcceptHandlerTests.swift; sourceTree = "<group>"; };
 		603921AEAAE9211B5A00593C /* OperatorWebRedirectView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OperatorWebRedirectView.swift; sourceTree = "<group>"; };
 		63007B62EFC23A0A6757B294 /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
+		6435DBB99FF002F6D0B69FB3 /* LISTING.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = LISTING.md; sourceTree = "<group>"; };
 		672F85AEE329F15A6CC0C716 /* AnimationConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnimationConstants.swift; sourceTree = "<group>"; };
 		6D6377601A6F2DF42DF4DFE3 /* red_truck.glb */ = {isa = PBXFileReference; path = red_truck.glb; sourceTree = "<group>"; };
 		7BB4C543B16861520B2D7C80 /* VolumeAdjustmentViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VolumeAdjustmentViewModel.swift; sourceTree = "<group>"; };
@@ -369,6 +371,7 @@
 				8D74268D761171C093876799 /* JunkOS-Driver.entitlements */,
 				C14897C95FBADE41B4B75E28 /* JunkOSDriverApp.swift */,
 				6D6377601A6F2DF42DF4DFE3 /* red_truck.glb */,
+				E95974805C6F6E8042702EF8 /* app-store */,
 				4DFFE93115C932ACD6706F02 /* Components */,
 				6A38FA0B2CA9712921C39C93 /* Config */,
 				761042F99BCA6B01B2D4DF4D /* Design */,
@@ -398,6 +401,7 @@
 		A1350807EEEC7AE55C5B8F27 = {
 			isa = PBXGroup;
 			children = (
+				E95974805C6F6E8042702EF8 /* app-store */,
 				4DFFE93115C932ACD6706F02 /* Components */,
 				6A38FA0B2CA9712921C39C93 /* Config */,
 				761042F99BCA6B01B2D4DF4D /* Design */,
@@ -495,6 +499,14 @@
 				3AC758A97FBC15501D71A1C1 /* Splash */,
 			);
 			path = Views;
+			sourceTree = "<group>";
+		};
+		E95974805C6F6E8042702EF8 /* app-store */ = {
+			isa = PBXGroup;
+			children = (
+				6435DBB99FF002F6D0B69FB3 /* LISTING.md */,
+			);
+			path = "app-store";
 			sourceTree = "<group>";
 		};
 		EB3CE005A3A57E4814D88B56 /* Docs */ = {
@@ -632,6 +644,7 @@
 				58C0B72A685306C4D5832E87 /* AppStore-Metadata.md in Resources */,
 				BAD93C9DACE562D75D564204 /* Assets.xcassets in Resources */,
 				10EA98CF33FB08CD7BD0F885 /* ExportOptions.plist in Resources */,
+				EA63EE40248E95C85FB7DB8C /* LISTING.md in Resources */,
 				A782AA636BD36D70CE7B9F71 /* MapboxNavigationREADME.md in Resources */,
 				C934F4E73453A391EA7AC996 /* add_file_to_xcode.sh in Resources */,
 				4546C91F88B3DC9BDB3E58D4 /* add_navigation_file.sh in Resources */,
@@ -778,7 +791,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 24GH82AX9R;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = ".spm-cache/artifacts/mapbox-common-ios/MapboxCommon/MapboxCommon.xcframework/ios-arm64_x86_64-simulator/MapboxCommon.framework/Info.plist";
+				INFOPLIST_FILE = "";
 				INFOPLIST_GENERATION_MODE = GeneratedFile;
 				INFOPLIST_KEY_CFBundleDisplayName = "Umuve Pro";
 				INFOPLIST_KEY_CFBundleIconName = AppIcon;
@@ -790,7 +803,7 @@
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Umuve Pro needs photo library access to upload job site photos.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UIBackgroundModes = "audio location";
+				INFOPLIST_KEY_UIBackgroundModes = location;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
@@ -813,7 +826,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 24GH82AX9R;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = ".spm-cache/artifacts/mapbox-common-ios/MapboxCommon/MapboxCommon.xcframework/ios-arm64_x86_64-simulator/MapboxCommon.framework/Info.plist";
+				INFOPLIST_FILE = "";
 				INFOPLIST_GENERATION_MODE = GeneratedFile;
 				INFOPLIST_KEY_CFBundleDisplayName = "Umuve Pro";
 				INFOPLIST_KEY_CFBundleIconName = AppIcon;
@@ -825,7 +838,7 @@
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Umuve Pro needs photo library access to upload job site photos.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UIBackgroundModes = "audio location";
+				INFOPLIST_KEY_UIBackgroundModes = location;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
@@ -873,7 +886,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 31;
+				CURRENT_PROJECT_VERSION = 36;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -931,7 +944,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 31;
+				CURRENT_PROJECT_VERSION = 36;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;

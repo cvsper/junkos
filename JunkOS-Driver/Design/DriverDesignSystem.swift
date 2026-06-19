@@ -20,10 +20,11 @@ extension Color {
     static let driverAccent = Color(hex: "EF4444")
     static let driverAccentLight = Color(hex: "FCA5A5")
 
-    // Backgrounds
-    static let driverBackground = Color(hex: "FEF2F2")
+    // Backgrounds — white page bg matches the Umuve customer app (was a reddish
+    // #FEF2F2 wash). Red stays as the accent (driverPrimary), not the canvas.
+    static let driverBackground = Color.white
     static let driverSurface = Color.white
-    static let driverSurfaceElevated = Color(hex: "FEE2E2")
+    static let driverSurfaceElevated = Color(hex: "F9FAFB")
 
     // Text
     static let driverText = Color(hex: "1C1917")

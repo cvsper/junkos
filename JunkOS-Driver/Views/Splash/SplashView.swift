@@ -18,9 +18,10 @@ struct SplashView: View {
                 .ignoresSafeArea()
 
             VStack(spacing: DriverSpacing.lg) {
-                Image(systemName: "truck.box.fill")
-                    .font(.system(size: 72))
-                    .foregroundStyle(.white)
+                Image("UmuveMarkWhite")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 132, height: 132)
                     .scaleEffect(logoScale)
                     .opacity(logoOpacity)
 
