@@ -322,6 +322,78 @@ def _send_winback_emails(app):
             logger.info("Scheduler: sent %d winback emails", count)
 
 
+# ---------------------------------------------------------------------------
+# Tasks migrated off the Celery worker (umuve-portal-beat) 2026-06-19.
+# These previously ran under `celery -A celery_app.celery worker -B`, which
+# required a dedicated Render worker dyno + Redis broker. They run different
+# data/channels than the jobs above (Portal-v1 B2B recurring + invoicing, and
+# Vapi voice calls vs. the email/SMS reminders), so this is functional parity,
+# not duplication. Folding them into APScheduler lets us delete the worker and
+# Redis. celery_app.py is kept for manual CLI backfills, just not deployed.
+# ---------------------------------------------------------------------------
+def _portal_recurring_tick(app):
+    """Portal-v1: generate Jobs for due recurring schedules (was
+    celery portal.recurring_tick, every 5 min)."""
+    with app.app_context():
+        try:
+            from portal_recurring import generate_jobs_for_due_schedules
+            created = generate_jobs_for_due_schedules(datetime.utcnow())
+            if created:
+                logger.info("portal.recurring_tick created %d jobs", len(created))
+        except Exception:
+            logger.exception("portal.recurring_tick failed")
+
+
+def _portal_invoice_monthly(app):
+    """Portal-v1: invoice the previous month (was celery
+    portal.invoice_monthly, 02:00 UTC on the 1st)."""
+    with app.app_context():
+        try:
+            from portal_invoicing import generate_monthly_invoices
+            today = datetime.utcnow().date()
+            last_of_prev = today.replace(day=1) - timedelta(days=1)
+            created = generate_monthly_invoices(last_of_prev.month, last_of_prev.year)
+            logger.info(
+                "portal.invoice_monthly %02d/%d created %d invoices",
+                last_of_prev.month, last_of_prev.year, len(created),
+            )
+        except Exception:
+            logger.exception("portal.invoice_monthly failed")
+
+
+def _customer_drip_emails(app):
+    """AbandonedBooking email drip (was celery customer.drip_emails). Hits the
+    AbandonedBooking table — distinct from _send_abandoned_booking_drip (Job)."""
+    try:
+        from drip_scheduler import run_drip  # pushes its own app context
+        run_drip()
+    except Exception:
+        logger.exception("customer.drip_emails failed")
+
+
+def _customer_review_calls(app):
+    """Vapi post-job review + win-back calls (was celery customer.review_calls).
+    Voice channel — distinct from _send_winback_emails (email)."""
+    try:
+        from review_scheduler import run_review_calls, run_winback_calls  # own context
+        reviews = run_review_calls()
+        winbacks = run_winback_calls()
+        if reviews or winbacks:
+            logger.info("customer.review_calls reviews=%s winbacks=%s", reviews, winbacks)
+    except Exception:
+        logger.exception("customer.review_calls failed")
+
+
+def _customer_reminders(app):
+    """Vapi 24h pre-pickup reminder calls (was celery customer.reminders).
+    Voice channel — distinct from _send_pickup_reminders (email + SMS)."""
+    try:
+        from reminder_scheduler import run_reminders  # pushes its own app context
+        run_reminders()
+    except Exception:
+        logger.exception("customer.reminders failed")
+
+
 def init_scheduler(app):
     """Initialize and start the background scheduler.
 
@@ -407,8 +479,62 @@ def init_scheduler(app):
             name="No-show watchdog (T-30 unassigned, T+15 late-start)",
         )
 
+        # --- Migrated from the Celery worker (umuve-portal-beat) 2026-06-19 ---
+
+        # Portal-v1: generate jobs for due recurring schedules (every 5 min).
+        scheduler.add_job(
+            _portal_recurring_tick,
+            "interval",
+            minutes=5,
+            args=[app],
+            id="portal_recurring_tick",
+            name="Portal recurring schedule -> jobs",
+        )
+
+        # Portal-v1: monthly invoicing — 02:00 UTC on the 1st.
+        scheduler.add_job(
+            _portal_invoice_monthly,
+            "cron",
+            day=1,
+            hour=2,
+            minute=0,
+            args=[app],
+            id="portal_invoice_monthly",
+            name="Portal monthly invoicing",
+        )
+
+        # AbandonedBooking email drip (every 30 min).
+        scheduler.add_job(
+            _customer_drip_emails,
+            "interval",
+            minutes=30,
+            args=[app],
+            id="customer_drip_emails",
+            name="AbandonedBooking email drip",
+        )
+
+        # Vapi review + win-back calls (every 30 min).
+        scheduler.add_job(
+            _customer_review_calls,
+            "interval",
+            minutes=30,
+            args=[app],
+            id="customer_review_calls",
+            name="Vapi review + win-back calls",
+        )
+
+        # Vapi 24h pre-pickup reminder calls (every 30 min).
+        scheduler.add_job(
+            _customer_reminders,
+            "interval",
+            minutes=30,
+            args=[app],
+            id="customer_reminders",
+            name="Vapi pre-pickup reminder calls",
+        )
+
         scheduler.start()
-        logger.info("Background scheduler started with 7 jobs")
+        logger.info("Background scheduler started with 12 jobs")
         return scheduler
     except ImportError:
         logger.warning("APScheduler not installed — scheduler disabled")

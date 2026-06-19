@@ -17,11 +17,12 @@ services:
         fromDatabase:
           name: umuve-db
           property: connectionString
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: umuve-redis
-          property: connectionString
+      # REDIS_URL intentionally removed 2026-06-19. The Celery worker that
+      # needed a Redis broker was folded into the web's APScheduler (see
+      # scheduler.py). The remaining Redis users — Flask-Limiter (extensions.py)
+      # and ops_event_bus — fall back to memory:// / inline when REDIS_URL is
+      # unset, so no Redis instance is required. Re-add only if you reintroduce
+      # a separate worker or need cross-process rate limiting.
       - key: ENABLE_SCHEDULER
         value: "true"
       # Marketplace dispatch mode. "assign" = single best-hauler auto-assign;
@@ -34,37 +35,12 @@ services:
       - key: DISPATCH_MODE
         value: "assign"
 
-  # Portal v1 scheduled tasks (spec 04 §9):
-  #   * portal.recurring_tick   — every 5 min, generates Jobs for due schedules
-  #   * portal.invoice_monthly  — 02:00 UTC on the 1st, invoices prior month
-  # Worker + Beat run in one process (sufficient at MVP volume).
-  - type: worker
-    name: umuve-portal-beat
-    env: python
-    rootDir: backend
-    buildCommand: pip install -r requirements.txt
-    startCommand: celery -A celery_app.celery worker -B --loglevel=info --concurrency=1
-    envVars:
-      - key: FLASK_ENV
-        value: production
-      - key: DATABASE_URL
-        fromDatabase:
-          name: umuve-db
-          property: connectionString
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: umuve-redis
-          property: connectionString
-      - key: SECRET_KEY
-        sync: false
-      - key: JWT_SECRET
-        sync: false
-
-  - type: redis
-    name: umuve-redis
-    ipAllowList: []
-    plan: starter
+  # Portal v1 scheduled tasks (spec 04 §9) — recurring_tick + invoice_monthly,
+  # plus the customer drip / Vapi review + reminder calls — were MIGRATED off
+  # this Celery worker into the web's APScheduler on 2026-06-19 (see
+  # scheduler.py). The `umuve-portal-beat` worker and `umuve-redis` instance
+  # are therefore deleted to cut cost. celery_app.py is retained for manual
+  # CLI backfills (e.g. invoice a specific month) but is no longer deployed.
 
 databases:
   - name: umuve-db
