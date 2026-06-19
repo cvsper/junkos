@@ -596,8 +596,9 @@ def create_connect_account(user_id):
     if not contractor:
         return jsonify({"error": "Contractor profile not found"}), 404
 
-    # Idempotent — return existing account if already created
-    if contractor.stripe_connect_id:
+    # Idempotent — return existing account if already created. Skip dev mock ids
+    # ("acct_dev_…"), which aren't real connected accounts, so a real one is made.
+    if contractor.stripe_connect_id and not contractor.stripe_connect_id.startswith("acct_dev_"):
         return jsonify({
             "success": True,
             "account_id": contractor.stripe_connect_id,
@@ -641,9 +642,6 @@ def create_account_link(user_id):
     if not contractor:
         return jsonify({"error": "Contractor profile not found"}), 404
 
-    if not contractor.stripe_connect_id:
-        return jsonify({"error": "No Stripe Connect account found. Call /connect/create-account first."}), 400
-
     base_url = os.environ.get("APP_BASE_URL", "http://localhost:8080")
     refresh_url = "{}/api/payments/connect/refresh".format(base_url)
     return_url = "{}/api/payments/connect/return".format(base_url)
@@ -652,21 +650,51 @@ def create_account_link(user_id):
     stripe_key = os.environ.get("STRIPE_SECRET_KEY", "")
 
     if stripe_key:
-        try:
-            account_link = stripe.AccountLink.create(
-                account=contractor.stripe_connect_id,
-                refresh_url=refresh_url,
-                return_url=return_url,
+        def _fresh_account():
+            """Create a real Express account + persist it."""
+            acct = stripe.Account.create(
+                type="express", country="US",
+                capabilities={"card_payments": {"requested": True},
+                              "transfers": {"requested": True}},
+            )
+            contractor.stripe_connect_id = acct.id
+            db.session.commit()
+            return acct.id
+
+        # Heal a stale/mock id up front: a dev mock ("acct_dev_…") or an empty id
+        # is never a real connected account, so make a real one before linking.
+        acct_id = contractor.stripe_connect_id
+        if not acct_id or acct_id.startswith("acct_dev_"):
+            acct_id = _fresh_account()
+
+        def _make_link(aid):
+            return stripe.AccountLink.create(
+                account=aid, refresh_url=refresh_url, return_url=return_url,
                 type="account_onboarding",
             )
-            return jsonify({
-                "success": True,
-                "url": account_link.url,
-                "expires_at": account_link.expires_at,
-            }), 200
+
+        try:
+            account_link = _make_link(acct_id)
         except Exception as e:
-            return jsonify({"error": "Stripe error: {}".format(str(e))}), 502
+            # Self-heal: the stored account isn't a connected account of this
+            # platform (e.g. created under a different key / test↔live, or deleted).
+            # Create a fresh account once and retry, rather than dead-ending the user.
+            msg = str(e).lower()
+            if "connected" in msg or "no such account" in msg or "does not exist" in msg:
+                try:
+                    account_link = _make_link(_fresh_account())
+                except Exception as e2:
+                    return jsonify({"error": "Stripe error: {}".format(str(e2))}), 502
+            else:
+                return jsonify({"error": "Stripe error: {}".format(str(e))}), 502
+        return jsonify({
+            "success": True,
+            "url": account_link.url,
+            "expires_at": account_link.expires_at,
+        }), 200
     else:
+        if not contractor.stripe_connect_id:
+            return jsonify({"error": "No Stripe Connect account found. Call /connect/create-account first."}), 400
         # Dev mode — return mock URL
         return jsonify({
             "success": True,
