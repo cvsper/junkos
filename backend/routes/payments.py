@@ -661,37 +661,37 @@ def create_account_link(user_id):
             db.session.commit()
             return acct.id
 
-        # Heal a stale/mock id up front: a dev mock ("acct_dev_…") or an empty id
-        # is never a real connected account, so make a real one before linking.
-        acct_id = contractor.stripe_connect_id
-        if not acct_id or acct_id.startswith("acct_dev_"):
-            acct_id = _fresh_account()
-
         def _make_link(aid):
             return stripe.AccountLink.create(
                 account=aid, refresh_url=refresh_url, return_url=return_url,
                 type="account_onboarding",
             )
 
+        # Whole flow is guarded so a Stripe failure returns a readable 502, never
+        # an opaque 500 (and never a half-set state that dead-ends the operator).
         try:
-            account_link = _make_link(acct_id)
-        except Exception as e:
-            # Self-heal: the stored account isn't a connected account of this
-            # platform (e.g. created under a different key / test↔live, or deleted).
-            # Create a fresh account once and retry, rather than dead-ending the user.
-            msg = str(e).lower()
-            if "connected" in msg or "no such account" in msg or "does not exist" in msg:
-                try:
+            # Heal a stale/mock id up front: a dev mock ("acct_dev_…") or an empty
+            # id is never a real connected account, so make a real one first.
+            acct_id = contractor.stripe_connect_id
+            if not acct_id or acct_id.startswith("acct_dev_"):
+                acct_id = _fresh_account()
+            try:
+                account_link = _make_link(acct_id)
+            except Exception as e:
+                # The stored account isn't a connected account of this platform
+                # (different key / test↔live / deleted) — recreate once and retry.
+                msg = str(e).lower()
+                if "connected" in msg or "no such account" in msg or "does not exist" in msg:
                     account_link = _make_link(_fresh_account())
-                except Exception as e2:
-                    return jsonify({"error": "Stripe error: {}".format(str(e2))}), 502
-            else:
-                return jsonify({"error": "Stripe error: {}".format(str(e))}), 502
-        return jsonify({
-            "success": True,
-            "url": account_link.url,
-            "expires_at": account_link.expires_at,
-        }), 200
+                else:
+                    raise
+            return jsonify({
+                "success": True,
+                "url": account_link.url,
+                "expires_at": account_link.expires_at,
+            }), 200
+        except Exception as e:
+            return jsonify({"error": "Stripe error: {}".format(str(e))}), 502
     else:
         if not contractor.stripe_connect_id:
             return jsonify({"error": "No Stripe Connect account found. Call /connect/create-account first."}), 400
