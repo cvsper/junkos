@@ -64,3 +64,6 @@ marketing/outreach/scrape_haulers.py
 marketing/outreach/send_resend_phase1.py
 marketing/outreach/pb-haulers.csv
 marketing/outreach/pbc-targets.csv
+
+# ASC API tool — holds key-id/issuer-id; never publish in public repo
+JunkOS-Driver/app-store/asc.py

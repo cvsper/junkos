@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=414, initial-scale=1">
+<title>Umuve Pro — App Store screenshots</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --red:#DC2626; --red-deep:#C21E21; --ink:#1d2420;
+    --asphalt-1:#17140F; --asphalt-2:#241D14;
+    --surface:#FFFFFF; --surface-2:#F6F6F4; --line:#ECE9E4; --muted:#8A8780;
+    --sf:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",sans-serif;
+    --display:"Archivo",var(--sf);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-font-smoothing:antialiased}
+  html,body{width:414px;height:896px;overflow:hidden}
+  body{
+    font-family:var(--display);
+    background:
+      radial-gradient(120% 80% at 78% 8%, rgba(220,38,38,.22), transparent 55%),
+      linear-gradient(168deg,var(--asphalt-1) 0%, var(--asphalt-2) 100%);
+    position:relative;
+  }
+  /* faint diagonal speed-stripe signature */
+  body::before{
+    content:"";position:absolute;inset:0;pointer-events:none;
+    background:repeating-linear-gradient(-24deg, rgba(255,255,255,.022) 0 2px, transparent 2px 30px);
+    mix-blend-mode:overlay;
+  }
+  /* grain */
+  body::after{
+    content:"";position:absolute;inset:0;pointer-events:none;opacity:.05;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='0.6'/></svg>");
+  }
+  .screen{display:none;position:absolute;inset:0;z-index:2}
+  .screen.active{display:block}
+
+  /* ---- marketing header (above the device) ---- */
+  .head{position:absolute;top:0;left:0;right:0;height:182px;padding:30px 34px 0;text-align:center;z-index:3}
+  .mark{height:26px;width:auto;margin:0 auto 16px;display:block;opacity:.95}
+  .cap{font-weight:800;font-size:30px;line-height:1.04;letter-spacing:-.018em;color:#fff;text-transform:lowercase}
+  .cap .hi{color:#ff5a4d}
+  .cap .hi.warm{background:linear-gradient(180deg,#ff6b5e,#DC2626);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+
+  /* ---- device frame ---- */
+  .device{
+    position:absolute;left:50%;top:176px;transform:translateX(-50%);
+    width:352px;height:760px;border-radius:52px;
+    background:#0b0b0c;
+    padding:11px;
+    box-shadow:0 2px 0 rgba(255,255,255,.06) inset, 0 40px 80px -28px rgba(0,0,0,.85), 0 0 0 2px rgba(255,255,255,.04);
+  }
+  .scr{position:relative;width:100%;height:100%;border-radius:42px;overflow:hidden;background:var(--surface-2)}
+  /* dynamic island */
+  .island{position:absolute;top:11px;left:50%;transform:translateX(-50%);width:108px;height:30px;background:#000;border-radius:18px;z-index:30}
+  /* status bar */
+  .status{position:absolute;top:0;left:0;right:0;height:50px;display:flex;align-items:center;justify-content:space-between;padding:16px 26px 0;font:600 14px/1 var(--sf);color:var(--ink);z-index:20}
+  .status .r{display:flex;gap:6px;align-items:center}
+  .status svg{display:block}
+  .dark .status{color:#fff}
+
+  /* app content scaffold */
+  .app{position:absolute;inset:0;padding-top:50px;display:flex;flex-direction:column}
+  .appbar{display:flex;align-items:center;justify-content:space-between;padding:8px 20px 12px}
+  .appbar img{height:20px}
+  .appbar .av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#3a3a3a,#111);color:#fff;font:700 13px var(--display);display:flex;align-items:center;justify-content:center}
+  .body{flex:1;overflow:hidden;padding:4px 20px 0}
+  h1.t{font:800 23px/1.1 var(--display);color:var(--ink);letter-spacing:-.02em;margin:6px 0 2px}
+  .sub{font:500 13px var(--sf);color:var(--muted);margin-bottom:14px}
+
+  .card{background:#fff;border:1px solid var(--line);border-radius:20px;padding:16px;box-shadow:0 8px 24px -18px rgba(0,0,0,.35)}
+  .num{font:800 1px var(--display);letter-spacing:-.03em;color:var(--ink)}
+
+  /* online card */
+  .online{background:linear-gradient(150deg,var(--red),var(--red-deep));color:#fff;border:none;border-radius:24px;padding:20px;position:relative;overflow:hidden}
+  .online .pulse{position:absolute;right:-30px;top:-30px;width:150px;height:150px;border-radius:50%;background:rgba(255,255,255,.12)}
+  .online .lbl{font:600 12px var(--sf);text-transform:uppercase;letter-spacing:.12em;opacity:.9}
+  .online .st{font:900 26px/1 var(--display);margin-top:7px;display:flex;align-items:center;gap:9px}
+  .dot{width:11px;height:11px;border-radius:50%;background:#7CFFB0;box-shadow:0 0 0 4px rgba(124,255,176,.3)}
+  .toggle{margin-top:16px;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.3);border-radius:999px;height:46px;display:flex;align-items:center;padding:4px;position:relative}
+  .toggle .knob{width:64px;height:38px;border-radius:999px;background:#fff;margin-left:auto;display:flex;align-items:center;justify-content:center;color:var(--red);font:800 12px var(--display)}
+  .toggle .ttext{position:absolute;left:20px;font:700 14px var(--display);color:#fff}
+
+  .stats{display:flex;gap:10px;margin-top:14px}
+  .stat{flex:1;background:#fff;border:1px solid var(--line);border-radius:18px;padding:13px 12px;text-align:left}
+  .stat .v{font:800 21px/1 var(--display);color:var(--ink);letter-spacing:-.02em}
+  .stat .k{font:600 11px var(--sf);color:var(--muted);margin-top:5px;text-transform:uppercase;letter-spacing:.04em}
+  .stat .v.red{color:var(--red)}
+
+  .sec{font:700 13px var(--display);color:var(--ink);text-transform:uppercase;letter-spacing:.06em;margin:20px 2px 10px;display:flex;justify-content:space-between;align-items:center}
+  .sec .count{color:var(--red);font-size:12px}
+
+  .job{display:flex;gap:12px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:18px;padding:13px;margin-bottom:10px}
+  .job .pic{width:46px;height:46px;border-radius:13px;flex:none;background:linear-gradient(135deg,#d9d4cc,#b6ada0)}
+  .job .pic.b{background:linear-gradient(135deg,#c7d2d8,#9fb0b8)}
+  .job .pic.c{background:linear-gradient(135deg,#d8ccc7,#b8a99f)}
+  .job .info{flex:1;min-width:0}
+  .job .a{font:700 14px var(--display);color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .job .m{font:500 12px var(--sf);color:var(--muted);margin-top:3px}
+  .job .pay{font:800 17px var(--display);color:var(--red);letter-spacing:-.02em}
+  .job .dist{font:600 10px var(--sf);color:var(--muted);text-align:right;margin-top:3px}
+
+  /* tab bar */
+  .tabs{height:74px;background:rgba(255,255,255,.92);backdrop-filter:blur(12px);border-top:1px solid var(--line);display:flex;justify-content:space-around;align-items:flex-start;padding-top:11px}
+  .tab{display:flex;flex-direction:column;align-items:center;gap:5px;font:600 10px var(--sf);color:#b9b6b0}
+  .tab.on{color:var(--red)}
+  .tab i{width:23px;height:23px;display:block;border-radius:6px;background:currentColor;-webkit-mask-size:contain;mask-size:contain}
+  .home-ind{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:120px;height:5px;border-radius:3px;background:rgba(0,0,0,.32);z-index:25}
+
+  /* offer overlay (screen 2) */
+  .offer-bg{position:absolute;inset:0;background:linear-gradient(160deg,#2a2520,#15120e)}
+  .offer{position:absolute;left:14px;right:14px;bottom:14px;background:#fff;border-radius:28px;padding:22px;box-shadow:0 30px 60px -20px rgba(0,0,0,.6)}
+  .offer .badge{display:inline-flex;align-items:center;gap:7px;background:rgba(220,38,38,.1);color:var(--red);font:700 12px var(--display);text-transform:uppercase;letter-spacing:.08em;padding:7px 13px;border-radius:999px}
+  .offer .timer{float:right;font:800 14px var(--display);color:var(--ink)}
+  .offer .addr{font:800 21px/1.15 var(--display);color:var(--ink);letter-spacing:-.02em;margin:16px 0 3px}
+  .offer .city{font:500 13px var(--sf);color:var(--muted)}
+  .payrow{display:flex;align-items:flex-end;justify-content:space-between;margin:18px 0;padding:16px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .payrow .big{font:900 46px/.9 var(--display);color:var(--ink);letter-spacing:-.03em}
+  .payrow .big span{color:var(--red)}
+  .payrow .meta{text-align:right}
+  .payrow .meta .d{font:800 17px var(--display);color:var(--ink)}
+  .payrow .meta .l{font:600 11px var(--sf);color:var(--muted);margin-top:2px}
+  .items{display:flex;flex-direction:column;gap:9px;margin-bottom:18px}
+  .item{display:flex;align-items:center;gap:10px;font:600 14px var(--sf);color:var(--ink)}
+  .item .ic{width:30px;height:30px;border-radius:9px;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-size:15px}
+  .btn{height:54px;border-radius:16px;display:flex;align-items:center;justify-content:center;font:800 16px var(--display);letter-spacing:-.01em}
+  .btn.primary{background:var(--red);color:#fff;box-shadow:0 14px 30px -12px rgba(220,38,38,.7)}
+  .btn.ghost{background:var(--surface-2);color:var(--muted);height:48px;margin-top:10px}
+
+  /* map (screen 3) */
+  .map{position:absolute;inset:0;background:
+    linear-gradient(0deg, rgba(0,0,0,.04), rgba(0,0,0,.04)),
+    linear-gradient(135deg,#e9ece8,#dde3df)}
+  .map .road{position:absolute;background:#fff;box-shadow:0 0 0 1px #d3d8d3}
+  .route{position:absolute;left:70px;top:120px;width:200px;height:300px;border:none}
+  .pin{position:absolute;width:30px;height:30px;border-radius:50% 50% 50% 2px;background:var(--red);transform:rotate(45deg);box-shadow:0 8px 16px -4px rgba(220,38,38,.6)}
+  .pin::after{content:"";position:absolute;inset:9px;background:#fff;border-radius:50%}
+  .sheet{position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:26px 26px 0 0;padding:18px 20px 26px;box-shadow:0 -18px 40px -22px rgba(0,0,0,.4)}
+  .grab{width:38px;height:5px;border-radius:3px;background:#e0ddd7;margin:0 auto 16px}
+  .cust{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+  .cust .av2{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#e7b7a6,#c98b73)}
+  .cust .nm{font:800 16px var(--display);color:var(--ink)}
+  .cust .et{font:600 12px var(--sf);color:#1a9e54}
+  .eta-pill{margin-left:auto;background:rgba(26,158,84,.12);color:#1a9e54;font:700 12px var(--display);padding:8px 12px;border-radius:999px}
+
+  /* photos (screen 4) */
+  .phead{display:flex;justify-content:space-between;align-items:center;margin:6px 2px 14px}
+  .seg{font:700 12px var(--display);color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+  .ph{aspect-ratio:1/1.05;border-radius:16px;position:relative;overflow:hidden;border:1px solid var(--line)}
+  .ph.r1{background:linear-gradient(160deg,#b9ada0,#8d8174)}
+  .ph.r2{background:linear-gradient(160deg,#a6b0b4,#7c878c)}
+  .ph.r3{background:linear-gradient(160deg,#cdbfae,#a89579)}
+  .ph.r4{background:linear-gradient(160deg,#c2b2a6,#94806f)}
+  .ph .tag{position:absolute;top:8px;left:8px;font:700 9px var(--display);text-transform:uppercase;letter-spacing:.08em;color:#fff;background:rgba(0,0,0,.45);padding:4px 8px;border-radius:7px}
+  .ph .check{position:absolute;bottom:8px;right:8px;width:22px;height:22px;border-radius:50%;background:var(--red);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800}
+  .add{aspect-ratio:1/1.05;border-radius:16px;border:2px dashed #d8d4cd;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;color:var(--muted);font:700 11px var(--display)}
+  .add .plus{width:34px;height:34px;border-radius:50%;background:var(--red);color:#fff;font-size:22px;display:flex;align-items:center;justify-content:center;font-weight:400;line-height:1}
+  .capbtn{position:absolute;bottom:90px;left:50%;transform:translateX(-50%);background:var(--red);color:#fff;height:52px;padding:0 26px;border-radius:999px;display:flex;align-items:center;gap:10px;font:800 15px var(--display);box-shadow:0 16px 32px -12px rgba(220,38,38,.7)}
+
+  /* earnings (screen 5) */
+  .hero-earn{background:linear-gradient(150deg,var(--ink),#0c100e);border:none;color:#fff;border-radius:24px;padding:22px;position:relative;overflow:hidden}
+  .hero-earn .glow{position:absolute;right:-40px;bottom:-50px;width:170px;height:170px;border-radius:50%;background:radial-gradient(circle,rgba(220,38,38,.5),transparent 70%)}
+  .hero-earn .k{font:600 12px var(--sf);text-transform:uppercase;letter-spacing:.1em;opacity:.7}
+  .hero-earn .v{font:900 44px/1 var(--display);letter-spacing:-.03em;margin-top:8px}
+  .hero-earn .chg{font:600 12px var(--sf);color:#7CFFB0;margin-top:8px}
+  .chart{display:flex;align-items:flex-end;gap:9px;height:78px;margin:18px 4px 4px}
+  .chart .bar{flex:1;background:rgba(255,255,255,.25);border-radius:6px 6px 0 0}
+  .chart .bar.hot{background:linear-gradient(180deg,#ff6b5e,var(--red))}
+  .prow{display:flex;align-items:center;gap:12px;padding:13px 2px;border-bottom:1px solid var(--line)}
+  .prow .si{width:38px;height:38px;border-radius:11px;background:#635BFF;color:#fff;display:flex;align-items:center;justify-content:center;font:800 16px var(--display)}
+  .prow .pinfo{flex:1}
+  .prow .pt{font:700 14px var(--display);color:var(--ink)}
+  .prow .pd{font:500 12px var(--sf);color:var(--muted);margin-top:2px}
+  .prow .pa{font:800 15px var(--display);color:#1a9e54}
+  .cashout{margin-top:16px}
+
+  /* profile (screen 6) */
+  .phero{display:flex;align-items:center;gap:14px;margin:8px 2px 18px}
+  .phero .pa{width:64px;height:64px;border-radius:20px;background:linear-gradient(135deg,#3a3a3a,#111);color:#fff;display:flex;align-items:center;justify-content:center;font:800 24px var(--display)}
+  .phero .pn{font:800 21px var(--display);color:var(--ink);letter-spacing:-.02em}
+  .phero .pm{font:600 12px var(--sf);color:var(--muted);margin-top:4px;display:flex;gap:10px}
+  .phero .pm b{color:var(--ink)}
+  .trow{display:flex;align-items:center;gap:14px;background:#fff;border:1px solid var(--line);border-radius:18px;padding:15px;margin-bottom:11px}
+  .trow .ti{width:40px;height:40px;border-radius:12px;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-size:19px}
+  .trow .tt{flex:1}
+  .trow .tl{font:700 14px var(--display);color:var(--ink)}
+  .trow .ts{font:500 12px var(--sf);color:var(--muted);margin-top:2px}
+  .sw{width:48px;height:29px;border-radius:999px;background:var(--red);position:relative;flex:none}
+  .sw::after{content:"";position:absolute;top:3px;right:3px;width:23px;height:23px;border-radius:50%;background:#fff}
+  .sw.off{background:#dcd8d2}.sw.off::after{right:auto;left:3px}
+  .ok{color:#1a9e54;font:700 13px var(--display);display:flex;align-items:center;gap:5px}
+</style>
+</head>
+<body>
+
+<!-- ============ SCREEN 1 — GO ONLINE DASHBOARD ============ -->
+<section class="screen" data-n="1">
+  <div class="head">
+    <img class="mark" src="mark-white.png" alt="">
+    <div class="cap">your next job, the moment <span class="hi warm">you're online</span></div>
+  </div>
+  <div class="device"><div class="scr">
+    <div class="island"></div>
+    <div class="status"><span>9:41</span><span class="r">●●● &nbsp;◢&nbsp; ▮▮▮</span></div>
+    <div class="app">
+      <div class="appbar"><img src="logo-full.png" alt="Umuve Pro"><div class="av">MR</div></div>
+      <div class="body">
+        <div class="online">
+          <div class="pulse"></div>
+          <div class="lbl">You're live</div>
+          <div class="st"><span class="dot"></span>Online in West Palm Beach</div>
+          <div class="toggle"><span class="ttext">Online</span><span class="knob">ON</span></div>
+        </div>
+        <div class="stats">
+          <div class="stat"><div class="v red">$340</div><div class="k">Today</div></div>
+          <div class="stat"><div class="v">4</div><div class="k">Jobs</div></div>
+          <div class="stat"><div class="v">4.9★</div><div class="k">Rating</div></div>
+        </div>
+        <div class="sec">Nearby jobs <span class="count">6 within 10 mi</span></div>
+        <div class="job"><div class="pic"></div><div class="info"><div class="a">1450 S Flagler Dr</div><div class="m">Sofa, mattress, 12 boxes</div></div><div><div class="pay">$128</div><div class="dist">3.2 mi</div></div></div>
+        <div class="job"><div class="pic b"></div><div class="info"><div class="a">820 Belvedere Rd</div><div class="m">Garage cleanout</div></div><div><div class="pay">$210</div><div class="dist">5.1 mi</div></div></div>
+        <div class="job"><div class="pic c"></div><div class="info"><div class="a">300 Clematis St</div><div class="m">Office furniture</div></div><div><div class="pay">$96</div><div class="dist">6.4 mi</div></div></div>
+      </div>
+      <div class="tabs"><div class="tab on"><i></i>Home</div><div class="tab"><i></i>Jobs</div><div class="tab"><i></i>Earnings</div><div class="tab"><i></i>Profile</div></div>
+    </div>
+    <div class="home-ind"></div>
+  </div></div>
+</section>
+
+<!-- ============ SCREEN 2 — INCOMING JOB OFFER ============ -->
+<section class="screen" data-n="2">
+  <div class="head">
+    <img class="mark" src="mark-white.png" alt="">
+    <div class="cap">see the pay <span class="hi warm">before you accept</span></div>
+  </div>
+  <div class="device"><div class="scr dark">
+    <div class="island"></div>
+    <div class="status"><span>9:41</span><span class="r">●●● &nbsp;◢&nbsp; ▮▮▮</span></div>
+    <div class="offer-bg"></div>
+    <div class="offer">
+      <span class="badge"><span class="dot" style="width:8px;height:8px;box-shadow:none"></span>New job offer</span>
+      <span class="timer">0:24</span>
+      <div class="addr">1450 S Flagler Dr</div>
+      <div class="city">West Palm Beach, FL 33401</div>
+      <div class="payrow">
+        <div class="big"><span>$</span>128</div>
+        <div class="meta"><div class="d">3.2 mi · 11 min</div><div class="l">Today, 2:30 PM</div></div>
+      </div>
+      <div class="items">
+        <div class="item"><span class="ic">🛋️</span>1 sofa (3-seat)</div>
+        <div class="item"><span class="ic">🛏️</span>1 queen mattress</div>
+        <div class="item"><span class="ic">📦</span>12 moving boxes</div>
+      </div>
+      <div class="btn primary">Accept job</div>
+      <div class="btn ghost">Decline</div>
+    </div>
+  </div></div>
+</section>
+
+<!-- ============ SCREEN 3 — JOB DETAIL + MAP ============ -->
+<section class="screen" data-n="3">
+  <div class="head">
+    <img class="mark" src="mark-white.png" alt="">
+    <div class="cap">navigate and <span class="hi warm">share your eta</span></div>
+  </div>
+  <div class="device"><div class="scr">
+    <div class="island"></div>
+    <div class="status"><span>9:41</span><span class="r">●●● &nbsp;◢&nbsp; ▮▮▮</span></div>
+    <div class="map">
+      <div class="road" style="left:0;right:0;top:180px;height:14px"></div>
+      <div class="road" style="left:0;right:0;top:340px;height:10px"></div>
+      <div class="road" style="left:120px;top:0;bottom:0;width:13px"></div>
+      <div class="road" style="left:250px;top:0;bottom:0;width:9px"></div>
+      <svg class="route" viewBox="0 0 200 300" fill="none"><path d="M14 290 C 14 200, 120 230, 126 150 S 180 60, 186 14" stroke="#DC2626" stroke-width="7" stroke-linecap="round" stroke-dasharray="1 16"/></svg>
+      <div class="pin" style="left:60px;top:392px"></div>
+      <div class="pin" style="left:248px;top:96px;background:var(--ink)"></div>
+    </div>
+    <div class="sheet">
+      <div class="grab"></div>
+      <div class="cust">
+        <div class="av2"></div>
+        <div><div class="nm">Sarah M.</div><div class="et">● ETA shared · arriving 2:41 PM</div></div>
+        <div class="eta-pill">11 min</div>
+      </div>
+      <div class="btn primary" style="margin-bottom:10px">Navigate</div>
+      <div class="job" style="margin:0"><div class="pic"></div><div class="info"><div class="a">1450 S Flagler Dr</div><div class="m">Sofa, mattress, 12 boxes</div></div><div class="pay">$128</div></div>
+    </div>
+  </div></div>
+</section>
+
+<!-- ============ SCREEN 4 — BEFORE/AFTER PHOTOS ============ -->
+<section class="screen" data-n="4">
+  <div class="head">
+    <img class="mark" src="mark-white.png" alt="">
+    <div class="cap">prove the work, <span class="hi warm">protect yourself</span></div>
+  </div>
+  <div class="device"><div class="scr">
+    <div class="island"></div>
+    <div class="status"><span>9:41</span><span class="r">●●● &nbsp;◢&nbsp; ▮▮▮</span></div>
+    <div class="app">
+      <div class="appbar"><div style="font:800 17px var(--display);color:var(--ink)">Job photos</div><div class="ok">Auto-saved ✓</div></div>
+      <div class="body">
+        <div class="phead"><span class="seg" style="color:var(--red)">● Before</span><span class="seg">2 photos</span></div>
+        <div class="grid">
+          <div class="ph r1"><span class="tag">Before</span><span class="check">✓</span></div>
+          <div class="ph r3"><span class="tag">Before</span><span class="check">✓</span></div>
+        </div>
+        <div class="phead" style="margin-top:18px"><span class="seg" style="color:var(--red)">● After</span><span class="seg">2 photos</span></div>
+        <div class="grid">
+          <div class="ph r2"><span class="tag">After</span><span class="check">✓</span></div>
+          <div class="add"><span class="plus">+</span>Add photo</div>
+        </div>
+      </div>
+      <div class="capbtn">📷 Capture photo</div>
+      <div class="tabs"><div class="tab"><i></i>Home</div><div class="tab on"><i></i>Jobs</div><div class="tab"><i></i>Earnings</div><div class="tab"><i></i>Profile</div></div>
+    </div>
+    <div class="home-ind"></div>
+  </div></div>
+</section>
+
+<!-- ============ SCREEN 5 — EARNINGS / PAYOUTS ============ -->
+<section class="screen" data-n="5">
+  <div class="head">
+    <img class="mark" src="mark-white.png" alt="">
+    <div class="cap">get paid fast <span class="hi warm">through stripe</span></div>
+  </div>
+  <div class="device"><div class="scr">
+    <div class="island"></div>
+    <div class="status"><span>9:41</span><span class="r">●●● &nbsp;◢&nbsp; ▮▮▮</span></div>
+    <div class="app">
+      <div class="appbar"><div style="font:800 17px var(--display);color:var(--ink)">Earnings</div><div class="av">MR</div></div>
+      <div class="body">
+        <div class="hero-earn">
+          <div class="glow"></div>
+          <div class="k">This week</div>
+          <div class="v">$1,284</div>
+          <div class="chg">▲ 18% vs last week · 11 jobs</div>
+          <div class="chart">
+            <div class="bar" style="height:38%"></div><div class="bar" style="height:54%"></div>
+            <div class="bar" style="height:30%"></div><div class="bar" style="height:70%"></div>
+            <div class="bar hot" style="height:92%"></div><div class="bar" style="height:60%"></div>
+            <div class="bar" style="height:44%"></div>
+          </div>
+        </div>
+        <div class="sec">Payouts <span class="count">Next: Fri</span></div>
+        <div class="prow"><div class="si">S</div><div class="pinfo"><div class="pt">Stripe payout</div><div class="pd">Jun 13 · Visa ••24</div></div><div class="pa">+$842</div></div>
+        <div class="prow"><div class="si">S</div><div class="pinfo"><div class="pt">Stripe payout</div><div class="pd">Jun 6 · Visa ••24</div></div><div class="pa">+$910</div></div>
+        <div class="prow"><div class="si">S</div><div class="pinfo"><div class="pt">Stripe payout</div><div class="pd">May 30 · Visa ••24</div></div><div class="pa">+$688</div></div>
+        <div class="btn primary cashout">Cash out $1,284</div>
+      </div>
+      <div class="tabs"><div class="tab"><i></i>Home</div><div class="tab"><i></i>Jobs</div><div class="tab on"><i></i>Earnings</div><div class="tab"><i></i>Profile</div></div>
+    </div>
+    <div class="home-ind"></div>
+  </div></div>
+</section>
+
+<!-- ============ SCREEN 6 — PROFILE / TRUCK ============ -->
+<section class="screen" data-n="6">
+  <div class="head">
+    <img class="mark" src="mark-white.png" alt="">
+    <div class="cap">your truck, your schedule, <span class="hi warm">your rules</span></div>
+  </div>
+  <div class="device"><div class="scr">
+    <div class="island"></div>
+    <div class="status"><span>9:41</span><span class="r">●●● &nbsp;◢&nbsp; ▮▮▮</span></div>
+    <div class="app">
+      <div class="appbar"><div style="font:800 17px var(--display);color:var(--ink)">Profile</div><div class="av">MR</div></div>
+      <div class="body">
+        <div class="phero">
+          <div class="pa">MR</div>
+          <div><div class="pn">Marcus R.</div><div class="pm"><span><b>4.9★</b> rating</span><span><b>212</b> jobs</span></div></div>
+        </div>
+        <div class="trow"><div class="ti">🚚</div><div class="tt"><div class="tl">Ford F-250 · 8 ft bed</div><div class="ts">Heavy loads up to 2,500 lb</div></div><div class="ok">Active ✓</div></div>
+        <div class="trow"><div class="ti">⚡</div><div class="tt"><div class="tl">Auto-accept nearby jobs</div><div class="ts">Within 8 mi of you</div></div><div class="sw"></div></div>
+        <div class="trow"><div class="ti">📅</div><div class="tt"><div class="tl">Available today</div><div class="ts">7:00 AM – 6:00 PM</div></div><div class="sw"></div></div>
+        <div class="trow"><div class="ti">💳</div><div class="tt"><div class="tl">Stripe payouts</div><div class="ts">Connected · Visa ••24</div></div><div class="ok">Connected ✓</div></div>
+        <div class="trow"><div class="ti">🔔</div><div class="tt"><div class="tl">Weekend jobs</div><div class="ts">Get offers Sat & Sun</div></div><div class="sw off"></div></div>
+      </div>
+      <div class="tabs"><div class="tab"><i></i>Home</div><div class="tab"><i></i>Jobs</div><div class="tab"><i></i>Earnings</div><div class="tab on"><i></i>Profile</div></div>
+    </div>
+    <div class="home-ind"></div>
+  </div></div>
+</section>
+
+<script>
+  // ?n=1..6 shows a single screen for headless capture; no param shows screen 1.
+  const n = new URLSearchParams(location.search).get('n') || '1';
+  const el = document.querySelector(`.screen[data-n="${n}"]`) || document.querySelector('.screen');
+  el.classList.add('active');
+</script>
+</body>
+</html>
