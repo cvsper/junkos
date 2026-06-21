@@ -23,7 +23,7 @@ import {
   Tag,
   X,
 } from "lucide-react";
-import { trackBookingConversion } from "@/components/analytics";
+import { trackBookingConversion, trackInitiateCheckout } from "@/components/analytics";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -268,6 +268,9 @@ function PaymentFormInner() {
           finalPrice
         );
 
+        // InitiateCheckout — same event_id as the server CAPI event (dedup)
+        trackInitiateCheckout({ value: finalPrice / 100, bookingId: newBookingId });
+
         // 3. Confirm with the payment method from Apple Pay / Google Pay
         const { error, paymentIntent } = await stripe.confirmCardPayment(
           piResult.clientSecret,
@@ -446,6 +449,9 @@ function PaymentFormInner() {
         newBookingId,
         finalPrice
       );
+
+      // InitiateCheckout — same event_id as the server CAPI event (dedup)
+      trackInitiateCheckout({ value: finalPrice / 100, bookingId: newBookingId });
 
       const clientSecret = paymentIntentResult.clientSecret;
 

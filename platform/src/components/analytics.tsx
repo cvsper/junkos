@@ -200,16 +200,34 @@ export function trackBookingConversion(params: {
  * uses before Purchase volume is high enough (see palm-beach-meta-launch.md).
  * Call when the customer reaches the payment step of the booking funnel.
  */
-export function trackInitiateCheckout(params?: { value?: number; currency?: string }) {
+export function trackInitiateCheckout(params?: {
+  value?: number;
+  currency?: string;
+  bookingId?: string;
+}) {
   if (typeof window === "undefined") return;
   const fbq = (window as unknown as Record<string, unknown>).fbq as
     | ((...args: unknown[]) => void)
     | undefined;
   if (fbq) {
-    fbq("track", "InitiateCheckout", {
-      value: params?.value ?? 0,
-      currency: params?.currency || "USD",
-    });
+    // Pass eventID checkout_<bookingId> so this dedupes with the server-side
+    // CAPI InitiateCheckout (fired from create-intent-simple). Without a
+    // bookingId there's nothing to dedupe against, so omit it.
+    const opts = params?.bookingId
+      ? { eventID: `checkout_${params.bookingId}` }
+      : undefined;
+    fbq(
+      "track",
+      "InitiateCheckout",
+      {
+        value: params?.value ?? 0,
+        currency: params?.currency || "USD",
+        ...(params?.bookingId
+          ? { content_ids: [params.bookingId], content_type: "product" }
+          : {}),
+      },
+      opts
+    );
   }
 }
 
