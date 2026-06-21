@@ -24,6 +24,7 @@ import logging
 import os
 import sys
 from datetime import datetime
+from functools import wraps
 from pathlib import Path
 
 from flask import Blueprint, jsonify, request
@@ -218,6 +219,41 @@ def subscribe_org(org_id, tier=None, stripe_api_key=None):
 billing_portal_bp = Blueprint(
     "billing_portal", __name__, url_prefix="/portal/v1/billing"
 )
+
+
+def _require_admin(f):
+    """Admin-only guard (mirrors routes/admin.py)."""
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        from auth_routes import require_auth
+        from models import db, User
+
+        @require_auth
+        def inner(user_id, *a, **kw):
+            user = db.session.get(User, user_id)
+            if not user or user.role != "admin":
+                return jsonify({"error": "Admin access required"}), 403
+            return f(user_id=user_id, *a, **kw)
+
+        return inner(*args, **kwargs)
+    return wrapper
+
+
+@billing_portal_bp.route("/bootstrap", methods=["POST"])
+@_require_admin
+def bootstrap_route(user_id):
+    """Admin-triggered: create/verify Stripe tier products + prices.
+
+    Idempotent — reuses existing IDs and just reports them on re-run. Returns
+    the resulting tier->price config so you can confirm it in one call instead
+    of shelling into the server. Requires STRIPE_SECRET_KEY on the server.
+    """
+    try:
+        cfg = bootstrap()
+        return jsonify({"success": True, "config": cfg}), 200
+    except Exception as e:
+        logging.getLogger(__name__).exception("billing bootstrap failed")
+        return jsonify({"success": False, "error": str(e)}), 502
 
 
 @billing_portal_bp.route("/webhook", methods=["POST"])
