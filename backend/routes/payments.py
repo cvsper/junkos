@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from models import db, Job, Payment, Contractor, User, Notification, generate_uuid, utcnow
+from models import db, Job, Payment, Contractor, User, Notification, PromoCode, generate_uuid, utcnow
 from auth_routes import require_auth
 from extensions import limiter
 
@@ -62,7 +62,26 @@ def create_payment_intent(user_id):
     if job.payment and job.payment.payment_status == "succeeded":
         return jsonify({"error": "Job is already paid"}), 409
 
-    amount = round(job.total_price + tip_amount, 2)
+    # --- Promo code (server-authoritative: re-validate here; never trust a
+    # client-supplied discount). A code shown in the funnel must actually
+    # reduce the charge, or the discount is cosmetic and the customer overpays.
+    discount = 0.0
+    promo_message = None
+    promo_code = (data.get("promo_code") or data.get("promoCode") or "").strip()
+    if promo_code:
+        from routes.promos import validate_promo_code
+        promo, disc, err = validate_promo_code(promo_code, job.total_price)
+        if err:
+            # Don't block payment — just charge full price and tell the client.
+            promo_message = err
+        else:
+            discount = disc
+            job.promo_code_id = promo.id
+            job.discount_amount = discount
+            promo_message = "Promo {} applied: -${:.2f}".format(promo.code, discount)
+
+    discounted_base = max(0.0, round(job.total_price - discount, 2))
+    amount = round(discounted_base + tip_amount, 2)
     commission = round(amount * PLATFORM_COMMISSION, 2)
     service_fee = round(amount * SERVICE_FEE_RATE, 2)
     driver_payout = max(0, round(amount - commission - service_fee, 2))
@@ -112,6 +131,8 @@ def create_payment_intent(user_id):
         "client_secret": client_secret,
         "payment_intent_id": intent_id,
         "amount": amount,
+        "discount": discount,
+        "promo_message": promo_message,
         "payment": payment.to_dict(),
     }), 201
 
@@ -133,10 +154,19 @@ def confirm_payment(user_id):
     if not payment:
         return jsonify({"error": "Payment not found"}), 404
 
+    was_succeeded = payment.payment_status == "succeeded"
     payment.payment_status = "succeeded"
     payment.updated_at = utcnow()
 
     job = db.session.get(Job, payment.job_id)
+
+    # Count a promo redemption once, only on the pending->succeeded transition,
+    # so a double-confirm (or webhook + manual confirm) can't over-count uses.
+    if job and job.promo_code_id and not was_succeeded:
+        promo = db.session.get(PromoCode, job.promo_code_id)
+        if promo:
+            promo.use_count = (promo.use_count or 0) + 1
+
     if job and job.driver_id:
         contractor = db.session.get(Contractor, job.driver_id)
         if contractor:
@@ -414,6 +444,28 @@ def create_simple_payment_intent():
     if amount > 10000:
         return jsonify({"error": "amount exceeds maximum allowed ($10,000)"}), 400
 
+    # --- Promo code (server-validated). This is the path the customer funnel +
+    # iOS use, so a code shown in the funnel must actually reduce the charge
+    # here or it's cosmetic and the customer overpays. Validated against the
+    # order amount; persisted on the job so use-counts/reporting are accurate.
+    discount = 0.0
+    promo_message = None
+    promo_code = (data.get("promoCode") or data.get("promo_code") or "").strip()
+    if promo_code:
+        from routes.promos import validate_promo_code
+        promo, disc, err = validate_promo_code(promo_code, amount)
+        if err:
+            promo_message = err  # don't block payment; charge full, inform client
+        else:
+            discount = disc
+            amount = max(0.50, round(amount - discount, 2))  # Stripe needs >= $0.50
+            promo_message = "Promo {} applied: -${:.2f}".format(promo.code, discount)
+            if booking_id:
+                _pj = db.session.get(Job, booking_id)
+                if _pj:
+                    _pj.promo_code_id = promo.id
+                    _pj.discount_amount = discount
+
     stripe = _get_stripe()
     stripe_key = os.environ.get("STRIPE_SECRET_KEY", "")
 
@@ -453,12 +505,15 @@ def create_simple_payment_intent():
             payment.amount = amount
             payment.payment_status = "pending"
             payment.updated_at = utcnow()
-            db.session.commit()
+        db.session.commit()  # persists the payment link AND any promo fields set on the job
 
     return jsonify({
         "success": True,
         "clientSecret": client_secret,
         "paymentIntentId": intent_id,
+        "amount": amount,
+        "discount": discount,
+        "promo_message": promo_message,
     }), 201
 
 
@@ -494,10 +549,18 @@ def confirm_simple_payment():
     if not payment:
         return jsonify({"error": "Payment not found"}), 404
 
+    was_succeeded = payment.payment_status == "succeeded"
     payment.payment_status = "succeeded"
     payment.updated_at = utcnow()
 
     job = db.session.get(Job, payment.job_id)
+
+    # Count a promo redemption once, on the pending->succeeded transition.
+    if job and job.promo_code_id and not was_succeeded:
+        _promo = db.session.get(PromoCode, job.promo_code_id)
+        if _promo:
+            _promo.use_count = (_promo.use_count or 0) + 1
+
     if job and job.status == "pending":
         job.status = "confirmed"
         job.updated_at = utcnow()

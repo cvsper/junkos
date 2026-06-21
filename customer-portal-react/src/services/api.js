@@ -106,12 +106,28 @@ export const api = {
     }
   },
 
-  // Create payment intent
-  createPaymentIntent: async (bookingId, amount) => {
+  // Validate a promo code against an order amount (for funnel display).
+  // Returns { valid, discount, final, message }.
+  validatePromo: async (code, orderAmount) => {
+    try {
+      const response = await apiClient.post('/promos/validate', {
+        code,
+        order_amount: orderAmount,
+      });
+      return response.data;
+    } catch (error) {
+      return { valid: false, message: error.response?.data?.error || 'Invalid promo code' };
+    }
+  },
+
+  // Create payment intent. promoCode (optional) is validated + applied
+  // server-side; the backend returns the discounted amount.
+  createPaymentIntent: async (bookingId, amount, promoCode = null) => {
     try {
       const response = await apiClient.post('/payments/create-intent-simple', {
         bookingId,
         amount,
+        promoCode,
       });
       return response.data;
     } catch (error) {
