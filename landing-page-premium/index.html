@@ -203,6 +203,71 @@
         .us-close h2{font-family:var(--font-display);font-weight:800;color:#1A1A1A;font-size:clamp(2rem,4vw,3rem);line-height:1.08;letter-spacing:-.03em;margin:0 0 1rem;text-wrap:balance}
         .us-close p{font-family:var(--font-body);font-size:1.1rem;line-height:1.6;color:#5B5B57;margin:0 0 2rem}
         .us-cta-row{display:flex;flex-wrap:wrap;gap:.85rem;justify-content:center}
+        /* trust bar */
+        .us-trust-bar{background:#fff;border-top:1px solid #ECE8E1;border-bottom:1px solid #ECE8E1;padding:1.35rem 1.5rem}
+        .us-trust-bar .row{max-width:1000px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:.9rem 2.2rem}
+        .us-trust-bar .item{display:inline-flex;align-items:center;gap:.5rem;font-family:var(--font-body);font-size:.95rem;color:#3a3a38;font-weight:600}
+        .us-trust-bar .item b{color:#1A1A1A}.us-trust-bar .st{color:#C52222}
+        /* prose + stats */
+        .us-prose{max-width:760px;margin:0 auto;text-align:center}
+        .us-prose p{font-family:var(--font-body);font-size:1.06rem;line-height:1.7;color:#5B5B57;margin:0 0 1.1rem}
+        .us-prose p strong{color:#1A1A1A}.us-prose a{color:#C52222;font-weight:600}
+        .us-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-top:2.5rem}
+        @media(max-width:720px){.us-stats{grid-template-columns:1fr 1fr}}
+        .us-stat{background:#fff;border:1px solid #ECE8E1;border-radius:1rem;padding:1.4rem 1rem;text-align:center}
+        .us-stat .num{font-family:var(--font-display);font-weight:800;font-size:1.8rem;color:#C52222;letter-spacing:-.02em}
+        .us-stat .lbl{font-family:var(--font-body);font-size:.84rem;color:#1A1A1A;font-weight:600;margin-top:.35rem}
+        .us-stat .src{font-size:.68rem;color:#a39e94;margin-top:.4rem;line-height:1.3}
+        /* testimonials */
+        .us-quotes{display:grid;grid-template-columns:repeat(3,1fr);gap:1.1rem}
+        @media(max-width:900px){.us-quotes{grid-template-columns:1fr 1fr}}
+        @media(max-width:620px){.us-quotes{grid-template-columns:1fr}}
+        .us-quote{background:#fff;border:1px solid #ECE8E1;border-radius:1rem;padding:1.5rem;display:flex;flex-direction:column;gap:1rem}
+        .us-quote .stars{color:#C52222;font-size:.95rem;letter-spacing:.12em}
+        .us-quote p{font-family:var(--font-body);font-size:.97rem;line-height:1.6;color:#3a3a38;margin:0;flex:1}
+        .us-quote .who{display:flex;align-items:center;gap:.7rem}
+        .us-quote .av{width:38px;height:38px;border-radius:50%;background:#1A1A1A;color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:800;font-size:.82rem;flex:none}
+        .us-quote .nm{font-family:var(--font-body);font-weight:700;font-size:.9rem;color:#1A1A1A}
+        .us-quote .ct{font-size:.8rem;color:#8a857c}
+        /* areas */
+        .us-areas{display:grid;grid-template-columns:1fr 1fr;gap:1.1rem;max-width:880px;margin:0 auto}
+        @media(max-width:620px){.us-areas{grid-template-columns:1fr}}
+        .us-area{background:#fff;border:1px solid #ECE8E1;border-radius:1rem;padding:1.6rem}
+        .us-area h3{font-family:var(--font-display);font-weight:800;font-size:1.15rem;color:#1A1A1A;margin:0 0 1rem}
+        .us-area .chips{display:flex;flex-wrap:wrap;gap:.5rem}
+        .us-area .chips span{background:#F6F4F0;border-radius:999px;padding:.4rem .8rem;font-family:var(--font-body);font-size:.85rem;color:#5B5B57}
+        .us-note{text-align:center;color:#5B5B57;font-family:var(--font-body);margin-top:1.6rem;font-size:.95rem}
+        .us-note a{color:#C52222;font-weight:600}
+        /* faq */
+        .us-faq{max-width:760px;margin:0 auto;display:grid;gap:.7rem}
+        .us-faq details{background:#fff;border:1px solid #ECE8E1;border-radius:.9rem;padding:0 1.2rem}
+        .us-faq summary{list-style:none;cursor:pointer;padding:1.1rem 0;font-family:var(--font-display);font-weight:700;font-size:1.02rem;color:#1A1A1A;display:flex;justify-content:space-between;align-items:center;gap:1rem}
+        .us-faq summary::-webkit-details-marker{display:none}
+        .us-faq summary::after{content:"+";color:#C52222;font-size:1.5rem;font-weight:400;line-height:1;transition:transform .2s}
+        .us-faq details[open] summary::after{transform:rotate(45deg)}
+        .us-faq .a{padding:0 0 1.1rem;font-family:var(--font-body);font-size:.96rem;line-height:1.6;color:#5B5B57;margin:0}
+        /* pricing */
+        .us-pricing{display:grid;grid-template-columns:repeat(3,1fr);gap:1.1rem;max-width:960px;margin:0 auto;align-items:start}
+        @media(max-width:760px){.us-pricing{grid-template-columns:1fr;max-width:420px}}
+        .us-price-card{background:#fff;border:1px solid #ECE8E1;border-radius:1.1rem;padding:1.8rem 1.6rem;position:relative}
+        .us-price-card.feat{border:1.5px solid #C52222;box-shadow:0 22px 46px -24px rgba(197,34,34,.4)}
+        .us-price-card .lbl{font-family:var(--font-body);font-weight:700;color:#8a857c;text-transform:uppercase;letter-spacing:.08em;font-size:.76rem}
+        .us-price-card .amt{font-family:var(--font-display);font-weight:800;color:#1A1A1A;font-size:2.5rem;letter-spacing:-.03em;margin:.4rem 0 .05rem}
+        .us-price-card .amt span{color:#C52222}
+        .us-price-card .sz{font-size:.85rem;color:#8a857c;margin-bottom:1.1rem}
+        .us-price-card ul{list-style:none;padding:0;margin:0;display:grid;gap:.55rem}
+        .us-price-card li{font-family:var(--font-body);font-size:.92rem;color:#5B5B57;display:flex;gap:.5rem;align-items:flex-start}
+        .us-price-card li::before{content:"\2713";color:#15803d;font-weight:800;flex:none}
+        .us-pop{position:absolute;top:-.7rem;left:50%;transform:translateX(-50%);background:#C52222;color:#fff;font-family:var(--font-body);font-weight:700;font-size:.72rem;letter-spacing:.04em;padding:.3rem .85rem;border-radius:999px;white-space:nowrap}
+        /* newsletter */
+        .us-news{max-width:520px;margin:0 auto;text-align:center}
+        .us-news h3{font-family:var(--font-display);font-weight:800;font-size:1.5rem;color:#1A1A1A;margin:0 0 .5rem}
+        .us-news p{font-family:var(--font-body);color:#5B5B57;margin:0 0 1.25rem;font-size:.95rem}
+        .us-news form{display:flex;gap:.5rem;max-width:440px;margin:0 auto}
+        .us-news input{flex:1;padding:.85rem 1rem;border:1px solid #d9d4cc;border-radius:.6rem;font-size:1rem;font-family:var(--font-body);outline:none;background:#fff}
+        .us-news input:focus{border-color:#C52222}
+        .us-news button{background:#C52222;color:#fff;border:none;border-radius:.6rem;padding:.85rem 1.4rem;font-family:var(--font-body);font-weight:700;cursor:pointer;white-space:nowrap}
+        .us-news .msg{margin-top:.75rem;font-size:.85rem;min-height:1.2em;color:#5B5B57}
         .btn{display:inline-flex;align-items:center;justify-content:center;border-radius:.5rem;font-weight:700;text-decoration:none;transition:transform .2s ease;cursor:pointer;border:none}
         .btn-primary{background:var(--color-accent);color:#fff}.btn-xl{padding:1.25rem 2.5rem;font-size:1.1rem}
     </style>
@@ -498,98 +563,29 @@
     </section>
 
     <!-- Trust Badges — Social Proof -->
-    <section class="logo-cloud-section" data-animate>
-        <h2 class="logo-cloud-title">Trusted by <strong>hundreds of customers</strong> across South Florida</h2>
-        <div class="logo-cloud-track">
-            <div class="logo-cloud-slider">
-                <span class="trust-badge">
-                    <svg class="trust-badge-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#FBBC04"/></svg>
-                    <span class="trust-badge-text"><strong>4.9</strong> Google Reviews</span>
-                </span>
-                <span class="trust-badge">
-                    <svg class="trust-badge-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#FF1A1A"/></svg>
-                    <span class="trust-badge-text"><strong>5.0</strong> on Yelp</span>
-                </span>
-                <span class="trust-badge">
-                    <svg class="trust-badge-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" stroke="#2563EB" stroke-width="2" fill="none"/><path d="m9 12 2 2 4-4" stroke="#2563EB" stroke-width="2" fill="none"/></svg>
-                    <span class="trust-badge-text">BBB Accredited</span>
-                </span>
-                <span class="trust-badge">
-                    <svg class="trust-badge-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" stroke="#16A34A" stroke-width="2" fill="none"/><path d="m9 12 2 2 4-4" stroke="#16A34A" stroke-width="2" fill="none"/></svg>
-                    <span class="trust-badge-text">Licensed & Insured</span>
-                </span>
-                <span class="trust-badge">
-                    <svg class="trust-badge-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 19H4.815a1.83 1.83 0 0 1-1.57-.881 1.785 1.785 0 0 1-.004-1.784L7.196 9.5" stroke="#16A34A" stroke-width="2" fill="none"/><path d="M11 19h8.203a1.83 1.83 0 0 0 1.556-.89 1.784 1.784 0 0 0 0-1.775l-1.226-2.12" stroke="#16A34A" stroke-width="2" fill="none"/><path d="m14 16-3 3 3 3" stroke="#16A34A" stroke-width="2" fill="none"/><path d="M8.293 13.596 7.196 9.5 3.1 10.598" stroke="#16A34A" stroke-width="2" fill="none"/><path d="m9.344 5.811 1.093-1.892A1.83 1.83 0 0 1 11.985 3a1.784 1.784 0 0 1 1.546.888l3.943 6.843" stroke="#16A34A" stroke-width="2" fill="none"/><path d="m13.378 9.633 4.096 1.098 1.097-4.096" stroke="#16A34A" stroke-width="2" fill="none"/></svg>
-                    <span class="trust-badge-text">Donate &amp; Recycle First</span>
-                </span>
-                <span class="trust-badge">
-                    <svg class="trust-badge-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" stroke="#DC2626" stroke-width="2" fill="none"/><polyline points="12 6 12 12 16 14" stroke="#DC2626" stroke-width="2" fill="none"/></svg>
-                    <span class="trust-badge-text">Same-Day Service</span>
-                </span>
-                <!-- Duplicate for seamless loop -->
-                <span class="trust-badge">
-                    <svg class="trust-badge-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#FBBC04"/></svg>
-                    <span class="trust-badge-text"><strong>4.9</strong> Google Reviews</span>
-                </span>
-                <span class="trust-badge">
-                    <svg class="trust-badge-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#FF1A1A"/></svg>
-                    <span class="trust-badge-text"><strong>5.0</strong> on Yelp</span>
-                </span>
-                <span class="trust-badge">
-                    <svg class="trust-badge-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" stroke="#2563EB" stroke-width="2" fill="none"/><path d="m9 12 2 2 4-4" stroke="#2563EB" stroke-width="2" fill="none"/></svg>
-                    <span class="trust-badge-text">BBB Accredited</span>
-                </span>
-                <span class="trust-badge">
-                    <svg class="trust-badge-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" stroke="#16A34A" stroke-width="2" fill="none"/><path d="m9 12 2 2 4-4" stroke="#16A34A" stroke-width="2" fill="none"/></svg>
-                    <span class="trust-badge-text">Licensed & Insured</span>
-                </span>
-                <span class="trust-badge">
-                    <svg class="trust-badge-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 19H4.815a1.83 1.83 0 0 1-1.57-.881 1.785 1.785 0 0 1-.004-1.784L7.196 9.5" stroke="#16A34A" stroke-width="2" fill="none"/><path d="M11 19h8.203a1.83 1.83 0 0 0 1.556-.89 1.784 1.784 0 0 0 0-1.775l-1.226-2.12" stroke="#16A34A" stroke-width="2" fill="none"/><path d="m14 16-3 3 3 3" stroke="#16A34A" stroke-width="2" fill="none"/><path d="M8.293 13.596 7.196 9.5 3.1 10.598" stroke="#16A34A" stroke-width="2" fill="none"/><path d="m9.344 5.811 1.093-1.892A1.83 1.83 0 0 1 11.985 3a1.784 1.784 0 0 1 1.546.888l3.943 6.843" stroke="#16A34A" stroke-width="2" fill="none"/><path d="m13.378 9.633 4.096 1.098 1.097-4.096" stroke="#16A34A" stroke-width="2" fill="none"/></svg>
-                    <span class="trust-badge-text">Donate &amp; Recycle First</span>
-                </span>
-                <span class="trust-badge">
-                    <svg class="trust-badge-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" stroke="#DC2626" stroke-width="2" fill="none"/><polyline points="12 6 12 12 16 14" stroke="#DC2626" stroke-width="2" fill="none"/></svg>
-                    <span class="trust-badge-text">Same-Day Service</span>
-                </span>
-            </div>
+    <section class="us-trust-bar" data-animate>
+        <div class="row">
+            <span class="item"><span class="st">&#9733;&#9733;&#9733;&#9733;&#9733;</span> <b>4.9</b> Google</span>
+            <span class="item"><span class="st">&#9733;</span> <b>5.0</b> on Yelp</span>
+            <span class="item">&#10003; BBB Accredited</span>
+            <span class="item">&#10003; Licensed &amp; insured</span>
+            <span class="item">&#9851; 90% diverted from landfills</span>
         </div>
     </section>
 
     <!-- AI-Optimized Content Block -->
-    <section class="section definition-section">
-        <div class="container">
-            <div class="definition-content" data-animate>
-                <h2 class="definition-title">What is Umuve?</h2>
-                <div class="definition-answer">
-                    <p><strong>Umuve is South Florida's on-demand junk removal and hauling platform connecting customers with 500+ vetted operators across Palm Beach and Broward counties.</strong> We handle furniture removal, appliance disposal, estate cleanouts, and construction debris with same-day service and upfront pricing.</p>
-
-                    <p>Unlike traditional junk removal companies, Umuve operates as a technology platform—matching jobs to the nearest available operator within 30 seconds for 47% faster service. Customers get instant online quotes (no phone calls required), real-time tracking, and eco-friendly disposal with 87% diversion from landfills.</p>
-
-                    <p>Founded in 2024, Umuve has completed 12,000+ jobs with an average rating of 4.9/5 stars across South Florida.</p>
-                </div>
-
-                <div class="stats-grid" data-animate data-animate-stagger>
-                    <div class="stat-card">
-                        <div class="stat-number">12,000+</div>
-                        <div class="stat-label">Jobs Completed</div>
-                        <div class="stat-source">Source: Umuve Platform Analytics, Feb 2026</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number">4.9/5</div>
-                        <div class="stat-label">Average Rating</div>
-                        <div class="stat-source">Verified customer reviews</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number">87%</div>
-                        <div class="stat-label">Waste Diverted from Landfills</div>
-                        <div class="stat-source">Third-party disposal tracking</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number">30 sec</div>
-                        <div class="stat-label">Average Operator Match Time</div>
-                        <div class="stat-source">System logs</div>
-                    </div>
-                </div>
+    <section class="us us-white">
+        <div class="us-wrap">
+            <div class="us-head" data-animate><span class="us-eyebrow">The platform</span><h2 class="us-h2">What is Umuve?</h2></div>
+            <div class="us-prose" data-animate>
+                <p><strong>Umuve is South Florida's on-demand junk-removal platform, connecting customers with vetted local operators across Palm Beach and Broward counties.</strong> Furniture, appliances, estate cleanouts, construction debris &mdash; same-day, with the price up front.</p>
+                <p>Instead of waiting for a truck to quote you at the curb, you get an instant online price (no phone calls), real-time tracking, and eco-friendly disposal that keeps most material out of landfills.</p>
+            </div>
+            <div class="us-stats" data-animate data-animate-stagger>
+                <div class="us-stat"><div class="num">4.9/5</div><div class="lbl">Average rating</div><div class="src">Verified customer reviews</div></div>
+                <div class="us-stat"><div class="num">Same day</div><div class="lbl">Most pickups in &lt;24h</div><div class="src">Palm Beach &amp; Broward</div></div>
+                <div class="us-stat"><div class="num">90%</div><div class="lbl">Diverted from landfills</div><div class="src">Donated &amp; recycled first</div></div>
+                <div class="us-stat"><div class="num">Binding</div><div class="lbl">Price up front</div><div class="src">No curbside upcharge</div></div>
             </div>
         </div>
     </section>
@@ -629,393 +625,57 @@
     </section>
 
     <!-- Social Proof — Scrolling Columns -->
-    <section class="section testimonials-section">
-        <div class="container">
-            <div class="section-header" data-animate>
-                <span class="section-label">Testimonials</span>
-                <h2 class="section-title">What Our Customers Say</h2>
-                <p class="section-subtitle">See what our customers have to say about us.</p>
-            </div>
-
-            <div class="testimonials-columns" data-animate>
-                <!-- Column 1 (visible on all screens) -->
-                <div class="testimonials-col">
-                    <div class="testimonials-scroll testimonials-scroll--slow">
-                        <!-- Set 1 -->
-                        <div class="tc-card">
-                            <p class="tc-text">"Fastest service I've ever experienced. Texted them at 9am, they showed up at 2pm same day and cleared everything in 20 minutes. Incredible."</p>
-                            <div class="tc-author">
-                                <div class="tc-avatar" style="background:#c0392b">MS</div>
-                                <div class="tc-meta">
-                                    <div class="tc-name">Maria S.</div>
-                                    <div class="tc-role">Boca Raton</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="tc-card">
-                            <p class="tc-text">"I was dreading cleaning out my late father's estate. Umuve handled everything professionally and respectfully. They even donated items to local charities."</p>
-                            <div class="tc-author">
-                                <div class="tc-avatar" style="background:#2c3e50">DT</div>
-                                <div class="tc-meta">
-                                    <div class="tc-name">David T.</div>
-                                    <div class="tc-role">Delray Beach</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="tc-card">
-                            <p class="tc-text">"Got quotes from 3 companies. Umuve was the most transparent and actually came in under budget. Great crew, super professional."</p>
-                            <div class="tc-author">
-                                <div class="tc-avatar" style="background:#8e44ad">JM</div>
-                                <div class="tc-meta">
-                                    <div class="tc-name">Jennifer M.</div>
-                                    <div class="tc-role">Fort Lauderdale</div>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Duplicate for seamless loop -->
-                        <div class="tc-card">
-                            <p class="tc-text">"Fastest service I've ever experienced. Texted them at 9am, they showed up at 2pm same day and cleared everything in 20 minutes. Incredible."</p>
-                            <div class="tc-author">
-                                <div class="tc-avatar" style="background:#c0392b">MS</div>
-                                <div class="tc-meta">
-                                    <div class="tc-name">Maria S.</div>
-                                    <div class="tc-role">Boca Raton</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="tc-card">
-                            <p class="tc-text">"I was dreading cleaning out my late father's estate. Umuve handled everything professionally and respectfully. They even donated items to local charities."</p>
-                            <div class="tc-author">
-                                <div class="tc-avatar" style="background:#2c3e50">DT</div>
-                                <div class="tc-meta">
-                                    <div class="tc-name">David T.</div>
-                                    <div class="tc-role">Delray Beach</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="tc-card">
-                            <p class="tc-text">"Got quotes from 3 companies. Umuve was the most transparent and actually came in under budget. Great crew, super professional."</p>
-                            <div class="tc-author">
-                                <div class="tc-avatar" style="background:#8e44ad">JM</div>
-                                <div class="tc-meta">
-                                    <div class="tc-name">Jennifer M.</div>
-                                    <div class="tc-role">Fort Lauderdale</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Column 2 (hidden on mobile) -->
-                <div class="testimonials-col testimonials-col--md">
-                    <div class="testimonials-scroll testimonials-scroll--mid">
-                        <div class="tc-card">
-                            <p class="tc-text">"Called on a Saturday morning and they came by noon. Took away an entire garage full of old furniture and junk. Couldn't believe how fast they were."</p>
-                            <div class="tc-author">
-                                <div class="tc-avatar" style="background:#d35400">CR</div>
-                                <div class="tc-meta">
-                                    <div class="tc-name">Carlos R.</div>
-                                    <div class="tc-role">Wellington</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="tc-card">
-                            <p class="tc-text">"Moving out of my condo and needed everything cleared in a day. Umuve showed up on time, worked fast, and left the place spotless. Highly recommend."</p>
-                            <div class="tc-author">
-                                <div class="tc-avatar" style="background:#16a085">AW</div>
-                                <div class="tc-meta">
-                                    <div class="tc-name">Alicia W.</div>
-                                    <div class="tc-role">Coral Springs</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="tc-card">
-                            <p class="tc-text">"The crew was polite, efficient, and careful not to damage anything. They recycled most of the items too. Great eco-friendly service."</p>
-                            <div class="tc-author">
-                                <div class="tc-avatar" style="background:#2980b9">RP</div>
-                                <div class="tc-meta">
-                                    <div class="tc-name">Robert P.</div>
-                                    <div class="tc-role">Pompano Beach</div>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Duplicate for seamless loop -->
-                        <div class="tc-card">
-                            <p class="tc-text">"Called on a Saturday morning and they came by noon. Took away an entire garage full of old furniture and junk. Couldn't believe how fast they were."</p>
-                            <div class="tc-author">
-                                <div class="tc-avatar" style="background:#d35400">CR</div>
-                                <div class="tc-meta">
-                                    <div class="tc-name">Carlos R.</div>
-                                    <div class="tc-role">Wellington</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="tc-card">
-                            <p class="tc-text">"Moving out of my condo and needed everything cleared in a day. Umuve showed up on time, worked fast, and left the place spotless. Highly recommend."</p>
-                            <div class="tc-author">
-                                <div class="tc-avatar" style="background:#16a085">AW</div>
-                                <div class="tc-meta">
-                                    <div class="tc-name">Alicia W.</div>
-                                    <div class="tc-role">Coral Springs</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="tc-card">
-                            <p class="tc-text">"The crew was polite, efficient, and careful not to damage anything. They recycled most of the items too. Great eco-friendly service."</p>
-                            <div class="tc-author">
-                                <div class="tc-avatar" style="background:#2980b9">RP</div>
-                                <div class="tc-meta">
-                                    <div class="tc-name">Robert P.</div>
-                                    <div class="tc-role">Pompano Beach</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Column 3 (hidden on mobile + tablet) -->
-                <div class="testimonials-col testimonials-col--lg">
-                    <div class="testimonials-scroll testimonials-scroll--fast">
-                        <div class="tc-card">
-                            <p class="tc-text">"Upfront pricing with no surprises. They quoted me over text with photos and the final price was exactly what they said. Refreshing honesty."</p>
-                            <div class="tc-author">
-                                <div class="tc-avatar" style="background:#e67e22">SK</div>
-                                <div class="tc-meta">
-                                    <div class="tc-name">Sandra K.</div>
-                                    <div class="tc-role">Boynton Beach</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="tc-card">
-                            <p class="tc-text">"Used Umuve for a commercial cleanout at our office. They handled desks, chairs, old equipment — everything. Done in under two hours."</p>
-                            <div class="tc-author">
-                                <div class="tc-avatar" style="background:#34495e">MT</div>
-                                <div class="tc-meta">
-                                    <div class="tc-name">Marcus T.</div>
-                                    <div class="tc-role">Plantation</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="tc-card">
-                            <p class="tc-text">"I didn't even have to be home. Left a key, went to work, came back to a completely empty garage. They even swept the floor. Amazing."</p>
-                            <div class="tc-author">
-                                <div class="tc-avatar" style="background:#c0392b">LN</div>
-                                <div class="tc-meta">
-                                    <div class="tc-name">Lisa N.</div>
-                                    <div class="tc-role">Lake Worth</div>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Duplicate for seamless loop -->
-                        <div class="tc-card">
-                            <p class="tc-text">"Upfront pricing with no surprises. They quoted me over text with photos and the final price was exactly what they said. Refreshing honesty."</p>
-                            <div class="tc-author">
-                                <div class="tc-avatar" style="background:#e67e22">SK</div>
-                                <div class="tc-meta">
-                                    <div class="tc-name">Sandra K.</div>
-                                    <div class="tc-role">Boynton Beach</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="tc-card">
-                            <p class="tc-text">"Used Umuve for a commercial cleanout at our office. They handled desks, chairs, old equipment — everything. Done in under two hours."</p>
-                            <div class="tc-author">
-                                <div class="tc-avatar" style="background:#34495e">MT</div>
-                                <div class="tc-meta">
-                                    <div class="tc-name">Marcus T.</div>
-                                    <div class="tc-role">Plantation</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="tc-card">
-                            <p class="tc-text">"I didn't even have to be home. Left a key, went to work, came back to a completely empty garage. They even swept the floor. Amazing."</p>
-                            <div class="tc-author">
-                                <div class="tc-avatar" style="background:#c0392b">LN</div>
-                                <div class="tc-meta">
-                                    <div class="tc-name">Lisa N.</div>
-                                    <div class="tc-role">Lake Worth</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Aggregate rating -->
-            <div class="testimonial-aggregate" data-animate>
-                <svg class="icon icon-star" style="width:20px;height:20px;"><use href="#icon-star"/></svg>
-                <strong>4.9/5</strong> from 100+ reviews on Google
+    <section class="us us-porcelain">
+        <div class="us-wrap">
+            <div class="us-head" data-animate><span class="us-eyebrow">Reviews</span><h2 class="us-h2">What customers say.</h2></div>
+            <div class="us-quotes" data-animate data-animate-stagger>
+                <div class="us-quote"><div class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div><p>&ldquo;Fastest service I&rsquo;ve ever experienced. Texted them at 9am, they showed up at 2pm same day and cleared everything in 20 minutes.&rdquo;</p><div class="who"><div class="av" style="background:#c0392b">MS</div><div><div class="nm">Maria S.</div><div class="ct">Boca Raton</div></div></div></div>
+                <div class="us-quote"><div class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div><p>&ldquo;I was dreading cleaning out my late father&rsquo;s estate. Umuve handled everything professionally and respectfully &mdash; they even donated items to local charities.&rdquo;</p><div class="who"><div class="av" style="background:#2c3e50">DT</div><div><div class="nm">David T.</div><div class="ct">Delray Beach</div></div></div></div>
+                <div class="us-quote"><div class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div><p>&ldquo;Got quotes from 3 companies. Umuve was the most transparent and actually came in under budget. Great crew, super professional.&rdquo;</p><div class="who"><div class="av" style="background:#8e44ad">JM</div><div><div class="nm">Jennifer M.</div><div class="ct">Fort Lauderdale</div></div></div></div>
+                <div class="us-quote"><div class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div><p>&ldquo;Called on a Saturday morning and they came by noon. Took away an entire garage full of old furniture. Couldn&rsquo;t believe how fast they were.&rdquo;</p><div class="who"><div class="av" style="background:#16a085">CR</div><div><div class="nm">Carlos R.</div><div class="ct">West Palm Beach</div></div></div></div>
+                <div class="us-quote"><div class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div><p>&ldquo;Moving out of my condo and needed everything cleared in a day. They showed up on time, worked fast, and left the place spotless.&rdquo;</p><div class="who"><div class="av" style="background:#d35400">AW</div><div><div class="nm">Alicia W.</div><div class="ct">Hollywood</div></div></div></div>
+                <div class="us-quote"><div class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div><p>&ldquo;The crew was polite, efficient, and careful not to damage anything. They recycled most of the items too. Great eco-friendly service.&rdquo;</p><div class="who"><div class="av" style="background:#34495e">ML</div><div><div class="nm">Marcus L.</div><div class="ct">Pompano Beach</div></div></div></div>
             </div>
         </div>
     </section>
 
     <!-- Service Areas -->
-    <section class="section areas-section" id="areas">
-        <div class="container">
-            <div class="section-header" data-animate>
-                <span class="section-label">Coverage</span>
-                <h2 class="section-title">Serving Palm Beach & Broward County</h2>
+    <section class="us us-white" id="areas">
+        <div class="us-wrap">
+            <div class="us-head" data-animate><span class="us-eyebrow">Coverage</span><h2 class="us-h2">Serving Palm Beach &amp; Broward.</h2></div>
+            <div class="us-areas" data-animate data-animate-stagger>
+                <div class="us-area"><h3>Palm Beach County</h3><div class="chips"><span>Boca Raton</span><span>Delray Beach</span><span>West Palm Beach</span><span>Wellington</span><span>Boynton Beach</span><span>Lake Worth</span><span>Jupiter</span><span>Palm Beach Gardens</span></div></div>
+                <div class="us-area"><h3>Broward County</h3><div class="chips"><span>Fort Lauderdale</span><span>Pompano Beach</span><span>Coral Springs</span><span>Pembroke Pines</span><span>Hollywood</span><span>Davie</span><span>Plantation</span><span>Sunrise</span></div></div>
             </div>
-
-            <div class="areas-grid" data-animate data-animate-stagger>
-                <div class="area-card">
-                    <h3>
-                        <svg class="icon icon-inline"><use href="#icon-map-pin"/></svg>
-                        Palm Beach County
-                    </h3>
-                    <div class="area-list">
-                        <span>Boca Raton</span>
-                        <span>Delray Beach</span>
-                        <span>West Palm Beach</span>
-                        <span>Wellington</span>
-                        <span>Boynton Beach</span>
-                        <span>Lake Worth</span>
-                        <span>Jupiter</span>
-                        <span>Palm Beach Gardens</span>
-                    </div>
-                </div>
-
-                <div class="area-card">
-                    <h3>
-                        <svg class="icon icon-inline"><use href="#icon-map-pin"/></svg>
-                        Broward County
-                    </h3>
-                    <div class="area-list">
-                        <span>Fort Lauderdale</span>
-                        <span>Pompano Beach</span>
-                        <span>Coral Springs</span>
-                        <span>Pembroke Pines</span>
-                        <span>Hollywood</span>
-                        <span>Davie</span>
-                        <span>Plantation</span>
-                        <span>Sunrise</span>
-                    </div>
-                </div>
-            </div>
-
-            <p class="areas-note" data-animate>Don't see your city? Call us—we probably service your area!</p>
+            <p class="us-note" data-animate>Don&rsquo;t see your city? <a href="tel:+15619441636">Call us</a> &mdash; we probably cover it.</p>
         </div>
     </section>
 
     <!-- FAQ Section -->
-    <section class="section faq-section" id="faq">
-        <div class="container">
-            <div class="section-header" data-animate>
-                <span class="section-label">FAQ</span>
-                <h2 class="section-title">Common Questions</h2>
-                <p class="section-subtitle">Everything you need to know about our junk removal service.</p>
-            </div>
-
-            <div class="faq-list" data-animate data-animate-stagger>
-                <div class="faq-item">
-                    <button class="faq-question" aria-expanded="false">
-                        <span>How much does junk removal cost?</span>
-                        <svg class="icon icon-faq-chevron"><use href="#icon-chevron-down"/></svg>
-                    </button>
-                    <div class="faq-answer">
-                        <p>We provide upfront quotes based on photos you text us. Pricing depends on the volume and type of items. There are no hidden fees — the price we quote is the price you pay.</p>
-                    </div>
-                </div>
-
-                <div class="faq-item">
-                    <button class="faq-question" aria-expanded="false">
-                        <span>What items do you accept?</span>
-                        <svg class="icon icon-faq-chevron"><use href="#icon-chevron-down"/></svg>
-                    </button>
-                    <div class="faq-answer">
-                        <p>We take almost everything — furniture, appliances, electronics, yard debris, construction waste, and more. We cannot accept hazardous materials like paint, chemicals, or asbestos.</p>
-                    </div>
-                </div>
-
-                <div class="faq-item">
-                    <button class="faq-question" aria-expanded="false">
-                        <span>Do I need to be home during pickup?</span>
-                        <svg class="icon icon-faq-chevron"><use href="#icon-chevron-down"/></svg>
-                    </button>
-                    <div class="faq-answer">
-                        <p>Nope! Just leave a key or arrange access and we'll handle everything. We'll text you a photo when the job is done so you have peace of mind.</p>
-                    </div>
-                </div>
-
-                <div class="faq-item">
-                    <button class="faq-question" aria-expanded="false">
-                        <span>How fast can you pick up my junk?</span>
-                        <svg class="icon icon-faq-chevron"><use href="#icon-chevron-down"/></svg>
-                    </button>
-                    <div class="faq-answer">
-                        <p>Most pickups happen same-day or next-day. Text us photos for an instant quote and we'll schedule your earliest available slot. We know you want it gone fast.</p>
-                    </div>
-                </div>
-
-                <div class="faq-item">
-                    <button class="faq-question" aria-expanded="false">
-                        <span>What happens to my stuff after pickup?</span>
-                        <svg class="icon icon-faq-chevron"><use href="#icon-chevron-down"/></svg>
-                    </button>
-                    <div class="faq-answer">
-                        <p>We recycle, donate, and repurpose whenever possible. About 90% of what we collect is diverted from landfills. Usable items go to local charities and donation centers.</p>
-                    </div>
-                </div>
-
-                <div class="faq-item">
-                    <button class="faq-question" aria-expanded="false">
-                        <span>Are you licensed and insured?</span>
-                        <svg class="icon icon-faq-chevron"><use href="#icon-chevron-down"/></svg>
-                    </button>
-                    <div class="faq-answer">
-                        <p>Yes! Umuve is fully licensed and insured in the state of Florida. Your property is protected during every job. We take professionalism seriously.</p>
-                    </div>
-                </div>
+    <section class="us us-porcelain" id="faq">
+        <div class="us-wrap">
+            <div class="us-head" data-animate><span class="us-eyebrow">FAQ</span><h2 class="us-h2">Common questions.</h2></div>
+            <div class="us-faq" data-animate>
+                <details><summary>How much does junk removal cost?</summary><p class="a">We give an upfront, binding quote from the photos you send &mdash; the price you&rsquo;re quoted is the price you pay. Pricing is volume-based; labor, hauling, and disposal are included. No hidden fees.</p></details>
+                <details><summary>What items do you take?</summary><p class="a">Almost everything &mdash; furniture, appliances, electronics, yard debris, and construction waste. We can&rsquo;t accept hazardous materials like paint, chemicals, or asbestos.</p></details>
+                <details><summary>Do I need to be home?</summary><p class="a">Nope. Leave a key or arrange access and we&rsquo;ll handle it &mdash; then text you before-and-after photos when the job&rsquo;s done.</p></details>
+                <details><summary>How fast can you pick up?</summary><p class="a">Most pickups happen same-day or next-day. Get an instant quote in the app and we&rsquo;ll book your earliest slot.</p></details>
+                <details><summary>What happens to my stuff?</summary><p class="a">We donate and recycle first &mdash; about 90% of what we collect is kept out of landfills, and usable items go to local charities.</p></details>
+                <details><summary>Are you licensed and insured?</summary><p class="a">Yes. Umuve operators are licensed and insured in Florida, and your property is protected on every job.</p></details>
             </div>
         </div>
     </section>
 
     <!-- Pricing Section -->
-    <section class="section pricing-section" id="pricing">
-        <div class="container">
-            <div class="section-header" data-animate>
-                <span class="section-label">Transparent Pricing</span>
-                <h2 class="section-title">Know What You'll Pay. No Surprises.</h2>
-                <p class="section-subtitle">Volume-based pricing. Labor, hauling, and eco-friendly disposal included.</p>
+    <section class="us us-white" id="pricing">
+        <div class="us-wrap">
+            <div class="us-head" data-animate><span class="us-eyebrow">Transparent pricing</span><h2 class="us-h2">Know what you'll pay. No surprises.</h2><p class="us-sub">Volume-based. Labor, hauling, and eco-friendly disposal included.</p></div>
+            <div class="us-pricing" data-animate data-animate-stagger>
+                <div class="us-price-card"><div class="lbl">Small load</div><div class="amt"><span>$</span>89</div><div class="sz">1/8 truck</div><ul><li>A few items (chair, boxes, lamp)</li><li>Same-day available</li><li>Labor included</li></ul></div>
+                <div class="us-price-card feat"><span class="us-pop">Most popular</span><div class="lbl">Medium load</div><div class="amt"><span>$</span>249</div><div class="sz">1/2 truck</div><ul><li>Couch + mattress + misc</li><li>Most popular size</li><li>Donation receipt included</li></ul></div>
+                <div class="us-price-card"><div class="lbl">Full truck</div><div class="amt"><span>$</span>599</div><div class="sz">Full load</div><ul><li>Garage &amp; estate cleanouts</li><li>Construction debris</li><li>Everything hauled in one trip</li></ul></div>
             </div>
-
-            <div class="pricing-grid" data-animate data-animate-stagger>
-                <div class="pricing-card">
-                    <div class="pricing-label">Small Load</div>
-                    <div class="pricing-amount">$89</div>
-                    <div class="pricing-desc">1/8 truck</div>
-                    <ul class="pricing-includes">
-                        <li>A few items (chair, boxes, lamp)</li>
-                        <li>Same-day available</li>
-                        <li>Labor included</li>
-                    </ul>
-                </div>
-
-                <div class="pricing-card">
-                    <div class="pricing-label">Medium Load</div>
-                    <div class="pricing-amount">$249</div>
-                    <div class="pricing-desc">1/2 truck</div>
-                    <ul class="pricing-includes">
-                        <li>Couch + mattress + misc</li>
-                        <li>Most popular size</li>
-                        <li>Donation receipt included</li>
-                    </ul>
-                    <span class="pricing-badge">Most Popular</span>
-                </div>
-
-                <div class="pricing-card">
-                    <div class="pricing-label">Full Truck</div>
-                    <div class="pricing-amount">$599</div>
-                    <div class="pricing-desc">Full truck load</div>
-                    <ul class="pricing-includes">
-                        <li>Garage/estate cleanouts</li>
-                        <li>Construction debris</li>
-                        <li>Everything hauled in one trip</li>
-                    </ul>
-                </div>
-            </div>
-
-            <p class="pricing-note" data-animate>Not sure about your load size? <a href="https://app.goumuve.com/book">Upload photos for a free quote</a> — we'll tell you exactly what it costs.</p>
+            <p class="us-note" data-animate>Not sure about your load? <a href="https://app.goumuve.com/book">Upload photos for a free quote</a> &mdash; we&rsquo;ll tell you exactly what it costs.</p>
         </div>
     </section>
 
@@ -1061,17 +721,15 @@
     </section>
 
     <!-- Newsletter Signup -->
-    <section class="section" style="padding:3rem 0;background:#f9fafb;">
-        <div class="container">
-            <div style="max-width:520px;margin:0 auto;text-align:center;">
-                <h3 style="font-family:var(--font-display);font-size:1.5rem;font-weight:800;margin-bottom:.5rem;">Get Deals & Tips</h3>
-                <p style="color:var(--color-text-secondary);margin-bottom:1.25rem;font-size:.95rem;">Seasonal discounts, decluttering tips, and South Florida hauling news. No spam.</p>
-                <form id="subscribe-form" style="display:flex;gap:.5rem;max-width:440px;margin:0 auto;" onsubmit="return handleSubscribe(event)">
-                    <input type="email" id="subscribe-email" placeholder="your@email.com" required style="flex:1;padding:.75rem 1rem;border:1px solid #d1d5db;border-radius:.5rem;font-size:1rem;font-family:var(--font-body);outline:none;" aria-label="Email address">
-                    <button type="submit" class="btn btn-primary" id="subscribe-btn" style="padding:.75rem 1.5rem;font-size:.95rem;white-space:nowrap;">Subscribe</button>
-                </form>
-                <p id="subscribe-msg" style="margin-top:.75rem;font-size:.85rem;min-height:1.2em;" aria-live="polite"></p>
-            </div>
+    <section class="us us-porcelain">
+        <div class="us-news" data-animate>
+            <h3>Get deals &amp; tips</h3>
+            <p>Seasonal discounts, decluttering tips, and South Florida hauling news. No spam.</p>
+            <form id="subscribe-form" onsubmit="return handleSubscribe(event)">
+                <input type="email" id="subscribe-email" placeholder="your@email.com" required aria-label="Email address">
+                <button type="submit" id="subscribe-btn">Subscribe</button>
+            </form>
+            <p id="subscribe-msg" class="msg" aria-live="polite"></p>
         </div>
     </section>
 
