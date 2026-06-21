@@ -157,7 +157,12 @@ if _cors_env:
             "CORS_ORIGINS is set to '*' in a non-development environment! "
             "Falling back to the default allow-list for safety."
         )
-        _allowed_origins = _DEFAULT_ORIGINS
+        _allowed_origins = list(_DEFAULT_ORIGINS)
+    else:
+        # Always include our own first-party origins so a missing entry in the
+        # env var can't silently break our apps (this is exactly what blocked
+        # portal.goumuve.com from talking to the API). De-duped, order kept.
+        _allowed_origins = list(dict.fromkeys(_allowed_origins + _DEFAULT_ORIGINS))
 elif _is_development:
     _allowed_origins = "*"
 else:
