@@ -216,6 +216,60 @@ def subscribe_org(org_id, tier=None, stripe_api_key=None):
 # ---------------------------------------------------------------------------
 # Flask webhook blueprint: /portal/v1/billing/webhook
 # ---------------------------------------------------------------------------
+def push_portal_invoice_to_stripe(org, portal_invoice, line_items):
+    """Create + finalize a Stripe invoice for a generated PortalInvoice.
+
+    Uses collection_method=send_invoice on the org's net terms, so it works for
+    B2B without a saved card (Stripe emails a hosted, payable invoice). The
+    /webhook handler flips PortalInvoice -> paid / past_due via stripe_invoice_id.
+
+    Returns the Stripe invoice id, or None if it can't push yet (no Stripe
+    customer on the org, no API key, or a zero total). Never raises.
+    """
+    try:
+        if not org or not getattr(org, "stripe_customer_id", None):
+            return None
+        if (portal_invoice.total_cents or 0) <= 0:
+            return None
+        import stripe
+        key = os.environ.get("STRIPE_SECRET_KEY")
+        if not key:
+            return None
+        stripe.api_key = key
+
+        # Pending invoice items on the customer (one per non-zero line).
+        for li in line_items:
+            amt = int(li.amount_cents or 0)
+            if amt <= 0:
+                continue
+            stripe.InvoiceItem.create(
+                customer=org.stripe_customer_id,
+                amount=amt,
+                currency="usd",
+                description=(li.description or "Pickup")[:200],
+            )
+
+        inv = stripe.Invoice.create(
+            customer=org.stripe_customer_id,
+            collection_method="send_invoice",
+            days_until_due=int(getattr(org, "net_terms_days", None) or 30),
+            auto_advance=True,
+            metadata={
+                "portal_invoice_id": portal_invoice.id,
+                "number": portal_invoice.number,
+            },
+        )
+        # Finalize so it's issued (and emailed for send_invoice).
+        stripe.Invoice.finalize_invoice(inv.id)
+        return inv.id
+    except Exception:
+        logger.exception(
+            "push_portal_invoice_to_stripe failed for org=%s invoice=%s",
+            getattr(org, "id", "?"), getattr(portal_invoice, "id", "?"),
+        )
+        return None
+
+
 billing_portal_bp = Blueprint(
     "billing_portal", __name__, url_prefix="/portal/v1/billing"
 )

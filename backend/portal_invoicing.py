@@ -174,6 +174,20 @@ def generate_monthly_invoices(month, year):
         invoice.line_items = line_items
         db.session.add(invoice)
         db.session.flush()
+
+        # Stage 2: push to Stripe so the invoice actually collects. Stores
+        # stripe_invoice_id; the /portal/v1/billing/webhook handler flips
+        # status -> paid / past_due. No-op (None) until the org has a Stripe
+        # customer + STRIPE_SECRET_KEY is set — invoice still exists as a record.
+        try:
+            from billing_portal import push_portal_invoice_to_stripe
+            sid = push_portal_invoice_to_stripe(org, invoice, line_items)
+            if sid:
+                invoice.stripe_invoice_id = sid
+                # stays "open" until the webhook marks it paid/past_due
+        except Exception:
+            logger.exception("Stripe invoice push failed for org %s", org_id)
+
         created_ids.append(invoice.id)
 
     db.session.commit()
