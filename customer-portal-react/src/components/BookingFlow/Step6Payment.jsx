@@ -42,27 +42,6 @@ const PaymentForm = ({ formData, updateCustomerInfo, prevStep, setError, resetFo
   const [errors, setErrors] = useState({});
   const [cardComplete, setCardComplete] = useState(false);
 
-  // Promo code (validated + applied server-side at payment time)
-  const [promoInput, setPromoInput] = useState(formData.promoCode || '');
-  const [appliedPromo, setAppliedPromo] = useState(null);
-  const [promoError, setPromoError] = useState('');
-  const [promoChecking, setPromoChecking] = useState(false);
-
-  const handleApplyPromo = async () => {
-    const code = promoInput.trim();
-    if (!code) return;
-    setPromoChecking(true);
-    setPromoError('');
-    const res = await api.validatePromo(code, formData.estimate?.total || 0);
-    setPromoChecking(false);
-    if (res.valid) {
-      setAppliedPromo({ code, discount: res.discount_amount, newTotal: res.new_total });
-    } else {
-      setAppliedPromo(null);
-      setPromoError(res.error || res.message || 'Invalid promo code');
-    }
-  };
-
   // Apple Pay / Google Pay
   const [paymentRequest, setPaymentRequest] = useState(null);
   const [canMakePayment, setCanMakePayment] = useState(null);
@@ -107,8 +86,8 @@ const PaymentForm = ({ formData, updateCustomerInfo, prevStep, setError, resetFo
         const bookingResult = await api.createBooking(bookingData);
         const newBookingId = bookingResult.bookingId;
 
-        // 2. Create payment intent (promo applied server-side if present)
-        const piResult = await api.createPaymentIntent(newBookingId, formData.estimate.total, appliedPromo?.code || null);
+        // 2. Create payment intent
+        const piResult = await api.createPaymentIntent(newBookingId, formData.estimate.total);
 
         // 3. Confirm with the payment method from Apple Pay / Google Pay
         const { error, paymentIntent } = await stripe.confirmCardPayment(
@@ -166,28 +145,6 @@ const PaymentForm = ({ formData, updateCustomerInfo, prevStep, setError, resetFo
     }
   };
 
-  // Capture the lead for email-drip recovery once a valid email is entered, so
-  // a customer who reaches payment but bails still gets the 1h/24h/72h drip.
-  // Conversion is auto-marked server-side on payment. Fire-and-forget, once
-  // per email. (validateEmail returns an error string when INVALID.)
-  const abandonedRef = useRef('');
-  const captureAbandoned = () => {
-    const email = (customerInfo.email || '').trim().toLowerCase();
-    if (!email || validateEmail(email)) return;
-    if (abandonedRef.current === email) return;
-    abandonedRef.current = email;
-    api.captureAbandoned({
-      email,
-      phone: customerInfo.phone,
-      name: customerInfo.name,
-      address: formData.address?.formatted || formData.address?.address || '',
-      items: formData.items,
-      estimatedPrice: formData.estimate?.total,
-      step: 6,
-      leadSource: 'web_booking',
-    });
-  };
-
   const validateCustomerInfo = () => {
     const newErrors = {};
 
@@ -238,22 +195,13 @@ const PaymentForm = ({ formData, updateCustomerInfo, prevStep, setError, resetFo
       const newBookingId = bookingResult.bookingId;
       setBookingId(newBookingId);
 
-      // 2. Create payment intent (promo, if any, is validated + applied server-side)
+      // 2. Create payment intent
       const paymentIntentResult = await api.createPaymentIntent(
         newBookingId,
-        formData.estimate.total,
-        appliedPromo?.code || null
+        formData.estimate.total
       );
 
       const clientSecret = paymentIntentResult.clientSecret;
-      const chargedTotal = paymentIntentResult.amount ?? (appliedPromo ? appliedPromo.newTotal : formData.estimate.total);
-
-      // Browser pixel: InitiateCheckout (deduped with server CAPI via event_id)
-      if (window.fbq) {
-        window.fbq('track', 'InitiateCheckout',
-          { value: chargedTotal, currency: 'USD', content_ids: [newBookingId], content_type: 'product' },
-          { eventID: `checkout_${newBookingId}` });
-      }
 
       // 3. Confirm payment with Stripe
       const cardElement = elements.getElement(CardElement);
@@ -277,14 +225,7 @@ const PaymentForm = ({ formData, updateCustomerInfo, prevStep, setError, resetFo
 
       // Success!
       setPaymentSuccess(true);
-
-      // Browser pixel: Purchase (deduped with server CAPI via event_id)
-      if (window.fbq) {
-        window.fbq('track', 'Purchase',
-          { value: chargedTotal, currency: 'USD', content_ids: [newBookingId], content_type: 'product' },
-          { eventID: `purchase_${newBookingId}` });
-      }
-
+      
       // Save customer info
       updateCustomerInfo('name', customerInfo.name);
       updateCustomerInfo('email', customerInfo.email);
@@ -431,37 +372,9 @@ const PaymentForm = ({ formData, updateCustomerInfo, prevStep, setError, resetFo
           <div className="flex justify-between items-center">
             <span className="text-lg font-medium text-gray-900">Amount Due</span>
             <span className="text-3xl font-bold text-primary-600">
-              {formatCurrency(appliedPromo ? appliedPromo.newTotal : formData.estimate.total)}
+              {formatCurrency(formData.estimate.total)}
             </span>
           </div>
-          {appliedPromo && (
-            <div className="mt-2 flex justify-between text-sm text-green-700">
-              <span>Promo {appliedPromo.code} applied</span>
-              <span>-{formatCurrency(appliedPromo.discount)}</span>
-            </div>
-          )}
-        </div>
-
-        {/* Promo code */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Promo code</label>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={promoInput}
-              onChange={(e) => { setPromoInput(e.target.value.toUpperCase()); setPromoError(''); }}
-              placeholder="e.g. PBC25"
-              disabled={!!appliedPromo}
-              className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm uppercase focus:border-primary-500 focus:outline-none disabled:bg-gray-100"
-            />
-            {appliedPromo ? (
-              <button type="button" onClick={() => { setAppliedPromo(null); setPromoInput(''); setPromoError(''); }} className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900">Remove</button>
-            ) : (
-              <button type="button" onClick={handleApplyPromo} disabled={promoChecking || !promoInput.trim()} className="px-4 py-2 rounded-lg bg-gray-900 text-white text-sm font-medium disabled:opacity-50">{promoChecking ? '…' : 'Apply'}</button>
-            )}
-          </div>
-          {promoError && <p className="mt-1 text-sm text-red-600">{promoError}</p>}
-          {appliedPromo && <p className="mt-1 text-sm text-green-700">You'll pay {formatCurrency(appliedPromo.newTotal)} — saved {formatCurrency(appliedPromo.discount)}.</p>}
         </div>
 
         {/* Apple Pay / Google Pay */}
@@ -528,7 +441,6 @@ const PaymentForm = ({ formData, updateCustomerInfo, prevStep, setError, resetFo
               id="email"
               value={customerInfo.email}
               onChange={(e) => handleCustomerInfoChange('email', e.target.value)}
-              onBlur={captureAbandoned}
               placeholder="john@example.com"
               disabled={isProcessing}
               className="input-field"
@@ -625,7 +537,7 @@ const PaymentForm = ({ formData, updateCustomerInfo, prevStep, setError, resetFo
             ) : (
               <>
                 <Lock className="w-4 h-4" />
-                Pay {formatCurrency(appliedPromo ? appliedPromo.newTotal : formData.estimate.total)}
+                Pay {formatCurrency(formData.estimate.total)}
               </>
             )}
           </button>
