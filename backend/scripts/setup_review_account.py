@@ -50,10 +50,14 @@ if not db_url:
 if db_url.startswith("postgres://"):
     db_url = db_url.replace("postgres://", "postgresql://", 1)
 
-now = datetime.datetime.utcnow()
+now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
 pw_hash = generate_password_hash(PASSWORD)
 
-engine = create_engine(db_url)
+# Render's external Postgres requires SSL; force it unless the URL already says so.
+connect_args = {}
+if "sslmode=" not in db_url:
+    connect_args["sslmode"] = "require"
+engine = create_engine(db_url, connect_args=connect_args, pool_pre_ping=True)
 with engine.begin() as conn:
     # ---- users row ----
     row = conn.execute(text("SELECT id, role FROM users WHERE lower(email) = :e"),
