@@ -10,6 +10,7 @@ import {
   Sparkles,
   Truck,
   Weight,
+  ShieldCheck,
 } from "lucide-react";
 import { useBookingStore } from "@/stores/booking-store";
 import { bookingApi } from "@/lib/api";
@@ -138,10 +139,10 @@ export function Step5Estimate() {
       {/* Header */}
       <div>
         <h2 className="font-display text-2xl font-bold tracking-tight text-foreground">
-          Review Your Estimate
+          Your Price
         </h2>
         <p className="mt-1 text-muted-foreground">
-          Check the details below and accept the estimate to continue.
+          Locked in before we show up — all-in, no surprises on the day.
         </p>
       </div>
 
@@ -264,13 +265,27 @@ export function Step5Estimate() {
 
             <div className="border-t border-border pt-3">
               <div className="flex items-center justify-between">
-                <span className="text-base font-bold text-foreground">
-                  Total Estimate
-                </span>
+                <div>
+                  <span className="text-base font-bold text-foreground">
+                    Your Price
+                  </span>
+                  <p className="text-xs text-muted-foreground">
+                    All-in — loading, hauling &amp; disposal included
+                  </p>
+                </div>
                 <span className="text-2xl font-bold text-primary">
                   ${total.toFixed(2)}
                 </span>
               </div>
+              {!usedFallback && (
+                <div className="mt-3 flex items-center gap-2 rounded-md border border-primary/15 bg-primary/5 px-3 py-2">
+                  <ShieldCheck className="h-4 w-4 shrink-0 text-primary" />
+                  <p className="text-xs text-foreground">
+                    <span className="font-semibold">Locked price.</span> This is
+                    what you pay for the items shown — no on-site upcharges.
+                  </p>
+                </div>
+              )}
             </div>
           </>
         )}
@@ -286,8 +301,8 @@ export function Step5Estimate() {
             className="mt-1 h-5 w-5 rounded border-border text-primary focus:ring-primary accent-primary cursor-pointer"
           />
           <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">
-            I understand this is an estimate and accept the pricing. Final price
-            will be confirmed after on-site assessment.
+            The items above are accurate, and I accept this locked, all-in price.
+            Only materially different or extra items would need a quick re-quote.
           </span>
         </label>
       )}
