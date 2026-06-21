@@ -32,6 +32,15 @@ def _run_noshow_watchdog():
         logger.exception("No-show watchdog pass failed")
 
 
+def _sweep_expired_broadcasts(app):
+    """Second-wave: re-broadcast broadcast offers that all expired unclaimed."""
+    try:
+        from dispatcher import sweep_expired_broadcasts
+        sweep_expired_broadcasts(app)
+    except Exception:
+        logger.exception("Broadcast re-offer sweep failed")
+
+
 def _check_twilio_health(app):
     """Probe Twilio; email-alert if the account is down (e.g. billing suspension
     → all SMS silently failing). Email-only alert, so it survives a Twilio
@@ -479,6 +488,16 @@ def init_scheduler(app):
             name="No-show watchdog (T-30 unassigned, T+15 late-start)",
         )
 
+        # Broadcast second-wave: re-offer jobs whose offers all expired unclaimed.
+        scheduler.add_job(
+            _sweep_expired_broadcasts,
+            "interval",
+            minutes=5,
+            args=[app],
+            id="sweep_expired_broadcasts",
+            name="Re-broadcast expired job offers",
+        )
+
         # --- Migrated from the Celery worker (umuve-portal-beat) 2026-06-19 ---
 
         # Portal-v1: generate jobs for due recurring schedules (every 5 min).
@@ -534,7 +553,7 @@ def init_scheduler(app):
         )
 
         scheduler.start()
-        logger.info("Background scheduler started with 12 jobs")
+        logger.info("Background scheduler started with 13 jobs")
         return scheduler
     except ImportError:
         logger.warning("APScheduler not installed — scheduler disabled")

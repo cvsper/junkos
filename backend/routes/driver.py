@@ -38,6 +38,53 @@ def _get_contractor_or_404(user_id):
 
 
 # ---------------------------------------------------------------------------
+# GET /api/driver/offers  — pending broadcast job offers for this operator
+# ---------------------------------------------------------------------------
+@driver_bp.route("/offers", methods=["GET"])
+@require_auth
+def list_offers(user_id):
+    """List the operator's open broadcast offers so the app can show them
+    natively (no SMS token needed). Accept via POST /api/offers/<token>/accept.
+    This is what unblocks DISPATCH_MODE=broadcast for app-only operators."""
+    contractor, err = _get_contractor_or_404(user_id)
+    if err:
+        return err
+    from models import JobOffer
+
+    now = utcnow()
+    offers = (
+        JobOffer.query
+        .filter(
+            JobOffer.contractor_id == contractor.id,
+            JobOffer.status == "sent",
+            (JobOffer.expires_at.is_(None)) | (JobOffer.expires_at > now),
+        )
+        .order_by(JobOffer.sent_at.desc())
+        .all()
+    )
+
+    out = []
+    for o in offers:
+        job = db.session.get(Job, o.job_id)
+        # Only surface still-claimable offers (job not already taken).
+        if not job or job.driver_id:
+            continue
+        out.append({
+            "accept_token": o.accept_token,
+            "offer_id": o.id,
+            "job_id": o.job_id,
+            "payout_amount": o.payout_amount,
+            "distance_miles": o.distance_miles,
+            "expires_at": o.expires_at.isoformat() if o.expires_at else None,
+            "address": job.address,
+            "scheduled_at": job.scheduled_at.isoformat() if job.scheduled_at else None,
+            "items": job.items,
+            "total_price": job.total_price,
+        })
+    return jsonify({"success": True, "offers": out}), 200
+
+
+# ---------------------------------------------------------------------------
 # GET /api/driver/earnings
 # ---------------------------------------------------------------------------
 @driver_bp.route("/earnings", methods=["GET"])

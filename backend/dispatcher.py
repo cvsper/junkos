@@ -1013,6 +1013,66 @@ def broadcast_job_async(job_id, app):
         return None
 
 
+def sweep_expired_broadcasts(app=None):
+    """Second-wave: re-broadcast jobs whose offers all expired with no taker.
+
+    A job sits in 'broadcasting' once offered. If every offer expires and nobody
+    claimed it, this re-offers to a fresh eligible pool (operators come online at
+    different times). Capped by total offers to avoid runaway; escalates to admin
+    past the cap or once the pickup time has passed. Never raises.
+    """
+    MAX_OFFERS = 32  # ~3-4 waves of ~8 haulers before we stop + escalate
+
+    def _do():
+        from models import db, Job, JobOffer, utcnow
+        now = utcnow()
+        jobs = Job.query.filter(
+            Job.status == "broadcasting", Job.driver_id.is_(None)
+        ).all()
+        for job in jobs:
+            offers = JobOffer.query.filter_by(job_id=job.id).all()
+            active = [
+                o for o in offers
+                if o.status == "sent" and (o.expires_at is None or o.expires_at > now)
+            ]
+            if active:
+                continue  # still has live offers — let them run
+
+            # All offers closed and nobody took it. Mark stale ones expired.
+            for o in offers:
+                if o.status == "sent":
+                    o.status = "expired"
+                    o.responded_at = now
+
+            past_due = job.scheduled_at and job.scheduled_at < now
+            if past_due or len(offers) >= MAX_OFFERS:
+                logger.warning(
+                    "sweep: job %s unclaimed (%d offers, past_due=%s) — escalating",
+                    job.id, len(offers), bool(past_due),
+                )
+                _notify_admin_no_operators(job)
+                db.session.commit()
+                continue
+
+            # Re-broadcast: reset to 'confirmed' so broadcast_job will proceed.
+            job.status = "confirmed"
+            job.updated_at = now
+            db.session.commit()
+            logger.info(
+                "sweep: re-broadcasting job %s (prior offers=%d)", job.id, len(offers)
+            )
+            broadcast_job(job.id)  # fresh wave (runs in the current app context)
+
+    try:
+        if app:
+            with app.app_context():
+                _do()
+        else:
+            _do()
+    except Exception:
+        logger.exception("sweep_expired_broadcasts failed")
+
+
 def _sms_broadcast_offer(offer, contractor, job):
     """SMS one hauler a job offer with an accept link. Never raises."""
     try:
