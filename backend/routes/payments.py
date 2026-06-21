@@ -22,8 +22,14 @@ payments_bp = Blueprint("payments", __name__, url_prefix="/api/payments")
 
 _stripe = None
 
-PLATFORM_COMMISSION = 0.20
-SERVICE_FEE_RATE = 0.08  # 8% of amount – matches booking.py
+# Platform economics live in one place (pricing_config) so the operator's
+# payout preview and their actual pay can't drift, and so the take rate is
+# env-tunable for a launch (PLATFORM_COMMISSION_RATE / SERVICE_FEE_RATE).
+from pricing_config import commission_rate as _commission_rate
+from pricing_config import service_fee_rate as _service_fee_rate
+
+PLATFORM_COMMISSION = _commission_rate()  # default 0.20, env PLATFORM_COMMISSION_RATE
+SERVICE_FEE_RATE = _service_fee_rate()  # default 0.08, env SERVICE_FEE_RATE
 
 
 def _get_stripe():

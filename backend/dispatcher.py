@@ -47,12 +47,14 @@ ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "")
 DISPATCH_MODE = os.environ.get("DISPATCH_MODE", "assign").strip().lower()
 
 # Platform take on each job. Contractor payout = total_price * (1 - take).
-# Conservative default; tune per market. Operators (fleets) use their own
-# operator_commission_rate elsewhere — this governs independent haulers.
-try:
-    PLATFORM_TAKE_RATE = float(os.environ.get("PLATFORM_TAKE_RATE", "0.20"))
-except (TypeError, ValueError):
-    PLATFORM_TAKE_RATE = 0.20
+# Sourced from pricing_config so this PREVIEW matches what payments.py actually
+# pays (commission + service fee). Previously a separate 0.20 knob here showed
+# operators 80% while payments paid 72% — that drift is gone. Tune the take for
+# a launch via PLATFORM_COMMISSION_RATE / SERVICE_FEE_RATE. Fleet operators use
+# their own operator_commission_rate elsewhere — a different concept.
+from pricing_config import platform_take_rate as _platform_take_rate
+
+PLATFORM_TAKE_RATE = _platform_take_rate()
 
 # How long a broadcast offer stays acceptable before it's considered stale.
 try:
