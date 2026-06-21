@@ -1,10 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { Nav } from "@/components/nav";
+import { Truck } from "lucide-react";
 import { portalFetch } from "@/lib/api";
 import { useAuthStore } from "@/lib/stores/authStore";
+import {
+  AppShell,
+  Card,
+  StatCard,
+  PortalLoading,
+  usePortalGuard,
+} from "@/components/ui";
 
 interface Summary {
   jobs_this_month: number;
@@ -14,73 +20,71 @@ interface Summary {
 }
 
 export default function DashboardPage() {
-  const router = useRouter();
-  const { token, isLoading, hydrate } = useAuthStore();
+  const { ready } = usePortalGuard();
+  const { org } = useAuthStore();
   const [summary, setSummary] = useState<Summary | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    hydrate();
-  }, [hydrate]);
-
-  useEffect(() => {
-    if (isLoading) return;
-    if (!token) {
-      router.replace("/login");
-      return;
-    }
+    if (!ready) return;
     portalFetch<Summary>("/dashboard/summary")
       .then(setSummary)
       .catch((e) => setError(String(e)));
-  }, [isLoading, token, router]);
+  }, [ready]);
 
-  if (isLoading || !token) {
-    return <div className="p-8 text-gray-500">Loading…</div>;
-  }
+  if (!ready) return <PortalLoading />;
 
   return (
-    <div className="flex min-h-screen">
-      <Nav />
-      <main className="flex-1 p-8 max-w-6xl">
-        <h1 className="text-2xl font-semibold mb-6">Dashboard</h1>
-        {error && <div className="text-brand-600 mb-4">{error}</div>}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card label="Jobs This Month" value={summary?.jobs_this_month ?? "—"} />
-          <Card label="Open Invoices" value={summary?.open_invoices ?? "—"} />
-          <Card
-            label="Active Properties"
-            value={summary?.active_properties ?? "—"}
-          />
-          <Card
-            label="Next Pickup"
-            value={
-              summary?.next_pickup?.scheduled_at
-                ? new Date(summary.next_pickup.scheduled_at).toLocaleDateString()
-                : "None scheduled"
-            }
-          />
+    <AppShell
+      title="Dashboard"
+      subtitle={org?.name ? `Welcome back, ${org.name}.` : undefined}
+    >
+      {error && (
+        <div className="mb-4 rounded-lg border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
         </div>
+      )}
 
-        {summary?.next_pickup && (
-          <div className="mt-8 rounded-lg border border-gray-200 bg-white p-5">
-            <h2 className="text-sm font-medium text-gray-500 mb-2">
-              Upcoming Pickup
-            </h2>
-            <div className="text-gray-900">{summary.next_pickup.address}</div>
-          </div>
-        )}
-      </main>
-    </div>
-  );
-}
-
-function Card({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div className="rounded-lg border border-gray-200 bg-white p-5">
-      <div className="text-xs font-medium uppercase tracking-wide text-gray-500">
-        {label}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard label="Jobs this month" value={summary?.jobs_this_month ?? "—"} />
+        <StatCard label="Open invoices" value={summary?.open_invoices ?? "—"} />
+        <StatCard label="Active properties" value={summary?.active_properties ?? "—"} />
+        <StatCard
+          label="Next pickup"
+          value={
+            summary?.next_pickup?.scheduled_at
+              ? new Date(summary.next_pickup.scheduled_at).toLocaleDateString(
+                  undefined,
+                  { month: "short", day: "numeric" }
+                )
+              : "None"
+          }
+          hint={summary?.next_pickup?.scheduled_at ? "scheduled" : "nothing scheduled"}
+        />
       </div>
-      <div className="mt-2 text-2xl font-semibold text-gray-900">{value}</div>
-    </div>
+
+      {summary?.next_pickup && (
+        <Card className="mt-6 p-6">
+          <div className="flex items-start gap-4">
+            <div className="flex h-11 w-11 flex-none items-center justify-center rounded-xl bg-brand-50">
+              <Truck className="h-5 w-5 text-brand-600" />
+            </div>
+            <div>
+              <div className="text-xs font-semibold uppercase tracking-wider text-gray-400">
+                Upcoming pickup
+              </div>
+              <div className="mt-1 text-lg font-semibold text-gray-900">
+                {summary.next_pickup.address}
+              </div>
+              {summary.next_pickup.scheduled_at && (
+                <div className="mt-0.5 text-sm text-gray-500">
+                  {new Date(summary.next_pickup.scheduled_at).toLocaleString()}
+                </div>
+              )}
+            </div>
+          </div>
+        </Card>
+      )}
+    </AppShell>
   );
 }

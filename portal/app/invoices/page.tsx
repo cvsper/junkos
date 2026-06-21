@@ -1,10 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { Nav } from "@/components/nav";
 import { portalFetch } from "@/lib/api";
-import { useAuthStore } from "@/lib/stores/authStore";
+import {
+  AppShell,
+  Badge,
+  statusTone,
+  Table,
+  Th,
+  Td,
+  Tr,
+  EmptyRow,
+  PortalLoading,
+  usePortalGuard,
+} from "@/components/ui";
 
 interface Invoice {
   id: string;
@@ -16,97 +25,66 @@ interface Invoice {
   due_at: string | null;
 }
 
-const STATUS_BADGE: Record<string, string> = {
-  draft: "bg-gray-100 text-gray-700",
-  open: "bg-yellow-50 text-yellow-800",
-  paid: "bg-green-50 text-green-700",
-  past_due: "bg-red-50 text-red-700",
-  void: "bg-gray-100 text-gray-400 line-through",
-};
-
 export default function InvoicesPage() {
-  const router = useRouter();
-  const { token, isLoading, hydrate } = useAuthStore();
+  const { ready } = usePortalGuard();
   const [rows, setRows] = useState<Invoice[]>([]);
 
   useEffect(() => {
-    hydrate();
-  }, [hydrate]);
-
-  useEffect(() => {
-    if (isLoading) return;
-    if (!token) return router.replace("/login");
+    if (!ready) return;
     portalFetch<{ invoices: Invoice[] }>("/billing/invoices").then((r) =>
       setRows(r.invoices)
     );
-  }, [isLoading, token, router]);
+  }, [ready]);
 
-  if (isLoading || !token) return <div className="p-8 text-gray-500">Loading…</div>;
+  if (!ready) return <PortalLoading />;
 
   return (
-    <div className="flex min-h-screen">
-      <Nav />
-      <main className="flex-1 p-8">
-        <h1 className="text-2xl font-semibold mb-6">Invoices</h1>
-        <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 text-left">
-              <tr>
-                <th className="px-4 py-3 text-xs uppercase text-gray-500">
-                  Number
-                </th>
-                <th className="px-4 py-3 text-xs uppercase text-gray-500">
-                  Period
-                </th>
-                <th className="px-4 py-3 text-xs uppercase text-gray-500">
-                  Status
-                </th>
-                <th className="px-4 py-3 text-xs uppercase text-gray-500 text-right">
-                  Amount
-                </th>
-                <th className="px-4 py-3 text-xs uppercase text-gray-500">
-                  Due
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="p-6 text-center text-gray-500">
-                    No invoices yet.
-                  </td>
-                </tr>
-              )}
-              {rows.map((i) => (
-                <tr key={i.id} className="border-t border-gray-100">
-                  <td className="px-4 py-3 font-medium">{i.number}</td>
-                  <td className="px-4 py-3 text-gray-600">
-                    {new Date(i.period_start).toLocaleDateString()} –{" "}
-                    {new Date(i.period_end).toLocaleDateString()}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`inline-block text-xs px-2 py-0.5 rounded-full ${
-                        STATUS_BADGE[i.status] || STATUS_BADGE.draft
-                      }`}
-                    >
-                      {i.status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    ${(i.total_cents / 100).toFixed(2)}
-                  </td>
-                  <td className="px-4 py-3 text-gray-600">
-                    {i.due_at
-                      ? new Date(i.due_at).toLocaleDateString()
-                      : "—"}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </main>
-    </div>
+    <AppShell title="Invoices" subtitle="Your monthly statements, one per cycle.">
+      <Table
+        head={
+          <tr>
+            <Th>Number</Th>
+            <Th>Period</Th>
+            <Th>Status</Th>
+            <Th className="text-right">Amount</Th>
+            <Th>Due</Th>
+          </tr>
+        }
+      >
+        {rows.length === 0 ? (
+          <EmptyRow colSpan={5}>
+            No invoices yet. They appear here once your first billing cycle closes.
+          </EmptyRow>
+        ) : (
+          rows.map((i) => (
+            <Tr key={i.id}>
+              <Td className="font-medium">{i.number}</Td>
+              <Td className="text-gray-600">
+                {new Date(i.period_start).toLocaleDateString(undefined, {
+                  month: "short",
+                  day: "numeric",
+                })}{" "}
+                –{" "}
+                {new Date(i.period_end).toLocaleDateString(undefined, {
+                  month: "short",
+                  day: "numeric",
+                })}
+              </Td>
+              <Td>
+                <Badge tone={statusTone(i.status)}>
+                  {i.status.replace(/_/g, " ")}
+                </Badge>
+              </Td>
+              <Td className="text-right font-medium tabular-nums">
+                ${(i.total_cents / 100).toFixed(2)}
+              </Td>
+              <Td className="text-gray-600">
+                {i.due_at ? new Date(i.due_at).toLocaleDateString() : "—"}
+              </Td>
+            </Tr>
+          ))
+        )}
+      </Table>
+    </AppShell>
   );
 }

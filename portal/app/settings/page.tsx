@@ -1,10 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { Nav } from "@/components/nav";
+import { ReactNode, useEffect, useState } from "react";
 import { portalFetch } from "@/lib/api";
 import { useAuthStore } from "@/lib/stores/authStore";
+import {
+  AppShell,
+  Card,
+  Button,
+  Badge,
+  statusTone,
+  PortalLoading,
+  usePortalGuard,
+} from "@/components/ui";
 
 interface Subscription {
   tier: string;
@@ -16,8 +23,8 @@ interface Subscription {
 }
 
 export default function SettingsPage() {
-  const router = useRouter();
-  const { token, isLoading, hydrate, org } = useAuthStore();
+  const { ready } = usePortalGuard();
+  const { org } = useAuthStore();
   const [sub, setSub] = useState<Subscription | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -49,39 +56,35 @@ export default function SettingsPage() {
   }
 
   useEffect(() => {
-    hydrate();
-  }, [hydrate]);
-
-  useEffect(() => {
-    if (isLoading) return;
-    if (!token) return router.replace("/login");
+    if (!ready) return;
     portalFetch<Subscription>("/billing/subscription").then(setSub);
-  }, [isLoading, token, router]);
+  }, [ready]);
 
-  if (isLoading || !token) return <div className="p-8 text-gray-500">Loading…</div>;
+  if (!ready) return <PortalLoading />;
 
   return (
-    <div className="flex min-h-screen">
-      <Nav />
-      <main className="flex-1 p-8 max-w-3xl">
-        <h1 className="text-2xl font-semibold mb-6">Settings</h1>
-
-        <section className="mb-8 rounded-lg border border-gray-200 bg-white p-5">
-          <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">
-            Organization
-          </h2>
+    <AppShell
+      title="Settings"
+      subtitle="Your organization and billing."
+      maxWidth="max-w-3xl"
+    >
+      <div className="space-y-6">
+        <Section title="Organization">
           <Row label="Name" value={org?.name || "—"} />
           <Row label="Slug" value={org?.slug || "—"} />
           <Row label="Billing email" value={org?.billing_email || "—"} />
-          <Row label="Status" value={org?.status || "—"} />
-        </section>
+          <Row
+            label="Status"
+            value={org?.status ? <Badge tone={statusTone(org.status)}>{org.status}</Badge> : "—"}
+          />
+        </Section>
 
-        <section className="rounded-lg border border-gray-200 bg-white p-5">
-          <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">
-            Subscription
-          </h2>
-          <Row label="Tier" value={sub?.tier || "—"} />
-          <Row label="Status" value={sub?.status || "—"} />
+        <Section title="Subscription">
+          <Row label="Plan" value={<span className="capitalize">{sub?.tier || "—"}</span>} />
+          <Row
+            label="Status"
+            value={sub?.status ? <Badge tone={statusTone(sub.status)}>{sub.status}</Badge> : "—"}
+          />
           <Row
             label="Payment"
             value={
@@ -100,48 +103,54 @@ export default function SettingsPage() {
               )
             }
           />
-        </section>
+        </Section>
 
-        <section className="mt-6 rounded-lg border border-gray-200 bg-white p-5">
-          <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">
-            Billing
-          </h2>
+        <Section title="Billing">
           {sub?.stripe_customer_id ? (
-            <button
-              onClick={manageBilling}
-              disabled={busy}
-              className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
-            >
+            <Button variant="dark" onClick={manageBilling} disabled={busy}>
               {busy ? "Opening…" : "Manage billing"}
-            </button>
+            </Button>
           ) : (
             <div>
-              <p className="text-sm text-gray-500 mb-3">
-                Choose a plan to start recurring service.
+              <p className="mb-3 text-sm text-gray-500">
+                Choose a plan to start recurring service and consolidated monthly
+                billing.
               </p>
               <div className="flex flex-wrap gap-2">
                 {["starter", "pro", "enterprise"].map((t) => (
-                  <button
+                  <Button
                     key={t}
+                    variant="secondary"
+                    className="capitalize"
                     onClick={() => startCheckout(t)}
                     disabled={busy}
-                    className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium capitalize text-gray-900 hover:border-gray-900 disabled:opacity-50"
                   >
                     Subscribe — {t}
-                  </button>
+                  </Button>
                 ))}
               </div>
             </div>
           )}
-        </section>
-      </main>
-    </div>
+        </Section>
+      </div>
+    </AppShell>
   );
 }
 
-function Row({ label, value }: { label: string; value: React.ReactNode }) {
+function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <div className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0 text-sm">
+    <Card className="p-6">
+      <h2 className="mb-4 text-xs font-semibold uppercase tracking-wider text-gray-400">
+        {title}
+      </h2>
+      {children}
+    </Card>
+  );
+}
+
+function Row({ label, value }: { label: string; value: ReactNode }) {
+  return (
+    <div className="flex items-center justify-between border-b border-gray-100 py-2.5 text-sm last:border-0">
       <span className="text-gray-500">{label}</span>
       <span className="font-medium text-gray-900">{value}</span>
     </div>
