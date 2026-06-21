@@ -116,8 +116,14 @@ def get_tracking_by_code(code):
             hauler = {
                 "first_name": first_name,
                 "truck_type": contractor.truck_type,
-                "avg_rating": contractor.avg_rating,
+                "avg_rating": round(contractor.avg_rating, 1) if contractor.avg_rating else None,
+                "total_jobs": contractor.total_jobs or 0,  # social proof
             }
+
+    # Before/after photos = the customer's own job proof. Surface them once the
+    # work is underway/done so the customer sees the cleanout was completed.
+    before_photos = (job.before_photos or []) if stage in ("on_site", "complete") else []
+    after_photos = (job.after_photos or []) if stage == "complete" else []
 
     return jsonify({
         "success": True,
@@ -128,6 +134,8 @@ def get_tracking_by_code(code):
             "scheduled_at": job.scheduled_at.isoformat() if job.scheduled_at else None,
             "address_short": (job.address or "").split(",")[0] if job.address else None,
             "hauler": hauler,
+            "before_photos": before_photos,
+            "after_photos": after_photos,
             # Items as count + first 3 categories — enough for "yes this is my booking"
             "items_summary": _summarize_items(job.items),
         },
