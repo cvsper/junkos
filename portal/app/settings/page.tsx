@@ -19,6 +19,34 @@ export default function SettingsPage() {
   const router = useRouter();
   const { token, isLoading, hydrate, org } = useAuthStore();
   const [sub, setSub] = useState<Subscription | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  async function startCheckout(tier: string) {
+    setBusy(true);
+    try {
+      const r = await portalFetch<{ url: string }>("/billing/checkout", {
+        method: "POST",
+        body: JSON.stringify({ tier }),
+      });
+      if (r.url) window.location.href = r.url;
+      else setBusy(false);
+    } catch {
+      setBusy(false);
+    }
+  }
+
+  async function manageBilling() {
+    setBusy(true);
+    try {
+      const r = await portalFetch<{ url: string }>("/billing/portal-session", {
+        method: "POST",
+      });
+      if (r.url) window.location.href = r.url;
+      else setBusy(false);
+    } catch {
+      setBusy(false);
+    }
+  }
 
   useEffect(() => {
     hydrate();
@@ -72,6 +100,39 @@ export default function SettingsPage() {
               )
             }
           />
+        </section>
+
+        <section className="mt-6 rounded-lg border border-gray-200 bg-white p-5">
+          <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">
+            Billing
+          </h2>
+          {sub?.stripe_customer_id ? (
+            <button
+              onClick={manageBilling}
+              disabled={busy}
+              className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
+            >
+              {busy ? "Opening…" : "Manage billing"}
+            </button>
+          ) : (
+            <div>
+              <p className="text-sm text-gray-500 mb-3">
+                Choose a plan to start recurring service.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {["starter", "pro", "enterprise"].map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => startCheckout(t)}
+                    disabled={busy}
+                    className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium capitalize text-gray-900 hover:border-gray-900 disabled:opacity-50"
+                  >
+                    Subscribe — {t}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </section>
       </main>
     </div>
