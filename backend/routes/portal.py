@@ -238,6 +238,186 @@ def auth_exchange_token():
 
 
 # ---------------------------------------------------------------------------
+# Self-serve B2B auth — the human front doors. No JWT-pasting, no service
+# token: a business owner signs up or logs in with email + password and the
+# org is resolved automatically. Both return a portal JWT (same shape as the
+# token-exchange path) so the rest of the app is unchanged.
+# ---------------------------------------------------------------------------
+try:  # rate-limit if the app's limiter is wired; no-op fallback otherwise
+    from extensions import limiter as _limiter
+
+    def _rl(spec):
+        return _limiter.limit(spec)
+except Exception:  # pragma: no cover - limiter optional in some contexts
+
+    def _rl(_spec):
+        def _wrap(f):
+            return f
+
+        return _wrap
+
+
+def _norm_email(v):
+    return (v or "").strip().lower()
+
+
+def _valid_email(email):
+    return "@" in email and "." in email.split("@")[-1]
+
+
+@portal_bp.route("/auth/register", methods=["POST"])
+@_rl("5 per minute")
+def auth_register():
+    """Self-serve business signup.
+
+    Creates the User (or claims a sales-provisioned one that has no password
+    yet), the Org, and an owner membership, then returns a portal JWT — the
+    store is signed in immediately.
+
+    Body: {business_name, email, password, contact_name?, phone?}
+    """
+    data = request.get_json(silent=True) or {}
+    business = (data.get("business_name") or data.get("name") or "").strip()
+    email = _norm_email(data.get("email"))
+    password = data.get("password") or ""
+    contact_name = (
+        data.get("contact_name") or data.get("owner_name") or ""
+    ).strip() or None
+    phone = (data.get("phone") or "").strip() or None
+
+    if not business or not email or not password:
+        return jsonify(
+            {"error": "Business name, email and password are required."}
+        ), 400
+    if len(password) < 6:
+        return jsonify({"error": "Password must be at least 6 characters."}), 400
+    if not _valid_email(email):
+        return jsonify({"error": "Enter a valid email address."}), 400
+
+    user = db.session.query(User).filter_by(email=email).first()
+    if user and user.password_hash:
+        return jsonify(
+            {
+                "error": "That email already has an account. Sign in instead.",
+                "code": "email_exists",
+            }
+        ), 409
+
+    if user is None:
+        user = User(email=email, name=contact_name, phone=phone, role="customer")
+        user.set_password(password)
+        db.session.add(user)
+        db.session.flush()
+    else:
+        # Sales-provisioned user with no password yet — let them claim it.
+        user.set_password(password)
+        if contact_name and not user.name:
+            user.name = contact_name
+
+    org = Org(
+        name=business,
+        slug=_unique_slug(_slugify(business)),
+        billing_email=email,
+        tier="starter",
+        status="trial",
+        net_terms_days=0,
+    )
+    db.session.add(org)
+    db.session.flush()
+
+    member = OrgMember(
+        org_id=org.id,
+        user_id=user.id,
+        role="owner",
+        scopes=["*"],
+        joined_at=_dt.datetime.utcnow(),
+    )
+    db.session.add(member)
+    db.session.commit()
+
+    token = mint_portal_token(user.id, org.id, "owner", ["*"])
+    return jsonify(
+        {
+            "token": token,
+            "org_id": org.id,
+            "role": "owner",
+            "scopes": ["*"],
+            "org": org.to_dict(),
+            "expires_in": PORTAL_TOKEN_TTL_DAYS * 86400,
+        }
+    ), 201
+
+
+@portal_bp.route("/auth/login", methods=["POST"])
+@_rl("10 per minute")
+def auth_login():
+    """Email + password login that resolves the user's org automatically.
+
+    Body: {email, password, org_id?}
+      - bad creds -> 401
+      - 0 orgs    -> 403 {code: "no_org"}
+      - 1 org     -> portal JWT
+      - >1 orgs   -> 200 {needs_org: true, orgs: [...]} unless org_id is given
+    """
+    data = request.get_json(silent=True) or {}
+    email = _norm_email(data.get("email"))
+    password = data.get("password") or ""
+    org_id = (data.get("org_id") or "").strip() or None
+
+    if not email or not password:
+        return jsonify({"error": "Email and password are required."}), 400
+
+    user = db.session.query(User).filter_by(email=email).first()
+    if not user or not user.check_password(password):
+        return jsonify({"error": "Invalid email or password."}), 401
+
+    memberships = (
+        db.session.query(OrgMember, Org)
+        .join(Org, Org.id == OrgMember.org_id)
+        .filter(OrgMember.user_id == user.id, OrgMember.joined_at.isnot(None))
+        .all()
+    )
+    if not memberships:
+        return jsonify(
+            {
+                "error": "No business account is linked to this email yet.",
+                "code": "no_org",
+            }
+        ), 403
+
+    chosen = None
+    if org_id:
+        chosen = next((row for row in memberships if row[0].org_id == org_id), None)
+        if chosen is None:
+            return jsonify({"error": "You don't have access to that business."}), 403
+    elif len(memberships) == 1:
+        chosen = memberships[0]
+    else:
+        return jsonify(
+            {
+                "needs_org": True,
+                "orgs": [
+                    {"org_id": m.org_id, "name": o.name, "role": m.role}
+                    for m, o in memberships
+                ],
+            }
+        )
+
+    member, org = chosen
+    token = mint_portal_token(user.id, org.id, member.role, member.scopes or [])
+    return jsonify(
+        {
+            "token": token,
+            "org_id": org.id,
+            "role": member.role,
+            "scopes": member.scopes or [],
+            "org": org.to_dict(),
+            "expires_in": PORTAL_TOKEN_TTL_DAYS * 86400,
+        }
+    )
+
+
+# ---------------------------------------------------------------------------
 # Sales-service bootstrap: POST /orgs
 # ---------------------------------------------------------------------------
 @portal_bp.route("/orgs", methods=["POST"])
