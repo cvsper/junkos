@@ -35,8 +35,7 @@ final class JobFeedViewModel {
         isLoading = false
     }
 
-    /// Claim a broadcast offer. On 409 (someone else took it) we drop it and
-    /// surface a message. Returns true only on a successful claim.
+    /// Claim a broadcast offer. Returns true only on a successful claim.
     func acceptOffer(_ offer: DriverOffer) async -> Bool {
         do {
             let res = try await api.acceptOffer(token: offer.acceptToken)
@@ -47,7 +46,11 @@ final class JobFeedViewModel {
             }
             return true
         } catch {
-            errorMessage = error.localizedDescription
+            // A lost race (HTTP 409) throws before decoding, so the card would
+            // otherwise linger. Re-fetch from the server: a claimed offer
+            // disappears; a transient error just keeps the current list.
+            errorMessage = "Couldn't claim that job — it may have been taken."
+            offers = (try? await api.getOffers().offers) ?? offers
             return false
         }
     }

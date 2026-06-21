@@ -37,6 +37,11 @@ targets:
           - "*.xcworkspace"
           - DerivedData
           - build
+          # ASC tooling + screenshots + listing docs. `path: .` was sweeping
+          # these into the app target as resources — asc.py carries the ASC
+          # key-id/issuer-id, so it must NOT be bundled into the archive.
+          - app-store
+          - Docs
           # Vendored SPM checkouts: ship their own example apps with
           # Main/LaunchScreen storyboards. Without this exclude, `path: .`
           # sweeps them into the app target → "Multiple commands produce

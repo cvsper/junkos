@@ -74,7 +74,63 @@ def _load_config():
 
 
 def _save_config(cfg):
-    CONFIG_PATH.write_text(json.dumps(cfg, indent=2))
+    try:
+        CONFIG_PATH.write_text(json.dumps(cfg, indent=2))
+    except Exception:
+        # On read-only / ephemeral filesystems the cache write can fail; that's
+        # fine — resolve_tier_price_id() rediscovers from Stripe when needed.
+        logger.warning("could not persist portal billing config to %s", CONFIG_PATH)
+
+
+def _stripe_key(override=None):
+    """Stripe secret key. Prefer STRIPE_SECRET_KEY (used by the rest of the
+    backend); fall back to the legacy STRIPE_API_KEY name."""
+    return override or os.environ.get("STRIPE_SECRET_KEY") or os.environ.get("STRIPE_API_KEY", "")
+
+
+def resolve_tier_price_id(tier):
+    """Return the Stripe monthly price id for a tier.
+
+    Prefers the cached config file, but if it's missing (Render's filesystem is
+    ephemeral across redeploys / multi-instance), rediscovers the price from
+    Stripe by product name + amount — the same way bootstrap() does — so
+    checkout/subscribe don't break with "run bootstrap first" after a redeploy.
+    Only raises if the product/price genuinely isn't in Stripe yet.
+    """
+    if tier not in TIERS:
+        raise ValueError("invalid tier {}".format(tier))
+    pid = _load_config().get("tiers", {}).get(tier, {}).get("base_price_id")
+    if pid:
+        return pid
+
+    import stripe
+    key = _stripe_key()
+    if not key:
+        raise RuntimeError("Stripe key not set")
+    stripe.api_key = key
+    meta = TIERS[tier]
+    product = next(
+        (p for p in stripe.Product.list(limit=100).auto_paging_iter()
+         if p.name == meta["name"]),
+        None,
+    )
+    if not product:
+        raise RuntimeError("tier {} not bootstrapped in Stripe — run bootstrap".format(tier))
+    price = next(
+        (pr for pr in stripe.Price.list(product=product.id, limit=10).auto_paging_iter()
+         if pr.unit_amount == meta["monthly_cents"]
+         and pr.recurring and pr.recurring.interval == "month"),
+        None,
+    )
+    if not price:
+        raise RuntimeError("no monthly price for tier {} in Stripe".format(tier))
+    # Best-effort re-cache so subsequent calls skip the lookup.
+    cfg = _load_config()
+    cfg.setdefault("tiers", {}).setdefault(tier, {}).update(
+        {"product_id": product.id, "base_price_id": price.id}
+    )
+    _save_config(cfg)
+    return price.id
 
 
 # ---------------------------------------------------------------------------
@@ -90,9 +146,9 @@ def bootstrap(stripe_api_key=None):
             "stripe SDK not installed. Run: pip install stripe"
         )
 
-    stripe.api_key = stripe_api_key or os.environ.get("STRIPE_API_KEY", "")
+    stripe.api_key = _stripe_key(stripe_api_key)
     if not stripe.api_key:
-        raise SystemExit("STRIPE_API_KEY not set")
+        raise SystemExit("Stripe key not set (STRIPE_SECRET_KEY)")
 
     cfg = _load_config()
     cfg.setdefault("tiers", {})
@@ -167,9 +223,9 @@ def subscribe_org(org_id, tier=None, stripe_api_key=None):
 
     from models import db, Org
 
-    stripe.api_key = stripe_api_key or os.environ.get("STRIPE_API_KEY", "")
+    stripe.api_key = _stripe_key(stripe_api_key)
     if not stripe.api_key:
-        raise SystemExit("STRIPE_API_KEY not set")
+        raise SystemExit("Stripe key not set (STRIPE_SECRET_KEY)")
 
     org = db.session.get(Org, org_id)
     if not org:
@@ -178,12 +234,8 @@ def subscribe_org(org_id, tier=None, stripe_api_key=None):
     if tier not in TIERS:
         raise SystemExit("invalid tier {}".format(tier))
 
-    cfg = _load_config()
-    price_id = cfg.get("tiers", {}).get(tier, {}).get("base_price_id")
-    if not price_id:
-        raise SystemExit(
-            "no price_id for tier {}. Run bootstrap first.".format(tier)
-        )
+    # Resilient: uses the cached config if present, else rediscovers from Stripe.
+    price_id = resolve_tier_price_id(tier)
 
     if not org.stripe_customer_id:
         customer = stripe.Customer.create(
@@ -279,14 +331,12 @@ def create_checkout_session(org, tier, success_url, cancel_url):
     if tier not in TIERS:
         raise ValueError("invalid tier {}".format(tier))
     import stripe
-    key = os.environ.get("STRIPE_SECRET_KEY")
+    key = _stripe_key()
     if not key:
-        raise RuntimeError("STRIPE_SECRET_KEY not set")
+        raise RuntimeError("Stripe key not set (STRIPE_SECRET_KEY)")
     stripe.api_key = key
-    cfg = _load_config()
-    price_id = cfg.get("tiers", {}).get(tier, {}).get("base_price_id")
-    if not price_id:
-        raise RuntimeError("no price for tier {} — run bootstrap first".format(tier))
+    # Resilient price lookup (cache or Stripe discovery) — survives a lost config.
+    price_id = resolve_tier_price_id(tier)
     params = {
         "mode": "subscription",
         "line_items": [{"price": price_id, "quantity": 1}],
