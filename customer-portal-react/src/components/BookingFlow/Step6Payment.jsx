@@ -166,6 +166,28 @@ const PaymentForm = ({ formData, updateCustomerInfo, prevStep, setError, resetFo
     }
   };
 
+  // Capture the lead for email-drip recovery once a valid email is entered, so
+  // a customer who reaches payment but bails still gets the 1h/24h/72h drip.
+  // Conversion is auto-marked server-side on payment. Fire-and-forget, once
+  // per email. (validateEmail returns an error string when INVALID.)
+  const abandonedRef = useRef('');
+  const captureAbandoned = () => {
+    const email = (customerInfo.email || '').trim().toLowerCase();
+    if (!email || validateEmail(email)) return;
+    if (abandonedRef.current === email) return;
+    abandonedRef.current = email;
+    api.captureAbandoned({
+      email,
+      phone: customerInfo.phone,
+      name: customerInfo.name,
+      address: formData.address?.formatted || formData.address?.address || '',
+      items: formData.items,
+      estimatedPrice: formData.estimate?.total,
+      step: 6,
+      leadSource: 'web_booking',
+    });
+  };
+
   const validateCustomerInfo = () => {
     const newErrors = {};
 
@@ -506,6 +528,7 @@ const PaymentForm = ({ formData, updateCustomerInfo, prevStep, setError, resetFo
               id="email"
               value={customerInfo.email}
               onChange={(e) => handleCustomerInfoChange('email', e.target.value)}
+              onBlur={captureAbandoned}
               placeholder="john@example.com"
               disabled={isProcessing}
               className="input-field"

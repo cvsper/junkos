@@ -106,6 +106,14 @@ export const api = {
     }
   },
 
+  // Capture a partial booking for email-drip recovery (fire-and-forget).
+  // Backend upserts by email and auto-marks converted on payment.
+  captureAbandoned: async (data) => {
+    try {
+      await apiClient.post('/booking/abandoned', data);
+    } catch (_) { /* recovery capture must never disrupt the funnel */ }
+  },
+
   // Validate a promo code against an order amount (for funnel display).
   // Returns { valid, discount, final, message }.
   validatePromo: async (code, orderAmount) => {
