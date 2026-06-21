@@ -144,6 +144,7 @@ _DEFAULT_ORIGINS = [
     "https://goumuve.com",
     "https://www.goumuve.com",
     "https://app.goumuve.com",
+    "https://portal.goumuve.com",
 ]
 
 _cors_env = os.environ.get("CORS_ORIGINS", "")
@@ -165,7 +166,17 @@ else:
 # ---------------------------------------------------------------------------
 # Initialize extensions
 # ---------------------------------------------------------------------------
-CORS(app, resources={r"/api/*": {"origins": _allowed_origins}})
+# The B2B portal frontend (portal.goumuve.com) talks to /portal/v1/*, so it
+# needs CORS too — without this every portal API call is blocked in-browser
+# and the app bounces to /login. Stripe webhooks under /portal are server-to-
+# server (CORS irrelevant there) so including them is harmless.
+CORS(
+    app,
+    resources={
+        r"/api/*": {"origins": _allowed_origins},
+        r"/portal/*": {"origins": _allowed_origins},
+    },
+)
 sqlalchemy_db.init_app(app)
 socketio.init_app(
     app,
