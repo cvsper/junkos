@@ -47,6 +47,11 @@ struct JobFeedView: View {
                             .padding(.horizontal, DriverSpacing.lg)
                             .padding(.top, DriverSpacing.sm)
 
+                        if !viewModel.offers.isEmpty {
+                            offersSection
+                                .padding(.horizontal, DriverSpacing.lg)
+                        }
+
                         if !sortedJobs.isEmpty {
                             sortBar
                                 .padding(.horizontal, DriverSpacing.lg)
@@ -220,6 +225,82 @@ struct JobFeedView: View {
             }
             Spacer()
         }
+    }
+
+    // MARK: - Broadcast offers
+
+    private var offersSection: some View {
+        VStack(alignment: .leading, spacing: DriverSpacing.sm) {
+            HStack(spacing: 6) {
+                Image(systemName: "bolt.badge.clock.fill")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(Color.driverPrimary)
+                Text("Job offers")
+                    .font(DriverTypography.headline)
+                    .foregroundStyle(Color.driverText)
+                Spacer()
+                Text("first to accept")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(Color.driverTextSecondary)
+                    .textCase(.uppercase)
+                    .tracking(0.4)
+            }
+            ForEach(viewModel.offers) { offer in
+                offerCard(offer)
+            }
+        }
+    }
+
+    private func offerCard(_ offer: DriverOffer) -> some View {
+        VStack(alignment: .leading, spacing: DriverSpacing.sm) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(offer.address ?? "Nearby pickup")
+                        .font(DriverTypography.headline)
+                        .foregroundStyle(Color.driverText)
+                        .lineLimit(1)
+                    if let d = offer.distanceMiles {
+                        Label(String(format: "%.1f mi away", d), systemImage: "location.fill")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundStyle(Color.driverTextSecondary)
+                    }
+                }
+                Spacer()
+                if let p = offer.payoutAmount {
+                    Text(String(format: "$%.0f", p))
+                        .font(.system(size: 22, weight: .bold, design: .rounded))
+                        .foregroundStyle(Color.driverPrimary)
+                }
+            }
+            Button {
+                HapticManager.shared.selection()
+                Task {
+                    let ok = await viewModel.acceptOffer(offer)
+                    if ok {
+                        NotificationCenter.default.post(
+                            name: .jobWasAccepted, object: nil,
+                            userInfo: ["job_id": offer.jobId]
+                        )
+                    }
+                }
+            } label: {
+                Text("Accept job")
+                    .font(DriverTypography.headline)
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, DriverSpacing.sm)
+                    .background(Color.driverPrimary)
+                    .clipShape(RoundedRectangle(cornerRadius: DriverRadius.md))
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(DriverSpacing.md)
+        .background(Color.driverSurface)
+        .clipShape(RoundedRectangle(cornerRadius: DriverRadius.lg))
+        .overlay(
+            RoundedRectangle(cornerRadius: DriverRadius.lg)
+                .stroke(Color.driverPrimary.opacity(0.3), lineWidth: 1)
+        )
     }
 
     // MARK: - Featured badge

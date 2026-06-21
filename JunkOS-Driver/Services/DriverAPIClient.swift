@@ -239,6 +239,19 @@ actor DriverAPIClient {
         try await request("/api/drivers/jobs/available?radius=\(radius)")
     }
 
+    // MARK: - Broadcast offers (DISPATCH_MODE=broadcast)
+
+    /// Open broadcast offers for this operator (first-to-accept wins).
+    func getOffers() async throws -> DriverOffersResponse {
+        try await request("/api/driver/offers")
+    }
+
+    /// Claim a broadcast offer atomically. Returns success=false (409) if
+    /// another operator already took it.
+    func acceptOffer(token: String) async throws -> OfferAcceptResponse {
+        try await request("/api/offers/\(token)/accept", method: "POST")
+    }
+
     func getCurrentJob() async throws -> CurrentJobResponse {
         try await request("/api/drivers/jobs/current")
     }

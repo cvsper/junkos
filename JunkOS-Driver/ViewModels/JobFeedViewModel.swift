@@ -10,6 +10,7 @@ import Foundation
 @Observable
 final class JobFeedViewModel {
     var jobs: [DriverJob] = []
+    var offers: [DriverOffer] = []   // broadcast offers (first-to-accept)
     var isLoading = false
     var errorMessage: String?
 
@@ -24,7 +25,31 @@ final class JobFeedViewModel {
         } catch {
             errorMessage = error.localizedDescription
         }
+        // Broadcast offers load alongside available jobs; a failure here must
+        // not blank the whole feed.
+        do {
+            offers = try await api.getOffers().offers
+        } catch {
+            // leave offers as-is
+        }
         isLoading = false
+    }
+
+    /// Claim a broadcast offer. On 409 (someone else took it) we drop it and
+    /// surface a message. Returns true only on a successful claim.
+    func acceptOffer(_ offer: DriverOffer) async -> Bool {
+        do {
+            let res = try await api.acceptOffer(token: offer.acceptToken)
+            offers.removeAll { $0.id == offer.id }
+            if !res.success {
+                errorMessage = res.message ?? "That job was just taken."
+                return false
+            }
+            return true
+        } catch {
+            errorMessage = error.localizedDescription
+            return false
+        }
     }
 
     func refresh() async {
