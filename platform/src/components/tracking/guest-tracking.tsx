@@ -45,8 +45,11 @@ interface Tracking {
   hauler: {
     first_name: string;
     truck_type: string | null;
-    avg_rating: number;
+    avg_rating: number | null;
+    total_jobs?: number;
   } | null;
+  before_photos?: string[];
+  after_photos?: string[];
   items_summary: string;
 }
 
@@ -287,13 +290,19 @@ export default function GuestTracking({ code }: { code: string }) {
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold truncate">{tracking.hauler.first_name}</p>
                 <div className="flex items-center gap-1.5 mt-0.5 text-xs text-muted-foreground">
-                  {tracking.hauler.avg_rating > 0 && (
+                  {tracking.hauler.avg_rating != null && tracking.hauler.avg_rating > 0 && (
                     <>
                       <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
                       <span>{tracking.hauler.avg_rating.toFixed(1)}</span>
-                      {tracking.hauler.truck_type && <span className="mx-1">·</span>}
+                      {(tracking.hauler.total_jobs || tracking.hauler.truck_type) && <span className="mx-1">·</span>}
                     </>
                   )}
+                  {tracking.hauler.total_jobs ? (
+                    <>
+                      <span>{tracking.hauler.total_jobs}+ jobs</span>
+                      {tracking.hauler.truck_type && <span className="mx-1">·</span>}
+                    </>
+                  ) : null}
                   {tracking.hauler.truck_type && (
                     <span className="inline-flex items-center gap-1">
                       <Truck className="w-3.5 h-3.5" />
@@ -303,6 +312,51 @@ export default function GuestTracking({ code }: { code: string }) {
                 </div>
               </div>
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Job proof — before/after photos (surfaced by the backend once the job
+          is on-site/complete). The proof the cleanout actually happened. */}
+      {((tracking.before_photos?.length ?? 0) > 0 ||
+        (tracking.after_photos?.length ?? 0) > 0) && (
+        <Card className="mt-5 border-border/60">
+          <CardContent className="py-5">
+            <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground font-semibold mb-3">
+              Job photos
+            </p>
+            {(tracking.before_photos?.length ?? 0) > 0 && (
+              <div className="mb-4">
+                <p className="text-xs font-medium text-muted-foreground mb-2">Before</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {tracking.before_photos!.map((url, i) => (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      key={`b${i}`}
+                      src={url}
+                      alt="Before pickup"
+                      className="w-full aspect-square object-cover rounded-xl border border-border/60"
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+            {(tracking.after_photos?.length ?? 0) > 0 && (
+              <div>
+                <p className="text-xs font-medium text-muted-foreground mb-2">After</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {tracking.after_photos!.map((url, i) => (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      key={`a${i}`}
+                      src={url}
+                      alt="After pickup"
+                      className="w-full aspect-square object-cover rounded-xl border border-border/60"
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
