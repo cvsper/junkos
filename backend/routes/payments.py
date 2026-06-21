@@ -438,33 +438,53 @@ def create_simple_payment_intent():
     except (ValueError, TypeError):
         return jsonify({"error": "Invalid amount"}), 400
 
-    if amount <= 0:
-        return jsonify({"error": "amount is required and must be positive"}), 400
-
-    if amount > 10000:
-        return jsonify({"error": "amount exceeds maximum allowed ($10,000)"}), 400
-
-    # --- Promo code (server-validated). This is the path the customer funnel +
-    # iOS use, so a code shown in the funnel must actually reduce the charge
-    # here or it's cosmetic and the customer overpays. Validated against the
-    # order amount; persisted on the job so use-counts/reporting are accurate.
     discount = 0.0
     promo_message = None
     promo_code = (data.get("promoCode") or data.get("promo_code") or "").strip()
-    if promo_code:
-        from routes.promos import validate_promo_code
-        promo, disc, err = validate_promo_code(promo_code, amount)
-        if err:
-            promo_message = err  # don't block payment; charge full, inform client
-        else:
-            discount = disc
-            amount = max(0.50, round(amount - discount, 2))  # Stripe needs >= $0.50
-            promo_message = "Promo {} applied: -${:.2f}".format(promo.code, discount)
-            if booking_id:
-                _pj = db.session.get(Job, booking_id)
-                if _pj:
-                    _pj.promo_code_id = promo.id
-                    _pj.discount_amount = discount
+
+    # Server-authoritative charge: when the booking exists, derive the amount
+    # from the Job's server-computed total_price (+ any promo validated at
+    # booking) instead of trusting the client-sent amount. This closes a hole
+    # where a tampered client could pay an arbitrary amount for a real job.
+    job_obj = db.session.get(Job, booking_id) if booking_id else None
+    if job_obj and job_obj.total_price:
+        base = float(job_obj.total_price)
+        discount = float(job_obj.discount_amount or 0)
+        # Apply a promo passed now only if one wasn't already applied at booking.
+        if promo_code and discount <= 0:
+            from routes.promos import validate_promo_code
+            promo, disc, err = validate_promo_code(promo_code, base)
+            if err:
+                promo_message = err
+            else:
+                discount = disc
+                job_obj.promo_code_id = promo.id
+                job_obj.discount_amount = disc
+                promo_message = "Promo {} applied: -${:.2f}".format(promo.code, disc)
+        server_amount = max(0.50, round(base - discount, 2))
+        if abs(server_amount - amount) > 0.01:
+            logger.warning(
+                "create-intent-simple amount override: client=%.2f server=%.2f job=%s",
+                amount, server_amount, booking_id,
+            )
+        amount = server_amount
+    else:
+        # No booking on file (e.g. a pre-booking flow): fall back to the client
+        # amount, still applying a validated promo against it if provided.
+        if amount <= 0:
+            return jsonify({"error": "amount is required and must be positive"}), 400
+        if promo_code:
+            from routes.promos import validate_promo_code
+            promo, disc, err = validate_promo_code(promo_code, amount)
+            if err:
+                promo_message = err
+            else:
+                discount = disc
+                amount = max(0.50, round(amount - discount, 2))
+                promo_message = "Promo {} applied: -${:.2f}".format(promo.code, disc)
+
+    if amount > 10000:
+        return jsonify({"error": "amount exceeds maximum allowed ($10,000)"}), 400
 
     stripe = _get_stripe()
     stripe_key = os.environ.get("STRIPE_SECRET_KEY", "")
