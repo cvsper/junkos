@@ -16,7 +16,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from models import (
     db, User, Contractor, Job, Payment, PricingRule, SurgeZone, Notification,
-    PricingConfig, Review, Rating, DeviceToken, AbandonedBooking,
+    PricingConfig, Review, Rating, DeviceToken, AbandonedBooking, Quote,
     generate_uuid, utcnow,
 )
 from auth_routes import require_auth
@@ -496,6 +496,216 @@ def list_customers(user_id):
 # ---------------------------------------------------------------------------
 # Analytics
 # ---------------------------------------------------------------------------
+
+_PRICING_DASHBOARD_HTML = """<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Umuve — Pricing & Conversion</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Outfit:wght@600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{--ink:#1a1a1a;--red:#C52222;--mut:#6b6b66;--line:#e8e5df;--bg:#FAF8F5}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'DM Sans',system-ui,sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:2.5rem 1.25rem 4rem}
+  h1{font-family:'Outfit',sans-serif;font-weight:800;font-size:1.9rem;letter-spacing:-.02em;margin:0}
+  .sub{color:var(--mut);margin:.25rem 0 1.5rem;font-size:.95rem}
+  .bar{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center;margin-bottom:1.5rem}
+  input,select{font:inherit;border:1px solid #d6d2ca;border-radius:.55rem;padding:.55rem .7rem;background:#fff}
+  input{min-width:18rem}
+  button{font:inherit;font-weight:700;background:var(--red);color:#fff;border:0;border-radius:.55rem;padding:.6rem 1.1rem;cursor:pointer}
+  button:hover{background:#9E1B1B}
+  .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:.9rem;margin-bottom:1.5rem}
+  @media(max-width:640px){.kpis{grid-template-columns:repeat(2,1fr)}}
+  .card{background:#fff;border:1px solid var(--line);border-radius:.9rem;padding:1.1rem 1.2rem}
+  .card .l{font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#9a948b}
+  .card .v{font-family:'Outfit',sans-serif;font-weight:800;font-size:1.7rem;margin-top:.25rem;letter-spacing:-.02em}
+  h2{font-family:'Outfit',sans-serif;font-weight:800;font-size:1.05rem;margin:1.75rem 0 .75rem}
+  table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line);border-radius:.9rem;overflow:hidden}
+  th,td{padding:.7rem .9rem;text-align:left;font-size:.9rem;border-top:1px solid var(--line)}
+  th{background:#f3f0ea;font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;color:#9a948b;border-top:0}
+  td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+  .conv{display:flex;align-items:center;gap:.5rem;justify-content:flex-end}
+  .track{width:80px;height:7px;border-radius:4px;background:#eee;overflow:hidden}
+  .fill{height:100%;background:var(--red)}
+  .muted{color:var(--mut);font-size:.85rem}
+  .err{color:var(--red);font-size:.9rem;margin:.5rem 0}
+</style></head><body><div class="wrap">
+  <h1>Pricing &amp; Conversion</h1>
+  <div class="sub">Quote &rarr; book conversion and platform take, by price band. Tune the binding quote toward the band that maximizes conversion &times; revenue.</div>
+  <div class="bar">
+    <input id="tok" type="password" placeholder="Admin token (stored in this browser only)">
+    <select id="days">
+      <option value="30">Last 30 days</option>
+      <option value="90" selected>Last 90 days</option>
+      <option value="180">Last 180 days</option>
+      <option value="365">Last 365 days</option>
+    </select>
+    <button onclick="load()">Load</button>
+  </div>
+  <div id="err" class="err"></div>
+  <div id="out" style="display:none">
+    <div class="kpis">
+      <div class="card"><div class="l">Quotes</div><div class="v" id="k_q">—</div></div>
+      <div class="card"><div class="l">Booked</div><div class="v" id="k_b">—</div></div>
+      <div class="card"><div class="l">Conversion</div><div class="v" id="k_c">—</div></div>
+      <div class="card"><div class="l">Avg quote</div><div class="v" id="k_aq">—</div></div>
+      <div class="card"><div class="l">Platform revenue</div><div class="v" id="k_rev">—</div></div>
+      <div class="card"><div class="l">Avg take / job</div><div class="v" id="k_take">—</div></div>
+    </div>
+    <h2>By price band</h2>
+    <table><thead><tr>
+      <th>Band</th><th class="n">Quoted</th><th class="n">Booked</th>
+      <th class="n">Conversion</th><th class="n">Avg price</th><th class="n">Platform rev</th>
+    </tr></thead><tbody id="bands"></tbody></table>
+    <h2>Binding vs estimate</h2>
+    <table><thead><tr><th>Quote type</th><th class="n">Quoted</th><th class="n">Booked</th><th class="n">Conversion</th></tr></thead>
+      <tbody id="conf"></tbody></table>
+    <p class="muted" id="meta" style="margin-top:1rem"></p>
+  </div>
+<script>
+  const $=id=>document.getElementById(id);
+  const money=n=>'$'+(n||0).toLocaleString(undefined,{maximumFractionDigits:0});
+  $('tok').value=localStorage.getItem('umuve_admin_token')||'';
+  async function load(){
+    const tok=$('tok').value.trim(); localStorage.setItem('umuve_admin_token',tok);
+    $('err').textContent=''; const days=$('days').value;
+    try{
+      const r=await fetch('/api/admin/pricing-analytics?days='+days,{headers:{Authorization:'Bearer '+tok}});
+      if(!r.ok){ $('err').textContent = r.status===403?'Not authorized — need a valid admin token.':'Error '+r.status; return; }
+      const d=await r.json(); render(d);
+    }catch(e){ $('err').textContent='Request failed: '+e; }
+  }
+  function convCell(p){ return '<div class="conv"><span>'+p.toFixed(1)+'%</span><span class="track"><span class="fill" style="width:'+Math.min(100,p)+'%"></span></span></div>'; }
+  function render(d){
+    $('out').style.display='block';
+    const o=d.overall;
+    $('k_q').textContent=o.quoted.toLocaleString();
+    $('k_b').textContent=o.booked.toLocaleString();
+    $('k_c').textContent=o.conversion.toFixed(1)+'%';
+    $('k_aq').textContent=money(o.avg_quote);
+    $('k_rev').textContent=money(o.platform_revenue);
+    $('k_take').textContent=money(o.avg_take_per_job);
+    $('bands').innerHTML=d.by_price_band.map(b=>'<tr><td>'+b.band+'</td><td class="n">'+b.quoted+'</td><td class="n">'+b.booked+'</td><td class="n">'+convCell(b.conversion)+'</td><td class="n">'+money(b.avg_price)+'</td><td class="n">'+money(b.revenue)+'</td></tr>').join('');
+    const c=d.by_confidence;
+    $('conf').innerHTML=[['Binding (high confidence)',c.binding],['Estimate (buffered)',c.non_binding]].map(([lbl,x])=>'<tr><td>'+lbl+'</td><td class="n">'+x.quoted+'</td><td class="n">'+x.booked+'</td><td class="n">'+convCell(x.conversion)+'</td></tr>').join('');
+    $('meta').textContent='Window: '+d.window_days+' days · platform take '+(d.take_rate*100).toFixed(0)+'% · revenue = booked price × take.';
+  }
+  if($('tok').value) load();
+</script>
+</div></body></html>"""
+
+
+# ---------------------------------------------------------------------------
+# Pricing analytics — quote -> book conversion + platform revenue, banded by
+# price. This is the lever for tuning the binding quote toward the price that
+# maximizes (conversion x take), instead of guessing.
+# ---------------------------------------------------------------------------
+_PRICE_BANDS = [(0, 100), (100, 150), (150, 250), (250, 400),
+                (400, 700), (700, 1500), (1500, None)]
+
+
+def _band_label(lo, hi):
+    return "${}+".format(lo) if hi is None else "${}–${}".format(lo, hi)
+
+
+@admin_bp.route("/pricing-analytics", methods=["GET"])
+@require_admin
+def pricing_analytics(user_id):
+    """Quote->book conversion + platform revenue, banded by quoted price.
+
+    A quote counts as converted when it reached 'booked' (or has a booking_id /
+    booked_at). Platform revenue per booked job = price * take_rate. Query param
+    ?days=N (default 90, clamped 1..365).
+    """
+    from pricing_config import platform_take_rate
+
+    try:
+        days = max(1, min(365, int(request.args.get("days", 90))))
+    except (TypeError, ValueError):
+        days = 90
+    since = utcnow() - timedelta(days=days)
+    take = platform_take_rate()
+
+    quotes = Quote.query.filter(Quote.created_at >= since).all()
+
+    def band_for(dollars):
+        for lo, hi in _PRICE_BANDS:
+            if dollars >= lo and (hi is None or dollars < hi):
+                return _band_label(lo, hi)
+        return _band_label(*_PRICE_BANDS[-1])
+
+    def is_booked(q):
+        return q.status == "booked" or q.booking_id is not None or q.booked_at is not None
+
+    rows = {
+        _band_label(lo, hi): {"band": _band_label(lo, hi), "quoted": 0,
+                              "booked": 0, "price_sum": 0.0, "revenue": 0.0}
+        for lo, hi in _PRICE_BANDS
+    }
+    tot = {"quoted": 0, "booked": 0, "revenue": 0.0, "price_sum": 0.0}
+    conf = {"binding": {"quoted": 0, "booked": 0},
+            "non_binding": {"quoted": 0, "booked": 0}}
+
+    for q in quotes:
+        dollars = (q.price_cents or 0) / 100.0
+        r = rows[band_for(dollars)]
+        r["quoted"] += 1
+        r["price_sum"] += dollars
+        tot["quoted"] += 1
+        tot["price_sum"] += dollars
+        ck = "binding" if q.binding else "non_binding"
+        conf[ck]["quoted"] += 1
+        if is_booked(q):
+            rev = dollars * take
+            r["booked"] += 1
+            r["revenue"] += rev
+            tot["booked"] += 1
+            tot["revenue"] += rev
+            conf[ck]["booked"] += 1
+
+    def pct(b, q):
+        return round(100.0 * b / q, 1) if q else 0.0
+
+    bands = []
+    for lo, hi in _PRICE_BANDS:
+        r = rows[_band_label(lo, hi)]
+        bands.append({
+            "band": r["band"],
+            "quoted": r["quoted"],
+            "booked": r["booked"],
+            "conversion": pct(r["booked"], r["quoted"]),
+            "avg_price": round(r["price_sum"] / r["quoted"], 2) if r["quoted"] else 0.0,
+            "revenue": round(r["revenue"], 2),
+        })
+
+    return jsonify({
+        "window_days": days,
+        "take_rate": round(take, 4),
+        "overall": {
+            "quoted": tot["quoted"],
+            "booked": tot["booked"],
+            "conversion": pct(tot["booked"], tot["quoted"]),
+            "avg_quote": round(tot["price_sum"] / tot["quoted"], 2) if tot["quoted"] else 0.0,
+            "platform_revenue": round(tot["revenue"], 2),
+            "avg_take_per_job": round(tot["revenue"] / tot["booked"], 2) if tot["booked"] else 0.0,
+        },
+        "by_price_band": bands,
+        "by_confidence": {
+            "binding": {**conf["binding"], "conversion": pct(conf["binding"]["booked"], conf["binding"]["quoted"])},
+            "non_binding": {**conf["non_binding"], "conversion": pct(conf["non_binding"]["booked"], conf["non_binding"]["quoted"])},
+        },
+    })
+
+
+@admin_bp.route("/pricing-dashboard", methods=["GET"])
+def pricing_dashboard():
+    """Self-contained pricing/conversion dashboard page. The page is public;
+    the data call it makes is admin-gated, so paste an admin token once (stored
+    in your browser only)."""
+    from flask import Response
+    return Response(_PRICING_DASHBOARD_HTML, mimetype="text/html")
+
 
 @admin_bp.route("/analytics", methods=["GET"])
 @require_admin
