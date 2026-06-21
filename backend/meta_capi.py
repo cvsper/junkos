@@ -171,6 +171,32 @@ def track_lead(lead_id, email=None, phone=None, value=None, currency="USD",
         return False
 
 
+def track_initiate_checkout(job_id, value, currency="USD", email=None, phone=None,
+                            client_ip=None, user_agent=None, fbp=None, fbc=None,
+                            event_source_url=None):
+    """Server-side InitiateCheckout — the mid-funnel signal Meta can optimize on
+    (survives ad-blockers / iOS, unlike the browser pixel). event_id
+    'checkout_<job_id>' dedupes with the browser pixel firing the same id.
+    Never raises.
+    """
+    try:
+        return send_event(
+            "InitiateCheckout",
+            "checkout_{}".format(job_id),
+            _build_user_data(email, phone, client_ip, user_agent, fbp, fbc),
+            custom_data={
+                "currency": currency,
+                "value": round(float(value or 0), 2),
+                "content_ids": [str(job_id)],
+                "content_type": "product",
+            },
+            event_source_url=event_source_url,
+        )
+    except Exception:
+        logger.exception("track_initiate_checkout failed for job %s", job_id)
+        return False
+
+
 def status():
     """Lightweight config readout for health/morning-brief surfacing."""
     return {

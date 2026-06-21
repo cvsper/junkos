@@ -507,6 +507,23 @@ def create_simple_payment_intent():
             payment.updated_at = utcnow()
         db.session.commit()  # persists the payment link AND any promo fields set on the job
 
+    # --- Meta CAPI: server-side InitiateCheckout (mid-funnel signal, deduped
+    # with the browser pixel via event_id checkout_<job_id>). Reaching payment
+    # is the conversion event Meta optimizes toward; firing server-side keeps it
+    # measurable through ad-blockers / iOS. No-op if CAPI unconfigured.
+    if booking_id:
+        try:
+            from meta_capi import track_initiate_checkout
+            track_initiate_checkout(
+                job_id=booking_id,
+                value=amount,
+                currency="USD",
+                email=customer_email,
+                event_source_url="https://app.goumuve.com/book",
+            )
+        except Exception:
+            logger.exception("Meta CAPI InitiateCheckout hook failed for %s", booking_id)
+
     return jsonify({
         "success": True,
         "clientSecret": client_secret,

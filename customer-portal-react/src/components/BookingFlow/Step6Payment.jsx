@@ -224,6 +224,14 @@ const PaymentForm = ({ formData, updateCustomerInfo, prevStep, setError, resetFo
       );
 
       const clientSecret = paymentIntentResult.clientSecret;
+      const chargedTotal = paymentIntentResult.amount ?? (appliedPromo ? appliedPromo.newTotal : formData.estimate.total);
+
+      // Browser pixel: InitiateCheckout (deduped with server CAPI via event_id)
+      if (window.fbq) {
+        window.fbq('track', 'InitiateCheckout',
+          { value: chargedTotal, currency: 'USD', content_ids: [newBookingId], content_type: 'product' },
+          { eventID: `checkout_${newBookingId}` });
+      }
 
       // 3. Confirm payment with Stripe
       const cardElement = elements.getElement(CardElement);
@@ -247,7 +255,14 @@ const PaymentForm = ({ formData, updateCustomerInfo, prevStep, setError, resetFo
 
       // Success!
       setPaymentSuccess(true);
-      
+
+      // Browser pixel: Purchase (deduped with server CAPI via event_id)
+      if (window.fbq) {
+        window.fbq('track', 'Purchase',
+          { value: chargedTotal, currency: 'USD', content_ids: [newBookingId], content_type: 'product' },
+          { eventID: `purchase_${newBookingId}` });
+      }
+
       // Save customer info
       updateCustomerInfo('name', customerInfo.name);
       updateCustomerInfo('email', customerInfo.email);
