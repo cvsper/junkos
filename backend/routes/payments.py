@@ -990,6 +990,12 @@ def _handle_payment_succeeded(intent):
     if not payment:
         return
 
+    # Idempotency: Stripe retries this webhook (and the client may have already
+    # hit /confirm-simple). If it's already reconciled, do nothing — otherwise
+    # we'd resend confirmation emails, re-notify, and double-count promo uses.
+    if payment.payment_status == "succeeded":
+        return
+
     payment.payment_status = "succeeded"
     payment.updated_at = utcnow()
 
@@ -999,6 +1005,14 @@ def _handle_payment_succeeded(intent):
     driver_gross = round(amount - platform_commission - (payment.service_fee or 0.0), 2)
 
     job = db.session.get(Job, payment.job_id)
+
+    # Promo redemption count — idempotent via the already-succeeded guard above,
+    # so this fires once whether confirm-simple or this webhook reconciles first.
+    if job and job.promo_code_id:
+        _promo = db.session.get(PromoCode, job.promo_code_id)
+        if _promo:
+            _promo.use_count = (_promo.use_count or 0) + 1
+
     operator_payout = 0.0
     if job and job.operator_id:
         op = db.session.get(Contractor, job.operator_id)
