@@ -553,6 +553,28 @@ def abandoned_booking_reminder_html(customer_name, booking_url):
     return _wrap(body)
 
 
+def b2b_dunning_html(org_name, invoice_number, amount, manage_url):
+    """Dunning email — a B2B invoice payment failed; recurring service paused."""
+    name = _esc(str(org_name)) if org_name else 'there'
+    inv = _esc(str(invoice_number)) if invoice_number else ''
+    body = (
+        '<h2 style="color:#111827;margin:0 0 12px;font-size:22px;">Payment needs attention</h2>'
+        '<p style="color:#4b5563;line-height:1.6;">Hi {name},</p>'
+        '<p style="color:#4b5563;line-height:1.6;">'
+        'We couldn\'t process payment for invoice <strong>{inv}</strong> '
+        '(${amt:.2f}). To avoid interruption, recurring pickups are paused until '
+        'this is resolved.</p>'
+        '<p style="color:#4b5563;line-height:1.6;">'
+        'Update your payment method to resume service right away.</p>'
+    ).format(name=name, inv=inv, amt=float(amount or 0))
+    body += _button(manage_url or '#', 'Update Payment Method')
+    body += (
+        '<p style="color:#6b7280;font-size:13px;line-height:1.6;text-align:center;">'
+        'Questions? Reply to this email or call <strong>(561) 888-3427</strong>.</p>'
+    )
+    return _wrap(body)
+
+
 def abandoned_booking_incentive_html(customer_name, booking_url, promo_code):
     """Return HTML for a 24-hour abandoned booking incentive email with promo code."""
     name = _esc(str(customer_name)) if customer_name else 'there'

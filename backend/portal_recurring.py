@@ -133,6 +133,18 @@ def generate_jobs_for_due_schedules(now=None):
     created_job_ids = []
     for schedule in due:
         try:
+            # Stage 5 hold: don't generate pickups for orgs that aren't paying.
+            # Advance the schedule so cadence stays put (no backlog) and so we
+            # don't hot-loop; generation resumes automatically once active.
+            org = db.session.get(Org, schedule.org_id)
+            if org and org.status in ("past_due", "paused", "churned"):
+                logger.info(
+                    "recurring: org=%s status=%s — holding job generation",
+                    schedule.org_id, org.status,
+                )
+                schedule.next_run_at = _advance_next_run(schedule, now)
+                continue
+
             customer_id = _resolve_customer_for_org(schedule.org_id)
             if not customer_id:
                 logger.warning(

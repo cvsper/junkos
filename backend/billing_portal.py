@@ -448,7 +448,24 @@ def stripe_webhook():
         )
         if inv:
             inv.status = "past_due"
+            org = db.session.get(Org, inv.org_id)
+            if org:
+                org.status = "past_due"  # holds recurring job-gen (Stage 5)
             db.session.commit()
+            # Dunning: tell the org payment failed + how to fix it. Never raises.
+            try:
+                if org and org.billing_email:
+                    from notifications import send_email
+                    from email_templates import b2b_dunning_html
+                    manage_url = os.environ.get("PORTAL_URL", "https://portal.goumuve.com") + "/settings"
+                    send_email(
+                        org.billing_email,
+                        "Action needed: your Umuve payment failed",
+                        b2b_dunning_html(org.name, inv.number,
+                                         (inv.total_cents or 0) / 100.0, manage_url),
+                    )
+            except Exception:
+                logger.exception("dunning email failed for org=%s", getattr(org, "id", "?"))
 
     return jsonify({"ok": True})
 
