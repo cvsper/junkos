@@ -10,7 +10,7 @@
 
     <link rel="canonical" href="https://goumuve.com/privacy">
     <link rel="icon" type="image/png" href="logo-icon.png">
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="/umuve.css">
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -167,48 +167,21 @@
     </style>
 </head>
 <body>
-    <!-- SVG Icon Sprite (minimal set for nav/footer) -->
-    <svg xmlns="http://www.w3.org/2000/svg" class="svg-sprite" style="display:none">
-        <symbol id="icon-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="4" x2="20" y1="12" y2="12"/>
-            <line x1="4" x2="20" y1="6" y2="6"/>
-            <line x1="4" x2="20" y1="18" y2="18"/>
-        </symbol>
-        <symbol id="icon-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M18 6 6 18"/>
-            <path d="m6 6 12 12"/>
-        </symbol>
-        <symbol id="icon-message" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z"/>
-        </symbol>
-    </svg>
-
     <!-- Navbar -->
-    <nav class="navbar">
-        <div class="container">
-            <div class="nav-content">
-                <div class="logo">
-                    <a href="/">
-                        <img src="logo-nav.png" alt="Umuve" style="height: 36px; width: auto;">
-                    </a>
-                </div>
-
-                <!-- Hamburger Toggle (mobile only) -->
-                <button class="nav-toggle" aria-label="Toggle menu" aria-expanded="false">
-                    <svg class="icon nav-toggle-open"><use href="#icon-menu"/></svg>
-                    <svg class="icon nav-toggle-close"><use href="#icon-x"/></svg>
-                </button>
-
-                <div class="nav-links">
-                    <a href="/#services" class="nav-link">Services</a>
-                    <a href="/#pricing" class="nav-link">Pricing</a>
-                    <a href="/#how-it-works" class="nav-link">How It Works</a>
-                    <a href="/#areas" class="nav-link">Service Areas</a>
-                    <a href="/#faq" class="nav-link">FAQ</a>
-                    <a href="https://app.goumuve.com/book" class="btn btn-glow" rel="noopener">
-                        <span>Book Now</span>
-                    </a>
-                </div>
+    <nav class="us-nav">
+        <div class="bar">
+            <a href="/" class="us-logo" aria-label="Umuve Home">
+                <picture><source srcset="logo-nav.webp" type="image/webp"><img src="logo-nav.png" alt="Umuve" width="120" height="32"></picture>
+            </a>
+            <input type="checkbox" id="us-navtoggle" hidden>
+            <label class="burger" for="us-navtoggle" aria-label="Toggle menu"><span></span><span></span><span></span></label>
+            <div class="links">
+                <a class="nl" href="/#how-it-works">How it works</a>
+                <a class="nl" href="/#services">Why Umuve</a>
+                <a class="nl" href="/#pricing">Pricing</a>
+                <a class="nl" href="/#areas">Service areas</a>
+                <a class="nl" href="/#faq">FAQ</a>
+                <a class="cta" href="https://app.goumuve.com/book" rel="noopener">Get my price</a>
             </div>
         </div>
     </nav>
@@ -503,36 +476,28 @@
     </div>
 
     <!-- Footer -->
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-grid">
-                <div class="footer-brand">
-                    <div class="logo">
-                        <img src="logo-full.png" alt="Umuve" style="height: 36px; width: auto;" loading="lazy" width="120" height="36">
-                        <span class="logo-text">Umuve</span>
-                    </div>
-                    <p>South Florida's fastest junk removal service</p>
-                </div>
-
-                <div class="footer-links">
-                    <h4>Contact</h4>
-                    <a href="tel:+15619441636">(561) 944-1636</a>
-                    <a href="sms:+15619441636">Text Us</a>
-                    <a href="mailto:info@goumuve.com">info@goumuve.com</a>
-                </div>
-
-                <div class="footer-links">
-                    <h4>Hours</h4>
-                    <p>Mon-Sat: 7am-7pm</p>
-                    <p>Sun: 8am-5pm</p>
-                </div>
+    <footer class="us-footer">
+        <div class="grid">
+            <div class="brand">
+                <span class="wm">Umuve</span>
+                <p>South Florida junk removal with the price up front. Snap a photo, book a local hauler, done.</p>
             </div>
-
-            <div class="footer-bottom">
-                <p>&copy; 2026 Umuve. Licensed & Insured.</p>
-                <p>Serving Palm Beach & Broward County, Florida</p>
-                <p style="margin-top: 8px;"><a href="/privacy" style="color: rgba(255,255,255,0.7); text-decoration: none;">Privacy Policy</a> | <a href="/terms" style="color: rgba(255,255,255,0.7); text-decoration: none;">Terms of Service</a></p>
+            <div class="col">
+                <h4>Contact</h4>
+                <a href="tel:+15619441636">(561) 944-1636</a>
+                <a href="sms:+18444356005">Text us</a>
+                <a href="mailto:info@goumuve.com">info@goumuve.com</a>
             </div>
+            <div class="col">
+                <h4>Hours</h4>
+                <p>Mon&ndash;Sat: 7am&ndash;7pm</p>
+                <p>Sun: 8am&ndash;5pm</p>
+            </div>
+        </div>
+        <div class="bottom">
+            <span>&copy; 2026 Umuve. Licensed &amp; insured.</span>
+            <span>Serving Palm Beach &amp; Broward County, FL</span>
+            <span><a href="/privacy">Privacy</a> &middot; <a href="/terms">Terms</a></span>
         </div>
     </footer>
 
