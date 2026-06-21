@@ -18,7 +18,7 @@ import secrets
 
 from sqlalchemy import and_
 
-from models import db, Job, Org, PortalInvoice, PortalInvoiceLineItem
+from models import db, Job, Org, PortalInvoice, PortalInvoiceLineItem, active_contract_for_org
 
 logger = logging.getLogger(__name__)
 
@@ -98,22 +98,66 @@ def generate_monthly_invoices(month, year):
         if existing is not None:
             continue
 
-        subtotal_cents = 0
         line_items = []
-        for j in org_jobs:
-            amount_cents = int(round((j.total_price or 0.0) * 100))
-            subtotal_cents += amount_cents
+        contract = active_contract_for_org(org_id, period_end)
+
+        if contract:
+            # Contract billing: monthly base + per-pickup overage beyond the
+            # included allowance. Included pickups are covered by the base.
+            n = len(org_jobs)
+            included = contract.included_pickups or 0
+            per_pickup = contract.metered_per_pickup_cents or 0
+            overage = max(0, n - included)
+            base_cents = contract.monthly_base_cents or 0
+            overage_cents = overage * per_pickup
+            subtotal_cents = base_cents + overage_cents
+
             line_items.append(
                 PortalInvoiceLineItem(
-                    job_id=j.id,
-                    description="Pickup {}".format(
-                        (j.completed_at or now).date().isoformat()
-                    ),
+                    description="Monthly base — {} plan".format(contract.tier.title()),
                     quantity=1.0,
-                    unit_cents=amount_cents,
-                    amount_cents=amount_cents,
+                    unit_cents=base_cents,
+                    amount_cents=base_cents,
                 )
             )
+            if overage > 0:
+                line_items.append(
+                    PortalInvoiceLineItem(
+                        description="Pickups: {} ({} included, {} billed)".format(
+                            n, included, overage
+                        ),
+                        quantity=float(overage),
+                        unit_cents=per_pickup,
+                        amount_cents=overage_cents,
+                    )
+                )
+            elif n > 0:
+                # Informational $0 line so the invoice shows usage within plan.
+                line_items.append(
+                    PortalInvoiceLineItem(
+                        description="Pickups: {} (all {} within plan)".format(n, included),
+                        quantity=float(n),
+                        unit_cents=0,
+                        amount_cents=0,
+                    )
+                )
+        else:
+            # No contract on file: fall back to summing each job's own price.
+            subtotal_cents = 0
+            for j in org_jobs:
+                amount_cents = int(round((j.total_price or 0.0) * 100))
+                subtotal_cents += amount_cents
+                line_items.append(
+                    PortalInvoiceLineItem(
+                        job_id=j.id,
+                        description="Pickup {}".format(
+                            (j.completed_at or now).date().isoformat()
+                        ),
+                        quantity=1.0,
+                        unit_cents=amount_cents,
+                        amount_cents=amount_cents,
+                    )
+                )
 
         invoice = PortalInvoice(
             org_id=org_id,

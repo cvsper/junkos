@@ -22,7 +22,7 @@ import os
 
 from sqlalchemy import and_
 
-from models import db, Job, Org, OrgMember, PortalProperty
+from models import db, Job, Org, OrgMember, PortalProperty, active_contract_for_org
 from portal_v1_models import PortalRecurringSchedule, PortalUnit
 
 logger = logging.getLogger(__name__)
@@ -143,12 +143,29 @@ def generate_jobs_for_due_schedules(now=None):
                 schedule.next_run_at = _advance_next_run(schedule, now)
                 continue
 
+            # Price the pickup from the org's contract (marginal per-pickup
+            # rate). Without this, recurring jobs carried no price and monthly
+            # invoices summed to $0. Included-pickup/base logic is applied at
+            # invoicing; this is the per-job unit price.
+            contract = active_contract_for_org(schedule.org_id, now)
+            if contract:
+                per_pickup = (contract.metered_per_pickup_cents or 0) / 100.0
+            else:
+                per_pickup = 0.0
+                logger.warning(
+                    "recurring: org=%s has no active contract — job priced $0",
+                    schedule.org_id,
+                )
+
             job = Job(
                 customer_id=customer_id,
                 org_id=schedule.org_id,
                 status="pending",
                 address=_address_for_schedule(schedule),
                 scheduled_at=schedule.next_run_at,
+                total_price=per_pickup,
+                base_price=per_pickup,
+                item_total=per_pickup,
             )
             # unit_id is a v1 column added via migration on the existing
             # jobs table — set via __dict__ to bypass mapper lag in tests

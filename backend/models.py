@@ -3202,6 +3202,24 @@ class Contract(db.Model):
     )
 
 
+def active_contract_for_org(org_id, when=None):
+    """Return the org's currently-effective Contract (or None).
+
+    A contract is effective when effective_from <= when and effective_to is
+    null or >= when. Newest effective_from wins if several overlap.
+    """
+    if not org_id:
+        return None
+    when = when or utcnow()
+    return (
+        Contract.query
+        .filter(Contract.org_id == org_id, Contract.effective_from <= when)
+        .filter((Contract.effective_to.is_(None)) | (Contract.effective_to >= when))
+        .order_by(Contract.effective_from.desc())
+        .first()
+    )
+
+
 class PortalInvoice(db.Model):
     """B2B portal invoice. Named PortalInvoice to avoid conflict with any
     residential invoice in use by the booking engine."""
