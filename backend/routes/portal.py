@@ -560,6 +560,47 @@ def get_subscription():
     )
 
 
+# Self-serve: start a Stripe Checkout to subscribe + collect a card. The
+# checkout.session.completed webhook (billing_portal.py) activates the org.
+@portal_bp.route("/billing/checkout", methods=["POST"])
+@portal_auth
+@require_role("owner", "admin")
+def billing_checkout():
+    org = db.session.get(Org, g.org_id)
+    if not org:
+        return jsonify({"error": "not_found"}), 404
+    data = request.get_json(silent=True) or {}
+    tier = data.get("tier") or org.tier or "starter"
+    base = os.environ.get("PORTAL_URL", "https://portal.goumuve.com")
+    success_url = data.get("successUrl") or "{}/settings?billing=success".format(base)
+    cancel_url = data.get("cancelUrl") or "{}/settings?billing=cancel".format(base)
+    try:
+        from billing_portal import create_checkout_session
+        url = create_checkout_session(org, tier, success_url, cancel_url)
+        audit("billing.checkout_started", "org", org.id, after={"tier": tier})
+        return jsonify({"url": url}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 502
+
+
+# Self-serve: Stripe Customer Portal link to manage card/subscription/invoices.
+@portal_bp.route("/billing/portal-session", methods=["POST"])
+@portal_auth
+@require_role("owner", "admin")
+def billing_portal_session():
+    org = db.session.get(Org, g.org_id)
+    if not org:
+        return jsonify({"error": "not_found"}), 404
+    base = os.environ.get("PORTAL_URL", "https://portal.goumuve.com")
+    return_url = (request.get_json(silent=True) or {}).get("returnUrl") or "{}/settings".format(base)
+    try:
+        from billing_portal import create_billing_portal_session
+        url = create_billing_portal_session(org, return_url)
+        return jsonify({"url": url}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 502
+
+
 @portal_bp.route("/billing/invoices", methods=["GET"])
 @portal_auth
 def list_invoices():

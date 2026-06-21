@@ -270,6 +270,54 @@ def push_portal_invoice_to_stripe(org, portal_invoice, line_items):
         return None
 
 
+def create_checkout_session(org, tier, success_url, cancel_url):
+    """Stripe Checkout (subscription mode) — collects a card AND starts the
+    org's subscription in one hosted flow. Returns the Checkout URL. The
+    checkout.session.completed webhook captures customer+subscription onto the
+    org and flips it active. This is the self-serve path (vs. subscribe_org,
+    which creates a subscription with no payment method)."""
+    if tier not in TIERS:
+        raise ValueError("invalid tier {}".format(tier))
+    import stripe
+    key = os.environ.get("STRIPE_SECRET_KEY")
+    if not key:
+        raise RuntimeError("STRIPE_SECRET_KEY not set")
+    stripe.api_key = key
+    cfg = _load_config()
+    price_id = cfg.get("tiers", {}).get(tier, {}).get("base_price_id")
+    if not price_id:
+        raise RuntimeError("no price for tier {} — run bootstrap first".format(tier))
+    params = {
+        "mode": "subscription",
+        "line_items": [{"price": price_id, "quantity": 1}],
+        "success_url": success_url,
+        "cancel_url": cancel_url,
+        "metadata": {"org_id": org.id, "tier": tier},
+        "subscription_data": {"metadata": {"org_id": org.id, "tier": tier}},
+        "allow_promotion_codes": True,
+    }
+    if org.stripe_customer_id:
+        params["customer"] = org.stripe_customer_id
+    elif org.billing_email:
+        params["customer_email"] = org.billing_email
+    return stripe.checkout.Session.create(**params).url
+
+
+def create_billing_portal_session(org, return_url):
+    """Stripe Customer Portal link so an org can manage its card, subscription,
+    and invoices. Requires an existing Stripe customer."""
+    if not org or not org.stripe_customer_id:
+        raise RuntimeError("org has no Stripe customer yet")
+    import stripe
+    key = os.environ.get("STRIPE_SECRET_KEY")
+    if not key:
+        raise RuntimeError("STRIPE_SECRET_KEY not set")
+    stripe.api_key = key
+    return stripe.billing_portal.Session.create(
+        customer=org.stripe_customer_id, return_url=return_url
+    ).url
+
+
 billing_portal_bp = Blueprint(
     "billing_portal", __name__, url_prefix="/portal/v1/billing"
 )
@@ -339,7 +387,25 @@ def stripe_webhook():
         else event.data.object
     )
 
-    if etype == "customer.subscription.updated":
+    if etype == "checkout.session.completed":
+        # Self-serve subscribe finished — capture the Stripe customer +
+        # subscription onto the org and activate it.
+        meta = (data.get("metadata") if isinstance(data, dict) else data.metadata) or {}
+        org_id = meta.get("org_id")
+        org = db.session.get(Org, org_id) if org_id else None
+        if org:
+            cust = data.get("customer") if isinstance(data, dict) else data.customer
+            sub = data.get("subscription") if isinstance(data, dict) else data.subscription
+            if cust:
+                org.stripe_customer_id = cust
+            if sub:
+                org.stripe_subscription_id = sub
+            if meta.get("tier"):
+                org.tier = meta["tier"]
+            org.status = "active"
+            db.session.commit()
+
+    elif etype == "customer.subscription.updated":
         sub_id = data.get("id") if isinstance(data, dict) else data.id
         status = data.get("status") if isinstance(data, dict) else data.status
         org = (
