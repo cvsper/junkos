@@ -252,6 +252,19 @@ actor DriverAPIClient {
         try await request("/api/offers/\(token)/accept", method: "POST")
     }
 
+    // MARK: - Payouts (instant cash-out vs free automatic)
+
+    /// Available balance + eligibility for an instant payout.
+    func getPayoutEligibility() async throws -> PayoutEligibilityResponse {
+        try await request("/api/payments/payout/eligibility")
+    }
+
+    /// Instant payout of the available balance to the operator's debit card
+    /// (~30 min). The 1.5% Stripe fee is borne by the operator.
+    func requestInstantPayout() async throws -> InstantPayoutResponse {
+        try await request("/api/payments/payout/instant", method: "POST")
+    }
+
     func getCurrentJob() async throws -> CurrentJobResponse {
         try await request("/api/drivers/jobs/current")
     }

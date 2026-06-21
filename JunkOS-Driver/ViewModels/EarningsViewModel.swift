@@ -15,6 +15,12 @@ final class EarningsViewModel {
     var selectedPeriod: EarningsPeriod = .today
     var errorMessage: String?
 
+    // Instant payout (cash out) state
+    var availableBalance: Double = 0
+    var payoutEligible = false
+    var payoutBusy = false
+    var payoutMessage: String?
+
     enum EarningsPeriod: String, CaseIterable {
         case today = "Today"
         case week = "This Week"
@@ -100,5 +106,38 @@ final class EarningsViewModel {
             errorMessage = error.localizedDescription
             isLoading = false
         }
+        await loadPayout()
+    }
+
+    @MainActor
+    func loadPayout() async {
+        do {
+            let r = try await DriverAPIClient.shared.getPayoutEligibility()
+            availableBalance = r.availableAmount
+            payoutEligible = r.eligible
+        } catch {
+            // non-fatal — leave the cash-out card hidden
+        }
+    }
+
+    @MainActor
+    func cashOutInstant() async {
+        payoutBusy = true
+        payoutMessage = nil
+        do {
+            let r = try await DriverAPIClient.shared.requestInstantPayout()
+            if r.success {
+                payoutMessage = String(
+                    format: "Sent $%.2f — arrives in ~30 min.",
+                    r.amount ?? availableBalance
+                )
+                await loadPayout()
+            } else {
+                payoutMessage = "Payout failed. Please try again."
+            }
+        } catch {
+            payoutMessage = error.localizedDescription
+        }
+        payoutBusy = false
     }
 }

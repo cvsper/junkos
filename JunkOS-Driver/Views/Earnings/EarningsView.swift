@@ -77,6 +77,12 @@ struct EarningsView: View {
                         .driverCard()
                         .padding(.horizontal, DriverSpacing.xl)
 
+                        // Cash out (instant payout) — only when there's a balance
+                        if viewModel.availableBalance > 0 {
+                            cashOutCard
+                                .padding(.horizontal, DriverSpacing.xl)
+                        }
+
                         // Loading or entries list
                         if viewModel.isLoading && viewModel.entries.isEmpty {
                             VStack(spacing: DriverSpacing.md) {
@@ -116,6 +122,54 @@ struct EarningsView: View {
                 await viewModel.fetchEarnings()
             }
         }
+    }
+
+    private var cashOutCard: some View {
+        VStack(alignment: .leading, spacing: DriverSpacing.sm) {
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Available to cash out")
+                        .font(DriverTypography.footnote)
+                        .foregroundStyle(Color.driverTextSecondary)
+                    Text(String(format: "$%.2f", viewModel.availableBalance))
+                        .font(.system(size: 26, weight: .bold, design: .rounded))
+                        .foregroundStyle(Color.driverText)
+                }
+                Spacer()
+            }
+            Button {
+                HapticManager.shared.selection()
+                Task { await viewModel.cashOutInstant() }
+            } label: {
+                HStack(spacing: 8) {
+                    if viewModel.payoutBusy {
+                        ProgressView().tint(.white)
+                    } else {
+                        Image(systemName: "bolt.fill")
+                    }
+                    Text(viewModel.payoutBusy ? "Sending…" : "Cash out instantly")
+                }
+                .font(DriverTypography.headline)
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, DriverSpacing.sm)
+                .background(Color.driverPrimary)
+                .clipShape(RoundedRectangle(cornerRadius: DriverRadius.md))
+            }
+            .buttonStyle(.plain)
+            .disabled(viewModel.payoutBusy || !viewModel.payoutEligible)
+
+            Text("Arrives in ~30 min · 1.5% fee. Or get paid free automatically in 1–2 business days.")
+                .font(DriverTypography.caption2)
+                .foregroundStyle(Color.driverTextTertiary)
+
+            if let msg = viewModel.payoutMessage {
+                Text(msg)
+                    .font(DriverTypography.caption)
+                    .foregroundStyle(Color.driverSuccess)
+            }
+        }
+        .driverCard()
     }
 }
 

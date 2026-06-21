@@ -44,3 +44,26 @@ struct OfferAcceptResponse: Codable {
     let status: String?
     let message: String?
 }
+
+// MARK: - Payouts
+
+struct PayoutEligibilityResponse: Codable {
+    let eligible: Bool
+    let availableAmount: Double
+
+    enum CodingKeys: String, CodingKey {
+        case eligible
+        case availableAmount = "available_amount"
+    }
+}
+
+struct InstantPayoutResponse: Codable {
+    let success: Bool
+    let amount: Double?
+    let payoutId: String?
+
+    enum CodingKeys: String, CodingKey {
+        case success, amount
+        case payoutId = "payout_id"
+    }
+}
