@@ -21,11 +21,10 @@ export function AuthShell({
     <div className="min-h-screen grid lg:grid-cols-2 bg-white">
       {/* Form side */}
       <div className="flex flex-col px-6 py-8 sm:px-12 lg:px-16">
-        <Link href="/" className="inline-flex items-baseline gap-2">
-          <span className="text-2xl font-bold tracking-tight text-brand-600">
-            Umuve
-          </span>
-          <span className="text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-gray-400">
+        <Link href="/" className="block" aria-label="Umuve Commercial — Home">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo-nav.png" alt="Umuve" className="h-8 w-auto" />
+          <span className="mt-1 block text-[0.6rem] font-semibold uppercase tracking-[0.2em] text-gray-400">
             Commercial
           </span>
         </Link>

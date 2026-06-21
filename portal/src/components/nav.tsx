@@ -31,12 +31,11 @@ export function Nav() {
   return (
     <aside className="flex min-h-screen w-60 flex-col border-r border-gray-200/80 bg-white">
       <div className="px-5 py-5">
-        <Link href="/" className="inline-flex items-baseline gap-2">
-          <span className="text-xl font-extrabold tracking-tight text-brand-600">
-            Umuve
-          </span>
-          <span className="text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-gray-400">
-            Commercial
+        <Link href="/" className="block" aria-label="Umuve Commercial — Home">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo-nav.png" alt="Umuve" className="h-7 w-auto" />
+          <span className="mt-1.5 block text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-gray-400">
+            Commercial Portal
           </span>
         </Link>
       </div>
