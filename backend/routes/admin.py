@@ -16,7 +16,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from models import (
     db, User, Contractor, Job, Payment, PricingRule, SurgeZone, Notification,
-    PricingConfig, Review, Rating, DeviceToken, AbandonedBooking, Quote,
+    PricingConfig, Review, Rating, DeviceToken, AbandonedBooking, Quote, Referral,
     generate_uuid, utcnow,
 )
 from auth_routes import require_auth
@@ -596,6 +596,97 @@ _PRICING_DASHBOARD_HTML = """<!DOCTYPE html>
 </div></body></html>"""
 
 
+_REFERRAL_DASHBOARD_HTML = """<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Umuve — Referral Payouts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Outfit:wght@600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{--ink:#1a1a1a;--red:#C52222;--mut:#6b6b66;--line:#e8e5df;--bg:#FAF8F5}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'DM Sans',system-ui,sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:2.5rem 1.25rem 4rem}
+  h1{font-family:'Outfit',sans-serif;font-weight:800;font-size:1.9rem;letter-spacing:-.02em;margin:0}
+  .sub{color:var(--mut);margin:.25rem 0 1.5rem;font-size:.95rem}
+  .bar{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center;margin-bottom:1.5rem}
+  input,select{font:inherit;border:1px solid #d6d2ca;border-radius:.55rem;padding:.55rem .7rem;background:#fff}
+  input{min-width:18rem}
+  button{font:inherit;font-weight:700;background:var(--red);color:#fff;border:0;border-radius:.55rem;padding:.6rem 1.1rem;cursor:pointer}
+  button:hover{background:#9E1B1B}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:.9rem;margin-bottom:1.5rem}
+  @media(max-width:640px){.kpis{grid-template-columns:repeat(2,1fr)}}
+  .card{background:#fff;border:1px solid var(--line);border-radius:.9rem;padding:1.1rem 1.2rem}
+  .card .l{font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#9a948b}
+  .card .v{font-family:'Outfit',sans-serif;font-weight:800;font-size:1.7rem;margin-top:.25rem;letter-spacing:-.02em}
+  table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line);border-radius:.9rem;overflow:hidden}
+  th,td{padding:.7rem .9rem;text-align:left;font-size:.9rem;border-top:1px solid var(--line)}
+  th{background:#f3f0ea;font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;color:#9a948b;border-top:0}
+  td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+  .tag{display:inline-block;border-radius:999px;padding:.15rem .55rem;font-size:.72rem;font-weight:700}
+  .t-rewarded{background:#E9F7EE;color:#1B7F44}
+  .t-completed{background:#FEF6E7;color:#9a6700}
+  .t-signed_up{background:#EEF2FF;color:#3a4ea8}
+  .t-other{background:#eee;color:#666}
+  .muted{color:var(--mut);font-size:.85rem}
+  .err{color:var(--red);font-size:.9rem;margin:.5rem 0}
+  .who{font-weight:600}.whoe{color:#9a948b;font-size:.78rem}
+</style></head><body><div class="wrap">
+  <h1>Referral Payouts</h1>
+  <div class="sub">Hauler-to-hauler referrals. Each completed referral pays BOTH haulers — totals below are status-based estimates of platform spend.</div>
+  <div class="bar">
+    <input id="tok" type="password" placeholder="Admin token (stored in this browser only)">
+    <select id="days">
+      <option value="90">Last 90 days</option>
+      <option value="365" selected>Last 365 days</option>
+      <option value="730">Last 2 years</option>
+    </select>
+    <button onclick="load()">Load</button>
+  </div>
+  <div id="err" class="err"></div>
+  <div id="out" style="display:none">
+    <div class="kpis">
+      <div class="card"><div class="l">Paid out</div><div class="v" id="k_paid">—</div></div>
+      <div class="card"><div class="l">Pending payout</div><div class="v" id="k_pending">—</div></div>
+      <div class="card"><div class="l">Rewarded refs</div><div class="v" id="k_rew">—</div></div>
+      <div class="card"><div class="l">Awaiting 1st job</div><div class="v" id="k_signed">—</div></div>
+    </div>
+    <table><thead><tr>
+      <th>Referrer</th><th>Referred hauler</th><th>Status</th>
+      <th class="n">Bonus each</th><th class="n">Total</th><th>Completed</th>
+    </tr></thead><tbody id="rows"></tbody></table>
+    <p class="muted" id="meta" style="margin-top:1rem"></p>
+  </div>
+<script>
+  const $=id=>document.getElementById(id);
+  const money=n=>'$'+(n||0).toLocaleString(undefined,{maximumFractionDigits:0});
+  $('tok').value=localStorage.getItem('umuve_admin_token')||'';
+  async function load(){
+    const tok=$('tok').value.trim(); localStorage.setItem('umuve_admin_token',tok);
+    $('err').textContent=''; const days=$('days').value;
+    try{
+      const r=await fetch('/api/admin/referral-payouts?days='+days,{headers:{Authorization:'Bearer '+tok}});
+      if(!r.ok){ $('err').textContent = r.status===403?'Not authorized — need a valid admin token.':'Error '+r.status; return; }
+      render(await r.json());
+    }catch(e){ $('err').textContent='Request failed: '+e; }
+  }
+  function who(w){ if(!w||(!w.name&&!w.email)) return '<span class="whoe">unknown</span>'; return '<div class="who">'+(w.name||w.email)+'</div>'+(w.name&&w.email?'<div class="whoe">'+w.email+'</div>':''); }
+  function tag(s){ const cls=['rewarded','completed','signed_up'].includes(s)?s:'other'; const lbl={rewarded:'Paid',completed:'Earned (pending)',signed_up:'Linked'}[s]||s; return '<span class="tag t-'+cls+'">'+lbl+'</span>'; }
+  function fdate(d){ return d? new Date(d).toLocaleDateString():'—'; }
+  function render(d){
+    $('out').style.display='block'; const s=d.summary;
+    $('k_paid').textContent=money(s.paid_out);
+    $('k_pending').textContent=money(s.pending_payout);
+    $('k_rew').textContent=s.rewarded;
+    $('k_signed').textContent=s.signed_up;
+    $('rows').innerHTML = d.referrals.length ? d.referrals.map(r=>'<tr><td>'+who(r.referrer)+'</td><td>'+who(r.referee)+'</td><td>'+tag(r.status)+'</td><td class="n">'+money(r.bonus_each)+'</td><td class="n">'+money(r.total_if_both)+'</td><td>'+fdate(r.completed_at)+'</td></tr>').join('') : '<tr><td colspan="6" style="text-align:center;color:#9a948b;padding:2rem">No referrals in this window yet.</td></tr>';
+    $('meta').textContent='Window: '+d.window_days+' days · $'+d.bonus_per_hauler+' per hauler · '+s.total+' contractor referrals. "Paid out" = rewarded refs × 2 haulers; precise per-transfer totals live in Stripe.';
+  }
+  if($('tok').value) load();
+</script>
+</div></body></html>"""
+
+
 # ---------------------------------------------------------------------------
 # Pricing analytics — quote -> book conversion + platform revenue, banded by
 # price. This is the lever for tuning the binding quote toward the price that
@@ -705,6 +796,106 @@ def pricing_dashboard():
     in your browser only)."""
     from flask import Response
     return Response(_PRICING_DASHBOARD_HTML, mimetype="text/html")
+
+
+# ---------------------------------------------------------------------------
+# Referral payouts — watch the supply-side referral spend (who got paid, totals)
+# ---------------------------------------------------------------------------
+@admin_bp.route("/referral-payouts", methods=["GET"])
+@require_admin
+def referral_payouts(user_id):
+    """Contractor (hauler) referral payouts: status, who, and totals.
+
+    A 'contractor' referral pays BOTH haulers reward_amount on the referred
+    hauler's first completed job (see payments.pay_referral_bonus). Money totals
+    are status-based approximations (we don't store per-transfer rows):
+      rewarded  -> both paid     -> counts as 2 x reward 'paid out'
+      completed -> earned, not fully paid -> 2 x reward 'pending'
+      signed_up -> linked, awaiting first job
+    Query param ?days=N (default 365, clamped 1..730).
+    """
+    try:
+        days = max(1, min(730, int(request.args.get("days", 365))))
+    except (TypeError, ValueError):
+        days = 365
+    since = utcnow() - timedelta(days=days)
+
+    try:
+        from routes.referrals import CONTRACTOR_REFERRAL_BONUS as _bonus
+    except Exception:
+        _bonus = 100.0
+
+    refs = (
+        db.session.query(Referral)
+        .filter(Referral.referral_type == "contractor", Referral.created_at >= since)
+        .order_by(Referral.created_at.desc())
+        .all()
+    )
+
+    uids = set()
+    for r in refs:
+        uids.add(r.referrer_id)
+        uids.add(r.referee_id)
+    uids.discard(None)
+    users = {}
+    if uids:
+        users = {u.id: u for u in db.session.query(User).filter(User.id.in_(uids)).all()}
+
+    def who(uid):
+        u = users.get(uid)
+        if not u:
+            return {"name": None, "email": None}
+        return {"name": u.name, "email": u.email}
+
+    paid_out = 0.0
+    pending = 0.0
+    counts = {"rewarded": 0, "completed": 0, "signed_up": 0, "other": 0}
+    rows = []
+    for r in refs:
+        bonus = float(r.reward_amount or 0.0)
+        both = round(bonus * 2, 2)
+        if r.status == "rewarded":
+            counts["rewarded"] += 1
+            paid_out += both
+        elif r.status == "completed":
+            counts["completed"] += 1
+            pending += both
+        elif r.status == "signed_up":
+            counts["signed_up"] += 1
+        else:
+            counts["other"] += 1
+        rows.append({
+            "id": r.id,
+            "referrer": who(r.referrer_id),
+            "referee": who(r.referee_id),
+            "status": r.status,
+            "bonus_each": bonus,
+            "total_if_both": both,
+            "created_at": r.created_at.isoformat() if r.created_at else None,
+            "completed_at": r.completed_at.isoformat() if r.completed_at else None,
+        })
+
+    return jsonify({
+        "window_days": days,
+        "bonus_per_hauler": _bonus,
+        "summary": {
+            "total": len(refs),
+            "rewarded": counts["rewarded"],
+            "completed_unpaid": counts["completed"],
+            "signed_up": counts["signed_up"],
+            "paid_out": round(paid_out, 2),
+            "pending_payout": round(pending, 2),
+        },
+        "referrals": rows,
+    })
+
+
+@admin_bp.route("/referral-dashboard", methods=["GET"])
+def referral_dashboard():
+    """Self-contained referral-payouts dashboard. Public page; the data call is
+    admin-gated, so paste an admin token once (stored in your browser only)."""
+    from flask import Response
+    return Response(_REFERRAL_DASHBOARD_HTML, mimetype="text/html")
 
 
 @admin_bp.route("/analytics", methods=["GET"])
