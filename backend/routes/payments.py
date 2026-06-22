@@ -308,6 +308,83 @@ def attempt_payout(job_id):
                 "message": "Internal payout error", "amount": 0.0}
 
 
+def pay_referral_bonus(referral):
+    """Auto-pay the contractor referral bonus to BOTH haulers via Stripe Connect.
+
+    Called from the job-completion hook when a referred hauler finishes their
+    first job. Idempotent (Stripe idempotency_key per party + a status guard),
+    never raises, and does NOT commit — the caller's transaction persists it.
+
+    - Each party with a connected payout account is paid a Transfer of
+      reward_amount and gets a "paid" notification.
+    - A party without a Connect account (or if STRIPE_SECRET_KEY is unset, or
+      REFERRAL_AUTO_PAYOUT=false) is left as an earned credit + notification;
+      re-running this is safe and will pay them once they're connected.
+    - status flips to 'rewarded' only once every party has actually been paid.
+    """
+    try:
+        if referral is None or getattr(referral, "referral_type", None) != "contractor":
+            return
+        if referral.status == "rewarded":
+            return
+        bonus = float(referral.reward_amount or 0.0)
+        if bonus <= 0:
+            return
+
+        auto = os.environ.get("REFERRAL_AUTO_PAYOUT", "true").lower() == "true"
+        stripe_key = os.environ.get("STRIPE_SECRET_KEY", "")
+        can_pay = bool(auto and stripe_key)
+        stripe = _get_stripe() if can_pay else None
+        cents = int(round(bonus * 100))
+
+        def _notify(uid, title, body):
+            if not uid:
+                return
+            db.session.add(Notification(
+                id=generate_uuid(), user_id=uid, type="payment",
+                title=title, body=body,
+                data={"referral_id": referral.id, "amount": bonus},
+            ))
+
+        paid_all = True
+        for role, uid in (("referrer", referral.referrer_id),
+                          ("referee", referral.referee_id)):
+            if not uid:
+                continue
+            contractor = Contractor.query.filter_by(user_id=uid).first()
+            connect = getattr(contractor, "stripe_connect_id", None) if contractor else None
+            if can_pay and connect:
+                try:
+                    stripe.Transfer.create(
+                        amount=cents,
+                        currency="usd",
+                        destination=connect,
+                        metadata={"referral_id": referral.id, "role": role,
+                                  "kind": "referral_bonus"},
+                        idempotency_key="refbonus_{}_{}".format(referral.id, role),
+                    )
+                    _notify(uid, "Referral Bonus Paid",
+                            "${:.2f} referral bonus has been sent to your account.".format(bonus))
+                    logger.info("Referral bonus $%.2f paid to %s (%s) ref=%s",
+                                bonus, uid, role, referral.id)
+                except Exception:
+                    paid_all = False
+                    logger.exception("Referral bonus transfer failed ref=%s role=%s",
+                                     referral.id, role)
+                    _notify(uid, "Referral Bonus Earned",
+                            "Your ${:.2f} referral bonus is earned — we'll send it shortly.".format(bonus))
+            else:
+                paid_all = False
+                _notify(uid, "Referral Bonus Earned",
+                        "Your ${:.2f} referral bonus is earned — we'll send it once your payout account is ready.".format(bonus))
+
+        if paid_all:
+            referral.status = "rewarded"
+    except Exception:
+        logger.exception("pay_referral_bonus crashed for referral %s",
+                         getattr(referral, "id", "?"))
+
+
 @payments_bp.route("/payout/<job_id>", methods=["POST"])
 @require_auth
 def trigger_payout(user_id, job_id):

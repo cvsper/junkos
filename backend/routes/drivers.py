@@ -431,29 +431,16 @@ def update_job_status(user_id, job_id):
             if c_referral:
                 c_referral.status = "completed"
                 c_referral.completed_at = utcnow()
-                bonus = c_referral.reward_amount or 0.0
                 logger.info(
                     "Contractor referral %s completed: referrer %s + new hauler %s "
-                    "each earn $%.2f (first job %s done)",
-                    c_referral.id, c_referral.referrer_id, contractor.user_id, bonus, job.id,
+                    "(first job %s done) — paying bonus",
+                    c_referral.id, c_referral.referrer_id, contractor.user_id, job.id,
                 )
-                # Notify both parties; bonus is tracked as a credit for sevs to pay out.
-                for uid, msg in (
-                    (c_referral.referrer_id,
-                     "Your referred hauler just completed their first job — "
-                     "${:.0f} referral bonus earned!".format(bonus)),
-                    (contractor.user_id,
-                     "First job complete! Your ${:.0f} referral bonus is earned.".format(bonus)),
-                ):
-                    if uid:
-                        db.session.add(Notification(
-                            id=generate_uuid(),
-                            user_id=uid,
-                            type="payment",
-                            title="Referral Bonus Earned",
-                            body=msg,
-                            data={"referral_id": c_referral.id, "amount": bonus},
-                        ))
+                # Auto-pay both haulers via Stripe Connect (idempotent; flips the
+                # referral to 'rewarded' once both are paid, notifies each party,
+                # falls back to an earned credit if a payout account isn't ready).
+                from routes.payments import pay_referral_bonus
+                pay_referral_bonus(c_referral)
         except Exception as e:
             logger.warning("Failed to update contractor referral on job completion: %s", e)
 
