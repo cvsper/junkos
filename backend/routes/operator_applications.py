@@ -73,6 +73,11 @@ def submit_operator_application():
             "error": "An application with this email already exists",
         }), 409
 
+    # Optional operator referral code (from a /operators?ref=CODE share link).
+    ref_code = (data.get("referral_code") or "").strip().upper()
+    if len(ref_code) != 8:
+        ref_code = None
+
     # Create the application record
     application = OperatorApplication(
         id=generate_uuid(),
@@ -83,6 +88,7 @@ def submit_operator_application():
         city=data["city"].strip(),
         trucks=data.get("trucks", "").strip() or None,
         experience=data.get("experience", "").strip() or None,
+        referral_code=ref_code,
         status="pending",
     )
     db.session.add(application)
@@ -283,6 +289,18 @@ def review_operator_application(user_id, app_id):
                 onboarding_completed_at=utcnow(),
             )
             db.session.add(contractor)
+
+        # If this operator came in through another hauler's referral link, link
+        # the referral now. It pays both haulers on the new operator's first
+        # completed job (drivers.py). Best-effort — never blocks approval.
+        if application.referral_code:
+            try:
+                from routes.referrals import link_contractor_referral
+                _ref, _err, _ = link_contractor_referral(user.id, application.referral_code)
+                if _err:
+                    logger.info("Operator referral not linked for %s: %s", user.id, _err)
+            except Exception:
+                logger.exception("Operator referral linking failed at approval for %s", user.id)
 
         # Send approval email (branded template shared with the driver flow + backfill)
         try:

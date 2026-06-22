@@ -179,7 +179,8 @@
     <section class="op-apply" id="apply">
         <div class="wrap">
             <h2 style="font-family:var(--font-display);font-weight:800;font-size:clamp(1.7rem,3.2vw,2.3rem);letter-spacing:-.02em;color:#1A1A1A;margin:0 0 .5rem;text-align:center">Apply to become an operator</h2>
-            <p style="font-family:var(--font-body);color:#5B5B57;text-align:center;margin:0 auto 2rem;max-width:42ch;line-height:1.6">Tell us a bit about yourself. We review applications within 24 hours.</p>
+            <p style="font-family:var(--font-body);color:#5B5B57;text-align:center;margin:0 auto 1.4rem;max-width:42ch;line-height:1.6">Tell us a bit about yourself. We review applications within 24 hours.</p>
+            <div id="op-ref-banner" style="display:none;max-width:42ch;margin:0 auto 1.4rem;background:#E9F7EE;border:1px solid #BFE6CD;color:#1B7F44;font-family:var(--font-body);font-size:.9rem;font-weight:600;text-align:center;padding:.7rem 1rem;border-radius:.6rem">&#127881; Referred by a hauler &mdash; your referral bonus is locked in after your first completed job.</div>
             <div class="op-form">
                 <form id="op-apply-form" novalidate>
                     <div class="two">
@@ -203,6 +204,7 @@
                         </label>
                     </div>
                     <label><span class="lbl">Experience (optional)</span><textarea name="experience" rows="3" placeholder="Tell us about your hauling or junk-removal experience."></textarea></label>
+                    <input type="hidden" name="referral_code" id="op-ref">
                     <button type="submit">Apply to haul</button>
                     <div class="op-msg err" id="op-err"></div>
                     <p style="font-family:var(--font-body);font-size:.72rem;color:#b3ada3;text-align:center;margin:.8rem 0 0">By applying you agree to be contacted by Umuve about operating on the platform.</p>
@@ -267,6 +269,14 @@
         var errBox = document.getElementById('op-err');
         var okBox = document.getElementById('op-ok');
         var API = 'https://junkos-backend.onrender.com/api/operator-applications';
+
+        // Operator referral: a hauler's share link is /operators?ref=CODE.
+        var ref = (new URLSearchParams(window.location.search).get('ref') || '').trim().toUpperCase();
+        if (ref.length === 8) {
+          document.getElementById('op-ref').value = ref;
+          var banner = document.getElementById('op-ref-banner');
+          if (banner) banner.style.display = 'block';
+        }
         form.addEventListener('submit', async function(e){
           e.preventDefault();
           errBox.style.display = 'none';

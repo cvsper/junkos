@@ -946,6 +946,7 @@ class OperatorApplication(db.Model):
     city = Column(String(100), nullable=False)
     trucks = Column(String(20), nullable=True)
     experience = Column(String(50), nullable=True)
+    referral_code = Column(String(8), nullable=True)  # referring hauler's code (operator referral)
     status = Column(String(20), nullable=False, default="pending")  # pending, approved, rejected
     rejection_reason = Column(Text, nullable=True)
     notes = Column(Text, nullable=True)

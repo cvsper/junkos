@@ -117,6 +117,9 @@ COLUMN_MIGRATIONS = [
     # Contractor-referral discriminator (added 2026-05-29)
     ("referrals", "referral_type", "VARCHAR(20)", "VARCHAR(20)", "'customer'"),
 
+    # Operator-referral capture on the recruiting application (added 2026-06-21)
+    ("operator_applications", "referral_code", "VARCHAR(8)", "VARCHAR(8)", "NULL"),
+
     # User win-back fields (added 2026-03-24)
     ("users", "winback_called", "BOOLEAN", "BOOLEAN", "FALSE"),
     ("users", "last_winback_at", "DATETIME", "TIMESTAMP", "NULL"),
