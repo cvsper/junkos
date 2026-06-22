@@ -530,11 +530,21 @@ _PRICING_DASHBOARD_HTML = """<!DOCTYPE html>
   .fill{height:100%;background:var(--red)}
   .muted{color:var(--mut);font-size:.85rem}
   .err{color:var(--red);font-size:.9rem;margin:.5rem 0}
-</style></head><body><div class="wrap">
+</style></head><body>
+<div id="adminLogin" style="display:none;position:fixed;inset:0;background:#FAF8F5;z-index:100;align-items:center;justify-content:center">
+  <div style="background:#fff;border:1px solid #e8e5df;border-radius:1rem;padding:2rem;max-width:340px;width:90%;box-shadow:0 18px 40px rgba(0,0,0,.08)">
+    <h2 style="font-family:'Outfit',sans-serif;font-weight:800;margin:0 0 .25rem">Admin sign in</h2>
+    <p style="color:#6b6b66;font-size:.9rem;margin:0 0 1.2rem">Sign in with your Umuve admin email &amp; password.</p>
+    <input id="al-email" type="email" placeholder="Email" autocomplete="email" style="width:100%;border:1px solid #d6d2ca;border-radius:.55rem;padding:.6rem .7rem;margin-bottom:.6rem;font:inherit;box-sizing:border-box">
+    <input id="al-pass" type="password" placeholder="Password" autocomplete="current-password" onkeydown="if(event.key==='Enter')adminLogin()" style="width:100%;border:1px solid #d6d2ca;border-radius:.55rem;padding:.6rem .7rem;margin-bottom:.6rem;font:inherit;box-sizing:border-box">
+    <button onclick="adminLogin()" style="width:100%;background:#C52222;color:#fff;border:0;border-radius:.55rem;padding:.65rem;font:inherit;font-weight:700;cursor:pointer">Sign in</button>
+    <div id="al-err" style="color:#C52222;font-size:.85rem;margin-top:.6rem"></div>
+  </div>
+</div>
+<div class="wrap">
   <h1>Pricing &amp; Conversion</h1>
   <div class="sub">Quote &rarr; book conversion and platform take, by price band. Tune the binding quote toward the band that maximizes conversion &times; revenue.</div>
   <div class="bar">
-    <input id="tok" type="password" placeholder="Admin token (stored in this browser only)">
     <select id="days">
       <option value="30">Last 30 days</option>
       <option value="90" selected>Last 90 days</option>
@@ -566,14 +576,30 @@ _PRICING_DASHBOARD_HTML = """<!DOCTYPE html>
 <script>
   const $=id=>document.getElementById(id);
   const money=n=>'$'+(n||0).toLocaleString(undefined,{maximumFractionDigits:0});
-  $('tok').value=localStorage.getItem('umuve_admin_token')||'';
+  const TOKEN_KEY='umuve_admin_token';
+  function _tok(){ return localStorage.getItem(TOKEN_KEY)||''; }
+  function _showLogin(msg){ document.getElementById('adminLogin').style.display='flex'; var o=document.getElementById('out'); if(o) o.style.display='none'; if(msg) document.getElementById('al-err').textContent=msg; }
+  function _hideLogin(){ document.getElementById('adminLogin').style.display='none'; }
+  async function adminLogin(){
+    var email=(document.getElementById('al-email').value||'').trim().toLowerCase();
+    var pass=document.getElementById('al-pass').value;
+    document.getElementById('al-err').textContent='';
+    if(!email||!pass){ document.getElementById('al-err').textContent='Enter email and password.'; return; }
+    try{
+      var r=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,password:pass})});
+      var b=await r.json().catch(function(){return{};});
+      if(r.ok&&b.token){ localStorage.setItem(TOKEN_KEY,b.token); _hideLogin(); load(); }
+      else { document.getElementById('al-err').textContent=(b&&b.error)||'Sign in failed.'; }
+    }catch(e){ document.getElementById('al-err').textContent='Network error.'; }
+  }
   async function load(){
-    const tok=$('tok').value.trim(); localStorage.setItem('umuve_admin_token',tok);
     $('err').textContent=''; const days=$('days').value;
     try{
-      const r=await fetch('/api/admin/pricing-analytics?days='+days,{headers:{Authorization:'Bearer '+tok}});
-      if(!r.ok){ $('err').textContent = r.status===403?'Not authorized — need a valid admin token.':'Error '+r.status; return; }
-      const d=await r.json(); render(d);
+      const r=await fetch('/api/admin/pricing-analytics?days='+days,{headers:{Authorization:'Bearer '+_tok()}});
+      if(r.status===401){ _showLogin('Please sign in.'); return; }
+      if(r.status===403){ _showLogin('That account is not an admin.'); return; }
+      if(!r.ok){ $('err').textContent='Error '+r.status; return; }
+      _hideLogin(); render(await r.json());
     }catch(e){ $('err').textContent='Request failed: '+e; }
   }
   function convCell(p){ return '<div class="conv"><span>'+p.toFixed(1)+'%</span><span class="track"><span class="fill" style="width:'+Math.min(100,p)+'%"></span></span></div>'; }
@@ -591,7 +617,7 @@ _PRICING_DASHBOARD_HTML = """<!DOCTYPE html>
     $('conf').innerHTML=[['Binding (high confidence)',c.binding],['Estimate (buffered)',c.non_binding]].map(([lbl,x])=>'<tr><td>'+lbl+'</td><td class="n">'+x.quoted+'</td><td class="n">'+x.booked+'</td><td class="n">'+convCell(x.conversion)+'</td></tr>').join('');
     $('meta').textContent='Window: '+d.window_days+' days · platform take '+(d.take_rate*100).toFixed(0)+'% · revenue = booked price × take.';
   }
-  if($('tok').value) load();
+  if(_tok()) load(); else _showLogin();
 </script>
 </div></body></html>"""
 
@@ -631,11 +657,21 @@ _REFERRAL_DASHBOARD_HTML = """<!DOCTYPE html>
   .muted{color:var(--mut);font-size:.85rem}
   .err{color:var(--red);font-size:.9rem;margin:.5rem 0}
   .who{font-weight:600}.whoe{color:#9a948b;font-size:.78rem}
-</style></head><body><div class="wrap">
+</style></head><body>
+<div id="adminLogin" style="display:none;position:fixed;inset:0;background:#FAF8F5;z-index:100;align-items:center;justify-content:center">
+  <div style="background:#fff;border:1px solid #e8e5df;border-radius:1rem;padding:2rem;max-width:340px;width:90%;box-shadow:0 18px 40px rgba(0,0,0,.08)">
+    <h2 style="font-family:'Outfit',sans-serif;font-weight:800;margin:0 0 .25rem">Admin sign in</h2>
+    <p style="color:#6b6b66;font-size:.9rem;margin:0 0 1.2rem">Sign in with your Umuve admin email &amp; password.</p>
+    <input id="al-email" type="email" placeholder="Email" autocomplete="email" style="width:100%;border:1px solid #d6d2ca;border-radius:.55rem;padding:.6rem .7rem;margin-bottom:.6rem;font:inherit;box-sizing:border-box">
+    <input id="al-pass" type="password" placeholder="Password" autocomplete="current-password" onkeydown="if(event.key==='Enter')adminLogin()" style="width:100%;border:1px solid #d6d2ca;border-radius:.55rem;padding:.6rem .7rem;margin-bottom:.6rem;font:inherit;box-sizing:border-box">
+    <button onclick="adminLogin()" style="width:100%;background:#C52222;color:#fff;border:0;border-radius:.55rem;padding:.65rem;font:inherit;font-weight:700;cursor:pointer">Sign in</button>
+    <div id="al-err" style="color:#C52222;font-size:.85rem;margin-top:.6rem"></div>
+  </div>
+</div>
+<div class="wrap">
   <h1>Referral Payouts</h1>
   <div class="sub">Hauler-to-hauler referrals. Each completed referral pays BOTH haulers. Totals are actual Stripe transfers from the payout ledger.</div>
   <div class="bar">
-    <input id="tok" type="password" placeholder="Admin token (stored in this browser only)">
     <select id="days">
       <option value="90">Last 90 days</option>
       <option value="365" selected>Last 365 days</option>
@@ -660,14 +696,30 @@ _REFERRAL_DASHBOARD_HTML = """<!DOCTYPE html>
 <script>
   const $=id=>document.getElementById(id);
   const money=n=>'$'+(n||0).toLocaleString(undefined,{maximumFractionDigits:0});
-  $('tok').value=localStorage.getItem('umuve_admin_token')||'';
+  const TOKEN_KEY='umuve_admin_token';
+  function _tok(){ return localStorage.getItem(TOKEN_KEY)||''; }
+  function _showLogin(msg){ document.getElementById('adminLogin').style.display='flex'; var o=document.getElementById('out'); if(o) o.style.display='none'; if(msg) document.getElementById('al-err').textContent=msg; }
+  function _hideLogin(){ document.getElementById('adminLogin').style.display='none'; }
+  async function adminLogin(){
+    var email=(document.getElementById('al-email').value||'').trim().toLowerCase();
+    var pass=document.getElementById('al-pass').value;
+    document.getElementById('al-err').textContent='';
+    if(!email||!pass){ document.getElementById('al-err').textContent='Enter email and password.'; return; }
+    try{
+      var r=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,password:pass})});
+      var b=await r.json().catch(function(){return{};});
+      if(r.ok&&b.token){ localStorage.setItem(TOKEN_KEY,b.token); _hideLogin(); load(); }
+      else { document.getElementById('al-err').textContent=(b&&b.error)||'Sign in failed.'; }
+    }catch(e){ document.getElementById('al-err').textContent='Network error.'; }
+  }
   async function load(){
-    const tok=$('tok').value.trim(); localStorage.setItem('umuve_admin_token',tok);
     $('err').textContent=''; const days=$('days').value;
     try{
-      const r=await fetch('/api/admin/referral-payouts?days='+days,{headers:{Authorization:'Bearer '+tok}});
-      if(!r.ok){ $('err').textContent = r.status===403?'Not authorized — need a valid admin token.':'Error '+r.status; return; }
-      render(await r.json());
+      const r=await fetch('/api/admin/referral-payouts?days='+days,{headers:{Authorization:'Bearer '+_tok()}});
+      if(r.status===401){ _showLogin('Please sign in.'); return; }
+      if(r.status===403){ _showLogin('That account is not an admin.'); return; }
+      if(!r.ok){ $('err').textContent='Error '+r.status; return; }
+      _hideLogin(); render(await r.json());
     }catch(e){ $('err').textContent='Request failed: '+e; }
   }
   function who(w){ if(!w||(!w.name&&!w.email)) return '<span class="whoe">unknown</span>'; return '<div class="who">'+(w.name||w.email)+'</div>'+(w.name&&w.email?'<div class="whoe">'+w.email+'</div>':''); }
@@ -682,7 +734,7 @@ _REFERRAL_DASHBOARD_HTML = """<!DOCTYPE html>
     $('rows').innerHTML = d.referrals.length ? d.referrals.map(r=>'<tr><td>'+who(r.referrer)+'</td><td>'+who(r.referee)+'</td><td>'+tag(r.status)+'</td><td class="n">'+money(r.bonus_each)+'</td><td class="n">'+money(r.paid)+' / '+money(r.total_if_both)+'</td><td>'+fdate(r.completed_at)+'</td></tr>').join('') : '<tr><td colspan="6" style="text-align:center;color:#9a948b;padding:2rem">No referrals in this window yet.</td></tr>';
     $('meta').textContent='Window: '+d.window_days+' days · $'+d.bonus_per_hauler+' per hauler · '+s.total+' referrals · '+(s.transfers||0)+' transfers. Paid out = actual Stripe transfers (ledger); pending = earned but not yet sent.';
   }
-  if($('tok').value) load();
+  if(_tok()) load(); else _showLogin();
 </script>
 </div></body></html>"""
 
