@@ -17,7 +17,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from models import (
     db, User, Contractor, Job, Payment, PricingRule, SurgeZone, Notification,
     PricingConfig, Review, Rating, DeviceToken, AbandonedBooking, Quote, Referral,
-    generate_uuid, utcnow,
+    ReferralPayout, generate_uuid, utcnow,
 )
 from auth_routes import require_auth
 from notifications import send_email, render_driver_approval_email
@@ -633,7 +633,7 @@ _REFERRAL_DASHBOARD_HTML = """<!DOCTYPE html>
   .who{font-weight:600}.whoe{color:#9a948b;font-size:.78rem}
 </style></head><body><div class="wrap">
   <h1>Referral Payouts</h1>
-  <div class="sub">Hauler-to-hauler referrals. Each completed referral pays BOTH haulers — totals below are status-based estimates of platform spend.</div>
+  <div class="sub">Hauler-to-hauler referrals. Each completed referral pays BOTH haulers. Totals are actual Stripe transfers from the payout ledger.</div>
   <div class="bar">
     <input id="tok" type="password" placeholder="Admin token (stored in this browser only)">
     <select id="days">
@@ -653,7 +653,7 @@ _REFERRAL_DASHBOARD_HTML = """<!DOCTYPE html>
     </div>
     <table><thead><tr>
       <th>Referrer</th><th>Referred hauler</th><th>Status</th>
-      <th class="n">Bonus each</th><th class="n">Total</th><th>Completed</th>
+      <th class="n">Bonus each</th><th class="n">Paid / total</th><th>Completed</th>
     </tr></thead><tbody id="rows"></tbody></table>
     <p class="muted" id="meta" style="margin-top:1rem"></p>
   </div>
@@ -679,8 +679,8 @@ _REFERRAL_DASHBOARD_HTML = """<!DOCTYPE html>
     $('k_pending').textContent=money(s.pending_payout);
     $('k_rew').textContent=s.rewarded;
     $('k_signed').textContent=s.signed_up;
-    $('rows').innerHTML = d.referrals.length ? d.referrals.map(r=>'<tr><td>'+who(r.referrer)+'</td><td>'+who(r.referee)+'</td><td>'+tag(r.status)+'</td><td class="n">'+money(r.bonus_each)+'</td><td class="n">'+money(r.total_if_both)+'</td><td>'+fdate(r.completed_at)+'</td></tr>').join('') : '<tr><td colspan="6" style="text-align:center;color:#9a948b;padding:2rem">No referrals in this window yet.</td></tr>';
-    $('meta').textContent='Window: '+d.window_days+' days · $'+d.bonus_per_hauler+' per hauler · '+s.total+' contractor referrals. "Paid out" = rewarded refs × 2 haulers; precise per-transfer totals live in Stripe.';
+    $('rows').innerHTML = d.referrals.length ? d.referrals.map(r=>'<tr><td>'+who(r.referrer)+'</td><td>'+who(r.referee)+'</td><td>'+tag(r.status)+'</td><td class="n">'+money(r.bonus_each)+'</td><td class="n">'+money(r.paid)+' / '+money(r.total_if_both)+'</td><td>'+fdate(r.completed_at)+'</td></tr>').join('') : '<tr><td colspan="6" style="text-align:center;color:#9a948b;padding:2rem">No referrals in this window yet.</td></tr>';
+    $('meta').textContent='Window: '+d.window_days+' days · $'+d.bonus_per_hauler+' per hauler · '+s.total+' referrals · '+(s.transfers||0)+' transfers. Paid out = actual Stripe transfers (ledger); pending = earned but not yet sent.';
   }
   if($('tok').value) load();
 </script>
@@ -847,23 +847,32 @@ def referral_payouts(user_id):
             return {"name": None, "email": None}
         return {"name": u.name, "email": u.email}
 
+    # Precise spend from the payout ledger (one row per referral+role).
+    ref_ids = [r.id for r in refs]
+    paid_by_ref = defaultdict(float)
     paid_out = 0.0
+    transfers_count = 0
+    if ref_ids:
+        for p in (db.session.query(ReferralPayout)
+                  .filter(ReferralPayout.referral_id.in_(ref_ids)).all()):
+            if p.status == "paid":
+                amt = float(p.amount or 0.0)
+                paid_out += amt
+                paid_by_ref[p.referral_id] += amt
+                transfers_count += 1
+
     pending = 0.0
     counts = {"rewarded": 0, "completed": 0, "signed_up": 0, "other": 0}
     rows = []
     for r in refs:
         bonus = float(r.reward_amount or 0.0)
         both = round(bonus * 2, 2)
-        if r.status == "rewarded":
-            counts["rewarded"] += 1
-            paid_out += both
-        elif r.status == "completed":
-            counts["completed"] += 1
-            pending += both
-        elif r.status == "signed_up":
-            counts["signed_up"] += 1
-        else:
-            counts["other"] += 1
+        counts[r.status if r.status in counts else "other"] += 1
+        paid_ref = round(paid_by_ref.get(r.id, 0.0), 2)
+        # Owed = what both haulers earn (once the referral lands) minus what we've
+        # actually transferred. Only earned states (completed/rewarded) owe.
+        owed = round(max(0.0, both - paid_ref), 2) if r.status in ("completed", "rewarded") else 0.0
+        pending += owed
         rows.append({
             "id": r.id,
             "referrer": who(r.referrer_id),
@@ -871,6 +880,8 @@ def referral_payouts(user_id):
             "status": r.status,
             "bonus_each": bonus,
             "total_if_both": both,
+            "paid": paid_ref,
+            "owed": owed,
             "created_at": r.created_at.isoformat() if r.created_at else None,
             "completed_at": r.completed_at.isoformat() if r.completed_at else None,
         })
@@ -884,6 +895,7 @@ def referral_payouts(user_id):
             "completed_unpaid": counts["completed"],
             "signed_up": counts["signed_up"],
             "paid_out": round(paid_out, 2),
+            "transfers": transfers_count,
             "pending_payout": round(pending, 2),
         },
         "referrals": rows,

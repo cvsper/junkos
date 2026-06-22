@@ -3396,3 +3396,42 @@ class OperatorLead(db.Model):
             "last_contacted_at": self.last_contacted_at.isoformat() if self.last_contacted_at else None,
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }
+
+
+class ReferralPayout(db.Model):
+    """Ledger of actual referral-bonus transfers — one row per (referral, role).
+
+    The precise source of truth for referral spend (vs status-based estimates).
+    Upserted by payments.pay_referral_bonus(): status 'paid' carries the Stripe
+    transfer id; 'deferred'/'failed' mean owed-but-not-sent.
+    """
+    __tablename__ = "referral_payouts"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    referral_id = Column(String(36), ForeignKey("referrals.id", ondelete="CASCADE"),
+                         nullable=False, index=True)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="SET NULL"),
+                     nullable=True, index=True)
+    role = Column(String(12), nullable=False)  # referrer | referee
+    amount = Column(Float, nullable=False, default=0.0)
+    currency = Column(String(8), nullable=False, default="usd")
+    status = Column(String(12), nullable=False, default="deferred")  # paid | failed | deferred
+    stripe_transfer_id = Column(String(64), nullable=True)
+    created_at = Column(DateTime, default=utcnow)
+    updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
+
+    __table_args__ = (
+        Index("ix_referral_payout_ref_role", "referral_id", "role", unique=True),
+    )
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "referral_id": self.referral_id,
+            "user_id": self.user_id,
+            "role": self.role,
+            "amount": self.amount,
+            "status": self.status,
+            "stripe_transfer_id": self.stripe_transfer_id,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }

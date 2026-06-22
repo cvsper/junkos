@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from models import db, Job, Payment, Contractor, User, Notification, PromoCode, generate_uuid, utcnow
+from models import db, Job, Payment, Contractor, User, Notification, PromoCode, ReferralPayout, generate_uuid, utcnow
 from auth_routes import require_auth
 from extensions import limiter
 
@@ -346,16 +346,39 @@ def pay_referral_bonus(referral):
                 data={"referral_id": referral.id, "amount": bonus},
             ))
 
+        def _ledger(uid, role, status, transfer_id=None):
+            """Upsert the one (referral, role) ledger row. Never downgrades a
+            row already marked paid."""
+            row = ReferralPayout.query.filter_by(
+                referral_id=referral.id, role=role).first()
+            if row and row.status == "paid":
+                return row
+            if not row:
+                row = ReferralPayout(
+                    id=generate_uuid(), referral_id=referral.id, role=role)
+                db.session.add(row)
+            row.user_id = uid
+            row.amount = bonus
+            row.status = status
+            if transfer_id:
+                row.stripe_transfer_id = transfer_id
+            return row
+
         paid_all = True
         for role, uid in (("referrer", referral.referrer_id),
                           ("referee", referral.referee_id)):
             if not uid:
                 continue
+            # Already paid this party (idempotent re-run) — skip Stripe entirely.
+            done = ReferralPayout.query.filter_by(
+                referral_id=referral.id, role=role, status="paid").first()
+            if done:
+                continue
             contractor = Contractor.query.filter_by(user_id=uid).first()
             connect = getattr(contractor, "stripe_connect_id", None) if contractor else None
             if can_pay and connect:
                 try:
-                    stripe.Transfer.create(
+                    tr = stripe.Transfer.create(
                         amount=cents,
                         currency="usd",
                         destination=connect,
@@ -363,18 +386,21 @@ def pay_referral_bonus(referral):
                                   "kind": "referral_bonus"},
                         idempotency_key="refbonus_{}_{}".format(referral.id, role),
                     )
+                    _ledger(uid, role, "paid", getattr(tr, "id", None))
                     _notify(uid, "Referral Bonus Paid",
                             "${:.2f} referral bonus has been sent to your account.".format(bonus))
                     logger.info("Referral bonus $%.2f paid to %s (%s) ref=%s",
                                 bonus, uid, role, referral.id)
                 except Exception:
                     paid_all = False
+                    _ledger(uid, role, "failed")
                     logger.exception("Referral bonus transfer failed ref=%s role=%s",
                                      referral.id, role)
                     _notify(uid, "Referral Bonus Earned",
                             "Your ${:.2f} referral bonus is earned — we'll send it shortly.".format(bonus))
             else:
                 paid_all = False
+                _ledger(uid, role, "deferred")
                 _notify(uid, "Referral Bonus Earned",
                         "Your ${:.2f} referral bonus is earned — we'll send it once your payout account is ready.".format(bonus))
 
