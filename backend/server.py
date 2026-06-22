@@ -254,6 +254,14 @@ app.register_blueprint(vapi_bp)
 app.register_blueprint(sms_webhook_bp)
 app.register_blueprint(campaigns_bp)
 
+# Automated operator/hauler recruiting outreach (operator_outreach.py)
+try:
+    from operator_outreach import outreach_bp
+    app.register_blueprint(outreach_bp)
+except Exception as _o_exc:
+    import logging as _logging
+    _logging.getLogger(__name__).warning("outreach_bp not registered: %s", _o_exc)
+
 # Vision-Based Binding Quote Engine (spec 01-vision-quote-engine.md)
 try:
     from routes.quotes import quotes_bp

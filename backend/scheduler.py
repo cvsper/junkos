@@ -403,6 +403,16 @@ def _customer_reminders(app):
         logger.exception("customer.reminders failed")
 
 
+def _run_operator_outreach(app):
+    """Daily operator/hauler recruiting outreach: source -> qualify -> email
+    drip. No-ops to a safe dry run until the compliance env is set."""
+    try:
+        from operator_outreach import run_outreach_cycle  # opens its own app ctx
+        run_outreach_cycle(app)
+    except Exception:
+        logger.exception("operator outreach job crashed")
+
+
 def init_scheduler(app):
     """Initialize and start the background scheduler.
 
@@ -552,8 +562,19 @@ def init_scheduler(app):
             name="Vapi pre-pickup reminder calls",
         )
 
+        # Daily operator/hauler recruiting outreach — 14:00 UTC (~9-10am ET).
+        scheduler.add_job(
+            _run_operator_outreach,
+            "cron",
+            hour=14,
+            minute=0,
+            args=[app],
+            id="operator_outreach",
+            name="Daily operator recruiting outreach",
+        )
+
         scheduler.start()
-        logger.info("Background scheduler started with 13 jobs")
+        logger.info("Background scheduler started with 14 jobs")
         return scheduler
     except ImportError:
         logger.warning("APScheduler not installed — scheduler disabled")
