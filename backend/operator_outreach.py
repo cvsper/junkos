@@ -300,7 +300,9 @@ def run_outreach_cycle(app):
                 if _can_send(cfg):
                     subject = _subject(lead, lead.drip_stage)
                     html = _body_html(cfg, lead, lead.drip_stage)
-                    send_email(lead.email, subject, html)  # async, never raises
+                    # Send from the recruiting identity (OUTREACH_FROM), NOT the
+                    # customer transactional sender — keeps deliverability separate.
+                    send_email(lead.email, subject, html, from_override=cfg["from"] or None)
                     import datetime as dt
                     lead.drip_stage += 1
                     lead.last_contacted_at = dt.datetime.utcnow()

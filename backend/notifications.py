@@ -123,7 +123,7 @@ EMAIL_FROM_NAME = os.environ.get("EMAIL_FROM_NAME",
                                  os.environ.get("SENDGRID_FROM_NAME", "Umuve"))
 
 
-def _send_email_sync(to_email, subject, html_content):
+def _send_email_sync(to_email, subject, html_content, from_override=None):
     """Send an email synchronously via Resend (preferred) or SendGrid (fallback).
 
     Returns a status indicator or None in dev mode. Never raises.
@@ -131,11 +131,11 @@ def _send_email_sync(to_email, subject, html_content):
     try:
         # --- Resend (preferred) ---
         if RESEND_API_KEY:
-            return _send_email_resend(to_email, subject, html_content)
+            return _send_email_resend(to_email, subject, html_content, from_override)
 
         # --- SendGrid (legacy fallback) ---
         if SENDGRID_API_KEY:
-            return _send_email_sendgrid(to_email, subject, html_content)
+            return _send_email_sendgrid(to_email, subject, html_content, from_override)
 
         # --- Dev mode: no email provider configured ---
         logger.warning(
@@ -148,16 +148,19 @@ def _send_email_sync(to_email, subject, html_content):
         return None
 
 
-def send_email(to_email, subject, html_content):
+def send_email(to_email, subject, html_content, from_override=None):
     """Send an email asynchronously in a background thread.
 
     This ensures the HTTP request handler is never blocked by email I/O.
-    Returns immediately. Never raises.
+    Returns immediately. Never raises. ``from_override`` (a full "Name <email>"
+    string) lets a caller send from a different identity — e.g. the operator
+    outreach engine sends from a recruiting address, NOT the customer
+    transactional sender, to keep their deliverability separate.
     """
     try:
         thread = threading.Thread(
             target=_send_email_sync,
-            args=(to_email, subject, html_content),
+            args=(to_email, subject, html_content, from_override),
             daemon=True,
         )
         thread.start()
@@ -282,14 +285,14 @@ def render_operator_approval_email(name):
     return ("Welcome to Umuve — Operator Approved!", html)
 
 
-def _send_email_resend(to_email, subject, html_content):
+def _send_email_resend(to_email, subject, html_content, from_override=None):
     """Send via the Resend API. Returns the response id or None."""
     try:
         import resend
         resend.api_key = RESEND_API_KEY
 
         params = {
-            "from": "{} <{}>".format(EMAIL_FROM_NAME, EMAIL_FROM),
+            "from": from_override or "{} <{}>".format(EMAIL_FROM_NAME, EMAIL_FROM),
             "to": [to_email],
             "subject": subject,
             "html": html_content,
@@ -302,14 +305,19 @@ def _send_email_resend(to_email, subject, html_content):
         return None
 
 
-def _send_email_sendgrid(to_email, subject, html_content):
+def _send_email_sendgrid(to_email, subject, html_content, from_override=None):
     """Send via SendGrid. Returns status code or None."""
     try:
         from sendgrid import SendGridAPIClient
         from sendgrid.helpers.mail import Mail
 
+        if from_override and "<" in from_override:
+            _from = (from_override.split("<")[1].rstrip(">").strip(),
+                     from_override.split("<")[0].strip() or EMAIL_FROM_NAME)
+        else:
+            _from = (EMAIL_FROM, EMAIL_FROM_NAME)
         message = Mail(
-            from_email=(EMAIL_FROM, EMAIL_FROM_NAME),
+            from_email=_from,
             to_emails=to_email,
             subject=subject,
             html_content=html_content,
