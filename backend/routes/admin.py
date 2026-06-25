@@ -853,6 +853,42 @@ def pricing_dashboard():
 # ---------------------------------------------------------------------------
 # Referral payouts — watch the supply-side referral spend (who got paid, totals)
 # ---------------------------------------------------------------------------
+@admin_bp.route("/outreach-run", methods=["POST"])
+@require_admin
+def outreach_run(user_id):
+    """Fire the operator-outreach cycle on demand (instead of waiting for the
+    14:00 UTC cron). Runs in a background thread so it can't time out; the
+    report is emailed to OUTREACH_REPORT_TO/ADMIN_EMAIL when it finishes.
+
+    ?preview=1  -> source + draft + report only, sends NOTHING (safe test).
+    default     -> a real run (sends if the engine is configured LIVE).
+    """
+    import threading
+    from flask import current_app
+    from operator_outreach import run_outreach_cycle, _cfg, _can_send
+
+    preview = (request.args.get("preview") or "").lower() in ("1", "true", "yes")
+    app_obj = current_app._get_current_object()
+    cfg = _cfg()
+    will_send = bool(_can_send(cfg) and cfg["places_key"]) and not preview
+
+    threading.Thread(
+        target=run_outreach_cycle, args=(app_obj,),
+        kwargs={"force_dry": preview}, daemon=True,
+    ).start()
+
+    return jsonify({
+        "started": True,
+        "preview": preview,
+        "will_send": will_send,
+        "message": ("Preview run started — sources + drafts only, no emails sent."
+                    if not will_send else
+                    "Live run started — sending up to the daily cap now."),
+        "report_emailed_to": cfg["report_to"] or None,
+        "note": "The full report (sourced/qualified/sent) is emailed in ~1-2 min.",
+    }), 202
+
+
 @admin_bp.route("/outreach-status", methods=["GET"])
 @require_admin
 def outreach_status(user_id):

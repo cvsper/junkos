@@ -279,15 +279,20 @@ def _due_leads(db, OperatorLead, cap):
     return due
 
 
-def run_outreach_cycle(app):
-    """Daily entrypoint. Never raises — logs + returns a report dict."""
+def run_outreach_cycle(app, force_dry=False):
+    """Daily entrypoint. Never raises — logs + returns a report dict.
+
+    force_dry=True sources/qualifies/drafts but sends nothing (safe preview),
+    regardless of config — used by the admin "run now / preview" trigger.
+    """
     with app.app_context():
         from models import db, OperatorLead
         from notifications import send_email
 
         cfg = _cfg()
+        can_send = _can_send(cfg) and not force_dry
         report = {"sourced": 0, "enriched": 0, "qualified": 0, "sent": 0,
-                  "dry_run": not _can_send(cfg)}
+                  "dry_run": not can_send}
         try:
             report["sourced"] = source_from_places(cfg, db, OperatorLead, max_new=cfg["daily_cap"] * 2)
             report["enriched"] = enrich_emails(db, OperatorLead, limit=cfg["daily_cap"] * 2)
@@ -297,7 +302,7 @@ def run_outreach_cycle(app):
             for lead in due:
                 if not lead.unsubscribe_token:
                     lead.unsubscribe_token = secrets.token_urlsafe(24)
-                if _can_send(cfg):
+                if can_send:
                     subject = _subject(lead, lead.drip_stage)
                     html = _body_html(cfg, lead, lead.drip_stage)
                     # Send from the recruiting identity (OUTREACH_FROM), NOT the
