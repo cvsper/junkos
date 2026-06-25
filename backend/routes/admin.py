@@ -853,6 +853,39 @@ def pricing_dashboard():
 # ---------------------------------------------------------------------------
 # Referral payouts — watch the supply-side referral spend (who got paid, totals)
 # ---------------------------------------------------------------------------
+@admin_bp.route("/outreach-status", methods=["GET"])
+@require_admin
+def outreach_status(user_id):
+    """Whether the daily operator-outreach engine is configured to actually send.
+
+    No secrets returned (booleans for keys), and it never sends — just reports
+    the effective mode so you can confirm your Render env took effect.
+    """
+    from operator_outreach import _cfg, _can_send
+    cfg = _cfg()
+    live = bool(_can_send(cfg) and cfg["places_key"])
+    missing = [name for name, ok in (
+        ("GOOGLE_PLACES_API_KEY", cfg["places_key"]),
+        ("OUTREACH_FROM", cfg["from"]),
+        ("OUTREACH_POSTAL_ADDRESS", cfg["postal"]),
+        ("OUTREACH_SEND_ENABLED=true", cfg["send_enabled"]),
+    ) if not ok]
+    return jsonify({
+        "mode": "LIVE — sends daily at 14:00 UTC" if live else "DRY RUN — sends nothing",
+        "live": live,
+        "config": {
+            "google_places_key_set": bool(cfg["places_key"]),
+            "outreach_from": cfg["from"] or None,
+            "postal_address_set": bool(cfg["postal"]),
+            "send_enabled": cfg["send_enabled"],
+            "daily_cap": cfg["daily_cap"],
+            "report_to": cfg["report_to"] or None,
+            "target_zips": cfg["zips"],
+        },
+        "missing_to_go_live": missing,
+    })
+
+
 @admin_bp.route("/referral-payouts", methods=["GET"])
 @require_admin
 def referral_payouts(user_id):
