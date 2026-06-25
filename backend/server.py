@@ -459,6 +459,53 @@ with app.app_context():
     except Exception as exc:
         app.logger.warning("Auto-migration on startup skipped: %s", exc)
 
+    # ----------------------------------------------------------------------
+    # One-time admin bootstrap (no shell required).
+    #
+    # Set BOOTSTRAP_ADMIN_EMAIL on the host (Render Environment tab) to promote
+    # that user to admin on boot. Optionally set BOOTSTRAP_ADMIN_PASSWORD to
+    # create the user if missing / reset the password. Reads creds from the
+    # host env only (never hardcoded), so it is safe in a public repo: an
+    # attacker can't set the host's env. Idempotent. REMOVE the password env
+    # var once you've signed in.
+    # ----------------------------------------------------------------------
+    try:
+        _boot_email = (os.environ.get("BOOTSTRAP_ADMIN_EMAIL") or "").strip().lower()
+        if _boot_email:
+            from sqlalchemy import func as _sa_func
+            from models import User as _User
+            _bu = (
+                sqlalchemy_db.session.query(_User)
+                .filter(_sa_func.lower(_User.email) == _boot_email)
+                .first()
+            )
+            _boot_pw = os.environ.get("BOOTSTRAP_ADMIN_PASSWORD")
+            if _bu is None:
+                if _boot_pw:
+                    _bu = _User(
+                        email=_boot_email,
+                        name=_boot_email.split("@")[0],
+                        role="admin",
+                    )
+                    _bu.set_password(_boot_pw)
+                    sqlalchemy_db.session.add(_bu)
+                    app.logger.info("admin-bootstrap: created admin %s", _boot_email)
+                else:
+                    app.logger.warning(
+                        "admin-bootstrap: no user %s and no BOOTSTRAP_ADMIN_PASSWORD "
+                        "to create one; skipping.", _boot_email,
+                    )
+            else:
+                if _boot_pw:
+                    _bu.set_password(_boot_pw)
+                if _bu.role != "admin":
+                    _bu.role = "admin"
+                app.logger.info("admin-bootstrap: promoted %s to admin", _boot_email)
+            sqlalchemy_db.session.commit()
+    except Exception as exc:
+        sqlalchemy_db.session.rollback()
+        app.logger.warning("admin-bootstrap skipped: %s", exc)
+
     # Seed the Post-Haul Attach Upsell Engine offer catalog (idempotent)
     try:
         from attach_catalog import seed_catalog
