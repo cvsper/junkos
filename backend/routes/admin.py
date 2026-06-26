@@ -1331,6 +1331,101 @@ def update_outreach_lead(user_id, lead_id):
     return jsonify({"success": True, "lead": lead.to_dict()}), 200
 
 
+@admin_bp.route("/b2b/leads", methods=["GET"])
+@require_admin
+def b2b_leads(user_id):
+    """B2B customer-acquisition leads for follow-up. ?status= / ?q= filters +
+    status breakdown across the whole funnel."""
+    from models import B2BLead
+
+    status = (request.args.get("status") or "").strip()
+    q = (request.args.get("q") or "").strip().lower()
+    limit = min(int(request.args.get("limit", 100)), 500)
+
+    query = B2BLead.query
+    if status:
+        query = query.filter(B2BLead.status == status)
+    if q:
+        like = "%{}%".format(q)
+        query = query.filter(db.or_(
+            db.func.lower(B2BLead.business_name).like(like),
+            db.func.lower(B2BLead.email).like(like),
+        ))
+    rows = query.order_by(B2BLead.updated_at.desc()).limit(limit).all()
+
+    counts = {}
+    for st, n in db.session.query(B2BLead.status, db.func.count(B2BLead.id)).group_by(B2BLead.status).all():
+        counts[st] = n
+
+    return jsonify({
+        "success": True,
+        "counts": counts,
+        "total": sum(counts.values()),
+        "leads": [l.to_dict() for l in rows],
+    }), 200
+
+
+@admin_bp.route("/b2b/leads/<lead_id>", methods=["POST"])
+@require_admin
+def update_b2b_lead(user_id, lead_id):
+    """Update a B2B lead's status and/or append a note. Body: {status?, note?}."""
+    from models import B2BLead, utcnow
+
+    lead = db.session.get(B2BLead, lead_id)
+    if not lead:
+        return jsonify({"error": "Lead not found"}), 404
+
+    data = request.get_json() or {}
+    new_status = (data.get("status") or "").strip()
+    note = (data.get("note") or "").strip()
+    allowed = {"new", "qualified", "contacted", "replied", "interested",
+               "converted", "skipped", "bounced", "unsubscribed", "dead"}
+    if new_status:
+        if new_status not in allowed:
+            return jsonify({"error": "Invalid status. Allowed: {}".format(sorted(allowed))}), 400
+        lead.status = new_status
+    if note:
+        import time as _t
+        stamp = _t.strftime("%Y-%m-%d %H:%M", _t.gmtime())
+        entry = "[{}] {}".format(stamp, note)
+        lead.notes = (lead.notes + "\n" + entry) if lead.notes else entry
+    lead.updated_at = utcnow()
+    db.session.commit()
+    return jsonify({"success": True, "lead": lead.to_dict()}), 200
+
+
+@admin_bp.route("/b2b-outreach-run", methods=["POST"])
+@require_admin
+def b2b_outreach_run(user_id):
+    """Fire the B2B customer-outreach cycle on demand (vs the 15:00 UTC cron).
+    Background thread; report emailed when done.
+    ?preview=1 -> source + draft + report only, sends NOTHING."""
+    import threading
+    from flask import current_app
+    from b2b_outreach import run_b2b_outreach_cycle, _cfg, _can_send
+
+    preview = (request.args.get("preview") or "").lower() in ("1", "true", "yes")
+    app_obj = current_app._get_current_object()
+    cfg = _cfg()
+    will_send = bool(_can_send(cfg) and cfg["places_key"]) and not preview
+
+    threading.Thread(
+        target=run_b2b_outreach_cycle, args=(app_obj,),
+        kwargs={"force_dry": preview}, daemon=True,
+    ).start()
+
+    return jsonify({
+        "started": True,
+        "preview": preview,
+        "will_send": will_send,
+        "message": ("Preview run started — sources + drafts only, no emails sent."
+                    if not will_send else
+                    "Live run started — emailing businesses up to the daily cap now."),
+        "report_emailed_to": cfg["report_to"] or None,
+        "note": "The full report (sourced/qualified/sent) is emailed in ~1-2 min.",
+    }), 202
+
+
 @admin_bp.route("/orgs", methods=["GET"])
 @require_admin
 def list_orgs(user_id):

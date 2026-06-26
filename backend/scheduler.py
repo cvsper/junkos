@@ -413,6 +413,16 @@ def _run_operator_outreach(app):
         logger.exception("operator outreach job crashed")
 
 
+def _run_b2b_outreach(app):
+    """Daily B2B customer-acquisition outreach: source businesses -> qualify ->
+    email drip to portal signup. Safe dry run until the B2B env is set."""
+    try:
+        from b2b_outreach import run_b2b_outreach_cycle  # opens its own app ctx
+        run_b2b_outreach_cycle(app)
+    except Exception:
+        logger.exception("b2b outreach job crashed")
+
+
 def _run_doc_expiry_sweep(app):
     """Daily: suspend any approved hauler whose insurance/license/registration
     has lapsed, and remind those expiring soon. Keeps an uninsured truck from
@@ -596,8 +606,20 @@ def init_scheduler(app):
             name="Daily operator document expiry sweep",
         )
 
+        # Daily B2B customer-acquisition outreach — 15:00 UTC (~11am ET), after
+        # the hauler outreach so the two sends don't collide.
+        scheduler.add_job(
+            _run_b2b_outreach,
+            "cron",
+            hour=15,
+            minute=0,
+            args=[app],
+            id="b2b_outreach",
+            name="Daily B2B customer outreach",
+        )
+
         scheduler.start()
-        logger.info("Background scheduler started with 15 jobs")
+        logger.info("Background scheduler started with 16 jobs")
         return scheduler
     except ImportError:
         logger.warning("APScheduler not installed — scheduler disabled")

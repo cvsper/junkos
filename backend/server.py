@@ -262,6 +262,14 @@ except Exception as _o_exc:
     import logging as _logging
     _logging.getLogger(__name__).warning("outreach_bp not registered: %s", _o_exc)
 
+# Automated B2B customer-acquisition outreach (b2b_outreach.py)
+try:
+    from b2b_outreach import b2b_outreach_bp
+    app.register_blueprint(b2b_outreach_bp)
+except Exception as _b_exc:
+    import logging as _logging
+    _logging.getLogger(__name__).warning("b2b_outreach_bp not registered: %s", _b_exc)
+
 # Vision-Based Binding Quote Engine (spec 01-vision-quote-engine.md)
 try:
     from routes.quotes import quotes_bp

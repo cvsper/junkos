@@ -447,7 +447,7 @@ _AUTO_SUBJECT = re.compile(
 def inbound_reply():
     """Provider webhook for inbound replies. Always returns 200 (so the provider
     doesn't retry-storm). Optional shared secret via OUTREACH_INBOUND_SECRET."""
-    from models import db, OperatorLead, User, Notification, generate_uuid
+    from models import db, OperatorLead, B2BLead, User, Notification, generate_uuid
 
     secret = os.environ.get("OUTREACH_INBOUND_SECRET", "").strip()
     if secret:
@@ -459,11 +459,21 @@ def inbound_reply():
     if not email:
         return {"ok": True, "matched": False, "reason": "no sender email"}, 200
 
+    # Match against either funnel — hauler recruiting (OperatorLead) or B2B
+    # customer acquisition (B2BLead). Both share the lead shape the helpers use.
     lead = (
         db.session.query(OperatorLead)
         .filter(db.func.lower(OperatorLead.email) == email)
         .first()
     )
+    lead_kind = "operator"
+    if not lead:
+        lead = (
+            db.session.query(B2BLead)
+            .filter(db.func.lower(B2BLead.email) == email)
+            .first()
+        )
+        lead_kind = "b2b"
     if not lead:
         return {"ok": True, "matched": False, "reason": "no lead for sender"}, 200
 
@@ -484,7 +494,7 @@ def inbound_reply():
     db.session.commit()
 
     _alert_admin_reply(lead, subject, snippet, db, User, Notification, generate_uuid)
-    return {"ok": True, "matched": True, "status": "replied", "lead_id": lead.id}, 200
+    return {"ok": True, "matched": True, "kind": lead_kind, "status": "replied", "lead_id": lead.id}, 200
 
 
 def _append_note(existing, line):

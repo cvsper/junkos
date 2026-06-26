@@ -3472,6 +3472,52 @@ class OperatorLead(db.Model):
         }
 
 
+class B2BLead(db.Model):
+    """A prospective COMMERCIAL CUSTOMER for the B2B portal (property managers,
+    restaurants, retail, construction, offices — businesses with recurring junk).
+
+    Counterpart to OperatorLead (which recruits haulers); this funnel drives
+    portal.goumuve.com signups. Same compliant daily outreach machinery
+    (b2b_outreach.py): Places + scrape sourcing, drip email, suppression.
+    """
+    __tablename__ = "b2b_leads"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    business_name = Column(String(200), nullable=True)
+    email = Column(String(255), nullable=True, index=True)
+    phone = Column(String(40), nullable=True)
+    website = Column(String(300), nullable=True)
+    place_id = Column(String(120), nullable=True, unique=True, index=True)
+    source = Column(String(16), nullable=False, default="places")
+    category = Column(String(60), nullable=True)  # vertical: property_mgmt|restaurant|retail|...
+    city = Column(String(80), nullable=True)
+    zip = Column(String(10), nullable=True, index=True)
+    status = Column(String(20), nullable=False, default="new", index=True)
+    drip_stage = Column(Integer, nullable=False, default=0)
+    last_contacted_at = Column(DateTime, nullable=True)
+    unsubscribe_token = Column(String(48), nullable=True, unique=True, index=True)
+    notes = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=utcnow, index=True)
+    updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "business_name": self.business_name,
+            "email": self.email,
+            "phone": self.phone,
+            "website": self.website,
+            "source": self.source,
+            "category": self.category,
+            "city": self.city,
+            "zip": self.zip,
+            "status": self.status,
+            "drip_stage": self.drip_stage,
+            "last_contacted_at": self.last_contacted_at.isoformat() if self.last_contacted_at else None,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
+
+
 class ReferralPayout(db.Model):
     """Ledger of actual referral-bonus transfers — one row per (referral, role).
 
