@@ -50,6 +50,26 @@ def _get_contractor_or_404(user_id):
     return contractor, None
 
 
+def _start_verification(contractor_id):
+    """Run automated document verification in a daemon thread (non-blocking)."""
+    import threading
+    from flask import current_app
+    try:
+        app_obj = current_app._get_current_object()
+    except Exception:
+        return
+    def _job():
+        try:
+            from operator_doc_verifier import verify_contractor
+            verify_contractor(app_obj, contractor_id)
+        except Exception:
+            import logging
+            logging.getLogger(__name__).exception(
+                "doc verification thread crashed for %s", contractor_id
+            )
+    threading.Thread(target=_job, daemon=True).start()
+
+
 def require_admin(f):
     """Wrap require_auth and additionally check that the user has admin role."""
     @wraps(f)
@@ -267,6 +287,7 @@ def submit_for_review(user_id):
 
     contractor.onboarding_status = "documents_submitted"
     contractor.rejection_reason = None
+    contractor.documents_verification_status = "verifying"
     contractor.updated_at = utcnow()
 
     # Notify all admins about new submission
@@ -288,10 +309,16 @@ def submit_for_review(user_id):
 
     db.session.commit()
 
+    # Kick off automated document verification in the background (vision read +
+    # rule checks). It updates the onboarding gate when it finishes; the request
+    # returns immediately so the driver isn't left waiting on a model call.
+    _start_verification(contractor.id)
+
     return jsonify({
         "success": True,
         "onboarding_status": contractor.onboarding_status,
-        "message": "Documents submitted for review",
+        "message": "Documents submitted — running automated verification.",
+        "verification_started": True,
     }), 200
 
 
@@ -446,3 +473,58 @@ def review_onboarding(user_id, contractor_id):
         "contractor": c_data,
         "action": action,
     }), 200
+
+
+# ---------------------------------------------------------------------------
+# GET /api/admin/onboarding/<contractor_id>/verification
+# ---------------------------------------------------------------------------
+@onboarding_bp.route("/api/admin/onboarding/<contractor_id>/verification", methods=["GET"])
+@require_admin
+def get_document_verification(user_id, contractor_id):
+    """Return the automated verification detail for each document so an admin
+    can review with everything pre-extracted (kind, name, expiry, findings)."""
+    from models import OperatorDocumentVerification
+
+    contractor = db.session.get(Contractor, contractor_id)
+    if not contractor:
+        return jsonify({"error": "Contractor not found"}), 404
+
+    rows = (
+        db.session.query(OperatorDocumentVerification)
+        .filter_by(contractor_id=contractor_id)
+        .all()
+    )
+    by_type = {r.doc_type: r.to_dict() for r in rows}
+
+    return jsonify({
+        "success": True,
+        "contractor_id": contractor_id,
+        "overall_status": contractor.documents_verification_status or "not_checked",
+        "verified_at": (
+            contractor.documents_verified_at.isoformat()
+            if contractor.documents_verified_at else None
+        ),
+        "documents": by_type,
+    }), 200
+
+
+# ---------------------------------------------------------------------------
+# POST /api/admin/onboarding/<contractor_id>/verify
+# ---------------------------------------------------------------------------
+@onboarding_bp.route("/api/admin/onboarding/<contractor_id>/verify", methods=["POST"])
+@require_admin
+def rerun_document_verification(user_id, contractor_id):
+    """Manually (re)run automated document verification for a contractor."""
+    contractor = db.session.get(Contractor, contractor_id)
+    if not contractor:
+        return jsonify({"error": "Contractor not found"}), 404
+
+    contractor.documents_verification_status = "verifying"
+    db.session.commit()
+    _start_verification(contractor_id)
+
+    return jsonify({
+        "success": True,
+        "message": "Verification started — results update in ~10-30s.",
+        "contractor_id": contractor_id,
+    }), 202

@@ -68,6 +68,10 @@ COLUMN_MIGRATIONS = [
     ("contractors", "license_expiry", "DATETIME", "TIMESTAMP", "NULL"),
     ("contractors", "onboarding_completed_at", "DATETIME", "TIMESTAMP", "NULL"),
     ("contractors", "rejection_reason", "TEXT", "TEXT", "NULL"),
+    # Automated document verification summary
+    ("contractors", "documents_verification_status", "VARCHAR(20)", "VARCHAR(20)", "'not_checked'"),
+    ("contractors", "documents_verified_at", "DATETIME", "TIMESTAMP", "NULL"),
+    ("contractors", "vehicle_registration_expiry", "DATETIME", "TIMESTAMP", "NULL"),
 
     # Payment table
     ("payments", "operator_payout_amount", "FLOAT", "FLOAT", "0.0"),

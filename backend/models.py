@@ -134,6 +134,14 @@ class Contractor(db.Model):
     onboarding_completed_at = Column(DateTime, nullable=True)
     rejection_reason = Column(Text, nullable=True)
 
+    # Automated document verification summary (detail rows live in
+    # OperatorDocumentVerification). Status: not_checked | verifying | passed |
+    # flagged | failed. `vehicle_registration_expiry` completes the trio so the
+    # daily expiry sweep can suspend on a lapsed registration too.
+    documents_verification_status = Column(String(20), default="not_checked")
+    documents_verified_at = Column(DateTime, nullable=True)
+    vehicle_registration_expiry = Column(DateTime, nullable=True)
+
     # Operator fields
     is_operator = Column(Boolean, default=False)
     operator_id = Column(String(36), ForeignKey("contractors.id", ondelete="SET NULL"), nullable=True, index=True)
@@ -172,11 +180,71 @@ class Contractor(db.Model):
             "vehicle_registration_url": self.vehicle_registration_url,
             "insurance_expiry": self.insurance_expiry.isoformat() if self.insurance_expiry else None,
             "license_expiry": self.license_expiry.isoformat() if self.license_expiry else None,
+            "vehicle_registration_expiry": self.vehicle_registration_expiry.isoformat() if self.vehicle_registration_expiry else None,
+            "documents_verification_status": self.documents_verification_status or "not_checked",
+            "documents_verified_at": self.documents_verified_at.isoformat() if self.documents_verified_at else None,
             "onboarding_completed_at": self.onboarding_completed_at.isoformat() if self.onboarding_completed_at else None,
             "rejection_reason": self.rejection_reason,
             "is_operator": self.is_operator or False,
             "operator_id": self.operator_id,
             "operator_commission_rate": self.operator_commission_rate or 0.15,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+
+# ---------------------------------------------------------------------------
+# OperatorDocumentVerification
+#
+# One row per (contractor, doc_type) automated verification run. Stores the
+# vision-model's extracted fields, the rule-engine verdict, and a short raw
+# excerpt for audit. Keeps history (re-runs append/update by doc_type), so an
+# admin can always see why a document passed or got flagged.
+# ---------------------------------------------------------------------------
+class OperatorDocumentVerification(db.Model):
+    __tablename__ = "operator_document_verifications"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    contractor_id = Column(
+        String(36),
+        ForeignKey("contractors.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    # insurance | drivers_license | vehicle_registration
+    doc_type = Column(String(32), nullable=False, index=True)
+    document_url = Column(String(500), nullable=True)
+
+    # verified | needs_review | rejected | error | pending
+    status = Column(String(20), nullable=False, default="pending")
+    reasons = Column(JSON, nullable=True, default=list)   # list[str] human-readable findings
+    extracted = Column(JSON, nullable=True, default=dict)  # {full_name, expiration_date, policy_number, ...}
+    expiry_date = Column(DateTime, nullable=True)
+    name_match_score = Column(Float, nullable=True)        # 0..1 vs applicant name
+    confidence = Column(Float, nullable=True)              # 0..1 model legibility/confidence
+    engine = Column(String(48), nullable=True)             # e.g. "anthropic:claude-haiku-4-5"
+    raw_excerpt = Column(Text, nullable=True)              # trimmed raw model output (audit)
+
+    created_at = Column(DateTime, default=utcnow)
+    updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
+
+    __table_args__ = (
+        db.UniqueConstraint("contractor_id", "doc_type", name="uq_contractor_doc_type"),
+    )
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "contractor_id": self.contractor_id,
+            "doc_type": self.doc_type,
+            "document_url": self.document_url,
+            "status": self.status,
+            "reasons": self.reasons or [],
+            "extracted": self.extracted or {},
+            "expiry_date": self.expiry_date.isoformat() if self.expiry_date else None,
+            "name_match_score": self.name_match_score,
+            "confidence": self.confidence,
+            "engine": self.engine,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }

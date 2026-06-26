@@ -413,6 +413,17 @@ def _run_operator_outreach(app):
         logger.exception("operator outreach job crashed")
 
 
+def _run_doc_expiry_sweep(app):
+    """Daily: suspend any approved hauler whose insurance/license/registration
+    has lapsed, and remind those expiring soon. Keeps an uninsured truck from
+    ever being dispatched."""
+    try:
+        from operator_doc_verifier import run_expiry_sweep  # opens its own app ctx
+        run_expiry_sweep(app)
+    except Exception:
+        logger.exception("doc expiry sweep job crashed")
+
+
 def init_scheduler(app):
     """Initialize and start the background scheduler.
 
@@ -573,8 +584,20 @@ def init_scheduler(app):
             name="Daily operator recruiting outreach",
         )
 
+        # Daily operator document expiry sweep — 13:00 UTC (~8-9am ET), before
+        # the recruiting outreach. Suspends lapsed-coverage haulers.
+        scheduler.add_job(
+            _run_doc_expiry_sweep,
+            "cron",
+            hour=13,
+            minute=0,
+            args=[app],
+            id="doc_expiry_sweep",
+            name="Daily operator document expiry sweep",
+        )
+
         scheduler.start()
-        logger.info("Background scheduler started with 14 jobs")
+        logger.info("Background scheduler started with 15 jobs")
         return scheduler
     except ImportError:
         logger.warning("APScheduler not installed — scheduler disabled")
