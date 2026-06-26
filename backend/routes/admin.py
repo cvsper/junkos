@@ -1266,6 +1266,71 @@ def referral_payouts(user_id):
     })
 
 
+@admin_bp.route("/outreach/leads", methods=["GET"])
+@require_admin
+def outreach_leads(user_id):
+    """List recruiting leads for follow-up, newest-touched first. Filter by
+    ?status= (e.g. replied) or ?q= (name/email substring). Includes a status
+    breakdown so you can see how the funnel is moving."""
+    from models import OperatorLead
+
+    status = (request.args.get("status") or "").strip()
+    q = (request.args.get("q") or "").strip().lower()
+    limit = min(int(request.args.get("limit", 100)), 500)
+
+    query = OperatorLead.query
+    if status:
+        query = query.filter(OperatorLead.status == status)
+    if q:
+        like = "%{}%".format(q)
+        query = query.filter(db.or_(
+            db.func.lower(OperatorLead.business_name).like(like),
+            db.func.lower(OperatorLead.email).like(like),
+        ))
+    rows = query.order_by(OperatorLead.updated_at.desc()).limit(limit).all()
+
+    # Status breakdown across ALL leads (not just the filtered page).
+    counts = {}
+    for st, n in db.session.query(OperatorLead.status, db.func.count(OperatorLead.id)).group_by(OperatorLead.status).all():
+        counts[st] = n
+
+    return jsonify({
+        "success": True,
+        "counts": counts,
+        "total": sum(counts.values()),
+        "leads": [l.to_dict() for l in rows],
+    }), 200
+
+
+@admin_bp.route("/outreach/leads/<lead_id>", methods=["POST"])
+@require_admin
+def update_outreach_lead(user_id, lead_id):
+    """Update a lead's status and/or append a note. Body: {status?, note?}."""
+    from models import OperatorLead, utcnow
+
+    lead = db.session.get(OperatorLead, lead_id)
+    if not lead:
+        return jsonify({"error": "Lead not found"}), 404
+
+    data = request.get_json() or {}
+    new_status = (data.get("status") or "").strip()
+    note = (data.get("note") or "").strip()
+    allowed = {"new", "qualified", "contacted", "replied", "interested",
+               "converted", "skipped", "bounced", "unsubscribed", "dead"}
+    if new_status:
+        if new_status not in allowed:
+            return jsonify({"error": "Invalid status. Allowed: {}".format(sorted(allowed))}), 400
+        lead.status = new_status
+    if note:
+        import time as _t
+        stamp = _t.strftime("%Y-%m-%d %H:%M", _t.gmtime())
+        entry = "[{}] {}".format(stamp, note)
+        lead.notes = (lead.notes + "\n" + entry) if lead.notes else entry
+    lead.updated_at = utcnow()
+    db.session.commit()
+    return jsonify({"success": True, "lead": lead.to_dict()}), 200
+
+
 @admin_bp.route("/launch-readiness", methods=["GET"])
 @require_admin
 def launch_readiness(user_id):

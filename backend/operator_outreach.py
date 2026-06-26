@@ -380,3 +380,157 @@ def unsubscribe():
         page.format("You're unsubscribed", "You won't receive any more emails from Umuve. Thanks."),
         mimetype="text/html",
     )
+
+
+# --------------------------------------------------------------------------- #
+# Inbound reply capture (email-provider webhook)
+#
+# When a recruited hauler REPLIES to an outreach email, the provider (Resend
+# Inbound / SendGrid Parse / Postmark / generic) POSTs here. We match the
+# sender to a lead, flip it to "replied" (which auto-stops the drip — the
+# sender loop only contacts qualified/contacted), stash the message, and alert
+# the admin so a human follows up fast. A real interested hauler is the most
+# valuable thing outreach produces; it must never sit unseen in an inbox.
+# --------------------------------------------------------------------------- #
+def _extract_inbound(req):
+    """Best-effort (from_email, subject, text) from common webhook shapes."""
+    data = {}
+    try:
+        data = req.get_json(silent=True) or {}
+    except Exception:
+        data = {}
+    form = req.form or {}
+
+    def first(*vals):
+        for v in vals:
+            if v:
+                return v
+        return ""
+
+    # Resend inbound nests under data; others are flat.
+    d = data.get("data") if isinstance(data.get("data"), dict) else data
+
+    frm = first(
+        _addr(d.get("from")), _addr(data.get("from")),
+        _addr(d.get("sender")), form.get("from"), form.get("sender"),
+        _addr((d.get("FromFull") or {}).get("Email")), d.get("From"),
+    )
+    subject = first(d.get("subject"), data.get("subject"), form.get("subject"), d.get("Subject"), "")
+    text = first(
+        d.get("text"), d.get("text_body"), d.get("TextBody"), d.get("plain"),
+        data.get("text"), form.get("text"), form.get("plain"), d.get("html"), "",
+    )
+    m = _EMAIL_RE.search(frm or "")
+    email = (m.group(0).lower() if m else "")
+    return email, (subject or "")[:200], (text or "")[:4000]
+
+
+def _addr(v):
+    """Pull an email string out of str | {'address'|'email': ...} | [..]."""
+    if not v:
+        return ""
+    if isinstance(v, str):
+        return v
+    if isinstance(v, dict):
+        return v.get("address") or v.get("email") or ""
+    if isinstance(v, (list, tuple)) and v:
+        return _addr(v[0])
+    return ""
+
+
+_AUTO_SUBJECT = re.compile(
+    r"out of office|automatic reply|auto[- ]?reply|delivery (status|failure)|"
+    r"undeliverable|mail delivery|returned mail|read receipt", re.I)
+
+
+@outreach_bp.route("/inbound", methods=["POST"])
+def inbound_reply():
+    """Provider webhook for inbound replies. Always returns 200 (so the provider
+    doesn't retry-storm). Optional shared secret via OUTREACH_INBOUND_SECRET."""
+    from models import db, OperatorLead, User, Notification, generate_uuid
+
+    secret = os.environ.get("OUTREACH_INBOUND_SECRET", "").strip()
+    if secret:
+        got = (request.args.get("secret") or request.headers.get("X-Webhook-Secret") or "").strip()
+        if got != secret:
+            return {"ok": False, "error": "forbidden"}, 403
+
+    email, subject, text = _extract_inbound(request)
+    if not email:
+        return {"ok": True, "matched": False, "reason": "no sender email"}, 200
+
+    lead = (
+        db.session.query(OperatorLead)
+        .filter(db.func.lower(OperatorLead.email) == email)
+        .first()
+    )
+    if not lead:
+        return {"ok": True, "matched": False, "reason": "no lead for sender"}, 200
+
+    # Bounce / auto-reply: don't treat as a real reply.
+    is_auto = bool(_AUTO_SUBJECT.search(subject or ""))
+    if is_auto and re.search(r"delivery|undeliverable|returned|daemon", (subject + " " + email), re.I):
+        lead.status = "bounced"
+        lead.notes = _append_note(lead.notes, "Bounce/auto: " + subject)
+        db.session.commit()
+        return {"ok": True, "matched": True, "status": "bounced"}, 200
+    if is_auto:
+        return {"ok": True, "matched": True, "status": "ignored_autoreply"}, 200
+
+    # A real human reply.
+    lead.status = "replied"
+    snippet = (text or "").strip().replace("\r", " ").replace("\n", " ")[:280]
+    lead.notes = _append_note(lead.notes, "REPLY: {} — {}".format(subject or "(no subject)", snippet))
+    db.session.commit()
+
+    _alert_admin_reply(lead, subject, snippet, db, User, Notification, generate_uuid)
+    return {"ok": True, "matched": True, "status": "replied", "lead_id": lead.id}, 200
+
+
+def _append_note(existing, line):
+    stamp = time.strftime("%Y-%m-%d %H:%M", time.gmtime())
+    entry = "[{}] {}".format(stamp, line)
+    return (existing + "\n" + entry) if existing else entry
+
+
+def _alert_admin_reply(lead, subject, snippet, db, User, Notification, generate_uuid):
+    name = lead.business_name or lead.email
+    # In-app notification to every admin
+    try:
+        for admin in User.query.filter_by(role="admin").all():
+            db.session.add(Notification(
+                id=generate_uuid(), user_id=admin.id, type="outreach_reply",
+                title="Hauler replied: {}".format(name),
+                body=(subject or "(no subject)") + " — " + (snippet or ""),
+                data={"lead_id": lead.id, "email": lead.email, "phone": lead.phone},
+            ))
+        db.session.commit()
+    except Exception:
+        logger.exception("outreach inbound: admin notification failed")
+    # Email + SMS the admin so it's seen fast
+    cfg = _cfg()
+    try:
+        from notifications import send_email
+        if cfg["report_to"]:
+            html = (
+                "<div style='font-family:Arial,sans-serif;font-size:14px'>"
+                "<h2>A recruited hauler replied 🎉</h2>"
+                "<p><b>{name}</b> ({email}{phone})</p>"
+                "<p><b>Subject:</b> {subj}</p><blockquote>{body}</blockquote>"
+                "<p>Follow up fast — reply from your inbox, or call them.</p></div>"
+            ).format(
+                name=name, email=lead.email or "—",
+                phone=(" · " + lead.phone) if lead.phone else "",
+                subj=subject or "(no subject)", body=snippet or "",
+            )
+            send_email(cfg["report_to"], "Hauler reply: {}".format(name), html)
+    except Exception:
+        logger.warning("outreach inbound: report email failed")
+    try:
+        admin_phone = os.environ.get("ADMIN_PHONE", "")
+        if admin_phone:
+            from sms_service import send_sms_async
+            send_sms_async(admin_phone, "Umuve: hauler {} replied to outreach — {}".format(
+                name, (snippet or subject or "")[:80]))
+    except Exception:
+        logger.warning("outreach inbound: admin SMS failed")
