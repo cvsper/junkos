@@ -470,6 +470,70 @@ def billing_status(user_id):
     }), 200
 
 
+@billing_portal_bp.route("/register-webhook", methods=["POST"])
+@_require_admin
+def register_webhook(user_id):
+    """Create the portal billing webhook in Stripe via the API (no dashboard
+    clicking) and return its signing secret so you can set
+    STRIPE_WEBHOOK_SECRET_PORTAL. The secret is ONLY returned by Stripe at
+    creation time. Idempotent-ish: if an endpoint for this URL already exists,
+    pass ?recreate=1 to delete + recreate it and get a fresh secret.
+    """
+    try:
+        import stripe
+    except ImportError:
+        return jsonify({"success": False, "error": "stripe SDK unavailable"}), 503
+
+    key = _stripe_key()
+    if not key:
+        return jsonify({"success": False, "error": "STRIPE_SECRET_KEY not set"}), 400
+    stripe.api_key = key
+
+    base = os.environ.get("PUBLIC_BASE_URL", "https://junkos-backend.onrender.com").rstrip("/")
+    url = base + "/portal/v1/billing/webhook"
+    events = [
+        "checkout.session.completed",
+        "customer.subscription.updated",
+        "invoice.paid",
+        "invoice.payment_failed",
+    ]
+    recreate = (request.args.get("recreate") or "").lower() in ("1", "true", "yes")
+
+    try:
+        existing = next(
+            (e for e in stripe.WebhookEndpoint.list(limit=100).auto_paging_iter() if e.url == url),
+            None,
+        )
+        if existing and not recreate:
+            return jsonify({
+                "success": True,
+                "already_exists": True,
+                "endpoint_id": existing.id,
+                "note": ("A webhook for this URL already exists. Stripe only reveals the "
+                         "signing secret at creation, so to get a fresh one call this again "
+                         "with ?recreate=1 (deletes + recreates), or roll the secret in the "
+                         "Stripe dashboard."),
+            }), 200
+        if existing and recreate:
+            stripe.WebhookEndpoint.delete(existing.id)
+
+        ep = stripe.WebhookEndpoint.create(
+            url=url, enabled_events=events, description="Umuve portal billing",
+        )
+        return jsonify({
+            "success": True,
+            "endpoint_id": ep.id,
+            "url": url,
+            "events": events,
+            "signing_secret": ep.secret,
+            "next_step": ("Set STRIPE_WEBHOOK_SECRET_PORTAL = the signing_secret above on "
+                          "Render (junkos-backend → Environment). Do NOT paste it in chat."),
+        }), 200
+    except Exception as e:
+        logging.getLogger(__name__).exception("register-webhook failed")
+        return jsonify({"success": False, "error": str(e)[:200]}), 502
+
+
 @billing_portal_bp.route("/webhook", methods=["POST"])
 def stripe_webhook():
     """Handle Stripe events relevant to portal subscriptions."""
