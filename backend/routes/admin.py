@@ -739,6 +739,222 @@ _REFERRAL_DASHBOARD_HTML = """<!DOCTYPE html>
 </div></body></html>"""
 
 
+# ===========================================================================
+# Operator Verification dashboard — review automated document checks and
+# approve/reject haulers with one click. Mirrors the referral/pricing dashboard
+# design system (porcelain + Outfit/DM Sans + red, shared login overlay).
+# ===========================================================================
+_VERIFICATION_DASHBOARD_HTML = """<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Umuve — Operator Verification</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Outfit:wght@600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{--ink:#1a1a1a;--red:#C52222;--mut:#6b6b66;--line:#e8e5df;--bg:#FAF8F5}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'DM Sans',system-ui,sans-serif}
+  .wrap{max-width:1080px;margin:0 auto;padding:2.5rem 1.25rem 4rem}
+  h1{font-family:'Outfit',sans-serif;font-weight:800;font-size:1.9rem;letter-spacing:-.02em;margin:0}
+  .sub{color:var(--mut);margin:.25rem 0 1.5rem;font-size:.95rem}
+  .bar{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center;margin-bottom:1.5rem}
+  select{font:inherit;border:1px solid #d6d2ca;border-radius:.55rem;padding:.55rem .7rem;background:#fff}
+  button{font:inherit;font-weight:700;background:var(--red);color:#fff;border:0;border-radius:.55rem;padding:.6rem 1.1rem;cursor:pointer}
+  button:hover{background:#9E1B1B}
+  button.ghost{background:#fff;color:var(--ink);border:1px solid #d6d2ca}
+  button.ghost:hover{background:#f3f0ea}
+  button.ok{background:#1B7F44}button.ok:hover{background:#156635}
+  button.sm{padding:.4rem .8rem;font-size:.85rem}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:.9rem;margin-bottom:1.5rem}
+  @media(max-width:640px){.kpis{grid-template-columns:repeat(2,1fr)}}
+  .card{background:#fff;border:1px solid var(--line);border-radius:.9rem;padding:1.1rem 1.2rem}
+  .card .l{font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#9a948b}
+  .card .v{font-family:'Outfit',sans-serif;font-weight:800;font-size:1.7rem;margin-top:.25rem;letter-spacing:-.02em}
+  table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line);border-radius:.9rem;overflow:hidden}
+  th,td{padding:.7rem .9rem;text-align:left;font-size:.9rem;border-top:1px solid var(--line)}
+  th{background:#f3f0ea;font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;color:#9a948b;border-top:0}
+  .tag{display:inline-block;border-radius:999px;padding:.15rem .55rem;font-size:.72rem;font-weight:700;white-space:nowrap}
+  .t-green{background:#E9F7EE;color:#1B7F44}
+  .t-amber{background:#FEF6E7;color:#9a6700}
+  .t-red{background:#FDECEC;color:#B42318}
+  .t-blue{background:#EEF2FF;color:#3a4ea8}
+  .t-gray{background:#eee;color:#666}
+  .muted{color:var(--mut);font-size:.85rem}
+  .err{color:var(--red);font-size:.9rem;margin:.5rem 0}
+  .who{font-weight:600}.whoe{color:#9a948b;font-size:.78rem}
+  /* Detail drawer */
+  #detail{display:none;margin-top:1.5rem;background:#fff;border:1px solid var(--line);border-radius:1rem;padding:1.5rem}
+  #detail h2{font-family:'Outfit',sans-serif;font-weight:800;margin:0;font-size:1.3rem}
+  .docgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:1rem;margin:1.2rem 0}
+  .doc{border:1px solid var(--line);border-radius:.8rem;padding:1rem;background:#FCFBF9}
+  .doc h3{font-family:'Outfit',sans-serif;font-weight:700;font-size:.95rem;margin:0 0 .5rem;display:flex;justify-content:space-between;align-items:center;gap:.5rem}
+  .kv{font-size:.83rem;margin:.2rem 0;color:#3a3a36}
+  .kv b{color:#9a948b;font-weight:600;display:inline-block;min-width:5.5rem}
+  .reasons{margin:.6rem 0 0;padding-left:1.1rem}
+  .reasons li{font-size:.82rem;margin:.15rem 0}
+  .reasons li.bad{color:#B42318}
+  .actions{display:flex;flex-wrap:wrap;gap:.6rem;margin-top:1.2rem;padding-top:1.2rem;border-top:1px solid var(--line)}
+  a.file{font-size:.8rem;color:var(--red);font-weight:600;text-decoration:none}
+  a.file:hover{text-decoration:underline}
+  .vrow{cursor:pointer}.vrow:hover{background:#FCFBF9}
+</style></head><body>
+<div id="adminLogin" style="display:none;position:fixed;inset:0;background:#FAF8F5;z-index:100;align-items:center;justify-content:center">
+  <div style="background:#fff;border:1px solid #e8e5df;border-radius:1rem;padding:2rem;max-width:340px;width:90%;box-shadow:0 18px 40px rgba(0,0,0,.08)">
+    <h2 style="font-family:'Outfit',sans-serif;font-weight:800;margin:0 0 .25rem">Admin sign in</h2>
+    <p style="color:#6b6b66;font-size:.9rem;margin:0 0 1.2rem">Sign in with your Umuve admin email &amp; password.</p>
+    <input id="al-email" type="email" placeholder="Email" autocomplete="email" style="width:100%;border:1px solid #d6d2ca;border-radius:.55rem;padding:.6rem .7rem;margin-bottom:.6rem;font:inherit;box-sizing:border-box">
+    <input id="al-pass" type="password" placeholder="Password" autocomplete="current-password" onkeydown="if(event.key==='Enter')adminLogin()" style="width:100%;border:1px solid #d6d2ca;border-radius:.55rem;padding:.6rem .7rem;margin-bottom:.6rem;font:inherit;box-sizing:border-box">
+    <button onclick="adminLogin()" style="width:100%;background:#C52222;color:#fff;border:0;border-radius:.55rem;padding:.65rem;font:inherit;font-weight:700;cursor:pointer">Sign in</button>
+    <div id="al-err" style="color:#C52222;font-size:.85rem;margin-top:.6rem"></div>
+  </div>
+</div>
+<div class="wrap">
+  <h1>Operator Verification</h1>
+  <div class="sub">Automated insurance / license / registration checks. Click a hauler to see the extracted fields and approve or reject.</div>
+  <div class="bar">
+    <select id="status">
+      <option value="needs_attention" selected>Needs attention</option>
+      <option value="documents_submitted">Submitted</option>
+      <option value="under_review">Under review</option>
+      <option value="approved">Approved</option>
+      <option value="rejected">Rejected</option>
+      <option value="all">All</option>
+    </select>
+    <button onclick="load()">Load</button>
+  </div>
+  <div id="err" class="err"></div>
+  <div id="out" style="display:none">
+    <div class="kpis">
+      <div class="card"><div class="l">Ready to approve</div><div class="v" id="k_ready">—</div></div>
+      <div class="card"><div class="l">Needs review</div><div class="v" id="k_flag">—</div></div>
+      <div class="card"><div class="l">Failed / expired</div><div class="v" id="k_fail">—</div></div>
+      <div class="card"><div class="l">Approved</div><div class="v" id="k_appr">—</div></div>
+    </div>
+    <table><thead><tr>
+      <th>Hauler</th><th>Onboarding</th><th>Verification</th><th>Documents</th><th></th>
+    </tr></thead><tbody id="rows"></tbody></table>
+    <p class="muted" id="meta" style="margin-top:1rem"></p>
+  </div>
+  <div id="detail"></div>
+<script>
+  const $=id=>document.getElementById(id);
+  const TOKEN_KEY='umuve_admin_token';
+  function _tok(){ return localStorage.getItem(TOKEN_KEY)||''; }
+  function H(){ return {Authorization:'Bearer '+_tok()}; }
+  function esc(s){ return (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+  function _showLogin(msg){ document.getElementById('adminLogin').style.display='flex'; var o=$('out'); if(o) o.style.display='none'; if(msg) $('al-err').textContent=msg; }
+  function _hideLogin(){ document.getElementById('adminLogin').style.display='none'; }
+  async function adminLogin(){
+    var email=($('al-email').value||'').trim().toLowerCase(); var pass=$('al-pass').value;
+    $('al-err').textContent='';
+    if(!email||!pass){ $('al-err').textContent='Enter email and password.'; return; }
+    try{
+      var r=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,password:pass})});
+      var b=await r.json().catch(function(){return{};});
+      if(r.ok&&b.token){ localStorage.setItem(TOKEN_KEY,b.token); _hideLogin(); load(); }
+      else { $('al-err').textContent=(b&&b.error)||'Sign in failed.'; }
+    }catch(e){ $('al-err').textContent='Network error.'; }
+  }
+  // ---- Tag helpers ----
+  const V_TAG={passed:['green','Verified'],flagged:['amber','Needs review'],failed:['red','Failed'],verifying:['blue','Verifying…'],not_checked:['gray','Not checked']};
+  const O_TAG={approved:['green','Approved'],under_review:['amber','Under review'],documents_submitted:['amber','Submitted'],rejected:['red','Rejected'],pending:['gray','Pending']};
+  function tag(map,k){ const m=map[k]||['gray',k||'—']; return '<span class="tag t-'+m[0]+'">'+esc(m[1])+'</span>'; }
+  const DOCT={insurance:'Insurance',drivers_license:"Driver's license",vehicle_registration:'Registration'};
+  function who(a){ return '<div class="who">'+esc(a.name||a.email||'Unknown')+'</div>'+(a.email?'<div class="whoe">'+esc(a.email)+(a.phone?' · '+esc(a.phone):'')+'</div>':''); }
+  function docDots(a){
+    const map=[['insurance',a.insurance_document_url],['drivers_license',a.drivers_license_url],['vehicle_registration',a.vehicle_registration_url]];
+    return map.map(([k,u])=>'<span title="'+DOCT[k]+'" style="opacity:'+(u?1:.25)+'">'+(u?'●':'○')+'</span>').join(' ');
+  }
+  let CURRENT=[];
+  async function load(){
+    $('err').textContent=''; $('detail').style.display='none';
+    const sel=$('status').value;
+    const qs = (sel==='all'||sel==='needs_attention') ? 'per_page=200' : 'status='+encodeURIComponent(sel)+'&per_page=200';
+    try{
+      const r=await fetch('/api/admin/onboarding/applications?'+qs,{headers:H()});
+      if(r.status===401){ _showLogin('Please sign in.'); return; }
+      if(r.status===403){ _showLogin('That account is not an admin.'); return; }
+      if(!r.ok){ $('err').textContent='Error '+r.status; return; }
+      _hideLogin(); const d=await r.json();
+      let apps=d.applications||[];
+      if(sel==='needs_attention') apps=apps.filter(a=>['documents_submitted','under_review'].includes(a.onboarding_status)||a.documents_verification_status==='flagged');
+      render(apps, d.total);
+    }catch(e){ $('err').textContent='Request failed: '+e; }
+  }
+  function render(apps,total){
+    CURRENT=apps; $('out').style.display='block';
+    const cnt=s=>apps.filter(s).length;
+    $('k_ready').textContent=cnt(a=>a.documents_verification_status==='passed'&&a.onboarding_status!=='approved');
+    $('k_flag').textContent=cnt(a=>a.documents_verification_status==='flagged');
+    $('k_fail').textContent=cnt(a=>a.documents_verification_status==='failed');
+    $('k_appr').textContent=cnt(a=>a.onboarding_status==='approved');
+    $('rows').innerHTML = apps.length ? apps.map((a,i)=>
+      '<tr class="vrow" onclick="openDetail('+i+')"><td>'+who(a)+'</td>'+
+      '<td>'+tag(O_TAG,a.onboarding_status)+'</td>'+
+      '<td>'+tag(V_TAG,a.documents_verification_status)+'</td>'+
+      '<td style="font-size:1.05rem;letter-spacing:.1rem;color:#1B7F44">'+docDots(a)+'</td>'+
+      '<td><button class="ghost sm" onclick="event.stopPropagation();openDetail('+i+')">View</button></td></tr>'
+    ).join('') : '<tr><td colspan="5" style="text-align:center;color:#9a948b;padding:2rem">Nothing here. Try a different filter.</td></tr>';
+    $('meta').textContent=apps.length+' shown'+(total!=null?' · '+total+' total in this status':'')+'. ● = uploaded, ○ = missing.';
+  }
+  function fdate(d){ return d? new Date(d).toLocaleDateString():'—'; }
+  function closeDetail(){ document.getElementById('detail').style.display='none'; }
+  async function openDetail(i){
+    const a=CURRENT[i]; const box=$('detail');
+    box.style.display='block'; box.scrollIntoView({behavior:'smooth',block:'nearest'});
+    box.innerHTML='<p class="muted">Loading verification…</p>';
+    let v={documents:{}};
+    try{ const r=await fetch('/api/admin/onboarding/'+a.id+'/verification',{headers:H()}); if(r.ok) v=await r.json(); }catch(e){}
+    const docs=v.documents||{};
+    const order=['insurance','drivers_license','vehicle_registration'];
+    const docCards=order.map(k=>{
+      const d=docs[k]; const url=[a.insurance_document_url,a.drivers_license_url,a.vehicle_registration_url][order.indexOf(k)];
+      const ex=(d&&d.extracted)||{};
+      const st=d? (d.status==='verified'?['green','Verified']:d.status==='rejected'?['red','Rejected']:d.status==='needs_review'?['amber','Review']:['gray',d.status]) : ['gray','Not run'];
+      const reasons=(d&&d.reasons||[]).map(x=>{const bad=/expired|wrong|tamper|hard to read|doesn|could not|unavailable/i.test(x);return '<li class="'+(bad?'bad':'')+'">'+esc(x)+'</li>';}).join('');
+      return '<div class="doc"><h3>'+DOCT[k]+' <span class="tag t-'+st[0]+'">'+st[1]+'</span></h3>'+
+        '<div class="kv"><b>On file</b>'+esc(ex.full_name||'—')+'</div>'+
+        '<div class="kv"><b>Expires</b>'+fdate(d&&d.expiry_date)+'</div>'+
+        '<div class="kv"><b>ID #</b>'+esc(ex.id_number||'—')+'</div>'+
+        '<div class="kv"><b>Issuer</b>'+esc(ex.issuer||'—')+'</div>'+
+        (d&&d.confidence!=null?'<div class="kv"><b>Confidence</b>'+Math.round(d.confidence*100)+'%</div>':'')+
+        (reasons?'<ul class="reasons">'+reasons+'</ul>':'')+
+        (url?'<div style="margin-top:.6rem"><a class="file" href="'+esc(url)+'" target="_blank" rel="noopener">View uploaded file ↗</a></div>':'<div class="muted" style="margin-top:.6rem">No file uploaded</div>')+
+        '</div>';
+    }).join('');
+    box.innerHTML='<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap">'+
+      '<div><h2>'+esc(a.name||a.email||'Hauler')+'</h2><div class="muted">'+esc(a.email||'')+(a.phone?' · '+esc(a.phone):'')+'</div>'+
+      '<div style="margin-top:.5rem">'+tag(O_TAG,a.onboarding_status)+' '+tag(V_TAG,a.documents_verification_status)+(v.verified_at?'<span class="muted"> · checked '+fdate(v.verified_at)+'</span>':'')+'</div></div>'+
+      '<button class="ghost sm" onclick="closeDetail()">Close</button></div>'+
+      '<div class="docgrid">'+docCards+'</div>'+
+      '<div class="actions">'+
+        '<button class="ok" onclick="review(\\''+a.id+'\\',\\'approve\\')">Approve hauler</button>'+
+        '<button onclick="review(\\''+a.id+'\\',\\'reject\\')">Reject…</button>'+
+        '<button class="ghost" onclick="reverify(\\''+a.id+'\\')">Re-run verification</button>'+
+      '</div><div id="aerr" class="err"></div>';
+  }
+  async function review(id,action){
+    const body={action:action};
+    if(action==='reject'){ const why=prompt('Reason for rejection (the hauler will see this):'); if(!why) return; body.rejection_reason=why; }
+    try{
+      const r=await fetch('/api/admin/onboarding/'+id+'/review',{method:'PUT',headers:Object.assign({'Content-Type':'application/json'},H()),body:JSON.stringify(body)});
+      if(!r.ok){ const b=await r.json().catch(()=>({})); $('aerr').textContent=(b&&b.error)||('Error '+r.status); return; }
+      $('detail').style.display='none'; load();
+    }catch(e){ $('aerr').textContent='Request failed: '+e; }
+  }
+  async function reverify(id){
+    const e=$('aerr'); if(e) e.textContent='';
+    try{
+      const r=await fetch('/api/admin/onboarding/'+id+'/verify',{method:'POST',headers:H()});
+      if(!r.ok){ if(e) e.textContent='Error '+r.status; return; }
+      if(e){ e.style.color='#1B7F44'; e.textContent='Re-running… reload in ~20s to see results.'; }
+    }catch(err){ if(e) e.textContent='Request failed: '+err; }
+  }
+  if(_tok()) load(); else _showLogin();
+</script>
+</div></body></html>"""
+
+
 # ---------------------------------------------------------------------------
 # Pricing analytics — quote -> book conversion + platform revenue, banded by
 # price. This is the lever for tuning the binding quote toward the price that
@@ -1029,6 +1245,14 @@ def referral_dashboard():
     admin-gated, so paste an admin token once (stored in your browser only)."""
     from flask import Response
     return Response(_REFERRAL_DASHBOARD_HTML, mimetype="text/html")
+
+
+@admin_bp.route("/verification-dashboard", methods=["GET"])
+def verification_dashboard():
+    """Self-contained operator document-verification dashboard. Public page;
+    data + actions are admin-gated (sign in once; token stored in-browser)."""
+    from flask import Response
+    return Response(_VERIFICATION_DASHBOARD_HTML, mimetype="text/html")
 
 
 @admin_bp.route("/analytics", methods=["GET"])
