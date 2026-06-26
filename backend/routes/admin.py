@@ -1266,6 +1266,100 @@ def referral_payouts(user_id):
     })
 
 
+@admin_bp.route("/launch-readiness", methods=["GET"])
+@require_admin
+def launch_readiness(user_id):
+    """Read-only GO/NO-GO check for a market launch. Runs the REAL dispatch
+    read-path (coverage + in-range online operators) against live prod data and
+    checks every config precondition the first booking depends on. Writes
+    nothing — safe to hit anytime.
+
+    Query: ?lat=&lng=&radius= (defaults to West Palm Beach, 30mi).
+    """
+    import os as _os
+    import dispatcher
+    from models import Contractor
+
+    lat = float(request.args.get("lat", 26.7153))
+    lng = float(request.args.get("lng", -80.0534))
+    radius = float(request.args.get("radius", dispatcher.MAX_RADIUS_MILES))
+
+    checks = []
+
+    def add(name, status, detail):
+        # status: pass | warn | fail
+        checks.append({"check": name, "status": status, "detail": detail})
+
+    # --- Dispatch mode (the silent breaker) ---
+    dm = (_os.environ.get("DISPATCH_MODE") or dispatcher.DISPATCH_MODE or "").strip().lower()
+    add("dispatch_mode", "pass" if dm == "assign" else "fail",
+        "DISPATCH_MODE={} (need 'assign' so the native app can claim jobs)".format(dm or "unset"))
+
+    # --- Scheduler (drips, reminders, payouts, no-show) ---
+    sched = (_os.environ.get("ENABLE_SCHEDULER") or "").lower() == "true"
+    add("scheduler", "pass" if sched else "warn",
+        "ENABLE_SCHEDULER={}".format("true" if sched else "off — drips/payouts/reminders won't run"))
+
+    # --- Stripe (operator payouts) ---
+    stripe_ok = bool(_os.environ.get("STRIPE_SECRET_KEY"))
+    add("stripe_payouts", "pass" if stripe_ok else "warn",
+        "STRIPE_SECRET_KEY {}".format("set — operators can be paid" if stripe_ok else "missing — payouts defer to credit"))
+
+    # --- No-operator fallback contacts ---
+    has_fallback = bool(_os.environ.get("ADMIN_PHONE") or _os.environ.get("ADMIN_EMAIL"))
+    add("admin_fallback", "pass" if has_fallback else "warn",
+        "ADMIN_PHONE/ADMIN_EMAIL {}".format("set" if has_fallback else "neither set — an unassigned paid job alerts nobody"))
+
+    # --- Live operator coverage (read-only, real dispatcher logic) ---
+    approved = Contractor.query.filter_by(approval_status="approved").all()
+    in_range, online_in_range = [], []
+    for c in approved:
+        if c.current_lat is None or c.current_lng is None:
+            continue
+        d = dispatcher.haversine(lat, lng, float(c.current_lat), float(c.current_lng))
+        if d <= radius:
+            entry = {
+                "name": (c.user.name if c.user else c.id),
+                "miles": round(d, 1),
+                "online": bool(c.is_online),
+                "has_stripe": bool(c.stripe_connect_id),
+            }
+            in_range.append(entry)
+            if c.is_online:
+                online_in_range.append(entry)
+
+    add("operator_coverage",
+        "pass" if online_in_range else ("warn" if in_range else "fail"),
+        "{} approved in range, {} ONLINE now (need >=1 online to dispatch)".format(len(in_range), len(online_in_range)))
+
+    # pre-payment coverage gate (does the funnel let a WPB booking through?)
+    try:
+        covered = dispatcher.has_active_coverage(lat, lng, radius)
+    except Exception:
+        covered = None
+    add("booking_gate", "pass" if covered else "warn",
+        "has_active_coverage={} (if false, WPB bookings get waitlisted not charged)".format(covered))
+
+    # --- Verdict ---
+    any_fail = any(c["status"] == "fail" for c in checks)
+    blocking = (dm != "assign") or (not online_in_range)
+    if not blocking and not any_fail:
+        verdict, summary = "GO", "Ready — a WPB booking will dispatch to an online operator."
+    elif dm == "assign" and in_range and not online_in_range:
+        verdict, summary = "ALMOST", "Config is good; nobody is ONLINE yet. Get an operator to Go Online, then it's GO."
+    else:
+        verdict, summary = "NO-GO", "Blocked — see failing checks below."
+
+    return jsonify({
+        "verdict": verdict,
+        "summary": summary,
+        "market": {"lat": lat, "lng": lng, "radius_miles": radius},
+        "checks": checks,
+        "operators_in_range": in_range,
+        "operators_online_in_range": online_in_range,
+    }), 200
+
+
 @admin_bp.route("/referral-dashboard", methods=["GET"])
 def referral_dashboard():
     """Self-contained referral-payouts dashboard. Public page; the data call is
