@@ -530,6 +530,10 @@ _PRICING_DASHBOARD_HTML = """<!DOCTYPE html>
   .fill{height:100%;background:var(--red)}
   .muted{color:var(--mut);font-size:.85rem}
   .err{color:var(--red);font-size:.9rem;margin:.5rem 0}
+  .adminnav{display:flex;gap:.4rem;margin-bottom:1.4rem;flex-wrap:wrap}
+  .adminnav a{font-size:.85rem;font-weight:700;color:#6b6b66;text-decoration:none;padding:.42rem .85rem;border-radius:999px;border:1px solid transparent}
+  .adminnav a:hover{background:#f3f0ea}
+  .adminnav a.active{background:#fff;border-color:#e8e5df;color:#1a1a1a;box-shadow:0 1px 2px rgba(0,0,0,.04)}
 </style></head><body>
 <div id="adminLogin" style="display:none;position:fixed;inset:0;background:#FAF8F5;z-index:100;align-items:center;justify-content:center">
   <div style="background:#fff;border:1px solid #e8e5df;border-radius:1rem;padding:2rem;max-width:340px;width:90%;box-shadow:0 18px 40px rgba(0,0,0,.08)">
@@ -542,6 +546,11 @@ _PRICING_DASHBOARD_HTML = """<!DOCTYPE html>
   </div>
 </div>
 <div class="wrap">
+  <nav class="adminnav">
+    <a href="/api/admin/verification-dashboard">Verification</a>
+    <a href="/api/admin/referral-dashboard">Referrals</a>
+    <a href="/api/admin/pricing-dashboard" class="active">Pricing</a>
+  </nav>
   <h1>Pricing &amp; Conversion</h1>
   <div class="sub">Quote &rarr; book conversion and platform take, by price band. Tune the binding quote toward the band that maximizes conversion &times; revenue.</div>
   <div class="bar">
@@ -657,6 +666,10 @@ _REFERRAL_DASHBOARD_HTML = """<!DOCTYPE html>
   .muted{color:var(--mut);font-size:.85rem}
   .err{color:var(--red);font-size:.9rem;margin:.5rem 0}
   .who{font-weight:600}.whoe{color:#9a948b;font-size:.78rem}
+  .adminnav{display:flex;gap:.4rem;margin-bottom:1.4rem;flex-wrap:wrap}
+  .adminnav a{font-size:.85rem;font-weight:700;color:#6b6b66;text-decoration:none;padding:.42rem .85rem;border-radius:999px;border:1px solid transparent}
+  .adminnav a:hover{background:#f3f0ea}
+  .adminnav a.active{background:#fff;border-color:#e8e5df;color:#1a1a1a;box-shadow:0 1px 2px rgba(0,0,0,.04)}
 </style></head><body>
 <div id="adminLogin" style="display:none;position:fixed;inset:0;background:#FAF8F5;z-index:100;align-items:center;justify-content:center">
   <div style="background:#fff;border:1px solid #e8e5df;border-radius:1rem;padding:2rem;max-width:340px;width:90%;box-shadow:0 18px 40px rgba(0,0,0,.08)">
@@ -669,6 +682,11 @@ _REFERRAL_DASHBOARD_HTML = """<!DOCTYPE html>
   </div>
 </div>
 <div class="wrap">
+  <nav class="adminnav">
+    <a href="/api/admin/verification-dashboard">Verification</a>
+    <a href="/api/admin/referral-dashboard" class="active">Referrals</a>
+    <a href="/api/admin/pricing-dashboard">Pricing</a>
+  </nav>
   <h1>Referral Payouts</h1>
   <div class="sub">Hauler-to-hauler referrals. Each completed referral pays BOTH haulers. Totals are actual Stripe transfers from the payout ledger.</div>
   <div class="bar">
@@ -797,6 +815,10 @@ _VERIFICATION_DASHBOARD_HTML = """<!DOCTYPE html>
   a.file{font-size:.8rem;color:var(--red);font-weight:600;text-decoration:none}
   a.file:hover{text-decoration:underline}
   .vrow{cursor:pointer}.vrow:hover{background:#FCFBF9}
+  .adminnav{display:flex;gap:.4rem;margin-bottom:1.4rem;flex-wrap:wrap}
+  .adminnav a{font-size:.85rem;font-weight:700;color:#6b6b66;text-decoration:none;padding:.42rem .85rem;border-radius:999px;border:1px solid transparent}
+  .adminnav a:hover{background:#f3f0ea}
+  .adminnav a.active{background:#fff;border-color:#e8e5df;color:#1a1a1a;box-shadow:0 1px 2px rgba(0,0,0,.04)}
 </style></head><body>
 <div id="adminLogin" style="display:none;position:fixed;inset:0;background:#FAF8F5;z-index:100;align-items:center;justify-content:center">
   <div style="background:#fff;border:1px solid #e8e5df;border-radius:1rem;padding:2rem;max-width:340px;width:90%;box-shadow:0 18px 40px rgba(0,0,0,.08)">
@@ -809,6 +831,11 @@ _VERIFICATION_DASHBOARD_HTML = """<!DOCTYPE html>
   </div>
 </div>
 <div class="wrap">
+  <nav class="adminnav">
+    <a href="/api/admin/verification-dashboard" class="active">Verification</a>
+    <a href="/api/admin/referral-dashboard">Referrals</a>
+    <a href="/api/admin/pricing-dashboard">Pricing</a>
+  </nav>
   <h1>Operator Verification</h1>
   <div class="sub">Automated insurance / license / registration checks. Click a hauler to see the extracted fields and approve or reject.</div>
   <div class="bar">
