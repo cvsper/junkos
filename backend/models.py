@@ -1059,6 +1059,11 @@ class AbandonedBooking(db.Model):
     created_at = Column(DateTime, default=utcnow)
     updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
     last_drip_at = Column(DateTime, nullable=True)
+    # No-coverage waitlist: where the customer wanted service + when we told
+    # them we're now live in their area (so we never re-notify).
+    waitlist_lat = Column(Float, nullable=True)
+    waitlist_lng = Column(Float, nullable=True)
+    waitlist_notified_at = Column(DateTime, nullable=True)
 
     def to_dict(self):
         return {
@@ -1073,6 +1078,7 @@ class AbandonedBooking(db.Model):
             "lead_source": self.lead_source,
             "drip_stage": self.drip_stage,
             "converted": self.converted,
+            "waitlist_notified_at": self.waitlist_notified_at.isoformat() if self.waitlist_notified_at else None,
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }
 

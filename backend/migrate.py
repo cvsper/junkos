@@ -72,6 +72,10 @@ COLUMN_MIGRATIONS = [
     ("contractors", "documents_verification_status", "VARCHAR(20)", "VARCHAR(20)", "'not_checked'"),
     ("contractors", "documents_verified_at", "DATETIME", "TIMESTAMP", "NULL"),
     ("contractors", "vehicle_registration_expiry", "DATETIME", "TIMESTAMP", "NULL"),
+    # No-coverage waitlist (reactivate customers when we go live in their area)
+    ("abandoned_bookings", "waitlist_lat", "FLOAT", "FLOAT", "NULL"),
+    ("abandoned_bookings", "waitlist_lng", "FLOAT", "FLOAT", "NULL"),
+    ("abandoned_bookings", "waitlist_notified_at", "DATETIME", "TIMESTAMP", "NULL"),
 
     # Payment table
     ("payments", "operator_payout_amount", "FLOAT", "FLOAT", "0.0"),

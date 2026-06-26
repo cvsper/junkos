@@ -117,12 +117,37 @@ def update_availability(user_id):
 
     data = request.get_json() or {}
 
+    was_online = bool(contractor.is_online)
     if "is_online" in data:
         contractor.is_online = bool(data["is_online"])
     if "availability_schedule" in data:
         contractor.availability_schedule = data["availability_schedule"]
 
     db.session.commit()
+
+    # Just came online with a known location? Reactivate any no-coverage
+    # waitlist customers near this hauler — turns dead demand into bookings.
+    try:
+        if (not was_online and contractor.is_online
+                and contractor.approval_status == "approved"
+                and contractor.current_lat is not None and contractor.current_lng is not None):
+            import threading
+            from flask import current_app
+            app_obj = current_app._get_current_object()
+            lat, lng = contractor.current_lat, contractor.current_lng
+
+            def _reactivate():
+                try:
+                    from waitlist import notify_waitlist_for_coverage
+                    notify_waitlist_for_coverage(app_obj, lat, lng)
+                except Exception:
+                    import logging
+                    logging.getLogger(__name__).exception("waitlist reactivation failed")
+
+            threading.Thread(target=_reactivate, daemon=True).start()
+    except Exception:
+        pass
+
     return jsonify({"success": True, "contractor": contractor.to_dict()}), 200
 
 

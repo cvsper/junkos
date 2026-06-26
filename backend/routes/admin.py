@@ -1331,6 +1331,54 @@ def update_outreach_lead(user_id, lead_id):
     return jsonify({"success": True, "lead": lead.to_dict()}), 200
 
 
+@admin_bp.route("/waitlist", methods=["GET"])
+@require_admin
+def waitlist_leads(user_id):
+    """No-coverage waitlist customers (demand in areas without a hauler yet).
+    ?notified=0|1 to filter on whether they've been told we're live."""
+    from models import AbandonedBooking
+
+    notified = request.args.get("notified")
+    limit = min(int(request.args.get("limit", 200)), 500)
+    query = AbandonedBooking.query.filter(
+        AbandonedBooking.lead_source == "no_coverage_waitlist"
+    )
+    if notified == "0":
+        query = query.filter(AbandonedBooking.waitlist_notified_at.is_(None))
+    elif notified == "1":
+        query = query.filter(AbandonedBooking.waitlist_notified_at.isnot(None))
+    rows = query.order_by(AbandonedBooking.created_at.desc()).limit(limit).all()
+
+    waiting = AbandonedBooking.query.filter(
+        AbandonedBooking.lead_source == "no_coverage_waitlist",
+        AbandonedBooking.waitlist_notified_at.is_(None),
+        AbandonedBooking.converted.is_(False),
+    ).count()
+
+    return jsonify({
+        "success": True,
+        "waiting_count": waiting,
+        "leads": [l.to_dict() for l in rows],
+    }), 200
+
+
+@admin_bp.route("/waitlist/notify", methods=["POST"])
+@require_admin
+def waitlist_notify(user_id):
+    """Manually fire waitlist reactivation for an area (e.g. when you onboard a
+    truck in a new zip). Body: {lat, lng, radius?}. Emails matching customers
+    'we're live in your area' once each."""
+    from flask import current_app
+    data = request.get_json() or {}
+    lat, lng = data.get("lat"), data.get("lng")
+    radius = float(data.get("radius", 30))
+    if lat is None or lng is None:
+        return jsonify({"error": "lat and lng are required"}), 400
+    from waitlist import notify_waitlist_for_coverage
+    result = notify_waitlist_for_coverage(current_app._get_current_object(), lat, lng, radius)
+    return jsonify({"success": True, **result}), 200
+
+
 @admin_bp.route("/launch-readiness", methods=["GET"])
 @require_admin
 def launch_readiness(user_id):

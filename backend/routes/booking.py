@@ -785,7 +785,17 @@ def create_booking(user_id):
                             )
                             existing.lead_source = "no_coverage_waitlist"
                             existing.step = 99
+                            try:
+                                existing.waitlist_lat = float(lat)
+                                existing.waitlist_lng = float(lng)
+                            except (TypeError, ValueError):
+                                pass
                         else:
+                            wl_lat = wl_lng = None
+                            try:
+                                wl_lat, wl_lng = float(lat), float(lng)
+                            except (TypeError, ValueError):
+                                pass
                             db.session.add(AbandonedBooking(
                                 email=customer_email,
                                 phone=customer_phone or None,
@@ -795,8 +805,18 @@ def create_booking(user_id):
                                 estimated_price=data.get("estimated_price"),
                                 lead_source="no_coverage_waitlist",
                                 step=99,
+                                waitlist_lat=wl_lat,
+                                waitlist_lng=wl_lng,
                             ))
                         db.session.commit()
+
+                        # Immediate branded "you're on the list" email so a guest
+                        # who closes the tab is still captured.
+                        try:
+                            from waitlist import send_holding_email
+                            send_holding_email(customer_email, customer_name, address)
+                        except Exception:
+                            pass
                     except Exception:
                         db.session.rollback()
                         import logging
