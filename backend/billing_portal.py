@@ -408,6 +408,68 @@ def bootstrap_route(user_id):
         return jsonify({"success": False, "error": str(e)}), 502
 
 
+@billing_portal_bp.route("/status", methods=["GET"])
+@_require_admin
+def billing_status(user_id):
+    """Activation readiness for B2B billing — no writes. Reports whether Stripe
+    is keyed, each tier is bootstrapped (price resolvable), and the webhook
+    secret is set, plus a live org status breakdown. One call to see exactly
+    what's left before billing is GO."""
+    from models import db, Org
+
+    checks = []
+
+    def add(name, status, detail):
+        checks.append({"check": name, "status": status, "detail": detail})
+
+    keyed = bool(_stripe_key())
+    add("stripe_key", "pass" if keyed else "fail",
+        "STRIPE_SECRET_KEY {}".format("set" if keyed else "missing — billing can't run"))
+
+    tier_state = {}
+    all_boot = True
+    for tier in TIERS:
+        try:
+            pid = resolve_tier_price_id(tier)
+            tier_state[tier] = {"bootstrapped": True, "price_id": pid}
+        except Exception as e:
+            tier_state[tier] = {"bootstrapped": False, "error": str(e)[:120]}
+            all_boot = False
+    add("tiers_bootstrapped", "pass" if all_boot else ("fail" if keyed else "warn"),
+        "{} / {} tiers have a Stripe price".format(
+            sum(1 for t in tier_state.values() if t.get("bootstrapped")), len(TIERS)))
+
+    wh = bool(os.environ.get("STRIPE_WEBHOOK_SECRET_PORTAL"))
+    add("webhook_secret", "pass" if wh else "warn",
+        "STRIPE_WEBHOOK_SECRET_PORTAL {}".format(
+            "set" if wh else "missing — subscription/invoice status won't sync back"))
+
+    counts = {}
+    try:
+        for st, n in db.session.query(Org.status, db.func.count(Org.id)).group_by(Org.status).all():
+            counts[st or "none"] = n
+    except Exception:
+        pass
+
+    blocking = (not keyed) or (not all_boot)
+    verdict = "NO-GO" if blocking else ("ALMOST" if not wh else "GO")
+    summary = {
+        "GO": "Billing is live — orgs can subscribe and status syncs back.",
+        "ALMOST": "Orgs can subscribe; set STRIPE_WEBHOOK_SECRET_PORTAL so paid/past-due syncs.",
+        "NO-GO": "Run bootstrap (POST /portal/v1/billing/bootstrap) and set STRIPE_SECRET_KEY.",
+    }[verdict]
+
+    return jsonify({
+        "verdict": verdict,
+        "summary": summary,
+        "checks": checks,
+        "tiers": tier_state,
+        "org_status_counts": counts,
+        "webhook_url": (os.environ.get("PUBLIC_BASE_URL", "https://junkos-backend.onrender.com").rstrip("/")
+                        + "/portal/v1/billing/webhook"),
+    }), 200
+
+
 @billing_portal_bp.route("/webhook", methods=["POST"])
 def stripe_webhook():
     """Handle Stripe events relevant to portal subscriptions."""
