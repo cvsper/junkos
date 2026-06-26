@@ -1331,6 +1331,63 @@ def update_outreach_lead(user_id, lead_id):
     return jsonify({"success": True, "lead": lead.to_dict()}), 200
 
 
+@admin_bp.route("/orgs", methods=["GET"])
+@require_admin
+def list_orgs(user_id):
+    """List B2B portal orgs with owner contact + engagement signals, for
+    personalized outreach. ?status=trial to filter (default all)."""
+    from models import Org, OrgMember, User, PortalProperty
+    from datetime import timezone as _tz
+
+    status = (request.args.get("status") or "").strip()
+    query = Org.query
+    if status:
+        query = query.filter(Org.status == status)
+    orgs = query.order_by(Org.created_at.desc()).limit(500).all()
+
+    now = utcnow()
+    out = []
+    for o in orgs:
+        # Owner contact (fall back to any member, then billing_email).
+        owner = (
+            db.session.query(User)
+            .join(OrgMember, OrgMember.user_id == User.id)
+            .filter(OrgMember.org_id == o.id, OrgMember.role == "owner")
+            .first()
+        )
+        if owner is None:
+            owner = (
+                db.session.query(User)
+                .join(OrgMember, OrgMember.user_id == User.id)
+                .filter(OrgMember.org_id == o.id)
+                .first()
+            )
+        member_count = db.session.query(OrgMember).filter_by(org_id=o.id).count()
+        property_count = db.session.query(PortalProperty).filter_by(org_id=o.id).count()
+        age_days = None
+        if o.created_at:
+            created = o.created_at if o.created_at.tzinfo else o.created_at.replace(tzinfo=_tz.utc)
+            age_days = (now - created).days
+
+        out.append({
+            "id": o.id,
+            "name": o.name,
+            "status": o.status,
+            "tier": o.tier,
+            "billing_email": o.billing_email,
+            "owner_name": (owner.name if owner else None),
+            "owner_email": (owner.email if owner else None),
+            "owner_phone": (owner.phone if owner else None),
+            "members": member_count,
+            "properties": property_count,
+            "has_stripe_customer": bool(o.stripe_customer_id),
+            "created_at": o.created_at.isoformat() if o.created_at else None,
+            "age_days": age_days,
+        })
+
+    return jsonify({"success": True, "count": len(out), "orgs": out}), 200
+
+
 @admin_bp.route("/waitlist", methods=["GET"])
 @require_admin
 def waitlist_leads(user_id):
