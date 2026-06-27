@@ -547,6 +547,7 @@ _PRICING_DASHBOARD_HTML = """<!DOCTYPE html>
 </div>
 <div class="wrap">
   <nav class="adminnav">
+    <a href="/api/admin/command-center-dashboard">Command Center</a>
     <a href="/api/admin/verification-dashboard">Verification</a>
     <a href="/api/admin/referral-dashboard">Referrals</a>
     <a href="/api/admin/pricing-dashboard" class="active">Pricing</a>
@@ -683,6 +684,7 @@ _REFERRAL_DASHBOARD_HTML = """<!DOCTYPE html>
 </div>
 <div class="wrap">
   <nav class="adminnav">
+    <a href="/api/admin/command-center-dashboard">Command Center</a>
     <a href="/api/admin/verification-dashboard">Verification</a>
     <a href="/api/admin/referral-dashboard" class="active">Referrals</a>
     <a href="/api/admin/pricing-dashboard">Pricing</a>
@@ -751,6 +753,135 @@ _REFERRAL_DASHBOARD_HTML = """<!DOCTYPE html>
     $('k_signed').textContent=s.signed_up;
     $('rows').innerHTML = d.referrals.length ? d.referrals.map(r=>'<tr><td>'+who(r.referrer)+'</td><td>'+who(r.referee)+'</td><td>'+tag(r.status)+'</td><td class="n">'+money(r.bonus_each)+'</td><td class="n">'+money(r.paid)+' / '+money(r.total_if_both)+'</td><td>'+fdate(r.completed_at)+'</td></tr>').join('') : '<tr><td colspan="6" style="text-align:center;color:#9a948b;padding:2rem">No referrals in this window yet.</td></tr>';
     $('meta').textContent='Window: '+d.window_days+' days · $'+d.bonus_per_hauler+' per hauler · '+s.total+' referrals · '+(s.transfers||0)+' transfers. Paid out = actual Stripe transfers (ledger); pending = earned but not yet sent.';
+  }
+  if(_tok()) load(); else _showLogin();
+</script>
+</div></body></html>"""
+
+
+# ===========================================================================
+# Command Center — one snapshot of the whole machine (supply, demand, outreach,
+# B2B, launch verdict, and what needs a human). Same design system as the rest.
+# ===========================================================================
+_COMMAND_CENTER_HTML = """<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Umuve — Command Center</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Outfit:wght@600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{--ink:#1a1a1a;--red:#C52222;--mut:#6b6b66;--line:#e8e5df;--bg:#FAF8F5}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'DM Sans',system-ui,sans-serif}
+  .wrap{max-width:1080px;margin:0 auto;padding:2.5rem 1.25rem 4rem}
+  h1{font-family:'Outfit',sans-serif;font-weight:800;font-size:1.9rem;letter-spacing:-.02em;margin:0}
+  .sub{color:var(--mut);margin:.25rem 0 1.5rem;font-size:.95rem}
+  button{font:inherit;font-weight:700;background:var(--red);color:#fff;border:0;border-radius:.55rem;padding:.55rem 1rem;cursor:pointer}
+  button:hover{background:#9E1B1B}
+  .adminnav{display:flex;gap:.4rem;margin-bottom:1.4rem;flex-wrap:wrap}
+  .adminnav a{font-size:.85rem;font-weight:700;color:#6b6b66;text-decoration:none;padding:.42rem .85rem;border-radius:999px;border:1px solid transparent}
+  .adminnav a:hover{background:#f3f0ea}
+  .adminnav a.active{background:#fff;border-color:#e8e5df;color:#1a1a1a;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+  .verdict{display:flex;align-items:center;gap:1rem;border-radius:1rem;padding:1.1rem 1.4rem;margin-bottom:1.4rem;color:#fff}
+  .verdict.GO{background:#1B7F44}.verdict.ALMOST{background:#B7791F}.verdict.NOGO{background:#B42318}
+  .verdict .vb{font-family:'Outfit',sans-serif;font-weight:900;font-size:1.6rem;letter-spacing:-.02em}
+  .verdict .vt{font-size:.95rem;opacity:.95}
+  .attn{background:#fff;border:1px solid var(--line);border-radius:1rem;padding:1rem 1.2rem;margin-bottom:1.6rem}
+  .attn h2{font-family:'Outfit',sans-serif;font-size:1rem;margin:0 0 .6rem}
+  .ai{display:flex;align-items:center;gap:.7rem;padding:.5rem 0;border-top:1px solid #f2efe9;font-size:.92rem}
+  .ai:first-of-type{border-top:0}
+  .dot{width:.6rem;height:.6rem;border-radius:50%;flex:0 0 auto}
+  .dot.high{background:#B42318}.dot.med{background:#B7791F}.dot.low{background:#9a948b}
+  .ai .act{margin-left:auto;color:var(--mut);font-size:.82rem}
+  .grp{margin:1.4rem 0 .6rem;font-family:'Outfit',sans-serif;font-weight:800;font-size:.78rem;letter-spacing:.1em;text-transform:uppercase;color:#9a948b}
+  .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:.9rem}
+  @media(max-width:760px){.cards{grid-template-columns:repeat(2,1fr)}}
+  .card{background:#fff;border:1px solid var(--line);border-radius:.9rem;padding:1rem 1.1rem}
+  .card .l{font-size:.7rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#9a948b}
+  .card .v{font-family:'Outfit',sans-serif;font-weight:800;font-size:1.6rem;margin-top:.25rem;letter-spacing:-.02em}
+  .card.hot .v{color:var(--red)}
+  .card .s{font-size:.75rem;color:var(--mut);margin-top:.15rem}
+  .funnel{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.4rem}
+  .pill{background:#f3f0ea;border-radius:999px;padding:.2rem .6rem;font-size:.75rem;color:#555}
+  .err{color:var(--red);font-size:.9rem}.muted{color:var(--mut);font-size:.82rem}
+</style></head><body>
+<div id="adminLogin" style="display:none;position:fixed;inset:0;background:#FAF8F5;z-index:100;align-items:center;justify-content:center">
+  <div style="background:#fff;border:1px solid #e8e5df;border-radius:1rem;padding:2rem;max-width:340px;width:90%;box-shadow:0 18px 40px rgba(0,0,0,.08)">
+    <h2 style="font-family:'Outfit',sans-serif;font-weight:800;margin:0 0 .25rem">Admin sign in</h2>
+    <p style="color:#6b6b66;font-size:.9rem;margin:0 0 1.2rem">Sign in with your Umuve admin email &amp; password.</p>
+    <input id="al-email" type="email" placeholder="Email" autocomplete="email" style="width:100%;border:1px solid #d6d2ca;border-radius:.55rem;padding:.6rem .7rem;margin-bottom:.6rem;font:inherit;box-sizing:border-box">
+    <input id="al-pass" type="password" placeholder="Password" autocomplete="current-password" onkeydown="if(event.key==='Enter')adminLogin()" style="width:100%;border:1px solid #d6d2ca;border-radius:.55rem;padding:.6rem .7rem;margin-bottom:.6rem;font:inherit;box-sizing:border-box">
+    <button onclick="adminLogin()" style="width:100%">Sign in</button>
+    <div id="al-err" style="color:#C52222;font-size:.85rem;margin-top:.6rem"></div>
+  </div>
+</div>
+<div class="wrap">
+  <nav class="adminnav">
+    <a href="/api/admin/command-center-dashboard" class="active">Command Center</a>
+    <a href="/api/admin/verification-dashboard">Verification</a>
+    <a href="/api/admin/referral-dashboard">Referrals</a>
+    <a href="/api/admin/pricing-dashboard">Pricing</a>
+  </nav>
+  <div style="display:flex;justify-content:space-between;align-items:baseline;gap:1rem;flex-wrap:wrap">
+    <div><h1>Command Center</h1><div class="sub">The whole machine at a glance. <span id="asof" class="muted"></span></div></div>
+    <button onclick="load()">Refresh</button>
+  </div>
+  <div id="err" class="err"></div>
+  <div id="out" style="display:none"></div>
+<script>
+  const $=id=>document.getElementById(id);
+  const TOKEN_KEY='umuve_admin_token';
+  function _tok(){ return localStorage.getItem(TOKEN_KEY)||''; }
+  function esc(s){ return (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+  function _showLogin(m){ document.getElementById('adminLogin').style.display='flex'; var o=$('out'); if(o)o.style.display='none'; if(m)$('al-err').textContent=m; }
+  function _hideLogin(){ document.getElementById('adminLogin').style.display='none'; }
+  async function adminLogin(){
+    var email=($('al-email').value||'').trim().toLowerCase(), pass=$('al-pass').value;
+    $('al-err').textContent='';
+    if(!email||!pass){ $('al-err').textContent='Enter email and password.'; return; }
+    try{ var r=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,password:pass})});
+      var b=await r.json().catch(()=>({})); if(r.ok&&b.token){ localStorage.setItem(TOKEN_KEY,b.token); _hideLogin(); load(); }
+      else $('al-err').textContent=(b&&b.error)||'Sign in failed.';
+    }catch(e){ $('al-err').textContent='Network error.'; }
+  }
+  const money=n=>'$'+(n||0).toLocaleString(undefined,{maximumFractionDigits:0});
+  function card(label,val,sub,hot){ return '<div class="card'+(hot?' hot':'')+'"><div class="l">'+label+'</div><div class="v">'+val+'</div>'+(sub?'<div class="s">'+sub+'</div>':'')+'</div>'; }
+  function funnel(obj,order){ const keys=order.filter(k=>obj[k]!=null); const rest=Object.keys(obj).filter(k=>!order.includes(k)); return '<div class="funnel">'+keys.concat(rest).map(k=>'<span class="pill">'+esc(k)+': <b>'+obj[k]+'</b></span>').join('')+'</div>'; }
+  async function load(){
+    $('err').textContent='';
+    try{
+      const r=await fetch('/api/admin/command-center',{headers:{Authorization:'Bearer '+_tok()}});
+      if(r.status===401){ _showLogin('Please sign in.'); return; }
+      if(r.status===403){ _showLogin('That account is not an admin.'); return; }
+      if(!r.ok){ $('err').textContent='Error '+r.status; return; }
+      _hideLogin(); render(await r.json());
+    }catch(e){ $('err').textContent='Request failed: '+e; }
+  }
+  function render(d){
+    $('out').style.display='block';
+    $('asof').textContent = d.as_of? ('Updated '+new Date(d.as_of).toLocaleString()) : '';
+    const vcls = d.verdict==='GO'?'GO':(d.verdict==='ALMOST'?'ALMOST':'NOGO');
+    const vtext = {GO:'A WPB booking will dispatch to an online operator.',ALMOST:'Config is good — get a truck online to flip to GO.','NO-GO':'Blocked — check dispatch config.'}[d.verdict]||'';
+    const s=d.supply, dm=d.demand;
+    const attn = (d.attention||[]).length ? d.attention.map(a=>'<div class="ai"><span class="dot '+a.level+'"></span><span>'+esc(a.what)+'</span><span class="act">'+esc(a.action)+'</span></div>').join('') : '<div class="ai"><span class="dot low"></span>Nothing needs you right now.</div>';
+    $('out').innerHTML =
+      '<div class="verdict '+vcls+'"><span class="vb">'+esc(d.verdict)+'</span><span class="vt">WPB launch — '+vtext+'</span></div>'+
+      '<div class="attn"><h2>Needs your attention</h2>'+attn+'</div>'+
+      '<div class="grp">Supply · operators</div><div class="cards">'+
+        card('Online in WPB', s.online_in_range_wpb, 'the launch gate', s.online_in_range_wpb===0)+
+        card('Online total', s.online)+
+        card('Approved', s.approved, s.approved_offline+' offline')+
+        card('Total operators', s.operators_total)+
+      '</div>'+
+      '<div class="grp">Demand · jobs &amp; revenue</div><div class="cards">'+
+        card('Revenue (7d)', money(dm.revenue_this_week), 'completed jobs')+
+        card('Jobs today', dm.jobs_today)+
+        card('Active now', dm.jobs_active, 'in progress')+
+        card('Waitlist', dm.waitlist_open, 'uncovered demand', dm.waitlist_open>0)+
+      '</div>'+
+      '<div class="grp">Hauler outreach funnel</div>'+funnel(d.outreach_haulers||{},['new','qualified','contacted','replied','converted'])+
+      '<div class="grp">B2B outreach funnel</div>'+funnel(d.outreach_b2b||{},['new','qualified','contacted','replied','converted'])+
+      '<div class="grp">B2B orgs</div>'+funnel(d.b2b_orgs||{},['trial','active','past_due','paused','churned']);
   }
   if(_tok()) load(); else _showLogin();
 </script>
@@ -832,6 +963,7 @@ _VERIFICATION_DASHBOARD_HTML = """<!DOCTYPE html>
 </div>
 <div class="wrap">
   <nav class="adminnav">
+    <a href="/api/admin/command-center-dashboard">Command Center</a>
     <a href="/api/admin/verification-dashboard" class="active">Verification</a>
     <a href="/api/admin/referral-dashboard">Referrals</a>
     <a href="/api/admin/pricing-dashboard">Pricing</a>
@@ -1559,6 +1691,124 @@ def waitlist_notify(user_id):
     return jsonify({"success": True, **result}), 200
 
 
+@admin_bp.route("/command-center", methods=["GET"])
+@require_admin
+def command_center(user_id):
+    """One aggregated snapshot of the whole machine — supply, demand, both
+    outreach funnels, B2B, the WPB launch verdict, and an 'attention' list of
+    what needs a human. Read-only."""
+    import os as _os
+    from datetime import timedelta as _td
+    from models import (Contractor, Job, AbandonedBooking, OperatorLead,
+                        B2BLead, Org)
+    import dispatcher
+
+    now = utcnow()
+    today0 = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    week_ago = now - _td(days=7)
+    WPB = (26.7153, -80.0534)
+    ACTIVE_JOB = ("pending", "assigned", "accepted", "en_route", "arrived", "started")
+
+    def _counts(model):
+        out = {}
+        for st, n in db.session.query(model.status, db.func.count(model.id)).group_by(model.status).all():
+            out[st or "none"] = n
+        return out
+
+    # --- Supply ---
+    contractors = Contractor.query.all()
+    approved = [c for c in contractors if c.approval_status == "approved"]
+    online = [c for c in approved if c.is_online]
+    online_in_range = 0
+    approved_offline = 0
+    for c in approved:
+        if not c.is_online:
+            approved_offline += 1
+        if c.current_lat is not None and c.current_lng is not None and c.is_online:
+            if dispatcher.haversine(WPB[0], WPB[1], float(c.current_lat), float(c.current_lng)) <= 30:
+                online_in_range += 1
+    docs = {}
+    for st, n in db.session.query(Contractor.documents_verification_status, db.func.count(Contractor.id)).group_by(Contractor.documents_verification_status).all():
+        docs[st or "not_checked"] = n
+    onboarding_review = Contractor.query.filter(
+        Contractor.onboarding_status.in_(["documents_submitted", "under_review"])
+    ).count()
+
+    # --- Demand (consumer) ---
+    jobs_today = Job.query.filter(Job.created_at >= today0).count()
+    jobs_week = Job.query.filter(Job.created_at >= week_ago).count()
+    jobs_active = Job.query.filter(Job.status.in_(ACTIVE_JOB)).count()
+    completed_week = Job.query.filter(Job.status == "completed", Job.completed_at >= week_ago).count()
+    revenue_week = db.session.query(db.func.coalesce(db.func.sum(Job.total_price), 0.0)).filter(
+        Job.status == "completed", Job.completed_at >= week_ago
+    ).scalar() or 0.0
+    waitlist_open = AbandonedBooking.query.filter(
+        AbandonedBooking.lead_source == "no_coverage_waitlist",
+        AbandonedBooking.converted.is_(False),
+        AbandonedBooking.waitlist_notified_at.is_(None),
+    ).count()
+
+    # --- Outreach funnels + B2B ---
+    hauler_funnel = _counts(OperatorLead)
+    b2b_funnel = _counts(B2BLead)
+    org_status = {}
+    for st, n in db.session.query(Org.status, db.func.count(Org.id)).group_by(Org.status).all():
+        org_status[st or "none"] = n
+
+    # --- Launch verdict (WPB) ---
+    dm = (_os.environ.get("DISPATCH_MODE") or dispatcher.DISPATCH_MODE or "").strip().lower()
+    if dm == "assign" and online_in_range >= 1:
+        verdict = "GO"
+    elif dm == "assign":
+        verdict = "ALMOST"
+    else:
+        verdict = "NO-GO"
+
+    # --- Attention list (what needs a human) ---
+    replied_leads = (OperatorLead.query.filter_by(status="replied").count()
+                     + B2BLead.query.filter_by(status="replied").count())
+    attention = []
+    if online_in_range == 0:
+        attention.append({"level": "high", "what": "No truck online in WPB — launch is blocked",
+                          "action": "Text an operator to Go Online"})
+    if approved_offline:
+        attention.append({"level": "high", "what": "{} approved operator(s) offline".format(approved_offline),
+                          "action": "Nudge them to Go Online"})
+    if docs.get("flagged"):
+        attention.append({"level": "med", "what": "{} document(s) flagged for review".format(docs["flagged"]),
+                          "action": "Review in Verification dashboard"})
+    if onboarding_review:
+        attention.append({"level": "med", "what": "{} onboarding submission(s) awaiting review".format(onboarding_review),
+                          "action": "Approve/reject in Verification"})
+    if replied_leads:
+        attention.append({"level": "med", "what": "{} outreach lead(s) replied".format(replied_leads),
+                          "action": "Follow up — they're warm"})
+    if waitlist_open:
+        attention.append({"level": "low", "what": "{} customer(s) on the no-coverage waitlist".format(waitlist_open),
+                          "action": "Auto-converts when a truck covers them"})
+
+    return jsonify({
+        "verdict": verdict,
+        "supply": {
+            "operators_total": len(contractors), "approved": len(approved),
+            "online": len(online), "online_in_range_wpb": online_in_range,
+            "approved_offline": approved_offline, "docs": docs,
+            "onboarding_awaiting_review": onboarding_review,
+        },
+        "demand": {
+            "jobs_today": jobs_today, "jobs_this_week": jobs_week,
+            "jobs_active": jobs_active, "completed_this_week": completed_week,
+            "revenue_this_week": round(float(revenue_week), 2),
+            "waitlist_open": waitlist_open,
+        },
+        "outreach_haulers": hauler_funnel,
+        "outreach_b2b": b2b_funnel,
+        "b2b_orgs": org_status,
+        "attention": attention,
+        "as_of": now.isoformat(),
+    }), 200
+
+
 @admin_bp.route("/launch-readiness", methods=["GET"])
 @require_admin
 def launch_readiness(user_id):
@@ -1667,6 +1917,14 @@ def verification_dashboard():
     data + actions are admin-gated (sign in once; token stored in-browser)."""
     from flask import Response
     return Response(_VERIFICATION_DASHBOARD_HTML, mimetype="text/html")
+
+
+@admin_bp.route("/command-center-dashboard", methods=["GET"])
+def command_center_dashboard():
+    """Self-contained ops command-center page (whole-machine snapshot). Public
+    page; the data call is admin-gated (sign in once; token stored in-browser)."""
+    from flask import Response
+    return Response(_COMMAND_CENTER_HTML, mimetype="text/html")
 
 
 @admin_bp.route("/analytics", methods=["GET"])
