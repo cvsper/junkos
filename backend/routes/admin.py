@@ -770,48 +770,139 @@ _COMMAND_CENTER_HTML = """<!DOCTYPE html>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Outfit:wght@600;700;800;900&display=swap" rel="stylesheet">
 <style>
-  :root{--ink:#1a1a1a;--red:#C52222;--mut:#6b6b66;--line:#e8e5df;--bg:#FAF8F5}
+  :root{
+    --bg:#F5F2EC; --card:#fff; --ink:#191714; --mut:#6E6A62; --faint:#A8A296;
+    --line:#E9E3D8; --red:#C52222; --red-d:#9E1B1B;
+    --ready:#1B7F44; --ready-bg:#E7F4EC; --hold:#B7791F; --hold-bg:#FBF1DF;
+    --stop:#C0362C; --stop-bg:#FBEAE7;
+    --r:16px; --shadow:0 1px 2px rgba(25,23,20,.04), 0 10px 30px -16px rgba(25,23,20,.14);
+  }
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--ink);font-family:'DM Sans',system-ui,sans-serif}
-  .wrap{max-width:1080px;margin:0 auto;padding:2.5rem 1.25rem 4rem}
-  h1{font-family:'Outfit',sans-serif;font-weight:800;font-size:1.9rem;letter-spacing:-.02em;margin:0}
-  .sub{color:var(--mut);margin:.25rem 0 1.5rem;font-size:.95rem}
-  button{font:inherit;font-weight:700;background:var(--red);color:#fff;border:0;border-radius:.55rem;padding:.55rem 1rem;cursor:pointer}
-  button:hover{background:#9E1B1B}
-  .adminnav{display:flex;gap:.4rem;margin-bottom:1.4rem;flex-wrap:wrap}
-  .adminnav a{font-size:.85rem;font-weight:700;color:#6b6b66;text-decoration:none;padding:.42rem .85rem;border-radius:999px;border:1px solid transparent}
-  .adminnav a:hover{background:#f3f0ea}
-  .adminnav a.active{background:#fff;border-color:#e8e5df;color:#1a1a1a;box-shadow:0 1px 2px rgba(0,0,0,.04)}
-  .verdict{display:flex;align-items:center;gap:1rem;border-radius:1rem;padding:1.1rem 1.4rem;margin-bottom:1.4rem;color:#fff}
-  .verdict.GO{background:#1B7F44}.verdict.ALMOST{background:#B7791F}.verdict.NOGO{background:#B42318}
-  .verdict .vb{font-family:'Outfit',sans-serif;font-weight:900;font-size:1.6rem;letter-spacing:-.02em}
-  .verdict .vt{font-size:.95rem;opacity:.95}
-  .attn{background:#fff;border:1px solid var(--line);border-radius:1rem;padding:1rem 1.2rem;margin-bottom:1.6rem}
-  .attn h2{font-family:'Outfit',sans-serif;font-size:1rem;margin:0 0 .6rem}
-  .ai{display:flex;align-items:center;gap:.7rem;padding:.5rem 0;border-top:1px solid #f2efe9;font-size:.92rem}
-  .ai:first-of-type{border-top:0}
-  .dot{width:.6rem;height:.6rem;border-radius:50%;flex:0 0 auto}
-  .dot.high{background:#B42318}.dot.med{background:#B7791F}.dot.low{background:#9a948b}
-  .ai .act{margin-left:auto;color:var(--mut);font-size:.82rem}
-  .grp{margin:1.4rem 0 .6rem;font-family:'Outfit',sans-serif;font-weight:800;font-size:.78rem;letter-spacing:.1em;text-transform:uppercase;color:#9a948b}
-  .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:.9rem}
-  @media(max-width:760px){.cards{grid-template-columns:repeat(2,1fr)}}
-  .card{background:#fff;border:1px solid var(--line);border-radius:.9rem;padding:1rem 1.1rem}
-  .card .l{font-size:.7rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#9a948b}
-  .card .v{font-family:'Outfit',sans-serif;font-weight:800;font-size:1.6rem;margin-top:.25rem;letter-spacing:-.02em}
-  .card.hot .v{color:var(--red)}
-  .card .s{font-size:.75rem;color:var(--mut);margin-top:.15rem}
-  .funnel{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.4rem}
-  .pill{background:#f3f0ea;border-radius:999px;padding:.2rem .6rem;font-size:.75rem;color:#555}
-  .err{color:var(--red);font-size:.9rem}.muted{color:var(--mut);font-size:.82rem}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'DM Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1020px;margin:0 auto;padding:2rem 1.25rem 4rem}
+  .num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+  a{color:inherit}
+  button{font:inherit;cursor:pointer}
+  :focus-visible{outline:2px solid var(--red);outline-offset:2px;border-radius:6px}
+
+  /* nav */
+  .adminnav{display:flex;gap:.4rem;margin-bottom:1.5rem;flex-wrap:wrap}
+  .adminnav a{font-size:.85rem;font-weight:700;color:var(--mut);text-decoration:none;padding:.42rem .85rem;border-radius:999px;border:1px solid transparent}
+  .adminnav a:hover{background:#EDE8DF}
+  .adminnav a.active{background:#fff;border-color:var(--line);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.04)}
+
+  /* status line */
+  .status{display:flex;align-items:center;gap:.55rem;margin-bottom:1.1rem;font-size:.9rem;color:var(--mut)}
+  .live{width:.55rem;height:.55rem;border-radius:50%;background:var(--faint);flex:0 0 auto}
+  .live.ready{background:var(--ready)} .live.hold{background:var(--hold)} .live.stop{background:var(--stop)}
+  .status .sp{margin-left:auto;display:flex;align-items:center;gap:.8rem}
+  .refresh{background:transparent;border:1px solid var(--line);border-radius:999px;padding:.35rem .8rem;color:var(--ink);font-weight:600;font-size:.82rem}
+  .refresh:hover{background:#fff}
+
+  /* hero / dispatch */
+  .hero{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:1.6rem 1.7rem;position:relative;overflow:hidden}
+  .hero::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px}
+  .hero.ready::before{background:var(--ready)} .hero.hold::before{background:var(--hold)} .hero.stop::before{background:var(--stop)}
+  .eyebrow{font-size:.72rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--faint)}
+  .word{font-family:'Outfit',sans-serif;font-weight:900;font-size:2.6rem;line-height:1.02;letter-spacing:-.03em;margin:.15rem 0 .25rem}
+  .ready .word{color:var(--ready)} .hold .word{color:var(--hold)} .stop .word{color:var(--stop)}
+  .say{font-size:1.02rem;color:var(--ink);max-width:46ch}
+
+  /* the dispatch link — the signature */
+  .link{display:flex;align-items:center;gap:.7rem;margin:1.5rem 0 .2rem;max-width:560px}
+  .node{flex:0 0 auto;min-width:118px;text-align:center;background:#FBFAF7;border:1px solid var(--line);border-radius:12px;padding:.7rem .6rem}
+  .node .n{font-family:'Outfit',sans-serif;font-weight:800;font-size:1.5rem;letter-spacing:-.02em}
+  .node .nl{font-size:.7rem;color:var(--mut);text-transform:uppercase;letter-spacing:.06em;margin-top:.15rem}
+  .wire{flex:1;height:2px;border-radius:2px;min-width:18px}
+  .clasp{flex:0 0 auto;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.85rem;position:relative}
+  /* matched */
+  .link.matched .wire{background:var(--ready)}
+  .link.matched .clasp{background:var(--ready);color:#fff}
+  .link.matched .node{border-color:#CDE7D6}
+  /* severed */
+  .link.severed .wire{background:repeating-linear-gradient(90deg,var(--stop) 0 5px,transparent 5px 10px);opacity:.55}
+  .link.severed .clasp{background:var(--stop-bg);color:var(--stop);border:1.5px solid var(--stop)}
+  .link.severed .node.supply{border-color:#E7C6C1}
+
+  .move{display:inline-flex;align-items:center;gap:.5rem;margin-top:1.2rem;font-weight:700;font-size:.98rem;text-decoration:none}
+  .move .tag{font-size:.66rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#fff;background:var(--red);padding:.2rem .5rem;border-radius:999px}
+  .move.go .tag{background:var(--ready)}
+  .move .arr{color:var(--red);transition:transform .15s ease}
+  a.move:hover .arr{transform:translateX(3px)}
+
+  /* section heads */
+  .head{font-family:'Outfit',sans-serif;font-weight:800;font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin:2rem 0 .7rem}
+
+  /* action feed */
+  .feed{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden}
+  .frow{display:flex;align-items:center;gap:.8rem;padding:.85rem 1.1rem;border-top:1px solid var(--line);font-size:.94rem}
+  .frow:first-child{border-top:0}
+  .frow .sev{width:.6rem;height:.6rem;border-radius:50%;flex:0 0 auto}
+  .sev.high{background:var(--stop)} .sev.med{background:var(--hold)} .sev.low{background:var(--faint)}
+  .frow .do{margin-left:auto;font-size:.82rem;font-weight:700;color:var(--red);white-space:nowrap;text-decoration:none;display:inline-flex;align-items:center;gap:.3rem}
+  a.do:hover{text-decoration:underline}
+  .frow.clear{color:var(--mut);font-style:normal}
+  .frow.clear .sev{background:var(--ready)}
+
+  /* marketplace sides */
+  .sides{display:grid;grid-template-columns:1fr 1px 1fr;gap:1.2rem;align-items:start}
+  .rule{background:var(--line);align-self:stretch}
+  .sidehead{font-family:'Outfit',sans-serif;font-weight:800;font-size:.95rem;margin-bottom:.7rem;display:flex;align-items:center;gap:.5rem}
+  .sidehead .d{width:.5rem;height:.5rem;border-radius:50%}
+  .sidehead.sup .d{background:var(--ink)} .sidehead.dem .d{background:var(--red)}
+  .cards{display:grid;grid-template-columns:1fr 1fr;gap:.7rem}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:.85rem .95rem;transition:transform .12s ease,box-shadow .12s ease}
+  .card:hover{transform:translateY(-1px);box-shadow:var(--shadow)}
+  .card .cl{font-size:.7rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--faint)}
+  .card .cv{font-family:'Outfit',sans-serif;font-weight:800;font-size:1.55rem;letter-spacing:-.02em;margin-top:.2rem}
+  .card .cs{font-size:.74rem;color:var(--mut);margin-top:.1rem}
+  .card.gate{background:linear-gradient(180deg,#fff,#FBFAF7)}
+  .card.gate.zero{border-color:#E7C6C1;background:linear-gradient(180deg,#fff,var(--stop-bg))}
+  .card.gate.zero .cv{color:var(--stop)}
+  .card.gate.ok .cv{color:var(--ready)}
+  .card.hot .cv{color:var(--red)}
+
+  /* pipeline funnels */
+  .pipe{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:1.1rem 1.2rem}
+  .flow{display:flex;align-items:center;flex-wrap:wrap;gap:.1rem;padding:.55rem 0;border-top:1px solid var(--line)}
+  .flow:first-of-type{border-top:0}
+  .flow .fname{font-weight:700;font-size:.84rem;width:88px;flex:0 0 auto;color:var(--ink)}
+  .stage{display:inline-flex;align-items:baseline;gap:.3rem;padding:.1rem .15rem}
+  .stage .sc{font-family:'Outfit',sans-serif;font-weight:800;font-size:.98rem}
+  .stage .sl{font-size:.74rem;color:var(--mut)}
+  .stage.warm .sc{color:var(--red)}
+  .sep{color:var(--faint);font-size:.85rem;padding:0 .35rem}
+  .accts{font-size:.86rem;color:var(--mut);margin-top:.1rem}
+  .accts b{color:var(--ink);font-variant-numeric:tabular-nums}
+
+  .err{color:var(--red);font-size:.92rem;margin:.5rem 0}
+  .muted{color:var(--mut);font-size:.82rem}
+
+  @media (max-width:680px){
+    .word{font-size:2.1rem}
+    .sides{grid-template-columns:1fr;gap:.4rem}
+    .rule{display:none}
+    .sidehead{margin-top:1rem}
+    .link{flex-wrap:nowrap}
+    .node{min-width:96px}
+    .flow .fname{width:100%}
+  }
+  /* one orchestrated load + the living clasp; fully off for reduced-motion */
+  @media (prefers-reduced-motion: no-preference){
+    .reveal{opacity:0;transform:translateY(8px);animation:rise .55s cubic-bezier(.2,.7,.2,1) forwards}
+    .reveal.d1{animation-delay:.04s}.reveal.d2{animation-delay:.12s}.reveal.d3{animation-delay:.2s}.reveal.d4{animation-delay:.28s}
+    @keyframes rise{to{opacity:1;transform:none}}
+    .link.matched .clasp::after{content:"";position:absolute;inset:-5px;border-radius:50%;border:2px solid var(--ready);opacity:.6;animation:beat 2.4s ease-out infinite}
+    @keyframes beat{0%{transform:scale(.8);opacity:.55}70%{transform:scale(1.5);opacity:0}100%{opacity:0}}
+  }
 </style></head><body>
-<div id="adminLogin" style="display:none;position:fixed;inset:0;background:#FAF8F5;z-index:100;align-items:center;justify-content:center">
-  <div style="background:#fff;border:1px solid #e8e5df;border-radius:1rem;padding:2rem;max-width:340px;width:90%;box-shadow:0 18px 40px rgba(0,0,0,.08)">
-    <h2 style="font-family:'Outfit',sans-serif;font-weight:800;margin:0 0 .25rem">Admin sign in</h2>
-    <p style="color:#6b6b66;font-size:.9rem;margin:0 0 1.2rem">Sign in with your Umuve admin email &amp; password.</p>
+<div id="adminLogin" style="display:none;position:fixed;inset:0;background:#F5F2EC;z-index:100;align-items:center;justify-content:center">
+  <div style="background:#fff;border:1px solid #E9E3D8;border-radius:1rem;padding:2rem;max-width:340px;width:90%;box-shadow:0 18px 40px rgba(0,0,0,.08)">
+    <h2 style="font-family:'Outfit',sans-serif;font-weight:800;margin:0 0 .25rem">Sign in</h2>
+    <p style="color:#6E6A62;font-size:.9rem;margin:0 0 1.2rem">Use your Umuve admin email and password.</p>
     <input id="al-email" type="email" placeholder="Email" autocomplete="email" style="width:100%;border:1px solid #d6d2ca;border-radius:.55rem;padding:.6rem .7rem;margin-bottom:.6rem;font:inherit;box-sizing:border-box">
     <input id="al-pass" type="password" placeholder="Password" autocomplete="current-password" onkeydown="if(event.key==='Enter')adminLogin()" style="width:100%;border:1px solid #d6d2ca;border-radius:.55rem;padding:.6rem .7rem;margin-bottom:.6rem;font:inherit;box-sizing:border-box">
-    <button onclick="adminLogin()" style="width:100%">Sign in</button>
+    <button onclick="adminLogin()" style="width:100%;background:#C52222;color:#fff;border:0;border-radius:.55rem;padding:.65rem;font:inherit;font-weight:700">Sign in</button>
     <div id="al-err" style="color:#C52222;font-size:.85rem;margin-top:.6rem"></div>
   </div>
 </div>
@@ -822,9 +913,9 @@ _COMMAND_CENTER_HTML = """<!DOCTYPE html>
     <a href="/api/admin/referral-dashboard">Referrals</a>
     <a href="/api/admin/pricing-dashboard">Pricing</a>
   </nav>
-  <div style="display:flex;justify-content:space-between;align-items:baseline;gap:1rem;flex-wrap:wrap">
-    <div><h1>Command Center</h1><div class="sub">The whole machine at a glance. <span id="asof" class="muted"></span></div></div>
-    <button onclick="load()">Refresh</button>
+  <div class="status">
+    <span id="live" class="live"></span><span>Umuve dispatch</span>
+    <span class="sp"><span id="asof" class="muted"></span><button class="refresh" onclick="load()">Refresh</button></span>
   </div>
   <div id="err" class="err"></div>
   <div id="out" style="display:none"></div>
@@ -838,50 +929,125 @@ _COMMAND_CENTER_HTML = """<!DOCTYPE html>
   async function adminLogin(){
     var email=($('al-email').value||'').trim().toLowerCase(), pass=$('al-pass').value;
     $('al-err').textContent='';
-    if(!email||!pass){ $('al-err').textContent='Enter email and password.'; return; }
+    if(!email||!pass){ $('al-err').textContent='Enter your email and password.'; return; }
     try{ var r=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,password:pass})});
       var b=await r.json().catch(()=>({})); if(r.ok&&b.token){ localStorage.setItem(TOKEN_KEY,b.token); _hideLogin(); load(); }
-      else $('al-err').textContent=(b&&b.error)||'Sign in failed.';
-    }catch(e){ $('al-err').textContent='Network error.'; }
+      else $('al-err').textContent=(b&&b.error)||'That sign-in did not work.';
+    }catch(e){ $('al-err').textContent='Network error. Try again.'; }
   }
   const money=n=>'$'+(n||0).toLocaleString(undefined,{maximumFractionDigits:0});
-  function card(label,val,sub,hot){ return '<div class="card'+(hot?' hot':'')+'"><div class="l">'+label+'</div><div class="v">'+val+'</div>'+(sub?'<div class="s">'+sub+'</div>':'')+'</div>'; }
-  function funnel(obj,order){ const keys=order.filter(k=>obj[k]!=null); const rest=Object.keys(obj).filter(k=>!order.includes(k)); return '<div class="funnel">'+keys.concat(rest).map(k=>'<span class="pill">'+esc(k)+': <b>'+obj[k]+'</b></span>').join('')+'</div>'; }
+  let _first=true; function rv(n){ return _first?(' reveal d'+n):''; }
+  const VMAP={
+    'GO':{cls:'ready',word:'Ready',say:'A West Palm booking will reach an online truck right now.'},
+    'ALMOST':{cls:'hold',word:'Almost',say:'Everything is set. One truck needs to go online to start dispatching.'},
+    'NO-GO':{cls:'stop',word:'Blocked',say:'Dispatch is off. Check the mode, or get a truck online.'}
+  };
+  function vchip(v){ return VMAP[v]||VMAP['NO-GO']; }
+  function card(label,val,sub,cls){ return '<div class="card '+(cls||'')+'"><div class="cl">'+label+'</div><div class="cv num">'+val+'</div>'+(sub?'<div class="cs">'+sub+'</div>':'')+'</div>'; }
+  function flow(name,obj,order,labels){
+    const keys=order.filter(k=>obj[k]!=null);
+    const rest=Object.keys(obj).filter(k=>!order.includes(k)&&k!=='none');
+    const all=keys.concat(rest);
+    const seg=all.map((k,i)=>{
+      const warm=(k==='replied'||k==='converted')&&obj[k]>0;
+      return (i?'<span class="sep">›</span>':'')+'<span class="stage'+(warm?' warm':'')+'"><span class="sc num">'+obj[k]+'</span><span class="sl">'+esc(labels[k]||k)+'</span></span>';
+    }).join('');
+    return '<div class="flow"><span class="fname">'+name+'</span>'+(all.length?seg:'<span class="muted">no leads yet</span>')+'</div>';
+  }
+  function actionHref(what){ return /document|onboarding|verif/i.test(what)?'/api/admin/verification-dashboard':null; }
+
   async function load(){
     $('err').textContent='';
     try{
       const r=await fetch('/api/admin/command-center',{headers:{Authorization:'Bearer '+_tok()}});
       if(r.status===401){ _showLogin('Please sign in.'); return; }
       if(r.status===403){ _showLogin('That account is not an admin.'); return; }
-      if(!r.ok){ $('err').textContent='Error '+r.status; return; }
+      if(!r.ok){ $('err').textContent='Could not load ('+r.status+'). Try Refresh.'; return; }
       _hideLogin(); render(await r.json());
-    }catch(e){ $('err').textContent='Request failed: '+e; }
+    }catch(e){ $('err').textContent='Request failed. Check your connection and Refresh.'; }
   }
+
   function render(d){
     $('out').style.display='block';
-    $('asof').textContent = d.as_of? ('Updated '+new Date(d.as_of).toLocaleString()) : '';
-    const vcls = d.verdict==='GO'?'GO':(d.verdict==='ALMOST'?'ALMOST':'NOGO');
-    const vtext = {GO:'A WPB booking will dispatch to an online operator.',ALMOST:'Config is good — get a truck online to flip to GO.','NO-GO':'Blocked — check dispatch config.'}[d.verdict]||'';
-    const s=d.supply, dm=d.demand;
-    const attn = (d.attention||[]).length ? d.attention.map(a=>'<div class="ai"><span class="dot '+a.level+'"></span><span>'+esc(a.what)+'</span><span class="act">'+esc(a.action)+'</span></div>').join('') : '<div class="ai"><span class="dot low"></span>Nothing needs you right now.</div>';
-    $('out').innerHTML =
-      '<div class="verdict '+vcls+'"><span class="vb">'+esc(d.verdict)+'</span><span class="vt">WPB launch — '+vtext+'</span></div>'+
-      '<div class="attn"><h2>Needs your attention</h2>'+attn+'</div>'+
-      '<div class="grp">Supply · operators</div><div class="cards">'+
-        card('Online in WPB', s.online_in_range_wpb, 'the launch gate', s.online_in_range_wpb===0)+
-        card('Online total', s.online)+
-        card('Approved', s.approved, s.approved_offline+' offline')+
-        card('Total operators', s.operators_total)+
-      '</div>'+
-      '<div class="grp">Demand · jobs &amp; revenue</div><div class="cards">'+
-        card('Revenue (7d)', money(dm.revenue_this_week), 'completed jobs')+
-        card('Jobs today', dm.jobs_today)+
-        card('Active now', dm.jobs_active, 'in progress')+
-        card('Waitlist', dm.waitlist_open, 'uncovered demand', dm.waitlist_open>0)+
-      '</div>'+
-      '<div class="grp">Hauler outreach funnel</div>'+funnel(d.outreach_haulers||{},['new','qualified','contacted','replied','converted'])+
-      '<div class="grp">B2B outreach funnel</div>'+funnel(d.outreach_b2b||{},['new','qualified','contacted','replied','converted'])+
-      '<div class="grp">B2B orgs</div>'+funnel(d.b2b_orgs||{},['trial','active','past_due','paused','churned']);
+    const v=vchip(d.verdict), s=d.supply||{}, dm=d.demand||{};
+    $('live').className='live '+v.cls;
+    $('asof').textContent = d.as_of ? ('Updated '+new Date(d.as_of).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})) : '';
+
+    const trucks = s.online_in_range_wpb||0;
+    const matched = trucks>=1;
+    const demandLabel = dm.waitlist_open>0 ? (dm.waitlist_open+' waiting')
+                       : dm.jobs_active>0 ? (dm.jobs_active+' active')
+                       : 'open';
+    const demandNum = dm.waitlist_open>0 ? dm.waitlist_open : (dm.jobs_active||0);
+
+    // the one move: first high item, else next step
+    const att=(d.attention||[]);
+    const top=att.find(a=>a.level==='high')||att[0];
+    let moveHtml='';
+    if(d.verdict==='GO'){
+      moveHtml='<span class="move go"><span class="tag">Next</span> Turn on the West Palm ads ($25/day)</span>';
+    } else if(top){
+      const href=actionHref(top.what);
+      const inner='<span class="tag">Do this</span> '+esc(top.action)+(href?'<span class="arr">→</span>':'');
+      moveHtml = href? ('<a class="move" href="'+href+'">'+inner+'</a>') : ('<span class="move">'+inner+'</span>');
+    }
+
+    const link=
+      '<div class="link '+(matched?'matched':'severed')+'">'+
+        '<div class="node supply"><div class="n num">'+trucks+'</div><div class="nl">trucks · WPB</div></div>'+
+        '<span class="wire"></span><span class="clasp">'+(matched?'✓':'✕')+'</span><span class="wire"></span>'+
+        '<div class="node demand"><div class="n num">'+demandNum+'</div><div class="nl">'+esc(demandLabel)+'</div></div>'+
+      '</div>';
+
+    const hero=
+      '<div class="hero '+v.cls+rv(1)+'">'+
+        '<div class="eyebrow">West Palm Beach · dispatch</div>'+
+        '<div class="word">'+v.word+'</div>'+
+        '<div class="say">'+v.say+'</div>'+
+        link+ moveHtml +
+      '</div>';
+
+    const feedRows = att.length ? att.map(a=>{
+      const href=actionHref(a.what);
+      const doEl = href? ('<a class="do" href="'+href+'">'+esc(a.action)+' →</a>') : ('<span class="do">'+esc(a.action)+'</span>');
+      return '<div class="frow"><span class="sev '+esc(a.level)+'"></span><span>'+esc(a.what)+'</span>'+doEl+'</div>';
+    }).join('') : '<div class="frow clear"><span class="sev"></span>You’re clear. Nothing needs you right now.</div>';
+    const feed='<div class="head">Do this now</div><div class="feed'+rv(2)+'">'+feedRows+'</div>';
+
+    const docflag=(s.docs&&s.docs.flagged)||0;
+    const supplyCards='<div class="cards">'+
+      card('Online in WPB', trucks, 'the launch gate', 'gate '+(trucks>0?'ok':'zero'))+
+      card('Online anywhere', s.online||0)+
+      card('Approved', s.approved||0, (s.approved_offline||0)+' offline now')+
+      card('Operators', s.operators_total||0, docflag?(docflag+' docs flagged'):null, docflag?'hot':'')+
+    '</div>';
+    const demandCards='<div class="cards">'+
+      card('Revenue · 7 days', money(dm.revenue_this_week), 'completed jobs')+
+      card('Jobs today', dm.jobs_today||0)+
+      card('Working now', dm.jobs_active||0, 'in progress')+
+      card('Waitlist', dm.waitlist_open||0, 'uncovered demand', (dm.waitlist_open||0)>0?'hot':'')+
+    '</div>';
+    const sides=
+      '<div class="head">The marketplace</div>'+
+      '<div class="sides'+rv(3)+'">'+
+        '<div><div class="sidehead sup"><span class="d"></span>Supply · trucks</div>'+supplyCards+'</div>'+
+        '<div class="rule"></div>'+
+        '<div><div class="sidehead dem"><span class="d"></span>Demand · hauls</div>'+demandCards+'</div>'+
+      '</div>';
+
+    const L={new:'new',qualified:'qualified',contacted:'sent',replied:'replied',converted:'won',skipped:'skipped',unsubscribed:'opted out',bounced:'bounced',interested:'interested',dead:'dead'};
+    const orgs=d.b2b_orgs||{};
+    const orgLine=['trial','active','past_due','paused','churned'].filter(k=>orgs[k]!=null)
+      .map(k=>esc(k.replace('_',' '))+' <b>'+orgs[k]+'</b>').join(' · ') || 'no accounts yet';
+    const pipe=
+      '<div class="head">Pipeline</div><div class="pipe'+rv(4)+'">'+
+        flow('Haulers', d.outreach_haulers||{}, ['new','qualified','contacted','replied','converted'], L)+
+        flow('Business', d.outreach_b2b||{}, ['new','qualified','contacted','replied','converted'], L)+
+        '<div class="flow"><span class="fname">Accounts</span><span class="accts">'+orgLine+'</span></div>'+
+      '</div>';
+
+    $('out').innerHTML = hero + feed + sides + pipe;
+    _first=false;
   }
   if(_tok()) load(); else _showLogin();
 </script>
