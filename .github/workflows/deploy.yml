@@ -20,8 +20,10 @@
 name: Deploy
 
 on:
-  push:
-    branches: [main]
+  # Manual-only — Vercel deploys the platform from git and Render auto-deploys
+  # the backend from git, so this Actions deploy is redundant. Kept for manual
+  # runs (Actions tab) if you ever need a CLI-driven Vercel deploy.
+  workflow_dispatch:
 
 # Only allow one deploy at a time; cancel older runs
 concurrency:

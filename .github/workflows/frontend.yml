@@ -13,10 +13,7 @@
 name: Frontend Build
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'platform/**'
+  # PR-only to conserve Actions minutes; Vercel deploys from git separately.
   pull_request:
     branches: [main]
     paths:

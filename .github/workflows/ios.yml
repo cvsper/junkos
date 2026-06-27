@@ -15,11 +15,7 @@
 name: iOS Build Check
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'JunkOS-Clean/**'
-      - 'JunkOS-Driver/**'
+  # PR-only to conserve Actions minutes (macOS runners are especially costly).
   pull_request:
     branches: [main]
     paths:

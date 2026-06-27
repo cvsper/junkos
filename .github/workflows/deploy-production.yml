@@ -1,8 +1,8 @@
 name: Deploy to Production
 
 on:
-  push:
-    branches: [main]
+  # Manual-only — Render/Vercel deploy from git. This ghcr container pipeline
+  # is opt-in; trigger it from the Actions tab when you actually want it.
   workflow_dispatch:
     inputs:
       skip_approval:

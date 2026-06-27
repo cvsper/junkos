@@ -1,8 +1,7 @@
 name: Umuve Test Suite
 
 on:
-  push:
-    branches: [ main, develop ]
+  # PR-only to conserve Actions minutes; Render/Vercel deploy from git separately.
   pull_request:
     branches: [ main, develop ]
 

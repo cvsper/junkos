@@ -11,10 +11,7 @@
 name: Backend Tests
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'backend/**'
+  # PR-only to conserve Actions minutes; Render deploys from git separately.
   pull_request:
     branches: [main]
     paths:

@@ -1,8 +1,7 @@
 name: Deploy to Staging
 
 on:
-  push:
-    branches: [develop]
+  # Manual-only — opt-in staging deploy (Render/Vercel handle real deploys).
   workflow_dispatch:
     inputs:
       skip_tests:

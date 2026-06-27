@@ -1,10 +1,10 @@
 name: CI
 
 on:
-  pull_request:
-    branches: [main, develop]
-  push:
-    branches: [main, develop]
+  # Manual-only — this pipeline builds/pushes Docker images, which Render/Vercel
+  # don't need (they deploy from git). Run it by hand from the Actions tab when
+  # you actually want a container build.
+  workflow_dispatch:
 
 env:
   PYTHON_VERSION: '3.11'
