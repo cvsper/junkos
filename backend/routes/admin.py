@@ -1483,6 +1483,34 @@ def list_orgs(user_id):
     return jsonify({"success": True, "count": len(out), "orgs": out}), 200
 
 
+@admin_bp.route("/orgs/<org_id>", methods=["DELETE"])
+@require_admin
+def delete_org(user_id, org_id):
+    """Delete a B2B org by explicit ID (cascades to its members/properties/
+    invoices). SAFETY: refuses any org that has a Stripe customer or
+    subscription attached — those must be cancelled in Stripe first, so a real
+    billed account can never be deleted by accident. Returns what was removed."""
+    from models import Org
+
+    org = db.session.get(Org, org_id)
+    if not org:
+        return jsonify({"error": "Org not found"}), 404
+
+    if org.stripe_customer_id or org.stripe_subscription_id:
+        return jsonify({
+            "error": "Refusing to delete — this org has Stripe billing attached. "
+                     "Cancel/delete it in Stripe first.",
+            "org": {"id": org.id, "name": org.name, "status": org.status,
+                    "stripe_customer_id": org.stripe_customer_id},
+        }), 409
+
+    removed = {"id": org.id, "name": org.name, "billing_email": org.billing_email,
+               "status": org.status}
+    db.session.delete(org)
+    db.session.commit()
+    return jsonify({"success": True, "deleted": removed}), 200
+
+
 @admin_bp.route("/waitlist", methods=["GET"])
 @require_admin
 def waitlist_leads(user_id):
