@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- iOS Smart App Banner: opens the Umuve app if installed, else the App Store -->
+    <meta name="apple-itunes-app" content="app-id=6759219031, app-argument=https://app.goumuve.com/book">
     <meta name="google-site-verification" content="OBQ-akddiwiY2euWG1G0PemigFFzMocMoqMPTwPLI7o" />
     <meta name="facebook-domain-verification" content="wflpf0laoe6l4p2hy2gbuhaneqs9fv" />
 
@@ -313,6 +315,27 @@
         }
         .btn{display:inline-flex;align-items:center;justify-content:center;border-radius:.5rem;font-weight:700;text-decoration:none;transition:transform .2s ease;cursor:pointer;border:none}
         .btn-primary{background:var(--color-accent);color:#fff}.btn-xl{padding:1.25rem 2.5rem;font-size:1.1rem}
+        /* Get the Umuve app */
+        .us-app{position:relative;overflow:hidden;background:linear-gradient(180deg,#fff,#FFF8F7)}
+        .us-app-inner{max-width:1120px;margin:0 auto;display:grid;grid-template-columns:1.02fr .98fr;gap:clamp(2rem,6vw,4.5rem);align-items:center}
+        @media(max-width:880px){.us-app-inner{grid-template-columns:1fr;text-align:center}}
+        .us-app-copy .us-h2{margin:.85rem 0 .8rem}
+        .us-app-copy .us-sub{max-width:42ch}
+        @media(max-width:880px){.us-app-copy .us-sub{margin-left:auto;margin-right:auto}}
+        .us-app-list{list-style:none;margin:1.5rem 0 0;padding:0;display:grid;gap:.65rem}
+        @media(max-width:880px){.us-app-list{display:inline-grid;text-align:left}}
+        .us-app-list li{display:flex;gap:.55rem;font-family:var(--font-body);font-size:1rem;color:#3a3a38}
+        .us-app-list .ck{color:#C52222;font-weight:800;flex:none}
+        .us-app-cta{display:flex;flex-wrap:wrap;gap:.8rem;margin-top:1.8rem}
+        @media(max-width:880px){.us-app-cta{justify-content:center}}
+        .us-app-note{font-family:var(--font-body);font-size:.86rem;color:#8a857c;margin:1.1rem 0 0}
+        @media(max-width:880px){.us-app-note{text-align:center}}
+        .app-stage{position:relative;display:flex;justify-content:center}
+        .app-stage::before{content:"";position:absolute;width:80%;height:80%;top:7%;left:10%;background:radial-gradient(circle at 50% 42%,rgba(197,34,34,.22),transparent 66%);filter:blur(16px);z-index:0}
+        .app-phone{position:relative;z-index:1;width:min(284px,68vw)}
+        .app-phone .bezel{background:#111;border-radius:46px;padding:.5rem;box-shadow:0 46px 84px -34px rgba(26,26,26,.55),0 8px 22px -12px rgba(26,26,26,.25)}
+        .app-phone .bezel img{display:block;width:100%;height:auto!important;border-radius:38px}
+        .app-phone .home{position:absolute;bottom:.55rem;left:50%;transform:translateX(-50%);width:32%;height:5px;border-radius:5px;background:rgba(255,255,255,.55);z-index:2}
     </style>
 
     <!-- Async Stylesheet -->
@@ -490,21 +513,12 @@
                 </div>
             </div>
 
-            <!-- Signature: the instant-price quote card -->
+            <!-- Signature: the real app, in your hand -->
             <div class="uh-card-wrap">
-                <div class="uh-card" role="img" aria-label="Example instant quote: a sofa, queen mattress and 12 boxes for a binding price of $128, arriving today">
-                    <div class="uh-card-head">
-                        <span class="t">Your quote</span>
-                        <span class="uh-cam">&#128247; 1 photo</span>
+                <div class="app-stage uh-anim d3">
+                    <div class="app-phone">
+                        <div class="bezel"><img src="images/app-book.png" width="430" height="830" decoding="async" alt="The Umuve app — book a same-day junk pickup in South Florida with the price up front"></div>
                     </div>
-                    <div class="uh-row"><span class="it"><span class="ic">&#128715;</span>Sofa</span><span class="pr">$89</span></div>
-                    <div class="uh-row"><span class="it"><span class="ic">&#128719;</span>Queen mattress</span><span class="pr">$39</span></div>
-                    <div class="uh-row"><span class="it"><span class="ic">&#128230;</span>12 moving boxes</span><span class="pr">incl.</span></div>
-                    <div class="uh-div"></div>
-                    <div class="uh-plbl">Total</div>
-                    <div class="uh-price"><span>$</span>128</div>
-                    <span class="uh-chip">&#10003; Binding price &mdash; locked in</span>
-                    <div class="uh-eta">&#128336; Arrives today, 2&ndash;4 PM</div>
                 </div>
             </div>
         </div>
