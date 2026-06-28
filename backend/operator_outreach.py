@@ -104,7 +104,16 @@ def source_from_places(cfg, db, OperatorLead, max_new=40):
                     params={"query": "{} in {}".format(query, zip_code), "key": cfg["places_key"]},
                     timeout=15,
                 )
-                results = (r.json() or {}).get("results", [])
+                data = r.json() or {}
+                status = data.get("status")
+                # A denied/over-quota/legacy-not-enabled key returns HTTP 200 with
+                # empty results — surface WHY instead of silently sourcing 0.
+                if status and status not in ("OK", "ZERO_RESULTS"):
+                    cfg["_places_status"] = status
+                    cfg["_places_error"] = data.get("error_message")
+                    logger.error("Places API %s for '%s'/%s: %s",
+                                 status, query, zip_code, data.get("error_message"))
+                results = data.get("results", [])
             except Exception:
                 logger.warning("places search failed for %s/%s", query, zip_code)
                 continue
@@ -295,6 +304,9 @@ def run_outreach_cycle(app, force_dry=False):
                   "dry_run": not can_send}
         try:
             report["sourced"] = source_from_places(cfg, db, OperatorLead, max_new=cfg["daily_cap"] * 2)
+            if cfg.get("_places_status"):
+                report["places_status"] = cfg["_places_status"]
+                report["places_error"] = cfg.get("_places_error")
             report["enriched"] = enrich_emails(db, OperatorLead, limit=cfg["daily_cap"] * 2)
             report["qualified"] = qualify(db, OperatorLead)
 

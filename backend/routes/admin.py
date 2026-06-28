@@ -1463,6 +1463,94 @@ def outreach_status(user_id):
     })
 
 
+def _check_seed_secret():
+    """Simple shared-secret gate for admin one-offs (browser/curl friendly).
+    Accepts ?secret=<ADMIN_SEED_SECRET> or an X-Admin-Secret header."""
+    expected = os.environ.get("ADMIN_SEED_SECRET", "")
+    got = request.args.get("secret") or request.headers.get("X-Admin-Secret", "")
+    return bool(expected) and got == expected
+
+
+@admin_bp.route("/outreach/run", methods=["GET", "POST"])
+def outreach_run_now():
+    """Run the recruiting outreach on demand instead of waiting for the 14:00 UTC cron.
+
+    Secured by ADMIN_SEED_SECRET (?secret= or X-Admin-Secret header).
+    SAFE BY DEFAULT: a source-only preview (force_dry) — sources + qualifies leads
+    but sends NO email. Pass ?send=1 to actually send (and it only really sends if
+    the Render env is configured live). ?engine=operator (default) | b2b | both.
+    """
+    if not _check_seed_secret():
+        return jsonify({"error": "Forbidden"}), 403
+    send = request.args.get("send") == "1"
+    engine = (request.args.get("engine") or "operator").strip().lower()
+    app = current_app._get_current_object()
+    report = {}
+    if engine in ("operator", "both"):
+        from operator_outreach import run_outreach_cycle
+        report["operator"] = run_outreach_cycle(app, force_dry=not send)
+    if engine in ("b2b", "both"):
+        from b2b_outreach import run_b2b_outreach_cycle
+        report["b2b"] = run_b2b_outreach_cycle(app, force_dry=not send)
+    return jsonify({
+        "ok": True,
+        "mode": "LIVE SEND" if send else "DRY RUN (sourced leads only, no email sent)",
+        "report": report,
+        "next": "Download the sourced leads: GET /api/admin/outreach/leads.csv?secret=…",
+    })
+
+
+@admin_bp.route("/outreach/leads.csv", methods=["GET"])
+def outreach_leads_csv():
+    """Export sourced hauler leads in the caller-kit tracker CSV format.
+
+    Secured by ADMIN_SEED_SECRET (?secret= or X-Admin-Secret header) — open in a
+    browser to download. Only leads WITH a phone, newest first, suppressed
+    statuses excluded. Optional: ?limit=N (default 500), ?city=, ?status=.
+    """
+    if not _check_seed_secret():
+        return jsonify({"error": "Forbidden"}), 403
+    import csv
+    import io
+    from flask import Response
+    from models import OperatorLead
+    try:
+        limit = max(1, min(2000, int(request.args.get("limit", 500))))
+    except (TypeError, ValueError):
+        limit = 500
+    q = OperatorLead.query.filter(
+        OperatorLead.phone.isnot(None),
+        OperatorLead.phone != "",
+        OperatorLead.status.notin_(["unsubscribed", "bounced", "converted", "skipped"]),
+    )
+    city = request.args.get("city")
+    if city:
+        q = q.filter(OperatorLead.city.ilike("%{}%".format(city)))
+    status = request.args.get("status")
+    if status:
+        q = q.filter(OperatorLead.status == status)
+    leads = q.order_by(OperatorLead.created_at.desc()).limit(limit).all()
+
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    writer.writerow(["priority", "company", "contact", "phone", "city", "email",
+                     "status", "outcome", "next_step", "called_on", "notes"])
+    for i, lead in enumerate(leads, 1):
+        note = "[{}]".format(lead.status)
+        if lead.website:
+            note += " " + lead.website
+        if lead.notes:
+            note += " " + lead.notes
+        writer.writerow([i, lead.business_name or "", "", lead.phone or "",
+                         lead.city or "", lead.email or "", "Not called",
+                         "", "", "", note.strip()])
+    return Response(
+        buf.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-Disposition": "attachment; filename=hauler_leads.csv"},
+    )
+
+
 @admin_bp.route("/referral-payouts", methods=["GET"])
 @require_admin
 def referral_payouts(user_id):
