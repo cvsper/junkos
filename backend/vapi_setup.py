@@ -399,8 +399,8 @@ assistant_config = {
         ],
     },
     "voice": {
-        "provider": "11labs",
-        "voiceId": "21m00Tcm4TlvDq8ikWAM",  # Rachel - warm, professional
+        "provider": "deepgram",
+        "voiceId": "aura-2-amalthea-en",  # Deepgram Aura-2 — low-latency; transcriber is also Deepgram
     },
     "firstMessage": "Thanks for calling Umuve — this is Maya. What are you looking to get rid of today?",
     "endCallMessage": "Thanks for calling Umuve! Have a great day.",
