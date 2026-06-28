@@ -400,7 +400,8 @@ assistant_config = {
     },
     "voice": {
         "provider": "deepgram",
-        "voiceId": "aura-2-amalthea-en",  # Deepgram Aura-2 — low-latency; transcriber is also Deepgram
+        "voiceId": "amalthea",   # Deepgram Aura-2 "Amalthea" — low-latency; transcriber is also Deepgram
+        "model": "aura-2",       # Vapi needs the bare name + model (NOT "aura-2-amalthea-en")
     },
     "firstMessage": "Thanks for calling Umuve — this is Maya. What are you looking to get rid of today?",
     "endCallMessage": "Thanks for calling Umuve! Have a great day.",
