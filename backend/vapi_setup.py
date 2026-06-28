@@ -402,6 +402,16 @@ assistant_config = {
         "provider": "deepgram",
         "voiceId": "amalthea",   # Deepgram Aura-2 "Amalthea" — low-latency; transcriber is also Deepgram
         "model": "aura-2",       # Vapi needs the bare name + model (NOT "aura-2-amalthea-en")
+        # Say the brand "Umuve" as "you-move" — applied at the speech layer only,
+        # so transcripts/logs keep "Umuve". Case-insensitive.
+        "chunkPlan": {
+            "enabled": True,
+            "formatPlan": {
+                "replacements": [
+                    {"type": "regex", "regex": "[Uu][Mm][Uu][Vv][Ee]", "value": "you move"},
+                ],
+            },
+        },
     },
     "firstMessage": "Thanks for calling Umuve — this is Maya. What are you looking to get rid of today?",
     "endCallMessage": "Thanks for calling Umuve! Have a great day.",
