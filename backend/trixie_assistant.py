@@ -2,9 +2,14 @@
 Ask Umuve — hosted call-coach assistant for the sales VA.
 
 Routes:
-  GET  /coach           -> serves the single-page chat UI (static, no secrets)
+  GET  /coach           -> single-page chat UI (HTML; links same-origin css/js)
+  GET  /coach/app.css   -> stylesheet
+  GET  /coach/app.js    -> client script
   POST /api/coach/chat  -> passcode-gated proxy to Claude Haiku with the Umuve
                            system prompt.
+
+CSS/JS are served as separate same-origin files because the app sets a strict
+Content-Security-Policy; server.py relaxes it to 'self' only for /coach* paths.
 
 Fails CLOSED: if TRIXIE_ASSISTANT_PASSCODE or ANTHROPIC_API_KEY is not set, the
 chat endpoint refuses to run, so the assistant is never open to the public.
@@ -117,6 +122,16 @@ def coach_page():
     return Response(COACH_HTML, mimetype="text/html")
 
 
+@coach_bp.route("/coach/app.css", methods=["GET"])
+def coach_css():
+    return Response(COACH_CSS, mimetype="text/css")
+
+
+@coach_bp.route("/coach/app.js", methods=["GET"])
+def coach_js():
+    return Response(COACH_JS, mimetype="application/javascript")
+
+
 @coach_bp.route("/api/coach/chat", methods=["POST"])
 @_ratelimit
 def coach_chat():
@@ -177,128 +192,7 @@ COACH_HTML = r"""<!doctype html>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="robots" content="noindex, nofollow" />
 <title>Ask Umuve — Call Coach</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
-<style>
-  :root{
-    --canvas:#EEF1F5; --surface:#FFFFFF; --ink:#16202C; --muted:#5B6878;
-    --accent:#FF6A2C; --accent-press:#E85B1F; --user:#1B2A3A; --line:#E3E8EE;
-    --ok:#1FA971; --bot:#FFFFFF; --shadow:0 1px 2px rgba(16,32,44,.06),0 8px 24px rgba(16,32,44,.06);
-    --display:'Space Grotesk',ui-sans-serif,system-ui,sans-serif;
-    --body:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
-  }
-  *{box-sizing:border-box}
-  html,body{height:100%}
-  body{
-    margin:0;background:var(--canvas);color:var(--ink);font-family:var(--body);
-    -webkit-font-smoothing:antialiased;line-height:1.45;
-  }
-  #app{max-width:680px;margin:0 auto;height:100dvh;display:flex;flex-direction:column;background:var(--canvas)}
-
-  /* shared mark */
-  .mark{
-    font-family:var(--display);font-weight:700;color:#fff;background:var(--user);
-    width:54px;height:54px;border-radius:16px;display:grid;place-items:center;font-size:26px;
-    position:relative;box-shadow:var(--shadow);
-  }
-  .mark::after{content:"";position:absolute;right:-3px;bottom:-3px;width:18px;height:18px;border-radius:6px;background:var(--accent)}
-  .mark.sm{width:38px;height:38px;border-radius:11px;font-size:19px}
-  .mark.sm::after{width:12px;height:12px;border-radius:4px;right:-2px;bottom:-2px}
-
-  /* ---- gate ---- */
-  .gate{flex:1;display:flex;align-items:center;justify-content:center;padding:24px}
-  .gate-card{
-    width:100%;max-width:380px;background:var(--surface);border:1px solid var(--line);
-    border-radius:22px;padding:32px 28px;box-shadow:var(--shadow);text-align:center;
-  }
-  .gate-card .mark{margin:0 auto 18px}
-  .gate h1{font-family:var(--display);font-weight:700;font-size:27px;margin:0 0 8px;letter-spacing:-.02em}
-  .gate .sub{color:var(--muted);margin:0 0 24px;font-size:15px}
-  .lbl{display:block;text-align:left;font-family:var(--display);font-weight:600;font-size:11px;
-    letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:0 0 7px}
-  input#code{
-    width:100%;padding:14px 15px;font-size:16px;font-family:var(--body);color:var(--ink);
-    background:#F6F8FA;border:1.5px solid var(--line);border-radius:13px;outline:none;
-  }
-  input#code:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(255,106,44,.18);background:#fff}
-  .btn{
-    width:100%;margin-top:14px;padding:14px;font-size:16px;font-family:var(--display);font-weight:600;
-    color:#fff;background:var(--accent);border:none;border-radius:13px;cursor:pointer;transition:background .15s,transform .05s;
-  }
-  .btn:hover{background:var(--accent-press)}
-  .btn:active{transform:translateY(1px)}
-  .hint{color:var(--muted);font-size:12.5px;margin:18px 0 0}
-  .err{color:#C0341F;font-size:13.5px;margin:12px 0 0;text-align:left}
-
-  /* ---- chat ---- */
-  .chat{flex:1;display:flex;flex-direction:column;min-height:0}
-  .bar{
-    display:flex;align-items:center;gap:12px;padding:12px 16px;
-    padding-top:max(12px,env(safe-area-inset-top));
-    background:var(--surface);border-bottom:1px solid var(--line);
-  }
-  .bar-id{flex:1;min-width:0}
-  .bar-title{font-family:var(--display);font-weight:700;font-size:17px;letter-spacing:-.01em}
-  .bar-sub{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:12.5px;margin-top:1px}
-  .dot{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px rgba(31,169,113,.18)}
-  .bar-btn{
-    font-family:var(--display);font-weight:600;font-size:12.5px;color:var(--muted);
-    background:transparent;border:1px solid var(--line);border-radius:9px;padding:7px 11px;cursor:pointer;
-  }
-  .bar-btn:hover{color:var(--ink);border-color:var(--muted)}
-
-  .thread{flex:1;overflow-y:auto;padding:20px 16px 8px;display:flex;flex-direction:column;gap:12px;scroll-behavior:smooth}
-  .row{display:flex;max-width:88%}
-  .row.user{align-self:flex-end;justify-content:flex-end}
-  .row.bot{align-self:flex-start}
-  .bubble{
-    padding:11px 14px;border-radius:18px;font-size:15.5px;white-space:normal;word-wrap:break-word;
-    animation:rise .22s ease both;
-  }
-  .row.bot .bubble{background:var(--bot);border:1px solid var(--line);border-bottom-left-radius:6px;box-shadow:var(--shadow)}
-  .row.user .bubble{background:var(--user);color:#fff;border-bottom-right-radius:6px}
-  .bubble strong{font-weight:700}
-  @keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-
-  .typing{display:flex;gap:4px;padding:14px 15px}
-  .typing span{width:7px;height:7px;border-radius:50%;background:var(--muted);opacity:.5;animation:blink 1.2s infinite}
-  .typing span:nth-child(2){animation-delay:.2s}
-  .typing span:nth-child(3){animation-delay:.4s}
-  @keyframes blink{0%,60%,100%{opacity:.25;transform:translateY(0)}30%{opacity:.9;transform:translateY(-3px)}}
-
-  /* ---- composer ---- */
-  .composer{
-    background:var(--surface);border-top:1px solid var(--line);
-    padding:10px 12px max(10px,env(safe-area-inset-bottom));
-  }
-  .chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:9px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
-  .chips::-webkit-scrollbar{display:none}
-  .chip{
-    flex:0 0 auto;font-family:var(--body);font-size:13px;color:var(--ink);background:#F1F4F7;
-    border:1px solid var(--line);border-radius:999px;padding:8px 13px;cursor:pointer;white-space:nowrap;transition:background .12s,border-color .12s;
-  }
-  .chip:hover{background:#E8EDF2;border-color:var(--muted)}
-  .send-row{display:flex;align-items:flex-end;gap:9px}
-  textarea#input{
-    flex:1;resize:none;max-height:140px;font-family:var(--body);font-size:16px;color:var(--ink);
-    background:#F6F8FA;border:1.5px solid var(--line);border-radius:16px;padding:12px 14px;outline:none;line-height:1.4;
-  }
-  textarea#input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(255,106,44,.16);background:#fff}
-  .send{
-    flex:0 0 auto;width:46px;height:46px;border-radius:50%;border:none;background:var(--accent);color:#fff;
-    cursor:pointer;display:grid;place-items:center;transition:background .15s,transform .05s;
-  }
-  .send:hover{background:var(--accent-press)}
-  .send:active{transform:translateY(1px)}
-  .send:disabled{background:#C7CDD4;cursor:default}
-  .send svg{width:20px;height:20px;display:block}
-
-  :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-  @media (prefers-reduced-motion:reduce){
-    *{animation:none!important;scroll-behavior:auto!important}
-  }
-</style>
+<link rel="stylesheet" href="/coach/app.css" />
 </head>
 <body>
 <div id="app">
@@ -322,7 +216,7 @@ COACH_HTML = r"""<!doctype html>
       <div class="mark sm">U</div>
       <div class="bar-id">
         <div class="bar-title">Ask Umuve</div>
-        <div class="bar-sub"><span class="dot"></span> Coach · ready</div>
+        <div class="bar-sub"><span class="dot"></span> Coach &middot; ready</div>
       </div>
       <button id="reset" class="bar-btn" type="button">Clear</button>
     </header>
@@ -336,7 +230,7 @@ COACH_HTML = r"""<!doctype html>
         <button class="chip" type="button">Follow-up text for "call me Friday"</button>
       </div>
       <form id="send-form" class="send-row">
-        <textarea id="input" rows="1" placeholder="Ask your coach…" aria-label="Ask your coach"></textarea>
+        <textarea id="input" rows="1" placeholder="Ask your coach&hellip;" aria-label="Ask your coach"></textarea>
         <button id="send" class="send" type="submit" aria-label="Send">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
         </button>
@@ -344,9 +238,88 @@ COACH_HTML = r"""<!doctype html>
     </div>
   </section>
 </div>
+<script src="/coach/app.js"></script>
+</body>
+</html>
+"""
 
-<script>
-(function(){
+
+COACH_CSS = r""":root{
+  --canvas:#EEF1F5; --surface:#FFFFFF; --ink:#16202C; --muted:#5B6878;
+  --accent:#FF6A2C; --accent-press:#E85B1F; --user:#1B2A3A; --line:#E3E8EE;
+  --ok:#1FA971; --bot:#FFFFFF; --shadow:0 1px 2px rgba(16,32,44,.06),0 8px 24px rgba(16,32,44,.06);
+  --display:ui-rounded,"SF Pro Rounded",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --body:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--canvas);color:var(--ink);font-family:var(--body);-webkit-font-smoothing:antialiased;line-height:1.45}
+#app{max-width:680px;margin:0 auto;height:100dvh;display:flex;flex-direction:column;background:var(--canvas)}
+
+.mark{font-family:var(--display);font-weight:700;color:#fff;background:var(--user);width:54px;height:54px;border-radius:16px;display:grid;place-items:center;font-size:26px;position:relative;box-shadow:var(--shadow)}
+.mark::after{content:"";position:absolute;right:-3px;bottom:-3px;width:18px;height:18px;border-radius:6px;background:var(--accent)}
+.mark.sm{width:38px;height:38px;border-radius:11px;font-size:19px}
+.mark.sm::after{width:12px;height:12px;border-radius:4px;right:-2px;bottom:-2px}
+
+.gate{flex:1;display:flex;align-items:center;justify-content:center;padding:24px}
+.gate-card{width:100%;max-width:380px;background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:32px 28px;box-shadow:var(--shadow);text-align:center}
+.gate-card .mark{margin:0 auto 18px}
+.gate h1{font-family:var(--display);font-weight:700;font-size:27px;margin:0 0 8px;letter-spacing:-.02em}
+.gate .sub{color:var(--muted);margin:0 0 24px;font-size:15px}
+.lbl{display:block;text-align:left;font-family:var(--display);font-weight:600;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:0 0 7px}
+input#code{width:100%;padding:14px 15px;font-size:16px;font-family:var(--body);color:var(--ink);background:#F6F8FA;border:1.5px solid var(--line);border-radius:13px;outline:none}
+input#code:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(255,106,44,.18);background:#fff}
+.btn{width:100%;margin-top:14px;padding:14px;font-size:16px;font-family:var(--display);font-weight:600;color:#fff;background:var(--accent);border:none;border-radius:13px;cursor:pointer;transition:background .15s,transform .05s}
+.btn:hover{background:var(--accent-press)}
+.btn:active{transform:translateY(1px)}
+.hint{color:var(--muted);font-size:12.5px;margin:18px 0 0}
+.err{color:#C0341F;font-size:13.5px;margin:12px 0 0;text-align:left}
+
+.chat{flex:1;display:flex;flex-direction:column;min-height:0}
+.bar{display:flex;align-items:center;gap:12px;padding:12px 16px;padding-top:max(12px,env(safe-area-inset-top));background:var(--surface);border-bottom:1px solid var(--line)}
+.bar-id{flex:1;min-width:0}
+.bar-title{font-family:var(--display);font-weight:700;font-size:17px;letter-spacing:-.01em}
+.bar-sub{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:12.5px;margin-top:1px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px rgba(31,169,113,.18)}
+.bar-btn{font-family:var(--display);font-weight:600;font-size:12.5px;color:var(--muted);background:transparent;border:1px solid var(--line);border-radius:9px;padding:7px 11px;cursor:pointer}
+.bar-btn:hover{color:var(--ink);border-color:var(--muted)}
+
+.thread{flex:1;overflow-y:auto;padding:20px 16px 8px;display:flex;flex-direction:column;gap:12px;scroll-behavior:smooth}
+.row{display:flex;max-width:88%}
+.row.user{align-self:flex-end;justify-content:flex-end}
+.row.bot{align-self:flex-start}
+.bubble{padding:11px 14px;border-radius:18px;font-size:15.5px;word-wrap:break-word;animation:rise .22s ease both}
+.row.bot .bubble{background:var(--bot);border:1px solid var(--line);border-bottom-left-radius:6px;box-shadow:var(--shadow)}
+.row.user .bubble{background:var(--user);color:#fff;border-bottom-right-radius:6px}
+.bubble strong{font-weight:700}
+@keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+.typing{display:flex;gap:4px;padding:14px 15px}
+.typing span{width:7px;height:7px;border-radius:50%;background:var(--muted);opacity:.5;animation:blink 1.2s infinite}
+.typing span:nth-child(2){animation-delay:.2s}
+.typing span:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,60%,100%{opacity:.25;transform:translateY(0)}30%{opacity:.9;transform:translateY(-3px)}}
+
+.composer{background:var(--surface);border-top:1px solid var(--line);padding:10px 12px max(10px,env(safe-area-inset-bottom))}
+.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:9px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:0 0 auto;font-family:var(--body);font-size:13px;color:var(--ink);background:#F1F4F7;border:1px solid var(--line);border-radius:999px;padding:8px 13px;cursor:pointer;white-space:nowrap;transition:background .12s,border-color .12s}
+.chip:hover{background:#E8EDF2;border-color:var(--muted)}
+.send-row{display:flex;align-items:flex-end;gap:9px}
+textarea#input{flex:1;resize:none;max-height:140px;font-family:var(--body);font-size:16px;color:var(--ink);background:#F6F8FA;border:1.5px solid var(--line);border-radius:16px;padding:12px 14px;outline:none;line-height:1.4}
+textarea#input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(255,106,44,.16);background:#fff}
+.send{flex:0 0 auto;width:46px;height:46px;border-radius:50%;border:none;background:var(--accent);color:#fff;cursor:pointer;display:grid;place-items:center;transition:background .15s,transform .05s}
+.send:hover{background:var(--accent-press)}
+.send:active{transform:translateY(1px)}
+.send:disabled{background:#C7CDD4;cursor:default}
+.send svg{width:20px;height:20px;display:block}
+
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;scroll-behavior:auto!important}}
+"""
+
+
+COACH_JS = r"""(function(){
   var API = "/api/coach/chat";
   var KEY = "umuve_coach_code";
   var gate = document.getElementById("gate");
@@ -355,7 +328,7 @@ COACH_HTML = r"""<!doctype html>
   var input = document.getElementById("input");
   var sendBtn = document.getElementById("send");
   var gateErr = document.getElementById("gate-err");
-  var history = [];   // {role, content} for the API
+  var history = [];
   var busy = false;
 
   function code(){ return localStorage.getItem(KEY) || ""; }
@@ -378,7 +351,6 @@ COACH_HTML = r"""<!doctype html>
   function typing(){
     var row = document.createElement("div");
     row.className = "row bot";
-    row.id = "typing";
     row.innerHTML = '<div class="bubble"><div class="typing"><span></span><span></span><span></span></div></div>';
     thread.appendChild(row);
     scroll();
@@ -433,7 +405,6 @@ COACH_HTML = r"""<!doctype html>
 
   function autosize(){ input.style.height = "auto"; input.style.height = Math.min(input.scrollHeight, 140) + "px"; }
 
-  // events
   document.getElementById("gate-form").addEventListener("submit", function(e){
     e.preventDefault();
     var v = document.getElementById("code").value.trim();
@@ -453,10 +424,6 @@ COACH_HTML = r"""<!doctype html>
     history = []; thread.innerHTML = ""; showChat();
   });
 
-  // boot
   if(code()){ showChat(); } else { showGate(); }
 })();
-</script>
-</body>
-</html>
 """

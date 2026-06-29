@@ -457,7 +457,16 @@ def set_security_headers(response):
     response.headers["X-XSS-Protection"] = "1; mode=block"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
-    response.headers["Content-Security-Policy"] = "default-src 'none'"
+    if request.path.startswith("/coach"):
+        # Hosted call-coach UI: loads its own same-origin CSS/JS and calls its
+        # same-origin chat API. Everything else stays fully locked down.
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; img-src 'self' data:; style-src 'self'; "
+            "script-src 'self'; connect-src 'self'; base-uri 'none'; "
+            "form-action 'self'; frame-ancestors 'none'"
+        )
+    else:
+        response.headers["Content-Security-Policy"] = "default-src 'none'"
     if not _is_development:
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
     return response
