@@ -110,6 +110,21 @@ def _anthropic_client():
         return None
 
 
+def _run(fn):
+    """Run a blocking call in a native thread when under an eventlet worker.
+
+    The anthropic SDK (httpx-based) misbehaves on eventlet green threads; tpool
+    hands it to a real OS thread. Falls back to a direct call off eventlet.
+    """
+    try:
+        from eventlet import tpool  # type: ignore
+    except Exception:
+        tpool = None
+    if tpool is not None:
+        return tpool.execute(fn)
+    return fn()
+
+
 _ratelimit = (
     limiter.limit("40 per hour; 8 per minute")
     if limiter is not None
@@ -130,6 +145,29 @@ def coach_css():
 @coach_bp.route("/coach/app.js", methods=["GET"])
 def coach_js():
     return Response(COACH_JS, mimetype="application/javascript")
+
+
+@coach_bp.route("/coach/diag", methods=["GET"])
+def coach_diag():
+    # TEMPORARY diagnostic — returns no secrets; remove after debugging.
+    info = {
+        "key_set": bool(os.environ.get("ANTHROPIC_API_KEY", "").strip()),
+        "passcode_set": bool(os.environ.get("TRIXIE_ASSISTANT_PASSCODE")),
+        "model": os.environ.get("COACH_MODEL", DEFAULT_MODEL),
+    }
+    client = _anthropic_client()
+    if client is None:
+        info.update(ok=False, error="no client (key missing or SDK import failed)")
+        return jsonify(info)
+    try:
+        resp = _run(lambda: client.messages.create(
+            model=info["model"], max_tokens=8,
+            messages=[{"role": "user", "content": "ping"}],
+        ))
+        info.update(ok=True, sample="".join(getattr(b, "text", "") for b in resp.content)[:40])
+    except Exception as e:
+        info.update(ok=False, error=(type(e).__name__ + ": " + str(e))[:400])
+    return jsonify(info)
 
 
 @coach_bp.route("/api/coach/chat", methods=["POST"])
@@ -168,12 +206,12 @@ def coach_chat():
 
     model = os.environ.get("COACH_MODEL", DEFAULT_MODEL)
     try:
-        resp = client.messages.create(
+        resp = _run(lambda: client.messages.create(
             model=model,
             max_tokens=MAX_TOKENS,
             system=SYSTEM_PROMPT,
             messages=messages,
-        )
+        ))
         reply = "".join(getattr(b, "text", "") for b in resp.content).strip()
         if not reply:
             reply = "Hmm, I didn't catch that — try asking another way?"
