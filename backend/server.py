@@ -270,6 +270,14 @@ except Exception as _b_exc:
     import logging as _logging
     _logging.getLogger(__name__).warning("b2b_outreach_bp not registered: %s", _b_exc)
 
+# Ask Umuve — hosted call-coach assistant for the sales VA (trixie_assistant.py)
+try:
+    from trixie_assistant import coach_bp
+    app.register_blueprint(coach_bp)
+except Exception as _c_exc:
+    import logging as _logging
+    _logging.getLogger(__name__).warning("coach_bp not registered: %s", _c_exc)
+
 # Vision-Based Binding Quote Engine (spec 01-vision-quote-engine.md)
 try:
     from routes.quotes import quotes_bp
