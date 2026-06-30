@@ -278,6 +278,14 @@ except Exception as _c_exc:
     import logging as _logging
     _logging.getLogger(__name__).warning("coach_bp not registered: %s", _c_exc)
 
+# Send Setup Link — operator-onboarding SMS tool (op_text_tool.py)
+try:
+    from op_text_tool import optext_bp
+    app.register_blueprint(optext_bp)
+except Exception as _t_exc:
+    import logging as _logging
+    _logging.getLogger(__name__).warning("optext_bp not registered: %s", _t_exc)
+
 # Vision-Based Binding Quote Engine (spec 01-vision-quote-engine.md)
 try:
     from routes.quotes import quotes_bp
@@ -457,9 +465,9 @@ def set_security_headers(response):
     response.headers["X-XSS-Protection"] = "1; mode=block"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
-    if request.path.startswith("/coach"):
-        # Hosted call-coach UI: loads its own same-origin CSS/JS and calls its
-        # same-origin chat API. Everything else stays fully locked down.
+    if request.path.startswith("/coach") or request.path.startswith("/optext"):
+        # Internal VA tools (call coach + send-setup-link): load their own
+        # same-origin CSS/JS and call same-origin APIs. Everything else locked.
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; img-src 'self' data:; style-src 'self'; "
             "script-src 'self'; connect-src 'self'; base-uri 'none'; "
