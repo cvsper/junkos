@@ -147,29 +147,6 @@ def coach_js():
     return Response(COACH_JS, mimetype="application/javascript")
 
 
-@coach_bp.route("/coach/diag", methods=["GET"])
-def coach_diag():
-    # TEMPORARY diagnostic — returns no secrets; remove after debugging.
-    info = {
-        "key_set": bool(os.environ.get("ANTHROPIC_API_KEY", "").strip()),
-        "passcode_set": bool(os.environ.get("TRIXIE_ASSISTANT_PASSCODE")),
-        "model": os.environ.get("COACH_MODEL", DEFAULT_MODEL),
-    }
-    client = _anthropic_client()
-    if client is None:
-        info.update(ok=False, error="no client (key missing or SDK import failed)")
-        return jsonify(info)
-    try:
-        resp = _run(lambda: client.messages.create(
-            model=info["model"], max_tokens=8,
-            messages=[{"role": "user", "content": "ping"}],
-        ))
-        info.update(ok=True, sample="".join(getattr(b, "text", "") for b in resp.content)[:40])
-    except Exception as e:
-        info.update(ok=False, error=(type(e).__name__ + ": " + str(e))[:400])
-    return jsonify(info)
-
-
 @coach_bp.route("/api/coach/chat", methods=["POST"])
 @_ratelimit
 def coach_chat():

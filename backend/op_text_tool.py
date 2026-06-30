@@ -6,7 +6,6 @@ Routes:
   GET  /optext           -> single-page tool (HTML; links same-origin css/js)
   GET  /optext/app.css   -> stylesheet
   GET  /optext/app.js    -> client script
-  GET  /optext/diag      -> TEMP no-send health check (Twilio config + reachable)
   POST /api/optext/send  -> passcode-gated; sends the setup-link SMS via Twilio
 
 Reuses sms_service.send_sms / format_phone (same Twilio number as booking SMS).
@@ -90,29 +89,6 @@ def optext_css():
 @optext_bp.route("/optext/app.js", methods=["GET"])
 def optext_js():
     return Response(OPTEXT_JS, mimetype="application/javascript")
-
-
-@optext_bp.route("/optext/diag", methods=["GET"])
-def optext_diag():
-    # TEMPORARY no-send health check — remove after verifying. Sends no SMS.
-    info = {
-        "passcode_set": bool(os.environ.get("TRIXIE_ASSISTANT_PASSCODE")),
-        "from_number_set": bool(_twilio_from()),
-        "sid_set": bool(os.environ.get("TWILIO_ACCOUNT_SID")),
-        "token_set": bool(os.environ.get("TWILIO_AUTH_TOKEN")),
-    }
-    try:
-        import sms_service
-        client = sms_service._get_twilio()
-        if client is None:
-            info.update(ok=False, error="Twilio client not initialised (missing SID/token)")
-            return jsonify(info)
-        # read-only call: confirms creds + account are usable for messaging
-        _run(lambda: client.messages.list(limit=1))
-        info.update(ok=True)
-    except Exception as e:
-        info.update(ok=False, error=(type(e).__name__ + ": " + str(e))[:400])
-    return jsonify(info)
 
 
 @optext_bp.route("/api/optext/send", methods=["POST"])
