@@ -60,7 +60,7 @@ const Step5Estimate = ({ formData, updateFormData, nextStep, prevStep, setError,
           service_fee: serviceFee,
           recycling_fees: 0,
           labor_fee: 0,
-          total: Math.max(basePrice + serviceFee, 79),
+          total: Math.max(basePrice + serviceFee, 119),
           surge_amount: 0,
           surge_reasons: [],
           is_load_estimate: true,
@@ -74,7 +74,7 @@ const Step5Estimate = ({ formData, updateFormData, nextStep, prevStep, setError,
         if (subtotal === 0) subtotal = 150;
 
         const serviceFee = Math.round(subtotal * 0.08 * 100) / 100;
-        const total = Math.max(subtotal + serviceFee, 79);
+        const total = Math.max(subtotal + serviceFee, 119);
         const totalQty = items.reduce((s, i) => s + (i.quantity || 1), 0);
 
         fallbackEstimate = {

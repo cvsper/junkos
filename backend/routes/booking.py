@@ -30,21 +30,27 @@ booking_bp = Blueprint("booking", __name__, url_prefix="/api/booking")
 # ---------------------------------------------------------------------------
 BASE_PRICE = 0.0            # Removed flat base -- pricing is fully item-driven
 SERVICE_FEE_RATE = 0.08     # 8 % of subtotal
-MINIMUM_JOB_PRICE = 79.00   # Floor price for any job
+MINIMUM_JOB_PRICE = 119.00  # Floor price for any job (2026-07-02 re-tier)
 
 # ---------------------------------------------------------------------------
-# Specific item prices -- benchmarked ~25% below 1-800-GOT-JUNK.
-# Keyed by item_type -> size -> price.  A flat-rate item uses "default".
-# Admin PricingRules in the DB override these when present.
+# Specific item prices. Re-tiered 2026-07-02: singles must clear the driver
+# floor — payout is ~77.8% of list (x1.08 service fee, x0.72 after take), and
+# a single-item run costs a hauler 60-90 min + fuel + dump fees, so list
+# prices below ~$99 pay under $77 and starve supply. Market anchors: LoadUp
+# effective $129-159 single item (after their service-area fee), GOT-JUNK
+# $130-250. We stay the cheapest *transparent* binding quote, not the
+# cheapest price. Keyed by item_type -> size -> price; flat-rate items use
+# "default". Admin PricingRules in the DB override these when present.
+# Frontend duplicate: customer-portal-react .../Step3Items.jsx — keep in sync.
 # ---------------------------------------------------------------------------
 CATEGORY_PRICES = {
     # ── Furniture ─────────────────────────────────────────────────────────
-    "sofa":                 {"default":  89.00},   # competitor: $120
-    "sofa_sleeper":         {"default": 109.00},   # competitor: $145
-    "sofa_sectional":       {"default": 139.00},   # competitor: $175–$225
-    "chair_recliner":       {"default":  79.00},   # competitor: $120
+    "sofa":                 {"default": 119.00},   # competitor: $170-$200
+    "sofa_sleeper":         {"default": 139.00},   # heavier than sofa — keep above it
+    "sofa_sectional":       {"default": 169.00},   # competitor: $175–$225
+    "chair_recliner":       {"default":  99.00},   # competitor: $120
     "chair_office":         {"default":  69.00},   # competitor: $120
-    "dresser":              {"default":  79.00},   # competitor: $120
+    "dresser":              {"default":  99.00},   # competitor: $120
     "bookcase":             {"default":  69.00},   # competitor: $120
     "cabinet":              {"default": 149.00},   # competitor: $225
     "table_dining":         {"default":  99.00},   # competitor: $140
@@ -58,15 +64,15 @@ CATEGORY_PRICES = {
     "desk_small":           {"default":  69.00},   # competitor: $120
     "desk_large":           {"default":  99.00},   # competitor: $159
     # ── Beds & Mattresses ─────────────────────────────────────────────────
-    "mattress":             {"default":  75.00},   # competitor: $120
-    "box_spring":           {"default":  75.00},   # competitor: $120
+    "mattress":             {"default":  99.00},   # competitor: $130-$250; +$20 recycling fee
+    "box_spring":           {"default":  89.00},   # competitor: $120; +$20 recycling fee
     "bed_frame":            {"default":  75.00},   # competitor: $120
     "bed_set":              {"default": 149.00},   # competitor: $120 (but set = 3 items)
     # ── Appliances ────────────────────────────────────────────────────────
-    "refrigerator":         {"default":  99.00},   # competitor: $145
+    "refrigerator":         {"default": 129.00},   # competitor: $145
     "refrigerator_bar":     {"default":  69.00},   # competitor: $120
-    "washer":               {"default":  79.00},   # competitor: $120
-    "dryer":                {"default":  79.00},   # competitor: $120
+    "washer":               {"default":  99.00},   # competitor: $120
+    "dryer":                {"default":  99.00},   # competitor: $120
     "washer_dryer_set":     {"default": 119.00},   # competitor: $160
     "dishwasher":           {"default":  69.00},   # competitor: $120
     "stove":                {"default":  79.00},   # competitor: $120
@@ -91,9 +97,9 @@ CATEGORY_PRICES = {
     "basketball_hoop_stand":{"default":  99.00},   # competitor: $145
     "lawn_mower_push":      {"default":  69.00},   # competitor: $120
     "lawn_mower_riding":    {"default": 149.00},   # competitor: $200
-    "hot_tub":              {"default": 299.00},   # competitor: $400
-    "pool_table":           {"default": 199.00},   # competitor: $328
-    "piano":                {"default": 199.00},   # competitor: $298
+    "hot_tub":              {"default": 349.00},   # competitor: $400+; two-man + disposal
+    "pool_table":           {"default": 269.00},   # competitor: $328; slate weight
+    "piano":                {"default": 299.00},   # competitor: $300-$500; two-man minimum
     # ── General / Bulk ────────────────────────────────────────────────────
     "bike":                 {"default":  49.00},   # competitor: $120
     "general":              {"default":  25.00},
@@ -116,7 +122,7 @@ FALLBACK_PRICES = {cat: sizes["default"] for cat, sizes in CATEGORY_PRICES.items
 # ---------------------------------------------------------------------------
 TRUCK_LOAD_PRICES = {
     # fraction_label: (fraction_value, price)
-    "min":   (0.0,    99.00),    # competitor: $148
+    "min":   (0.0,   119.00),    # competitor: $148; aligned to MINIMUM_JOB_PRICE
     "1/8":   (0.125, 179.00),    # competitor: $258
     "1/6":   (0.167, 229.00),    # competitor: $328
     "1/4":   (0.25,  279.00),    # competitor: $388

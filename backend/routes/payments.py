@@ -88,8 +88,11 @@ def create_payment_intent(user_id):
 
     discounted_base = max(0.0, round(job.total_price - discount, 2))
     amount = round(discounted_base + tip_amount, 2)
-    commission = round(amount * PLATFORM_COMMISSION, 2)
-    service_fee = round(amount * SERVICE_FEE_RATE, 2)
+    # Platform take applies to the job amount only — tips pass through to the
+    # driver 100%. (Previously the split was computed on amount incl. tip, so
+    # the platform skimmed 28% of every tip.)
+    commission = round(discounted_base * PLATFORM_COMMISSION, 2)
+    service_fee = round(discounted_base * SERVICE_FEE_RATE, 2)
     driver_payout = max(0, round(amount - commission - service_fee, 2))
 
     stripe = _get_stripe()
@@ -1128,10 +1131,14 @@ def _handle_payment_succeeded(intent):
     payment.payment_status = "succeeded"
     payment.updated_at = utcnow()
 
-    # Recalculate commission split (platform 20%, operator commission from remainder)
+    # Recalculate commission split (platform 20%, operator commission from
+    # remainder). Tips are excluded from the split base and from the operator
+    # cut — they pass through 100% to the hauler who worked the job.
     amount = payment.amount or 0.0
-    platform_commission = round(amount * PLATFORM_COMMISSION, 2)
-    driver_gross = round(amount - platform_commission - (payment.service_fee or 0.0), 2)
+    tip = payment.tip_amount or 0.0
+    split_base = max(0.0, round(amount - tip, 2))
+    platform_commission = round(split_base * PLATFORM_COMMISSION, 2)
+    driver_gross = round(split_base - platform_commission - (payment.service_fee or 0.0), 2)
 
     job = db.session.get(Job, payment.job_id)
 
@@ -1151,7 +1158,7 @@ def _handle_payment_succeeded(intent):
 
     payment.commission = platform_commission
     payment.operator_payout_amount = operator_payout
-    payment.driver_payout_amount = max(0, round(driver_gross - operator_payout, 2))
+    payment.driver_payout_amount = max(0, round(driver_gross - operator_payout + tip, 2))
 
     if job:
         # Move job from pending to confirmed now that payment succeeded
