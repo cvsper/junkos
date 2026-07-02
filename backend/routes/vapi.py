@@ -8,6 +8,8 @@ service area checks) and webhook events (call started, ended, etc.).
 import os
 import re
 import json
+import hmac
+import hashlib
 import logging
 import threading
 from datetime import datetime, timezone
@@ -15,10 +17,46 @@ from flask import Blueprint, request, jsonify, current_app
 
 from models import db, User, Job, Payment, CallLog, ScheduledCallback, Contractor, CallerProfile, CallInsight, generate_uuid, generate_referral_code
 from auth_routes import require_auth
+from routes.admin import require_admin
 
 logger = logging.getLogger(__name__)
 
 vapi_bp = Blueprint("vapi", __name__, url_prefix="/api/vapi")
+
+# Warn-once flag for the missing VAPI_SERVER_SECRET fail-open path.
+_vapi_secret_warned = False
+
+
+def _verify_vapi_secret():
+    """Shared-secret gate for the Vapi /tool and /webhook endpoints.
+
+    Vapi sends its serverUrlSecret in the X-Vapi-Secret header. When
+    VAPI_SERVER_SECRET is set here, the header must match (constant-time).
+
+    Fail-open when the env var is NOT set: the secret has to be configured in
+    BOTH the Vapi dashboard (serverUrlSecret) and Render before enforcement
+    can start — rejecting before then would brick Maya. We log a warning once
+    so the gap is visible.
+
+    Returns True when the request may proceed.
+    """
+    global _vapi_secret_warned
+    expected = os.environ.get("VAPI_SERVER_SECRET", "")
+    if not expected:
+        if not _vapi_secret_warned:
+            logger.warning(
+                "VAPI_SERVER_SECRET is not set — /api/vapi/tool and "
+                "/api/vapi/webhook are UNAUTHENTICATED. Set the same secret "
+                "in Render and as serverUrlSecret in the Vapi dashboard to "
+                "enforce."
+            )
+            _vapi_secret_warned = True
+        return True
+
+    provided = request.headers.get("X-Vapi-Secret", "")
+    return hmac.compare_digest(
+        provided.encode("utf-8"), expected.encode("utf-8")
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -55,6 +93,9 @@ def handle_tool_call():
         ]
     }
     """
+    if not _verify_vapi_secret():
+        return jsonify({"error": "Unauthorized"}), 401
+
     data = request.get_json()
     if not data:
         return jsonify({"error": "No data"}), 400
@@ -775,6 +816,9 @@ def _handle_lookup_caller(args, vapi_data):
 @vapi_bp.route("/webhook", methods=["POST"])
 def handle_webhook():
     """Handle Vapi webhook events (call started, ended, transcript, etc.)."""
+    if not _verify_vapi_secret():
+        return jsonify({"error": "Unauthorized"}), 401
+
     data = request.get_json()
     if not data:
         return jsonify({"ok": True})
@@ -1433,7 +1477,8 @@ def _handle_transcript(message):
 # Call log API endpoints (operator dashboard)
 # ---------------------------------------------------------------------------
 @vapi_bp.route("/calls", methods=["GET"])
-def list_call_logs():
+@require_admin
+def list_call_logs(user_id):
     """Return recent call logs, paginated. Defaults to last 50.
 
     Query params:
@@ -1494,7 +1539,8 @@ def get_call_log(call_id):
 
 
 @vapi_bp.route("/callbacks", methods=["GET"])
-def list_callbacks():
+@require_admin
+def list_callbacks(user_id):
     """Return pending scheduled callbacks for the operator dashboard.
 
     Query params:
@@ -1736,7 +1782,8 @@ def get_call_insight(call_id):
 
 
 @vapi_bp.route("/callers", methods=["GET"])
-def list_caller_profiles():
+@require_admin
+def list_caller_profiles(user_id):
     """Return caller profiles, paginated. For the operator dashboard."""
     page = request.args.get("page", 1, type=int)
     per_page = min(request.args.get("per_page", 50, type=int), 100)
@@ -1759,7 +1806,8 @@ def list_caller_profiles():
 
 
 @vapi_bp.route("/callers/<phone>", methods=["GET"])
-def get_caller_profile(phone):
+@require_admin
+def get_caller_profile(user_id, phone):
     """Get a single caller profile by phone number."""
     profile = CallerProfile.query.filter_by(phone=phone).first()
     if not profile:
@@ -1779,7 +1827,9 @@ def get_caller_profile(phone):
 # ---------------------------------------------------------------------------
 # Meta Lead Ads Webhook — auto-call leads with Maya
 # ---------------------------------------------------------------------------
-META_VERIFY_TOKEN = os.environ.get("META_VERIFY_TOKEN", "umuve-leads-2026")
+# No hardcoded fallback — the verify token must come from the environment.
+# If META_VERIFY_TOKEN is unset, GET verification is refused (403).
+META_VERIFY_TOKEN = os.environ.get("META_VERIFY_TOKEN", "")
 
 VAPI_API_KEY = os.environ.get("VAPI_API_KEY", "")
 VAPI_ASSISTANT_ID = "91198234-25c8-450a-9075-854509e9e59d"
@@ -1793,7 +1843,15 @@ def meta_leads_verify():
     token = request.args.get("hub.verify_token", "")
     challenge = request.args.get("hub.challenge", "")
 
-    if mode == "subscribe" and token == META_VERIFY_TOKEN:
+    if not META_VERIFY_TOKEN:
+        logger.warning(
+            "META_VERIFY_TOKEN is not set — refusing Meta webhook verification"
+        )
+        return "Forbidden", 403
+
+    if mode == "subscribe" and hmac.compare_digest(
+        token.encode("utf-8"), META_VERIFY_TOKEN.encode("utf-8")
+    ):
         logger.info("Meta webhook verified")
         return challenge, 200
     return "Forbidden", 403
@@ -1819,6 +1877,26 @@ def meta_leads_webhook():
 
     We fetch the actual lead data from Meta's API, then trigger a Vapi call.
     """
+    # Verify Meta's payload signature when META_APP_SECRET is configured
+    # (X-Hub-Signature-256 = "sha256=" + HMAC-SHA256 of the raw body).
+    # Fail-open when unset so leads keep flowing until the secret is added.
+    app_secret = os.environ.get("META_APP_SECRET", "")
+    if app_secret:
+        signature = request.headers.get("X-Hub-Signature-256", "")
+        expected_sig = "sha256=" + hmac.new(
+            app_secret.encode("utf-8"), request.get_data(), hashlib.sha256
+        ).hexdigest()
+        if not hmac.compare_digest(
+            signature.encode("utf-8"), expected_sig.encode("utf-8")
+        ):
+            logger.warning("Meta leads webhook: X-Hub-Signature-256 mismatch — rejecting")
+            return jsonify({"error": "Invalid signature"}), 403
+    else:
+        logger.warning(
+            "META_APP_SECRET is not set — accepting Meta leads webhook "
+            "without signature verification"
+        )
+
     data = request.get_json()
     if not data:
         return jsonify({"ok": True})

@@ -11,6 +11,7 @@ from flask import Flask, request, jsonify, url_for
 from flask_cors import CORS
 from functools import wraps
 from datetime import datetime, timedelta
+import hmac
 import os
 import logging
 
@@ -77,8 +78,12 @@ _RECOMMENDED_ENV_VARS = [
     "CORS_ORIGINS",
 ]
 
-_flask_env = os.environ.get("FLASK_ENV", "development")
-if _flask_env != "development":
+# Development is an EXPLICIT opt-in (FLASK_ENV=development or dev). An unset
+# FLASK_ENV means production-safe defaults: startup checks run, CORS uses the
+# allow-list (never wildcard), HSTS is sent, and Flask debug stays off.
+_flask_env = (os.environ.get("FLASK_ENV") or "").strip().lower()
+_is_development = _flask_env in ("development", "dev")
+if not _is_development:
     _missing_critical = [v for v in _CRITICAL_ENV_VARS if not os.environ.get(v)]
     _missing_recommended = [v for v in _RECOMMENDED_ENV_VARS if not os.environ.get(v)]
 
@@ -135,7 +140,8 @@ app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16 MB max request body
 # ---------------------------------------------------------------------------
 # CORS configuration
 # ---------------------------------------------------------------------------
-_is_development = os.environ.get("FLASK_ENV", "development") == "development"
+# _is_development is defined once above (explicit opt-in via FLASK_ENV);
+# unset FLASK_ENV ⇒ production-safe: allow-list CORS, HSTS on, debug off.
 
 _DEFAULT_ORIGINS = [
     "https://platform-olive-nu.vercel.app",
@@ -781,12 +787,35 @@ def health_check():
     return jsonify({"status": "healthy", "service": "Umuve API", "version": "2.2.1-socketio-v4-protocol"}), 200
 
 
+def _check_admin_seed_secret(path_secret=None):
+    """Constant-time gate for the ADMIN_SEED_SECRET-protected endpoints.
+
+    The secret is accepted from the "X-Admin-Secret" request header
+    (preferred — keeps it out of URL paths and access logs) or, for backward
+    compatibility with existing callers, from the URL path segment. Returns
+    True only when ADMIN_SEED_SECRET is configured AND one of the provided
+    values matches (hmac.compare_digest, no timing leak).
+    """
+    expected = os.environ.get("ADMIN_SEED_SECRET", "")
+    if not expected:
+        return False
+    expected_bytes = expected.encode("utf-8")
+    header_secret = request.headers.get("X-Admin-Secret", "")
+    if header_secret and hmac.compare_digest(
+        header_secret.encode("utf-8"), expected_bytes
+    ):
+        return True
+    if path_secret and hmac.compare_digest(
+        str(path_secret).encode("utf-8"), expected_bytes
+    ):
+        return True
+    return False
+
+
 @app.route("/api/run-migrate/<secret>", methods=["POST"])
-@limiter.exempt
 def run_migrate_endpoint(secret):
     """Database migration endpoint secured by ADMIN_SEED_SECRET env var."""
-    expected = os.environ.get("ADMIN_SEED_SECRET", "")
-    if not expected or secret != expected:
+    if not _check_admin_seed_secret(secret):
         return jsonify({"error": "Forbidden"}), 403
     try:
         from migrate import run_migrations
@@ -800,7 +829,6 @@ def run_migrate_endpoint(secret):
 
 
 @app.route("/api/admin/test-alert/<secret>", methods=["POST", "GET"])
-@limiter.exempt
 def test_alert_endpoint(secret):
     """Fire a test SMS + email to the configured admin contacts.
 
@@ -811,8 +839,7 @@ def test_alert_endpoint(secret):
     Returns which channels are configured and whether each send was attempted,
     so a missing env var or provider misconfig is visible in the response.
     """
-    expected = os.environ.get("ADMIN_SEED_SECRET", "")
-    if not expected or secret != expected:
+    if not _check_admin_seed_secret(secret):
         return jsonify({"error": "Forbidden"}), 403
 
     admin_phone = os.environ.get("ADMIN_PHONE", "")
@@ -864,7 +891,6 @@ def test_alert_endpoint(secret):
 
 
 @app.route("/api/admin/seed-demo-driver/<secret>", methods=["POST", "GET"])
-@limiter.exempt
 def seed_demo_driver_endpoint(secret):
     """Idempotently create the App Store reviewer demo account for Umuve Pro.
 
@@ -877,8 +903,7 @@ def seed_demo_driver_endpoint(secret):
     Pass ?password=... to set the login password (default below). Returns the
     exact credentials to paste into App Store Connect → App Review Information.
     """
-    expected = os.environ.get("ADMIN_SEED_SECRET", "")
-    if not expected or secret != expected:
+    if not _check_admin_seed_secret(secret):
         return jsonify({"error": "Forbidden"}), 403
 
     from datetime import timedelta as _td
@@ -971,7 +996,6 @@ def seed_demo_driver_endpoint(secret):
 
 
 @app.route("/api/admin/provision-hauler/<secret>", methods=["POST"])
-@limiter.exempt
 def provision_hauler_endpoint(secret):
     """Idempotently provision a REAL independent hauler (driver) and approve them.
 
@@ -994,8 +1018,7 @@ def provision_hauler_endpoint(secret):
 
     Returns the login credentials (incl. the generated temp password) to hand off.
     """
-    expected = os.environ.get("ADMIN_SEED_SECRET", "")
-    if not expected or secret != expected:
+    if not _check_admin_seed_secret(secret):
         return jsonify({"error": "Forbidden"}), 403
 
     import secrets as _secrets
@@ -1089,7 +1112,6 @@ def provision_hauler_endpoint(secret):
 
 
 @app.route("/api/admin/capi-status/<secret>", methods=["GET", "POST"])
-@limiter.exempt
 def capi_status_endpoint(secret):
     """Report Meta Conversions API config + optionally fire a test event.
 
@@ -1104,8 +1126,7 @@ def capi_status_endpoint(secret):
     "Test Events" tab without polluting live data. The response shows whether
     the send was accepted.
     """
-    expected = os.environ.get("ADMIN_SEED_SECRET", "")
-    if not expected or secret != expected:
+    if not _check_admin_seed_secret(secret):
         return jsonify({"error": "Forbidden"}), 403
 
     from flask import request as _req
@@ -1159,7 +1180,6 @@ def capi_status_endpoint(secret):
 
 
 @app.route("/api/admin/social-status/<secret>", methods=["GET"])
-@limiter.exempt
 def social_status_endpoint(secret):
     """Report social-posting (IG/FB Graph API) readiness from prod.
 
@@ -1171,8 +1191,7 @@ def social_status_endpoint(secret):
     ADMIN_SEED_SECRET. NEVER echoes the token — only booleans, scope names,
     and ids (page/IG ids are not secrets).
     """
-    expected = os.environ.get("ADMIN_SEED_SECRET", "")
-    if not expected or secret != expected:
+    if not _check_admin_seed_secret(secret):
         return jsonify({"error": "Forbidden"}), 403
 
     token = os.environ.get("META_ACCESS_TOKEN", "")
@@ -1229,7 +1248,6 @@ def social_status_endpoint(secret):
 
 
 @app.route("/api/admin/backfill-approval-emails/<secret>", methods=["POST"])
-@limiter.exempt
 def backfill_approval_emails_endpoint(secret):
     """Send the branded approval email to already-approved haulers who may have
     missed it (e.g. approved before the email existed, or the old email lacked
@@ -1239,8 +1257,7 @@ def backfill_approval_emails_endpoint(secret):
     who WOULD be emailed without sending anything. Pass ?send=1 to actually send.
     ?role=operator (default) | driver | all.
     """
-    expected = os.environ.get("ADMIN_SEED_SECRET", "")
-    if not expected or secret != expected:
+    if not _check_admin_seed_secret(secret):
         return jsonify({"error": "Forbidden"}), 403
 
     import time as _time
@@ -1305,7 +1322,6 @@ def backfill_approval_emails_endpoint(secret):
 
 
 @app.route("/api/admin/void-job/<secret>", methods=["POST"])
-@limiter.exempt
 def void_job_endpoint(secret):
     """Cancel or delete a job by confirmation_code or job_id — for clearing test
     / junk bookings out of the pipeline. ADMIN_SEED_SECRET-gated.
@@ -1314,8 +1330,7 @@ def void_job_endpoint(secret):
     Default  -> soft cancel (status='cancelled', payment cancelled) — safe, keeps the row.
     ?hard=1  -> fully delete the Job + its Payment/JobOffer rows and detach any Quote.
     """
-    expected = os.environ.get("ADMIN_SEED_SECRET", "")
-    if not expected or secret != expected:
+    if not _check_admin_seed_secret(secret):
         return jsonify({"error": "Forbidden"}), 403
 
     from flask import request as _req
@@ -1883,5 +1898,6 @@ def internal_error(e):
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
-    debug = os.environ.get("FLASK_ENV", "development") == "development"
+    # Debug only with explicit FLASK_ENV=development|dev — never by default.
+    debug = _is_development
     socketio.run(app, debug=debug, host="0.0.0.0", port=port)

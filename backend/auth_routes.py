@@ -234,9 +234,12 @@ def send_verification_code():
         'success': True,
         'message': 'Verification code sent',
     }
-    # Include code in response only when Twilio is not configured (dev mode)
+    # Echo the OTP in the response ONLY in explicit development mode (and
+    # only when Twilio isn't configured to actually send it). Never echo in
+    # production — an unset FLASK_ENV or missing Twilio creds must not leak
+    # login codes.
     import os
-    if not os.environ.get("TWILIO_ACCOUNT_SID"):
+    if os.environ.get("FLASK_ENV") == "development" and not os.environ.get("TWILIO_ACCOUNT_SID"):
         response_data['code'] = code
 
     return jsonify(response_data)
@@ -778,6 +781,7 @@ def delete_account(user_id):
 # MARK: - Seed Admin
 
 @auth_bp.route('/seed-admin', methods=['POST'])
+@limiter.limit("5 per hour")
 def seed_admin():
     """Promote a user to admin role. Requires a seed secret."""
     import os
@@ -789,7 +793,10 @@ def seed_admin():
     expected = os.environ.get('ADMIN_SEED_SECRET', '')
     if not expected:
         return jsonify({'error': 'ADMIN_SEED_SECRET is not configured'}), 503
-    if secret != expected:
+    # Constant-time comparison to avoid leaking the secret via timing
+    if not secret or not secrets.compare_digest(
+        str(secret).encode('utf-8'), expected.encode('utf-8')
+    ):
         return jsonify({'error': 'Unauthorized'}), 403
 
     user = User.query.filter_by(email=email).first()
@@ -802,6 +809,7 @@ def seed_admin():
 
 
 @auth_bp.route('/bootstrap-admin', methods=['POST'])
+@limiter.limit("5 per hour")
 def bootstrap_admin():
     """One-time admin bootstrap. Only works when zero admins exist."""
     from werkzeug.security import generate_password_hash
@@ -930,72 +938,8 @@ def find_or_create_user_by_phone(phone):
     return user_id
 
 
-# MARK: - Utility Endpoint for Testing
-@auth_bp.route('/upgrade_operator', methods=['POST'])
-def upgrade_to_operator():
-    """Temporary endpoint to upgrade a user to operator role for testing.
-
-    Requires a secret key for security.
-    Body: {"email": "user@example.com", "secret": "your-secret"}
-    """
-    data = request.get_json()
-    if not data:
-        return jsonify({'error': 'Request body required'}), 400
-
-    email = data.get('email', '').strip().lower()
-    secret = data.get('secret', '').strip()
-
-    UPGRADE_SECRET = os.environ.get('UPGRADE_SECRET')
-    if not UPGRADE_SECRET:
-        return jsonify(error="Not configured"), 503
-
-    if secret != UPGRADE_SECRET:
-        return jsonify({'error': 'Invalid secret'}), 403
-
-    if not email:
-        return jsonify({'error': 'Email required'}), 400
-
-    # Find and upgrade the user
-    user = User.query.filter_by(email=email).first()
-    if not user:
-        return jsonify({'error': 'User not found'}), 404
-
-    # Upgrade to operator
-    user.role = 'operator'
-
-    # Create or update Contractor record with is_operator=True
-    from models import Contractor, generate_uuid
-    contractor = Contractor.query.filter_by(user_id=user.id).first()
-    if not contractor:
-        contractor = Contractor(
-            id=generate_uuid(),
-            user_id=user.id,
-            is_operator=True,
-            approval_status='approved',
-            onboarding_status='approved'
-        )
-        db.session.add(contractor)
-    else:
-        contractor.is_operator = True
-        contractor.approval_status = 'approved'
-        contractor.onboarding_status = 'approved'
-
-    db.session.commit()
-
-    return jsonify({
-        'success': True,
-        'message': f'User {email} upgraded to operator with contractor record',
-        'user': {
-            'id': user.id,
-            'email': user.email,
-            'name': user.name,
-            'role': user.role
-        },
-        'contractor': {
-            'id': contractor.id,
-            'is_operator': contractor.is_operator
-        }
-    }), 200
+# NOTE: the temporary /upgrade_operator testing endpoint was removed
+# (security audit 2026-07-02) — use the admin dashboard / seed-admin flow.
 
 # MARK: - Dev/Test Login for Drivers
 

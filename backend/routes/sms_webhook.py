@@ -25,6 +25,52 @@ logger = logging.getLogger(__name__)
 sms_webhook_bp = Blueprint("sms_webhook", __name__, url_prefix="/api/sms")
 
 
+def _validate_twilio_signature():
+    """Validate the X-Twilio-Signature header on the inbound webhook.
+
+    Fail-safe by design (this is live SMS — a misconfig must not brick it):
+      - Only enforced when TWILIO_AUTH_TOKEN is set AND
+        SMS_WEBHOOK_VALIDATE (default "on") is not "off". Setting
+        SMS_WEBHOOK_VALIDATE=off is the escape hatch if the reconstructed
+        URL ever mismatches what Twilio signed in prod.
+      - Any unexpected error in the validator itself allows the request
+        through (logged) rather than dropping customer texts.
+
+    Returns True when the request may proceed, False to reject with 403.
+    """
+    auth_token = os.environ.get("TWILIO_AUTH_TOKEN", "")
+    validate_flag = os.environ.get("SMS_WEBHOOK_VALIDATE", "on").strip().lower()
+
+    if not auth_token or validate_flag == "off":
+        logger.warning(
+            "Twilio signature validation SKIPPED (auth_token_set=%s, "
+            "SMS_WEBHOOK_VALIDATE=%s)",
+            bool(auth_token), validate_flag,
+        )
+        return True
+
+    try:
+        from twilio.request_validator import RequestValidator
+
+        # Render terminates TLS at its proxy, so Flask sees http:// while
+        # Twilio signed the public https:// URL. Honor X-Forwarded-Proto to
+        # rebuild the scheme Twilio actually used.
+        url = request.url
+        forwarded_proto = (
+            request.headers.get("X-Forwarded-Proto", "").split(",")[0].strip().lower()
+        )
+        if forwarded_proto == "https" and url.startswith("http://"):
+            url = "https://" + url[len("http://"):]
+
+        signature = request.headers.get("X-Twilio-Signature", "")
+        validator = RequestValidator(auth_token)
+        return validator.validate(url, request.form, signature)
+    except Exception:
+        # Never let a validator bug take down inbound SMS — allow and log.
+        logger.exception("Twilio signature validation errored; allowing request")
+        return True
+
+
 @sms_webhook_bp.route("/inbound", methods=["POST"])
 def inbound_sms():
     """Handle inbound SMS/MMS from Twilio.
@@ -33,6 +79,13 @@ def inbound_sms():
     Twilio sends form-encoded data:
         From, To, Body, NumMedia, MediaUrl0, MediaContentType0, etc.
     """
+    if not _validate_twilio_signature():
+        logger.warning(
+            "Rejected inbound SMS with invalid Twilio signature (remote=%s)",
+            request.remote_addr,
+        )
+        return Response("Forbidden", status=403)
+
     from_phone = request.form.get("From", "")
     body = request.form.get("Body", "").strip()
     num_media = int(request.form.get("NumMedia", 0))
