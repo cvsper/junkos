@@ -145,6 +145,8 @@ def get_tracking_by_code(code):
             "after_photos": after_photos,
             # Items as count + first 3 categories — enough for "yes this is my booking"
             "items_summary": _summarize_items(job.items),
+            # Rescue Engine impact receipt — shows once complete, estimate-only.
+            "impact_summary": job.impact_summary if stage == "complete" else None,
         },
     }), 200
 

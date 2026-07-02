@@ -402,23 +402,17 @@ except Exception as _a_exc:
     import logging as _logging
     _logging.getLogger(__name__).warning("attach_bp not registered: %s", _a_exc)
 
-# Donation / Resale Rescue Engine (spec 05-donation-resale-engine.md)
+# Rescue Engine v1 \u2014 per-job disposition preference + outcome + impact receipt.
+# (The advanced per-item resale marketplace + IRS donation receipts + landfill
+# routing optimizer \u2014 routes/resale.py, routes/routing.py \u2014 are a later,
+# partner-dependent phase; their schema exists but stays dormant until real
+# resale/donation partners are signed. Not imported here on purpose.)
 try:
-    from routes.resale import resale_bp
-    app.register_blueprint(resale_bp)
-except Exception as _r_exc:
+    from routes.impact import impact_bp
+    app.register_blueprint(impact_bp)
+except Exception as _imp_exc:
     import logging as _logging
-    _logging.getLogger(__name__).warning("resale_bp not registered: %s", _r_exc)
-
-# Landfill Routing Optimizer (spec 06-landfill-routing-optimizer.md)
-# OR-Tools + OSRM (self-hosted). We explicitly reject Google Routes API
-# because it cannot encode tipping-fee constraints (see spec \u00a75).
-try:
-    from routes.routing import routing_bp
-    app.register_blueprint(routing_bp)
-except Exception as _rt_exc:
-    import logging as _logging
-    _logging.getLogger(__name__).warning("routing_bp not registered: %s", _rt_exc)
+    _logging.getLogger(__name__).warning("impact_bp not registered: %s", _imp_exc)
 
 # Life-Event Demand Trigger Engine (spec 03-life-event-triggers.md)
 # Umuve is a documentation-and-haul vendor, NOT a public adjuster (FL sec.

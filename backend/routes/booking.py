@@ -900,6 +900,12 @@ def create_booking(user_id):
     notes = data.get("notes", "")
     lead_source = data.get("lead_source") or data.get("leadSource") or None
 
+    # Rescue Engine v1: customer's disposition preference (defaults to "best").
+    from impact import normalize_preference
+    disposition_preference = normalize_preference(
+        data.get("disposition_preference") or data.get("dispositionPreference")
+    )
+
     # --- Re-calculate pricing with the v2 engine ---
     est = calculate_estimate(items, scheduled_date=scheduled_date, lat=lat, lng=lng)
 
@@ -1008,6 +1014,7 @@ def create_booking(user_id):
         discount_amount=discount_amount,
         notes=notes,
         lead_source=lead_source,
+        disposition_preference=disposition_preference,
         confirmation_code=generate_referral_code(),
     )
     db.session.add(job)

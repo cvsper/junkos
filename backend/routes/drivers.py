@@ -535,6 +535,21 @@ def apply_job_status_transition(job, contractor, new_status, data=None):
         job.completed_at = utcnow()
         contractor.total_jobs = (contractor.total_jobs or 0) + 1
 
+        # Rescue Engine v1: capture the hauler's disposition outcome + reason,
+        # then build the customer's impact-receipt copy (estimate-only, no
+        # charity-name claims — all wording centralized in impact.py).
+        try:
+            from impact import normalize_outcome, build_impact_summary
+            _outcome = normalize_outcome(data.get("disposition_outcome"))
+            if _outcome:
+                job.disposition_outcome = _outcome
+            _dnotes = (data.get("disposition_notes") or "").strip()
+            if _dnotes:
+                job.disposition_notes = _dnotes[:1000]
+            job.impact_summary = build_impact_summary(job)
+        except Exception:
+            logger.exception("Impact summary build failed for job %s", job.id)
+
         # Graduation ladder: once a concierge (no-app) hauler has proven out on
         # their 2nd completed job, invite them onto the full app + Stripe so
         # they get paid instantly instead of same-day by hand — the last human
@@ -708,17 +723,21 @@ def apply_job_status_transition(job, contractor, new_status, data=None):
                                 item_names.append(item.get("category", "Item").replace("_", " ").title())
                     
                     email_job_completed(
-                        customer.email, customer.name, job.id, 
-                        job.total_price, item_names
+                        customer.email, customer.name, job.id,
+                        job.total_price, item_names,
+                        impact_summary=job.impact_summary,
                     )
-                    
+
                     # Schedule follow-up 24h later
                     schedule_email_follow_up(customer.email, customer.name)
 
+                _complete_body = (job.impact_summary
+                                  or "Pickup complete! Rate your experience")
                 send_push_notification(
                     customer.id, "Pickup Complete!",
-                    "Pickup complete! Rate your experience",
-                    {"job_id": job.id, "status": "completed", "category": "job_completed"},
+                    _complete_body,
+                    {"job_id": job.id, "status": "completed", "category": "job_completed",
+                     "impact_summary": job.impact_summary},
                 )
             # Push to operator if job was delegated
             if job.operator_id:

@@ -87,6 +87,12 @@ COLUMN_MIGRATIONS = [
     # Job promo code fields
     ("jobs", "promo_code_id", "VARCHAR(36)", "VARCHAR(36)", "NULL"),
     ("jobs", "discount_amount", "FLOAT", "FLOAT", "0.0"),
+
+    # Rescue Engine v1 — per-job disposition preference + outcome + impact
+    ("jobs", "disposition_preference", "VARCHAR(20)", "VARCHAR(20)", "'best'"),
+    ("jobs", "disposition_outcome", "VARCHAR(20)", "VARCHAR(20)", "NULL"),
+    ("jobs", "disposition_notes", "TEXT", "TEXT", "NULL"),
+    ("jobs", "impact_summary", "TEXT", "TEXT", "NULL"),
     ("jobs", "cancelled_at", "DATETIME", "TIMESTAMP", "NULL"),
     ("jobs", "cancellation_fee", "FLOAT", "FLOAT", "0.0"),
     ("jobs", "rescheduled_count", "INTEGER", "INTEGER", "0"),

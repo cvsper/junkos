@@ -367,6 +367,16 @@ class Job(db.Model):
 
     drip_stage = Column(Integer, default=0)  # 0=none, 1=reminder, 2=incentive, 3=final
 
+    # --- Disposition / impact (Rescue Engine v1) ---
+    # Customer's preference at booking; driver's marked outcome at completion.
+    # Deliberately per-job and lightweight — the advanced per-item resale/
+    # donation-receipt schema (ItemValuation/ResaleListing/...) is a separate,
+    # partner-dependent feature that stays dormant until real partners exist.
+    disposition_preference = Column(String(20), default="best")   # dispose|recycle|donate|best
+    disposition_outcome = Column(String(20), nullable=True)       # donated|recycled|disposed|mixed|could_not
+    disposition_notes = Column(Text, nullable=True)
+    impact_summary = Column(Text, nullable=True)                  # cached customer-facing receipt copy
+
     created_at = Column(DateTime, default=utcnow)
     updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
 
@@ -425,6 +435,10 @@ class Job(db.Model):
             "volume_adjustment_proposed": self.volume_adjustment_proposed,
             "adjusted_volume": self.adjusted_volume,
             "adjusted_price": self.adjusted_price,
+            "disposition_preference": self.disposition_preference or "best",
+            "disposition_outcome": self.disposition_outcome,
+            "disposition_notes": self.disposition_notes,
+            "impact_summary": self.impact_summary,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }

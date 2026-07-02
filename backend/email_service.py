@@ -163,15 +163,26 @@ def email_booking_confirmed(to_email, name, job_id, date, time, address):
         logger.exception("email_booking_confirmed failed for %s", to_email)
         return None
 
-def email_job_completed(to_email, name, job_id, amount, items):
-    """Send job completion receipt."""
+def email_job_completed(to_email, name, job_id, amount, items, impact_summary=None):
+    """Send job completion receipt. impact_summary (optional) renders the
+    Rescue Engine impact-receipt line when the driver marked an outcome."""
     try:
         first_name = name.split()[0] if name else "there"
         short_id = str(job_id)[:8] if job_id else "N/A"
-        
+
         items_list = ""
         if items:
             items_list = "<p><strong>Items removed:</strong> " + ", ".join(items) + "</p>"
+
+        impact_block = ""
+        if impact_summary:
+            impact_block = (
+                '<div style="background:#ecfdf5;border:1px solid #a7f3d0;'
+                'padding:16px 20px;border-radius:8px;margin:20px 0;color:#065f46">'
+                '<strong>🌱 Your impact</strong><br>{}'
+                '<br><span style="font-size:12px;color:#059669">Estimated — '
+                'final handling is at the hauler&#39;s discretion.</span></div>'
+            ).format(impact_summary)
 
         content = f"""
         <h2>Job Completed Successfully!</h2>
@@ -182,6 +193,7 @@ def email_job_completed(to_email, name, job_id, amount, items):
             <strong>Job ID:</strong> #{short_id}
             {items_list}
         </div>
+        {impact_block}
         <p>We hope you're happy with the service! A review request will follow shortly.</p>
         <p>Have more junk? We're always here to help.</p>
         <p style="margin-top: 30px;">
