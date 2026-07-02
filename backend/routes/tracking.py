@@ -24,12 +24,14 @@ def get_tracking_info(job_id):
     if not job:
         return jsonify({"error": "Booking not found"}), 404
 
+    # Pricing/financial details deliberately excluded: this endpoint is public
+    # (the job UUID acts as the capability), so it returns only what the
+    # tracking page needs.
     result = {
         "job_id": job.id,
         "status": job.status,
         "address": job.address,
         "scheduled_at": job.scheduled_at.isoformat() if job.scheduled_at else None,
-        "total_price": job.total_price,
         "items": job.items or [],
         "created_at": job.created_at.isoformat() if job.created_at else None,
     }
@@ -73,8 +75,13 @@ def get_tracking_info(job_id):
 _STAGE_MAP = {
     "pending":      ("waiting",   "We're confirming a hauler for your pickup."),
     "confirmed":    ("waiting",   "We're confirming a hauler for your pickup."),
+    "broadcasting": ("waiting",   "We're confirming a hauler for your pickup."),
     "accepted":     ("assigned",  "A hauler has been assigned and will arrive at your scheduled time."),
     "assigned":     ("assigned",  "A hauler has been assigned and will arrive at your scheduled time."),
+    # The real driver-app statuses — previously missing, so the public page
+    # showed "Booking status pending." while the hauler was literally driving.
+    "en_route":     ("en_route",  "Your hauler is on the way."),
+    "arrived":      ("on_site",   "Your hauler has arrived and is loading up."),
     "in_progress":  ("en_route",  "Your hauler is on the way."),
     "started":      ("on_site",   "Your hauler has arrived and is loading up."),
     "completed":    ("complete",  "Pickup complete. Thanks for choosing umuve!"),

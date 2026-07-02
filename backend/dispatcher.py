@@ -1068,7 +1068,10 @@ def sweep_expired_broadcasts(app=None):
                     o.status = "expired"
                     o.responded_at = now
 
-            past_due = job.scheduled_at and job.scheduled_at < now
+            # scheduled_at comes back naive from the DB; compare aware-vs-aware
+            # or this raises TypeError and kills the whole sweep loop (no
+            # re-broadcasts, no expiry, no escalation — jobs stuck forever).
+            past_due = job.scheduled_at and _aware_utc(job.scheduled_at) < now
             if past_due or len(offers) >= MAX_OFFERS:
                 logger.warning(
                     "sweep: job %s unclaimed (%d offers, past_due=%s) — escalating",
@@ -1199,12 +1202,22 @@ def accept_offer(token):
             Job.__table__.update()
             .where(Job.id == job.id)
             .where(Job.driver_id.is_(None))
+            # Status guard: a cancelled (or already-progressed) job must not be
+            # resurrectable by a stale SMS accept link — the hauler would drive
+            # to a dead pickup.
+            .where(Job.status.in_(("pending", "confirmed", "broadcasting")))
             .values(**_claim_values)
         )
         result = db.session.execute(claimed)
         if result.rowcount != 1:
-            # Lost the race between the read above and this update.
+            # Lost the race between the read above and this update — or the job
+            # was cancelled/progressed out from under the link.
             db.session.rollback()
+            db.session.refresh(job)
+            if job.status == "cancelled":
+                return {"ok": False, "status": "cancelled",
+                        "message": "This job was cancelled by the customer.",
+                        "job": None}
             return {"ok": False, "status": "taken",
                     "message": "Sorry — another hauler grabbed this job first.",
                     "job": None}

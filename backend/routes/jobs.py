@@ -229,7 +229,9 @@ def cancel_job(user_id, job_id):
     if not job or job.customer_id != user_id:
         return jsonify({"error": "Job not found"}), 404
 
-    cancellable = ("pending", "confirmed", "assigned")
+    # "broadcasting" must be cancellable: a paid job whose offer waves found no
+    # hauler would otherwise be stuck un-cancellable while the customer waits.
+    cancellable = ("pending", "confirmed", "assigned", "broadcasting")
     if job.status not in cancellable:
         return jsonify({"error": "Job cannot be cancelled in its current status"}), 409
 
@@ -251,6 +253,79 @@ def cancel_job(user_id, job_id):
     job.status = "cancelled"
     job.cancelled_at = utcnow()
     job.cancellation_fee = cancellation_fee
+
+    # --- Void any outstanding dispatch offers so a hauler tapping a stale SMS
+    # accept-link can't resurrect this cancelled job and drive to a dead pickup.
+    try:
+        from models import JobOffer
+        JobOffer.query.filter_by(job_id=job.id, status="sent").update(
+            {"status": "expired"}, synchronize_session=False,
+        )
+    except Exception:
+        pass  # offers table may not exist in older deploys
+
+    # --- Refund a paid job (minus the cancellation fee) ---
+    # Without this, cancelling a paid booking flips the status but silently
+    # keeps the customer's money. Refund failure never blocks the cancel —
+    # it records a failed Refund row for the admin sweep instead.
+    refund_amount = 0.0
+    payment = job.payment
+    if payment and payment.payment_status == "succeeded":
+        from models import Refund
+        refund_amount = max(0.0, round((payment.amount or 0.0) - cancellation_fee, 2))
+        refund_row = Refund(
+            id=generate_uuid(),
+            payment_id=payment.id,
+            amount=refund_amount,
+            reason="customer_cancelled (fee ${:.2f})".format(cancellation_fee),
+            status="pending",
+        )
+        db.session.add(refund_row)
+        intent_id = payment.stripe_payment_intent_id or ""
+        stripe_key = os.environ.get("STRIPE_SECRET_KEY", "")
+        if refund_amount <= 0:
+            refund_row.status = "cancelled"  # fee consumed the full amount
+        elif intent_id.startswith("pi_dev_") or not stripe_key:
+            refund_row.status = "succeeded"  # dev mode — no real charge existed
+            payment.payment_status = "refunded" if cancellation_fee <= 0 else "partially_refunded"
+        else:
+            try:
+                import stripe as _stripe_sdk
+                _stripe_sdk.api_key = stripe_key
+                sr = _stripe_sdk.Refund.create(
+                    payment_intent=intent_id,
+                    amount=int(round(refund_amount * 100)),
+                    reason="requested_by_customer",
+                    idempotency_key="refund_{}".format(job.id),
+                )
+                refund_row.stripe_refund_id = sr.id
+                refund_row.status = "succeeded"
+                payment.payment_status = "refunded" if cancellation_fee <= 0 else "partially_refunded"
+                payment.updated_at = utcnow()
+            except Exception as e:
+                refund_row.status = "failed"
+                refund_row.reason = "{} | stripe_error: {}".format(refund_row.reason, str(e)[:200])
+                db.session.add(Notification(
+                    id=generate_uuid(),
+                    user_id=user_id,
+                    type="refund_pending",
+                    title="Refund Processing",
+                    body="Your refund of ${:.2f} is being processed and may take a little longer than usual.".format(refund_amount),
+                    data={"job_id": job.id, "amount": refund_amount},
+                ))
+                try:
+                    from sms_service import send_sms
+                    send_sms(
+                        os.environ.get("ADMIN_PHONE", ""),
+                        "UMUVE ALERT: refund FAILED for cancelled job {} (${:.2f}) — issue manually in Stripe.".format(str(job.id)[:8], refund_amount),
+                    )
+                except Exception:
+                    pass
+                import logging as _logging
+                _logging.getLogger(__name__).error(
+                    "Refund failed for job %s ($%.2f) — manual Stripe action needed",
+                    job.id, refund_amount,
+                )
 
     # --- Notify assigned driver via push ---
     if had_driver:

@@ -18,7 +18,29 @@ from auth_routes import require_auth
 
 driver_bp = Blueprint("driver", __name__, url_prefix="/api/driver")
 
-PLATFORM_COMMISSION_RATE = 0.20  # 20% platform commission, 80% to driver
+# Real economics come from the Payment split (commission + service fee +
+# operator cut + 100%-pass-through tips), env-tunable via pricing_config.
+# A hardcoded 20% here previously showed haulers ~11% more than their actual
+# deposit — the fastest possible way to lose a hauler on job #1.
+from pricing_config import commission_rate as _commission_rate
+from pricing_config import service_fee_rate as _service_fee_rate
+
+
+def _job_driver_payout(job):
+    """The driver's actual take for a job.
+
+    Prefers the authoritative Payment.driver_payout_amount (set by the shared
+    split on payment success). Falls back to a config-driven estimate only for
+    legacy rows that predate the split, and returns 0 for unpaid/refunded jobs.
+    """
+    payment = getattr(job, "payment", None)
+    if payment is not None:
+        if payment.payment_status in ("refunded", "failed"):
+            return 0.0
+        if (payment.driver_payout_amount or 0.0) > 0:
+            return round(payment.driver_payout_amount, 2)
+    total = job.total_price or 0.0
+    return round(total * (1.0 - _commission_rate() - _service_fee_rate()), 2)
 
 
 def _get_contractor_or_404(user_id):
@@ -110,7 +132,7 @@ def earnings(user_id):
         monthly_map = defaultdict(lambda: {"amount": 0.0, "jobs": 0})
 
         for job in completed_jobs:
-            driver_payout = round(job.total_price * (1 - PLATFORM_COMMISSION_RATE), 2)
+            driver_payout = _job_driver_payout(job)
             total_earned += driver_payout
 
             completed_dt = job.completed_at or job.updated_at or job.created_at
@@ -213,8 +235,8 @@ def earnings_history(user_id):
 
         jobs = []
         for job in pagination.items:
-            commission = round(job.total_price * PLATFORM_COMMISSION_RATE, 2)
-            driver_payout = round(job.total_price - commission, 2)
+            driver_payout = _job_driver_payout(job)
+            commission = max(0.0, round((job.total_price or 0.0) - driver_payout, 2))
             jobs.append({
                 "id": job.id,
                 "address": job.address,
@@ -348,7 +370,7 @@ def stats(user_id):
             .all()
         )
         total_earned = round(
-            sum(j.total_price * (1 - PLATFORM_COMMISSION_RATE) for j in all_completed), 2
+            sum(_job_driver_payout(j) for j in all_completed), 2
         )
 
         # This week earned (Monday through now)
@@ -364,7 +386,7 @@ def stats(user_id):
             .all()
         )
         this_week_earned = round(
-            sum(j.total_price * (1 - PLATFORM_COMMISSION_RATE) for j in this_week_jobs), 2
+            sum(_job_driver_payout(j) for j in this_week_jobs), 2
         )
 
         # This month earned
@@ -379,7 +401,7 @@ def stats(user_id):
             .all()
         )
         this_month_earned = round(
-            sum(j.total_price * (1 - PLATFORM_COMMISSION_RATE) for j in this_month_jobs), 2
+            sum(_job_driver_payout(j) for j in this_month_jobs), 2
         )
 
         return jsonify({

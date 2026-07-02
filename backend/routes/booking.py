@@ -954,8 +954,9 @@ def create_booking(user_id):
         promo_code_id = promo.id
         discount_amount = discount
         total = round(total - discount, 2)
-        # Increment use count
-        promo.use_count = (promo.use_count or 0) + 1
+        # NOTE: use_count is incremented on PAYMENT SUCCESS (webhook/confirm),
+        # not here — counting at booking creation double-counted every paid
+        # booking and exhausted max-use codes at half their budget.
 
     # --- Resolve customer (auth user or guest) ---
     if not user_id:
@@ -1211,7 +1212,12 @@ def lead_stats(user_id):
 # ---------------------------------------------------------------------------
 @booking_bp.route("/<job_id>", methods=["GET"])
 def get_booking_status(job_id):
-    """Return full booking status including payment and rating info."""
+    """Return booking status for the confirmation/status page.
+
+    Public (the UUID is the capability), so the payment sub-object is reduced
+    to what the page needs — never the Stripe intent id, commission, or
+    driver/operator payout splits, which previously leaked here.
+    """
     job = db.session.get(Job, job_id)
     if not job:
         return jsonify({"error": "Booking not found"}), 404
@@ -1219,7 +1225,11 @@ def get_booking_status(job_id):
     result = job.to_dict()
 
     if job.payment:
-        result["payment"] = job.payment.to_dict()
+        result["payment"] = {
+            "payment_status": job.payment.payment_status,
+            "amount": job.payment.amount,
+            "tip_amount": job.payment.tip_amount,
+        }
     else:
         result["payment"] = None
 

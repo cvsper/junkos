@@ -191,10 +191,15 @@ def get_available_jobs(user_id):
     page = request.args.get("page", 1, type=int)
     per_page = request.args.get("per_page", 20, type=int)
 
-    # Include pending jobs + jobs already assigned to this contractor
+    # Claimable = PAID and unassigned ("confirmed"/"broadcasting") — unpaid
+    # "pending" jobs are no longer shown since accept rejects them anyway.
+    # Plus jobs already assigned to this contractor.
     pending_jobs = Job.query.filter(
         db.or_(
-            Job.status.in_(["pending", "confirmed"]),
+            db.and_(
+                Job.driver_id.is_(None),
+                Job.status.in_(["confirmed", "broadcasting"]),
+            ),
             db.and_(
                 Job.driver_id == contractor.id,
                 Job.status.in_(["assigned", "accepted", "en_route", "arrived", "started"]),
@@ -207,11 +212,11 @@ def get_available_jobs(user_id):
         if job.lat is not None and job.lng is not None and contractor.current_lat is not None and contractor.current_lng is not None:
             dist = _haversine(contractor.current_lat, contractor.current_lng, job.lat, job.lng)
             if dist <= radius_km:
-                job_data = job.to_dict()
+                job_data = _with_driver_payout(job)
                 job_data["distance_km"] = round(dist, 2)
                 nearby.append(job_data)
         else:
-            job_data = job.to_dict()
+            job_data = _with_driver_payout(job)
             job_data["distance_km"] = None
             nearby.append(job_data)
 
@@ -249,7 +254,19 @@ def get_current_job(user_id):
     if not active_job:
         return jsonify({"success": True, "job": None}), 200
 
-    return jsonify({"success": True, "job": active_job.to_dict()}), 200
+    return jsonify({"success": True, "job": _with_driver_payout(active_job)}), 200
+
+
+def _with_driver_payout(job):
+    """job.to_dict() + the driver's actual/estimated take for driver-facing
+    endpoints — so the app can show 'Your pay' instead of the customer total."""
+    d = job.to_dict()
+    try:
+        from routes.driver import _job_driver_payout
+        d["driver_payout"] = _job_driver_payout(job)
+    except Exception:
+        pass
+    return d
 
 
 @drivers_bp.route("/jobs/<job_id>/accept", methods=["POST"])
@@ -275,12 +292,43 @@ def accept_job(user_id, job_id):
     if not job:
         return jsonify({"error": "Job not found"}), 404
 
-    if job.status not in ("pending", "confirmed", "assigned"):
+    # Atomic claim (same pattern as the broadcast accept path): a conditional
+    # UPDATE so two concurrent accepts can't both win, a driver can't steal a
+    # job already assigned to someone else, and unpaid ("pending") jobs can't
+    # be accepted — payment confirmation is what makes a job claimable.
+    now = utcnow()
+    if job.driver_id == contractor.id and job.status == "assigned":
+        # Dispatcher pre-assigned this driver; accepting flips assigned->accepted.
+        claim = (
+            Job.__table__.update()
+            .where(Job.id == job_id)
+            .where(Job.driver_id == contractor.id)
+            .where(Job.status == "assigned")
+            .values(status="accepted", updated_at=now)
+        )
+    else:
+        _values = {"driver_id": contractor.id, "status": "accepted", "updated_at": now}
+        if contractor.operator_id:
+            _values["operator_id"] = contractor.operator_id
+        claim = (
+            Job.__table__.update()
+            .where(Job.id == job_id)
+            .where(Job.driver_id.is_(None))
+            .where(Job.status.in_(("confirmed", "broadcasting")))
+            .values(**_values)
+        )
+
+    result = db.session.execute(claim)
+    if result.rowcount != 1:
+        db.session.rollback()
+        db.session.refresh(job)
+        if job.driver_id and job.driver_id != contractor.id:
+            return jsonify({"error": "That job was just taken by another hauler"}), 409
+        if job.status == "pending":
+            return jsonify({"error": "Job is awaiting payment and cannot be accepted yet"}), 409
         return jsonify({"error": "Job cannot be accepted (current status: {})".format(job.status)}), 409
 
-    job.driver_id = contractor.id
-    job.status = "accepted"
-    job.updated_at = utcnow()
+    db.session.refresh(job)
 
     notification = Notification(
         id=generate_uuid(),
@@ -329,7 +377,7 @@ def accept_job(user_id, job_id):
         },
     }, room=job.id)
 
-    return jsonify({"success": True, "job": job.to_dict()}), 200
+    return jsonify({"success": True, "job": _with_driver_payout(job)}), 200
 
 
 @drivers_bp.route("/jobs/<job_id>/decline", methods=["POST"])
@@ -419,6 +467,64 @@ def apply_job_status_transition(job, contractor, new_status, data=None):
             "error": "Cannot transition from {} to {}".format(job.status, new_status),
             "allowed": allowed,
         }, 409
+
+    # Driver-initiated "cancelled" releases the job back to the pool instead of
+    # killing the customer's paid booking: clear the driver, requeue, re-dispatch,
+    # and tell the customer + admin. (Previously this flipped a paid job to
+    # cancelled with no refund, no cleanup, and no word to guest customers.)
+    if new_status == "cancelled":
+        reason = (data.get("reason") or data.get("cancellation_reason") or "").strip()
+        job.driver_id = None
+        if job.operator_id and contractor.operator_id == job.operator_id:
+            job.operator_id = None
+        job.status = "confirmed"
+        job.updated_at = utcnow()
+        db.session.add(Notification(
+            id=generate_uuid(),
+            user_id=job.customer_id,
+            type="job_update",
+            title="Finding You a New Hauler",
+            body="Your hauler had to cancel — we're lining up a replacement now. Your booking and payment are unaffected.",
+            data={"job_id": job.id, "status": "reassigning"},
+        ))
+        db.session.commit()
+
+        try:
+            from notifications import send_push_notification as _push
+            _push(job.customer_id, "Finding You a New Hauler",
+                  "Your hauler had to cancel — we're lining up a replacement now.",
+                  {"job_id": job.id, "status": "reassigning"})
+            _customer = db.session.get(User, job.customer_id)
+            if _customer and _customer.phone:
+                from sms_service import send_sms_async
+                send_sms_async(
+                    _customer.phone,
+                    "umuve update: your hauler had to cancel, and we're already lining up a replacement. "
+                    "Your booking and payment are unaffected — we'll text you the moment a new hauler is confirmed.",
+                )
+            if _customer and _customer.email:
+                from notifications import send_job_status_update_email
+                send_job_status_update_email(_customer.email, _customer.name, job.id, "reassigning")
+        except Exception:
+            logger.exception("Driver-cancel customer notify failed for job %s", job.id)
+
+        try:
+            from sms_service import send_sms
+            send_sms(
+                os.environ.get("ADMIN_PHONE", ""),
+                "UMUVE ALERT: hauler {} cancelled job {} ({}). Reason: {}. Auto re-dispatching.".format(
+                    contractor.id[:8], str(job.id)[:8], job.address or "?", reason or "none given"),
+            )
+        except Exception:
+            pass
+
+        try:
+            from dispatcher import auto_assign_job_async
+            auto_assign_job_async(job.id, current_app._get_current_object())
+        except Exception:
+            logger.exception("Re-dispatch after driver cancel failed for job %s", job.id)
+
+        return True, {"success": True, "job": job.to_dict(), "released": True}, 200
 
     job.status = new_status
     job.updated_at = utcnow()

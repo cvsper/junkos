@@ -48,8 +48,13 @@ LATE_WINDOW_MAX_MINUTES = 25
 
 
 def _statuses_open():
-    """Statuses that still represent an unfinished job (no real-world start)."""
-    return ("pending", "confirmed", "accepted", "assigned", "in_progress")
+    """Statuses that still represent an unfinished job (no real-world start).
+
+    "broadcasting" matters: a paid job mid-offer-wave with no acceptor is
+    exactly the case the watchdog exists for — omitting it made those jobs
+    invisible to every safety net.
+    """
+    return ("pending", "confirmed", "broadcasting", "accepted", "assigned", "in_progress")
 
 
 def run_t30_check():

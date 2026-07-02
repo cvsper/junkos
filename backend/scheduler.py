@@ -65,7 +65,12 @@ def _sweep_pending_payouts(app):
         from models import db, Payment
         from routes.payments import attempt_payout
 
-        pending = Payment.query.filter_by(payout_status="pending_connect").all()
+        # Include "failed" too: one transient Stripe error at completion time
+        # previously meant the hauler was silently never paid. attempt_payout
+        # is idempotent (Stripe idempotency key per job), so retrying is safe.
+        pending = Payment.query.filter(
+            Payment.payout_status.in_(("pending_connect", "failed"))
+        ).all()
         retried = paid = 0
         for p in pending:
             retried += 1

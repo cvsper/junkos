@@ -41,6 +41,36 @@ def _get_stripe():
     return _stripe
 
 
+def recompute_payment_split(payment, job):
+    """Compute commission / operator cut / driver payout on a Payment, in place.
+
+    This is THE split. It must run on every path that marks a payment
+    succeeded (webhook, /confirm, /confirm-simple) — bookings create the
+    Payment with driver_payout_amount=0, and whichever confirmation path wins
+    the race must fill it in, or the hauler gets paid $0. Tips are excluded
+    from the split base and pass through 100% to the driver.
+
+    Does not commit; the caller's transaction persists it.
+    """
+    amount = payment.amount or 0.0
+    tip = payment.tip_amount or 0.0
+    split_base = max(0.0, round(amount - tip, 2))
+    platform_commission = round(split_base * PLATFORM_COMMISSION, 2)
+    service_fee = payment.service_fee or 0.0
+    driver_gross = round(split_base - platform_commission - service_fee, 2)
+
+    operator_payout = 0.0
+    if job is not None and getattr(job, "operator_id", None):
+        op = db.session.get(Contractor, job.operator_id)
+        if op:
+            rate = op.operator_commission_rate or 0.15
+            operator_payout = round(driver_gross * rate, 2)
+
+    payment.commission = platform_commission
+    payment.operator_payout_amount = operator_payout
+    payment.driver_payout_amount = max(0, round(driver_gross - operator_payout + tip, 2))
+
+
 @payments_bp.route("/create-intent", methods=["POST"])
 @limiter.limit("10 per minute")
 @require_auth
@@ -104,7 +134,7 @@ def create_payment_intent(user_id):
     if stripe_key:
         try:
             intent = stripe.PaymentIntent.create(
-                amount=int(amount * 100),
+                amount=int(round(amount * 100)),
                 currency="usd",
                 metadata={"job_id": job_id, "user_id": user_id},
             )
@@ -123,6 +153,15 @@ def create_payment_intent(user_id):
             job_id=job_id,
         )
         db.session.add(payment)
+
+    # Cancel the superseded intent so a stale client_secret can't double-charge.
+    _old_intent = payment.stripe_payment_intent_id
+    if (_old_intent and _old_intent != intent_id
+            and not _old_intent.startswith("pi_dev_") and stripe_key):
+        try:
+            stripe.PaymentIntent.cancel(_old_intent)
+        except Exception:
+            pass
 
     payment.stripe_payment_intent_id = intent_id
     payment.amount = amount
@@ -163,11 +202,31 @@ def confirm_payment(user_id):
     if not payment:
         return jsonify({"error": "Payment not found"}), 404
 
+    job = db.session.get(Job, payment.job_id)
+
+    # Ownership: only the customer who owns the job may confirm its payment.
+    if job and job.customer_id != user_id:
+        return jsonify({"error": "Not authorised for this payment"}), 403
+
+    # Verify against Stripe that the intent actually succeeded. Without this,
+    # any client could mark its own payment "succeeded" with no money moving
+    # — and the platform would still pay the driver real dollars.
+    if not intent_id.startswith("pi_dev_"):
+        stripe = _get_stripe()
+        if os.environ.get("STRIPE_SECRET_KEY", ""):
+            try:
+                intent_obj = stripe.PaymentIntent.retrieve(intent_id)
+                if intent_obj.status != "succeeded":
+                    return jsonify({"error": "Payment intent has not succeeded (status: {})".format(intent_obj.status)}), 400
+            except Exception as e:
+                return jsonify({"error": "Failed to verify payment with Stripe: {}".format(str(e))}), 502
+
     was_succeeded = payment.payment_status == "succeeded"
     payment.payment_status = "succeeded"
     payment.updated_at = utcnow()
 
-    job = db.session.get(Job, payment.job_id)
+    if not was_succeeded:
+        recompute_payment_split(payment, job)
 
     # Count a promo redemption once, only on the pending->succeeded transition,
     # so a double-confirm (or webhook + manual confirm) can't over-count uses.
@@ -175,6 +234,17 @@ def confirm_payment(user_id):
         promo = db.session.get(PromoCode, job.promo_code_id)
         if promo:
             promo.use_count = (promo.use_count or 0) + 1
+
+    # Advance the job and dispatch, same as confirm-simple — otherwise an
+    # honest confirm through this route strands the job in "pending".
+    if job and job.status == "pending":
+        job.status = "confirmed"
+        job.updated_at = utcnow()
+        try:
+            from socket_events import broadcast_job_status
+            broadcast_job_status(job.id, job.status)
+        except Exception:
+            pass
 
     if job and job.driver_id:
         contractor = db.session.get(Contractor, job.driver_id)
@@ -190,6 +260,14 @@ def confirm_payment(user_id):
             db.session.add(notification)
 
     db.session.commit()
+
+    # --- Auto-dispatch best operator in background (mirrors confirm-simple) ---
+    if job and job.status == "confirmed" and not job.driver_id:
+        try:
+            from dispatcher import auto_assign_job_async
+            auto_assign_job_async(job.id, current_app._get_current_object())
+        except Exception:
+            logger.exception("Failed to trigger auto-dispatch for job %s", job.id)
 
     # --- Cancel abandoned booking recovery SMS ---
     try:
@@ -232,7 +310,17 @@ def attempt_payout(job_id):
             return {"ok": False, "status": "not_payable",
                     "message": "Job not found", "amount": 0.0}
 
-        payment = job.payment
+        # Never pay before the work is done — payment success alone is not
+        # payout eligibility. (Completion is what flips this gate.)
+        if job.status != "completed":
+            return {"ok": False, "status": "not_payable",
+                    "message": "Job is not completed", "amount": 0.0}
+
+        # Row-lock the payment so a concurrent completion hook / scheduler
+        # sweep / manual trigger can't both read payout_status=="pending" and
+        # double-transfer. (No-op on SQLite dev; real lock on Postgres.)
+        payment = (Payment.query.filter_by(job_id=job_id)
+                   .with_for_update().first())
         if not payment:
             return {"ok": False, "status": "not_payable",
                     "message": "No payment record", "amount": 0.0}
@@ -251,6 +339,16 @@ def attempt_payout(job_id):
         if not contractor:
             return {"ok": False, "status": "not_payable",
                     "message": "Contractor not found", "amount": 0.0}
+
+        # Safety net: if no confirmation path ever computed the split (race
+        # variants, legacy rows), compute it now rather than transfer $0.
+        if (payment.driver_payout_amount or 0.0) <= 0 and (payment.amount or 0.0) > 0:
+            recompute_payment_split(payment, job)
+            db.session.commit()
+            logger.warning(
+                "attempt_payout recomputed missing split for job %s -> $%.2f",
+                job_id, payment.driver_payout_amount or 0.0,
+            )
 
         amount = payment.driver_payout_amount or 0.0
         stripe_key = os.environ.get("STRIPE_SECRET_KEY", "")
@@ -272,10 +370,11 @@ def attempt_payout(job_id):
             try:
                 stripe = _get_stripe()
                 stripe.Transfer.create(
-                    amount=int(amount * 100),
+                    amount=int(round(amount * 100)),
                     currency="usd",
                     destination=contractor.stripe_connect_id,
                     metadata={"job_id": job_id},
+                    idempotency_key="payout_{}".format(job_id),
                 )
             except Exception as e:
                 payment.payout_status = "failed"
@@ -417,7 +516,21 @@ def pay_referral_bonus(referral):
 @payments_bp.route("/payout/<job_id>", methods=["POST"])
 @require_auth
 def trigger_payout(user_id, job_id):
-    """Trigger Stripe Connect payout to the contractor for a completed job."""
+    """Trigger Stripe Connect payout to the contractor for a completed job.
+
+    Only an admin or the job's assigned driver may trigger this — any other
+    authenticated account gets 403 (payouts move real money).
+    """
+    caller = db.session.get(User, user_id)
+    is_admin = bool(caller and caller.role == "admin")
+    if not is_admin:
+        job_row = db.session.get(Job, job_id)
+        if not job_row or not job_row.driver_id:
+            return jsonify({"error": "Not authorised"}), 403
+        contractor = Contractor.query.filter_by(user_id=user_id).first()
+        if not contractor or contractor.id != job_row.driver_id:
+            return jsonify({"error": "Not authorised"}), 403
+
     result = attempt_payout(job_id)
     if result["ok"]:
         job = db.session.get(Job, job_id)
@@ -550,6 +663,14 @@ def create_simple_payment_intent():
     except (ValueError, TypeError):
         return jsonify({"error": "Invalid amount"}), 400
 
+    # A paid booking must never have its payment reset to pending / its intent
+    # re-pointed — this route is public, and the job UUID is discoverable, so
+    # without this guard anyone could wipe the paid state of any booking.
+    if booking_id:
+        existing_payment = Payment.query.filter_by(job_id=booking_id).first()
+        if existing_payment and existing_payment.payment_status == "succeeded":
+            return jsonify({"error": "This booking is already paid"}), 409
+
     discount = 0.0
     promo_message = None
     promo_code = (data.get("promoCode") or data.get("promo_code") or "").strip()
@@ -613,7 +734,7 @@ def create_simple_payment_intent():
     if stripe_key:
         try:
             intent_kwargs = {
-                "amount": int(amount * 100),
+                "amount": int(round(amount * 100)),
                 "currency": "usd",
                 "metadata": metadata,
             }
@@ -633,6 +754,15 @@ def create_simple_payment_intent():
     if booking_id:
         payment = Payment.query.filter_by(job_id=booking_id).first()
         if payment:
+            # Cancel the superseded intent (e.g. user re-opened checkout) so a
+            # stale client_secret can't produce a second live charge later.
+            old_intent = payment.stripe_payment_intent_id
+            if (old_intent and old_intent != intent_id
+                    and not old_intent.startswith("pi_dev_") and stripe_key):
+                try:
+                    stripe.PaymentIntent.cancel(old_intent)
+                except Exception:
+                    pass  # already confirmed/cancelled — Stripe refuses, fine
             payment.stripe_payment_intent_id = intent_id
             payment.amount = amount
             payment.payment_status = "pending"
@@ -703,6 +833,13 @@ def confirm_simple_payment():
     payment.updated_at = utcnow()
 
     job = db.session.get(Job, payment.job_id)
+
+    # Compute the commission/payout split NOW. This path usually beats the
+    # Stripe webhook (whose already-succeeded guard then no-ops), and bookings
+    # create the Payment with driver_payout_amount=0 — without this the hauler
+    # would be paid $0 for the job.
+    if not was_succeeded:
+        recompute_payment_split(payment, job)
 
     # Count a promo redemption once, on the pending->succeeded transition.
     if job and job.promo_code_id and not was_succeeded:
@@ -1083,16 +1220,40 @@ def stripe_webhook():
             return jsonify({"error": "Invalid signature"}), 400
         except ValueError:
             return jsonify({"error": "Invalid payload"}), 400
-    else:
-        # Dev mode — parse without verification
+    elif os.environ.get("FLASK_ENV") == "development":
+        # Dev mode only — parse without verification
         import json
         try:
             event = json.loads(payload)
         except Exception:
             return jsonify({"error": "Invalid JSON"}), 400
+    else:
+        # Fail CLOSED in production: without the webhook secret we cannot tell
+        # a real Stripe event from a forged one that marks jobs paid for free.
+        logger.error("STRIPE_WEBHOOK_SECRET is not set — rejecting webhook")
+        return jsonify({"error": "Webhook not configured"}), 500
 
     event_type = event.get("type") if isinstance(event, dict) else event["type"]
     data_object = event.get("data", {}).get("object", {}) if isinstance(event, dict) else event["data"]["object"]
+    event_id = event.get("id") if isinstance(event, dict) else getattr(event, "id", None)
+
+    # Durable idempotency: Stripe retries webhooks, and gunicorn runs multiple
+    # workers — the in-row status guards alone can race. Record each event id
+    # once (unique index on stripe_event_id) and skip replays.
+    if event_id:
+        from models import WebhookEvent
+        try:
+            db.session.add(WebhookEvent(
+                id=generate_uuid(),
+                stripe_event_id=event_id,
+                event_type=event_type or "unknown",
+                status="processing",
+            ))
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            logger.info("Stripe webhook replay skipped: %s (%s)", event_id, event_type)
+            return jsonify({"received": True, "duplicate": True}), 200
 
     if event_type == "payment_intent.succeeded":
         _handle_payment_succeeded(data_object)
@@ -1119,7 +1280,20 @@ def _handle_payment_succeeded(intent):
     """Mark payment as succeeded, update job to confirmed, and trigger auto-assignment."""
     intent_id = intent.get("id", "")
     payment = Payment.query.filter_by(stripe_payment_intent_id=intent_id).first()
+
+    # Fallback: if the intent id on file was superseded (client re-opened
+    # checkout) or the webhook raced create-intent's commit, find the payment
+    # via the job id we stamped into the intent metadata — and adopt this
+    # intent as the one that actually charged.
     if not payment:
+        meta = intent.get("metadata") or {}
+        meta_job_id = meta.get("job_id") or meta.get("booking_id")
+        if meta_job_id:
+            payment = Payment.query.filter_by(job_id=meta_job_id).first()
+            if payment and payment.payment_status != "succeeded":
+                payment.stripe_payment_intent_id = intent_id
+    if not payment:
+        logger.warning("Stripe webhook: no payment found for intent %s", intent_id)
         return
 
     # Idempotency: Stripe retries this webhook (and the client may have already
@@ -1131,16 +1305,11 @@ def _handle_payment_succeeded(intent):
     payment.payment_status = "succeeded"
     payment.updated_at = utcnow()
 
-    # Recalculate commission split (platform 20%, operator commission from
-    # remainder). Tips are excluded from the split base and from the operator
-    # cut — they pass through 100% to the hauler who worked the job.
-    amount = payment.amount or 0.0
-    tip = payment.tip_amount or 0.0
-    split_base = max(0.0, round(amount - tip, 2))
-    platform_commission = round(split_base * PLATFORM_COMMISSION, 2)
-    driver_gross = round(split_base - platform_commission - (payment.service_fee or 0.0), 2)
-
     job = db.session.get(Job, payment.job_id)
+
+    # Commission/operator/driver split — the single shared computation used by
+    # every confirmation path (tips pass through 100% to the driver).
+    recompute_payment_split(payment, job)
 
     # Promo redemption count — idempotent via the already-succeeded guard above,
     # so this fires once whether confirm-simple or this webhook reconciles first.
@@ -1148,17 +1317,6 @@ def _handle_payment_succeeded(intent):
         _promo = db.session.get(PromoCode, job.promo_code_id)
         if _promo:
             _promo.use_count = (_promo.use_count or 0) + 1
-
-    operator_payout = 0.0
-    if job and job.operator_id:
-        op = db.session.get(Contractor, job.operator_id)
-        if op:
-            rate = op.operator_commission_rate or 0.15
-            operator_payout = round(driver_gross * rate, 2)
-
-    payment.commission = platform_commission
-    payment.operator_payout_amount = operator_payout
-    payment.driver_payout_amount = max(0, round(driver_gross - operator_payout + tip, 2))
 
     if job:
         # Move job from pending to confirmed now that payment succeeded
