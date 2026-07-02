@@ -114,12 +114,27 @@ def optext_send():
     if client is None or not from_num:
         return jsonify({"error": "Texting isn't configured yet — ask Shamar to set the Twilio number."}), 503
 
+    # Register the hauler as a concierge operator in the same tap — they start
+    # receiving SMS job offers immediately, no app required. Idempotent; an
+    # app-registered number is left alone. The setup link below still goes out
+    # so they can graduate to the full app + instant payouts when ready.
+    concierge_status = None
+    try:
+        from recruiter import register_concierge
+        res = register_concierge(formatted, name=name, source="optext",
+                                 send_welcome=False)
+        concierge_status = res.get("status")
+        logger.info("optext concierge register for %s: %s", formatted, concierge_status)
+    except Exception:
+        logger.exception("optext concierge register failed for %s", formatted)
+
     body = _build_message(name)
     try:
         msg = _run(lambda: client.messages.create(body=body, from_=from_num, to=formatted))
         sid = getattr(msg, "sid", None)
         logger.info("optext sent to %s (sid=%s)", formatted, sid)
-        return jsonify({"ok": True, "to": formatted, "sid": sid})
+        return jsonify({"ok": True, "to": formatted, "sid": sid,
+                        "concierge": concierge_status})
     except Exception as e:
         logger.exception("optext send failed")
         return jsonify({

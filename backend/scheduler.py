@@ -434,6 +434,17 @@ def _run_doc_expiry_sweep(app):
         logger.exception("doc expiry sweep job crashed")
 
 
+def _run_recruiter_calls(app):
+    """Maya Recruiter: place a capped batch of outbound recruiting calls to
+    NEW driver leads. Fully kill-switched — no-ops unless RECRUITER_CALLS_ENABLED
+    (+ Vapi env) is set. Runs a few times a day inside the calling window."""
+    try:
+        from recruiter_calls import run_recruiter_calls
+        run_recruiter_calls(app)
+    except Exception:
+        logger.exception("recruiter calls job crashed")
+
+
 def init_scheduler(app):
     """Initialize and start the background scheduler.
 
@@ -618,8 +629,21 @@ def init_scheduler(app):
             name="Daily B2B customer outreach",
         )
 
+        # Maya Recruiter outbound calls — three passes inside the ET calling
+        # window (15:00 / 18:00 / 21:00 UTC ~= 10am / 1pm / 4pm ET). Each pass
+        # is capped and the whole job is dark unless RECRUITER_CALLS_ENABLED.
+        scheduler.add_job(
+            _run_recruiter_calls,
+            "cron",
+            hour="15,18,21",
+            minute=30,
+            args=[app],
+            id="recruiter_calls",
+            name="Maya recruiter outbound calls (kill-switched)",
+        )
+
         scheduler.start()
-        logger.info("Background scheduler started with 16 jobs")
+        logger.info("Background scheduler started with 17 jobs")
         return scheduler
     except ImportError:
         logger.warning("APScheduler not installed — scheduler disabled")

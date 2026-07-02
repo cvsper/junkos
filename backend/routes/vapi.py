@@ -782,6 +782,12 @@ def handle_webhook():
     message = data.get("message", {})
     msg_type = message.get("type", "")
 
+    # Maya Recruiter calls carry a metadata marker — route their outcomes to the
+    # auto-registration handler instead of the customer-call pipeline.
+    if msg_type == "end-of-call-report" and _is_recruiter_call(message):
+        _handle_recruiter_outcome(message)
+        return jsonify({"ok": True})
+
     if msg_type == "end-of-call-report":
         _handle_end_of_call_report(message)
     elif msg_type == "status-update":
@@ -791,6 +797,112 @@ def handle_webhook():
         _handle_transcript(message)
 
     return jsonify({"ok": True})
+
+
+def _recruiter_metadata(message):
+    """Return the assistantOverrides.metadata dict for a call, or {}."""
+    call = message.get("call", {}) or {}
+    overrides = call.get("assistantOverrides", {}) or {}
+    md = overrides.get("metadata", {}) or {}
+    if not md:
+        # Some Vapi payloads surface metadata at the call root instead.
+        md = call.get("metadata", {}) or {}
+    return md if isinstance(md, dict) else {}
+
+
+def _is_recruiter_call(message):
+    return _recruiter_metadata(message).get("purpose") == "recruit"
+
+
+def _handle_recruiter_outcome(message):
+    """Maya Recruiter end-of-call: on a warm outcome, auto-register the hauler
+    as a concierge operator and text the setup link. Never raises."""
+    try:
+        from models import db
+        from partner_models import DriverLead
+
+        md = _recruiter_metadata(message)
+        lead_id = md.get("driver_lead_id")
+        call = message.get("call", {}) or {}
+        phone = call.get("customer", {}).get("number", "")
+
+        analysis = message.get("analysis", {}) or {}
+        structured = analysis.get("structuredData", {}) or {}
+        outcome = (structured.get("outcome") or "").lower()
+        hauler_name = structured.get("hauler_name") or ""
+        summary = message.get("summary", "")
+
+        lead = db.session.get(DriverLead, lead_id) if lead_id else None
+        if not lead and phone:
+            lead = DriverLead.query.filter_by(phone_e164=phone).first()
+
+        logger.info("RECRUITER outcome=%s phone=%s lead=%s",
+                    outcome, phone, lead.id if lead else "?")
+
+        target_phone = (lead.phone_e164 if lead else None) or phone
+
+        if outcome == "interested" and target_phone:
+            from recruiter import register_concierge, send_setup_link
+            res = register_concierge(
+                target_phone,
+                name=hauler_name or (lead.name_guess if lead else None),
+                source="maya_recruiter",
+                send_welcome=True,
+            )
+            # Also send the full setup link so they can go straight to the app.
+            send_setup_link(target_phone, name=hauler_name)
+            if lead:
+                lead.state = "QUALIFIED" if res["ok"] else "HUMAN_REVIEW"
+                lead.updated_at = _now()
+                db.session.commit()
+            _notify_admin_recruit(target_phone, hauler_name, res, summary)
+
+        elif outcome in ("callback", "not_interested", "wrong_number", "voicemail"):
+            if lead:
+                state_map = {
+                    "callback": "RESPONDED",
+                    "not_interested": "REJECTED",
+                    "wrong_number": "REJECTED",
+                    "voicemail": "NEW",   # leave NEW so a later run retries once
+                }
+                if outcome == "voicemail":
+                    # Don't spin forever on a dead number: mark REJECTED after a
+                    # call already recorded on last_recruiter_call_at.
+                    lead.state = "NEW"
+                else:
+                    lead.state = state_map.get(outcome, "HUMAN_REVIEW")
+                lead.updated_at = _now()
+                db.session.commit()
+    except Exception:
+        logger.exception("Recruiter outcome handler failed")
+        try:
+            from models import db
+            db.session.rollback()
+        except Exception:
+            pass
+
+
+def _notify_admin_recruit(phone, name, res, summary):
+    """Tell the admin a hauler just got auto-recruited. Never raises."""
+    try:
+        import os
+        admin_phone = os.environ.get("ADMIN_PHONE", "")
+        if not admin_phone:
+            return
+        from sms_service import send_sms_async
+        send_sms_async(
+            admin_phone,
+            "NEW HAULER (Maya): {} {} — {}. {}".format(
+                name or "(no name)", phone, res.get("status", "?"),
+                (summary or "")[:120]),
+        )
+    except Exception:
+        logger.exception("Admin recruit notify failed")
+
+
+def _now():
+    from datetime import datetime, timezone
+    return datetime.now(timezone.utc)
 
 
 def _handle_end_of_call_report(message):

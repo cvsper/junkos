@@ -59,6 +59,9 @@ COLUMN_MIGRATIONS = [
     ("contractors", "operator_commission_rate", "FLOAT", "FLOAT", "0.15"),
     ("contractors", "is_concierge", "BOOLEAN", "BOOLEAN", "FALSE"),
 
+    # Maya Recruiter — last outbound recruiting call to a driver lead
+    ("driver_leads", "last_recruiter_call_at", "DATETIME", "TIMESTAMP", "NULL"),
+
     # Contractor onboarding fields
     ("contractors", "onboarding_status", "VARCHAR(20)", "VARCHAR(20)", "'pending'"),
     ("contractors", "background_check_status", "VARCHAR(20)", "VARCHAR(20)", "'not_started'"),

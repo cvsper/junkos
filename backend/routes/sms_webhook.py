@@ -39,6 +39,41 @@ def inbound_sms():
 
     logger.info("Inbound SMS from %s: body=%r media=%d", from_phone, body[:100], num_media)
 
+    # --- Hauler self-signup + opt-out (Tier 1-A): runs before everything so a
+    # "JOBS" text becomes supply instead of getting auto-quoted, and a "STOP"
+    # from a concierge hauler removes them from the offer wave. Consent-clean:
+    # the hauler initiated the message. ---
+    if num_media == 0 and body:
+        try:
+            from recruiter import is_signup_keyword, register_concierge
+            lower = body.strip().lower()
+
+            if lower.split()[0].strip(".!,") in ("stop", "unsubscribe", "cancel", "quit"):
+                _opt_out_concierge(from_phone)
+                # Twilio's own STOP handling also fires; this just flips our flag.
+
+            elif is_signup_keyword(body):
+                res = register_concierge(from_phone, source="inbound_keyword")
+                if res["status"] == "created":
+                    return _twiml_response(
+                        "You're on Umuve's paid-jobs list! We text you a job "
+                        "(pay + address), you reply to grab it, haul it, we pay "
+                        "same day. No app needed to start. Reply STOP to opt out."
+                    )
+                if res["status"] == "exists_concierge":
+                    return _twiml_response(
+                        "You're already on the list — job offers come by text. "
+                        "Reply STOP to opt out."
+                    )
+                if res["status"] == "exists_app":
+                    return _twiml_response(
+                        "You're already registered in the Umuve Pro app — open "
+                        "it and tap Go Online to get jobs."
+                    )
+                # invalid/error: fall through to normal handling
+        except Exception:
+            logger.exception("Hauler signup fast-path failed; falling through")
+
     # --- Support detection (Tier 1-B): bypass Vapi for customers in trouble ---
     # Check BEFORE the photo/Vapi paths so a "where is my hauler" text doesn't
     # get auto-quoted or lost in the AI line. Photos are still photos — only
@@ -127,6 +162,27 @@ def inbound_sms():
         "Thanks for texting Umuve! Text us a PHOTO of your junk for an instant quote, "
         "or call (844) 435-6005. Book online: app.goumuve.com"
     )
+
+
+def _opt_out_concierge(phone):
+    """Flip a concierge hauler offline on STOP so they stop getting offers.
+
+    Never raises. Only touches concierge accounts — a customer texting STOP
+    is handled by Twilio's carrier-level opt-out and the default reply below.
+    """
+    try:
+        from models import db, User, utcnow
+        from recruiter import normalize_phone
+        e164 = normalize_phone(phone) or phone
+        user = User.query.filter_by(phone=e164).first()
+        if user and user.contractor_profile and user.contractor_profile.is_concierge:
+            c = user.contractor_profile
+            c.is_online = False
+            c.updated_at = utcnow()
+            db.session.commit()
+            logger.info("Concierge %s opted out (STOP) — offline", c.id)
+    except Exception:
+        logger.exception("Concierge opt-out failed for %s", phone)
 
 
 def _twiml_response(message):

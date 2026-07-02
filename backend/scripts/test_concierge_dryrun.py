@@ -279,6 +279,75 @@ def main():
         noauth = client.get("/api/admin/concierge/ledger")
         check("Ledger requires admin auth", noauth.status_code in (401, 403))
 
+        print("\n=== 6. Recruiter: keyword auto-signup + reactivation ===")
+        import recruiter
+        from models import Contractor as _C, User as _U
+
+        r1 = recruiter.register_concierge("+15619990001", name="Dwayne Hauls",
+                                          source="inbound_keyword")
+        check("JOBS keyword registers a concierge hauler",
+              r1["status"] == "created" and r1["contractor_id"])
+        new_c = db.session.get(_C, r1["contractor_id"])
+        check("New concierge is approved + online + in range",
+              new_c.is_online and new_c.approval_status == "approved"
+              and new_c.current_lat is not None)
+
+        # It shows up on the offer wave, not the silent auto-assign.
+        check("Recruited hauler is NOT an app auto-assign candidate",
+              all(c["contractor"].id != new_c.id
+                  for c in dispatcher.find_best_operator(make_paid_job(*CUSTOMER))))
+
+        r_dupe = recruiter.register_concierge("+1 (561) 999-0001",
+                                              source="inbound_keyword")
+        check("Same number (diff format) is idempotent, no dup",
+              r_dupe["status"] == "exists_concierge"
+              and r_dupe["contractor_id"] == new_c.id)
+
+        # Opt out, then a fresh signup keyword reactivates.
+        new_c.is_online = False
+        db.session.commit()
+        r_re = recruiter.register_concierge("+15619990001", source="inbound_keyword")
+        db.session.refresh(new_c)
+        check("Signup keyword reactivates an opted-out hauler",
+              r_re["status"] == "exists_concierge" and new_c.is_online)
+
+        check("is_signup_keyword matches JOBS/haul, not chatter",
+              recruiter.is_signup_keyword("JOBS")
+              and recruiter.is_signup_keyword("haul please")
+              and not recruiter.is_signup_keyword("how much for a couch"))
+
+        # An app-registered phone must never be converted to concierge.
+        appu = _U(id=generate_uuid(), phone="+15617770001", name="App Hauler",
+                  role="driver")
+        db.session.add(appu)
+        db.session.flush()
+        db.session.add(_C(id=generate_uuid(), user_id=appu.id,
+                          approval_status="approved", is_concierge=False))
+        db.session.commit()
+        r_app = recruiter.register_concierge("+15617770001", source="inbound_keyword")
+        check("App-registered phone is left alone (not converted)",
+              r_app["status"] == "exists_app")
+
+        print("\n=== 7. Graduation ladder (2nd concierge job) ===")
+        gc = db.session.get(_C, r1["contractor_id"])
+        gc.total_jobs = 1  # they've done one; the next completion is #2
+        db.session.commit()
+        gjob = make_paid_job(*CUSTOMER)
+        gjob.driver_id = gc.id
+        gjob.status = "started"
+        db.session.commit()
+        sent = {"n": 0}
+        _orig_setup = recruiter.send_setup_link
+        recruiter.send_setup_link = lambda *a, **k: sent.__setitem__("n", sent["n"] + 1) or True
+        # Also patch the reference already imported into routes.drivers namespace.
+        try:
+            ok, payload, code = _drivers.apply_job_status_transition(gjob, gc, "completed", {})
+        finally:
+            recruiter.send_setup_link = _orig_setup
+        check("2nd completed concierge job fires graduation setup link",
+              gc.total_jobs == 2 and sent["n"] == 1,
+              "total_jobs={} links_sent={}".format(gc.total_jobs, sent["n"]))
+
     failures = [r for r in _results if not r[1]]
     print("\n{}/{} checks passed.".format(
         len(_results) - len(failures), len(_results)))

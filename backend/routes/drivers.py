@@ -429,6 +429,24 @@ def apply_job_status_transition(job, contractor, new_status, data=None):
         job.completed_at = utcnow()
         contractor.total_jobs = (contractor.total_jobs or 0) + 1
 
+        # Graduation ladder: once a concierge (no-app) hauler has proven out on
+        # their 2nd completed job, invite them onto the full app + Stripe so
+        # they get paid instantly instead of same-day by hand — the last human
+        # step (the manual payout ledger) drains itself to zero. Fires exactly
+        # once, at total_jobs == 2. Idempotent guard via a tag on the user.
+        try:
+            if (getattr(contractor, "is_concierge", False)
+                    and contractor.total_jobs == 2
+                    and contractor.user and contractor.user.phone):
+                from recruiter import send_setup_link
+                if send_setup_link(contractor.user.phone,
+                                   name=contractor.user.name):
+                    logger.info("GRADUATION: sent app+Stripe setup link to "
+                                "concierge %s after 2nd job", contractor.id)
+        except Exception:
+            logger.exception("Graduation-ladder hook failed for contractor %s",
+                             contractor.id)
+
         # Warn if proof photos have not been submitted
         has_before = bool(job.before_photos)
         has_after = bool(job.after_photos)

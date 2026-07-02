@@ -95,6 +95,9 @@ class DriverLead(db.Model):
     dedupe_hash = Column(String(64), nullable=False, index=True)
     opted_out = Column(Boolean, nullable=False, default=False)
     platform = Column(String(24), nullable=True)  # denormalized for fast filters
+    # Maya Recruiter (outbound calls) — timestamp of the last recruiting call
+    # placed to this lead. Drives the daily-cap count and prevents re-dialing.
+    last_recruiter_call_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=utcnow, nullable=False)
     updated_at = Column(DateTime, default=utcnow, onupdate=utcnow, nullable=False)
 
