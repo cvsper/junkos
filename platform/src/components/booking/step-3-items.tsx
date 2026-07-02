@@ -118,11 +118,14 @@ const ITEM_PRESETS: Record<string, ItemPreset[]> = {
 };
 
 // Truck load thresholds based on 1-800-GOT-JUNK sizing (full truck = ~450 cu ft)
+// Preview-only: the binding quote comes from the backend estimate. Floor must
+// not undercut MINIMUM_JOB_PRICE ($119, 2026-07-02 re-tier) or step 5 reads
+// as a bait-and-switch.
 const TRUCK_LOADS = [
-  { label: "1/8 Truck", fraction: 0.125, maxCuFt: 56, price: 89 },
-  { label: "1/4 Truck", fraction: 0.25, maxCuFt: 112, price: 149 },
-  { label: "1/2 Truck", fraction: 0.5, maxCuFt: 225, price: 249 },
-  { label: "3/4 Truck", fraction: 0.75, maxCuFt: 337, price: 399 },
+  { label: "1/8 Truck", fraction: 0.125, maxCuFt: 56, price: 119 },
+  { label: "1/4 Truck", fraction: 0.25, maxCuFt: 112, price: 179 },
+  { label: "1/2 Truck", fraction: 0.5, maxCuFt: 225, price: 279 },
+  { label: "3/4 Truck", fraction: 0.75, maxCuFt: 337, price: 429 },
   { label: "Full Truck", fraction: 1.0, maxCuFt: 450, price: 599 },
 ];
 
@@ -140,7 +143,7 @@ function getPriceRange(totalCuFt: number): { low: number; high: number; label: s
   const nextLoad = TRUCK_LOADS[Math.min(currentIdx + 1, TRUCK_LOADS.length - 1)];
 
   if (totalCuFt === 0) {
-    return { low: 89, high: 149, label: "1/8 – 1/4 Truck" };
+    return { low: 119, high: 179, label: "1/8 – 1/4 Truck" };
   }
   if (currentIdx === TRUCK_LOADS.length - 1) {
     // Already at full truck

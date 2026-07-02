@@ -399,12 +399,26 @@ def update_job_status(user_id, job_id):
     if not new_status:
         return jsonify({"error": "status is required"}), 400
 
+    ok, payload, code = apply_job_status_transition(job, contractor, new_status, data)
+    return jsonify(payload), code
+
+
+def apply_job_status_transition(job, contractor, new_status, data=None):
+    """Advance a job through its lifecycle with every side effect the driver
+    app relies on (timestamps, referrals, auto-payout, customer email/SMS/push).
+
+    Shared by the authenticated driver route above and the concierge
+    (phone-only hauler) console in routes/concierge.py so the two paths can
+    never drift. Returns ``(ok, payload, http_code)``.
+    """
+    data = data or {}
+
     allowed = VALID_STATUS_TRANSITIONS.get(job.status, [])
     if new_status not in allowed:
-        return jsonify({
+        return False, {
             "error": "Cannot transition from {} to {}".format(job.status, new_status),
             "allowed": allowed,
-        }), 409
+        }, 409
 
     job.status = new_status
     job.updated_at = utcnow()
@@ -628,7 +642,7 @@ def update_job_status(user_id, job_id):
     from socket_events import broadcast_job_status
     broadcast_job_status(job.id, new_status)
 
-    return jsonify({"success": True, "job": job.to_dict()}), 200
+    return True, {"success": True, "job": job.to_dict()}, 200
 
 
 @drivers_bp.route("/jobs/<job_id>/proof", methods=["POST"])

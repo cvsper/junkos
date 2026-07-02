@@ -286,6 +286,15 @@ except Exception as _t_exc:
     import logging as _logging
     _logging.getLogger(__name__).warning("optext_bp not registered: %s", _t_exc)
 
+# Concierge (shadow-operator) mode — phone-only haulers via SMS offers +
+# token-gated /w/ job console + manual-payout ledger (routes/concierge.py)
+try:
+    from routes.concierge import concierge_bp
+    app.register_blueprint(concierge_bp)
+except Exception as _cg_exc:
+    import logging as _logging
+    _logging.getLogger(__name__).warning("concierge_bp not registered: %s", _cg_exc)
+
 # Vision-Based Binding Quote Engine (spec 01-vision-quote-engine.md)
 try:
     from routes.quotes import quotes_bp

@@ -14,7 +14,20 @@ a booking or payment flow.
 import math
 import logging
 import threading
-from datetime import timedelta
+from datetime import timedelta, timezone
+
+
+def _aware_utc(dt):
+    """Normalize a DB-loaded datetime for comparison against utcnow().
+
+    DateTime columns round-trip NAIVE (SQLite always; Postgres TIMESTAMP
+    without tz) while models.utcnow() is timezone-aware — comparing them
+    raises TypeError, which killed the offer accept/sweep paths on any
+    fresh session read.
+    """
+    if dt is not None and dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt
 
 logger = logging.getLogger(__name__)
 
@@ -208,6 +221,10 @@ def find_best_operator(job):
             approval_status="approved",
         )
 
+        # Concierge (phone-only) haulers can't act on a silent app auto-assign
+        # — they are reached through the broadcast offer wave instead.
+        query = query.filter(Contractor.is_concierge.isnot(True))
+
         # Scope to operator fleet if job belongs to an operator
         if job.operator_id:
             query = query.filter_by(operator_id=job.operator_id)
@@ -362,11 +379,16 @@ def auto_assign_job(job_id, app=None):
 
             if not candidates:
                 logger.warning(
-                    "auto_assign_job: no operators available for job %s at %s",
+                    "auto_assign_job: no app operators available for job %s at %s"
+                    " — falling back to an offer wave (reaches concierge haulers)",
                     job_id, job.address,
                 )
-                # Notify admin
-                _notify_admin_no_operators(job)
+                # The wave SMSes every eligible hauler (including phone-only
+                # concierge operators) a first-to-accept link. If nobody is
+                # eligible for the wave either, broadcast_job itself escalates
+                # to the existing admin no-operators alert — a booking is
+                # never silently dropped.
+                broadcast_job(job_id)
                 return
 
             # Assign top candidate
@@ -1035,7 +1057,7 @@ def sweep_expired_broadcasts(app=None):
             offers = JobOffer.query.filter_by(job_id=job.id).all()
             active = [
                 o for o in offers
-                if o.status == "sent" and (o.expires_at is None or o.expires_at > now)
+                if o.status == "sent" and (o.expires_at is None or _aware_utc(o.expires_at) > now)
             ]
             if active:
                 continue  # still has live offers — let them run
@@ -1153,7 +1175,7 @@ def accept_offer(token):
                     "job": None}
 
         # Expired?
-        if offer.expires_at and utcnow() > offer.expires_at:
+        if offer.expires_at and utcnow() > _aware_utc(offer.expires_at):
             offer.status = "expired"
             offer.responded_at = utcnow()
             db.session.commit()
