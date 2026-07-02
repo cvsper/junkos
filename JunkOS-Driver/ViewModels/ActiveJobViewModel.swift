@@ -41,10 +41,21 @@ final class ActiveJobViewModel {
         await updateStatus("started", beforePhotos: photoUrls.isEmpty ? nil : photoUrls)
     }
 
-    func markCompleted() async {
+    /// Marks the job completed. `dispositionOutcome`/`dispositionNotes` are the
+    /// Rescue Engine v1 fields — what the hauler did with the load. Both optional;
+    /// completion never blocks on them.
+    func markCompleted(
+        dispositionOutcome: String? = nil,
+        dispositionNotes: String? = nil
+    ) async {
         // Upload after photos first — same blocking rule as markStarted().
         guard let photoUrls = await uploadPhotosOrFail(afterPhotos) else { return }
-        await updateStatus("completed", afterPhotos: photoUrls.isEmpty ? nil : photoUrls)
+        await updateStatus(
+            "completed",
+            afterPhotos: photoUrls.isEmpty ? nil : photoUrls,
+            dispositionOutcome: dispositionOutcome,
+            dispositionNotes: dispositionNotes
+        )
         if job?.jobStatus == .completed {
             showCompletion = true
         }
@@ -69,7 +80,9 @@ final class ActiveJobViewModel {
     private func updateStatus(
         _ status: String,
         beforePhotos: [String]? = nil,
-        afterPhotos: [String]? = nil
+        afterPhotos: [String]? = nil,
+        dispositionOutcome: String? = nil,
+        dispositionNotes: String? = nil
     ) async {
         guard let jobId = job?.id else { return }
         isUpdating = true
@@ -79,7 +92,9 @@ final class ActiveJobViewModel {
                 jobId: jobId,
                 status: status,
                 beforePhotos: beforePhotos,
-                afterPhotos: afterPhotos
+                afterPhotos: afterPhotos,
+                dispositionOutcome: dispositionOutcome,
+                dispositionNotes: dispositionNotes
             )
             job = response.job
             HapticManager.shared.success()

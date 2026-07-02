@@ -125,6 +125,12 @@ struct DriverJob: Codable, Identifiable {
     // defaulted so older API responses (and memberwise init callers) still work.
     var driverPayout: Double? = nil
 
+    // Customer's stated preference for what happens to the load
+    // (e.g. "donate" | "recycle" | "dispose"). Seeds the Rescue Engine outcome
+    // picker's default. Optional + defaulted so older API responses and
+    // memberwise-init callers (tests) still compile.
+    var dispositionPreference: String? = nil
+
     enum CodingKeys: String, CodingKey {
         case id
         case customerId = "customer_id"
@@ -148,6 +154,7 @@ struct DriverJob: Codable, Identifiable {
         case updatedAt = "updated_at"
         case distanceKm = "distance_km"
         case driverPayout = "driver_payout"
+        case dispositionPreference = "disposition_preference"
     }
 
     var jobStatus: JobStatus {
@@ -222,11 +229,18 @@ struct StatusUpdateRequest: Codable {
     let status: String
     let beforePhotos: [String]?
     let afterPhotos: [String]?
+    // Rescue Engine v1 — what the hauler did with the load, sent alongside the
+    // "completed" update. Both optional + defaulted; synthesized Codable uses
+    // encodeIfPresent, so non-completion status updates omit these fields.
+    var dispositionOutcome: String? = nil
+    var dispositionNotes: String? = nil
 
     enum CodingKeys: String, CodingKey {
         case status
         case beforePhotos = "before_photos"
         case afterPhotos = "after_photos"
+        case dispositionOutcome = "disposition_outcome"
+        case dispositionNotes = "disposition_notes"
     }
 }
 

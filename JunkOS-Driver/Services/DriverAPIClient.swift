@@ -281,7 +281,9 @@ actor DriverAPIClient {
         jobId: String,
         status: String,
         beforePhotos: [String]? = nil,
-        afterPhotos: [String]? = nil
+        afterPhotos: [String]? = nil,
+        dispositionOutcome: String? = nil,
+        dispositionNotes: String? = nil
     ) async throws -> JobActionResponse {
         try await request(
             "/api/drivers/jobs/\(jobId)/status",
@@ -289,7 +291,9 @@ actor DriverAPIClient {
             body: StatusUpdateRequest(
                 status: status,
                 beforePhotos: beforePhotos,
-                afterPhotos: afterPhotos
+                afterPhotos: afterPhotos,
+                dispositionOutcome: dispositionOutcome,
+                dispositionNotes: dispositionNotes
             )
         )
     }
