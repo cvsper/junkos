@@ -1,0 +1,9 @@
+# Deploys run from the repo root (Root Directory = platform; deploying from
+# inside platform/ doubles the path — see registers/umuve_platform.md).
+# Allowlist only what the platform build needs: the repo is ~4GB with the iOS
+# project + marketing assets, and Vercel caps uploads at 100MB.
+/*
+!/platform
+platform/node_modules
+platform/.next
+platform/.vercel
