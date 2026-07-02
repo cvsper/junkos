@@ -14,6 +14,7 @@ import {
   PhoneCall,
   AlertTriangle,
   XCircle,
+  Leaf,
 } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
@@ -51,6 +52,9 @@ interface Tracking {
   before_photos?: string[];
   after_photos?: string[];
   items_summary: string;
+  // Rescue Engine v1 — a human-readable impact line, present only once the
+  // job is complete (null/absent until then).
+  impact_summary?: string | null;
 }
 
 // The happy-path order of stages, used to render the progress rail.
@@ -357,6 +361,25 @@ export default function GuestTracking({ code }: { code: string }) {
                 </div>
               </div>
             )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Your impact — Rescue Engine v1 receipt, shown once the backend has a
+          computed summary (job complete). Everything here is an estimate. */}
+      {tracking.impact_summary && (
+        <Card className="mt-5 border-emerald-200/70 bg-emerald-50/50 dark:border-emerald-900/40 dark:bg-emerald-950/20">
+          <CardContent className="py-5">
+            <p className="text-[11px] uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-400 font-semibold mb-3 flex items-center gap-1.5">
+              <Leaf className="w-3.5 h-3.5" />
+              Your impact
+            </p>
+            <p className="text-sm text-foreground leading-relaxed">
+              {tracking.impact_summary}
+            </p>
+            <p className="text-xs text-muted-foreground mt-3">
+              Estimated — final handling is at the hauler&apos;s discretion.
+            </p>
           </CardContent>
         </Card>
       )}

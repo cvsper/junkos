@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { Address, JobItem } from "@/types";
+import type { Address, JobItem, DispositionPreference } from "@/types";
 
 interface BookingState {
   // Form state
@@ -11,6 +11,7 @@ interface BookingState {
   scheduledDate: string;
   scheduledTimeSlot: string;
   notes: string;
+  dispositionPreference: DispositionPreference;
   estimatedPrice: number;
   quoteId: string | null;
   quoteBinding: boolean;
@@ -54,6 +55,7 @@ interface BookingState {
 
   // Misc actions
   setNotes: (notes: string) => void;
+  setDispositionPreference: (preference: DispositionPreference) => void;
   setEstimatedPrice: (price: number) => void;
   setQuoteId: (quoteId: string | null) => void;
   setQuoteBinding: (quoteBinding: boolean) => void;
@@ -82,6 +84,7 @@ const initialState = {
   scheduledDate: "",
   scheduledTimeSlot: "",
   notes: "",
+  dispositionPreference: "best" as DispositionPreference,
   estimatedPrice: 0,
   quoteId: null,
   quoteBinding: false,
@@ -142,6 +145,7 @@ export const useBookingStore = create<BookingState>((set, get) => ({
 
   // Misc
   setNotes: (notes) => set({ notes }),
+  setDispositionPreference: (dispositionPreference) => set({ dispositionPreference }),
   setEstimatedPrice: (estimatedPrice) => set({ estimatedPrice }),
   setQuoteId: (quoteId) => set({ quoteId }),
   setQuoteBinding: (quoteBinding) => set({ quoteBinding }),

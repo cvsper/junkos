@@ -22,6 +22,7 @@ import {
   AlertCircle,
   Tag,
   X,
+  Leaf,
 } from "lucide-react";
 import Link from "next/link";
 import { trackBookingConversion, trackInitiateCheckout, trackLead } from "@/components/analytics";
@@ -120,6 +121,7 @@ function PaymentFormInner() {
     scheduledTimeSlot,
     estimatedPrice,
     notes,
+    dispositionPreference,
     isSubmitting,
     setIsSubmitting,
     promoCode: appliedPromoCode,
@@ -268,6 +270,7 @@ function PaymentFormInner() {
             scheduledDate,
             scheduledTimeSlot,
             notes,
+            disposition_preference: dispositionPreference,
             estimatedPrice: finalPrice,
             ...(promoApplied ? { promo_code: appliedPromoCode } : {}),
             ...(leadSource ? { lead_source: leadSource } : {}),
@@ -349,7 +352,7 @@ function PaymentFormInner() {
     return () => {
       paymentRequestRef.current = null;
     };
-  }, [stripe, finalPrice, estimatedPrice, address, items, scheduledDate, scheduledTimeSlot, notes, promoApplied, appliedPromoCode, leadSource]);
+  }, [stripe, finalPrice, estimatedPrice, address, items, scheduledDate, scheduledTimeSlot, notes, dispositionPreference, promoApplied, appliedPromoCode, leadSource]);
 
   // ---------------------------------------------------------------------------
   // Card change handler
@@ -459,6 +462,7 @@ function PaymentFormInner() {
           scheduledDate,
           scheduledTimeSlot,
           notes,
+          disposition_preference: dispositionPreference,
           estimatedPrice: finalPrice,
           ...(promoApplied ? { promo_code: appliedPromoCode } : {}),
           ...(leadSource ? { lead_source: leadSource } : {}),
@@ -625,6 +629,17 @@ function PaymentFormInner() {
           <span className="font-medium text-foreground">{email}</span>. Our team
           will contact you before your scheduled pickup.
         </p>
+
+        {/* Disposition reassurance — best-effort intent, never a guarantee */}
+        {(dispositionPreference === "donate" ||
+          dispositionPreference === "recycle") && (
+          <p className="flex items-center gap-1.5 text-xs text-muted-foreground max-w-sm">
+            <Leaf className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
+            {dispositionPreference === "donate"
+              ? "We'll aim to donate or reuse your items where possible."
+              : "We'll aim to recycle your items where possible."}
+          </p>
+        )}
 
         {/* Referral Prompt */}
         <ReferralPrompt />

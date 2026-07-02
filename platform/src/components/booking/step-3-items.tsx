@@ -20,12 +20,14 @@ import {
   Info,
   DollarSign,
   Shield,
+  Heart,
+  Recycle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useBookingStore } from "@/stores/booking-store";
 import { cn } from "@/lib/utils";
-import type { JobItem } from "@/types";
+import type { JobItem, DispositionPreference } from "@/types";
 
 // ---------------------------------------------------------------------------
 // Category definitions with truck space & weight data (1-800-GOT-JUNK model)
@@ -157,6 +159,45 @@ function getPriceRange(totalCuFt: number): { low: number; high: number; label: s
 }
 
 const MAX_DESCRIPTION = 500;
+
+// ---------------------------------------------------------------------------
+// Disposition preference (Rescue Engine v1) — how the customer wants items
+// handled after pickup. Copy is intentionally aspirational, never a promise:
+// every option is a best-effort estimate, and no charity is named.
+// ---------------------------------------------------------------------------
+
+const DISPOSITION_OPTIONS: {
+  value: DispositionPreference;
+  label: string;
+  description: string;
+  icon: typeof Sparkles;
+}[] = [
+  {
+    value: "best",
+    label: "Let Umuve decide",
+    description: "We'll aim for the most responsible option for each item.",
+    icon: Sparkles,
+  },
+  {
+    value: "donate",
+    label: "Donate if usable",
+    description:
+      "Whenever possible, reusable items may be routed toward donation or reuse partners.",
+    icon: Heart,
+  },
+  {
+    value: "recycle",
+    label: "Recycle",
+    description: "We'll route recyclable materials to recycling where available.",
+    icon: Recycle,
+  },
+  {
+    value: "dispose",
+    label: "Dispose",
+    description: "Standard responsible disposal.",
+    icon: Trash2,
+  },
+];
 
 // ---------------------------------------------------------------------------
 // Item row component
@@ -296,7 +337,15 @@ function TruckFillBar({ totalCuFt }: { totalCuFt: number }) {
 // ---------------------------------------------------------------------------
 
 export function Step3Items() {
-  const { items, setItems, aiAnalysis, notes, setNotes } = useBookingStore();
+  const {
+    items,
+    setItems,
+    aiAnalysis,
+    notes,
+    setNotes,
+    dispositionPreference,
+    setDispositionPreference,
+  } = useBookingStore();
 
   const [selectedCategories, setSelectedCategories] = useState<string[]>(() => {
     // Initialize from existing items
@@ -722,6 +771,67 @@ export function Step3Items() {
           maxLength={MAX_DESCRIPTION}
           className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
         />
+      </div>
+
+      {/* Disposition preference — Rescue Engine v1 */}
+      <div className="space-y-3">
+        <div>
+          <Label className="text-sm font-medium">
+            What should happen to your items?
+          </Label>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Tell us your preference — we&apos;ll aim for it wherever it&apos;s practical.
+          </p>
+        </div>
+        <div
+          role="radiogroup"
+          aria-label="What should happen to your items?"
+          className="grid grid-cols-1 sm:grid-cols-2 gap-3"
+        >
+          {DISPOSITION_OPTIONS.map((opt) => {
+            const Icon = opt.icon;
+            const isSelected = dispositionPreference === opt.value;
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                role="radio"
+                aria-checked={isSelected}
+                onClick={() => setDispositionPreference(opt.value)}
+                className={cn(
+                  "flex items-start gap-3 rounded-lg border-2 p-3 text-left transition-all",
+                  isSelected
+                    ? "border-primary bg-primary/5"
+                    : "border-border bg-card hover:border-primary/30 hover:bg-muted/50"
+                )}
+              >
+                <span
+                  className={cn(
+                    "flex h-8 w-8 shrink-0 items-center justify-center rounded-full",
+                    isSelected
+                      ? "bg-primary/10 text-primary"
+                      : "bg-muted text-muted-foreground"
+                  )}
+                >
+                  <Icon className="h-4 w-4" />
+                </span>
+                <span className="min-w-0">
+                  <span
+                    className={cn(
+                      "block text-sm font-semibold",
+                      isSelected ? "text-primary" : "text-foreground"
+                    )}
+                  >
+                    {opt.label}
+                  </span>
+                  <span className="mt-0.5 block text-xs text-muted-foreground leading-snug">
+                    {opt.description}
+                  </span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

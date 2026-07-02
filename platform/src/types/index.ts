@@ -128,6 +128,10 @@ export interface PricingRule {
 }
 
 // Booking flow types
+
+/** Rescue Engine v1 — customer preference for how items are handled post-haul. */
+export type DispositionPreference = "best" | "donate" | "recycle" | "dispose";
+
 export interface BookingFormData {
   step: number;
   address: Partial<Address>;
@@ -142,6 +146,7 @@ export interface BookingFormData {
   promo_code?: string;
   lead_source?: string;
   quote_id?: string | null;
+  disposition_preference?: DispositionPreference;
   customerName?: string;
   customerEmail?: string;
   customerPhone?: string;
