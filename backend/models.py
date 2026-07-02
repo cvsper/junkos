@@ -147,6 +147,12 @@ class Contractor(db.Model):
     operator_id = Column(String(36), ForeignKey("contractors.id", ondelete="SET NULL"), nullable=True, index=True)
     operator_commission_rate = Column(Float, default=0.15)
 
+    # Concierge (shadow) hauler: registered by admin with just a name+phone,
+    # works jobs through SMS offers + the token-gated /w/ console — no app,
+    # no login, no Stripe. Excluded from app auto-assign (they can't act on
+    # it); reached via the broadcast offer wave. Payouts settle by hand.
+    is_concierge = Column(Boolean, default=False)
+
     created_at = Column(DateTime, default=utcnow)
     updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
 
@@ -188,6 +194,7 @@ class Contractor(db.Model):
             "is_operator": self.is_operator or False,
             "operator_id": self.operator_id,
             "operator_commission_rate": self.operator_commission_rate or 0.15,
+            "is_concierge": self.is_concierge or False,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }

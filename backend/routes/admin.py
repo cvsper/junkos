@@ -2563,6 +2563,17 @@ def assign_job(user_id, job_id):
     db.session.add(notification_cust)
     db.session.commit()
 
+    # Concierge (no-app) hauler: mint an accepted offer token and SMS them the
+    # job console link — the console is their only way to run the job.
+    if contractor.is_concierge:
+        try:
+            from routes.concierge import ensure_concierge_console_link
+            ensure_concierge_console_link(job, contractor)
+        except Exception as e:
+            import logging as _log
+            _log.getLogger(__name__).exception(
+                "Concierge console link failed for job %s: %s", job.id, e)
+
     # --- Email / SMS / Push notifications ---
     driver_name = contractor.user.name if contractor.user else None
     try:

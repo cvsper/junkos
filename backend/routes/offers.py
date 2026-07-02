@@ -16,7 +16,7 @@ import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from dispatcher import accept_offer
+from dispatcher import accept_offer, _aware_utc
 
 offers_bp = Blueprint("offers", __name__)
 
@@ -87,10 +87,16 @@ def offer_page(token):
                      "We'll text you the next one.</p>", accent="#d9534f")
 
     if job.driver_id == offer.contractor_id:
+        if offer.contractor and offer.contractor.is_concierge:
+            return _page("Yours", "This job is yours ✅",
+                         "<a href='/w/{}' style='text-decoration:none'>"
+                         "<button type='button'>Open job console</button></a>"
+                         "<p class='note'>Run the job from that page — status "
+                         "updates, customer contact, and your payout.</p>".format(token))
         return _page("Yours", "This job is yours ✅",
                      "<p class='note'>Open the umuve app for full details and navigation.</p>")
 
-    if offer.expires_at and utcnow() > offer.expires_at:
+    if offer.expires_at and utcnow() > _aware_utc(offer.expires_at):
         return _page("Expired", "This offer expired",
                      "<p class='note'>Offers are first-come, first-served. "
                      "Watch for the next text.</p>", accent="#d9534f")
@@ -122,8 +128,19 @@ def offer_page(token):
 # ---------------------------------------------------------------------------
 @offers_bp.route("/o/<token>/accept", methods=["POST"])
 def offer_accept_page(token):
+    from models import JobOffer
+
     result = accept_offer(token)
     if result["ok"]:
+        # Concierge (no-app) haulers get sent to the token-gated job console
+        # instead of the app — it's the only way they can run the job.
+        offer = JobOffer.query.filter_by(accept_token=token).first()
+        if offer and offer.contractor and offer.contractor.is_concierge:
+            return _page("Accepted", "Job accepted! 🎉",
+                         "<a href='/w/{}' style='text-decoration:none'>"
+                         "<button type='button'>Open job console</button></a>"
+                         "<p class='note'>Bookmark that page — it's how you run "
+                         "this job and get paid.</p>".format(token))
         return _page("Accepted", "Job accepted! 🎉",
                      "<p class='note'>{}</p>".format(result["message"]))
     accent = "#d9534f"

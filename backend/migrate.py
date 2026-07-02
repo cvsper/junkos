@@ -57,6 +57,7 @@ COLUMN_MIGRATIONS = [
     ("contractors", "is_operator", "BOOLEAN", "BOOLEAN", "FALSE"),
     ("contractors", "operator_id", "VARCHAR(36)", "VARCHAR(36)", "NULL"),
     ("contractors", "operator_commission_rate", "FLOAT", "FLOAT", "0.15"),
+    ("contractors", "is_concierge", "BOOLEAN", "BOOLEAN", "FALSE"),
 
     # Contractor onboarding fields
     ("contractors", "onboarding_status", "VARCHAR(20)", "VARCHAR(20)", "'pending'"),
