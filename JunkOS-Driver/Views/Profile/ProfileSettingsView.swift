@@ -97,36 +97,6 @@ struct ProfileSettingsView: View {
                             .padding(.horizontal, DriverSpacing.xl)
                         }
 
-                        // MARK: - Performance Stats
-                        VStack(alignment: .leading, spacing: DriverSpacing.sm) {
-                            SectionHeader(title: "Performance")
-
-                            HStack(spacing: 0) {
-                                MetricCell(
-                                    label: "Acceptance",
-                                    metric: "Job Acceptance Rate",
-                                    value: profile != nil ? "95%" : "—",
-                                    color: .driverSuccess
-                                )
-                                Divider().frame(height: 50)
-                                MetricCell(
-                                    label: "Cancellation",
-                                    metric: "Cancellation Rate",
-                                    value: profile != nil ? "2%" : "—",
-                                    color: .driverError
-                                )
-                                Divider().frame(height: 50)
-                                MetricCell(
-                                    label: "Hauler Tier",
-                                    metric: "Contractor Level",
-                                    value: haulerTier,
-                                    color: .driverPrimary
-                                )
-                            }
-                        }
-                        .driverCard()
-                        .padding(.horizontal, DriverSpacing.xl)
-
                         // MARK: - Job Ratings
                         VStack(alignment: .leading, spacing: DriverSpacing.sm) {
                             SectionHeader(title: "Job Ratings")
@@ -179,48 +149,6 @@ struct ProfileSettingsView: View {
                                 }
                                 .padding(.top, DriverSpacing.xxs)
                             }
-                        }
-                        .driverCard()
-                        .padding(.horizontal, DriverSpacing.xl)
-
-                        // MARK: - Service Quality
-                        VStack(alignment: .leading, spacing: DriverSpacing.sm) {
-                            SectionHeader(title: "Service Quality")
-
-                            HStack {
-                                VStack(alignment: .leading, spacing: DriverSpacing.xxs) {
-                                    Text("Customer Satisfaction")
-                                        .font(DriverTypography.caption)
-                                        .foregroundStyle(Color.driverTextSecondary)
-
-                                    Text(profile != nil ? "98%" : "—")
-                                        .font(DriverTypography.price)
-                                        .foregroundStyle(Color.driverPrimary)
-                                }
-
-                                Spacer()
-
-                                // Satisfaction indicator
-                                ZStack {
-                                    Circle()
-                                        .stroke(Color.driverBorder, lineWidth: 4)
-                                        .frame(width: 52, height: 52)
-
-                                    Circle()
-                                        .trim(from: 0, to: profile != nil ? 0.98 : 0)
-                                        .stroke(Color.driverPrimary, style: StrokeStyle(lineWidth: 4, lineCap: .round))
-                                        .frame(width: 52, height: 52)
-                                        .rotationEffect(.degrees(-90))
-
-                                    Image(systemName: "hand.thumbsup.fill")
-                                        .font(.system(size: 16))
-                                        .foregroundStyle(Color.driverPrimary)
-                                }
-                            }
-
-                            Text("Based on post-job customer feedback")
-                                .font(DriverTypography.caption2)
-                                .foregroundStyle(Color.driverTextTertiary)
                         }
                         .driverCard()
                         .padding(.horizontal, DriverSpacing.xl)
@@ -281,12 +209,12 @@ struct ProfileSettingsView: View {
 
                                 Spacer()
 
-                                if appState.contractorProfile?.stripeConnectId != nil {
+                                if appState.hasCompletedStripeConnect {
                                     Text("Active")
                                         .font(DriverTypography.caption)
                                         .foregroundStyle(Color.driverSuccess)
                                 } else {
-                                    Text("Not set up")
+                                    Text("Finish setup")
                                         .font(DriverTypography.caption)
                                         .foregroundStyle(Color.driverWarning)
                                 }
@@ -399,28 +327,6 @@ private struct ProfileRow: View {
                 .font(DriverTypography.body)
                 .foregroundStyle(Color.driverText)
         }
-    }
-}
-
-private struct MetricCell: View {
-    let label: String
-    let metric: String
-    let value: String
-    let color: Color
-
-    var body: some View {
-        VStack(spacing: DriverSpacing.xxs) {
-            Text(value)
-                .font(DriverTypography.headline)
-                .foregroundStyle(color)
-
-            Text(label)
-                .font(DriverTypography.caption2)
-                .foregroundStyle(Color.driverTextSecondary)
-                .lineLimit(1)
-        }
-        .frame(maxWidth: .infinity)
-        .accessibilityLabel("\(metric): \(value)")
     }
 }
 

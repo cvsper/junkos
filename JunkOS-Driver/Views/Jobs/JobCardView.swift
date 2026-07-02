@@ -131,7 +131,7 @@ struct JobCardView: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
 
-            // Driver take subtitle (80%)
+            // Driver take subtitle (backend payout, or 72% estimate)
             Text("you keep ~\(driverTake)")
                 .font(.system(size: 12, weight: .medium, design: .rounded))
                 .foregroundStyle(Color.driverSuccess)
@@ -147,7 +147,7 @@ struct JobCardView: View {
     }
 
     private var driverTake: String {
-        String(format: "$%.0f", job.totalPrice * 0.80)
+        job.formattedPayout
     }
 
     private var etaPill: some View {

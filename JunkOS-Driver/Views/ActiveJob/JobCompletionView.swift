@@ -43,13 +43,13 @@ struct JobCompletionView: View {
             .opacity(isVisible ? 1 : 0)
             .offset(y: isVisible ? 0 : 20)
 
-            // Earnings
+            // Earnings — operator take-home, not the customer total
             VStack(spacing: DriverSpacing.xs) {
-                Text("You earned")
+                Text(job.payoutLabel)
                     .font(DriverTypography.footnote)
                     .foregroundStyle(Color.driverTextSecondary)
 
-                Text(job.formattedPrice)
+                Text(job.formattedPayout)
                     .font(DriverTypography.stat)
                     .foregroundStyle(Color.driverPrimary)
             }

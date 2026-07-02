@@ -69,9 +69,8 @@ struct OperatorWebRedirectView: View {
     }
 
     private var dashboardURL: String {
-        let base = AppConfig.shared.baseURL
-            .replacingOccurrences(of: "/api", with: "")
-            .replacingOccurrences(of: ":5001", with: ":3000")
-        return "\(base)/operator"
+        // Production operator dashboard. Deriving this from the API base URL
+        // produced 404s (string surgery on the backend host, not the web app).
+        "https://app.goumuve.com/operator"
     }
 }

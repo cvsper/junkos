@@ -9,6 +9,7 @@ import SwiftUI
 
 struct OnlineToggleView: View {
     let isOnline: Bool
+    var isToggling: Bool = false
     let onToggle: () -> Void
 
     @State private var pulseScale: CGFloat = 1.0
@@ -54,21 +55,35 @@ struct OnlineToggleView: View {
                     )
 
                 // Label
-                VStack(spacing: DriverSpacing.xxs) {
-                    Image(systemName: isOnline ? "power" : "power")
-                        .font(.system(size: 32, weight: .semibold))
-                        .foregroundStyle(.white)
+                if isToggling {
+                    VStack(spacing: DriverSpacing.xxs) {
+                        ProgressView()
+                            .tint(.white)
+                            .scaleEffect(1.3)
 
-                    Text(isOnline ? "ONLINE" : "OFFLINE")
-                        .font(.system(size: 13, weight: .bold, design: .rounded))
-                        .foregroundStyle(.white.opacity(0.9))
-                        .tracking(2)
+                        Text("UPDATING")
+                            .font(.system(size: 13, weight: .bold, design: .rounded))
+                            .foregroundStyle(.white.opacity(0.9))
+                            .tracking(2)
+                    }
+                } else {
+                    VStack(spacing: DriverSpacing.xxs) {
+                        Image(systemName: isOnline ? "power" : "power")
+                            .font(.system(size: 32, weight: .semibold))
+                            .foregroundStyle(.white)
+
+                        Text(isOnline ? "ONLINE" : "OFFLINE")
+                            .font(.system(size: 13, weight: .bold, design: .rounded))
+                            .foregroundStyle(.white.opacity(0.9))
+                            .tracking(2)
+                    }
                 }
             }
             .frame(maxWidth: .infinity)
             .frame(height: 220)
         }
         .buttonStyle(.plain)
+        .disabled(isToggling)
         .onChange(of: isOnline) { _, online in
             if online {
                 startPulse()

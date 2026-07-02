@@ -23,11 +23,23 @@ struct DashboardView: View {
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
+            .alert("Couldn't Update Status", isPresented: Binding(
+                get: { appState.toggleError != nil },
+                set: { if !$0 { appState.toggleError = nil } }
+            )) {
+                Button("Retry") {
+                    Task { await appState.toggleOnline() }
+                }
+                Button("Dismiss", role: .cancel) {}
+            } message: {
+                Text(appState.toggleError ?? "Something went wrong. Please try again.")
+            }
             .task {
                 if appState.contractorProfile == nil {
                     await appState.loadContractorProfile()
                 }
                 dashVM.loadStats(from: appState.contractorProfile)
+                await dashVM.loadTodayStats()
             }
             .navigationDestination(for: AppRoute.self) { route in
                 switch route {
@@ -68,6 +80,7 @@ struct DashboardView: View {
                     // Online toggle
                     OnlineToggleView(
                         isOnline: appState.isOnline,
+                        isToggling: appState.isToggling,
                         onToggle: {
                             Task { await appState.toggleOnline() }
                         }

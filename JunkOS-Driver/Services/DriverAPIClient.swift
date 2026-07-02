@@ -433,3 +433,20 @@ struct EarningsHistoryResponse: Codable {
         }
     }
 }
+
+extension EarningsHistoryResponse {
+    /// Number of payout entries dated today — one entry per completed job,
+    /// so this is "jobs completed today". The summary only carries amounts.
+    var todayJobCount: Int {
+        let withFractional = ISO8601DateFormatter()
+        withFractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let plain = ISO8601DateFormatter()
+        return entries.filter { entry in
+            guard let str = entry.date,
+                  let date = withFractional.date(from: str) ?? plain.date(from: str) else {
+                return false
+            }
+            return Calendar.current.isDateInToday(date)
+        }.count
+    }
+}

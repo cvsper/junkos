@@ -75,6 +75,22 @@ final class LiveMapViewModel {
         recenterTimer = nil
     }
 
+    // MARK: - Today Stats (bottom strip)
+
+    /// Load today's earnings + completed-job count from earnings history.
+    /// The strip previously showed $0 forever and lifetime totals as "today".
+    func loadTodayStats() {
+        Task { @MainActor in
+            do {
+                let response = try await api.getEarningsHistory()
+                todayEarnings = response.summary.today
+                todayJobsCount = response.todayJobCount
+            } catch {
+                // Leave last-known values; the strip shows $0 until it loads.
+            }
+        }
+    }
+
     // MARK: - Job Fetching
 
     private func fetchJobs() {

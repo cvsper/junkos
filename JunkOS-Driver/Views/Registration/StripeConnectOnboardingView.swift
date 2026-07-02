@@ -80,9 +80,14 @@ struct StripeConnectOnboardingView: View {
                     .onDisappear {
                         Task {
                             await viewModel.onSafariDismissed()
-                            // Reload profile to update stripeConnectId
-                            if case .active = viewModel.onboardingStatus {
-                                await appState.loadContractorProfile()
+                            // Reload profile + Connect status so routing advances.
+                            // pending_verification also counts as "onboarding done"
+                            // — Stripe just hasn't finished reviewing yet.
+                            switch viewModel.onboardingStatus {
+                            case .active, .pendingVerification:
+                                await appState.loadContractorProfile(force: true)
+                            default:
+                                break
                             }
                         }
                     }

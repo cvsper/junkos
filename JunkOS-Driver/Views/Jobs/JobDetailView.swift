@@ -56,7 +56,7 @@ struct JobDetailView: View {
 
                         // Details card
                         VStack(spacing: DriverSpacing.md) {
-                            DetailRow(label: "Estimated Pay", value: job.formattedPrice, icon: "dollarsign.circle")
+                            DetailRow(label: job.payoutLabel, value: job.formattedPayout, icon: "dollarsign.circle")
                             DetailRow(label: "Distance", value: job.formattedDistance, icon: "location")
 
                             if let items = job.items, !items.isEmpty {

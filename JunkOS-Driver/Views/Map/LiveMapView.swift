@@ -234,7 +234,7 @@ struct LiveMapView: View {
         }
         .onAppear {
             mapVM.startPolling()
-            mapVM.todayJobsCount = appState.contractorProfile?.totalJobs ?? 0
+            mapVM.loadTodayStats()
 
             // CRITICAL: Sync existing active job when going online
             // If driver already has an active job, show it on map immediately

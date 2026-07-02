@@ -23,15 +23,6 @@ struct ActiveJobView: View {
                         .padding(.horizontal, DriverSpacing.xl)
                         .padding(.top, DriverSpacing.md)
 
-                    // Error
-                    if let error = viewModel.errorMessage {
-                        Text(error)
-                            .font(DriverTypography.footnote)
-                            .foregroundStyle(Color.driverError)
-                            .padding(.horizontal, DriverSpacing.xl)
-                            .padding(.top, DriverSpacing.xs)
-                    }
-
                     // Content based on status
                     Group {
                         switch job.jobStatus {
@@ -77,6 +68,14 @@ struct ActiveJobView: View {
         }
         .navigationTitle("Active Job")
         .navigationBarTitleDisplayMode(.inline)
+        .alert("Something Went Wrong", isPresented: Binding(
+            get: { viewModel.errorMessage != nil },
+            set: { if !$0 { viewModel.errorMessage = nil } }
+        )) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(viewModel.errorMessage ?? "Please try again.")
+        }
         .onAppear {
             viewModel.job = appState.activeJob
         }

@@ -47,6 +47,14 @@ struct JobFeedView: View {
                             .padding(.horizontal, DriverSpacing.lg)
                             .padding(.top, DriverSpacing.sm)
 
+                        if isUnderReview {
+                            underReviewBanner
+                                .padding(.horizontal, DriverSpacing.lg)
+                        } else if let error = viewModel.errorMessage {
+                            errorBanner(error)
+                                .padding(.horizontal, DriverSpacing.lg)
+                        }
+
                         if !viewModel.offers.isEmpty {
                             offersSection
                                 .padding(.horizontal, DriverSpacing.lg)
@@ -137,6 +145,69 @@ struct JobFeedView: View {
         }
     }
 
+    // MARK: - Error / Approval Banners
+
+    /// Backend returns 403 "Contractor is not approved" until an admin approves
+    /// the account — show a friendly persistent state instead of a raw error.
+    private var isUnderReview: Bool {
+        viewModel.errorMessage?.localizedCaseInsensitiveContains("not approved") == true
+    }
+
+    private var underReviewBanner: some View {
+        HStack(spacing: DriverSpacing.sm) {
+            Image(systemName: "clock.badge.checkmark")
+                .font(.system(size: 22))
+                .foregroundStyle(Color.statusPending)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Account under review")
+                    .font(DriverTypography.headline)
+                    .foregroundStyle(Color.driverText)
+                Text("Jobs unlock once you're approved.")
+                    .font(DriverTypography.footnote)
+                    .foregroundStyle(Color.driverTextSecondary)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(DriverSpacing.md)
+        .background(Color.driverSurface)
+        .clipShape(RoundedRectangle(cornerRadius: DriverRadius.lg))
+        .shadow(color: .black.opacity(0.05), radius: 6, x: 0, y: 2)
+    }
+
+    private func errorBanner(_ message: String) -> some View {
+        HStack(spacing: DriverSpacing.sm) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.system(size: 16))
+                .foregroundStyle(Color.driverError)
+
+            Text(message)
+                .font(DriverTypography.footnote)
+                .foregroundStyle(Color.driverText)
+                .multilineTextAlignment(.leading)
+
+            Spacer(minLength: 0)
+
+            Button {
+                viewModel.errorMessage = nil
+                Task { await viewModel.refresh() }
+            } label: {
+                Text("Retry")
+                    .font(DriverTypography.caption)
+                    .foregroundStyle(Color.driverPrimary)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(DriverSpacing.md)
+        .background(Color.driverError.opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: DriverRadius.lg))
+        .overlay(
+            RoundedRectangle(cornerRadius: DriverRadius.lg)
+                .stroke(Color.driverError.opacity(0.25), lineWidth: 1)
+        )
+    }
+
     // MARK: - Status Hero
 
     private var statusHero: some View {
@@ -194,7 +265,7 @@ struct JobFeedView: View {
         if viewModel.jobs.isEmpty {
             return "Watching for new jobs in your area…"
         }
-        let total = viewModel.jobs.reduce(0.0) { $0 + $1.totalPrice * 0.80 }
+        let total = viewModel.jobs.reduce(0.0) { $0 + $1.estimatedPayout }
         return String(format: "Potential earnings nearby: $%.0f", total)
     }
 
@@ -284,15 +355,22 @@ struct JobFeedView: View {
                     }
                 }
             } label: {
-                Text("Accept job")
-                    .font(DriverTypography.headline)
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, DriverSpacing.sm)
-                    .background(Color.driverPrimary)
-                    .clipShape(RoundedRectangle(cornerRadius: DriverRadius.md))
+                Group {
+                    if viewModel.isAccepting {
+                        ProgressView().tint(.white)
+                    } else {
+                        Text("Accept job")
+                            .font(DriverTypography.headline)
+                    }
+                }
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, DriverSpacing.sm)
+                .background(Color.driverPrimary.opacity(viewModel.isAccepting ? 0.6 : 1))
+                .clipShape(RoundedRectangle(cornerRadius: DriverRadius.md))
             }
             .buttonStyle(.plain)
+            .disabled(viewModel.isAccepting)
         }
         .padding(DriverSpacing.md)
         .background(Color.driverSurface)

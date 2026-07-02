@@ -26,7 +26,13 @@ final class AppState {
     var isRegistered: Bool { contractorProfile != nil }
     var isApproved: Bool { contractorProfile?.approval == .approved }
     var isOperator: Bool { contractorProfile?.isOperator == true }
-    var hasCompletedStripeConnect: Bool { contractorProfile?.stripeConnectId != nil }
+
+    /// True only when Stripe Connect onboarding is actually complete (active /
+    /// payouts enabled) or under review (pending_verification). The backend
+    /// persists `stripe_connect_id` at account CREATION — before onboarding
+    /// finishes — so the id alone is not proof of completion.
+    /// Updated by `refreshConnectStatus()` during profile loads.
+    var hasCompletedStripeConnect = false
 
     // Online status
     var isOnline = false
@@ -71,6 +77,7 @@ final class AppState {
         guard KeychainHelper.loadString(forKey: "authToken") != nil else {
             contractorProfile = nil
             isOnline = false
+            hasCompletedStripeConnect = false
             return
         }
 
@@ -94,6 +101,9 @@ final class AppState {
                 registerPushTokenIfNeeded()
                 print("✅ Profile loaded successfully")
 
+                // Resolve real Stripe Connect onboarding state (routing gate)
+                await refreshConnectStatus()
+
                 // Load active job after profile loads
                 await loadActiveJob()
                 return
@@ -105,6 +115,7 @@ final class AppState {
                 if let apiError = error as? APIError,
                    case .unauthorized = apiError {
                     contractorProfile = nil
+                    hasCompletedStripeConnect = false
                     auth.logout()
                     print("❌ Auth error - logged out")
                     return
@@ -141,15 +152,42 @@ final class AppState {
         }
     }
 
+    // MARK: - Stripe Connect Status
+
+    /// Refresh `hasCompletedStripeConnect` from the Connect status endpoint.
+    func refreshConnectStatus() async {
+        // No Connect account created yet — definitely not onboarded.
+        guard contractorProfile?.stripeConnectId != nil else {
+            hasCompletedStripeConnect = false
+            return
+        }
+        do {
+            let response = try await api.getConnectStatus()
+            hasCompletedStripeConnect = response.status == "active"
+                || response.status == "pending_verification"
+                || response.payoutsEnabled
+        } catch {
+            // Network failure: fall back to the id heuristic so an
+            // already-active operator isn't locked into onboarding.
+            hasCompletedStripeConnect = contractorProfile?.stripeConnectId != nil
+        }
+    }
+
     // MARK: - Online Toggle
 
     var toggleError: String?
+    var isToggling = false
 
     func toggleOnline() async {
+        guard !isToggling else { return }
         guard contractorProfile != nil else {
             toggleError = "Complete contractor registration first."
             return
         }
+        isToggling = true
+        toggleError = nil
+        defer { isToggling = false }
+
         let newState = !isOnline
         do {
             let response = try await api.updateAvailability(isOnline: newState)

@@ -12,6 +12,7 @@ final class JobFeedViewModel {
     var jobs: [DriverJob] = []
     var offers: [DriverOffer] = []   // broadcast offers (first-to-accept)
     var isLoading = false
+    var isAccepting = false          // an offer-accept POST is in flight
     var errorMessage: String?
 
     private let api = DriverAPIClient.shared
@@ -36,7 +37,11 @@ final class JobFeedViewModel {
     }
 
     /// Claim a broadcast offer. Returns true only on a successful claim.
+    /// Guarded against double-taps: a second call while one is in flight is a no-op.
     func acceptOffer(_ offer: DriverOffer) async -> Bool {
+        guard !isAccepting else { return false }
+        isAccepting = true
+        defer { isAccepting = false }
         do {
             let res = try await api.acceptOffer(token: offer.acceptToken)
             offers.removeAll { $0.id == offer.id }

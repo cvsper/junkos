@@ -121,6 +121,10 @@ struct DriverJob: Codable, Identifiable {
     // Added by available-jobs endpoint
     let distanceKm: Double?
 
+    // Operator take-home sent by the backend (`driver_payout`). Optional +
+    // defaulted so older API responses (and memberwise init callers) still work.
+    var driverPayout: Double? = nil
+
     enum CodingKeys: String, CodingKey {
         case id
         case customerId = "customer_id"
@@ -143,6 +147,7 @@ struct DriverJob: Codable, Identifiable {
         case createdAt = "created_at"
         case updatedAt = "updated_at"
         case distanceKm = "distance_km"
+        case driverPayout = "driver_payout"
     }
 
     var jobStatus: JobStatus {
@@ -161,6 +166,21 @@ struct DriverJob: Codable, Identifiable {
 
     var formattedPrice: String {
         String(format: "$%.0f", totalPrice)
+    }
+
+    /// Operator take-home. Prefers the backend-provided `driver_payout`;
+    /// falls back to 72% of the customer total (20% commission + 8% service fee).
+    var estimatedPayout: Double {
+        driverPayout ?? totalPrice * 0.72
+    }
+
+    var formattedPayout: String {
+        String(format: "$%.0f", estimatedPayout)
+    }
+
+    /// Honest label for the payout figure: exact when the backend sent it.
+    var payoutLabel: String {
+        driverPayout != nil ? "Your pay" : "Est. your pay"
     }
 
     var itemNames: [String] {

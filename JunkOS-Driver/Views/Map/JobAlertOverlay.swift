@@ -71,13 +71,18 @@ struct JobAlertOverlay: View {
 
             // Badges: Price + Distance
             HStack(spacing: DriverSpacing.sm) {
-                // Price badge
+                // Pay badge — operator take-home, not the customer total
                 HStack(spacing: DriverSpacing.xxs) {
                     Image(systemName: "dollarsign.circle.fill")
                         .foregroundStyle(Color.driverPrimary)
-                    Text(job.formattedPrice)
-                        .font(DriverTypography.price)
-                        .foregroundStyle(Color.driverText)
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text(job.formattedPayout)
+                            .font(DriverTypography.price)
+                            .foregroundStyle(Color.driverText)
+                        Text(job.payoutLabel)
+                            .font(DriverTypography.caption2)
+                            .foregroundStyle(Color.driverTextSecondary)
+                    }
                 }
                 .padding(.horizontal, DriverSpacing.md)
                 .padding(.vertical, DriverSpacing.xs)
