@@ -355,7 +355,7 @@
 
     if (slider && label && price && desc) {
         const mapping = {
-            '1': { label: 'Single Item', price: '$89', desc: 'Perfect for a single couch, a large fridge, or a pile of 3-4 chairs.' },
+            '1': { label: 'Single Item', price: '$119', desc: 'Perfect for a single couch, a large fridge, or a pile of 3-4 chairs.' },
             '2': { label: '1/4 Truckload', price: '$179', desc: 'Fits a sofa, a mattress set, and a few boxes. Ideal for a small closet clear-out.' },
             '3': { label: '1/2 Truckload', price: '$329', desc: 'About the size of a small bedroom or a standard kitchen cleanout.' },
             '4': { label: 'Full Truckload', price: '$579', desc: 'Maximum capacity (14 cubic yards). Great for full garage or estate cleanouts.' }

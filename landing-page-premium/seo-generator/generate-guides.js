@@ -26,7 +26,7 @@ const guides = [
     metaDescription: 'Learn how to dispose of a mattress in South Florida. Compare professional pickup, county curbside, donation, and DIY options. Costs, county rules, and eco tips.',
     h1: 'How to Dispose of a Mattress in South Florida',
     subtitle: 'Your complete 2026 guide to mattress disposal across Palm Beach, Broward, and Miami-Dade counties.',
-    quickAnswer: 'The fastest way to dispose of a mattress in South Florida is professional pickup — Umuve hauls it same-day starting at $89, handles all transport, and recycles 89% of materials. Free curbside pickup is available in all three counties but requires advance scheduling and specific placement rules. Donation is possible if the mattress is stain-free and structurally sound.',
+    quickAnswer: 'The fastest way to dispose of a mattress in South Florida is professional pickup — Umuve hauls it same-day starting at $119, handles all transport, and recycles 89% of materials. Free curbside pickup is available in all three counties but requires advance scheduling and specific placement rules. Donation is possible if the mattress is stain-free and structurally sound.',
     serviceSlug: 'mattress-disposal',
     serviceName: 'Mattress Disposal',
     relatedGuides: [
@@ -52,7 +52,7 @@ const guides = [
       { id: 'faq', label: 'FAQ' },
     ],
     professional: {
-      price: '$89 – $199',
+      price: '$119 – $199',
       description: 'Umuve picks up your mattress same-day from anywhere in your home — bedroom, upstairs, storage unit. No prep needed. Two-person crews handle king-sized mattresses, bunk beds, and adjustable bases without damage to walls or floors. The mattress is wrapped, loaded, and taken to a certified mattress recycling facility where steel springs, foam, and fabric are separated for recovery.',
       includes: ['Full labor and carrying', 'Same-day service available', 'Recycling or donation of usable mattresses', 'No prep or disassembly needed', 'All hauling and disposal fees'],
     },
@@ -64,7 +64,7 @@ const guides = [
     donation: 'Mattresses can be donated if they are stain-free, bed bug-free, and structurally intact (no broken springs or torn fabric). Habitat for Humanity ReStores in South Florida accept mattresses in good condition — call your local ReStore to confirm. Goodwill locations in Miami-Dade accept twin and full mattresses but rarely queen or king due to storage constraints. The Salvation Army accepts queen and king mattresses with advance arrangement. St. Vincent de Paul thrift stores in Broward County are worth calling if other options are full.',
     diy: 'DIY mattress disposal means either hauling it yourself to a county transfer station or breaking it down for easier transport. Renting a pickup truck from U-Haul or Home Depot costs $19-$40 for a few hours. Transfer station fees in South Florida run $30-$75 per mattress depending on county. Breaking down a mattress: cut the fabric cover off with a utility knife, remove and separate the foam (can go in regular trash in small bags), and take the steel spring coil to a scrap metal recycler — they often pay $5-$15 per unit. Memory foam mattresses have no spring coil and must go to a foam recycler or the landfill.',
     costTable: [
-      { method: 'Umuve Professional Pickup', cost: '$89 – $199', time: 'Same day', effort: 'Zero', eco: '89% recycled' },
+      { method: 'Umuve Professional Pickup', cost: '$119 – $199', time: 'Same day', effort: 'Zero', eco: '89% recycled' },
       { method: 'County Curbside', cost: 'Free', time: '5–14 days wait', effort: 'Move to curb', eco: 'Landfill likely' },
       { method: 'Donation (Habitat/Goodwill)', cost: 'Free', time: '2–7 days', effort: 'Transport required', eco: 'Best if accepted' },
       { method: 'DIY Haul to Transfer Station', cost: '$50 – $120', time: 'Half-day', effort: 'High', eco: 'Mostly landfill' },
@@ -74,10 +74,10 @@ const guides = [
       { title: 'Leaving it on the curb without scheduling', body: 'Unscheduled bulk items left at the curb can earn you a code enforcement citation in most South Florida cities. HOA violations typically run $50-$200 per day. Always call your city or schedule online before putting anything on the curb.' },
       { title: 'Donating a mattress that will be rejected', body: 'Most charities inspect mattresses on arrival. Any visible stain, odor, or structural damage results in rejection. You will then need to haul it somewhere else. When in doubt, book professional pickup.' },
       { title: 'Assuming a hotel will take your old mattress', body: 'Hotels and furnished rental operators will not accept used residential mattresses due to liability and health code requirements. This is a common misconception.' },
-      { title: 'Illegally dumping', body: 'South Florida counties issue $500–$10,000 fines for illegal dumping of mattresses. Cameras at popular dump sites result in hundreds of citations per year. The fine is never worth it when free curbside or $89 professional pickup exist.' },
+      { title: 'Illegally dumping', body: 'South Florida counties issue $500–$10,000 fines for illegal dumping of mattresses. Cameras at popular dump sites result in hundreds of citations per year. The fine is never worth it when free curbside or $119 professional pickup exist.' },
     ],
     faqs: [
-      { q: 'How much does it cost to dispose of a mattress in South Florida?', a: 'Professional pickup starts at $89 for a twin or full and runs up to $199 for a king or adjustable base. County curbside is free with 5-14 day scheduling. DIY haul to a transfer station costs $50-$120 including truck rental and dump fees.' },
+      { q: 'How much does it cost to dispose of a mattress in South Florida?', a: 'Professional pickup starts at $119 for a twin or full and runs up to $199 for a king or adjustable base. County curbside is free with 5-14 day scheduling. DIY haul to a transfer station costs $50-$120 including truck rental and dump fees.' },
       { q: 'Can I leave a mattress on the curb in South Florida?', a: 'Only after scheduling with your municipality. Unscheduled bulk items can result in code enforcement citations of $50-$200 per day. Palm Beach SWA, Broward cities, and Miami-Dade all require advance scheduling for bulk pickup.' },
       { q: 'Does Habitat for Humanity take mattresses?', a: 'Habitat for Humanity ReStores accept mattresses in excellent condition — no stains, no odor, no structural damage. Call your local ReStore before transporting, as acceptance varies by location and current inventory.' },
       { q: 'How long does same-day mattress pickup take with Umuve?', a: 'Most pickups take 15-30 minutes from arrival. You book online, we give you a 2-hour arrival window, and two crew members carry the mattress from anywhere in your home and load it. No prep needed.' },
@@ -89,10 +89,10 @@ const guides = [
   {
     slug: 'how-to-dispose-of-a-refrigerator',
     title: 'How to Dispose of a Refrigerator in South Florida (2026)',
-    metaDescription: 'How to dispose of a refrigerator in South Florida legally. EPA refrigerant rules, county pickup options, utility rebates, and professional removal starting at $89.',
+    metaDescription: 'How to dispose of a refrigerator in South Florida legally. EPA refrigerant rules, county pickup options, utility rebates, and professional removal starting at $119.',
     h1: 'How to Dispose of a Refrigerator in South Florida',
     subtitle: 'EPA-compliant refrigerator disposal for Palm Beach, Broward, and Miami-Dade residents in 2026.',
-    quickAnswer: 'Refrigerator disposal in South Florida requires EPA-compliant refrigerant recovery before the unit can be scrapped or landfilled. Professional removal by Umuve starts at $89 and includes all refrigerant handling and certified recycling. FPL and other utilities offer appliance rebates of $25-$50 for qualifying units. Free municipal pickup takes 5-14 days.',
+    quickAnswer: 'Refrigerator disposal in South Florida requires EPA-compliant refrigerant recovery before the unit can be scrapped or landfilled. Professional removal by Umuve starts at $119 and includes all refrigerant handling and certified recycling. FPL and other utilities offer appliance rebates of $25-$50 for qualifying units. Free municipal pickup takes 5-14 days.',
     serviceSlug: 'refrigerator-disposal',
     serviceName: 'Refrigerator Disposal',
     relatedGuides: [
@@ -118,7 +118,7 @@ const guides = [
       { id: 'faq', label: 'FAQ' },
     ],
     professional: {
-      price: '$89 – $249',
+      price: '$119 – $249',
       description: 'Umuve handles the full refrigerator removal process — disconnection from water line and power, safe removal from your kitchen without floor or cabinet damage, transport to an EPA-certified recycling facility where refrigerants are properly recovered per Clean Air Act Section 608, and full materials recycling. No extra charges for refrigerant handling. Steel, copper, aluminum, and plastics are all separated for recovery.',
       includes: ['Water line and power disconnection', 'EPA-compliant refrigerant recovery at certified facility', 'Full labor and hauling', 'Same-day service', '95% materials recycled'],
     },
@@ -130,7 +130,7 @@ const guides = [
     donation: 'Working refrigerators under 10 years old can often be donated. Habitat for Humanity ReStores in Broward and Palm Beach counties accept working refrigerators. The Salvation Army in Miami-Dade picks up working appliances. Check if your utility company — FPL, TECO, or Florida City Gas — has an appliance rebate program. FPL\'s Energy Efficiency program offers $25-$50 for qualifying refrigerators and freezers through their appliance recycling program. Call 800-226-3545 to schedule an FPL pickup.',
     diy: 'DIY disposal requires you to first have refrigerant evacuated by a licensed EPA Section 608 technician — illegal to release Freon into the atmosphere, with fines up to $44,539 per day. Once evacuated, you can haul the unit to a metal scrap yard (they pay $5-$20 per refrigerator), a county transfer station, or schedule free utility recycling. Renting an appliance dolly ($15-$25) is essential — modern refrigerators weigh 180-350 lbs. A friend is also necessary; never attempt to move a refrigerator solo.',
     costTable: [
-      { method: 'Umuve Professional Pickup', cost: '$89 – $249', time: 'Same day', effort: 'Zero', eco: '95% recycled' },
+      { method: 'Umuve Professional Pickup', cost: '$119 – $249', time: 'Same day', effort: 'Zero', eco: '95% recycled' },
       { method: 'FPL Appliance Recycling', cost: 'Free + $25-$50 rebate', time: '1–2 weeks', effort: 'Minimal', eco: 'Good' },
       { method: 'County Curbside (after Freon removal)', cost: '$50–$150 for tech + free pickup', time: '1–3 weeks', effort: 'Medium', eco: 'Partial recycling' },
       { method: 'Scrap Metal Yard', cost: 'Free (may pay $5–$20)', time: 'Same day if you haul', effort: 'High', eco: 'Good for metals' },
@@ -145,7 +145,7 @@ const guides = [
     faqs: [
       { q: 'Is it legal to throw away a refrigerator in South Florida?', a: 'You cannot legally throw a refrigerator in the regular trash. Refrigerants must be properly recovered by an EPA-certified technician before disposal. All three South Florida counties have regulations requiring proper appliance disposal.' },
       { q: 'Does FPL pay me to take my old refrigerator?', a: 'Yes, in many cases. FPL\'s appliance recycling program offers $25-$50 for qualifying refrigerators and freezers. Call 800-226-3545. The unit must be operational and within their service territory.' },
-      { q: 'How much does refrigerator removal cost in South Florida?', a: 'Professional removal by Umuve starts at $89 and includes all labor, hauling, and certified recycling. Adding a second unit reduces per-unit cost. DIY approaches cost $50-$150 after mandatory refrigerant evacuation fees.' },
+      { q: 'How much does refrigerator removal cost in South Florida?', a: 'Professional removal by Umuve starts at $119 and includes all labor, hauling, and certified recycling. Adding a second unit reduces per-unit cost. DIY approaches cost $50-$150 after mandatory refrigerant evacuation fees.' },
       { q: 'Can Umuve disconnect my refrigerator\'s water line?', a: 'Yes. Our crews are trained to disconnect standard water line connections. If your refrigerator has a complex built-in water filtration system or unusual plumbing, we recommend having a plumber disconnect it before booking, though standard ice maker lines are no problem.' },
       { q: 'What recycling rate do refrigerators achieve?', a: 'At EPA-certified facilities, refrigerators achieve 95%+ recycling rates. Steel and aluminum are the primary recovered materials. Compressor oil, refrigerant, and insulating foam are also recovered. Only small amounts of mixed plastics and seals go to landfill.' },
       { q: 'How long does refrigerator pickup take with Umuve?', a: 'Most refrigerator removals take 20-30 minutes from arrival. We disconnect, remove, and load. You get a 2-hour arrival window and real-time tracking.' },
@@ -155,10 +155,10 @@ const guides = [
   {
     slug: 'how-to-dispose-of-electronics',
     title: 'How to Dispose of Electronics in South Florida (2026)',
-    metaDescription: 'How to dispose of electronics and e-waste in South Florida legally. Free drop-off locations, certified recyclers, data destruction, and pickup starting at $89.',
+    metaDescription: 'How to dispose of electronics and e-waste in South Florida legally. Free drop-off locations, certified recyclers, data destruction, and pickup starting at $119.',
     h1: 'How to Dispose of Electronics (E-Waste) in South Florida',
     subtitle: 'Safe, legal, and eco-friendly electronics disposal across Palm Beach, Broward, and Miami-Dade in 2026.',
-    quickAnswer: 'Florida law prohibits televisions, computers, and monitors from entering the regular trash. South Florida residents can use free county e-waste drop-off events, retail take-back programs (Best Buy, Staples), or professional pickup by Umuve starting at $89 with certified data destruction. Never place electronics at the curb as unscheduled e-waste.',
+    quickAnswer: 'Florida law prohibits televisions, computers, and monitors from entering the regular trash. South Florida residents can use free county e-waste drop-off events, retail take-back programs (Best Buy, Staples), or professional pickup by Umuve starting at $119 with certified data destruction. Never place electronics at the curb as unscheduled e-waste.',
     serviceSlug: 'electronics-recycling',
     serviceName: 'Electronics Recycling',
     relatedGuides: [
@@ -184,7 +184,7 @@ const guides = [
       { id: 'faq', label: 'FAQ' },
     ],
     professional: {
-      price: '$89 – $299',
+      price: '$119 – $299',
       description: 'Umuve picks up all your old electronics in one visit — computers, monitors, printers, TVs, stereos, gaming systems, cables, and accessories. Everything goes to R2-certified recycling facilities. Hard drives and storage devices are physically destroyed or certified-wiped to NIST 800-88 standards. A certificate of destruction is available for business clients. Ideal when you have more than a few items or need data security.',
       includes: ['All e-waste types accepted', 'Certified data destruction for hard drives', 'R2-certified recycling facility', 'Certificate of destruction available', 'Same-day service'],
     },
@@ -196,7 +196,7 @@ const guides = [
     donation: 'Working electronics in good condition can often be donated. PCs for People in South Florida accepts computers less than 8 years old. Goodwill accepts working TVs, computers, and accessories. World Computer Exchange accepts functional equipment for international distribution to developing countries. For smartphones and tablets, many carriers and manufacturers have trade-in programs that give you credit toward new purchases — Apple, Samsung, and Google all run ongoing programs. Best Buy has a trade-in program and takes non-working devices for recycling.',
     diy: 'Best Buy accepts virtually all consumer electronics for recycling in-store — up to 3 items per household per day, free for most items (TVs and monitors: $25 fee, waived with $35+ purchase). Staples accepts electronics and ink cartridges for recycling. The EPA\'s eCycler locator at epa.gov/recycle finds R2-certified recyclers near you. For data security before drop-off: use DBAN (free tool) to wipe hard drives, or physically remove and destroy the hard drive before taking the rest of the computer for recycling.',
     costTable: [
-      { method: 'Umuve Professional Pickup', cost: '$89 – $299', time: 'Same day', effort: 'Zero', eco: '96% recycled' },
+      { method: 'Umuve Professional Pickup', cost: '$119 – $299', time: 'Same day', effort: 'Zero', eco: '96% recycled' },
       { method: 'County HHW Drop-Off Events', cost: 'Free', time: 'Next event date', effort: 'You transport', eco: 'Excellent' },
       { method: 'Best Buy In-Store Recycling', cost: 'Free (TVs $25)', time: 'Same day', effort: 'You transport', eco: 'Good (R2 certified)' },
       { method: 'Retail Trade-In Programs', cost: 'Free + credit', time: 'Varies', effort: 'Low', eco: 'Good' },
@@ -212,7 +212,7 @@ const guides = [
       { q: 'Is it illegal to throw away a TV or computer in Florida?', a: 'Yes. Florida Statute 403.7192 bans televisions and computers (desktops, laptops, and monitors) from residential trash and landfills. Violations can result in warnings and fines.' },
       { q: 'Where can I drop off old electronics for free in South Florida?', a: 'All three South Florida counties hold free monthly HHW and e-waste events. Best Buy accepts most electronics in-store for free recycling. Staples accepts computers and accessories. Check pbcswa.com, broward.org/solidwaste, or miamidade.gov/solidwaste for schedules.' },
       { q: 'Does Umuve destroy hard drives?', a: 'Yes. Umuve offers certified hard drive destruction. All storage media is either physically shredded or degaussed at our R2-certified partner facilities. Certificates of destruction are available for business clients.' },
-      { q: 'How much does electronics pickup cost?', a: 'Umuve charges $89 for a small pickup (a few items) up to $299 for a large collection. Volume is the main factor. County drop-off events are free if you transport the items yourself.' },
+      { q: 'How much does electronics pickup cost?', a: 'Umuve charges $119 for a small pickup (a few items) up to $299 for a large collection. Volume is the main factor. County drop-off events are free if you transport the items yourself.' },
       { q: 'What electronics does Umuve accept?', a: 'We accept all consumer electronics: computers, laptops, monitors, TVs (all types), printers, scanners, copiers, fax machines, phones, tablets, gaming consoles, stereos, cables, and accessories. We do not accept devices containing radioactive materials.' },
       { q: 'Can old electronics be donated instead of recycled?', a: 'If the device is functional and less than 5-7 years old, donation is often the best option. Goodwill, PCs for People, and World Computer Exchange accept qualifying devices. Non-working or outdated electronics should go to certified recycling.' },
     ],
@@ -287,10 +287,10 @@ const guides = [
   {
     slug: 'how-to-dispose-of-a-couch',
     title: 'How to Dispose of a Couch in South Florida (2026)',
-    metaDescription: 'How to dispose of a couch or sofa in South Florida. Pickup options, donation centers, curbside rules, and professional removal starting at $89.',
+    metaDescription: 'How to dispose of a couch or sofa in South Florida. Pickup options, donation centers, curbside rules, and professional removal starting at $119.',
     h1: 'How to Dispose of a Couch in South Florida',
     subtitle: 'Get rid of your old sofa, sectional, or loveseat the right way in Palm Beach, Broward, and Miami-Dade.',
-    quickAnswer: 'Couch removal in South Florida starts at $89 for professional pickup with Umuve — same-day service, all labor included, 90% donated or recycled. County curbside pickup is free but requires advance scheduling and typically a 5-14 day wait. Couches in good condition can be donated to Habitat for Humanity, Salvation Army, or Goodwill.',
+    quickAnswer: 'Couch removal in South Florida starts at $119 for professional pickup with Umuve — same-day service, all labor included, 90% donated or recycled. County curbside pickup is free but requires advance scheduling and typically a 5-14 day wait. Couches in good condition can be donated to Habitat for Humanity, Salvation Army, or Goodwill.',
     serviceSlug: 'couch-removal',
     serviceName: 'Couch Removal',
     relatedGuides: [
@@ -316,7 +316,7 @@ const guides = [
       { id: 'faq', label: 'FAQ' },
     ],
     professional: {
-      price: '$89 – $299',
+      price: '$119 – $299',
       description: 'Umuve removes couches and sofas of any size — standard two-seater sofas, oversized sectionals, sleeper sofas, recliners, and outdoor patio sectionals. Two-person crews navigate your furniture through doors, hallways, and staircases. If your sectional does not fit through the door, we disassemble it on-site. Couches in good condition are donated to Habitat for Humanity, Salvation Army, or local shelters. Damaged pieces are broken down — wood frames recycled, foam repurposed, fabric processed.',
       includes: ['Any couch or sofa type accepted', 'Disassembly if needed to fit through doors', 'Same-day service', 'Donation for usable couches', '90% donated or recycled'],
     },
@@ -328,7 +328,7 @@ const guides = [
     donation: 'Habitat for Humanity ReStores in Boca Raton, Deerfield Beach, and Fort Lauderdale accept couches in excellent condition — no stains, tears, pet damage, or odor. The Salvation Army Family Stores in Miami-Dade and Broward offer free furniture pickup for qualifying donations (call your local store to schedule). Goodwill in Palm Beach County accepts couches in very good condition. Local Facebook Marketplace and the Buy Nothing groups are excellent for free rehoming — post your couch with clear photos and it often disappears within hours, especially for quality pieces.',
     diy: 'If donation is not an option and you want to avoid pickup fees, renting a truck is the primary DIY route. A 10-foot U-Haul runs $19.95 + mileage. Broward County Solid Waste transfer stations accept furniture for $50-$80 per load. Palm Beach County SWA South County transfer station charges by weight. You will need a helper — couches are bulky and awkward even when light. Alternatively, breaking down the couch: remove cushions (bag for trash), cut fabric with a utility knife to remove upholstery (trash), separate foam (compress into bags), and haul the wood/metal frame to a scrap yard or schedule a metal pickup.',
     costTable: [
-      { method: 'Umuve Professional Pickup', cost: '$89 – $299', time: 'Same day', effort: 'Zero', eco: '90% donated or recycled' },
+      { method: 'Umuve Professional Pickup', cost: '$119 – $299', time: 'Same day', effort: 'Zero', eco: '90% donated or recycled' },
       { method: 'County Curbside', cost: 'Free', time: '5–14 days', effort: 'Move to curb', eco: 'Partial' },
       { method: 'Donation (Salvation Army pickup)', cost: 'Free', time: '1–7 days', effort: 'Schedule pickup', eco: 'Best' },
       { method: 'DIY Haul (truck + transfer station)', cost: '$70 – $120', time: 'Half-day', effort: 'High', eco: 'Partial' },
@@ -341,7 +341,7 @@ const guides = [
       { title: 'Treating all sofas as trash when many have value', body: 'A sectional sofa in good condition can sell for $150-$600 on Facebook Marketplace or Craigslist in South Florida. Before booking removal, take 5 minutes to photograph it and post. If it sells, you get paid instead of paying.' },
     ],
     faqs: [
-      { q: 'How much does couch removal cost in South Florida?', a: 'Professional removal by Umuve starts at $89 for a standard sofa or loveseat. Sectional sofas average $139-$189. Sleeper sofas or unusually heavy pieces may be $199-$299. County curbside is free with advance scheduling.' },
+      { q: 'How much does couch removal cost in South Florida?', a: 'Professional removal by Umuve starts at $119 for a standard sofa or loveseat. Sectional sofas average $139-$189. Sleeper sofas or unusually heavy pieces may be $199-$299. County curbside is free with advance scheduling.' },
       { q: 'Will Habitat for Humanity pick up a couch?', a: 'Habitat for Humanity ReStore locations in South Florida vary on pickup availability. Some locations offer free pickup of large donations including couches; others require you to bring the item. Call your local ReStore directly. The couch must be in excellent condition — no stains, no odor, no pet damage.' },
       { q: 'Can Umuve remove a couch from upstairs?', a: 'Yes. Umuve crews carry furniture from any floor of any building. Two-person teams handle second-floor bedroom couches, high-rise condo removals (with elevator), and multi-story homes routinely. Stairs are included in standard pricing.' },
       { q: 'What if my sectional does not fit through the door?', a: 'Not a problem. We disassemble sectionals on-site if needed — removing legs, separating chaise sections, and using door removal when necessary. Disassembly is included in our standard service.' },
@@ -356,7 +356,7 @@ const guides = [
     metaDescription: 'How to dispose of old appliances in South Florida. Legal disposal for refrigerators, washers, dryers, dishwashers, and stoves. Costs, county rules, and recycling info.',
     h1: 'How to Dispose of Appliances in South Florida',
     subtitle: 'Legal and eco-friendly appliance disposal across Palm Beach, Broward, and Miami-Dade — refrigerators, washers, dryers, and more.',
-    quickAnswer: 'Most major appliances in South Florida require special handling before disposal. Refrigerators and AC units need EPA-compliant refrigerant recovery. All appliances should go to certified metal recyclers rather than landfills. Umuve handles same-day appliance removal starting at $89. Utility rebates of $25-$75 are available for certain units through FPL.',
+    quickAnswer: 'Most major appliances in South Florida require special handling before disposal. Refrigerators and AC units need EPA-compliant refrigerant recovery. All appliances should go to certified metal recyclers rather than landfills. Umuve handles same-day appliance removal starting at $119. Utility rebates of $25-$75 are available for certain units through FPL.',
     serviceSlug: 'appliance-removal',
     serviceName: 'Appliance Removal',
     relatedGuides: [
@@ -382,7 +382,7 @@ const guides = [
       { id: 'faq', label: 'FAQ' },
     ],
     professional: {
-      price: '$89 – $299',
+      price: '$119 – $299',
       description: 'Umuve removes all major household appliances — refrigerators, freezers, washing machines, dryers, dishwashers, stoves, ovens, water heaters, dehumidifiers, and air conditioners. We handle EPA-required refrigerant recovery for units that contain Freon or HFCs. All appliances go to certified metal recycling facilities where 95% of materials are recovered. Same-day service available throughout South Florida.',
       includes: ['All major appliances accepted', 'EPA-compliant refrigerant handling for qualified units', 'Disconnection from standard connections', 'Full labor and hauling', '95% recycled at certified facilities'],
     },
@@ -394,7 +394,7 @@ const guides = [
     donation: 'Working appliances less than 10 years old in good condition can often be donated. Habitat for Humanity ReStores accept working washers, dryers, refrigerators, and stoves. The Salvation Army picks up working appliances with advance scheduling in many South Florida areas. FPL\'s appliance recycling program offers $25-$75 rebates for qualifying units — visit fpl.com/save/residential/appliance-recycling.html. Contact FPL at (800) 226-3545 for eligible models and scheduling.',
     diy: 'Scrap metal yards pay $5-$25 per appliance depending on metal content and market prices. A washer or dryer is mostly steel and fetches the best prices. Refrigerators and AC units must have refrigerant removed first — HVAC techs charge $50-$150 for this service. Without a truck, you are paying $20-$40/hour for a rental. Transfer station fees in South Florida run $30-$80 per load. For single appliances, DIY rarely saves money over professional removal.',
     costTable: [
-      { method: 'Umuve Professional Pickup', cost: '$89 – $299', time: 'Same day', effort: 'Zero', eco: '95% recycled' },
+      { method: 'Umuve Professional Pickup', cost: '$119 – $299', time: 'Same day', effort: 'Zero', eco: '95% recycled' },
       { method: 'County Curbside', cost: 'Free', time: '5–14 days', effort: 'Move to curb', eco: 'Partial' },
       { method: 'FPL Appliance Recycling (refrigerators)', cost: 'Free + $25–$75 rebate', time: '1–2 weeks', effort: 'Minimal', eco: 'Good' },
       { method: 'Scrap Metal Yard (with truck)', cost: 'Free–$20 income', time: 'Same day', effort: 'High', eco: 'Good' },
@@ -411,7 +411,7 @@ const guides = [
       { q: 'Can Home Depot or Lowe\'s take my old appliance when delivering a new one?', a: 'Yes, most retailers offer haul-away for $25-$50 when delivering new appliances. Ask at purchase. They typically take the same type of item they delivered. This is convenient but confirm the appliance goes to a recycler, not a landfill.' },
       { q: 'What appliances require special disposal in Florida?', a: 'Refrigerators, freezers, air conditioners, and dehumidifiers contain refrigerants that require EPA-certified recovery. Electronics (built into smart appliances) should go to certified e-waste recyclers. All other appliances can go to standard metal recyclers.' },
       { q: 'Does Umuve disconnect appliances before removal?', a: 'We disconnect standard connections — water supply lines, dryer vents, 120V power cords. Gas disconnection and hardwired 240V appliances should be handled by a licensed technician before our arrival. We can coordinate in most cases.' },
-      { q: 'What is the best appliance recycling program in South Florida?', a: 'FPL\'s appliance recycling program offers the best value — free pickup and $25-$75 cash back for qualifying refrigerators and freezers. For other appliances, Umuve\'s certified recycling is the most convenient at $89+ for same-day service.' },
+      { q: 'What is the best appliance recycling program in South Florida?', a: 'FPL\'s appliance recycling program offers the best value — free pickup and $25-$75 cash back for qualifying refrigerators and freezers. For other appliances, Umuve\'s certified recycling is the most convenient at $119+ for same-day service.' },
       { q: 'Can I get paid for an old appliance?', a: 'FPL pays $25-$75 rebates for qualifying refrigerators. Scrap metal yards pay $5-$25 per appliance if you transport it. Working appliances in good condition can sell for $50-$300 on Facebook Marketplace or Craigslist. In most cases, the FPL rebate is the easiest cash option.' },
     ],
   },
@@ -420,10 +420,10 @@ const guides = [
   {
     slug: 'how-to-dispose-of-a-tv',
     title: 'How to Dispose of a TV in South Florida (2026)',
-    metaDescription: 'How to dispose of a TV legally in South Florida. Free drop-off, county e-waste events, Best Buy recycling, and professional TV pickup starting at $89.',
+    metaDescription: 'How to dispose of a TV legally in South Florida. Free drop-off, county e-waste events, Best Buy recycling, and professional TV pickup starting at $119.',
     h1: 'How to Dispose of a TV in South Florida',
     subtitle: 'Legal TV disposal options for all types — flat screens, CRTs, and smart TVs — across South Florida.',
-    quickAnswer: 'Throwing a TV in the regular trash is illegal in Florida. Options include free drop-off at Best Buy (most TV types, free with any in-store purchase), county e-waste events (free, monthly), or professional pickup by Umuve starting at $89 including wall-mount removal. CRT televisions require R2-certified recycling due to lead content.',
+    quickAnswer: 'Throwing a TV in the regular trash is illegal in Florida. Options include free drop-off at Best Buy (most TV types, free with any in-store purchase), county e-waste events (free, monthly), or professional pickup by Umuve starting at $119 including wall-mount removal. CRT televisions require R2-certified recycling due to lead content.',
     serviceSlug: 'tv-recycling',
     serviceName: 'TV Recycling',
     relatedGuides: [
@@ -449,7 +449,7 @@ const guides = [
       { id: 'faq', label: 'FAQ' },
     ],
     professional: {
-      price: '$89 – $199',
+      price: '$119 – $199',
       description: 'Umuve picks up TVs of any type and size — 80-inch flat screens, wall-mounted displays, CRT televisions, projection TVs, and computer monitors. We remove wall mounts without wall damage when requested. All TVs go to R2-certified e-waste recyclers where glass, metals, and plastics are recovered. Florida law compliance guaranteed — no TV goes to landfill.',
       includes: ['All TV types and sizes', 'Wall-mount removal included', 'R2-certified recycling facility', 'Same-day service', 'Florida law compliant disposal'],
     },
@@ -461,7 +461,7 @@ const guides = [
     donation: 'Working TVs less than 5 years old in good condition can be donated to Goodwill, Salvation Army, or local thrift stores. Goodwill accepts flat screen TVs in working condition at most South Florida locations. Community centers, schools, and churches sometimes accept donated TVs for classrooms or common areas. Facebook Marketplace and Nextdoor are effective for rehoming working televisions quickly. CRT televisions are almost universally unaccepted for donation — recycle these through HHW or certified e-waste programs.',
     diy: 'Best Buy is the most accessible TV recycling option in South Florida. They accept flat screen TVs up to 32 inches for free; larger TVs carry a $25 fee (waived with a $35+ in-store purchase). CRT TVs have a $25-$35 fee regardless. Staples accepts TVs at some locations — call ahead. The EPA eCycler locator at epa.gov/recycle lists certified recyclers near you. Never place a TV at the curb as unauthorized e-waste — it is illegal and results in citations.',
     costTable: [
-      { method: 'Umuve Professional Pickup', cost: '$89 – $199', time: 'Same day', effort: 'Zero', eco: '97% recycled' },
+      { method: 'Umuve Professional Pickup', cost: '$119 – $199', time: 'Same day', effort: 'Zero', eco: '97% recycled' },
       { method: 'Best Buy In-Store (flat screens ≤32")', cost: 'Free', time: 'Same day', effort: 'You transport', eco: 'Good' },
       { method: 'Best Buy In-Store (>32" or CRT)', cost: '$25 fee (waived with purchase)', time: 'Same day', effort: 'You transport', eco: 'Good' },
       { method: 'County HHW Event', cost: 'Free', time: 'Next event date', effort: 'You transport', eco: 'Excellent' },
@@ -477,7 +477,7 @@ const guides = [
       { q: 'Is it illegal to throw away a TV in Florida?', a: 'Yes. Florida Statute 403.7192 prohibits televisions from entering regular household trash or landfills. First-time violations result in warnings; subsequent violations carry fines. Use certified e-waste recycling, county drop-off events, or Best Buy.' },
       { q: 'Does Best Buy recycle TVs for free in South Florida?', a: 'Best Buy accepts flat screen TVs up to 32 inches for free. TVs over 32 inches or CRT televisions have a $25 fee, which is waived with any $35+ in-store purchase. Most South Florida Best Buy locations participate.' },
       { q: 'Can I donate my old flat screen TV?', a: 'If it is working and less than 5 years old, yes. Goodwill accepts flat screens at most South Florida locations. Salvation Army and community organizations also accept working TVs. CRTs are not accepted for donation anywhere in South Florida.' },
-      { q: 'How much does TV pickup cost with Umuve?', a: 'TV pickup starts at $89 for a single standard flat screen. Multiple TVs or large projector TVs may run $119-$199. Wall-mount removal is included. Pricing covers all labor, transport, and certified recycling.' },
+      { q: 'How much does TV pickup cost with Umuve?', a: 'TV pickup starts at $119 for a single standard flat screen. Multiple TVs or large projector TVs may run $119-$199. Wall-mount removal is included. Pricing covers all labor, transport, and certified recycling.' },
       { q: 'Does Umuve remove wall-mounted TVs?', a: 'Yes. Our crews unmount wall-mounted TVs carefully to avoid wall damage. The bracket hardware and mount are included in the removal. We patch any anchor holes if requested (additional fee).' },
       { q: 'What happens to recycled TVs?', a: 'At R2-certified facilities, TVs are disassembled. Glass panels are processed for lead or rare earth recovery. Circuit boards go to precious metal smelters. Plastic housings are shredded and pelletized. Backlights with mercury are handled under strict environmental controls.' },
     ],
@@ -621,10 +621,10 @@ const guides = [
   {
     slug: 'how-to-dispose-of-a-washer-dryer',
     title: 'How to Dispose of a Washer and Dryer in South Florida (2026)',
-    metaDescription: 'How to dispose of a washer and dryer in South Florida. Free utility rebates, county pickup, scrap metal options, and professional removal from $89.',
+    metaDescription: 'How to dispose of a washer and dryer in South Florida. Free utility rebates, county pickup, scrap metal options, and professional removal from $119.',
     h1: 'How to Dispose of a Washer and Dryer in South Florida',
     subtitle: 'Remove and recycle your old washer and dryer the right way in Palm Beach, Broward, and Miami-Dade.',
-    quickAnswer: 'Washers and dryers are among the most recyclable appliances — primarily steel with copper motors and wiring. Professional removal starts at $89 per unit with Umuve, same-day. Scrap metal yards pay $5-$20 per unit. FPL does not offer rebates for washers and dryers (refrigerators only), but county curbside pickup handles them with advance scheduling, no special prep required.',
+    quickAnswer: 'Washers and dryers are among the most recyclable appliances — primarily steel with copper motors and wiring. Professional removal starts at $119 per unit with Umuve, same-day. Scrap metal yards pay $5-$20 per unit. FPL does not offer rebates for washers and dryers (refrigerators only), but county curbside pickup handles them with advance scheduling, no special prep required.',
     serviceSlug: 'appliance-removal',
     serviceName: 'Appliance Removal',
     relatedGuides: [
@@ -650,7 +650,7 @@ const guides = [
       { id: 'faq', label: 'FAQ' },
     ],
     professional: {
-      price: '$89 – $199 per unit, or $149 for both',
+      price: '$119 – $199 per unit, or $149 for both',
       description: 'Umuve removes washers and dryers from any location — laundry room, garage, second-floor closet. We disconnect water supply hoses and dryer vents. Both units are transported to certified metal recycling facilities. Booking both units together saves money. Most pickups take 20-30 minutes.',
       includes: ['Water hose and vent disconnection', 'Any floor or location', 'Same-day service', 'Certified metal recycling', 'Pricing discount for both units'],
     },
@@ -662,20 +662,20 @@ const guides = [
     donation: 'Working washers and dryers are highly sought after for donation. Habitat for Humanity ReStores accept working laundry appliances. The Salvation Army offers free furniture and appliance pickup for qualifying donations in South Florida — call your local store to confirm washer/dryer pickup availability. Community assistance organizations like Catholic Charities and United Way affiliates in South Florida sometimes coordinate appliance donations for families in need. Working units also sell well: $75-$250 each on Facebook Marketplace or Craigslist for name brands in good condition.',
     diy: 'Washers and dryers are the most DIY-friendly appliances for disposal. They contain no hazardous materials requiring special handling. A standard washer is 150-200 lbs; a dryer is 100-140 lbs. With an appliance dolly ($15-$25/day rental), one or two people can handle them. Scrap metal yards pay $5-$20 per unit. The copper motor inside a washing machine makes it more valuable at scrap — do not disassemble before the yard as they account for the copper when weighing. Transfer station disposal runs $30-$60 per unit.',
     costTable: [
-      { method: 'Umuve Professional Removal', cost: '$89–$149 per unit', time: 'Same day', effort: 'Zero', eco: 'Certified recycling' },
+      { method: 'Umuve Professional Removal', cost: '$119–$149 per unit', time: 'Same day', effort: 'Zero', eco: 'Certified recycling' },
       { method: 'County Curbside', cost: 'Free', time: '5–14 days', effort: 'Move to curb', eco: 'Partial recycling' },
       { method: 'Scrap Metal Yard (self-haul)', cost: 'Free + $5–$20 income', time: 'Same day', effort: 'Medium', eco: 'Good recycling' },
       { method: 'Donation (working units)', cost: 'Free', time: '1–7 days', effort: 'Low', eco: 'Best' },
     ],
     environmental: 'A washing machine contains approximately 100-120 lbs of steel, 10-15 lbs of copper (motor windings and wiring), 15-25 lbs of stainless steel drum material, and 10-20 lbs of plastic tubs and components. The copper content makes washing machines particularly valuable for metal recyclers — copper trades at $3-$4/lb. Dryers are primarily steel with aluminum drum components. Both appliances achieve near-100% material recovery at certified metal recyclers through magnetic separation, shredding, and non-ferrous sorting.',
     mistakes: [
-      { title: 'Not checking if the appliance has resale value', body: 'A working LG, Samsung, or Whirlpool washer less than 8 years old sells for $150-$350 on Facebook Marketplace in South Florida. Spending $89 to remove something worth $200 is worth a 10-minute listing first.' },
+      { title: 'Not checking if the appliance has resale value', body: 'A working LG, Samsung, or Whirlpool washer less than 8 years old sells for $150-$350 on Facebook Marketplace in South Florida. Spending $119 to remove something worth $200 is worth a 10-minute listing first.' },
       { title: 'Forgetting to disconnect water supply hoses', body: 'Leaving supply hoses connected when moving a washer usually results in a flooded laundry room. Turn off the water supply valves and disconnect hoses before any washer move. Umuve handles this during professional pickup.' },
       { title: 'Moving heavy appliances without an appliance dolly', body: 'Washing machines weigh 150-200 lbs. Without a dolly, you will scratch floors and risk injury. Appliance dollies are $15-$25/day at Home Depot or U-Haul.' },
       { title: 'Stacking units before confirming the receiving facility accepts them', body: 'Some charity donation centers refuse older or front-load washers due to mold issues. Call before transporting.' },
     ],
     faqs: [
-      { q: 'How much does washer and dryer removal cost in South Florida?', a: 'Umuve charges $89-$149 per unit, or $149 for both units together. County curbside is free with 5-14 day scheduling. Scrap metal yards accept them free and may pay you $5-$20 per unit.' },
+      { q: 'How much does washer and dryer removal cost in South Florida?', a: 'Umuve charges $119-$149 per unit, or $149 for both units together. County curbside is free with 5-14 day scheduling. Scrap metal yards accept them free and may pay you $5-$20 per unit.' },
       { q: 'Does FPL offer rebates for old washers and dryers?', a: 'No. FPL\'s appliance rebate program covers refrigerators and freezers only. ENERGY STAR appliance rebates for new purchases are sometimes available from FPL but do not apply to old unit disposal.' },
       { q: 'Can I donate a working washer and dryer in South Florida?', a: 'Yes. Habitat for Humanity ReStores, Salvation Army, and community assistance organizations accept working laundry appliances. Salvation Army offers free pickup in many South Florida areas — call (800) 728-7825.' },
       { q: 'How do scrap metal yards handle washers and dryers?', a: 'They weigh the unit and pay by pound at current scrap steel rates ($0.04-$0.07/lb for steel, more for copper). A 200-lb washer earns $8-$14 at current market rates. The copper motor increases value. Bring ID and the unit in any condition.' },
@@ -825,10 +825,10 @@ const lifestyleGuides = [
   {
     slug: 'how-to-dispose-of-a-dishwasher',
     title: 'How to Dispose of a Dishwasher in South Florida (2026)',
-    metaDescription: 'How to dispose of an old dishwasher in South Florida. Disconnection steps, county pickup options, scrap metal value, and professional removal from $89.',
+    metaDescription: 'How to dispose of an old dishwasher in South Florida. Disconnection steps, county pickup options, scrap metal value, and professional removal from $119.',
     h1: 'How to Dispose of a Dishwasher in South Florida',
     subtitle: 'Dishwasher removal and disposal options across Palm Beach, Broward, and Miami-Dade.',
-    quickAnswer: 'Dishwashers are primarily steel and plastic with no hazardous materials requiring special handling. They qualify for free county curbside bulk pickup (advance scheduling), sell to scrap metal yards for $5-$15, or can be professionally removed by Umuve for $89. Disconnection requires turning off the water supply valve under the sink and uncoupling the drain hose.',
+    quickAnswer: 'Dishwashers are primarily steel and plastic with no hazardous materials requiring special handling. They qualify for free county curbside bulk pickup (advance scheduling), sell to scrap metal yards for $5-$15, or can be professionally removed by Umuve for $119. Disconnection requires turning off the water supply valve under the sink and uncoupling the drain hose.',
     serviceSlug: 'appliance-removal',
     serviceName: 'Appliance Removal',
     isSimple: true,
@@ -838,7 +838,7 @@ const lifestyleGuides = [
       'Most South Florida cities accept dishwashers as standard bulk pickup items.',
       'Scrap metal yards pay $5-$15 per unit — call ahead for current rates.',
       'Working dishwashers sell for $50-$150 on Facebook Marketplace or Craigslist.',
-      'Umuve removes dishwashers starting at $89, including disconnection and hauling.',
+      'Umuve removes dishwashers starting at $119, including disconnection and hauling.',
     ],
     relatedGuides: [
       { slug: 'how-to-dispose-of-appliances', title: 'How to Dispose of Appliances' },
@@ -859,7 +859,7 @@ const lifestyleGuides = [
     metaDescription: 'How to dispose of a dehumidifier in South Florida. Refrigerant rules, free county pickup, FPL rebates, and professional removal.',
     h1: 'How to Dispose of a Dehumidifier in South Florida',
     subtitle: 'EPA-compliant dehumidifier disposal — refrigerant rules, rebates, and pickup options.',
-    quickAnswer: 'Dehumidifiers contain refrigerants (R-410A or R-22) that require EPA-certified recovery before disposal — the same requirement as refrigerators and AC units. FPL\'s appliance recycling program sometimes covers dehumidifiers. County curbside requires certified refrigerant evacuation first. Umuve handles dehumidifiers from $89 with certified refrigerant handling.',
+    quickAnswer: 'Dehumidifiers contain refrigerants (R-410A or R-22) that require EPA-certified recovery before disposal — the same requirement as refrigerators and AC units. FPL\'s appliance recycling program sometimes covers dehumidifiers. County curbside requires certified refrigerant evacuation first. Umuve handles dehumidifiers from $119 with certified refrigerant handling.',
     serviceSlug: 'appliance-removal',
     serviceName: 'Appliance Removal',
     isSimple: true,
@@ -868,7 +868,7 @@ const lifestyleGuides = [
       'Do not crush, puncture, or cut refrigerant lines — illegal under the Clean Air Act.',
       'Check FPL\'s appliance rebate program for dehumidifier eligibility (800-226-3545).',
       'County curbside requires documented refrigerant removal — same as air conditioners.',
-      'Professional removal by Umuve starts at $89, includes EPA-compliant refrigerant handling.',
+      'Professional removal by Umuve starts at $119, includes EPA-compliant refrigerant handling.',
       'Working units sell for $30-$100 on Facebook Marketplace depending on capacity.',
     ],
     relatedGuides: [
@@ -887,10 +887,10 @@ const lifestyleGuides = [
   {
     slug: 'how-to-dispose-of-a-stove-oven',
     title: 'How to Dispose of a Stove or Oven in South Florida (2026)',
-    metaDescription: 'How to dispose of an old stove or oven in South Florida. Gas vs electric disconnection, county pickup, scrap value, and professional removal from $89.',
+    metaDescription: 'How to dispose of an old stove or oven in South Florida. Gas vs electric disconnection, county pickup, scrap value, and professional removal from $119.',
     h1: 'How to Dispose of a Stove or Oven in South Florida',
     subtitle: 'Gas and electric stove removal and disposal across Palm Beach, Broward, and Miami-Dade.',
-    quickAnswer: 'Stoves and ovens are primarily steel with no hazardous materials (no refrigerants). Gas stoves require a licensed plumber or gas technician to disconnect the gas line before removal. Electric stoves are straightforward to disconnect and haul. County curbside accepts both. Scrap metal yards take stoves for $5-$20. Umuve removes stoves from $89.',
+    quickAnswer: 'Stoves and ovens are primarily steel with no hazardous materials (no refrigerants). Gas stoves require a licensed plumber or gas technician to disconnect the gas line before removal. Electric stoves are straightforward to disconnect and haul. County curbside accepts both. Scrap metal yards take stoves for $5-$20. Umuve removes stoves from $119.',
     serviceSlug: 'appliance-removal',
     serviceName: 'Appliance Removal',
     isSimple: true,
@@ -900,7 +900,7 @@ const lifestyleGuides = [
       'Both types are accepted as standard bulk curbside items — no special hazardous waste prep.',
       'Scrap metal yards pay $5-$20 per stove/oven. Bring ID; some require title/proof of ownership.',
       'Working gas ranges sell for $100-$300 on Facebook Marketplace; electric for $75-$200.',
-      'Professional removal by Umuve starts at $89 including disconnection coordination.',
+      'Professional removal by Umuve starts at $119 including disconnection coordination.',
     ],
     relatedGuides: [
       { slug: 'how-to-dispose-of-appliances', title: 'How to Dispose of Appliances' },
@@ -926,7 +926,7 @@ const diyGuides = [
     metaDescription: 'Step-by-step guide to removing a toilet yourself. Tools needed, safety tips, disposal options, and when to call a plumber. South Florida specific tips.',
     h1: 'How to Remove a Toilet: Step-by-Step Guide',
     subtitle: 'Remove your old toilet safely with this complete guide — then book Umuve to haul it away.',
-    quickAnswer: 'Toilet removal is a manageable DIY project for most homeowners. You need: an adjustable wrench, utility knife, rubber gloves, a bucket, and a helper for the lift. The process takes 30-60 minutes. Once removed, the toilet can go to the county transfer station ($30-$60), a curbside bulk pickup (schedule first), or call Umuve for $89 same-day haul-away.',
+    quickAnswer: 'Toilet removal is a manageable DIY project for most homeowners. You need: an adjustable wrench, utility knife, rubber gloves, a bucket, and a helper for the lift. The process takes 30-60 minutes. Once removed, the toilet can go to the county transfer station ($30-$60), a curbside bulk pickup (schedule first), or call Umuve for $119 same-day haul-away.',
     serviceSlug: 'construction-debris',
     serviceName: 'Construction Debris',
     isDiy: true,
@@ -954,7 +954,7 @@ const diyGuides = [
       { city: 'miami-fl', name: 'Miami' },
       { city: 'boca-raton-fl', name: 'Boca Raton' },
     ],
-    disposalNote: 'Once removed, your toilet can be disposed of through: (1) County curbside bulk pickup — schedule first, most cities accept porcelain fixtures; (2) County C&D transfer station drop-off ($30-$60); (3) Umuve same-day pickup starting at $89. Toilets in working condition can sometimes be donated to Habitat for Humanity ReStore.',
+    disposalNote: 'Once removed, your toilet can be disposed of through: (1) County curbside bulk pickup — schedule first, most cities accept porcelain fixtures; (2) County C&D transfer station drop-off ($30-$60); (3) Umuve same-day pickup starting at $119. Toilets in working condition can sometimes be donated to Habitat for Humanity ReStore.',
   },
   {
     slug: 'how-to-remove-drywall',
@@ -996,7 +996,7 @@ const diyGuides = [
     metaDescription: 'How to remove a kitchen sink yourself. Plumbing disconnection steps, tools needed, and disposal options in South Florida.',
     h1: 'How to Remove a Kitchen Sink: Step-by-Step Guide',
     subtitle: 'Remove your old kitchen sink safely — then haul it away or call Umuve.',
-    quickAnswer: 'Kitchen sink removal requires turning off the water supply lines (under the sink), disconnecting the drain trap and garbage disposal if present, and lifting the sink out of the countertop. Stainless sinks can be donated to Habitat ReStore if in good condition. Cast iron sinks sell for $20-$80 at scrap metal yards. Umuve removes old sinks for $89.',
+    quickAnswer: 'Kitchen sink removal requires turning off the water supply lines (under the sink), disconnecting the drain trap and garbage disposal if present, and lifting the sink out of the countertop. Stainless sinks can be donated to Habitat ReStore if in good condition. Cast iron sinks sell for $20-$80 at scrap metal yards. Umuve removes old sinks for $119.',
     serviceSlug: 'construction-debris',
     serviceName: 'Construction Debris',
     isDiy: true,
@@ -1022,7 +1022,7 @@ const diyGuides = [
       { city: 'miami-fl', name: 'Miami' },
       { city: 'doral-fl', name: 'Doral' },
     ],
-    disposalNote: 'Sink disposal options: (1) Stainless or cast iron sinks with scrap value go to scrap metal yards ($5-$80 depending on weight); (2) Porcelain sinks in excellent condition to Habitat ReStore; (3) County transfer station C&D drop-off; (4) Umuve pickup from $89 for a sink plus any other renovation debris.',
+    disposalNote: 'Sink disposal options: (1) Stainless or cast iron sinks with scrap value go to scrap metal yards ($5-$80 depending on weight); (2) Porcelain sinks in excellent condition to Habitat ReStore; (3) County transfer station C&D drop-off; (4) Umuve pickup from $119 for a sink plus any other renovation debris.',
   },
   {
     slug: 'how-to-take-apart-a-bed-frame',
@@ -1030,7 +1030,7 @@ const diyGuides = [
     metaDescription: 'How to disassemble and dispose of a bed frame. Step-by-step guide for wood, metal, and upholstered frames plus South Florida disposal options.',
     h1: 'How to Take Apart a Bed Frame',
     subtitle: 'Disassemble your old bed frame safely — wood, metal, and upholstered styles covered.',
-    quickAnswer: 'Most bed frames take 15-30 minutes to disassemble with basic tools. Metal frames: remove bolts at corner joints. Wood platform beds: unscrew the slats then the side rails from the headboard and footboard. Upholstered frames: no disassembly needed, just remove for pickup. Umuve removes bed frames for $89, or county curbside is free with scheduling.',
+    quickAnswer: 'Most bed frames take 15-30 minutes to disassemble with basic tools. Metal frames: remove bolts at corner joints. Wood platform beds: unscrew the slats then the side rails from the headboard and footboard. Upholstered frames: no disassembly needed, just remove for pickup. Umuve removes bed frames for $119, or county curbside is free with scheduling.',
     serviceSlug: 'furniture-removal',
     serviceName: 'Furniture Removal',
     isDiy: true,
@@ -1055,7 +1055,7 @@ const diyGuides = [
       { city: 'miami-fl', name: 'Miami' },
       { city: 'boca-raton-fl', name: 'Boca Raton' },
     ],
-    disposalNote: 'Bed frame disposal options: (1) Metal frames go to scrap metal yards ($5-$15); (2) Wood frames can go curbside with scheduling; (3) Solid wood frames in good condition to Habitat ReStore or Craigslist; (4) Umuve picks up bed frames plus mattresses together for best value — starting at $89 for both.',
+    disposalNote: 'Bed frame disposal options: (1) Metal frames go to scrap metal yards ($5-$15); (2) Wood frames can go curbside with scheduling; (3) Solid wood frames in good condition to Habitat ReStore or Craigslist; (4) Umuve picks up bed frames plus mattresses together for best value — starting at $119 for both.',
   },
   {
     slug: 'how-to-take-apart-a-couch',
@@ -1063,7 +1063,7 @@ const diyGuides = [
     metaDescription: 'How to disassemble a couch, sofa, or sectional for disposal or moving. Step-by-step breakdown guide for South Florida homeowners.',
     h1: 'How to Take Apart a Couch or Sectional',
     subtitle: 'Break down your sofa or sectional for easier removal, moving, or disposal.',
-    quickAnswer: 'A couch can be broken down into: removable cushions (separate immediately), sections of a sectional (connected by metal clips), and the frame itself (upholstery cut away, wood and metal separated). Full disassembly takes 30-90 minutes with a utility knife, reciprocating saw, pry bar, and bolt cutter. Or call Umuve — we handle this for you starting at $89.',
+    quickAnswer: 'A couch can be broken down into: removable cushions (separate immediately), sections of a sectional (connected by metal clips), and the frame itself (upholstery cut away, wood and metal separated). Full disassembly takes 30-90 minutes with a utility knife, reciprocating saw, pry bar, and bolt cutter. Or call Umuve — we handle this for you starting at $119.',
     serviceSlug: 'couch-removal',
     serviceName: 'Couch Removal',
     isDiy: true,
@@ -1089,7 +1089,7 @@ const diyGuides = [
       { city: 'miami-fl', name: 'Miami' },
       { city: 'coral-springs-fl', name: 'Coral Springs' },
     ],
-    disposalNote: 'After disassembly: bag foam for regular trash (small amounts), take metal frames to scrap yards, put wood sections out for curbside bulk pickup (scheduled), or call Umuve to haul the entire disassembled pile from $89. Umuve also handles the disassembly for you — often faster than DIY.',
+    disposalNote: 'After disassembly: bag foam for regular trash (small amounts), take metal frames to scrap yards, put wood sections out for curbside bulk pickup (scheduled), or call Umuve to haul the entire disassembled pile from $119. Umuve also handles the disassembly for you — often faster than DIY.',
   },
 ];
 
@@ -1172,7 +1172,7 @@ const checklistGuides = [
     metaDescription: 'What to do with old furniture in South Florida — sell, donate, recycle, or remove. Best options for couches, mattresses, dressers, and more.',
     h1: 'What to Do with Old Furniture in South Florida',
     subtitle: 'Sell, donate, recycle, or remove old furniture — the best options by condition and type.',
-    quickAnswer: 'Old furniture in South Florida has four paths: sell it (Facebook Marketplace and Craigslist are active in this market), donate it (Habitat for Humanity ReStore, Salvation Army, Goodwill), recycle materials at certified facilities, or call Umuve for professional removal starting at $89. The right choice depends on the item\'s condition and how quickly you need it gone.',
+    quickAnswer: 'Old furniture in South Florida has four paths: sell it (Facebook Marketplace and Craigslist are active in this market), donate it (Habitat for Humanity ReStore, Salvation Army, Goodwill), recycle materials at certified facilities, or call Umuve for professional removal starting at $119. The right choice depends on the item\'s condition and how quickly you need it gone.',
     serviceSlug: 'furniture-removal',
     serviceName: 'Furniture Removal',
     isChecklist: true,
@@ -1184,7 +1184,7 @@ const checklistGuides = [
     ],
     roomRooms: [
       { room: 'Sofas and Sectionals', tips: 'South Florida\'s active Facebook Marketplace means quality sectionals sell quickly. Price at 20-30% of retail for good condition. If donating, Salvation Army pickup is the easiest option. Umuve removes same-day with 90% donation or recycling rate.' },
-      { room: 'Mattresses', tips: 'Mattresses cannot be donated if they have any stains. If yours is clean and under 5 years old, Habitat ReStore may accept it. Otherwise, professional removal at $89-$199 routes it to certified mattress recyclers.' },
+      { room: 'Mattresses', tips: 'Mattresses cannot be donated if they have any stains. If yours is clean and under 5 years old, Habitat ReStore may accept it. Otherwise, professional removal at $119-$199 routes it to certified mattress recyclers.' },
       { room: 'Dressers and Bedroom Furniture', tips: 'Solid wood dressers sell extremely well in South Florida — $75-$300 for quality pieces. IKEA and flat-pack furniture has lower resale value but is accepted at Goodwill. Paint or refinish before listing to increase sale price significantly.' },
     ],
     relatedGuides: [
@@ -1848,7 +1848,7 @@ function ctaSection() {
                     Ready to Get Rid of It?
                 </h2>
                 <p style="font-size: 1.05rem; margin-bottom: 2rem; opacity: 0.9; line-height: 1.7;">
-                    Umuve serves all of South Florida with same-day pickup starting at $89. Licensed, insured, and 92% recycled or donated. No hidden fees.
+                    Umuve serves all of South Florida with same-day pickup starting at $119. Licensed, insured, and 92% recycled or donated. No hidden fees.
                 </p>
                 <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
                     <a href="${BOOK_URL}" style="background: white; color: #DC2626; font-weight: 700; padding: 0.9rem 2rem; border-radius: 0.5rem; text-decoration: none; font-size: 1rem;">
@@ -1912,7 +1912,7 @@ function footer() {
 
     <!-- Sticky CTA -->
     <div class="sticky-cta" style="display: none;" id="stickyCta">
-        <span style="font-size: 0.9rem;">Same-day pickup from $89</span>
+        <span style="font-size: 0.9rem;">Same-day pickup from $119</span>
         <a href="${BOOK_URL}" style="background: white; color: #DC2626; font-weight: 700; padding: 0.5rem 1.25rem; border-radius: 0.4rem; font-size: 0.9rem;">Book Now</a>
         <a href="tel:+15619441636" style="font-size: 0.9rem; opacity: 0.85;">${PHONE}</a>
         <button onclick="document.getElementById('stickyCta').style.display='none'" style="background: none; border: none; color: white; font-size: 1.2rem; cursor: pointer; padding: 0 0.25rem;">&times;</button>
@@ -1952,7 +1952,7 @@ ${hero(g)}
                 <div style="background: white; border: 1px solid rgba(0,0,0,0.07); border-radius: 0.75rem; padding: 1.5rem; margin-bottom: 2rem;">
                     <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 0.75rem;">Professional Removal by Umuve</h3>
                     <p style="color: #3a3a3a; line-height: 1.7; font-size: 0.95rem; margin-bottom: 1rem;">
-                        Umuve removes this type of appliance starting at $89 with same-day service throughout South Florida. We handle disconnection, loading, hauling, and certified recycling — no prep needed on your end.
+                        Umuve removes this type of appliance starting at $119 with same-day service throughout South Florida. We handle disconnection, loading, hauling, and certified recycling — no prep needed on your end.
                     </p>
                     <a href="${BOOK_URL}" class="btn btn-primary">Book Same-Day Pickup</a>
                 </div>
@@ -2016,7 +2016,7 @@ ${hero(g)}
             <div style="max-width: 800px; margin: 0 auto;">
                 <h2 style="font-size: 1.6rem; font-weight: 800; margin-bottom: 1rem;">Skip the DIY: Let Umuve Handle It</h2>
                 <p style="color: #3a3a3a; line-height: 1.75; margin-bottom: 1.5rem;">
-                    If you would rather not deal with the disconnection, the heavy lifting, or the disposal logistics, Umuve handles everything start to finish — same-day, starting at $89. We carry from anywhere in your home, load, haul, and recycle or donate responsibly.
+                    If you would rather not deal with the disconnection, the heavy lifting, or the disposal logistics, Umuve handles everything start to finish — same-day, starting at $119. We carry from anywhere in your home, load, haul, and recycle or donate responsibly.
                 </p>
                 <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
                     <a href="${BOOK_URL}" class="btn btn-primary">Book Same-Day Service</a>
@@ -2087,7 +2087,7 @@ ${hero(g)}
             <div style="max-width: 800px; margin: 0 auto;">
                 <h2 style="font-size: 1.6rem; font-weight: 800; margin-bottom: 1rem;">When to Call Umuve</h2>
                 <p style="color: #3a3a3a; line-height: 1.75; margin-bottom: 1.5rem;">
-                    Once you have sorted and staged your items for removal, Umuve makes the actual hauling effortless. We pick up furniture, appliances, boxes of junk, and renovation debris — anything that is not going with you. Same-day service throughout South Florida starting at $89. Our teams carry, load, and haul while you focus on what comes next.
+                    Once you have sorted and staged your items for removal, Umuve makes the actual hauling effortless. We pick up furniture, appliances, boxes of junk, and renovation debris — anything that is not going with you. Same-day service throughout South Florida starting at $119. Our teams carry, load, and haul while you focus on what comes next.
                 </p>
                 <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem;">
                     <a href="${BOOK_URL}" class="btn btn-primary">Book Same-Day Pickup</a>

@@ -57,7 +57,7 @@
 **Visual:** Split image — cluttered garage on left, clean garage on right
 **Headline:** Junk Gone in 24 Hours
 **Primary text:**
-> Got junk? We'll haul it away — fast. Starting at $89.
+> Got junk? We'll haul it away — fast. Starting at $119.
 > Same-day service available across Palm Beach & Broward.
 > Book online in 2 minutes. No hidden fees.
 **CTA:** Book Now
@@ -66,7 +66,7 @@
 ### Creative 2: "Price Anchor" (Static Image)
 **Format:** 1080x1080 square
 **Visual:** Clean, branded graphic with pricing
-**Headline:** Junk Removal from $89
+**Headline:** Junk Removal from $119
 **Primary text:**
 > Cheaper than 1-800-GOT-JUNK. Faster than doing it yourself.
 > Furniture, appliances, yard waste, garage cleanouts — we haul it all.
@@ -79,7 +79,7 @@
 - Card 1: "500+ Pickups Completed in South Florida"
 - Card 2: Customer quote — "They showed up same day and cleared my entire garage. Amazing." — Maria R., Boca Raton
 - Card 3: "Rated 4.9 stars by South Florida homeowners"
-- Card 4: "Book in 2 minutes — from $89" + CTA
+- Card 4: "Book in 2 minutes — from $119" + CTA
 **Primary text:**
 > South Florida's #1 junk removal service. Here's why:
 **CTA:** Book Now
@@ -90,7 +90,7 @@
 - [0-3s] POV: You looking at a pile of junk in your garage
 - [3-7s] Text overlay: "One tap. Gone tomorrow."
 - [7-12s] Quick cuts of haulers loading truck, before/after
-- [12-15s] Logo + "Book now at goumuve.com — from $89"
+- [12-15s] Logo + "Book now at goumuve.com — from $119"
 **CTA:** Book Now
 
 ### Creative 5: "Retargeting — Urgency" (Static)

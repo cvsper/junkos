@@ -13,7 +13,7 @@ const MAX_FILES = 10;
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 export function Step2Photos() {
-  const { photos, photoPreviewUrls, addPhotos, removePhoto, aiAnalysis, aiAnalyzing, setAiAnalysis, setAiAnalyzing, address, scheduledDate, setQuoteId, setEstimatedPrice } =
+  const { photos, photoPreviewUrls, addPhotos, removePhoto, aiAnalysis, aiAnalyzing, setAiAnalysis, setAiAnalyzing, address, scheduledDate, setQuoteId, setQuoteBinding, setEstimatedPrice } =
     useBookingStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -254,7 +254,9 @@ export function Step2Photos() {
                 // locked price. Only mirror the price into the UI when it's a
                 // binding quote (the backend recomputes non-binding ones).
                 setQuoteId(q.id);
-                if (q.binding && typeof q.price === "number") {
+                const binding = q.binding && typeof q.price === "number";
+                setQuoteBinding(binding);
+                if (binding) {
                   setEstimatedPrice(q.price);
                 }
               }}

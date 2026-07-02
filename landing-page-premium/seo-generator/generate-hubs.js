@@ -94,14 +94,14 @@ const FOOTER = () => `<footer style="background:#111827;color:#9ca3af;padding:3r
 
 // ---- SERVICES HUB ----
 const SERVICES = [
-  { slug: 'furniture-removal', name: 'Furniture Removal', desc: 'Couches, dressers, tables, chairs, mattresses, and all household furniture.', price: 'from $89', jobs: '4,820+' },
-  { slug: 'appliance-removal', name: 'Appliance Removal', desc: 'Refrigerators, washers, dryers, stoves, dishwashers, and all appliances.', price: 'from $89', jobs: '3,240+' },
-  { slug: 'mattress-disposal', name: 'Mattress Disposal', desc: 'Twin, full, queen, and king mattresses. 89% recycled.', price: 'from $89', jobs: '2,180+' },
+  { slug: 'furniture-removal', name: 'Furniture Removal', desc: 'Couches, dressers, tables, chairs, mattresses, and all household furniture.', price: 'from $119', jobs: '4,820+' },
+  { slug: 'appliance-removal', name: 'Appliance Removal', desc: 'Refrigerators, washers, dryers, stoves, dishwashers, and all appliances.', price: 'from $119', jobs: '3,240+' },
+  { slug: 'mattress-disposal', name: 'Mattress Disposal', desc: 'Twin, full, queen, and king mattresses. 89% recycled.', price: 'from $119', jobs: '2,180+' },
   { slug: 'estate-cleanout', name: 'Estate Cleanout', desc: 'Full home, apartment, and storage unit cleanouts. Handled with care.', price: 'from $399', jobs: '890+' },
   { slug: 'construction-debris', name: 'Construction Debris', desc: 'Drywall, lumber, tile, concrete, and all renovation waste.', price: 'from $149', jobs: '1,650+' },
   { slug: 'hot-tub-removal', name: 'Hot Tub Removal', desc: 'Above-ground and in-ground hot tubs, spas, and saunas.', price: 'from $299', jobs: '340+' },
-  { slug: 'yard-waste-removal', name: 'Yard Waste Removal', desc: 'Tree branches, brush, palm fronds, leaves, and landscaping debris.', price: 'from $89', jobs: '1,870+' },
-  { slug: 'electronics-recycling', name: 'Electronics Recycling', desc: 'TVs, computers, monitors, printers, and all e-waste. R2-certified disposal.', price: 'from $89', jobs: '1,420+' },
+  { slug: 'yard-waste-removal', name: 'Yard Waste Removal', desc: 'Tree branches, brush, palm fronds, leaves, and landscaping debris.', price: 'from $119', jobs: '1,870+' },
+  { slug: 'electronics-recycling', name: 'Electronics Recycling', desc: 'TVs, computers, monitors, printers, and all e-waste. R2-certified disposal.', price: 'from $119', jobs: '1,420+' },
   { slug: 'garage-cleanout', name: 'Garage Cleanout', desc: 'Single and double car garages cleared completely. Swept clean after.', price: 'from $149', jobs: '1,340+' },
   { slug: 'office-commercial-cleanout', name: 'Office &amp; Commercial', desc: 'Office floors, retail spaces, and warehouses. After-hours available.', price: 'from $299', jobs: '620+' },
 ];
@@ -119,13 +119,13 @@ const COMMERCIAL_SERVICES_HUB = [
 function generateServicesHub() {
   const canonical = '/services';
   const title = 'All Junk Removal Services in South Florida | Umuve';
-  const desc = 'Browse all 17 junk removal services offered by Umuve across South Florida. Furniture, appliances, estates, construction debris, commercial cleanouts, and more. Same-day available. Starting at $89.';
+  const desc = 'Browse all 17 junk removal services offered by Umuve across South Florida. Furniture, appliances, estates, construction debris, commercial cleanouts, and more. Same-day available. Starting at $119.';
 
   const schema = `<script type="application/ld+json">{"@context":"https://schema.org","@type":"ItemList","name":"Umuve Junk Removal Services","description":"Complete list of junk removal services available across South Florida","url":"https://goumuve.com/services","numberOfItems":17}</script>`;
 
   const faqSchema = `<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
 {"@type":"Question","name":"What junk removal services does Umuve offer?","acceptedAnswer":{"@type":"Answer","text":"Umuve offers 17 junk removal services including furniture removal, appliance removal, mattress disposal, estate cleanouts, construction debris, hot tub removal, yard waste, electronics recycling, garage cleanouts, and commercial services. All services are available across 42 South Florida cities."}},
-{"@type":"Question","name":"What is the minimum price for junk removal with Umuve?","acceptedAnswer":{"@type":"Answer","text":"Umuve starts at $89 for single-item pickup. Most residential jobs run $149-499. Estate cleanouts and commercial jobs start higher based on volume."}},
+{"@type":"Question","name":"What is the minimum price for junk removal with Umuve?","acceptedAnswer":{"@type":"Answer","text":"Umuve starts at $119 for single-item pickup. Most residential jobs run $149-499. Estate cleanouts and commercial jobs start higher based on volume."}},
 {"@type":"Question","name":"Do you offer same-day junk removal?","acceptedAnswer":{"@type":"Answer","text":"Yes. Same-day service is available for approximately 67% of bookings across South Florida. Book online and select same-day or next-day availability."}}
 ]}</script>`;
 
@@ -142,7 +142,7 @@ ${NAV()}
 <h1 style="font-family:Outfit;font-size:clamp(2rem,4vw,3rem);font-weight:800;margin-bottom:1rem;line-height:1.2">Junk Removal Services in South Florida</h1>
 <p style="font-size:1.1rem;color:#5c5c5c;margin-bottom:2rem;max-width:700px;line-height:1.7">17 services. 42 cities. 500+ local operators. Same-day available. All pricing is transparent — see your estimate before you book.</p>
 <div style="display:flex;flex-wrap:wrap;gap:1rem">
-<a href="https://app.goumuve.com/book" style="background:#DC2626;color:#fff;padding:1rem 2rem;font-weight:700;border-radius:0.5rem;text-decoration:none">Book Now — From $89</a>
+<a href="https://app.goumuve.com/book" style="background:#DC2626;color:#fff;padding:1rem 2rem;font-weight:700;border-radius:0.5rem;text-decoration:none">Book Now — From $119</a>
 <a href="/pricing" style="background:#fff;color:#374151;padding:1rem 2rem;font-weight:600;border-radius:0.5rem;text-decoration:none;border:1px solid rgba(0,0,0,0.15)">View Full Pricing</a>
 </div>
 </div></section>
@@ -150,7 +150,7 @@ ${NAV()}
 <!-- Stats Bar -->
 <section style="background:#DC2626;padding:1.5rem 0">
 <div class="container"><div style="display:flex;flex-wrap:wrap;gap:2rem;align-items:center;justify-content:center">
-${[['17', 'Services offered'],['42', 'South FL cities'],['500+', 'Local operators'],['$89', 'Starting price']].map(([n, l]) => `<div style="text-align:center"><div style="font-size:1.5rem;font-weight:800;color:#fff;font-family:Outfit">${n}</div><div style="font-size:0.8rem;color:rgba(255,255,255,0.85)">${l}</div></div>`).join('<div style="width:1px;height:36px;background:rgba(255,255,255,0.3)"></div>')}
+${[['17', 'Services offered'],['42', 'South FL cities'],['500+', 'Local operators'],['$119', 'Starting price']].map(([n, l]) => `<div style="text-align:center"><div style="font-size:1.5rem;font-weight:800;color:#fff;font-family:Outfit">${n}</div><div style="font-size:0.8rem;color:rgba(255,255,255,0.85)">${l}</div></div>`).join('<div style="width:1px;height:36px;background:rgba(255,255,255,0.3)"></div>')}
 </div></div></section>
 
 <!-- Residential Services -->
@@ -220,7 +220,7 @@ ${[['1. Book Online', 'Choose your service, get an instant estimate, and confirm
 <div style="display:grid;gap:1rem">
 ${[
   {q:'What junk removal services does Umuve offer?', a:'Umuve offers 17 junk removal services including furniture removal, appliance removal, mattress disposal, estate cleanouts, construction debris, hot tub removal, yard waste, electronics recycling, garage cleanouts, and full commercial services. All services are available across 42 South Florida cities.'},
-  {q:'What is the minimum price?', a:'Umuve starts at $89 for single-item pickup. Most residential jobs run $149-499. Estate cleanouts and commercial jobs start higher based on volume. See our full pricing page for service-by-service breakdowns.'},
+  {q:'What is the minimum price?', a:'Umuve starts at $119 for single-item pickup. Most residential jobs run $149-499. Estate cleanouts and commercial jobs start higher based on volume. See our full pricing page for service-by-service breakdowns.'},
   {q:'Do you offer same-day junk removal?', a:'Yes. Same-day service is available for approximately 67% of bookings across South Florida. Book online and select same-day or next-day availability.'},
   {q:'Are your services eco-friendly?', a:'Yes. Umuve recycles or donates 87% of everything we haul. We partner with Habitat for Humanity, Goodwill, R2-certified e-waste recyclers, and composting facilities across South Florida.'}
 ].map(f => `<div style="background:#f9fafb;border:1px solid rgba(0,0,0,0.08);border-radius:0.75rem;padding:1.5rem">
@@ -284,7 +284,7 @@ const CITIES = [
 function generateLocationsHub() {
   const canonical = '/locations';
   const title = 'Junk Removal Service Areas in South Florida — 42 Cities | Umuve';
-  const desc = 'Umuve serves 42 cities across Palm Beach, Broward, and Miami-Dade counties. Find junk removal service in your city. 500+ local operators. Same-day available. Starts at $89.';
+  const desc = 'Umuve serves 42 cities across Palm Beach, Broward, and Miami-Dade counties. Find junk removal service in your city. 500+ local operators. Same-day available. Starts at $119.';
 
   const palmBeach = CITIES.filter(c => c.county === 'Palm Beach');
   const broward = CITIES.filter(c => c.county === 'Broward');
@@ -355,7 +355,7 @@ ${['Furniture Removal', 'Appliance Removal', 'Mattress Disposal', 'Estate Cleano
 <div class="container">
 <h2 style="font-family:Outfit;font-size:2rem;font-weight:800;margin-bottom:1rem">Find Service in Your City</h2>
 <p style="font-size:1.125rem;margin-bottom:2rem;opacity:0.95">Book online and get an instant price estimate. Same-day service available in most South Florida cities.</p>
-<a href="https://app.goumuve.com/book" style="background:#fff;color:#DC2626;padding:1rem 2.5rem;font-weight:700;border-radius:0.5rem;text-decoration:none;font-size:1.05rem">Book Now — From $89</a>
+<a href="https://app.goumuve.com/book" style="background:#fff;color:#DC2626;padding:1rem 2.5rem;font-weight:700;border-radius:0.5rem;text-decoration:none;font-size:1.05rem">Book Now — From $119</a>
 </div></section>
 
 <!-- FAQ -->
@@ -467,7 +467,7 @@ ${catGuides.map(g => `<a href="/guides/${g.slug}" style="text-decoration:none;co
 <div class="container">
 <h2 style="font-family:Outfit;font-size:2rem;font-weight:800;margin-bottom:1rem">Ready to Hire Instead?</h2>
 <p style="font-size:1.125rem;margin-bottom:2rem;opacity:0.95">Book Umuve online. Instant estimate. We handle all the heavy lifting across South Florida.</p>
-<a href="https://app.goumuve.com/book" style="background:#fff;color:#DC2626;padding:1rem 2.5rem;font-weight:700;border-radius:0.5rem;text-decoration:none;font-size:1.05rem">Book Junk Removal — From $89</a>
+<a href="https://app.goumuve.com/book" style="background:#fff;color:#DC2626;padding:1rem 2.5rem;font-weight:700;border-radius:0.5rem;text-decoration:none;font-size:1.05rem">Book Junk Removal — From $119</a>
 </div></section>
 
 ${FOOTER()}
@@ -496,16 +496,16 @@ const ALL_SERVICES_PRICING = [
 function generatePricingPage() {
   const canonical = '/pricing';
   const title = 'Junk Removal Pricing in South Florida — Transparent Rates | Umuve';
-  const desc = 'Transparent junk removal pricing for South Florida. See exact pricing for all 14 services before you book. No on-site estimate games. Starting at $89. Average job $189.';
+  const desc = 'Transparent junk removal pricing for South Florida. See exact pricing for all 14 services before you book. No on-site estimate games. Starting at $119. Average job $189.';
 
   const faqSchema = `<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
-{"@type":"Question","name":"How much does junk removal cost in South Florida?","acceptedAnswer":{"@type":"Answer","text":"The average junk removal job in South Florida costs $189 with Umuve. Prices range from $89 for single-item pickup to $3,500+ for full estate cleanouts. Get an instant estimate online before you book."}},
-{"@type":"Question","name":"What is the minimum charge for junk removal?","acceptedAnswer":{"@type":"Answer","text":"Umuve's minimum charge is $89, which covers single-item pickups like a single couch, mattress, or appliance."}},
+{"@type":"Question","name":"How much does junk removal cost in South Florida?","acceptedAnswer":{"@type":"Answer","text":"The average junk removal job in South Florida costs $189 with Umuve. Prices range from $119 for single-item pickup to $3,500+ for full estate cleanouts. Get an instant estimate online before you book."}},
+{"@type":"Question","name":"What is the minimum charge for junk removal?","acceptedAnswer":{"@type":"Answer","text":"Umuve's minimum charge is $119, which covers single-item pickups like a single couch, mattress, or appliance."}},
 {"@type":"Question","name":"Does the price include loading?","acceptedAnswer":{"@type":"Answer","text":"Yes. All Umuve pricing is all-inclusive — loading, hauling, fuel, and disposal are all included. There are no hidden fees."}},
-{"@type":"Question","name":"How does Umuve pricing compare to 1-800-GOT-JUNK?","acceptedAnswer":{"@type":"Answer","text":"Umuve is typically 25-35% lower than 1-800-GOT-JUNK. GOT-JUNK starts at $150+ with a $298 minimum for most jobs. Umuve starts at $89 with transparent online estimates."}}
+{"@type":"Question","name":"How does Umuve pricing compare to 1-800-GOT-JUNK?","acceptedAnswer":{"@type":"Answer","text":"Umuve is typically 25-35% lower than 1-800-GOT-JUNK. GOT-JUNK starts at $150+ with a $298 minimum for most jobs. Umuve starts at $119 with transparent online estimates."}}
 ]}</script>`;
 
-  const serviceSchema = `<script type="application/ld+json">{"@context":"https://schema.org","@type":"Service","serviceType":"Junk Removal","provider":{"@type":"Organization","name":"Umuve","url":"https://goumuve.com","telephone":"+15619441636"},"areaServed":{"@type":"State","name":"Florida"},"offers":{"@type":"AggregateOffer","lowPrice":"89","priceCurrency":"USD"}}</script>`;
+  const serviceSchema = `<script type="application/ld+json">{"@context":"https://schema.org","@type":"Service","serviceType":"Junk Removal","provider":{"@type":"Organization","name":"Umuve","url":"https://goumuve.com","telephone":"+15619441636"},"areaServed":{"@type":"State","name":"Florida"},"offers":{"@type":"AggregateOffer","lowPrice":"119","priceCurrency":"USD"}}</script>`;
 
   return `${HEAD(title, desc, canonical, faqSchema + '\n' + serviceSchema)}
 <body>
@@ -528,7 +528,7 @@ ${NAV()}
 <!-- Price Promise Banner -->
 <section style="background:#1e3a5f;padding:1.5rem 0">
 <div class="container"><div style="display:flex;flex-wrap:wrap;gap:2rem;justify-content:center;align-items:center">
-${[['$89', 'Minimum price'],['$189', 'Average job'],['All-Inclusive', 'Loading + hauling + disposal'],['No Estimate Games', 'Price online, upfront']].map(([n, l]) => `<div style="text-align:center"><div style="font-family:Outfit;font-weight:800;color:#fff;font-size:1.3rem">${n}</div><div style="font-size:0.78rem;color:#93c5fd">${l}</div></div>`).join('<div style="width:1px;height:36px;background:rgba(255,255,255,0.2)"></div>')}
+${[['$119', 'Minimum price'],['$189', 'Average job'],['All-Inclusive', 'Loading + hauling + disposal'],['No Estimate Games', 'Price online, upfront']].map(([n, l]) => `<div style="text-align:center"><div style="font-family:Outfit;font-weight:800;color:#fff;font-size:1.3rem">${n}</div><div style="font-size:0.78rem;color:#93c5fd">${l}</div></div>`).join('<div style="width:1px;height:36px;background:rgba(255,255,255,0.2)"></div>')}
 </div></div></section>
 
 <!-- Pricing Table -->
@@ -591,7 +591,7 @@ ${[
 </thead>
 <tbody>
 ${[
-  ['1-2 items (minimum)', '1 couch, 1 mattress, 1 appliance', '$89-$149'],
+  ['1-2 items (minimum)', '1 couch, 1 mattress, 1 appliance', '$119-$149'],
   ['Quarter truck (3 cu yd)', 'Bedroom furniture set', '$149-$249'],
   ['Half truck (5-6 cu yd)', 'Small room cleanout', '$249-$399'],
   ['Three-quarter truck (8-9 cu yd)', 'Large room or garage', '$399-$549'],
@@ -624,7 +624,7 @@ ${[
 </thead>
 <tbody>
 ${[
-  ['Single Item / Minimum', '$89', '$298+', '$249+'],
+  ['Single Item / Minimum', '$119', '$298+', '$249+'],
   ['Quarter Truck', '$149-249', '$298-398', '$249-349'],
   ['Half Truck', '$249-399', '$398-598', '$349-499'],
   ['Full Truck', '$549-849', '$798-1,198', '$699-999'],
@@ -658,12 +658,12 @@ ${[
 <h2 style="font-family:Outfit;font-size:1.75rem;font-weight:800;margin-bottom:1.5rem">Pricing FAQs</h2>
 <div style="display:grid;gap:1rem">
 ${[
-  {q:'How much does junk removal cost in South Florida?', a:'The average junk removal job in South Florida costs $189 with Umuve. Prices range from $89 for single-item pickup to $3,500+ for full estate cleanouts. Your price depends on volume, item types, and access. Get an instant estimate online before booking.'},
+  {q:'How much does junk removal cost in South Florida?', a:'The average junk removal job in South Florida costs $189 with Umuve. Prices range from $119 for single-item pickup to $3,500+ for full estate cleanouts. Your price depends on volume, item types, and access. Get an instant estimate online before booking.'},
   {q:'Does the price include labor and disposal?', a:'Yes. All Umuve pricing is all-inclusive — loading labor, truck, fuel, and eco-friendly disposal are included. There are no surprise add-ons when we arrive.'},
-  {q:'How does Umuve pricing compare to 1-800-GOT-JUNK?', a:'Umuve is typically 25-35% lower than 1-800-GOT-JUNK. GOT-JUNK\'s minimum is $298+ for most jobs. Umuve starts at $89. For a half-truck load, Umuve typically costs $100-200 less than the same job with GOT-JUNK.'},
+  {q:'How does Umuve pricing compare to 1-800-GOT-JUNK?', a:'Umuve is typically 25-35% lower than 1-800-GOT-JUNK. GOT-JUNK\'s minimum is $298+ for most jobs. Umuve starts at $119. For a half-truck load, Umuve typically costs $100-200 less than the same job with GOT-JUNK.'},
   {q:'Do prices vary by city in South Florida?', a:'Prices are largely consistent across all 42 South Florida cities we serve. Minor variations can occur based on drive distance to disposal facilities, local demand, and same-day surcharges during peak periods.'},
   {q:'Is there a discount for large jobs?', a:'Volume pricing naturally decreases per cubic yard as load size increases. Commercial accounts and recurring customers receive additional negotiated rates. Ask about our commercial pricing for businesses.'},
-  {q:'What is the cheapest way to get junk removed in South Florida?', a:'Book a single-item pickup at $89 for one item. For larger loads, Umuve is typically the lowest-priced fully insured, eco-friendly option in South Florida. Local cash haulers may quote less but typically lack insurance and eco-friendly disposal practices.'}
+  {q:'What is the cheapest way to get junk removed in South Florida?', a:'Book a single-item pickup at $119 for one item. For larger loads, Umuve is typically the lowest-priced fully insured, eco-friendly option in South Florida. Local cash haulers may quote less but typically lack insurance and eco-friendly disposal practices.'}
 ].map(f => `<div style="background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:0.75rem;padding:1.5rem">
 <h3 style="font-family:Outfit;font-size:1rem;font-weight:700;margin:0 0 0.5rem">${f.q}</h3>
 <p style="color:#6b7280;margin:0;line-height:1.7">${f.a}</p>

@@ -19,7 +19,7 @@ export const blogPosts: BlogPost[] = [
     date: "2026-03-15",
     metaTitle: "Junk Removal Cost in South Florida — 2026 Pricing Guide | Umuve",
     metaDescription:
-      "How much does junk removal cost in South Florida? Single items from $79, full truckloads from $579. See our item-by-item pricing and compare to competitors.",
+      "How much does junk removal cost in South Florida? Single items from $119, full truckloads from $579. See our item-by-item pricing and compare to competitors.",
     keywords: [
       "junk removal cost south florida",
       "how much does junk removal cost",
@@ -39,16 +39,16 @@ export const blogPosts: BlogPost[] = [
       <p>Most junk removal companies — including Umuve — price by volume (how much space your items take up in the truck). Here are typical price ranges in the South Florida market:</p>
 
       <ul>
-        <li><strong>Single small item</strong> (chair, lamp, box of junk): $79 – $120</li>
-        <li><strong>Sofa or couch</strong>: $89 – $175</li>
-        <li><strong>Mattress</strong>: $79 – $150</li>
-        <li><strong>Refrigerator or large appliance</strong>: $99 – $200</li>
+        <li><strong>Single small item</strong> (chair, lamp, box of junk): $119 – $150</li>
+        <li><strong>Sofa or couch</strong>: $119 – $175</li>
+        <li><strong>Mattress</strong>: $119 – $150</li>
+        <li><strong>Refrigerator or large appliance</strong>: $119 – $200</li>
         <li><strong>Quarter truckload</strong> (small room cleanout): $199 – $350</li>
         <li><strong>Half truckload</strong> (garage or bedroom): $349 – $500</li>
         <li><strong>Full truckload</strong> (whole apartment or estate): $579 – $800+</li>
       </ul>
 
-      <p>At Umuve, our pricing starts at <strong>$79 for a single item</strong> and tops out at <strong>$579 for a full truckload</strong>. No hidden fees, no "truck fee" surcharges, and no bait-and-switch estimates.</p>
+      <p>At Umuve, our pricing starts at <strong>$119 for a single item</strong> and tops out at <strong>$579 for a full truckload</strong>. No hidden fees, no "truck fee" surcharges, and no bait-and-switch estimates.</p>
 
       <h2>How Umuve Compares to the Competition</h2>
       <p>The big national franchises — 1-800-GOT-JUNK, College Hunks Hauling Junk, and others — typically charge 20–40% more than local operators. Their overhead is higher (franchise fees, national marketing budgets), and that cost gets passed to you.</p>
@@ -80,7 +80,7 @@ export const blogPosts: BlogPost[] = [
       <p>Serving <a href="/miami">Miami</a>, <a href="/fort-lauderdale">Fort Lauderdale</a>, <a href="/west-palm-beach">West Palm Beach</a>, and 20+ cities across South Florida.</p>
 
       <h2>Ready to Get a Quote?</h2>
-      <p>Stop guessing. <a href="/book">Book your pickup now</a> and get a transparent price with no surprises. Starting at just $79.</p>
+      <p>Stop guessing. <a href="/book">Book your pickup now</a> and get a transparent price with no surprises. Starting at just $119.</p>
     `,
   },
   {
@@ -323,7 +323,7 @@ export const blogPosts: BlogPost[] = [
         <li>People who want zero physical labor</li>
       </ul>
 
-      <p><strong>Typical cost:</strong> $79 – $579+ depending on volume</p>
+      <p><strong>Typical cost:</strong> $119 – $579+ depending on volume</p>
 
       <h2>Dumpster Rental: How It Works</h2>
       <p>A dumpster is dropped off at your property. You fill it yourself over a set period (usually 3–7 days). Then it's picked up and hauled to the dump.</p>
@@ -346,7 +346,7 @@ export const blogPosts: BlogPost[] = [
         <tbody>
           <tr><td>Labor</td><td>Crew does all lifting</td><td>You load it yourself</td></tr>
           <tr><td>Speed</td><td>Done in hours</td><td>3–7 day rental</td></tr>
-          <tr><td>Cost (small job)</td><td>$79 – $199</td><td>$300+ minimum</td></tr>
+          <tr><td>Cost (small job)</td><td>$119 – $199</td><td>$300+ minimum</td></tr>
           <tr><td>Cost (large job)</td><td>$399 – $579</td><td>$400 – $600+</td></tr>
           <tr><td>Space needed</td><td>None — truck parks at curb</td><td>Driveway or parking area</td></tr>
           <tr><td>Recycling/donation</td><td>Sorted by crew</td><td>Everything goes to dump</td></tr>

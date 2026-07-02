@@ -48,10 +48,10 @@ export function generateMetadata({
 
   return {
     title: `Junk Removal in ${name}, FL | Umuve - Hauling Made Simple`,
-    description: `Affordable junk removal in ${name}, Florida. We donate first, dispose last. Furniture, appliances, yard waste & more. Starting at $79. Book online in minutes.`,
+    description: `Affordable junk removal in ${name}, Florida. We donate first, dispose last. Furniture, appliances, yard waste & more. Starting at $119. Book online in minutes.`,
     openGraph: {
       title: `Junk Removal in ${name}, FL | Umuve`,
-      description: `Affordable junk removal in ${name}, Florida. We donate first, dispose last. Starting at $79.`,
+      description: `Affordable junk removal in ${name}, Florida. We donate first, dispose last. Starting at $119.`,
       type: "website",
       url: `https://app.goumuve.com/${params.city}`,
     },
@@ -138,9 +138,9 @@ const SERVICES = [
 ];
 
 const PRICING = [
-  { item: "Single Item", price: "$79", note: "Small items like chairs, lamps" },
-  { item: "Sofa / Couch", price: "$89", note: "Any size, we carry it out" },
-  { item: "Fridge / Appliance", price: "$99", note: "Safe disconnect & haul" },
+  { item: "Single Item", price: "$119", note: "Small items like chairs, lamps" },
+  { item: "Sofa / Couch", price: "$119", note: "Any size, we carry it out" },
+  { item: "Fridge / Appliance", price: "$119", note: "Safe disconnect & haul" },
   { item: "Full Truck Load", price: "$579", note: "Clear out an entire space" },
 ];
 
@@ -205,7 +205,7 @@ export default function CityPage({ params }: { params: { city: string } }) {
       "@type": "City",
       name: cityName,
     },
-    priceRange: "$79 - $579",
+    priceRange: "$119 - $579",
     image: "https://app.goumuve.com/logo-nav.png",
     sameAs: [
       "https://goumuve.com",
@@ -243,7 +243,7 @@ export default function CityPage({ params }: { params: { city: string } }) {
             >
               Book a Pickup
             </Link>
-            <span className="text-red-200 text-sm">Starting at just $79</span>
+            <span className="text-red-200 text-sm">Starting at just $119</span>
           </div>
         </div>
       </section>

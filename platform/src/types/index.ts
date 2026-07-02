@@ -131,7 +131,8 @@ export interface PricingRule {
 export interface BookingFormData {
   step: number;
   address: Partial<Address>;
-  photos: File[];
+  /** Raw File objects don't survive JSON.stringify — do not send; use photoUrls */
+  photos?: File[];
   photoUrls: string[];
   items: JobItem[];
   scheduledDate: string;

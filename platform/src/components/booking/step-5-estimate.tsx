@@ -95,6 +95,7 @@ export function Step5Estimate() {
   const [loading, setLoading] = useState(true);
   const [usedFallback, setUsedFallback] = useState(false);
   const [accepted, setAccepted] = useState(false);
+  const [error, setError] = useState("");
 
   const item = items[0];
   const category = item?.category || "general";
@@ -109,6 +110,17 @@ export function Step5Estimate() {
   const fetchEstimate = useCallback(async () => {
     setLoading(true);
     setUsedFallback(false);
+
+    // A binding vision quote (from step 2) is locked — the backend charges
+    // that price, so show it instead of letting a re-estimate overwrite it.
+    const { quoteId, quoteBinding, estimatedPrice: lockedPrice } =
+      useBookingStore.getState();
+    if (quoteId && quoteBinding && lockedPrice > 0) {
+      setBreakdown([{ label: "Binding photo quote", amount: lockedPrice }]);
+      setTotal(lockedPrice);
+      setLoading(false);
+      return;
+    }
 
     try {
       const response = await bookingApi.estimate(items, address);
@@ -131,8 +143,15 @@ export function Step5Estimate() {
     fetchEstimate();
   }, [fetchEstimate]);
 
-  // Expose validation
-  Step5Estimate.validate = (): boolean => accepted;
+  // Expose validation that also sets local error state
+  Step5Estimate.validate = (): boolean => {
+    if (!accepted) {
+      setError("Please confirm your items and price to continue.");
+      return false;
+    }
+    setError("");
+    return true;
+  };
 
   return (
     <div className="space-y-8">
@@ -293,18 +312,30 @@ export function Step5Estimate() {
 
       {/* Accept Checkbox */}
       {!loading && (
-        <label className="flex items-start gap-3 cursor-pointer group">
-          <input
-            type="checkbox"
-            checked={accepted}
-            onChange={(e) => setAccepted(e.target.checked)}
-            className="mt-1 h-5 w-5 rounded border-border text-primary focus:ring-primary accent-primary cursor-pointer"
-          />
-          <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">
-            The items above are accurate, and I accept this locked, all-in price.
-            Only materially different or extra items would need a quick re-quote.
-          </span>
-        </label>
+        <div className="space-y-2">
+          <label className="flex items-start gap-3 cursor-pointer group">
+            <input
+              type="checkbox"
+              checked={accepted}
+              onChange={(e) => {
+                setAccepted(e.target.checked);
+                if (e.target.checked) setError("");
+              }}
+              className="mt-1 h-5 w-5 rounded border-border text-primary focus:ring-primary accent-primary cursor-pointer"
+            />
+            <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">
+              The items above are accurate, and I accept this locked, all-in price.
+              Only materially different or extra items would need a quick re-quote.
+            </span>
+          </label>
+          <div aria-live="polite" aria-atomic="true">
+            {error && (
+              <p role="alert" className="text-sm text-destructive font-medium">
+                {error}
+              </p>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );

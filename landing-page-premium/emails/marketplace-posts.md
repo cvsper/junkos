@@ -3,11 +3,11 @@
 ## Facebook Marketplace
 
 **Category:** Home Services > Hauling / Junk Removal
-**Price:** $89
+**Price:** $119
 **Location:** Palm Beach Gardens, FL 33418
 
 **Title:**
-Spring Cleaning Special — Same-Day Junk Removal from $89
+Spring Cleaning Special — Same-Day Junk Removal from $119
 
 **Description:**
 SPRING CLEANING? WE'LL HAUL IT ALL AWAY.
@@ -27,7 +27,7 @@ WHAT WE HAUL:
 - Hot tubs and exercise equipment
 
 SPRING CLEANING PRICING (no hidden fees):
-- Small load: $89
+- Small load: $119
 - Quarter truck: $149
 - Half truck: $249
 - Three-quarter truck: $399
@@ -48,7 +48,7 @@ Call: (561) 944-1636
 ## Facebook Marketplace — Post #2 (Dumpster Alternative)
 
 **Category:** Home Services > Hauling / Junk Removal
-**Price:** $89
+**Price:** $119
 **Location:** West Palm Beach, FL
 
 **Title:**
@@ -63,7 +63,7 @@ With Umuve:
 - We come same-day
 - WE do all the loading (you don't touch anything)
 - We're gone in under an hour
-- Starting at just $89
+- Starting at just $119
 
 Perfect for:
 - Garage cleanouts
@@ -93,11 +93,11 @@ Need ONE thing gone? We do that too.
 
 Single item removal:
 - Mattress: $75
-- Couch: $89
+- Couch: $119
 - Refrigerator: $99
 - Washer/Dryer set: $119
 - Desk: $69
-- TV: $89
+- TV: $119
 
 We show up same-day, haul it out, and dispose of it properly.
 
@@ -116,7 +116,7 @@ Call: (561) 944-1636
 **Neighborhood:** Palm Beach Gardens
 
 **Title:**
-Spring Cleaning Help — Same-Day Junk Removal Starting at $89
+Spring Cleaning Help — Same-Day Junk Removal Starting at $119
 
 **Post:**
 Hey neighbors! Spring cleaning season is here and if you're like me, the garage/closet/yard situation is out of control.
@@ -129,7 +129,7 @@ Just wanted to recommend Umuve — they're a local junk removal service that ser
 - 87% of items get donated or recycled (not just dumped)
 - Licensed and insured
 
-Pricing starts at $89. Way cheaper than renting a dumpster, and you don't have to do any of the work yourself.
+Pricing starts at $119. Way cheaper than renting a dumpster, and you don't have to do any of the work yourself.
 
 Text them a photo at (844) 435-6005 for an instant quote, or book online at goumuve.com.
 
@@ -145,7 +145,7 @@ Anyone need junk removed? Found a great local service
 **Post:**
 Saw a few people asking about junk removal lately so wanted to share — I used Umuve for a garage cleanout and they were great. Same-day, did all the lifting, fair price ($249 for half a truck).
 
-They serve Palm Beach and Broward counties. Starting at $89. Licensed and insured.
+They serve Palm Beach and Broward counties. Starting at $119. Licensed and insured.
 
 goumuve.com or call (561) 944-1636. Text (844) 435-6005 with a photo for an instant quote.
 
@@ -160,7 +160,7 @@ Just passing it along for anyone who needs it!
 **Cost:** $5.00 to publish
 
 **Title:**
-Spring Cleaning Junk Removal — Same Day — From $89 (South Florida)
+Spring Cleaning Junk Removal — Same Day — From $119 (South Florida)
 
 **Body:**
 UMUVE — Professional Junk Removal
@@ -176,7 +176,7 @@ WHAT WE REMOVE:
 * Full estate/garage cleanouts
 
 PRICING (all-inclusive — labor + hauling + disposal):
-* Small load: $89
+* Small load: $119
 * Quarter truck: $149
 * Half truck: $249
 * Full truck: $599

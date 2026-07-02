@@ -31,7 +31,7 @@ function getCityFAQ(city) {
     return [
         {
             q: `How much does junk removal cost in ${city.name}, FL?`,
-            a: `The average junk removal job in ${city.name} costs $${city.avgJobCost}. Single-item pickups start at $89, while full truck loads run up to $599. Pricing depends on volume, item type, and accessibility. Get an instant quote online — no phone call needed.`
+            a: `The average junk removal job in ${city.name} costs $${city.avgJobCost}. Single-item pickups start at $119, while full truck loads run up to $599. Pricing depends on volume, item type, and accessibility. Get an instant quote online — no phone call needed.`
         },
         {
             q: `How fast can I get junk picked up in ${city.name}?`,
@@ -123,7 +123,7 @@ function generateLocalBusinessSchema(city) {
 
 function generateLocationPage(city, allCities) {
     const title = `Junk Removal in ${city.name}, FL — Same-Day Pickup | Umuve`;
-    const description = `Professional junk removal in ${city.name}, Florida. ${city.operators} local operators, ${city.jobsCompleted.toLocaleString()}+ jobs completed, ${city.rating}★ rating. Starting at $89. Book online in 3 minutes.`;
+    const description = `Professional junk removal in ${city.name}, Florida. ${city.operators} local operators, ${city.jobsCompleted.toLocaleString()}+ jobs completed, ${city.rating}★ rating. Starting at $119. Book online in 3 minutes.`;
     const faqs = getCityFAQ(city);
     const nearbyCities = getNearbyCities(city, allCities);
     const localInfo = city.localInfo || `Professional junk removal services covering all of ${city.name} and surrounding ${city.county} County areas.`;
@@ -215,7 +215,7 @@ function generateLocationPage(city, allCities) {
             "@type": "OfferCatalog",
             "name": "Junk Removal Services",
             "itemListElement": [
-                {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Single Item Pickup"}, "price": "89", "priceCurrency": "USD"},
+                {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Single Item Pickup"}, "price": "119", "priceCurrency": "USD"},
                 {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Quarter Truck Load"}, "price": "149", "priceCurrency": "USD"},
                 {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Half Truck Load"}, "price": "249", "priceCurrency": "USD"},
                 {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Full Truck Load"}, "price": "599", "priceCurrency": "USD"}
@@ -301,7 +301,7 @@ function generateLocationPage(city, allCities) {
             <div style="max-width: 800px; margin: 0 auto; text-align: center;">
                 <h1 style="font-family: Outfit, sans-serif; font-size: clamp(2rem, 5vw, 2.75rem); font-weight: 800; margin-bottom: 1.5rem; line-height: 1.15;">
                     Junk Removal in ${city.name}, FL<br>
-                    <span style="color: #DC2626;">Same-Day Pickup from $89</span>
+                    <span style="color: #DC2626;">Same-Day Pickup from $119</span>
                 </h1>
                 <p style="font-size: 1.15rem; color: #5c5c5c; margin-bottom: 2rem; line-height: 1.6;">
                     ${localInfo} With ${city.operators} local operators and ${city.jobsCompleted.toLocaleString()}+ completed jobs, Umuve is ${city.name}'s most trusted junk removal service. Book online in 3 minutes — no phone call needed.
@@ -415,7 +415,7 @@ function generateLocationPage(city, allCities) {
                 <div style="display: grid; gap: 0.75rem; max-width: 600px; margin: 0 auto;">
                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 1.25rem 1.5rem; background: white; border: 1px solid rgba(0,0,0,0.08); border-radius: 0.75rem;">
                         <div><strong>Single Item</strong><br><span style="font-size: 0.85rem; color: #8a8a8a;">1 piece of furniture, appliance, etc.</span></div>
-                        <span style="font-size: 1.25rem; font-weight: 800; color: #DC2626;">$89</span>
+                        <span style="font-size: 1.25rem; font-weight: 800; color: #DC2626;">$119</span>
                     </div>
                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 1.25rem 1.5rem; background: white; border: 1px solid rgba(0,0,0,0.08); border-radius: 0.75rem;">
                         <div><strong>1/4 Truck</strong><br><span style="font-size: 0.85rem; color: #8a8a8a;">Small room cleanout, few items</span></div>
@@ -465,7 +465,7 @@ function generateLocationPage(city, allCities) {
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
                     <div style="background: white; padding: 1.5rem; border-radius: 0.75rem; border: 1px solid rgba(0,0,0,0.06);">
                         <h3 style="font-weight: 700; margin-bottom: 0.5rem;">25% Less Than 1-800-GOT-JUNK</h3>
-                        <p style="color: #5c5c5c; line-height: 1.6;">No franchise fees means lower overhead. We pass the savings to you. Compare our $89 minimum to their $150+ starting price.</p>
+                        <p style="color: #5c5c5c; line-height: 1.6;">No franchise fees means lower overhead. We pass the savings to you. Compare our $119 minimum to their $150+ starting price.</p>
                     </div>
                     <div style="background: white; padding: 1.5rem; border-radius: 0.75rem; border: 1px solid rgba(0,0,0,0.06);">
                         <h3 style="font-weight: 700; margin-bottom: 0.5rem;">Book in 3 Minutes, Not 30</h3>
@@ -574,7 +574,7 @@ function generateLocationPage(city, allCities) {
 
     <!-- Sticky CTA (Mobile) -->
     <div class="sticky-cta">
-        <a href="https://app.goumuve.com/book" class="book-btn">Book Online — From $89</a>
+        <a href="https://app.goumuve.com/book" class="book-btn">Book Online — From $119</a>
         <a href="tel:+15619441636" class="call-btn">Call Now</a>
     </div>
 

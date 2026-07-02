@@ -75,11 +75,11 @@ const COMPARISONS = [
   {
     slug: 'umuve-vs-1800-got-junk',
     title: 'Umuve vs 1-800-GOT-JUNK — Which Junk Removal Service is Best?',
-    desc: 'Umuve vs 1-800-GOT-JUNK comparison for South Florida. Compare pricing ($89 vs $159+), same-day availability, and booking convenience. Find out why Umuve is the modern choice.',
+    desc: 'Umuve vs 1-800-GOT-JUNK comparison for South Florida. Compare pricing ($119 vs $159+), same-day availability, and booking convenience. Find out why Umuve is the modern choice.',
     competitor: '1-800-GOT-JUNK',
     intro: '1-800-GOT-JUNK is the world\'s largest junk removal franchise. They are famous for their blue trucks and "point-and-it\'s-gone" service. However, Umuve was built to address the gaps in their model — specifically around price transparency and on-demand dispatching in South Florida.',
     tableRows: [
-      { feature: 'Starting Price', umuve: 'From $89', competitor: '$159+ (varies)', winner: 'umuve' },
+      { feature: 'Starting Price', umuve: 'From $119', competitor: '$159+ (varies)', winner: 'umuve' },
       { feature: 'Booking Method', umuve: 'Instant online quote', competitor: 'Phone or on-site quote', winner: 'umuve' },
       { feature: 'Same-Day Service', umuve: 'Yes, 30-min matching', competitor: '2-hour arrival windows', winner: 'umuve' },
       { feature: 'Pricing Model', umuve: 'Upfront volume-based', competitor: 'On-site "estimated" pricing', winner: 'umuve' },
@@ -92,14 +92,14 @@ const COMPARISONS = [
       'Uniformity — You get a very similar experience whether you are in Miami or Seattle.'
     ],
     umuveWins: [
-      'Substantially Lower Costs — Umuve starts at $89, while 1-800-GOT-JUNK typically starts closer to $160.',
+      'Substantially Lower Costs — Umuve starts at $119, while 1-800-GOT-JUNK typically starts closer to $160.',
       'True Price Transparency — We give you an estimate online before you book. They usually require a driver to see the junk first.',
       'Faster Dispatch — Because we use a platform of 500+ local operators, we can often match a truck in under 30 seconds.',
       'Local Expertise — We focus purely on South Florida, meaning our operators know local recycling centers and donation sites better than a corporate franchise.'
     ],
     verdict: 'If you want the "brand name" experience and don\'t mind paying a premium for it, 1-800-GOT-JUNK is a solid service. But for South Florida residents who want the best price and an instant booking experience, Umuve is the more efficient, tech-forward alternative.',
     faqs: [
-      { q: 'Is Umuve cheaper than 1-800-GOT-JUNK?', a: 'Yes. Umuve starts at $89 for single items, whereas 1-800-GOT-JUNK often has a minimum closer to $159 depending on the location and load type.' },
+      { q: 'Is Umuve cheaper than 1-800-GOT-JUNK?', a: 'Yes. Umuve starts at $119 for single items, whereas 1-800-GOT-JUNK often has a minimum closer to $159 depending on the location and load type.' },
       { q: 'Can I get a quote from Umuve without a home visit?', a: 'Absolutely. That is one of our biggest advantages. You can upload photos and get an instant quote online. 1-800-GOT-JUNK typically requires a crew to visit your home to give a firm price.' },
       { q: 'Does 1-800-GOT-JUNK offer same-day service?', a: 'They do offer same-day service based on availability, but you usually have to wait for a 2-hour arrival window. Umuve uses real-time GPS matching to find the nearest operator immediately.' }
     ]
@@ -111,7 +111,7 @@ const COMPARISONS = [
     competitor: 'Junk King',
     intro: 'Junk King is known for its large red trucks and commitment to recycling. They are a major player in the South Florida market. Umuve provides a similar eco-friendly focus but with a platform-based model that offers more flexibility and better pricing for smaller jobs.',
     tableRows: [
-      { feature: 'Minimum Price', umuve: '$89', competitor: '$125+', winner: 'umuve' },
+      { feature: 'Minimum Price', umuve: '$119', competitor: '$125+', winner: 'umuve' },
       { feature: 'Truck Size', umuve: '12-14 cubic yards', competitor: 'Up to 18 cubic yards', winner: 'competitor' },
       { feature: 'Recycling Rate', umuve: '87% (donated/recycled)', competitor: 'Up to 60%', winner: 'umuve' },
       { feature: 'Booking Speed', umuve: 'Instant (3 min)', competitor: 'Standard booking flow', winner: 'umuve' },
@@ -122,7 +122,7 @@ const COMPARISONS = [
       'Established Recycling — They have built a strong reputation for keeping items out of landfills over the last decade.'
     ],
     umuveWins: [
-      'Lower Starting Costs — We cater to everyone, from a single chair removal to full estates. Our $89 entry point is much more accessible.',
+      'Lower Starting Costs — We cater to everyone, from a single chair removal to full estates. Our $119 entry point is much more accessible.',
       'The "Donate First" Difference — We emphasize donation to local South Florida charities first, ensuring items have a second life rather than just being recycled for raw materials.',
       'Platform Availability — 500+ operators means we have more "active trucks" on the road at any given time than a single Junk King franchise.',
       'Modern User Experience — Our dashboard lets you track your driver via GPS, just like a rideshare app.'
@@ -165,11 +165,11 @@ const COMPARISONS = [
   {
     slug: 'college-hunks',
     title: 'Umuve vs College Hunks Hauling Junk — Which Is Better for South Florida?',
-    desc: 'Umuve vs College Hunks Hauling Junk comparison for South Florida. Compare pricing ($89 vs $298+), booking, availability, and service quality. Find out which junk removal service is right for you.',
+    desc: 'Umuve vs College Hunks Hauling Junk comparison for South Florida. Compare pricing ($119 vs $298+), booking, availability, and service quality. Find out which junk removal service is right for you.',
     competitor: 'College Hunks Hauling Junk',
     intro: 'College Hunks Hauling Junk is one of the largest junk removal franchises in the country. They are widely recognized, generally professional, and offer both junk removal and moving services under one roof. In South Florida, Umuve competes directly with College Hunks. Here is an honest, detailed comparison.',
     tableRows: [
-      { feature: 'Starting Price', umuve: 'From $89', competitor: '$298 minimum', winner: 'umuve' },
+      { feature: 'Starting Price', umuve: 'From $119', competitor: '$298 minimum', winner: 'umuve' },
       { feature: 'Online Booking', umuve: 'Instant quote + book', competitor: 'Online form + call back', winner: 'umuve' },
       { feature: 'Same-Day Service', umuve: 'Yes, in most cases', competitor: 'Yes, availability varies', winner: 'tie' },
       { feature: 'Business Model', umuve: 'Platform + local operators', competitor: 'Franchise model', winner: 'tie' },
@@ -184,7 +184,7 @@ const COMPARISONS = [
       'Uniform experience — Franchise training means a fairly predictable service experience across locations.'
     ],
     umuveWins: [
-      'Lower prices — Umuve starts at $89 versus College Hunks\'s $298 minimum, a substantial difference for small jobs.',
+      'Lower prices — Umuve starts at $119 versus College Hunks\'s $298 minimum, a substantial difference for small jobs.',
       'Instant booking — Umuve lets you book with an immediate price estimate. College Hunks requires a call-back or on-site assessment.',
       'Broader coverage — 500+ local operators across 42 South Florida cities versus franchise territory limits.',
       'Eco-friendly commitment — 87% recycling and donation rate, with verifiable partner organizations.',
@@ -192,7 +192,7 @@ const COMPARISONS = [
     ],
     verdict: 'If you need both junk removal AND moving services in one booking, College Hunks is a reasonable choice. For pure junk removal in South Florida — especially smaller jobs — Umuve wins on price, convenience, and coverage. The $298 minimum at College Hunks means you pay the same for a single couch as for a half-truckload at Umuve.',
     faqs: [
-      { q: 'Is College Hunks more expensive than Umuve?', a: 'Yes, on average. College Hunks has a $298+ minimum for most jobs. Umuve starts at $89 for single-item pickup. For a half-truck load, expect to pay 25-40% more with College Hunks than with Umuve in South Florida.' },
+      { q: 'Is College Hunks more expensive than Umuve?', a: 'Yes, on average. College Hunks has a $298+ minimum for most jobs. Umuve starts at $119 for single-item pickup. For a half-truck load, expect to pay 25-40% more with College Hunks than with Umuve in South Florida.' },
       { q: 'Does College Hunks offer same-day junk removal in South Florida?', a: 'College Hunks does offer same-day service depending on franchise location availability. Umuve offers same-day service for approximately 67% of bookings, dispatched from 500+ local operators across 42 cities.' },
       { q: 'Can College Hunks help with moving?', a: 'Yes. College Hunks offers moving services in addition to junk removal, which Umuve does not. If you need both junk hauled and furniture moved in the same appointment, College Hunks may be the better fit.' },
       { q: 'Which service is better for a full house cleanout?', a: 'Both can handle full house cleanouts. Umuve typically prices full house cleanouts 20-35% lower than College Hunks and can often staff larger crews through its operator network for faster completion.' },
@@ -210,7 +210,7 @@ const COMPARISONS = [
       { feature: 'Booking', umuve: 'Book online anytime', competitor: 'Community contract (not individual)', winner: 'umuve' },
       { feature: 'What They Haul', umuve: 'Bulk items, furniture, appliances', competitor: 'Bagged trash (regular garbage)', winner: 'umuve' },
       { feature: 'Who Can Book', umuve: 'Anyone — residential or commercial', competitor: 'Apartment communities only (contract)', winner: 'umuve' },
-      { feature: 'Pricing', umuve: '$89+ per job', competitor: '$25-35/unit/month (community pays)', winner: 'different' },
+      { feature: 'Pricing', umuve: '$119+ per job', competitor: '$25-35/unit/month (community pays)', winner: 'different' },
       { feature: 'Same-Day', umuve: 'Yes', competitor: 'No — scheduled pickups only', winner: 'umuve' },
       { feature: 'Eco-Friendly', umuve: '87% recycled/donated', competitor: 'Standard waste stream', winner: 'umuve' },
       { feature: 'Bulk Item Removal', umuve: 'Core service', competitor: 'Not offered', winner: 'umuve' }
@@ -233,13 +233,13 @@ const COMPARISONS = [
       { q: 'Can I book Trash Butler for my individual apartment?', a: 'No. Trash Butler operates on community contracts with apartment building management. Individual residents cannot book Trash Butler independently — it must be part of your building\'s services.' },
       { q: 'Is Trash Butler available in South Florida?', a: 'Trash Butler operates in select apartment communities across South Florida. Coverage varies by specific building and landlord contract. Umuve covers all 42 cities across Palm Beach, Broward, and Miami-Dade counties.' },
       { q: 'If I live in a Trash Butler building and need junk removed, what do I use?', a: 'You would use Umuve (or a similar junk removal service) for bulk item removal. Trash Butler only handles regular bagged trash. For furniture, appliances, moving cleanouts, or anything bulky, book Umuve.' },
-      { q: 'How much does Trash Butler cost compared to Umuve?', a: 'Trash Butler is priced at roughly $25-35 per unit per month, paid by the apartment community (and often baked into rent). Umuve is priced per job starting at $89, booked individually on-demand.' }
+      { q: 'How much does Trash Butler cost compared to Umuve?', a: 'Trash Butler is priced at roughly $25-35 per unit per month, paid by the apartment community (and often baked into rent). Umuve is priced per job starting at $119, booked individually on-demand.' }
     ]
   },
   {
     slug: 'bagster',
     title: 'Umuve vs Bagster (Waste Management) — Which Is Better for South Florida?',
-    desc: 'Umuve vs Bagster comparison. Bagster bags cost $30 at Home Depot with $300-400 pickup fees. Umuve loads everything for you starting at $89. Full cost and convenience comparison for South Florida.',
+    desc: 'Umuve vs Bagster comparison. Bagster bags cost $30 at Home Depot with $300-400 pickup fees. Umuve loads everything for you starting at $119. Full cost and convenience comparison for South Florida.',
     competitor: 'Bagster by Waste Management',
     intro: 'Bagster is a product sold by Waste Management — a large, collapsible bag available at Home Depot and Lowe\'s for about $30. You fill it yourself with up to 3 cubic yards of debris, then call Waste Management for pickup at an additional $300-400+ fee. Umuve is a full-service junk removal platform where local operators do all the loading and hauling for you. Here is the real cost comparison.',
     tableRows: [
@@ -281,7 +281,7 @@ const COMPARISONS = [
     competitor: 'All Major Competitors',
     intro: 'Searching for junk removal services near you in South Florida? You have more options than ever — national franchises, regional chains, local haulers, and marketplace platforms like Umuve. This guide compares every major option across the metrics that actually matter: price, booking experience, availability, eco-friendliness, and coverage. We are Umuve and we are biased — but we have tried to be fair.',
     tableRows: [
-      { feature: 'Starting Price', umuve: '$89', competitor: '$150-299 (varies by service)', winner: 'umuve' },
+      { feature: 'Starting Price', umuve: '$119', competitor: '$150-299 (varies by service)', winner: 'umuve' },
       { feature: 'Online Booking', umuve: 'Instant quote + book', competitor: 'Most require phone or callback', winner: 'umuve' },
       { feature: 'Same-Day Service', umuve: 'Yes (67% of jobs)', competitor: 'Available but not guaranteed', winner: 'tie' },
       { feature: 'South FL Coverage', umuve: '42 cities, 500+ operators', competitor: 'Varies by franchise territory', winner: 'umuve' },
@@ -297,7 +297,7 @@ const COMPARISONS = [
       'Local haulers cash pricing — Uninsured local haulers sometimes offer lower upfront prices, though without insurance or eco-guarantees.'
     ],
     umuveWins: [
-      'Lowest starting price — $89 minimum versus $150-299 for national franchises.',
+      'Lowest starting price — $119 minimum versus $150-299 for national franchises.',
       'Broadest South Florida coverage — 42 cities covered through 500+ local operators, versus limited franchise territories.',
       'True online booking — Instant price estimate and booking confirmation without requiring a phone call.',
       'Best eco-friendly performance — 87% recycling and donation rate, higher than any national competitor.',
@@ -306,7 +306,7 @@ const COMPARISONS = [
     ],
     verdict: 'For most South Florida homeowners and businesses, Umuve offers the best combination of price, convenience, coverage, and environmental responsibility. The 500+ local operator network means more availability, faster response times, and more competitive pricing than any single-company franchise. If brand recognition is your primary decision factor, 1-800-GOT-JUNK is the most widely recognized name. If you need moving services bundled with junk removal, College Hunks is worth considering. For everyone else — Umuve is the answer.',
     faqs: [
-      { q: 'What is the cheapest junk removal service in South Florida?', a: 'Umuve starts at $89 for single-item pickup, which is the lowest starting price among major services in South Florida. Local cash haulers may sometimes undercut this, but they typically lack insurance, eco-friendly disposal practices, and consistent availability.' },
+      { q: 'What is the cheapest junk removal service in South Florida?', a: 'Umuve starts at $119 for single-item pickup, which is the lowest starting price among major services in South Florida. Local cash haulers may sometimes undercut this, but they typically lack insurance, eco-friendly disposal practices, and consistent availability.' },
       { q: 'Which junk removal service has the best coverage in South Florida?', a: 'Umuve covers 42 cities across Palm Beach, Broward, and Miami-Dade counties through 500+ local operators. This is broader than any individual franchise territory for 1-800-GOT-JUNK, Junk King, or College Hunks in South Florida.' },
       { q: 'How do I know which junk removal service to trust?', a: 'Check for insurance (ask for a COI), read reviews on Google and Yelp, confirm eco-friendly disposal policies, and verify same-day availability. All Umuve operators are vetted, insured, and rated by customers. You can read operator reviews before booking.' },
       { q: 'Is it worth hiring a junk removal service or should I rent a truck?', a: 'Hiring a service like Umuve is usually more cost-effective when you factor in truck rental ($50-100), gas, dump fees ($30-80), your time (4-8 hours), and the physical labor. For $149-250, Umuve handles all of it for you.' },
@@ -382,7 +382,7 @@ ${NAV()}
 <div style="display:inline-block;background:#FEF2F2;color:#DC2626;padding:0.35rem 1rem;border-radius:9999px;font-size:0.85rem;font-weight:600;margin-bottom:1rem">${heroLabel}</div>
 <h1 style="font-family:Outfit;font-size:clamp(1.75rem,3.5vw,2.75rem);font-weight:800;margin-bottom:1.25rem;line-height:1.2">${comp.title}</h1>
 <p style="font-size:1.05rem;color:#5c5c5c;margin-bottom:2rem;line-height:1.7;max-width:750px">${comp.intro}</p>
-<a href="https://app.goumuve.com/book" style="background:#DC2626;color:#fff;padding:1rem 2rem;font-weight:700;border-radius:0.5rem;text-decoration:none;font-size:1rem;display:inline-block">Book Umuve — From $89</a>
+<a href="https://app.goumuve.com/book" style="background:#DC2626;color:#fff;padding:1rem 2rem;font-weight:700;border-radius:0.5rem;text-decoration:none;font-size:1rem;display:inline-block">Book Umuve — From $119</a>
 </div></div></section>
 
 <!-- Comparison Table -->
@@ -467,7 +467,7 @@ ${comp.faqs.map(f => `<div style="background:#f9fafb;border:1px solid rgba(0,0,0
 <h2 style="font-family:Outfit;font-size:2rem;font-weight:800;margin-bottom:1rem">Try Umuve Today</h2>
 <p style="font-size:1.125rem;margin-bottom:2rem;opacity:0.95">Book online in 3 minutes. Instant price estimate. Same-day service available across South Florida.</p>
 <div style="display:flex;flex-wrap:wrap;gap:1rem;justify-content:center">
-<a href="https://app.goumuve.com/book" style="background:#fff;color:#DC2626;padding:1rem 2.5rem;font-weight:700;border-radius:0.5rem;text-decoration:none;font-size:1.05rem">Book Umuve Now — From $89</a>
+<a href="https://app.goumuve.com/book" style="background:#fff;color:#DC2626;padding:1rem 2.5rem;font-weight:700;border-radius:0.5rem;text-decoration:none;font-size:1.05rem">Book Umuve Now — From $119</a>
 <a href="tel:5619441636" style="background:rgba(255,255,255,0.15);color:#fff;padding:1rem 2rem;font-weight:600;border-radius:0.5rem;text-decoration:none">(561) 944-1636</a>
 </div>
 </div></section>

@@ -270,12 +270,12 @@ export function Step1Address() {
         </div>
       </div>
 
-      {/* Service Area Info + Social Proof */}
+      {/* Service Area Info */}
       <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 flex items-start gap-3">
         <MapPin className="h-5 w-5 text-primary mt-0.5 shrink-0" />
         <div>
           <p className="text-sm font-semibold text-foreground">
-            2,450+ pickups completed in South Florida
+            Licensed &amp; insured local haulers
           </p>
           <p className="text-sm text-muted-foreground mt-0.5">
             Serving Palm Beach &amp; Broward County
@@ -292,7 +292,7 @@ export function Step1Address() {
         />
         <TrustIndicator
           icon={<DollarSign className="h-5 w-5" />}
-          title="Starting at $89"
+          title="Starting at $119"
           description="Transparent pricing, no hidden fees"
         />
         <TrustIndicator

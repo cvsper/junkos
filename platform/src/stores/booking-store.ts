@@ -13,6 +13,7 @@ interface BookingState {
   notes: string;
   estimatedPrice: number;
   quoteId: string | null;
+  quoteBinding: boolean;
   isSubmitting: boolean;
   leadSource: string;
 
@@ -55,6 +56,7 @@ interface BookingState {
   setNotes: (notes: string) => void;
   setEstimatedPrice: (price: number) => void;
   setQuoteId: (quoteId: string | null) => void;
+  setQuoteBinding: (quoteBinding: boolean) => void;
   setIsSubmitting: (isSubmitting: boolean) => void;
   setLeadSource: (leadSource: string) => void;
 
@@ -82,6 +84,7 @@ const initialState = {
   notes: "",
   estimatedPrice: 0,
   quoteId: null,
+  quoteBinding: false,
   isSubmitting: false,
   leadSource: "",
   promoCode: "",
@@ -141,6 +144,7 @@ export const useBookingStore = create<BookingState>((set, get) => ({
   setNotes: (notes) => set({ notes }),
   setEstimatedPrice: (estimatedPrice) => set({ estimatedPrice }),
   setQuoteId: (quoteId) => set({ quoteId }),
+  setQuoteBinding: (quoteBinding) => set({ quoteBinding }),
   setIsSubmitting: (isSubmitting) => set({ isSubmitting }),
   setLeadSource: (leadSource) => set({ leadSource }),
 

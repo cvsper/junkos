@@ -150,7 +150,7 @@ function getNeighborhoodFAQs(neighborhoodName, neighborhoodType, city, neighborh
             },
             {
                 q: `How much does junk removal cost in ${neighborhoodName}, ${cityName}?`,
-                a: `Junk removal in ${neighborhoodName} starts at $89 for a single item. Full garage cleanouts average $249-$399. Whole-home or estate cleanouts range from $399-$1,800+ depending on volume. Get an instant quote online — no phone call required.`
+                a: `Junk removal in ${neighborhoodName} starts at $119 for a single item. Full garage cleanouts average $249-$399. Whole-home or estate cleanouts range from $399-$1,800+ depending on volume. Get an instant quote online — no phone call required.`
             },
             {
                 q: `Can you remove items from inside a gated community without a resident present?`,
@@ -172,7 +172,7 @@ function getNeighborhoodFAQs(neighborhoodName, neighborhoodType, city, neighborh
             },
             {
                 q: `Can you remove items from a condo in ${neighborhoodName}?`,
-                a: `Absolutely. Condo removal is one of our most common services in ${neighborhoodName}. We handle elevator logistics, coordinate with building staff, respect noise rules, and leave hallways spotless. Same-day booking available from $89.`
+                a: `Absolutely. Condo removal is one of our most common services in ${neighborhoodName}. We handle elevator logistics, coordinate with building staff, respect noise rules, and leave hallways spotless. Same-day booking available from $119.`
             }
         ],
         beach: [
@@ -186,7 +186,7 @@ function getNeighborhoodFAQs(neighborhoodName, neighborhoodType, city, neighborh
             },
             {
                 q: `How much does junk removal cost in ${neighborhoodName}, ${cityName}?`,
-                a: `Starting at $89 for a single item. Outdoor furniture and patio sets average $149-$299. Full condo cleanouts range from $399-$1,800 depending on size and volume. All prices include labor, hauling, and eco-friendly disposal.`
+                a: `Starting at $119 for a single item. Outdoor furniture and patio sets average $149-$299. Full condo cleanouts range from $399-$1,800 depending on size and volume. All prices include labor, hauling, and eco-friendly disposal.`
             },
             {
                 q: `Can you remove boat equipment and marine items in ${neighborhoodName}?`,
@@ -204,7 +204,7 @@ function getNeighborhoodFAQs(neighborhoodName, neighborhoodType, city, neighborh
             },
             {
                 q: `How much does junk removal cost in ${neighborhoodName}, ${cityName}?`,
-                a: `Starting at $89 for a single item. Renovation debris removal starts at $149. Estate and whole-home cleanouts range from $399 to $1,800+. All prices are upfront with no surprise fees.`
+                a: `Starting at $119 for a single item. Renovation debris removal starts at $149. Estate and whole-home cleanouts range from $399 to $1,800+. All prices are upfront with no surprise fees.`
             },
             {
                 q: `Do you work with contractors doing historic renovations in ${neighborhoodName}?`,
@@ -226,7 +226,7 @@ function getNeighborhoodFAQs(neighborhoodName, neighborhoodType, city, neighborh
             },
             {
                 q: `How much does junk removal cost in ${neighborhoodName}, ${cityName}?`,
-                a: `Starting at $89 for a single item pickup. Full apartment cleanouts average $399-$799. Pricing is upfront and transparent — you approve the quote before we start. No hidden fees, no pressure.`
+                a: `Starting at $119 for a single item pickup. Full apartment cleanouts average $399-$799. Pricing is upfront and transparent — you approve the quote before we start. No hidden fees, no pressure.`
             }
         ],
         rural: [
@@ -240,7 +240,7 @@ function getNeighborhoodFAQs(neighborhoodName, neighborhoodType, city, neighborh
             },
             {
                 q: `How much does junk removal cost in ${neighborhoodName}, ${cityName}?`,
-                a: `Starting at $89 for a single item. Outbuilding or barn cleanouts start at $249. Large property cleanouts range from $499 to $1,800+ depending on volume. Pricing includes labor, loading, and hauling to appropriate facilities.`
+                a: `Starting at $119 for a single item. Outbuilding or barn cleanouts start at $249. Large property cleanouts range from $499 to $1,800+ depending on volume. Pricing includes labor, loading, and hauling to appropriate facilities.`
             },
             {
                 q: `Is same-day service available for ${neighborhoodName}?`,
@@ -258,7 +258,7 @@ function getNeighborhoodFAQs(neighborhoodName, neighborhoodType, city, neighborh
             },
             {
                 q: `How much does junk removal cost in ${neighborhoodName}, ${cityName}?`,
-                a: `Starting at $89 for a single item. Estate cleanouts start at $399. Full luxury home cleanouts can range from $1,200 to $3,500+ depending on volume and property size. All pricing is provided upfront before work begins.`
+                a: `Starting at $119 for a single item. Estate cleanouts start at $399. Full luxury home cleanouts can range from $1,200 to $3,500+ depending on volume and property size. All pricing is provided upfront before work begins.`
             },
             {
                 q: `Do you have experience with ${neighborhoodName}-style properties in ${cityName}?`,
@@ -268,7 +268,7 @@ function getNeighborhoodFAQs(neighborhoodName, neighborhoodType, city, neighborh
         suburban: [
             {
                 q: `How much does junk removal cost in ${neighborhoodName}, ${cityName}?`,
-                a: `Junk removal in ${neighborhoodName} starts at $89 for a single item. A full garage cleanout averages $249. Whole-home cleanouts range from $399 to $1,800+ depending on volume. Get an instant quote online in 3 minutes — no phone call needed.`
+                a: `Junk removal in ${neighborhoodName} starts at $119 for a single item. A full garage cleanout averages $249. Whole-home cleanouts range from $399 to $1,800+ depending on volume. Get an instant quote online in 3 minutes — no phone call needed.`
             },
             {
                 q: `Can you pick up large items from inside my home in ${neighborhoodName}?`,
@@ -302,21 +302,21 @@ function getNeighborhoodIntro(neighborhoodName, neighborhoodDesc, neighborhoodTy
             senior: ` In ${neighborhoodName}, our operators understand that a good cleanout is about trust and patience, not just speed. We sort carefully, set aside anything you want to keep, and handle everything else with dignity and respect.`,
             rural: ` ${neighborhoodName}'s larger lots and rural character mean bigger loads and longer drives — our trucks are equipped for both. Same-day service is available throughout ${cityName}, including rural properties in ${neighborhoodName}.`,
             luxury: ` In ${neighborhoodName}, we bring white-glove standards to every job: covered loads, protected floors, quiet operation, and operators who understand that your property deserves professional care from the first step to the last.`,
-            suburban: ` In ${neighborhoodName}, the most common calls we get are garage cleanouts, furniture hauls, and move-out cleanups — and we've handled thousands of them across ${cityName}. Starting at $89, same-day service available.`
+            suburban: ` In ${neighborhoodName}, the most common calls we get are garage cleanouts, furniture hauls, and move-out cleanups — and we've handled thousands of them across ${cityName}. Starting at $119, same-day service available.`
         };
         return neighborhoodDesc + (typeContext[neighborhoodType] || typeContext['suburban']);
     }
 
     // Fallback intros when no city-specific description exists
     const fallbacks = {
-        gated: `Junk removal in ${neighborhoodName}, ${cityName} requires more than a truck and a crew — it requires gate access coordination, HOA knowledge, and timing that works within your community's rules. Umuve's local operators are pre-cleared at most ${cityName} gated communities. Same-day service, upfront pricing, no HOA violations. From $89.`,
-        downtown: `${neighborhoodName}'s urban density means freight elevators, loading docks, and city parking are part of every junk removal job here. Umuve's operators handle all of it — freight elevator booking, dock coordination, and tight urban navigation — so your removal goes smoothly from start to finish. Same-day service from $89.`,
-        beach: `${neighborhoodName}'s beachfront and waterfront properties produce a specific type of junk removal need: weathered outdoor furniture, condo-association-managed disposal, and season-timed cleanouts. Umuve serves ${neighborhoodName} with the reliability and same-day availability that ${cityName} residents expect. Starting at $89.`,
-        historic: `${neighborhoodName}'s historic character comes with narrow lots, mature trees, and vintage construction that requires careful removal work. Umuve operators navigate these properties daily — from renovation debris to whole-home cleanouts. We protect what matters and remove what doesn't. From $89.`,
-        senior: `${neighborhoodName} residents count on Umuve for patient, respectful junk removal that fits their schedule and community rules. Whether it's downsizing, a single-item pickup, or a full cleanout, our operators work at your pace and leave nothing behind — except a cleaner home. From $89.`,
-        rural: `${neighborhoodName}'s larger lots and rural properties need a hauler that can handle the access and the volume. Umuve's trucks are equipped for long driveways, wide lots, and heavy loads across all of ${cityName}'s rural neighborhoods. Same-day service from $89.`,
-        luxury: `${neighborhoodName} residents expect more from a junk removal company — and Umuve delivers. Professional operators, property-protective practices, discreet service, and upfront pricing that respects your time. From single-item hauls to whole-estate cleanouts, we bring the right level of care to every ${neighborhoodName} job. Starting at $89.`,
-        suburban: `${neighborhoodName} is one of ${cityName}'s most active junk removal areas — garage cleanouts, furniture swaps, and move-out hauls are our bread and butter here. Umuve connects you with a local, licensed operator in under ${city.avgResponseMinutes} minutes. Same-day service, starting at $89.`
+        gated: `Junk removal in ${neighborhoodName}, ${cityName} requires more than a truck and a crew — it requires gate access coordination, HOA knowledge, and timing that works within your community's rules. Umuve's local operators are pre-cleared at most ${cityName} gated communities. Same-day service, upfront pricing, no HOA violations. From $119.`,
+        downtown: `${neighborhoodName}'s urban density means freight elevators, loading docks, and city parking are part of every junk removal job here. Umuve's operators handle all of it — freight elevator booking, dock coordination, and tight urban navigation — so your removal goes smoothly from start to finish. Same-day service from $119.`,
+        beach: `${neighborhoodName}'s beachfront and waterfront properties produce a specific type of junk removal need: weathered outdoor furniture, condo-association-managed disposal, and season-timed cleanouts. Umuve serves ${neighborhoodName} with the reliability and same-day availability that ${cityName} residents expect. Starting at $119.`,
+        historic: `${neighborhoodName}'s historic character comes with narrow lots, mature trees, and vintage construction that requires careful removal work. Umuve operators navigate these properties daily — from renovation debris to whole-home cleanouts. We protect what matters and remove what doesn't. From $119.`,
+        senior: `${neighborhoodName} residents count on Umuve for patient, respectful junk removal that fits their schedule and community rules. Whether it's downsizing, a single-item pickup, or a full cleanout, our operators work at your pace and leave nothing behind — except a cleaner home. From $119.`,
+        rural: `${neighborhoodName}'s larger lots and rural properties need a hauler that can handle the access and the volume. Umuve's trucks are equipped for long driveways, wide lots, and heavy loads across all of ${cityName}'s rural neighborhoods. Same-day service from $119.`,
+        luxury: `${neighborhoodName} residents expect more from a junk removal company — and Umuve delivers. Professional operators, property-protective practices, discreet service, and upfront pricing that respects your time. From single-item hauls to whole-estate cleanouts, we bring the right level of care to every ${neighborhoodName} job. Starting at $119.`,
+        suburban: `${neighborhoodName} is one of ${cityName}'s most active junk removal areas — garage cleanouts, furniture swaps, and move-out hauls are our bread and butter here. Umuve connects you with a local, licensed operator in under ${city.avgResponseMinutes} minutes. Same-day service, starting at $119.`
     };
 
     return fallbacks[neighborhoodType] || fallbacks['suburban'];
@@ -373,7 +373,7 @@ function generateNeighborhoodPage(neighborhood, neighborhoodSlug, city, otherNei
     const title = `Junk Removal in ${neighborhood}, ${city.name}, FL | Umuve`;
     const pageUrl = `https://goumuve.com/junk-removal/${city.slug}-fl/${neighborhoodSlug}`;
 
-    const metaDesc = `Professional junk removal in ${neighborhood}, ${city.name}, FL — from $89. ${city.operators} local operators, same-day service. ${city.rating} stars from ${city.reviewCount} reviews. Book online.`;
+    const metaDesc = `Professional junk removal in ${neighborhood}, ${city.name}, FL — from $119. ${city.operators} local operators, same-day service. ${city.rating} stars from ${city.reviewCount} reviews. Book online.`;
 
     const introText = getNeighborhoodIntro(neighborhood, neighborhoodDesc, neighborhoodType, city);
     const whyChooseReasons = getNeighborhoodWhyChoose(neighborhood, neighborhoodType, city.name);
@@ -579,7 +579,7 @@ function generateNeighborhoodPage(neighborhood, neighborhoodSlug, city, otherNei
             <div style="max-width: 800px; margin: 0 auto; text-align: center;">
                 <h1 style="font-family: Outfit, sans-serif; font-size: clamp(2rem, 5vw, 2.75rem); font-weight: 800; margin-bottom: 1.5rem; line-height: 1.15;">
                     Junk Removal in ${neighborhood}, ${city.name}, FL<br>
-                    <span style="color: #DC2626;">From $89 — Same-Day Service</span>
+                    <span style="color: #DC2626;">From $119 — Same-Day Service</span>
                 </h1>
                 <p style="font-size: 1.1rem; color: #5c5c5c; margin-bottom: 2rem; line-height: 1.7; text-align: left;">
                     ${introText}
@@ -729,7 +729,7 @@ function generateNeighborhoodPage(neighborhood, neighborhoodSlug, city, otherNei
                             <strong>Single Item</strong><br>
                             <span style="font-size: 0.85rem; color: #8a8a8a;">One piece of furniture, appliance, or item</span>
                         </div>
-                        <span style="font-size: 1.25rem; font-weight: 800; color: #DC2626;">$89</span>
+                        <span style="font-size: 1.25rem; font-weight: 800; color: #DC2626;">$119</span>
                     </div>
                     <div class="pricing-row">
                         <div>
@@ -883,7 +883,7 @@ function generateNeighborhoodPage(neighborhood, neighborhoodSlug, city, otherNei
 
     <!-- Sticky CTA Bar -->
     <div class="sticky-cta">
-        <a href="https://app.goumuve.com/book" class="book-btn">Book Junk Removal in ${neighborhood} &mdash; From $89</a>
+        <a href="https://app.goumuve.com/book" class="book-btn">Book Junk Removal in ${neighborhood} &mdash; From $119</a>
         <a href="sms:+18444356005" class="sms-btn">Text Us</a>
     </div>
 

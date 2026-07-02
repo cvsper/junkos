@@ -163,7 +163,7 @@ export default function BlogPostPage({
             href="/book"
             className="mt-6 inline-flex items-center justify-center rounded-xl bg-red-600 text-white font-bold text-lg px-8 py-4 shadow-lg hover:bg-red-700 transition-colors"
           >
-            Book a Pickup — Starting at $79
+            Book a Pickup — Starting at $119
           </Link>
         </div>
       </article>

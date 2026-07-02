@@ -296,7 +296,7 @@ function TruckFillBar({ totalCuFt }: { totalCuFt: number }) {
 // ---------------------------------------------------------------------------
 
 export function Step3Items() {
-  const { items, setItems, aiAnalysis } = useBookingStore();
+  const { items, setItems, aiAnalysis, notes, setNotes } = useBookingStore();
 
   const [selectedCategories, setSelectedCategories] = useState<string[]>(() => {
     // Initialize from existing items
@@ -315,6 +315,8 @@ export function Step3Items() {
   });
 
   const [description, setDescription] = useState(() => {
+    // Prefer notes already in the store (e.g. a resumed booking)
+    if (notes) return notes;
     // Use the first item's name as description if it doesn't match a preset
     return items[0]?.name && !Object.values(ITEM_PRESETS).flat().some((p) => p.label === items[0]?.name)
       ? items[0].name
@@ -456,6 +458,11 @@ export function Step3Items() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [itemsByCategory, selectedCategories, setItems]);
+
+  // Sync notes to the store so they reach the submit payload
+  useEffect(() => {
+    setNotes(description);
+  }, [description, setNotes]);
 
   // Validation
   const validate = (): boolean => {

@@ -23,13 +23,13 @@ import {
   Tag,
   X,
 } from "lucide-react";
-import { trackBookingConversion, trackInitiateCheckout } from "@/components/analytics";
+import Link from "next/link";
+import { trackBookingConversion, trackInitiateCheckout, trackLead } from "@/components/analytics";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useBookingStore, clearAbandonedBooking } from "@/stores/booking-store";
 import { bookingApi, paymentsApi, promosApi } from "@/lib/api";
-import { ReviewPrompt } from "@/components/review-prompt";
 import { ReferralPrompt } from "@/components/referral-prompt";
 
 // ---------------------------------------------------------------------------
@@ -50,15 +50,6 @@ function formatPhoneNumber(value: string): string {
   if (digits.length <= 3) return `(${digits}`;
   if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
   return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 10)}`;
-}
-
-function generateBookingId(): string {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let id = "UMV-";
-  for (let i = 0; i < 6; i++) {
-    id += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return id;
 }
 
 const TIME_SLOT_LABELS: Record<string, string> = {
@@ -129,7 +120,6 @@ function PaymentFormInner() {
     scheduledTimeSlot,
     estimatedPrice,
     notes,
-    photos,
     isSubmitting,
     setIsSubmitting,
     promoCode: appliedPromoCode,
@@ -171,6 +161,14 @@ function PaymentFormInner() {
   const [canMakePayment, setCanMakePayment] = useState(false);
   const paymentRequestRef = useRef<PaymentRequest | null>(null);
 
+  // Fire Meta Lead only once, and only after contact info actually reaches
+  // the backend (not on page view).
+  const leadTrackedRef = useRef(false);
+
+  // Booking created on a previous submit attempt (e.g. a declined card).
+  // Reused on retry so we never create duplicate Jobs.
+  const createdBookingIdRef = useRef<string | null>(null);
+
   // ---------------------------------------------------------------------------
   // Beacon abandoned booking to backend for email drip recovery
   // ---------------------------------------------------------------------------
@@ -198,7 +196,15 @@ function PaymentFormInner() {
           leadSource: leadSource || undefined,
         }),
         signal: controller.signal,
-      }).catch(() => {});
+      })
+        .then((res) => {
+          // Real contact info was captured — count the Meta Lead (once).
+          if (res.ok && !leadTrackedRef.current) {
+            leadTrackedRef.current = true;
+            trackLead();
+          }
+        })
+        .catch(() => {});
     }, 2000); // Debounce 2s
 
     return () => {
@@ -206,6 +212,16 @@ function PaymentFormInner() {
       controller.abort();
     };
   }, [email, phone, name, address, items, estimatedPrice, leadSource]);
+
+  // ---------------------------------------------------------------------------
+  // Meta InitiateCheckout when the payment step mounts (mid-funnel volume).
+  // No eventID here — the mid-submit IC below carries checkout_<bookingId>
+  // and dedupes with the server CAPI event.
+  // ---------------------------------------------------------------------------
+  useEffect(() => {
+    trackInitiateCheckout({ value: finalPrice });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ---------------------------------------------------------------------------
   // Apple Pay / Google Pay setup
@@ -240,27 +256,39 @@ function PaymentFormInner() {
         const payerEmail = ev.payerEmail || "";
         const payerPhone = ev.payerPhone || "";
 
-        // 1. Submit booking to backend
-        const bookingResult = await bookingApi.submit({
-          step: 6,
-          address,
-          photos,
-          photoUrls: [],
-          items,
-          scheduledDate,
-          scheduledTimeSlot,
-          notes,
-          estimatedPrice: finalPrice,
-          ...(promoApplied ? { promo_code: appliedPromoCode } : {}),
-          ...(leadSource ? { lead_source: leadSource } : {}),
-          ...(quoteId ? { quote_id: quoteId } : {}),
-          customerName: payerName,
-          customerEmail: payerEmail,
-          customerPhone: payerPhone,
-        });
+        // 1. Submit booking to backend (reuse a booking created on a prior
+        // attempt instead of creating a duplicate Job)
+        let newBookingId = createdBookingIdRef.current;
+        if (!newBookingId) {
+          const bookingResult = await bookingApi.submit({
+            step: 6,
+            address,
+            photoUrls: [],
+            items,
+            scheduledDate,
+            scheduledTimeSlot,
+            notes,
+            estimatedPrice: finalPrice,
+            ...(promoApplied ? { promo_code: appliedPromoCode } : {}),
+            ...(leadSource ? { lead_source: leadSource } : {}),
+            ...(quoteId ? { quote_id: quoteId } : {}),
+            customerName: payerName,
+            customerEmail: payerEmail,
+            customerPhone: payerPhone,
+          });
 
-        const rawResult = bookingResult as unknown as Record<string, Record<string, unknown>>;
-      const newBookingId = (rawResult.job?.id as string) || bookingResult.id || generateBookingId();
+          const rawResult = bookingResult as unknown as Record<string, Record<string, unknown>>;
+          newBookingId = (rawResult.job?.id as string) || bookingResult.id;
+          if (!newBookingId) {
+            throw new Error(
+              "Something went wrong creating your booking — please try again."
+            );
+          }
+          createdBookingIdRef.current = newBookingId;
+          // Extract confirmation code from nested job response
+          const jobData = (bookingResult as unknown as Record<string, unknown>).job as Record<string, unknown> | undefined;
+          setConfirmationCode((jobData?.confirmation_code as string) || "");
+        }
 
         // 2. Create payment intent
         const piResult = await paymentsApi.createIntent(
@@ -269,7 +297,7 @@ function PaymentFormInner() {
         );
 
         // InitiateCheckout — same event_id as the server CAPI event (dedup)
-        trackInitiateCheckout({ value: finalPrice / 100, bookingId: newBookingId });
+        trackInitiateCheckout({ value: finalPrice, bookingId: newBookingId });
 
         // 3. Confirm with the payment method from Apple Pay / Google Pay
         const { error, paymentIntent } = await stripe.confirmCardPayment(
@@ -307,10 +335,7 @@ function PaymentFormInner() {
         setEmail(payerEmail);
         setPhone(payerPhone);
         setBookingId(newBookingId);
-        // Extract confirmation code from nested job response
-        const jobData = (bookingResult as unknown as Record<string, unknown>).job as Record<string, unknown> | undefined;
-        setConfirmationCode((jobData?.confirmation_code as string) || "");
-        trackBookingConversion({ bookingId: newBookingId, value: finalPrice / 100 });
+        trackBookingConversion({ bookingId: newBookingId, value: finalPrice });
         clearAbandonedBooking();
         setIsSuccess(true);
       } catch (err) {
@@ -324,7 +349,7 @@ function PaymentFormInner() {
     return () => {
       paymentRequestRef.current = null;
     };
-  }, [stripe, finalPrice, estimatedPrice, address, items, scheduledDate, scheduledTimeSlot, notes, photos, promoApplied, appliedPromoCode, leadSource]);
+  }, [stripe, finalPrice, estimatedPrice, address, items, scheduledDate, scheduledTimeSlot, notes, promoApplied, appliedPromoCode, leadSource]);
 
   // ---------------------------------------------------------------------------
   // Card change handler
@@ -422,27 +447,39 @@ function PaymentFormInner() {
     setErrors({});
 
     try {
-      // 1. Submit the booking to the backend
-      const bookingResult = await bookingApi.submit({
-        step: 6,
-        address,
-        photos,
-        photoUrls: [],
-        items,
-        scheduledDate,
-        scheduledTimeSlot,
-        notes,
-        estimatedPrice: finalPrice,
-        ...(promoApplied ? { promo_code: appliedPromoCode } : {}),
-        ...(leadSource ? { lead_source: leadSource } : {}),
-        ...(quoteId ? { quote_id: quoteId } : {}),
-        customerName: name.trim(),
-        customerEmail: email.trim(),
-        customerPhone: phone.trim(),
-      });
+      // 1. Submit the booking to the backend (reuse a booking created on a
+      // prior attempt — e.g. a declined card — instead of creating a duplicate)
+      let newBookingId = createdBookingIdRef.current;
+      if (!newBookingId) {
+        const bookingResult = await bookingApi.submit({
+          step: 6,
+          address,
+          photoUrls: [],
+          items,
+          scheduledDate,
+          scheduledTimeSlot,
+          notes,
+          estimatedPrice: finalPrice,
+          ...(promoApplied ? { promo_code: appliedPromoCode } : {}),
+          ...(leadSource ? { lead_source: leadSource } : {}),
+          ...(quoteId ? { quote_id: quoteId } : {}),
+          customerName: name.trim(),
+          customerEmail: email.trim(),
+          customerPhone: phone.trim(),
+        });
 
-      const rawResult = bookingResult as unknown as Record<string, Record<string, unknown>>;
-      const newBookingId = (rawResult.job?.id as string) || bookingResult.id || generateBookingId();
+        const rawResult = bookingResult as unknown as Record<string, Record<string, unknown>>;
+        newBookingId = (rawResult.job?.id as string) || bookingResult.id;
+        if (!newBookingId) {
+          throw new Error(
+            "Something went wrong creating your booking — please try again."
+          );
+        }
+        createdBookingIdRef.current = newBookingId;
+        // Extract confirmation code from nested job response
+        const jobData = (bookingResult as unknown as Record<string, unknown>).job as Record<string, unknown> | undefined;
+        setConfirmationCode((jobData?.confirmation_code as string) || "");
+      }
 
       // 2. Create payment intent on the server
       const paymentIntentResult = await paymentsApi.createIntent(
@@ -451,7 +488,7 @@ function PaymentFormInner() {
       );
 
       // InitiateCheckout — same event_id as the server CAPI event (dedup)
-      trackInitiateCheckout({ value: finalPrice / 100, bookingId: newBookingId });
+      trackInitiateCheckout({ value: finalPrice, bookingId: newBookingId });
 
       const clientSecret = paymentIntentResult.clientSecret;
 
@@ -486,10 +523,7 @@ function PaymentFormInner() {
 
       // Success
       setBookingId(newBookingId);
-      // Extract confirmation code from nested job response
-      const jobData = (bookingResult as unknown as Record<string, unknown>).job as Record<string, unknown> | undefined;
-      setConfirmationCode((jobData?.confirmation_code as string) || "");
-      trackBookingConversion({ bookingId: newBookingId, value: finalPrice / 100 });
+      trackBookingConversion({ bookingId: newBookingId, value: finalPrice });
       clearAbandonedBooking();
       setIsSuccess(true);
     } catch (err) {
@@ -539,8 +573,13 @@ function PaymentFormInner() {
                 {confirmationCode}
               </p>
               <p className="text-xs text-muted-foreground mt-2">
-                Save this code to track your pickup at{" "}
-                <span className="font-medium text-foreground">/dashboard</span>
+                Save this code —{" "}
+                <Link
+                  href={`/track/code/${confirmationCode}`}
+                  className="font-medium text-primary underline hover:no-underline"
+                >
+                  track your pickup here
+                </Link>
               </p>
             </div>
           )}
@@ -590,12 +629,10 @@ function PaymentFormInner() {
         {/* Referral Prompt */}
         <ReferralPrompt />
 
-        {/* Review Prompt */}
-        <ReviewPrompt bookingId={bookingId} />
-
         <Button
           onClick={() => {
             useBookingStore.getState().reset();
+            createdBookingIdRef.current = null;
             setIsSuccess(false);
             setName("");
             setEmail("");
