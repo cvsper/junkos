@@ -98,16 +98,10 @@ export default function RootLayout({
           </ErrorBoundaryWrapper>
         </PostHogProvider>
         <Analytics />
-        <footer className="border-t border-border mt-12 py-6 px-4 text-xs text-muted-foreground">
-          <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
-            <div>© {new Date().getFullYear()} Umuve. All rights reserved.</div>
-            <nav className="flex gap-4">
-              <a href="/privacy" className="hover:underline">Privacy Policy</a>
-              <a href="/terms" className="hover:underline">Terms of Service</a>
-              <a href="/contact" className="hover:underline">Contact</a>
-            </nav>
-          </div>
-        </footer>
+        {/* No global footer here: each section renders its own (the customer
+            group's disposal/trust footer, the legal group's footer). A footer
+            at the root duplicated those on every customer/legal page and hung
+            awkwardly below the h-screen operator/driver/admin dashboards. */}
       </body>
     </html>
   );

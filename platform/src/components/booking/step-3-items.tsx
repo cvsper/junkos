@@ -242,15 +242,15 @@ function ItemRow({ item, presets, onUpdate, onRemove }: ItemRowProps) {
         </div>
       </div>
 
-      {/* Quantity */}
-      <div className="flex items-center gap-1.5 shrink-0">
+      {/* Quantity — 36px touch targets (thumb-friendly on mobile) */}
+      <div className="flex items-center gap-2 shrink-0">
         <button
           type="button"
           onClick={() => onUpdate(item.id, { quantity: Math.max(1, item.quantity - 1) })}
           disabled={item.quantity <= 1}
-          className="h-7 w-7 rounded border border-input flex items-center justify-center text-muted-foreground hover:bg-muted disabled:opacity-40"
+          className="h-9 w-9 rounded border border-input flex items-center justify-center text-muted-foreground hover:bg-muted disabled:opacity-40"
         >
-          <Minus className="h-3 w-3" />
+          <Minus className="h-4 w-4" />
         </button>
         <span className="w-6 text-center text-sm font-semibold tabular-nums">
           {item.quantity}
@@ -259,9 +259,9 @@ function ItemRow({ item, presets, onUpdate, onRemove }: ItemRowProps) {
           type="button"
           onClick={() => onUpdate(item.id, { quantity: Math.min(20, item.quantity + 1) })}
           disabled={item.quantity >= 20}
-          className="h-7 w-7 rounded border border-input flex items-center justify-center text-muted-foreground hover:bg-muted disabled:opacity-40"
+          className="h-9 w-9 rounded border border-input flex items-center justify-center text-muted-foreground hover:bg-muted disabled:opacity-40"
         >
-          <Plus className="h-3 w-3" />
+          <Plus className="h-4 w-4" />
         </button>
       </div>
 
@@ -269,7 +269,7 @@ function ItemRow({ item, presets, onUpdate, onRemove }: ItemRowProps) {
       <button
         type="button"
         onClick={() => onRemove(item.id)}
-        className="h-7 w-7 rounded flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0"
+        className="h-9 w-9 rounded flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0"
         aria-label="Remove item"
       >
         <XIcon className="h-4 w-4" />
