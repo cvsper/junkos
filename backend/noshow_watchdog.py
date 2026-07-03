@@ -53,8 +53,14 @@ def _statuses_open():
     "broadcasting" matters: a paid job mid-offer-wave with no acceptor is
     exactly the case the watchdog exists for — omitting it made those jobs
     invisible to every safety net.
+
+    "en_route"/"arrived" are the REAL pre-start statuses (the state machine
+    in routes/drivers.py has no "in_progress") — a job at T+15 that is merely
+    en_route is still late for the customer. "started" is excluded: work has
+    physically begun; stage-stall coverage for it lives in ops_sentinel.
     """
-    return ("pending", "confirmed", "broadcasting", "accepted", "assigned", "in_progress")
+    return ("pending", "confirmed", "broadcasting", "accepted", "assigned",
+            "en_route", "arrived")
 
 
 def run_t30_check():

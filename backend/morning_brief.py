@@ -94,16 +94,33 @@ def _section_needs_attention(now):
     """Things that are unresolved RIGHT NOW and need sevs's hand today."""
     from models import db, Job, ScheduledCallback, AbandonedBooking  # noqa: F401
 
-    # Unassigned upcoming jobs (next 48h, still pending)
+    # Unassigned open jobs: upcoming 48h, ASAP (no schedule), AND anything
+    # already past its time that never resolved. A NULL scheduled_at must not
+    # hide a paid job (ASAP is the default launch booking).
+    from sqlalchemy import or_
     unassigned = Job.query.filter(
-        Job.scheduled_at >= now,
-        Job.scheduled_at <= now + timedelta(hours=48),
+        or_(
+            Job.scheduled_at.is_(None),
+            Job.scheduled_at <= now + timedelta(hours=48),
+        ),
         Job.driver_id.is_(None),
         Job.operator_id.is_(None),
         Job.status.in_((
-            "pending", "confirmed", "accepted", "assigned",
+            "pending", "confirmed", "broadcasting", "accepted", "assigned",
         )),
+        Job.created_at >= now - timedelta(days=14),  # bound the lookback
     ).all()
+
+    # Money owed to haulers (concierge pending_connect + failed transfers).
+    # Payout state lives on Payment, keyed by job.
+    from models import Payment
+    owed_rows = (
+        db.session.query(Payment, Job)
+        .join(Job, Payment.job_id == Job.id)
+        .filter(Payment.payout_status.in_(("pending_connect", "failed")),
+                Job.status == "completed")
+        .all()
+    )
 
     # Recent urgent callbacks (last 48h, status still pending)
     callback_cutoff = now - timedelta(hours=48)
@@ -167,6 +184,24 @@ def _section_needs_attention(now):
             ).format(
                 addr=(w.address or "")[:50],
                 email=w.email or "",
+            ))
+
+    if owed_rows:
+        total_owed = sum(float(p.driver_payout_amount or 0) for p, _j in owed_rows)
+        rows.append((
+            "<tr><td style='color:#c00'><b>💸 Hauler payouts owed</b></td>"
+            "<td><b>{n} job(s), ${amt:.2f}</b> — pay via concierge console / "
+            "fix Stripe Connect</td></tr>"
+        ).format(n=len(owed_rows), amt=total_owed))
+        for p, j in owed_rows[:5]:
+            rows.append((
+                "<tr><td></td><td style='font-size:13px;color:#555'>"
+                "#{code} • {status} • ${amt:.2f} • completed {when}</td></tr>"
+            ).format(
+                code=(j.confirmation_code or str(j.id)[:8]),
+                status=p.payout_status,
+                amt=float(p.driver_payout_amount or 0),
+                when=(j.completed_at.strftime("%b %d") if j.completed_at else "?"),
             ))
 
     if not rows:

@@ -284,6 +284,32 @@ except Exception as _c_exc:
     import logging as _logging
     _logging.getLogger(__name__).warning("coach_bp not registered: %s", _c_exc)
 
+# Previously built-but-never-registered public endpoints (2026-07-03 audit):
+# newsletter capture + partner signups. Both are plain lead-capture routes the
+# marketing site links to; registering them turns 404s into leads.
+try:
+    from routes.subscribe import subscribe_bp
+    app.register_blueprint(subscribe_bp)
+except Exception as _s_exc:
+    import logging as _logging
+    _logging.getLogger(__name__).warning("subscribe_bp not registered: %s", _s_exc)
+
+try:
+    from routes.partners import partners_bp
+    app.register_blueprint(partners_bp)
+except Exception as _p_exc:
+    import logging as _logging
+    _logging.getLogger(__name__).warning("partners_bp not registered: %s", _p_exc)
+
+# AI photo analysis — register only when an OpenAI key exists (route 500s without).
+if os.environ.get("OPENAI_API_KEY"):
+    try:
+        from routes import ai_bp
+        app.register_blueprint(ai_bp)
+    except Exception as _ai_exc:
+        import logging as _logging
+        _logging.getLogger(__name__).warning("ai_bp not registered: %s", _ai_exc)
+
 # Send Setup Link — operator-onboarding SMS tool (op_text_tool.py)
 try:
     from op_text_tool import optext_bp

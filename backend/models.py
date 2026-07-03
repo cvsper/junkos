@@ -3576,3 +3576,85 @@ class ReferralPayout(db.Model):
             "stripe_transfer_id": self.stripe_transfer_id,
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }
+
+
+class AutomationEvent(db.Model):
+    """Idempotence markers for automation sends/alerts (ops sentinel, durable
+    review sends, referral nudges, trial nudges). One row = this (kind,
+    subject) already fired; unique constraint makes every automation
+    exactly-once without per-feature Boolean columns on hot tables."""
+
+    __tablename__ = "automation_events"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    kind = Column(String(60), nullable=False)
+    subject_type = Column(String(30), nullable=False, default="job")
+    subject_id = Column(String(64), nullable=False)
+    detail = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=utcnow)
+
+    __table_args__ = (
+        db.UniqueConstraint("kind", "subject_type", "subject_id",
+                            name="uq_automation_event"),
+        db.Index("ix_automation_events_kind_subject", "kind", "subject_id"),
+    )
+
+
+class Subscriber(db.Model):
+    """Newsletter / mailing-list capture from the public /api/subscribe
+    endpoint (blueprint existed since launch prep but this model was never
+    written, so the route 500'd on import and was left unregistered)."""
+
+    __tablename__ = "subscribers"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    email = Column(String(255), unique=True, nullable=False, index=True)
+    name = Column(String(120), nullable=True)
+    source = Column(String(50), nullable=True, default="website")
+    list_name = Column(String(50), nullable=True, default="newsletter")
+    status = Column(String(20), nullable=False, default="active")  # active|unsubscribed
+    created_at = Column(DateTime, default=utcnow)
+    updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "email": self.email,
+            "name": self.name,
+            "source": self.source,
+            "list": self.list_name,
+            "status": self.status,
+        }
+
+
+class Partner(db.Model):
+    """Partnership-program signups (realtors, property managers, movers…)
+    from goumuve.com/partners — same missing-model story as Subscriber."""
+
+    __tablename__ = "partners"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    name = Column(String(120), nullable=False)
+    email = Column(String(255), nullable=False, index=True)
+    phone = Column(String(40), nullable=True)
+    brokerage = Column(String(200), nullable=True)
+    coverage_areas = Column(Text, nullable=True)
+    partner_type = Column(String(40), nullable=False, default="other")
+    status = Column(String(20), nullable=False, default="pending")  # pending|approved|rejected
+    referral_code = Column(String(20), unique=True, nullable=True, index=True)
+    created_at = Column(DateTime, default=utcnow)
+    updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "email": self.email,
+            "phone": self.phone,
+            "brokerage": self.brokerage,
+            "coverage_areas": self.coverage_areas,
+            "partner_type": self.partner_type,
+            "status": self.status,
+            "referral_code": self.referral_code,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }

@@ -335,6 +335,30 @@ def auth_register():
     db.session.add(member)
     db.session.commit()
 
+    # Welcome email — B2B signups previously got total silence after signup
+    # (consumer signup sends one; portal never did). Fire-and-forget.
+    try:
+        from email_service import _wrap_template, send_email_async
+        send_email_async(
+            email,
+            "Welcome to Umuve for Business",
+            _wrap_template(
+                "<h2>You're in, {biz}</h2>"
+                "<p>Your Umuve business account is live. Three things you can "
+                "do right now:</p>"
+                "<ul><li><b>Book a pickup</b> — one-off or recurring</li>"
+                "<li><b>Add locations & teammates</b> under Settings</li>"
+                "<li><b>See pricing & invoicing</b> — net terms available on "
+                "paid plans</li></ul>"
+                "<p style='margin-top:30px'><a href='https://portal.goumuve.com' "
+                "class='button'>Open your portal</a></p>"
+                "<p>Reply to this email and a human answers.</p>".format(
+                    biz=business)),
+        )
+    except Exception:
+        import logging as _plog
+        _plog.getLogger(__name__).exception("portal welcome email failed")
+
     token = mint_portal_token(user.id, org.id, "owner", ["*"])
     return jsonify(
         {

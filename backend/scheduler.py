@@ -450,6 +450,74 @@ def _run_recruiter_calls(app):
         logger.exception("recruiter calls job crashed")
 
 
+def _run_ops_sentinel(app):
+    """Every 10 min: catch jobs/money stalling in states nothing else watches
+    (mid-job stalls, ASAP jobs with no dispatch, offline hauler mid-job,
+    stuck/owed payouts). Alert-only; exactly-once per (kind, job)."""
+    try:
+        from ops_sentinel import run_sentinel
+        run_sentinel(app)
+    except Exception:
+        logger.exception("ops sentinel job crashed")
+
+
+def _run_morning_brief(app):
+    """Daily ops digest email to ADMIN_EMAIL — the backstop that catches
+    whatever every other alert missed."""
+    try:
+        with app.app_context():
+            from morning_brief import send_brief
+            send_brief()
+    except Exception:
+        logger.exception("morning brief job crashed")
+
+
+def _run_mystery_shop(app):
+    """Daily synthetic shopper: walks the public booking funnel (no payment,
+    no Stripe) and URGENT-alerts if it's broken. Gate: MYSTERY_SHOP_ENABLED
+    (default on — it is read-only against prod)."""
+    if os.environ.get("MYSTERY_SHOP_ENABLED", "true").lower() != "true":
+        return
+    try:
+        with app.app_context():
+            from mystery_shop import main as mystery_main
+            mystery_main()
+    except Exception:
+        logger.exception("mystery shop job crashed")
+
+
+def _run_vapi_health(app):
+    """Hourly: scan recent Vapi calls for hang-up/failure patterns."""
+    try:
+        with app.app_context():
+            from vapi_health_monitor import check_call_health
+            check_call_health()
+    except Exception:
+        logger.exception("vapi health monitor job crashed")
+
+
+def _run_growth_sweep(app):
+    """Every 30 min: durable post-job review SMS/email (replaces the
+    threading.Timer sends that died on redeploy), referral share nudge,
+    6-month re-engagement, B2B trial nudges. Exactly-once per send."""
+    try:
+        from growth_loops import run_growth_sweep
+        run_growth_sweep(app)
+    except Exception:
+        logger.exception("growth sweep job crashed")
+
+
+def _run_activation_drip(app):
+    """Daily: nudge registered haulers who never went online (T+1/3/7 SMS,
+    concierge fallback offer) + doc-completion nudges. Gate:
+    ACTIVATION_DRIP_ENABLED (default on)."""
+    try:
+        from supply_drip import run_activation_drip
+        run_activation_drip(app)
+    except Exception:
+        logger.exception("activation drip job crashed")
+
+
 def init_scheduler(app):
     """Initialize and start the background scheduler.
 
@@ -645,6 +713,70 @@ def init_scheduler(app):
             args=[app],
             id="recruiter_calls",
             name="Maya recruiter outbound calls (kill-switched)",
+        )
+
+        # Ops sentinel — the net under every other net. Every 10 min.
+        scheduler.add_job(
+            _run_ops_sentinel,
+            "interval",
+            minutes=10,
+            args=[app],
+            id="ops_sentinel",
+            name="Ops sentinel (stall/payout/offline watchdog)",
+        )
+
+        # Daily morning brief — 11:00 UTC (~7am ET), lands before the workday.
+        scheduler.add_job(
+            _run_morning_brief,
+            "cron",
+            hour=11,
+            minute=0,
+            args=[app],
+            id="morning_brief",
+            name="Daily admin morning brief",
+        )
+
+        # Daily synthetic mystery shop — 12:10 UTC, after the brief.
+        scheduler.add_job(
+            _run_mystery_shop,
+            "cron",
+            hour=12,
+            minute=10,
+            args=[app],
+            id="mystery_shop",
+            name="Synthetic booking-funnel shopper",
+        )
+
+        # Vapi call-health scan — hourly at :20.
+        scheduler.add_job(
+            _run_vapi_health,
+            "cron",
+            minute=20,
+            args=[app],
+            id="vapi_health",
+            name="Vapi call-health monitor",
+        )
+
+        # Growth loops — every 30 min (durable review sends, referral nudge,
+        # 6-month re-engagement, B2B trial nudges).
+        scheduler.add_job(
+            _run_growth_sweep,
+            "interval",
+            minutes=30,
+            args=[app],
+            id="growth_sweep",
+            name="Growth loops sweep",
+        )
+
+        # Supply-activation drip — daily 16:00 UTC (~noon ET, good SMS hour).
+        scheduler.add_job(
+            _run_activation_drip,
+            "cron",
+            hour=16,
+            minute=0,
+            args=[app],
+            id="activation_drip",
+            name="Hauler activation drip",
         )
 
         scheduler.start()

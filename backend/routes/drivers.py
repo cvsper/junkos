@@ -145,6 +145,26 @@ def update_availability(user_id):
                     logging.getLogger(__name__).exception("waitlist reactivation failed")
 
             threading.Thread(target=_reactivate, daemon=True).start()
+
+            # LAUNCH MOMENT: the very first hauler going online is the last
+            # gate before revenue. Fire the launch checklist at the admin,
+            # exactly once ever.
+            try:
+                from ops_sentinel import _once as _sentinel_once
+                if _sentinel_once("first_hauler_online", "global",
+                                  subject_type="launch"):
+                    admin_phone = (os.environ.get("OPERATOR_PHONE")
+                                   or os.environ.get("ADMIN_PHONE", ""))
+                    if admin_phone:
+                        from notifications import send_sms as _launch_sms
+                        _launch_sms(admin_phone,
+                                    "🚀 FIRST HAULER ONLINE: {}. Launch checklist: "
+                                    "1) GET /api/admin/launch-readiness "
+                                    "2) PBC25 test booking end-to-end "
+                                    "3) cancel test 4) flip ads ON. GO.".format(
+                                        getattr(contractor, "name", contractor.id)))
+            except Exception:
+                pass
     except Exception:
         pass
 
@@ -596,6 +616,40 @@ def apply_job_status_transition(job, contractor, new_status, data=None):
                     "Referral %s completed: referee %s first job %s done",
                     referral.id, job.customer_id, job.id,
                 )
+                # CUSTOMER referral reward — previously advertised ($10) but
+                # never issued (pay_referral_bonus only handles contractors).
+                # Issue the referrer a single-use $10 promo code + tell them.
+                if getattr(referral, "referral_type", None) != "contractor":
+                    try:
+                        import secrets as _secrets
+                        from models import PromoCode
+                        bonus = float(referral.reward_amount or 10.0)
+                        code = "THANKS-{}".format(_secrets.token_hex(3).upper())
+                        db.session.add(PromoCode(
+                            code=code, discount_type="fixed",
+                            discount_value=bonus, max_uses=1,
+                            created_by="referral:{}".format(referral.id),
+                        ))
+                        referral.status = "rewarded"
+                        referrer = db.session.get(User, referral.referrer_id)
+                        if referrer:
+                            db.session.add(Notification(
+                                id=generate_uuid(), user_id=referrer.id,
+                                type="referral", title="You earned $10!",
+                                body="Your friend completed their first pickup. "
+                                     "Use code {} for ${:.0f} off your next one.".format(
+                                         code, bonus),
+                                data={"referral_id": referral.id, "promo_code": code},
+                            ))
+                            if referrer.phone:
+                                from sms_service import send_sms as _ref_sms
+                                _ref_sms(referrer.phone,
+                                         "Umuve: your referral booked! Here's your "
+                                         "$10 thank-you — code {} on your next "
+                                         "pickup. goumuve.com".format(code))
+                    except Exception:
+                        logger.exception("customer referral reward failed for %s",
+                                         referral.id)
         except Exception as e:
             logger.warning("Failed to update referral on job completion: %s", e)
 
@@ -671,7 +725,32 @@ def apply_job_status_transition(job, contractor, new_status, data=None):
         )
         customer = db.session.get(User, job.customer_id)
 
-        if new_status == "en_route":
+        if new_status == "accepted":
+            # The customer's first human signal: someone real took the job.
+            # Guests especially heard NOTHING between payment and en_route
+            # before this — silence they read as "they forgot me."
+            if customer:
+                hauler_label = driver_name or "Your hauler"
+                when = (
+                    job.scheduled_at.strftime("%a %b %d, %I:%M %p")
+                    if job.scheduled_at else "shortly"
+                )
+                if customer.phone:
+                    from sms_service import send_sms as _customer_sms
+                    _customer_sms(
+                        customer.phone,
+                        "Umuve: {} confirmed your pickup — arriving {}. "
+                        "Track: https://app.goumuve.com/track/{}".format(
+                            hauler_label, when,
+                            job.confirmation_code or job.id),
+                    )
+                send_push_notification(
+                    customer.id, "Hauler Confirmed",
+                    "{} accepted your job and is scheduled for {}.".format(hauler_label, when),
+                    {"job_id": job.id, "status": "accepted", "category": "job_update"},
+                )
+
+        elif new_status == "en_route":
             # Email + SMS customer, push to customer
             if customer:
                 if customer.email:
@@ -728,8 +807,8 @@ def apply_job_status_transition(job, contractor, new_status, data=None):
                         impact_summary=job.impact_summary,
                     )
 
-                    # Schedule follow-up 24h later
-                    schedule_email_follow_up(customer.email, customer.name)
+                    # 24h review follow-up email now sent durably by the
+                    # growth_loops sweep (Timer-based sends died on redeploy).
 
                 _complete_body = (job.impact_summary
                                   or "Pickup complete! Rate your experience")
@@ -752,30 +831,9 @@ def apply_job_status_transition(job, contractor, new_status, data=None):
                         {"job_id": job.id, "driver_id": contractor.id},
                     )
 
-            # Schedule review request SMS with 2-hour delay so it doesn't
-            # feel pushy right after completion.  Fire-and-forget — failures
-            # here must never affect the job completion response.
-            if customer and customer.phone:
-                try:
-                    from sms_service import schedule_review_request
-                    # Extract city from the job address (last component before
-                    # state/zip, or fall back to the full address)
-                    _city = None
-                    if job.address:
-                        parts = [p.strip() for p in job.address.split(",")]
-                        if len(parts) >= 2:
-                            _city = parts[-2]  # e.g. "Miami" from "123 Main St, Miami, FL 33101"
-                        else:
-                            _city = parts[0]
-                    schedule_review_request(
-                        customer.phone,
-                        customer.name,
-                        _city,
-                    )
-                except Exception:
-                    import logging as _log2
-                    _log2.getLogger(__name__).exception(
-                        "Failed to schedule review SMS for job %s", job.id)
+            # Review-request SMS (2h later) now sent durably by the
+            # growth_loops sweep — the threading.Timer version silently died
+            # on every deploy/restart, losing a chunk of review asks.
 
     except Exception as e:
         import logging as _log

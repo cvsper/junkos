@@ -1525,6 +1525,32 @@ def _handle_payment_failed(intent):
                 data={"job_id": job.id},
             )
             db.session.add(notification)
+            # Guests have no app to see the in-app row — reach them directly
+            # so the job doesn't get worked unpaid.
+            try:
+                if getattr(customer, "phone", None):
+                    from sms_service import send_sms as _sms
+                    _sms(customer.phone,
+                         "Umuve: your payment for job {} didn't go through. "
+                         "Please update your card so we can keep your booking: "
+                         "https://app.goumuve.com/track/{}".format(
+                             job.confirmation_code or str(job.id)[:8],
+                             job.confirmation_code or job.id))
+            except Exception:
+                logger.exception("payment-failed customer SMS failed")
+        # A failed charge on a live job is money walking out the door.
+        try:
+            admin_phone = os.environ.get("OPERATOR_PHONE") or os.environ.get("ADMIN_PHONE", "")
+            if admin_phone:
+                from notifications import send_sms as _admin_sms
+                _admin_sms(admin_phone,
+                           "⚠️ PAYMENT FAILED ${:.2f} on job {} (status {}). "
+                           "Job is still live — decide before dispatch works it free.".format(
+                               payment.amount,
+                               job.confirmation_code or str(job.id)[:8],
+                               job.status))
+        except Exception:
+            logger.exception("payment-failed admin SMS failed")
 
     db.session.commit()
 
@@ -1556,6 +1582,21 @@ def _handle_charge_refunded(charge):
                 data={"job_id": job.id, "amount": refund_amount},
             )
             db.session.add(notification)
+        # If the job still has a hauler moving on it, the refund means the
+        # trip may be dead — tell the admin so nobody drives to a refunded job.
+        if job.status in ("assigned", "accepted", "en_route", "arrived", "started"):
+            try:
+                admin_phone = os.environ.get("OPERATOR_PHONE") or os.environ.get("ADMIN_PHONE", "")
+                if admin_phone:
+                    from notifications import send_sms as _admin_sms
+                    _admin_sms(admin_phone,
+                               "⚠️ REFUND ${:.2f} on job {} while status={}. "
+                               "Hauler may still be en route — cancel/redirect them.".format(
+                                   refund_amount,
+                                   job.confirmation_code or str(job.id)[:8],
+                                   job.status))
+            except Exception:
+                logger.exception("refund admin SMS failed")
 
     db.session.commit()
 
