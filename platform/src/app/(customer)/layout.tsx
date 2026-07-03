@@ -197,7 +197,11 @@ export default function CustomerLayout({
 
       {/* Footer */}
       <footer className="border-t border-border bg-background mt-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Extra bottom padding on mobile clears the fixed support-chat bubble
+            (56px at bottom-4/right-4) so the copyright + Contact link aren't
+            hidden under it; desktop needs no clearance (centered content
+            doesn't reach the viewport-right bubble). */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-24 sm:pb-8">
           <div className="flex flex-col items-center gap-4">
             <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm text-green-700 font-medium">
               <span className="flex items-center gap-1.5">&#10084;&#65039; Donate First</span>
