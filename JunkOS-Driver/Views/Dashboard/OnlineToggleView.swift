@@ -59,7 +59,7 @@ struct OnlineToggleView: View {
                     VStack(spacing: DriverSpacing.xxs) {
                         ProgressView()
                             .tint(.white)
-                            .scaleEffect(1.3)
+                            .scaleEffect(1.3 as CGFloat)
 
                         Text("UPDATING")
                             .font(.system(size: 13, weight: .bold, design: .rounded))
