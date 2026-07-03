@@ -11,6 +11,7 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from models import db, Partner, generate_uuid, generate_referral_code
+from routes.admin import require_admin
 
 logger = logging.getLogger(__name__)
 
@@ -81,8 +82,9 @@ def register_partner():
 
 
 @partners_bp.route("/list", methods=["GET"])
+@require_admin
 def list_partners():
-    """Admin endpoint to list all partners (no auth for now)."""
+    """Admin endpoint to list all partners."""
     try:
         partners = Partner.query.order_by(Partner.created_at.desc()).all()
         return jsonify([p.to_dict() for p in partners])
@@ -91,8 +93,9 @@ def list_partners():
 
 
 @partners_bp.route("/<partner_id>", methods=["PATCH"])
+@require_admin
 def update_partner(partner_id):
-    """Update partner status or details."""
+    """Update partner status or details. Admin only — approval mints referral codes."""
     try:
         partner = db.session.get(Partner, partner_id)
         if not partner:
