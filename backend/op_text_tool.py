@@ -149,37 +149,39 @@ OPTEXT_HTML = r"""<!doctype html>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="robots" content="noindex, nofollow" />
-<title>Umuve — Send Setup Link</title>
+<meta name="theme-color" content="#0B0E12" />
+<title>Umuve — Setup Link</title>
+<link rel="stylesheet" href="/va/app.css" />
 <link rel="stylesheet" href="/optext/app.css" />
 </head>
 <body>
 <div id="app">
   <section id="gate" class="gate">
-    <div class="card">
-      <div class="mark">U</div>
-      <h1>Send Setup Link</h1>
-      <p class="sub">Text an interested hauler the Umuve onboarding links in one tap.</p>
-      <form id="gate-form" autocomplete="off">
+    <div class="gatewrap">
+      <img class="brand-lg rv" src="/va/logo.png" alt="Umuve" />
+      <div class="eyebrow rv">Internal · VA suite</div>
+      <h1 class="display" aria-label="Setup link">SETUP&nbsp;LINK</h1>
+      <p class="sub rv">They said YES — this text signs them up to get jobs.</p>
+      <form id="gate-form" autocomplete="off" class="rv">
         <label class="lbl" for="code">Access code</label>
-        <input id="code" type="password" inputmode="text" autocomplete="off" placeholder="Enter your code" />
+        <input id="code" type="password" autocomplete="off" placeholder="Enter your code" />
         <button class="btn" type="submit">Start</button>
         <p id="gate-err" class="err" hidden></p>
       </form>
-      <p class="hint">Same code as your coach. From Shamar.</p>
+      <p class="hint rv">Same code as your coach. From Shamar.</p>
     </div>
   </section>
 
   <section id="tool" class="tool" hidden>
     <header class="bar">
-      <div class="mark sm">U</div>
-      <div class="bar-id">
-        <div class="bar-title">Send Setup Link</div>
-        <div class="bar-sub">Texts from the Umuve number</div>
-      </div>
+      <a class="back" href="/va" aria-label="Back to VA tools">←</a>
+      <img class="brand" src="/va/logo.png" alt="Umuve" />
+      <div class="bar-sub">Texts send from the Umuve number</div>
     </header>
 
     <div class="body">
-      <form id="send-form" autocomplete="off">
+      <h2 class="display display-sm" aria-label="They said yes">THEY SAID&nbsp;YES</h2>
+      <form id="send-form" autocomplete="off" class="rv">
         <label class="lbl" for="name">Hauler / company name <span class="opt">(optional)</span></label>
         <input id="name" type="text" placeholder="e.g. Mike at Palm Beach Haulers" />
         <label class="lbl" for="phone">Their cell number</label>
@@ -188,9 +190,13 @@ OPTEXT_HTML = r"""<!doctype html>
         <p id="result" class="result" hidden></p>
       </form>
 
-      <div class="preview">
-        <div class="preview-h">What they'll receive</div>
-        <div class="bubble">Hi [name], it's Umuve (you-move) — thanks for your interest! Get set up &amp; start getting paid junk-removal jobs:<br>1) Apply: goumuve.com/operators<br>2) Umuve Pro app<br>3) Connect Stripe, then tap Go Online.<br>Shamar will help you finish — just reply with any questions.</div>
+      <div class="preview rv">
+        <div class="preview-h">What they&rsquo;ll receive</div>
+        <div class="bubble">Hi [name], it&rsquo;s Umuve (you-move) — thanks for your interest! Get set up &amp; start getting paid junk-removal jobs:
+1) Apply: goumuve.com/operators
+2) Umuve Pro app
+3) Connect Stripe, then tap Go Online.
+Shamar will help you finish — just reply with any questions.</div>
       </div>
 
       <div id="sent-wrap" class="sent-wrap" hidden>
@@ -206,67 +212,15 @@ OPTEXT_HTML = r"""<!doctype html>
 """
 
 
-OPTEXT_CSS = r""":root{
-  --canvas:#EEF1F5; --surface:#FFFFFF; --ink:#16202C; --muted:#5B6878;
-  --accent:#FF6A2C; --accent-press:#E85B1F; --line:#E3E8EE; --ok:#1FA971;
-  --bot:#FFFFFF; --shadow:0 1px 2px rgba(16,32,44,.06),0 8px 24px rgba(16,32,44,.06);
-  --display:ui-rounded,"SF Pro Rounded",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-  --body:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-}
-*{box-sizing:border-box}
-html,body{height:100%}
-body{margin:0;background:var(--canvas);color:var(--ink);font-family:var(--body);-webkit-font-smoothing:antialiased;line-height:1.45}
-#app{max-width:560px;margin:0 auto;min-height:100dvh;display:flex;flex-direction:column}
-
-.mark{font-family:var(--display);font-weight:700;color:#fff;background:#1B2A3A;width:54px;height:54px;border-radius:16px;display:grid;place-items:center;font-size:26px;position:relative;box-shadow:var(--shadow)}
-.mark::after{content:"";position:absolute;right:-3px;bottom:-3px;width:18px;height:18px;border-radius:6px;background:var(--accent)}
-.mark.sm{width:38px;height:38px;border-radius:11px;font-size:19px}
-.mark.sm::after{width:12px;height:12px;border-radius:4px;right:-2px;bottom:-2px}
-
-.gate{flex:1;display:flex;align-items:center;justify-content:center;padding:24px}
-.card{width:100%;max-width:380px;background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:32px 28px;box-shadow:var(--shadow);text-align:center}
-.card .mark{margin:0 auto 18px}
-h1{font-family:var(--display);font-weight:700;font-size:26px;margin:0 0 8px;letter-spacing:-.02em}
-.sub{color:var(--muted);margin:0 0 24px;font-size:15px}
-.lbl{display:block;text-align:left;font-family:var(--display);font-weight:600;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:14px 0 7px}
-.lbl .opt{font-weight:500;letter-spacing:0;text-transform:none;color:#9aa6b2}
-.card .lbl:first-of-type{margin-top:0}
-input{width:100%;padding:14px 15px;font-size:16px;font-family:var(--body);color:var(--ink);background:#F6F8FA;border:1.5px solid var(--line);border-radius:13px;outline:none}
-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(255,106,44,.18);background:#fff}
-.btn{width:100%;margin-top:16px;padding:15px;font-size:16px;font-family:var(--display);font-weight:600;color:#fff;background:var(--accent);border:none;border-radius:13px;cursor:pointer;transition:background .15s,transform .05s}
-.btn:hover{background:var(--accent-press)}
-.btn:active{transform:translateY(1px)}
-.btn:disabled{background:#C7CDD4;cursor:default}
-.hint{color:var(--muted);font-size:12.5px;margin:18px 0 0}
-.err{color:#C0341F;font-size:13.5px;margin:12px 0 0;text-align:left}
-
-.tool{flex:1;display:flex;flex-direction:column}
-.bar{display:flex;align-items:center;gap:12px;padding:14px 18px;padding-top:max(14px,env(safe-area-inset-top));background:var(--surface);border-bottom:1px solid var(--line)}
-.bar-title{font-family:var(--display);font-weight:700;font-size:17px}
-.bar-sub{color:var(--muted);font-size:12.5px;margin-top:1px}
-.body{padding:20px 18px max(20px,env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:20px}
-#send-form{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:20px 18px;box-shadow:var(--shadow)}
-.result{margin:14px 0 0;padding:12px 14px;border-radius:12px;font-size:14.5px;display:none}
-.result.show{display:block}
-.result.ok{background:#E7F7EF;color:#0E6B45;border:1px solid #B6E6CE}
-.result.bad{background:#FBEAE6;color:#B23218;border:1px solid #F1C4B8}
-
-.preview{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px 18px}
-.preview-h,.sent-h{font-family:var(--display);font-weight:600;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
-.bubble{background:#EAF0F6;border:1px solid var(--line);border-radius:14px;border-bottom-left-radius:5px;padding:12px 14px;font-size:14px;color:#27313c;line-height:1.5}
-.sent-wrap{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px 18px}
-.sent{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
-.sent li{font-size:14px;color:var(--ink);display:flex;align-items:center;gap:8px}
-.sent li::before{content:"✅"}
-
-:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+OPTEXT_CSS = r"""/* Design system lives in /va/app.css (single source). This file keeps the
+route alive for cached clients and holds optext-only tweaks. */
+.bar .brand{margin-right:auto}
 """
 
 
 OPTEXT_JS = r"""(function(){
   var API = "/api/optext/send";
-  var KEY = "umuve_coach_code";   // shared login with the coach
+  var KEY = "umuve_coach_code";   // shared login with the coach + /va tools
   var gate = document.getElementById("gate");
   var tool = document.getElementById("tool");
   var gateErr = document.getElementById("gate-err");
@@ -277,13 +231,43 @@ OPTEXT_JS = r"""(function(){
   var sentWrap = document.getElementById("sent-wrap");
   var sentList = document.getElementById("sent");
   var busy = false;
+  var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function splitChars(el){
+    if(!el || el.dataset.split) return;
+    el.dataset.split = "1";
+    var text = el.textContent;
+    el.textContent = "";
+    for(var i = 0; i < text.length; i++){
+      var s = document.createElement("span");
+      s.className = "ch";
+      s.textContent = text[i] === " " ? " " : text[i];
+      el.appendChild(s);
+    }
+  }
+  function reveal(scope){
+    if(reduced){
+      scope.querySelectorAll(".rv,.display .ch").forEach(function(el){ el.classList.add("in"); });
+      scope.querySelectorAll(".display-sm").forEach(function(d){ d.classList.add("uline"); });
+      return;
+    }
+    scope.querySelectorAll(".display").forEach(splitChars);
+    scope.querySelectorAll(".display .ch").forEach(function(c, i){
+      setTimeout(function(){ c.classList.add("in"); }, 40 + i * 26);
+    });
+    scope.querySelectorAll(".rv").forEach(function(b, i){
+      setTimeout(function(){ b.classList.add("in"); }, 140 + i * 65);
+    });
+    scope.querySelectorAll(".display-sm").forEach(function(d){
+      setTimeout(function(){ d.classList.add("uline"); }, 200);
+    });
+  }
 
   function code(){ return localStorage.getItem(KEY) || ""; }
   function show(el){ el.hidden = false; }
-
-  function showTool(){ gate.hidden = true; tool.hidden = false; nameEl.focus(); }
+  function showTool(){ gate.hidden = true; tool.hidden = false; reveal(tool); nameEl.focus(); }
   function showGate(msg){
-    tool.hidden = true; gate.hidden = false;
+    tool.hidden = true; gate.hidden = false; reveal(gate);
     if(msg){ gateErr.textContent = msg; gateErr.hidden = false; } else { gateErr.hidden = true; }
     document.getElementById("code").focus();
   }

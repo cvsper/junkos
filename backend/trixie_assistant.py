@@ -260,9 +260,9 @@ COACH_HTML = r"""<!doctype html>
 
 
 COACH_CSS = r""":root{
-  --canvas:#EEF1F5; --surface:#FFFFFF; --ink:#16202C; --muted:#5B6878;
-  --accent:#FF6A2C; --accent-press:#E85B1F; --user:#1B2A3A; --line:#E3E8EE;
-  --ok:#1FA971; --bot:#FFFFFF; --shadow:0 1px 2px rgba(16,32,44,.06),0 8px 24px rgba(16,32,44,.06);
+  --canvas:#0B0E12; --surface:#141922; --ink:#F4F6F8; --muted:rgba(244,246,248,.62);
+  --accent:#FF6A2C; --accent-press:#E85B1F; --user:#1A2029; --line:rgba(244,246,248,.09);
+  --ok:#3DD68C; --bot:#141922; --shadow:none;
   --display:ui-rounded,"SF Pro Rounded",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --body:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
 }
@@ -282,8 +282,8 @@ body{margin:0;background:var(--canvas);color:var(--ink);font-family:var(--body);
 .gate h1{font-family:var(--display);font-weight:700;font-size:27px;margin:0 0 8px;letter-spacing:-.02em}
 .gate .sub{color:var(--muted);margin:0 0 24px;font-size:15px}
 .lbl{display:block;text-align:left;font-family:var(--display);font-weight:600;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:0 0 7px}
-input#code{width:100%;padding:14px 15px;font-size:16px;font-family:var(--body);color:var(--ink);background:#F6F8FA;border:1.5px solid var(--line);border-radius:13px;outline:none}
-input#code:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(255,106,44,.18);background:#fff}
+input#code{width:100%;padding:14px 15px;font-size:16px;font-family:var(--body);color:var(--ink);background:#1A2029;border:1.5px solid var(--line);border-radius:13px;outline:none}
+input#code:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(255,106,44,.18);background:#141922}
 .btn{width:100%;margin-top:14px;padding:14px;font-size:16px;font-family:var(--display);font-weight:600;color:#fff;background:var(--accent);border:none;border-radius:13px;cursor:pointer;transition:background .15s,transform .05s}
 .btn:hover{background:var(--accent-press)}
 .btn:active{transform:translateY(1px)}
@@ -321,8 +321,8 @@ input#code:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(255,106,44
 .chip{flex:0 0 auto;font-family:var(--body);font-size:13px;color:var(--ink);background:#F1F4F7;border:1px solid var(--line);border-radius:999px;padding:8px 13px;cursor:pointer;white-space:nowrap;transition:background .12s,border-color .12s}
 .chip:hover{background:#E8EDF2;border-color:var(--muted)}
 .send-row{display:flex;align-items:flex-end;gap:9px}
-textarea#input{flex:1;resize:none;max-height:140px;font-family:var(--body);font-size:16px;color:var(--ink);background:#F6F8FA;border:1.5px solid var(--line);border-radius:16px;padding:12px 14px;outline:none;line-height:1.4}
-textarea#input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(255,106,44,.16);background:#fff}
+textarea#input{flex:1;resize:none;max-height:140px;font-family:var(--body);font-size:16px;color:var(--ink);background:#1A2029;border:1.5px solid var(--line);border-radius:16px;padding:12px 14px;outline:none;line-height:1.4}
+textarea#input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(255,106,44,.16);background:#141922}
 .send{flex:0 0 auto;width:46px;height:46px;border-radius:50%;border:none;background:var(--accent);color:#fff;cursor:pointer;display:grid;place-items:center;transition:background .15s,transform .05s}
 .send:hover{background:var(--accent-press)}
 .send:active{transform:translateY(1px)}
