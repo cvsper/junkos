@@ -130,6 +130,10 @@ def main():
                     driver_payout_amount=80.0),
         ])
         db.session.commit()
+        # zombie: months-old accepted job — must land in the daily digest,
+        # NEVER a per-job stall alert (first prod sweep spammed these)
+        _job(customer_id=cust.id, status="accepted", driver_id=hauler.id,
+             scheduled_at=utcnow() - timedelta(days=100))
         j_enr_id = str(j_enr.id)  # plain id survives session teardown
         # age the idle hauler past the T+1 activation-nudge threshold
         db.session.execute(
@@ -147,6 +151,8 @@ def main():
         check("offline mid-job caught", _events("offline_midjob") >= 1)
         check("failed payout caught", _events("payout_failed") == 1)
         check("owed payout digest fired", _events("payout_owed") == 1)
+        check("zombie digested, NOT stall-alerted",
+              _events("zombie_digest") == 1 and _events("stall_accepted") == 1)
         n_sms_first = len(SENT["sms"])
         check("admin SMS sent (capped)", 0 < n_sms_first <= 5)
     run_sentinel(app)

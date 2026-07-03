@@ -41,6 +41,7 @@ STALL_STARTED_MIN = 360
 PAYOUT_FAILED_HOURS = 18
 PAYOUT_OWED_HOURS = 24
 MAX_SMS_PER_RUN = 5
+STALE_JOB_CUTOFF_DAYS = 14   # older open jobs = zombies -> daily digest, not alerts
 
 
 def _utcnow():
@@ -99,6 +100,18 @@ def run_sentinel(app):
 
         now = _utcnow()
         budget = MAX_SMS_PER_RUN
+        zombie_floor = now - timedelta(days=STALE_JOB_CUTOFF_DAYS)
+        zombies = []
+
+        def _is_zombie(job):
+            """Open jobs whose relevant time is ancient are dead operations,
+            not live emergencies — first prod sweep SMS-spammed months-old
+            test jobs. They get ONE daily digest, never per-job alerts."""
+            ts = _aware(job.scheduled_at) or _aware(job.created_at)
+            if ts and ts < zombie_floor:
+                zombies.append(job)
+                return True
+            return False
 
         # --- C: ASAP paid jobs that never got dispatched -------------------
         cutoff = now - timedelta(minutes=ASAP_UNASSIGNED_MIN)
@@ -106,6 +119,8 @@ def run_sentinel(app):
                                  Job.scheduled_at.is_(None),
                                  Job.created_at <= cutoff).all())
         for job in rows:
+            if _is_zombie(job):
+                continue
             if _once("asap_unassigned", job.id):
                 budget = _alert("ASAP job undispatched {}min+".format(ASAP_UNASSIGNED_MIN),
                                 [_job_label(job), "status=confirmed, no hauler assigned",
@@ -114,6 +129,8 @@ def run_sentinel(app):
         # --- A: assigned/accepted with no start progress -------------------
         rows = Job.query.filter(Job.status.in_(("assigned", "accepted"))).all()
         for job in rows:
+            if _is_zombie(job):
+                continue
             anchor = None
             if job.scheduled_at is not None:
                 if now > _aware(job.scheduled_at) + timedelta(minutes=STALL_ACCEPT_SCHED_MIN):
@@ -132,6 +149,8 @@ def run_sentinel(app):
                         "started": STALL_STARTED_MIN}
         rows = Job.query.filter(Job.status.in_(tuple(stage_limits))).all()
         for job in rows:
+            if _is_zombie(job):
+                continue
             changed = _aware(job.updated_at) or _aware(job.created_at)
             limit = stage_limits[job.status]
             if changed and now > changed + timedelta(minutes=limit):
@@ -143,6 +162,8 @@ def run_sentinel(app):
         # --- H: hauler offline mid-job --------------------------------------
         rows = Job.query.filter(Job.status.in_(("assigned", "accepted", "en_route"))).all()
         for job in rows:
+            if _is_zombie(job):
+                continue
             cid = job.driver_id or job.operator_id
             if not cid:
                 continue
@@ -156,6 +177,20 @@ def run_sentinel(app):
                                  "{} is offline while job is {}".format(
                                      getattr(c, "name", cid), job.status),
                                  "If unreachable, cancel+redispatch from admin"], budget)
+
+        # --- Zombie digest: ancient open jobs, one SMS per day max -----------
+        if zombies:
+            day_key = now.strftime("%Y-%m-%d")
+            if _once("zombie_digest", day_key, subject_type="digest"):
+                codes = ", ".join(
+                    (z.confirmation_code or str(z.id)[:8]) for z in zombies[:8])
+                budget = _alert(
+                    "{} ancient open job(s) need cleanup".format(len(zombies)),
+                    ["Open >{}d — dead test/abandoned era jobs, not live customers".format(
+                        STALE_JOB_CUTOFF_DAYS),
+                     "Codes: {}{}".format(codes, "…" if len(zombies) > 8 else ""),
+                     "Bulk-cancel in admin; no per-job alerts will fire for these"],
+                    budget)
 
         # --- E: payouts stuck failed (payout state lives on Payment) ---------
         from models import Payment
