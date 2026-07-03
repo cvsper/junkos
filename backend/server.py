@@ -284,6 +284,14 @@ except Exception as _c_exc:
     import logging as _logging
     _logging.getLogger(__name__).warning("coach_bp not registered: %s", _c_exc)
 
+# VA Tools Hub — situation-based text sender (Tracy's suggestion 2026-07-03)
+try:
+    from va_hub import vahub_bp
+    app.register_blueprint(vahub_bp)
+except Exception as _v_exc:
+    import logging as _logging
+    _logging.getLogger(__name__).warning("vahub_bp not registered: %s", _v_exc)
+
 # Previously built-but-never-registered public endpoints (2026-07-03 audit):
 # newsletter capture + partner signups. Both are plain lead-capture routes the
 # marketing site links to; registering them turns 404s into leads.
@@ -500,9 +508,10 @@ def set_security_headers(response):
     response.headers["X-XSS-Protection"] = "1; mode=block"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
-    if request.path.startswith("/coach") or request.path.startswith("/optext"):
-        # Internal VA tools (call coach + send-setup-link): load their own
-        # same-origin CSS/JS and call same-origin APIs. Everything else locked.
+    if (request.path.startswith("/coach") or request.path.startswith("/optext")
+            or request.path == "/va" or request.path.startswith("/va/")):
+        # Internal VA tools (call coach + send-setup-link + VA hub): load their
+        # own same-origin CSS/JS and call same-origin APIs. Everything else locked.
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; img-src 'self' data:; style-src 'self'; "
             "script-src 'self'; connect-src 'self'; base-uri 'none'; "
