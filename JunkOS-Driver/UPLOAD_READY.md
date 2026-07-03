@@ -62,3 +62,8 @@ flagged as needing a new TestFlight build.
   but Mapbox navigation token delivery is worth a look before a public release.
 - Uncommitted screenshot PNG changes under `app-store/screenshots/` were left
   out of the staging commit on purpose.
+
+## UPLOADED 2026-07-03
+Re-cut as marketing version **1.0.1** (build 41) — Apple rejected 1.0.0 because it
+must exceed the already-approved App Store version. Upload accepted:
+Delivery UUID 92959864-469d-4192-8aad-ca6aceba6199. Processing in ASC → TestFlight.

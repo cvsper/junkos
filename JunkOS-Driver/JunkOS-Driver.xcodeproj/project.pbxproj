@@ -51,6 +51,7 @@
 		4F219CCBF09D2A91F8C8A08F /* DriverDesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 803F2EDEBF20C6218ADFA2CB /* DriverDesignSystem.swift */; };
 		51871BDB30F8368F3F8EC867 /* MapboxNavigationUIKit in Frameworks */ = {isa = PBXBuildFile; productRef = 99F9BA012822441FBAC1A4F8 /* MapboxNavigationUIKit */; };
 		543AED3BD6981E51E3034CAC /* RatingViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3A12FA1C9524EEC52BAF42 /* RatingViewModel.swift */; };
+		57C8859578563B86B47A06D2 /* ExportOptions-Staging.plist in Resources */ = {isa = PBXBuildFile; fileRef = EA42FEBDBC8E792F85982906 /* ExportOptions-Staging.plist */; };
 		5C4180CB8AE424D51E75FF1F /* HapticManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FCB1498666015B9BBBC1DF1 /* HapticManager.swift */; };
 		5E9FA33210F489FBB5632E05 /* SocketIOManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF8D49E5C00DA1F5B18B2699 /* SocketIOManager.swift */; };
 		60FCA470DEE7BC6DF3C2D582 /* ContractorRegistrationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3650D5429433D4FB66AA8423 /* ContractorRegistrationView.swift */; };
@@ -101,6 +102,7 @@
 		E8806EA1AE37848938F8D70C /* DriverAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AC42610087364CBEADF1B33 /* DriverAPIClient.swift */; };
 		EFF5C17CB3686BD2C855518D /* JobFeedViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F5425951FF88727F63532BA /* JobFeedViewModel.swift */; };
 		F361D5D58D022CB9B931D03E /* PriceBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B159DA9208AE40B64BFAC73 /* PriceBadge.swift */; };
+		F616712667334A9BF23F3DD3 /* UPLOAD_READY.md in Resources */ = {isa = PBXBuildFile; fileRef = 66A7B33EB5A6F87B16EC77CD /* UPLOAD_READY.md */; };
 		FD39D911FE97C3F7209D09C8 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B085FF75904906904989D302 /* AppState.swift */; };
 /* End PBXBuildFile section */
 
@@ -151,6 +153,7 @@
 		590A28D68129D58B9E85ED9E /* JobAcceptHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobAcceptHandlerTests.swift; sourceTree = "<group>"; };
 		603921AEAAE9211B5A00593C /* OperatorWebRedirectView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OperatorWebRedirectView.swift; sourceTree = "<group>"; };
 		63007B62EFC23A0A6757B294 /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
+		66A7B33EB5A6F87B16EC77CD /* UPLOAD_READY.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = UPLOAD_READY.md; sourceTree = "<group>"; };
 		672F85AEE329F15A6CC0C716 /* AnimationConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnimationConstants.swift; sourceTree = "<group>"; };
 		6D6377601A6F2DF42DF4DFE3 /* red_truck.glb */ = {isa = PBXFileReference; path = red_truck.glb; sourceTree = "<group>"; };
 		7BB4C543B16861520B2D7C80 /* VolumeAdjustmentViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VolumeAdjustmentViewModel.swift; sourceTree = "<group>"; };
@@ -198,6 +201,7 @@
 		E269A5BD9F9CDD622483E10C /* NavigateToJobView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigateToJobView.swift; sourceTree = "<group>"; };
 		E7CB288966F25A1F3987FC69 /* ProfileSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileSettingsView.swift; sourceTree = "<group>"; };
 		E8B6BDEF51AB3AAF0BBE344D /* NavigationCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationCoordinator.swift; sourceTree = "<group>"; };
+		EA42FEBDBC8E792F85982906 /* ExportOptions-Staging.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "ExportOptions-Staging.plist"; sourceTree = "<group>"; };
 		EC3AE09A2DB13F9BF74C5203 /* RatingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RatingView.swift; sourceTree = "<group>"; };
 		ED5DECECC5344F008D376847 /* EarningsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EarningsView.swift; sourceTree = "<group>"; };
 		EE6A30F12DD65BEE0708A3A6 /* ImageUploadService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageUploadService.swift; sourceTree = "<group>"; };
@@ -364,10 +368,12 @@
 				C5E3F3D403E2B18000445A56 /* add_navigation_file.sh */,
 				B42C35F057DC0132348BA134 /* archive-and-upload.sh */,
 				1FBC43CAFF78869678C21C3F /* Assets.xcassets */,
+				EA42FEBDBC8E792F85982906 /* ExportOptions-Staging.plist */,
 				48870C02A80F4EF1D4CDD4DF /* ExportOptions.plist */,
 				8D74268D761171C093876799 /* JunkOS-Driver.entitlements */,
 				C14897C95FBADE41B4B75E28 /* JunkOSDriverApp.swift */,
 				6D6377601A6F2DF42DF4DFE3 /* red_truck.glb */,
+				66A7B33EB5A6F87B16EC77CD /* UPLOAD_READY.md */,
 				4DFFE93115C932ACD6706F02 /* Components */,
 				6A38FA0B2CA9712921C39C93 /* Config */,
 				761042F99BCA6B01B2D4DF4D /* Design */,
@@ -618,7 +624,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				BAD93C9DACE562D75D564204 /* Assets.xcassets in Resources */,
+				57C8859578563B86B47A06D2 /* ExportOptions-Staging.plist in Resources */,
 				10EA98CF33FB08CD7BD0F885 /* ExportOptions.plist in Resources */,
+				F616712667334A9BF23F3DD3 /* UPLOAD_READY.md in Resources */,
 				C934F4E73453A391EA7AC996 /* add_file_to_xcode.sh in Resources */,
 				4546C91F88B3DC9BDB3E58D4 /* add_navigation_file.sh in Resources */,
 				9B847BC10273270680F2A31E /* archive-and-upload.sh in Resources */,
@@ -871,7 +879,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 1.0.0;
+				MARKETING_VERSION = 1.0.1;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -936,7 +944,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 1.0.0;
+				MARKETING_VERSION = 1.0.1;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
