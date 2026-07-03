@@ -7,3 +7,11 @@
 platform/node_modules
 platform/.next
 platform/.vercel
+
+# The SAME repo feeds the umuve-portal project (Root Directory = portal).
+# Allowlisting only /platform above silently emptied every portal build from
+# 2026-06-30 on (Ready-but-404 deployments — the portal.goumuve.com outage).
+!/portal
+portal/node_modules
+portal/.next
+portal/.vercel
