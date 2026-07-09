@@ -133,6 +133,64 @@ def list_contractors(user_id):
     }), 200
 
 
+@admin_bp.route("/contractors/payout-reminder-sms", methods=["POST"])
+@require_admin
+def payout_reminder_sms(user_id):
+    """Text the payout-setup reminder to approved contractors with no usable
+    email on file (phone-only signups the email campaign can't reach).
+
+    Body: {"send": false} (default) returns the candidate list without
+    texting; {"send": true} fires the SMS. Optional "contractor_ids" narrows
+    the run to specific contractors instead of auto-selecting.
+    """
+    data = request.get_json(silent=True) or {}
+    do_send = bool(data.get("send"))
+    only_ids = set(data.get("contractor_ids") or [])
+
+    candidates = []
+    for c in Contractor.query.filter_by(approval_status="approved").all():
+        u = db.session.get(User, c.user_id) if c.user_id else None
+        if not u or not (u.phone or "").strip():
+            continue
+        has_email = "@" in (u.email or "")
+        if only_ids:
+            if c.id not in only_ids:
+                continue
+        elif has_email:
+            continue
+        candidates.append({"contractor_id": c.id, "name": u.name,
+                           "phone": u.phone, "email": u.email or None})
+
+    if not do_send:
+        return jsonify({"success": True, "mode": "dry_run",
+                        "candidates": candidates}), 200
+
+    import sms_service
+    results = []
+    for cand in candidates:
+        first = (cand["name"] or "").split()[0] or "there"
+        body = (
+            "Hi {}, it's Umuve — one step left before you can get paid: "
+            "connect your payout account in your driver profile → "
+            "https://app.goumuve.com/driver/profile Takes about 5 min. "
+            "Add a debit card to unlock instant cash-outs, 24/7. Do it now "
+            "so you're payout-ready before your first job."
+        ).format(first)
+        try:
+            sid = sms_service.send_sms(cand["phone"], body)
+            results.append({**cand, "sent": bool(sid)})
+        except Exception:
+            current_app.logger.exception(
+                "payout reminder SMS failed for %s", cand["contractor_id"])
+            results.append({**cand, "sent": False})
+
+    sent_n = sum(1 for r in results if r["sent"])
+    current_app.logger.info("payout reminder SMS: %d/%d sent", sent_n, len(results))
+    return jsonify({"success": True, "mode": "sent",
+                    "sent": sent_n, "total": len(results),
+                    "results": results}), 200
+
+
 @admin_bp.route("/contractors/<contractor_id>/approve", methods=["PUT"])
 @require_admin
 def approve_contractor(user_id, contractor_id):

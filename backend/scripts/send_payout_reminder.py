@@ -4,9 +4,11 @@ Send the "set up payouts" reminder to signed contractors.
 
 Pulls approved contractors from the admin API, filters out likely-test
 accounts, and sends the `stripe_payout` campaign template to each one.
+Approved contractors with NO usable email on file (phone-only signups)
+get the reminder by SMS instead, via /api/admin/contractors/payout-reminder-sms.
 
-Dry-run by default — prints the exact recipient list and exits. Nothing is
-created or sent until you re-run with --send.
+Dry-run by default — prints the exact email recipient list AND the SMS
+candidate list, then exits. Nothing is sent until you re-run with --send.
 
 Usage:
     # preview recipients (safe, read-only):
@@ -82,7 +84,7 @@ def main():
         first = name.split()[0].title() if name else None
         recipients.append({"email": email, "first_name": first})
 
-    print(f"\nRecipients ({len(recipients)}):")
+    print(f"\nEmail recipients ({len(recipients)}):")
     for rec in recipients:
         print(f"  {rec['first_name'] or '?':16} {rec['email']}")
     if skipped:
@@ -90,10 +92,38 @@ def main():
         for name, email, cid in skipped:
             print(f"  {name:24} {email:32} {cid}")
 
-    if not recipients:
+    # Phone-only contractors (no usable email) get the reminder by text.
+    s, r = call(base, "/api/admin/contractors/payout-reminder-sms", token=token,
+                body={"send": False})
+    sms_candidates = r.get("candidates", []) if s == 200 else []
+    if s != 200:
+        print(f"\n⚠ SMS candidate check failed (HTTP {s}): {r} — email leg unaffected.")
+    print(f"\nSMS candidates — no email on file ({len(sms_candidates)}):")
+    for cand in sms_candidates:
+        name = cand.get("name") or "?"
+        skip_flag = " ⚠ test?" if TEST_RE.search(name) else ""
+        print(f"  {name:24} {cand.get('phone', '?'):16}{skip_flag}")
+
+    if not recipients and not sms_candidates:
         print("\nNo recipients — nothing to do."); return 1
     if not a.send:
-        print("\nDRY RUN — re-run with --send to create + send the campaign."); return 0
+        print("\nDRY RUN — re-run with --send to send emails + texts."); return 0
+
+    if sms_candidates:
+        targets = [c["contractor_id"] for c in sms_candidates
+                   if not TEST_RE.search(c.get("name") or "")]
+        if targets:
+            s, r = call(base, "/api/admin/contractors/payout-reminder-sms", token=token,
+                        body={"send": True, "contractor_ids": targets})
+            if s == 200:
+                print(f"\nSMS: {r.get('sent')}/{r.get('total')} sent")
+                for res in r.get("results", []):
+                    print(f"  {'✅' if res.get('sent') else '❌'} {res.get('name'):24} {res.get('phone')}")
+            else:
+                print(f"\nSMS send failed (HTTP {s}): {r}")
+
+    if not recipients:
+        print("\nNo email recipients — done (SMS only)."); return 0
 
     s, r = call(base, "/api/campaigns", token=token, body={
         "name": "Payout setup reminder (Stripe Connect)",
