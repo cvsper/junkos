@@ -210,8 +210,15 @@ def va_email_send():
     # Sync send (off the event loop via tpool) so the VA sees real failures,
     # from the recruiting identity — _send_email_sync never raises.
     from notifications import _send_email_sync
+    from_addr = _va_email_from()
     result = _run(lambda: _send_email_sync(to_email, subject, html,
-                                           from_override=_va_email_from()))
+                                           from_override=from_addr))
+    if result is None and from_addr:
+        # The recruiting identity can fail independently of the provider
+        # (e.g. its domain isn't verified) — retry once from the default
+        # sender rather than dead-ending the VA.
+        logger.warning("va_hub email from %s failed; retrying from default sender", from_addr)
+        result = _run(lambda: _send_email_sync(to_email, subject, html))
     if result is None:
         return jsonify({"error": "Email isn't configured yet — ask Shamar."}), 503
 
