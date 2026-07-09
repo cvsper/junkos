@@ -57,6 +57,8 @@ def main():
     ap.add_argument("--password", default=os.environ.get("ADMIN_LOGIN_PASSWORD"))
     ap.add_argument("--token", default=os.environ.get("ADMIN_TOKEN"))
     ap.add_argument("--send", action="store_true", help="actually create + send the campaign")
+    ap.add_argument("--sms-only", action="store_true",
+                    help="skip the email campaign (e.g. it already went out); only text the phone-only contractors")
     ap.add_argument("--include", default="", help="contractor IDs to include despite the test-name filter")
     a = ap.parse_args()
     base = a.base.rstrip("/")
@@ -122,8 +124,8 @@ def main():
             else:
                 print(f"\nSMS send failed (HTTP {s}): {r}")
 
-    if not recipients:
-        print("\nNo email recipients — done (SMS only)."); return 0
+    if a.sms_only or not recipients:
+        print("\nEmail campaign skipped — done (SMS only)."); return 0
 
     s, r = call(base, "/api/campaigns", token=token, body={
         "name": "Payout setup reminder (Stripe Connect)",
