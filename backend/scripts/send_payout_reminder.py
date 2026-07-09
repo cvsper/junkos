@@ -120,7 +120,8 @@ def main():
             if s == 200:
                 print(f"\nSMS: {r.get('sent')}/{r.get('total')} sent")
                 for res in r.get("results", []):
-                    print(f"  {'✅' if res.get('sent') else '❌'} {res.get('name'):24} {res.get('phone')}")
+                    mark = "✅" if res.get("sent") else ("⏭ already reminded" if res.get("skipped") else "❌")
+                    print(f"  {mark} {res.get('name') or '?':24} {res.get('phone')}")
             else:
                 print(f"\nSMS send failed (HTTP {s}): {r}")
 

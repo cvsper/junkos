@@ -166,11 +166,31 @@ def payout_reminder_sms(user_id):
                         "candidates": candidates}), 200
 
     import sms_service
+
+    def already_reminded(formatted_phone):
+        """True if this number already got the payout reminder recently —
+        makes re-runs (e.g. after a mid-batch crash) safe from double-texts."""
+        try:
+            client = sms_service._get_twilio()
+            if not client or not formatted_phone:
+                return False
+            since = datetime.now(timezone.utc) - timedelta(days=3)
+            for m in client.messages.list(to=formatted_phone, date_sent_after=since, limit=20):
+                if "connect your payout account" in (m.body or ""):
+                    return True
+        except Exception:
+            current_app.logger.exception("payout reminder dedupe check failed")
+        return False
+
     results = []
     for cand in candidates:
         # One bad row must never abort the whole run — build + send inside
         # the guard, and report per-contractor.
         try:
+            formatted = sms_service.format_phone(cand["phone"])
+            if already_reminded(formatted):
+                results.append({**cand, "sent": False, "skipped": "already reminded"})
+                continue
             name_parts = (cand["name"] or "").split()
             first = name_parts[0] if name_parts else "there"
             body = (
