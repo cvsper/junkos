@@ -1027,6 +1027,54 @@ def operator_recruitment_4_html(first_name=None, area=None):
     return _operator_wrap(body)
 
 
+def va_operator_intro_html(name=None, company=None, city=None, va_name=None):
+    """VA-sent intro email for recruiting leads that list an email instead of a
+    manager's phone. Numbers match the VA text templates (~72% + 100% of tips),
+    NOT the older recruitment drip — this is the same concierge funnel."""
+    greet = 'Hi {},'.format(_esc(str(name).strip())) if name and str(name).strip() else 'Hi there,'
+    who = _esc(str(company).strip()) if company and str(company).strip() else 'you'
+    area = _esc(str(city).strip()) if city and str(city).strip() else 'South Florida'
+    va = _esc(str(va_name).strip()) if va_name and str(va_name).strip() else 'the Umuve team'
+
+    body = (
+        '<p style="font-size:16px;line-height:1.7;margin:0 0 16px;">{greet}</p>'
+        '<p style="font-size:16px;line-height:1.7;margin:0 0 16px;">'
+        'I\'m {va} with <strong>Umuve</strong> &mdash; I tried reaching {who} by phone and '
+        'figured email might be easier.</p>'
+        '<p style="font-size:16px;line-height:1.7;margin:0 0 20px;">'
+        'We\'re a junk removal marketplace in South Florida. Customers book and pay for '
+        'pickups on our platform, and we send those jobs by text to local hauling '
+        'companies like yours.</p>'
+    ).format(greet=greet, va=va, who=who)
+
+    body += (
+        '<table width="100%" cellpadding="0" cellspacing="0" style="background:#f9fafb;'
+        'border-radius:12px;border:1px solid #e5e7eb;margin:0 0 24px;">'
+        '<tr><td style="padding:24px;">'
+        '<table width="100%" cellpadding="0" cellspacing="0">'
+        '<tr><td style="padding:8px 0;font-size:15px;color:#1a1a1a;">&#10003;&nbsp; Booked, paid jobs sent by text &mdash; take only the ones you want</td></tr>'
+        '<tr><td style="padding:8px 0;font-size:15px;color:#1a1a1a;">&#10003;&nbsp; Keep <strong style="color:#DC2626;">~72%</strong> of the job price plus <strong>100% of tips</strong></td></tr>'
+        '<tr><td style="padding:8px 0;font-size:15px;color:#1a1a1a;">&#10003;&nbsp; Get paid after each job &mdash; <strong>same-day payout</strong> available</td></tr>'
+        '<tr><td style="padding:8px 0;font-size:15px;color:#1a1a1a;">&#10003;&nbsp; No fees, no contracts, no minimums</td></tr>'
+        '</table></td></tr></table>'
+    )
+
+    body += (
+        '<p style="font-size:16px;line-height:1.7;margin:0 0 20px;">'
+        'We\'re live in Palm Beach County now and adding haulers across {area}. '
+        'Setup takes about 2 minutes.</p>'
+        '<p style="text-align:center;margin:0 0 20px;">'
+        '<a href="https://goumuve.com/operators" style="display:inline-block;background:#DC2626;'
+        'color:#ffffff;text-decoration:none;padding:16px 40px;border-radius:8px;font-weight:700;'
+        'font-size:16px;">See How It Works &#8594;</a></p>'
+        '<p style="font-size:16px;line-height:1.7;margin:0 0 16px;">'
+        'Or just reply to this email and I\'ll get you set up.</p>'
+        '<p style="font-size:16px;line-height:1.7;margin:0 0 4px;">&mdash; {va}, Umuve</p>'
+    ).format(area=area, va=va)
+
+    return _operator_wrap(body)
+
+
 def operator_stripe_payout_html(first_name=None):
     """Payout-setup reminder for signed operators. Subject: Set up payouts — get paid the same day you haul."""
     name = _esc(str(first_name)) if first_name else 'there'

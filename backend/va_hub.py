@@ -22,6 +22,7 @@ from __future__ import annotations
 import hmac
 import logging
 import os
+import re
 
 from flask import Blueprint, Response, jsonify, request
 
@@ -154,6 +155,70 @@ def va_send():
         }), 502
 
 
+# ---------------------------------------------------------------------------
+# Intro EMAIL — for leads whose listing shows an email instead of a manager's
+# phone (Tracy's 2026-07-09 suggestion). Sends from the Umuve recruiting
+# address, never the VA's personal email. Same passcode gate, same whitelist
+# principle: the client picks fields, the body is built server-side only.
+# ---------------------------------------------------------------------------
+_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+
+def _va_email_from():
+    return (os.environ.get("VA_EMAIL_FROM")
+            or os.environ.get("OUTREACH_FROM") or "").strip() or None
+
+
+@vahub_bp.route("/va/email", methods=["GET"])
+def va_email_page():
+    return Response(VA_EMAIL_HTML, mimetype="text/html")
+
+
+@vahub_bp.route("/va/email.js", methods=["GET"])
+def va_email_js():
+    return Response(VA_EMAIL_JS, mimetype="application/javascript")
+
+
+@vahub_bp.route("/api/va/email", methods=["POST"])
+@_ratelimit
+def va_email_send():
+    if not os.environ.get("TRIXIE_ASSISTANT_PASSCODE"):
+        return jsonify({"error": "Not set up yet — ask Shamar to add the access code."}), 503
+
+    data = request.get_json(silent=True) or {}
+    if not _passcode_ok(data.get("passcode")):
+        return jsonify({"error": "That access code didn't work — double-check with Shamar."}), 401
+
+    to_email = (data.get("email") or "").strip().lower()
+    if not _EMAIL_RE.match(to_email):
+        return jsonify({"error": "Enter a valid email address."}), 400
+
+    name = (data.get("name") or "").strip()[:80]
+    company = (data.get("company") or "").strip()[:120]
+    city = (data.get("city") or "").strip()[:80]
+    va_name = (data.get("va_name") or "").strip()[:40]
+
+    from email_templates import va_operator_intro_html
+    html = va_operator_intro_html(name=name, company=company, city=city, va_name=va_name)
+    if company:
+        subject = "Paying junk-removal jobs for {}".format(company)
+    elif city:
+        subject = "Paying junk-removal jobs in {}".format(city)
+    else:
+        subject = "Paying junk-removal jobs for your trucks"
+
+    # Sync send (off the event loop via tpool) so the VA sees real failures,
+    # from the recruiting identity — _send_email_sync never raises.
+    from notifications import _send_email_sync
+    result = _run(lambda: _send_email_sync(to_email, subject, html,
+                                           from_override=_va_email_from()))
+    if result is None:
+        return jsonify({"error": "Email isn't configured yet — ask Shamar."}), 503
+
+    logger.info("va_hub intro email sent to %s (company=%s)", to_email, company or "-")
+    return jsonify({"ok": True, "to": to_email, "subject": subject})
+
+
 
 import base64 as _b64
 
@@ -183,7 +248,7 @@ VA_HUB_HTML = r"""<!doctype html>
     <div class="gatewrap">
       <img class="brand-lg rv" src="/va/logo.png" alt="Umuve" /><div class="eyebrow rv">Internal · VA suite</div>
       <h1 class="display" id="display-gate" aria-label="VA Tools">VA&nbsp;TOOLS</h1>
-      <p class="sub rv">Every call ends one of four ways. This sends the right text for each.</p>
+      <p class="sub rv">Every call ends one of five ways. This sends the right message for each.</p>
       <form id="gate-form" autocomplete="off" class="rv">
         <label class="lbl" for="code">Access code</label>
         <input id="code" type="password" autocomplete="off" placeholder="Enter your code" />
@@ -222,6 +287,14 @@ VA_HUB_HTML = r"""<!doctype html>
         <div class="situ-txt">
           <div class="situ-t">They want details</div>
           <div class="situ-d"><b>Info pack</b> — <b>pay split</b>, how jobs work, no commitments.</div>
+        </div>
+        <div class="situ-go">→</div>
+      </a>
+      <a class="situ rv" href="/va/email">
+        <div class="situ-key">@</div>
+        <div class="situ-txt">
+          <div class="situ-t">They only gave an email</div>
+          <div class="situ-d"><b>Intro email</b> from the Umuve address — for listings with <b>no manager phone</b>.</div>
         </div>
         <div class="situ-go">→</div>
       </a>
@@ -626,5 +699,171 @@ VA_JS = r"""(function(){
   }
 
   if(code()){ showTool(); init(); } else { showGate(); }
+})();
+"""
+
+
+VA_EMAIL_HTML = r"""<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="robots" content="noindex, nofollow" />
+<meta name="theme-color" content="#0B0E12" />
+<title>Umuve — Send an Email</title>
+<link rel="stylesheet" href="/va/app.css" />
+</head>
+<body>
+<div id="app">
+  <section id="gate" class="gate">
+    <div class="gatewrap">
+      <img class="brand-lg rv" src="/va/logo.png" alt="Umuve" /><div class="eyebrow rv">Internal · VA suite</div>
+      <h1 class="display" aria-label="Send an email">SEND AN&nbsp;EMAIL</h1>
+      <p class="sub rv">Same login as your other tools.</p>
+      <form id="gate-form" autocomplete="off" class="rv">
+        <label class="lbl" for="code">Access code</label>
+        <input id="code" type="password" autocomplete="off" placeholder="Enter your code" />
+        <button class="btn" type="submit">Start</button>
+        <p id="gate-err" class="err" hidden></p>
+      </form>
+    </div>
+  </section>
+
+  <section id="tool" class="tool" hidden>
+    <header class="bar">
+      <a class="back" href="/va" aria-label="Back to VA tools">←</a>
+      <img class="brand" src="/va/logo.png" alt="Umuve" />
+      <div class="bar-sub">Emails send from the Umuve address</div>
+    </header>
+
+    <div class="body">
+      <h2 class="display display-sm rv">INTRO&nbsp;EMAIL</h2>
+      <p class="sub rv">For leads whose listing only shows an email — no manager phone. Their reply comes back to the Umuve inbox.</p>
+
+      <form id="email-form" autocomplete="off" class="rv">
+        <label class="lbl" for="va">Your first name</label>
+        <input id="va" type="text" placeholder="e.g. Tracy" />
+        <label class="lbl" for="name">Contact first name <span class="opt">(optional)</span></label>
+        <input id="name" type="text" placeholder="e.g. Eric" />
+        <label class="lbl" for="company">Company <span class="opt">(optional)</span></label>
+        <input id="company" type="text" placeholder="e.g. Gator Dumpster" />
+        <label class="lbl" for="city">City / area <span class="opt">(optional)</span></label>
+        <input id="city" type="text" placeholder="e.g. West Palm Beach" />
+        <label class="lbl" for="lead-email">Their email address</label>
+        <input id="lead-email" type="email" inputmode="email" placeholder="name@company.com" />
+        <button id="email-send" class="btn" type="submit">Send the intro email</button>
+        <p id="email-result" class="result" hidden></p>
+      </form>
+
+      <div class="preview rv">
+        <div class="preview-h">Subject line</div>
+        <div class="bubble" id="subj"></div>
+      </div>
+      <div class="preview rv">
+        <div class="preview-h">What they&rsquo;ll receive <span class="opt">(styled with the Umuve logo when it lands)</span></div>
+        <div class="bubble" id="email-bubble"></div>
+      </div>
+
+      <div id="email-sent-wrap" class="sent-wrap" hidden>
+        <div class="sent-h">Sent this session</div>
+        <ul id="email-sent" class="sent"></ul>
+      </div>
+    </div>
+  </section>
+</div>
+<script src="/va/app.js"></script>
+<script src="/va/email.js"></script>
+</body>
+</html>
+"""
+
+
+VA_EMAIL_JS = r"""(function(){
+  var KEY = "umuve_coach_code";   // gate + reveal come from /va/app.js
+  var VA_KEY = "umuve_va_name";
+  var form = document.getElementById("email-form");
+  if(!form) return;
+  function code(){ return localStorage.getItem(KEY) || ""; }
+  function v(id){ return document.getElementById(id).value.trim(); }
+  function greet(n){ return n ? "Hi " + n + "," : "Hi there,"; }
+
+  function subject(){
+    var c = v("company"), ci = v("city");
+    if(c) return "Paying junk-removal jobs for " + c;
+    if(ci) return "Paying junk-removal jobs in " + ci;
+    return "Paying junk-removal jobs for your trucks";
+  }
+  function body(){
+    var va = v("va") || "the Umuve team";
+    var who = v("company") || "you";
+    var area = v("city") || "South Florida";
+    return greet(v("name")) + "\n\n" +
+      "I'm " + va + " with Umuve — I tried reaching " + who + " by phone and figured email might be easier.\n\n" +
+      "We're a junk removal marketplace in South Florida. Customers book and pay for pickups on our platform, and we send those jobs by text to local hauling companies like yours.\n\n" +
+      "✓ Booked, paid jobs sent by text — take only the ones you want\n" +
+      "✓ Keep ~72% of the job price plus 100% of tips\n" +
+      "✓ Get paid after each job — same-day payout available\n" +
+      "✓ No fees, no contracts, no minimums\n\n" +
+      "We're live in Palm Beach County now and adding haulers across " + area + ". Setup takes about 2 minutes.\n\n" +
+      "[ See How It Works → goumuve.com/operators ]\n\n" +
+      "Or just reply to this email and I'll get you set up.\n\n" +
+      "— " + va + ", Umuve";
+  }
+  function refresh(){
+    document.getElementById("subj").textContent = subject();
+    document.getElementById("email-bubble").textContent = body();
+  }
+
+  document.getElementById("va").value = localStorage.getItem(VA_KEY) || "";
+  ["va","name","company","city"].forEach(function(id){
+    document.getElementById(id).addEventListener("input", refresh);
+  });
+  refresh();
+
+  var busy = false;
+  function setResult(kind, text){
+    var r = document.getElementById("email-result");
+    r.textContent = text; r.className = "result show " + kind;
+  }
+  form.addEventListener("submit", function(e){
+    e.preventDefault();
+    if(busy) return;
+    var va = v("va"), email = v("lead-email");
+    if(!va){ setResult("bad", "Add your first name so the lead knows who wrote."); return; }
+    if(!email || email.indexOf("@") < 1){ setResult("bad", "Enter their email address first."); return; }
+    localStorage.setItem(VA_KEY, va);
+    var btn = document.getElementById("email-send");
+    busy = true; btn.disabled = true; btn.textContent = "Sending…";
+    fetch("/api/va/email", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ passcode: code(), va_name: va, name: v("name"),
+                             company: v("company"), city: v("city"), email: email })
+    }).then(function(r){ return r.json().then(function(j){ return {status:r.status, body:j}; }); })
+    .then(function(res){
+      busy = false; btn.disabled = false; btn.textContent = "Send the intro email";
+      if(res.status === 401){
+        localStorage.removeItem(KEY);
+        setResult("bad", "That code didn't work — double-check with Shamar, then reload this page.");
+        return;
+      }
+      if(res.status >= 200 && res.status < 300 && res.body.ok){
+        setResult("ok", "Sent to " + (res.body.to || email) + " ✅");
+        var li = document.createElement("li");
+        li.textContent = (v("company") ? v("company") + " — " : "") + (res.body.to || email);
+        var list = document.getElementById("email-sent");
+        list.insertBefore(li, list.firstChild);
+        document.getElementById("email-sent-wrap").hidden = false;
+        ["name","company","city","lead-email"].forEach(function(id){
+          document.getElementById(id).value = "";
+        });
+        refresh();
+      } else {
+        setResult("bad", res.body.error || "Couldn't send — try again.");
+      }
+    }).catch(function(){
+      busy = false; btn.disabled = false; btn.textContent = "Send the intro email";
+      setResult("bad", "Couldn't reach the server — check your connection and try again.");
+    });
+  });
 })();
 """
