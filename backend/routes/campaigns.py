@@ -28,6 +28,7 @@ from email_templates import (
     operator_recruitment_3_html,
     operator_recruitment_4_html,
     operator_recruitment_5_html,
+    operator_stripe_payout_html,
     winback_html,
 )
 
@@ -60,6 +61,11 @@ TEMPLATES = {
     "recruitment_5": {
         "subject": "Last email — $3K/week opportunity closing",
         "fn": operator_recruitment_5_html,
+        "args": ["first_name"],
+    },
+    "stripe_payout": {
+        "subject": "Set up payouts — get paid the same day you haul",
+        "fn": operator_stripe_payout_html,
         "args": ["first_name"],
     },
     "winback": {

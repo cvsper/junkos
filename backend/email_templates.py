@@ -1027,6 +1027,63 @@ def operator_recruitment_4_html(first_name=None, area=None):
     return _operator_wrap(body)
 
 
+def operator_stripe_payout_html(first_name=None):
+    """Payout-setup reminder for signed operators. Subject: Set up payouts — get paid the same day you haul."""
+    name = _esc(str(first_name)) if first_name else 'there'
+
+    body = (
+        '<p style="font-size:16px;line-height:1.7;margin:0 0 16px;">Hey {name},</p>'
+        '<p style="font-size:16px;line-height:1.7;margin:0 0 16px;">'
+        'Jobs are going live in West Palm Beach, and there\'s one thing left on your account: '
+        '<strong>connecting your payout account</strong>. It takes about 5 minutes, and it\'s '
+        'the difference between finishing a job and actually getting paid for it.</p>'
+    ).format(name=name)
+
+    # Money-flow card — the one thing to remember: job done -> cash in minutes.
+    body += (
+        '<table width="100%" cellpadding="0" cellspacing="0" style="background:#ECFDF5;'
+        'border:1px solid #A7F3D0;border-radius:12px;margin:0 0 24px;">'
+        '<tr><td style="padding:24px;">'
+        '<p style="margin:0 0 4px;font-size:13px;font-weight:700;letter-spacing:1px;'
+        'text-transform:uppercase;color:#059669;">How you get paid on Umuve</p>'
+        '<p style="margin:0 0 16px;font-size:22px;font-weight:700;color:#064E3B;line-height:1.3;">'
+        'Money on your debit card in minutes. 24/7.</p>'
+        '<table width="100%" cellpadding="0" cellspacing="0">'
+        '<tr><td style="padding:6px 0;font-size:15px;color:#064E3B;">'
+        '<strong>1.</strong>&nbsp; Finish the job &mdash; your cut is sent to your balance automatically</td></tr>'
+        '<tr><td style="padding:6px 0;font-size:15px;color:#064E3B;">'
+        '<strong>2.</strong>&nbsp; Tap <strong>Cash Out</strong> in your Earnings tab &mdash; any time, day or night</td></tr>'
+        '<tr><td style="padding:6px 0;font-size:15px;color:#064E3B;">'
+        '<strong>3.</strong>&nbsp; Money lands on your debit card in minutes &mdash; weekends and holidays included</td></tr>'
+        '</table>'
+        '<p style="margin:16px 0 0;font-size:13px;color:#047857;">'
+        'Prefer to wait? Standard payouts to your bank are free and arrive in 1&ndash;2 business days.</p>'
+        '</td></tr></table>'
+    )
+
+    body += (
+        '<p style="font-size:16px;line-height:1.7;margin:0 0 12px;"><strong>Set it up now:</strong></p>'
+        '<p style="font-size:15px;line-height:1.8;margin:0 0 20px;">'
+        '1. Open your driver profile and tap <strong>Connect Stripe</strong><br>'
+        '2. Have your ID, bank details, and <strong>debit card</strong> ready &mdash; '
+        'the debit card is what unlocks instant cash-outs<br>'
+        '3. Finish every screen in one sitting &mdash; the secure link expires if you step away</p>'
+        '<p style="text-align:center;margin:0 0 20px;">'
+        '<a href="https://app.goumuve.com/driver/profile" style="display:inline-block;background:#DC2626;'
+        'color:#ffffff;text-decoration:none;padding:16px 40px;border-radius:8px;font-weight:700;'
+        'font-size:16px;">Set Up Payouts &#8594;</a></p>'
+        '<p style="font-size:14px;line-height:1.7;color:#6b7280;margin:0 0 16px;">'
+        'One heads-up: Stripe verifies every new account, so your <em>first</em> payout can take a '
+        'few days to clear. After that, cash-outs are instant. Set up now so the waiting period is '
+        'behind you before your first job &mdash; not after it.</p>'
+        '<p style="font-size:16px;line-height:1.7;margin:0 0 16px;">'
+        'Questions? Text us at <a href="tel:+15619441636" style="color:#DC2626;text-decoration:none;">'
+        '(561) 944-1636</a> and we\'ll walk you through it.</p>'
+    )
+
+    return _operator_wrap(body)
+
+
 def operator_recruitment_5_html(first_name=None):
     """Email 5 — Last Chance (Day 10). Subject: Last email — $3K/week opportunity closing."""
     name = _esc(str(first_name)) if first_name else 'there'
