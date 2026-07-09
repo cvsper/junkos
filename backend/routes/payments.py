@@ -991,7 +991,9 @@ def create_account_link(user_id):
     if not contractor:
         return jsonify({"error": "Contractor profile not found"}), 404
 
-    base_url = os.environ.get("APP_BASE_URL", "http://localhost:8080")
+    # Livemode Stripe rejects non-HTTPS redirect URLs, so the fallback must be
+    # the real backend origin, not localhost.
+    base_url = os.environ.get("APP_BASE_URL", "https://junkos-backend.onrender.com")
     refresh_url = "{}/api/payments/connect/refresh".format(base_url)
     return_url = "{}/api/payments/connect/return".format(base_url)
 
