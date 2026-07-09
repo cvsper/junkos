@@ -115,7 +115,11 @@ def send_booking_sms(phone_number, booking_id, scheduled_date, address):
 # ---------------------------------------------------------------------------
 # Email — Resend (preferred) or SendGrid (legacy fallback)
 # ---------------------------------------------------------------------------
-RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "")
+# Prefer RESEND_API_KEY_2 (fresh key, verified working 2026-07-09) over the
+# original RESEND_API_KEY, which is suspected stale but deliberately left in
+# place because other services may still reference it.
+RESEND_API_KEY = (os.environ.get("RESEND_API_KEY_2", "")
+                  or os.environ.get("RESEND_API_KEY", ""))
 SENDGRID_API_KEY = os.environ.get("SENDGRID_API_KEY", "")
 EMAIL_FROM = os.environ.get("EMAIL_FROM",
                             os.environ.get("SENDGRID_FROM_EMAIL", "bookings@goumuve.com"))
