@@ -168,20 +168,23 @@ def payout_reminder_sms(user_id):
     import sms_service
     results = []
     for cand in candidates:
-        first = (cand["name"] or "").split()[0] or "there"
-        body = (
-            "Hi {}, it's Umuve — one step left before you can get paid: "
-            "connect your payout account in your driver profile → "
-            "https://app.goumuve.com/driver/profile Takes about 5 min. "
-            "Add a debit card to unlock instant cash-outs, 24/7. Do it now "
-            "so you're payout-ready before your first job."
-        ).format(first)
+        # One bad row must never abort the whole run — build + send inside
+        # the guard, and report per-contractor.
         try:
+            name_parts = (cand["name"] or "").split()
+            first = name_parts[0] if name_parts else "there"
+            body = (
+                "Hi {}, it's Umuve — one step left before you can get paid: "
+                "connect your payout account in your driver profile → "
+                "https://app.goumuve.com/driver/profile Takes about 5 min. "
+                "Add a debit card to unlock instant cash-outs, 24/7. Do it now "
+                "so you're payout-ready before your first job."
+            ).format(first)
             sid = sms_service.send_sms(cand["phone"], body)
             results.append({**cand, "sent": bool(sid)})
         except Exception:
             current_app.logger.exception(
-                "payout reminder SMS failed for %s", cand["contractor_id"])
+                "payout reminder SMS failed for %s", cand.get("contractor_id"))
             results.append({**cand, "sent": False})
 
     sent_n = sum(1 for r in results if r["sent"])
