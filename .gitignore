@@ -57,6 +57,8 @@ customer-portal/
 
 # Internal/sensitive — never publish to this public repo
 JunkOS-Clean/WHAT-SEVS-DOES.md
+landing-page-premium/emails/*.csv
+marketing/outreach/send_log.csv
 marketing/outreach/send-50.csv
 marketing/outreach/send-ready.csv
 marketing/outreach/send_log_phase1.csv
