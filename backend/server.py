@@ -583,6 +583,28 @@ with app.app_context():
         sqlalchemy_db.session.rollback()
         app.logger.warning("admin-bootstrap skipped: %s", exc)
 
+    # ----------------------------------------------------------------------
+    # Launch-promo guard (2026-07-17). PBC25 shipped with min_order_amount=0,
+    # which let the code zero-out small jobs we still pay a hauler to run.
+    # Raise the floor to $75 once; admins can still lower it deliberately via
+    # the promos API — this only corrects the unset (0/None) state.
+    # ----------------------------------------------------------------------
+    try:
+        from sqlalchemy import func as _sa_func
+        from models import PromoCode as _PromoCode
+        _pbc = (
+            sqlalchemy_db.session.query(_PromoCode)
+            .filter(_sa_func.upper(_PromoCode.code) == "PBC25")
+            .first()
+        )
+        if _pbc is not None and not (_pbc.min_order_amount or 0):
+            _pbc.min_order_amount = 75.0
+            sqlalchemy_db.session.commit()
+            app.logger.info("promo-guard: PBC25 min_order_amount set to 75.0")
+    except Exception as exc:
+        sqlalchemy_db.session.rollback()
+        app.logger.warning("promo-guard skipped: %s", exc)
+
     # Seed the Post-Haul Attach Upsell Engine offer catalog (idempotent)
     try:
         from attach_catalog import seed_catalog
@@ -929,17 +951,19 @@ def seed_demo_driver_endpoint(secret):
         can walk accept -> navigate -> complete.
 
     Secured by ADMIN_SEED_SECRET. Re-running is safe (fetches existing rows).
-    Pass ?password=... to set the login password (default below). Returns the
+    Pass ?password=... to set the login password; omitted, a random one is
+    generated (this repo is public — no literal defaults). Returns the
     exact credentials to paste into App Store Connect → App Review Information.
     """
     if not _check_admin_seed_secret(secret):
         return jsonify({"error": "Forbidden"}), 403
 
+    import secrets as _secrets
     from datetime import timedelta as _td
     from flask import request as _req
     from models import db, User, Contractor, Job, generate_uuid, utcnow
 
-    password = _req.args.get("password") or "ReviewDemo2026!"
+    password = _req.args.get("password") or "Rev-{}".format(_secrets.token_urlsafe(12))
     created = {"user": False, "contractor": False, "customer": False, "job": False}
 
     try:

@@ -97,9 +97,9 @@ CATEGORY_PRICES = {
     "basketball_hoop_stand":{"default":  99.00},   # competitor: $145
     "lawn_mower_push":      {"default":  69.00},   # competitor: $120
     "lawn_mower_riding":    {"default": 149.00},   # competitor: $200
-    "hot_tub":              {"default": 349.00},   # competitor: $400+; two-man + disposal
+    "hot_tub":              {"default": 449.00},   # competitor: $400-600; two-man + disposal + cut-up labor
     "pool_table":           {"default": 269.00},   # competitor: $328; slate weight
-    "piano":                {"default": 299.00},   # competitor: $300-$500; two-man minimum
+    "piano":                {"default": 399.00},   # competitor: $350-$550; two-man minimum, weight
     # ── General / Bulk ────────────────────────────────────────────────────
     "bike":                 {"default":  49.00},   # competitor: $120
     "general":              {"default":  25.00},
@@ -187,6 +187,37 @@ VOLUME_DISCOUNT_TIERS = [
     (8,  15, 0.15),
     (16, None, 0.20),
 ]
+
+# ---------------------------------------------------------------------------
+# Bulk-debris guards (2026-07-17). The cheap catch-all categories priced
+# per item collapse at demo scale: 20x construction @ $45 minus the 20%
+# volume discount quoted $778 for a job the commercial market prices at
+# $1,700+ — the hauler can net NEGATIVE after C&D dump fees (billed by the
+# ton). Two rules:
+#   1. Catch-alls never earn the volume discount (they're already floor-priced
+#      and their disposal cost scales with quantity, unlike furniture).
+#   2. `construction` beyond the base quantity bills at a marginal rate tied
+#      to the commercial C&D full-load rate ($1,195 / ~20 item-equivalents ≈
+#      $60) — smooth curve, no price cliff mid-funnel. Demo-scale jobs land
+#      at market instead of at consumer item prices.
+# Commercial per-load rate card (Jul 2026): 1/4 $445 · 1/2 $795 · full $1,195,
+# disposal incl. to 2 tons/load — keep marginal rates consistent with it.
+# ---------------------------------------------------------------------------
+VOLUME_DISCOUNT_EXCLUDED = {"general", "other", "construction", "yard_waste"}
+BULK_MARGINAL_RATES = {
+    # category: (base_quantity_at_list_price, marginal_rate_beyond_base)
+    "construction": (5, 60.00),
+}
+
+# Optional booking add-ons (industry-standard upsells; frontend may omit).
+ADDON_FEES = {
+    "disassembly_items": 25.00,   # per item we take apart (swing set, bed, desk)
+    "stair_flights":     15.00,   # per flight of stairs beyond ground level
+}
+ADDON_LABELS = {
+    "disassembly_items": "Disassembly",
+    "stair_flights":     "Stairs (per flight)",
+}
 
 # ---------------------------------------------------------------------------
 # Time-based surge configuration (additive percentages)
@@ -411,7 +442,7 @@ def _estimate_truck_size(total_quantity):
 # ============================================================================
 # Core pricing function  (shared by estimate + booking endpoints)
 # ============================================================================
-def calculate_estimate(items, scheduled_date=None, lat=None, lng=None):
+def calculate_estimate(items, scheduled_date=None, lat=None, lng=None, addons=None):
     """Compute the full pricing breakdown.
 
     Parameters
@@ -439,9 +470,32 @@ def calculate_estimate(items, scheduled_date=None, lat=None, lng=None):
             continue
 
         unit_price = _get_item_price(category, size)
+        total_quantity += quantity
+
+        bulk_cfg = BULK_MARGINAL_RATES.get(category.lower())
+        if bulk_cfg and quantity > bulk_cfg[0]:
+            base_qty, marginal_rate = bulk_cfg
+            extra_qty = quantity - base_qty
+            base_total = unit_price * base_qty
+            extra_total = marginal_rate * extra_qty
+            item_total += base_total + extra_total
+            item_breakdown.append({
+                "category": category,
+                "quantity": base_qty,
+                "unit_price": round(unit_price, 2),
+                "line_total": round(base_total, 2),
+            })
+            item_breakdown.append({
+                "category": category,
+                "quantity": extra_qty,
+                "unit_price": round(marginal_rate, 2),
+                "line_total": round(extra_total, 2),
+                "size": "bulk",
+            })
+            continue
+
         line_total = unit_price * quantity
         item_total += line_total
-        total_quantity += quantity
 
         line = {
             "category": category,
@@ -473,10 +527,17 @@ def calculate_estimate(items, scheduled_date=None, lat=None, lng=None):
                     "total": round(line_fee, 2),
                 })
 
-    # --- Volume discount ---
-    discount_rate = _volume_discount_rate(total_quantity)
-    volume_discount = round(item_total * discount_rate, 2)
-    volume_discount_label = _volume_discount_label(total_quantity)
+    # --- Volume discount (catch-all categories excluded — see guard above) ---
+    eligible_quantity = 0
+    eligible_total = 0.0
+    for line in item_breakdown:
+        if (line["category"] or "").lower() in VOLUME_DISCOUNT_EXCLUDED:
+            continue
+        eligible_quantity += line["quantity"]
+        eligible_total += line["line_total"]
+    discount_rate = _volume_discount_rate(eligible_quantity)
+    volume_discount = round(eligible_total * discount_rate, 2)
+    volume_discount_label = _volume_discount_label(eligible_quantity)
 
     items_subtotal = round(item_total - volume_discount, 2)
 
@@ -503,9 +564,30 @@ def calculate_estimate(items, scheduled_date=None, lat=None, lng=None):
     labor_hours = 0
     labor_fee = 0.0
 
+    # --- Optional add-ons (flat fees; not surged, not discounted) ---
+    addons = addons or {}
+    addons_total = 0.0
+    addons_breakdown = []
+    for addon_key, addon_fee in ADDON_FEES.items():
+        try:
+            addon_qty = int(addons.get(addon_key) or 0)
+        except (TypeError, ValueError):
+            addon_qty = 0
+        if addon_qty > 0:
+            addon_line = round(addon_fee * addon_qty, 2)
+            addons_total += addon_line
+            addons_breakdown.append({
+                "addon": addon_key,
+                "label": ADDON_LABELS[addon_key],
+                "quantity": addon_qty,
+                "unit_fee": addon_fee,
+                "total": addon_line,
+            })
+    addons_total = round(addons_total, 2)
+
     # --- Total (with minimum floor, admin-overridable) ---
     min_price = _get_minimum_job_price()
-    raw_total = round(surged_subtotal + service_fee + recycling_total + labor_fee, 2)
+    raw_total = round(surged_subtotal + service_fee + recycling_total + labor_fee + addons_total, 2)
     total = max(raw_total, min_price)
     minimum_applied = total > raw_total
 
@@ -528,6 +610,8 @@ def calculate_estimate(items, scheduled_date=None, lat=None, lng=None):
         "recycling_breakdown": recycling_breakdown,
         "labor_fee": labor_fee,
         "labor_fee_rate": LABOR_FEE_PER_HOUR,
+        "addons_total": addons_total,
+        "addons": addons_breakdown,
         "total": total,
         "minimum_applied": minimum_applied,
         "minimum_job_price": min_price,
@@ -574,8 +658,9 @@ def estimate():
     lng = address.get("lng")
 
     scheduled_date = data.get("scheduledDate") or data.get("scheduled_date")
+    addons = data.get("addons") if isinstance(data.get("addons"), dict) else None
 
-    result = calculate_estimate(items, scheduled_date=scheduled_date, lat=lat, lng=lng)
+    result = calculate_estimate(items, scheduled_date=scheduled_date, lat=lat, lng=lng, addons=addons)
 
     if result["total_quantity"] == 0:
         return jsonify({"error": "At least one item with a valid category is required"}), 400
