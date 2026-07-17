@@ -326,6 +326,15 @@ except Exception as _t_exc:
     import logging as _logging
     _logging.getLogger(__name__).warning("optext_bp not registered: %s", _t_exc)
 
+# B2B agreements — in-app e-signature: passcode-gated /agreements console +
+# public tokenized /sign/<token> pages (routes/agreements.py)
+try:
+    from routes.agreements import agreements_bp
+    app.register_blueprint(agreements_bp)
+except Exception as _ag_exc:
+    import logging as _logging
+    _logging.getLogger(__name__).warning("agreements_bp not registered: %s", _ag_exc)
+
 # Concierge (shadow-operator) mode — phone-only haulers via SMS offers +
 # token-gated /w/ job console + manual-payout ledger (routes/concierge.py)
 try:

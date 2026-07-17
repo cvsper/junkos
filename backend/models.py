@@ -3658,3 +3658,50 @@ class Partner(db.Model):
             "referral_code": self.referral_code,
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }
+
+
+class Agreement(db.Model):
+    """B2B service agreement with in-app e-signature.
+
+    Follows the ESIGN/UETA click-to-sign pattern: explicit consent language,
+    signer identity + audit trail (IP, user agent, timestamp), and an
+    immutable executed snapshot (HTML + SHA-256) retained for both parties.
+    """
+
+    __tablename__ = "agreements"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    token = Column(String(64), unique=True, nullable=False, index=True)
+    client_company = Column(String(200), nullable=False)
+    client_name = Column(String(120), nullable=False)
+    client_email = Column(String(255), nullable=False)
+    client_phone = Column(String(40), nullable=True)
+    template = Column(String(40), nullable=False, default="commercial_v1")
+    status = Column(String(20), nullable=False, default="sent")  # sent|viewed|signed|void
+    created_at = Column(DateTime, default=utcnow)
+    viewed_at = Column(DateTime, nullable=True)
+    signed_at = Column(DateTime, nullable=True)
+    signer_name = Column(String(120), nullable=True)
+    signer_title = Column(String(120), nullable=True)
+    signer_ip = Column(String(64), nullable=True)
+    signer_user_agent = Column(String(255), nullable=True)
+    signature_image = Column(Text, nullable=True)   # drawn signature (PNG data-URL)
+    document_sha256 = Column(String(64), nullable=True)
+    executed_html = Column(Text, nullable=True)     # immutable signed snapshot
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "token": self.token,
+            "client_company": self.client_company,
+            "client_name": self.client_name,
+            "client_email": self.client_email,
+            "client_phone": self.client_phone,
+            "template": self.template,
+            "status": self.status,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "viewed_at": self.viewed_at.isoformat() if self.viewed_at else None,
+            "signed_at": self.signed_at.isoformat() if self.signed_at else None,
+            "signer_name": self.signer_name,
+            "signer_title": self.signer_title,
+        }
