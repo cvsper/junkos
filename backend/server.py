@@ -518,9 +518,12 @@ def set_security_headers(response):
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
     if (request.path.startswith("/coach") or request.path.startswith("/optext")
-            or request.path == "/va" or request.path.startswith("/va/")):
-        # Internal VA tools (call coach + send-setup-link + VA hub): load their
-        # own same-origin CSS/JS and call same-origin APIs. Everything else locked.
+            or request.path == "/va" or request.path.startswith("/va/")
+            or request.path == "/agreements" or request.path.startswith("/agreements/")
+            or request.path.startswith("/sign/")):
+        # Internal VA tools (call coach + send-setup-link + VA hub) and the
+        # agreements e-sign pages: load their own same-origin CSS/JS and call
+        # same-origin APIs. Everything else locked.
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; img-src 'self' data:; style-src 'self'; "
             "script-src 'self'; connect-src 'self'; base-uri 'none'; "
