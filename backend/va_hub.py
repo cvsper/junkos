@@ -155,6 +155,52 @@ def va_send():
         }), 502
 
 
+# Twilio marks a message "sent" the moment the carrier accepts it; landlines
+# and filtered numbers fail AFTER that, silently. This lets the VA tool poll
+# the real outcome so "sent" never masks an undeliverable number again.
+_SID_RE = re.compile(r"^(SM|MM)[0-9a-f]{32}$")
+
+_DELIVERY_ERRORS = {
+    30003: "Their phone is off or out of coverage — try again later.",
+    30004: "Their carrier blocked the message (they may have opted out).",
+    30005: "That number doesn't exist or is disconnected.",
+    30006: "That's a landline — it can't receive texts. Use the email sender instead.",
+    30007: "Their carrier filtered the message as spam.",
+    21614: "That's not a textable mobile number. Use the email sender instead.",
+}
+
+
+@vahub_bp.route("/api/va/status", methods=["POST"])
+@_ratelimit
+def va_status():
+    data = request.get_json(silent=True) or {}
+    if not _passcode_ok(data.get("passcode")):
+        return jsonify({"error": "That access code didn't work."}), 401
+
+    sid = (data.get("sid") or "").strip()
+    if not _SID_RE.match(sid):
+        return jsonify({"error": "Bad message id."}), 400
+
+    import sms_service
+    client = sms_service._get_twilio()
+    if client is None:
+        return jsonify({"error": "Texting isn't configured."}), 503
+
+    try:
+        msg = _run(lambda: client.messages(sid).fetch())
+    except Exception:
+        logger.exception("va_hub status fetch failed")
+        return jsonify({"error": "Couldn't check status — try again."}), 502
+
+    status = (getattr(msg, "status", None) or "").lower()
+    error_code = getattr(msg, "error_code", None)
+    out = {"ok": True, "status": status, "error_code": error_code}
+    if status in ("failed", "undelivered"):
+        out["reason"] = _DELIVERY_ERRORS.get(
+            error_code, "The message couldn't be delivered to that number.")
+    return jsonify(out)
+
+
 # ---------------------------------------------------------------------------
 # Intro EMAIL — for leads whose listing shows an email instead of a manager's
 # phone (Tracy's 2026-07-09 suggestion). Sends from the Umuve recruiting
@@ -669,6 +715,33 @@ VA_JS = r"""(function(){
     var r = document.getElementById("result");
     r.textContent = text; r.className = "result show " + kind;
   }
+
+  // Poll the real delivery outcome — "sent" only means our provider accepted
+  // it; landlines and filtered numbers fail a few seconds later.
+  var DELIVERY_POLLS = [4000, 9000, 18000];
+  function watchDelivery(sid, to, attempt){
+    if(!sid) return;
+    attempt = attempt || 0;
+    if(attempt >= DELIVERY_POLLS.length){
+      setResult("ok", "Sent to " + to + " ✅ (delivery not confirmed yet — if they say nothing arrived, the number may not take texts; try the email sender)");
+      return;
+    }
+    setTimeout(function(){
+      fetch("/api/va/status", {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({ passcode: code(), sid: sid })
+      }).then(function(r){ return r.json(); })
+      .then(function(j){
+        if(j && j.status === "delivered"){
+          setResult("ok", "Delivered to " + to + " ✅✅ — it's on their phone.");
+        } else if(j && (j.status === "failed" || j.status === "undelivered")){
+          setResult("bad", "NOT delivered to " + to + " — " + (j.reason || "the number rejected it."));
+        } else {
+          watchDelivery(sid, to, attempt + 1);
+        }
+      }).catch(function(){ watchDelivery(sid, to, attempt + 1); });
+    }, DELIVERY_POLLS[attempt]);
+  }
   function send(){
     if(busy) return;
     var phone = document.getElementById("phone").value.trim();
@@ -687,7 +760,8 @@ VA_JS = r"""(function(){
       busy = false; btn.disabled = false; btn.textContent = TEMPLATES[current].btn;
       if(res.status === 401){ showGate("That code didn't work — double-check with Shamar."); return; }
       if(res.status >= 200 && res.status < 300 && res.body.ok){
-        setResult("ok", "Sent to " + (res.body.to || phone) + " ✅");
+        setResult("ok", "Sent to " + (res.body.to || phone) + " ✅ — checking delivery…");
+        watchDelivery(res.body.sid, res.body.to || phone, 0);
         var li = document.createElement("li");
         li.textContent = TEMPLATES[current].title + " — " + (name ? name + " — " : "") + (res.body.to || phone);
         var list = document.getElementById("sent");
