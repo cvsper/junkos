@@ -1075,6 +1075,53 @@ def va_operator_intro_html(name=None, company=None, city=None, va_name=None):
     return _operator_wrap(body)
 
 
+def va_operator_setup_html(name=None, company=None, va_name=None):
+    """VA-sent SETUP LINK email — for a signed-up YES whose phone can't receive
+    texts (landline/filtered). Mirrors the optext SMS steps exactly
+    (op_text_tool._build_message): apply link, Umuve Pro app, Stripe + Go Online."""
+    greet = 'Hi {},'.format(_esc(str(name).strip())) if name and str(name).strip() else 'Hi there,'
+    who = _esc(str(company).strip()) if company and str(company).strip() else 'your company'
+    va = _esc(str(va_name).strip()) if va_name and str(va_name).strip() else 'the Umuve team'
+
+    body = (
+        '<p style="font-size:16px;line-height:1.7;margin:0 0 16px;">{greet}</p>'
+        '<p style="font-size:16px;line-height:1.7;margin:0 0 20px;">'
+        'It\'s {va} with <strong>Umuve</strong> (you-move) &mdash; thanks for signing up {who}! '
+        'Here\'s everything to get set up and start getting paid junk-removal jobs. '
+        'It takes about 2 minutes:</p>'
+    ).format(greet=greet, va=va, who=who)
+
+    body += (
+        '<table width="100%" cellpadding="0" cellspacing="0" style="background:#f9fafb;'
+        'border-radius:12px;border:1px solid #e5e7eb;margin:0 0 24px;">'
+        '<tr><td style="padding:24px;">'
+        '<table width="100%" cellpadding="0" cellspacing="0">'
+        '<tr><td style="padding:8px 0;font-size:15px;color:#1a1a1a;">'
+        '<strong>1)</strong>&nbsp; Apply: <a href="https://goumuve.com/operators" '
+        'style="color:#DC2626;font-weight:700;">goumuve.com/operators</a></td></tr>'
+        '<tr><td style="padding:8px 0;font-size:15px;color:#1a1a1a;">'
+        '<strong>2)</strong>&nbsp; Download the Umuve Pro app: '
+        '<a href="https://apps.apple.com/app/id6759131650" style="color:#DC2626;font-weight:700;">'
+        'App Store &#8594;</a></td></tr>'
+        '<tr><td style="padding:8px 0;font-size:15px;color:#1a1a1a;">'
+        '<strong>3)</strong>&nbsp; In the app: connect Stripe (that\'s how you get paid), '
+        'then tap <strong>Go Online</strong>.</td></tr>'
+        '</table></td></tr></table>'
+    )
+
+    body += (
+        '<p style="text-align:center;margin:0 0 20px;">'
+        '<a href="https://goumuve.com/operators" style="display:inline-block;background:#DC2626;'
+        'color:#ffffff;text-decoration:none;padding:16px 40px;border-radius:8px;font-weight:700;'
+        'font-size:16px;">Start Your Application &#8594;</a></p>'
+        '<p style="font-size:16px;line-height:1.7;margin:0 0 16px;">'
+        'Shamar will help you finish &mdash; just reply to this email with any questions.</p>'
+        '<p style="font-size:16px;line-height:1.7;margin:0 0 4px;">&mdash; {va}, Umuve</p>'
+    ).format(va=va)
+
+    return _operator_wrap(body)
+
+
 def operator_stripe_payout_html(first_name=None):
     """Payout-setup reminder for signed operators. Subject: Set up payouts — get paid the same day you haul."""
     name = _esc(str(first_name)) if first_name else 'there'

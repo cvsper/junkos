@@ -243,15 +243,28 @@ def va_email_send():
     company = (data.get("company") or "").strip()[:120]
     city = (data.get("city") or "").strip()[:80]
     va_name = (data.get("va_name") or "").strip()[:40]
+    template = (data.get("template") or "intro").strip()
 
-    from email_templates import va_operator_intro_html
-    html = va_operator_intro_html(name=name, company=company, city=city, va_name=va_name)
-    if company:
-        subject = "Paying junk-removal jobs for {}".format(company)
-    elif city:
-        subject = "Paying junk-removal jobs in {}".format(city)
+    # Server-side whitelist, same principle as the text tool: the client only
+    # picks which template, never the body.
+    if template == "setup":
+        from email_templates import va_operator_setup_html
+        html = va_operator_setup_html(name=name, company=company, va_name=va_name)
+        if company:
+            subject = "Your Umuve setup link — {}".format(company)
+        else:
+            subject = "Your Umuve setup link"
+    elif template == "intro":
+        from email_templates import va_operator_intro_html
+        html = va_operator_intro_html(name=name, company=company, city=city, va_name=va_name)
+        if company:
+            subject = "Paying junk-removal jobs for {}".format(company)
+        elif city:
+            subject = "Paying junk-removal jobs in {}".format(city)
+        else:
+            subject = "Paying junk-removal jobs for your trucks"
     else:
-        subject = "Paying junk-removal jobs for your trucks"
+        return jsonify({"error": "Pick which email to send first."}), 400
 
     # Sync send (off the event loop via tpool) so the VA sees real failures,
     # from the recruiting identity — _send_email_sync never raises.
@@ -268,8 +281,8 @@ def va_email_send():
     if result is None:
         return jsonify({"error": "Email isn't configured yet — ask Shamar."}), 503
 
-    logger.info("va_hub intro email sent to %s (company=%s)", to_email, company or "-")
-    return jsonify({"ok": True, "to": to_email, "subject": subject})
+    logger.info("va_hub %s email sent to %s (company=%s)", template, to_email, company or "-")
+    return jsonify({"ok": True, "to": to_email, "subject": subject, "template": template})
 
 
 
@@ -818,8 +831,13 @@ VA_EMAIL_HTML = r"""<!doctype html>
     </header>
 
     <div class="body">
-      <h2 class="display display-sm rv">INTRO&nbsp;EMAIL</h2>
-      <p class="sub rv">For leads whose listing only shows an email — no manager phone. Their reply comes back to the Umuve inbox.</p>
+      <div class="seg rv" role="tablist" aria-label="Which email">
+        <button class="seg-btn" id="etab-intro" role="tab" data-t="intro">Intro email</button>
+        <button class="seg-btn" id="etab-setup" role="tab" data-t="setup">Setup link</button>
+      </div>
+
+      <h2 class="display display-sm rv" id="email-title">INTRO&nbsp;EMAIL</h2>
+      <p class="sub rv" id="email-sub">For leads whose listing only shows an email — no manager phone. Their reply comes back to the Umuve inbox.</p>
 
       <form id="email-form" autocomplete="off" class="rv">
         <label class="lbl" for="va">Your first name</label>
@@ -868,8 +886,26 @@ VA_EMAIL_JS = r"""(function(){
   function v(id){ return document.getElementById(id).value.trim(); }
   function greet(n){ return n ? "Hi " + n + "," : "Hi there,"; }
 
+  var current = "intro";   // which template — mirrors the text tool's tabs
+
+  var COPY = {
+    intro: {
+      title: "INTRO EMAIL",
+      sub: "For leads whose listing only shows an email — no manager phone. Their reply comes back to the Umuve inbox.",
+      btn: "Send the intro email"
+    },
+    setup: {
+      title: "SETUP LINK",
+      sub: "For a signed-up YES whose phone can't receive texts (landline). Same steps as the setup text, by email.",
+      btn: "Send the setup link"
+    }
+  };
+
   function subject(){
     var c = v("company"), ci = v("city");
+    if(current === "setup"){
+      return c ? "Your Umuve setup link — " + c : "Your Umuve setup link";
+    }
     if(c) return "Paying junk-removal jobs for " + c;
     if(ci) return "Paying junk-removal jobs in " + ci;
     return "Paying junk-removal jobs for your trucks";
@@ -878,6 +914,17 @@ VA_EMAIL_JS = r"""(function(){
     var va = v("va") || "the Umuve team";
     var who = v("company") || "you";
     var area = v("city") || "South Florida";
+    if(current === "setup"){
+      var forWho = v("company") ? " " + v("company") : "";
+      return greet(v("name")) + "\n\n" +
+        "It's " + va + " with Umuve (you-move) — thanks for signing up" + forWho + "! Here's everything to get set up and start getting paid junk-removal jobs. It takes about 2 minutes:\n\n" +
+        "1) Apply: goumuve.com/operators\n" +
+        "2) Download the Umuve Pro app (App Store)\n" +
+        "3) In the app: connect Stripe (that's how you get paid), then tap Go Online.\n\n" +
+        "[ Start Your Application → goumuve.com/operators ]\n\n" +
+        "Shamar will help you finish — just reply to this email with any questions.\n\n" +
+        "— " + va + ", Umuve";
+    }
     return greet(v("name")) + "\n\n" +
       "I'm " + va + " with Umuve — I tried reaching " + who + " by phone and figured email might be easier.\n\n" +
       "We're a junk removal marketplace in South Florida. Customers book and pay for pickups on our platform, and we send those jobs by text to local hauling companies like yours.\n\n" +
@@ -894,12 +941,28 @@ VA_EMAIL_JS = r"""(function(){
     document.getElementById("subj").textContent = subject();
     document.getElementById("email-bubble").textContent = body();
   }
+  function pick(t){
+    current = t;
+    document.getElementById("email-title").textContent = COPY[t].title;
+    document.getElementById("email-sub").textContent = COPY[t].sub;
+    document.getElementById("email-send").textContent = COPY[t].btn;
+    ["intro","setup"].forEach(function(k){
+      var b = document.getElementById("etab-" + k);
+      if(b){ b.classList.toggle("active", k === t); b.setAttribute("aria-selected", k === t ? "true" : "false"); }
+    });
+    refresh();
+  }
 
   document.getElementById("va").value = localStorage.getItem(VA_KEY) || "";
   ["va","name","company","city"].forEach(function(id){
     document.getElementById(id).addEventListener("input", refresh);
   });
-  refresh();
+  ["intro","setup"].forEach(function(k){
+    var b = document.getElementById("etab-" + k);
+    if(b){ b.addEventListener("click", function(e){ e.preventDefault(); pick(k); }); }
+  });
+  var params = new URLSearchParams(location.search);
+  pick(COPY[params.get("t")] ? params.get("t") : "intro");
 
   var busy = false;
   function setResult(kind, text){
@@ -918,10 +981,11 @@ VA_EMAIL_JS = r"""(function(){
     fetch("/api/va/email", {
       method:"POST", headers:{"Content-Type":"application/json"},
       body: JSON.stringify({ passcode: code(), va_name: va, name: v("name"),
-                             company: v("company"), city: v("city"), email: email })
+                             company: v("company"), city: v("city"), email: email,
+                             template: current })
     }).then(function(r){ return r.json().then(function(j){ return {status:r.status, body:j}; }); })
     .then(function(res){
-      busy = false; btn.disabled = false; btn.textContent = "Send the intro email";
+      busy = false; btn.disabled = false; btn.textContent = COPY[current].btn;
       if(res.status === 401){
         localStorage.removeItem(KEY);
         setResult("bad", "That code didn't work — double-check with Shamar, then reload this page.");
@@ -942,7 +1006,7 @@ VA_EMAIL_JS = r"""(function(){
         setResult("bad", res.body.error || "Couldn't send — try again.");
       }
     }).catch(function(){
-      busy = false; btn.disabled = false; btn.textContent = "Send the intro email";
+      busy = false; btn.disabled = false; btn.textContent = COPY[current].btn;
       setResult("bad", "Couldn't reach the server — check your connection and try again.");
     });
   });
