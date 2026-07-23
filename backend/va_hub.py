@@ -107,12 +107,20 @@ def va_text_page():
 
 @vahub_bp.route("/va/app.css", methods=["GET"])
 def va_css():
-    return Response(VA_CSS, mimetype="text/css")
+    return _no_cache(Response(VA_CSS, mimetype="text/css"))
+
+
+def _no_cache(resp):
+    # Render's CDN cached a stale email.js after the setup-tab deploy — the
+    # VA got new HTML with old JS (dead tabs). These assets are tiny; never
+    # let any cache hold them.
+    resp.headers["Cache-Control"] = "no-cache, must-revalidate"
+    return resp
 
 
 @vahub_bp.route("/va/app.js", methods=["GET"])
 def va_js():
-    return Response(VA_JS, mimetype="application/javascript")
+    return _no_cache(Response(VA_JS, mimetype="application/javascript"))
 
 
 @vahub_bp.route("/api/va/send", methods=["POST"])
@@ -222,7 +230,7 @@ def va_email_page():
 
 @vahub_bp.route("/va/email.js", methods=["GET"])
 def va_email_js():
-    return Response(VA_EMAIL_JS, mimetype="application/javascript")
+    return _no_cache(Response(VA_EMAIL_JS, mimetype="application/javascript"))
 
 
 @vahub_bp.route("/api/va/email", methods=["POST"])
@@ -306,7 +314,7 @@ VA_HUB_HTML = r"""<!doctype html>
 <meta name="robots" content="noindex, nofollow" />
 <meta name="theme-color" content="#0B0E12" />
 <title>Umuve — VA Tools</title>
-<link rel="stylesheet" href="/va/app.css" />
+<link rel="stylesheet" href="/va/app.css?v=3" />
 </head>
 <body>
 <div id="app">
@@ -375,7 +383,7 @@ VA_HUB_HTML = r"""<!doctype html>
     </div>
   </section>
 </div>
-<script src="/va/app.js"></script>
+<script src="/va/app.js?v=3"></script>
 </body>
 </html>
 """
@@ -389,7 +397,7 @@ VA_TEXT_HTML = r"""<!doctype html>
 <meta name="robots" content="noindex, nofollow" />
 <meta name="theme-color" content="#0B0E12" />
 <title>Umuve — Send a Text</title>
-<link rel="stylesheet" href="/va/app.css" />
+<link rel="stylesheet" href="/va/app.css?v=3" />
 </head>
 <body>
 <div id="app">
@@ -445,7 +453,7 @@ VA_TEXT_HTML = r"""<!doctype html>
     </div>
   </section>
 </div>
-<script src="/va/app.js"></script>
+<script src="/va/app.js?v=3"></script>
 </body>
 </html>
 """
@@ -805,7 +813,7 @@ VA_EMAIL_HTML = r"""<!doctype html>
 <meta name="robots" content="noindex, nofollow" />
 <meta name="theme-color" content="#0B0E12" />
 <title>Umuve — Send an Email</title>
-<link rel="stylesheet" href="/va/app.css" />
+<link rel="stylesheet" href="/va/app.css?v=3" />
 </head>
 <body>
 <div id="app">
@@ -870,8 +878,8 @@ VA_EMAIL_HTML = r"""<!doctype html>
     </div>
   </section>
 </div>
-<script src="/va/app.js"></script>
-<script src="/va/email.js"></script>
+<script src="/va/app.js?v=3"></script>
+<script src="/va/email.js?v=3"></script>
 </body>
 </html>
 """
