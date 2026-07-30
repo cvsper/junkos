@@ -236,6 +236,16 @@ def _handle_create_booking(args, vapi_data):
         except Exception:
             pass
 
+        # The assistant sometimes hallucinates the year and produces a past
+        # date (e.g. 2025-07-15 on a 2026 call). A past scheduled_at silently
+        # breaks dispatch, so store TBD instead and flag for follow-up.
+        if scheduled_at and scheduled_at < datetime.now(timezone.utc):
+            logger.warning(
+                "Rejecting past scheduled_at %s from assistant (date=%s time=%s)",
+                scheduled_at, scheduled_date, scheduled_time,
+            )
+            scheduled_at = None
+
     # Find or create user
     existing = User.query.filter_by(email=email).first()
     if existing:

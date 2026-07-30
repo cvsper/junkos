@@ -2701,6 +2701,58 @@ def assign_job(user_id, job_id):
     return jsonify({"success": True, "job": job.to_dict()}), 200
 
 
+@admin_bp.route("/jobs/<job_id>/reschedule", methods=["PUT"])
+@require_admin
+def admin_reschedule_job(user_id, job_id):
+    """Admin override to fix a job's scheduled_at (e.g. a bad date saved by
+    the phone-booking flow). Accepts scheduled_date (YYYY-MM-DD) and
+    scheduled_time (HH:MM), combined into a UTC scheduled_at."""
+    job = db.session.get(Job, job_id)
+    if not job:
+        return jsonify({"error": "Job not found"}), 404
+
+    if job.status not in ("pending", "confirmed", "assigned", "delegating"):
+        return jsonify({"error": "Job cannot be rescheduled in its current status"}), 409
+
+    data = request.get_json(silent=True) or {}
+    scheduled_date = data.get("scheduled_date")
+    scheduled_time = data.get("scheduled_time")
+    if not scheduled_date or not scheduled_time:
+        return jsonify({"error": "scheduled_date and scheduled_time are required"}), 400
+
+    try:
+        new_scheduled_at = datetime.strptime(
+            "{} {}".format(scheduled_date, scheduled_time), "%Y-%m-%d %H:%M"
+        ).replace(tzinfo=timezone.utc)
+    except ValueError:
+        return jsonify({"error": "Invalid date/time format. Use YYYY-MM-DD and HH:MM"}), 400
+
+    if new_scheduled_at < datetime.now(timezone.utc):
+        return jsonify({"error": "Cannot schedule a job in the past"}), 400
+
+    job.scheduled_at = new_scheduled_at
+    job.updated_at = utcnow()
+
+    if job.driver_id:
+        driver = db.session.get(Contractor, job.driver_id)
+        if driver:
+            from notifications import send_push_notification
+            send_push_notification(
+                driver.user_id,
+                "Job Rescheduled",
+                "Job #{} has been rescheduled to {} at {}.".format(
+                    str(job.id)[:8], scheduled_date, scheduled_time
+                ),
+            )
+
+    db.session.commit()
+
+    from socket_events import broadcast_job_status
+    broadcast_job_status(job.id, job.status, {"scheduled_at": new_scheduled_at.isoformat()})
+
+    return jsonify({"success": True, "job": job.to_dict()}), 200
+
+
 @admin_bp.route("/jobs/<job_id>/cancel", methods=["PUT"])
 @require_admin
 def admin_cancel_job(user_id, job_id):
