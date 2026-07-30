@@ -217,12 +217,21 @@ def _send_abandoned_booking_drip(app):
         now = datetime.now(timezone.utc)
         base_url = os.environ.get("FRONTEND_URL", "https://goumuve.com")
 
+        # Phone bookings are confirmed orders awaiting fulfillment, not
+        # abandoned checkouts — "You left something behind" reads as a
+        # cancellation to a customer who already got a confirmation email.
+        from sqlalchemy import or_
+        not_phone_booking = or_(
+            Job.notes.is_(None), ~Job.notes.ilike("%AI receptionist%")
+        )
+
         # Stage 1: 2+ hours old, drip_stage=0 → send reminder
         stage1_cutoff = now - timedelta(hours=2)
         stage1_jobs = Job.query.filter(
             Job.status == "pending",
             Job.drip_stage == 0,
             Job.created_at <= stage1_cutoff,
+            not_phone_booking,
         ).all()
 
         for job in stage1_jobs:
@@ -242,6 +251,7 @@ def _send_abandoned_booking_drip(app):
             Job.status == "pending",
             Job.drip_stage == 1,
             Job.created_at <= stage2_cutoff,
+            not_phone_booking,
         ).all()
 
         for job in stage2_jobs:
@@ -263,6 +273,7 @@ def _send_abandoned_booking_drip(app):
             Job.status == "pending",
             Job.drip_stage == 2,
             Job.created_at <= stage3_cutoff,
+            not_phone_booking,
         ).all()
 
         for job in stage3_jobs:

@@ -2092,9 +2092,9 @@ def command_center(user_id):
 
     # --- Launch verdict (WPB) ---
     dm = (_os.environ.get("DISPATCH_MODE") or dispatcher.DISPATCH_MODE or "").strip().lower()
-    if dm == "assign" and online_in_range >= 1:
+    if dm in ("assign", "broadcast") and online_in_range >= 1:
         verdict = "GO"
-    elif dm == "assign":
+    elif dm in ("assign", "broadcast"):
         verdict = "ALMOST"
     else:
         verdict = "NO-GO"
@@ -2170,8 +2170,8 @@ def launch_readiness(user_id):
 
     # --- Dispatch mode (the silent breaker) ---
     dm = (_os.environ.get("DISPATCH_MODE") or dispatcher.DISPATCH_MODE or "").strip().lower()
-    add("dispatch_mode", "pass" if dm == "assign" else "fail",
-        "DISPATCH_MODE={} (need 'assign' so the native app can claim jobs)".format(dm or "unset"))
+    add("dispatch_mode", "pass" if dm in ("assign", "broadcast") else "fail",
+        "DISPATCH_MODE={} ('assign' auto-assigns; 'broadcast' offers to all haulers, first accept wins)".format(dm or "unset"))
 
     # --- Scheduler (drips, reminders, payouts, no-show) ---
     sched = (_os.environ.get("ENABLE_SCHEDULER") or "").lower() == "true"
