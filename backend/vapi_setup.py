@@ -504,18 +504,26 @@ assistant_config = {
         "chunkPlan": {
             "enabled": True,
             "formatPlan": {
-                # NOTE: these are compiled as JavaScript regexes. Inline flags
-                # like (?i) are Python/PCRE syntax and are rejected — spell the
-                # case-insensitivity out with character classes instead.
+                # NOTE: Vapi compiles these with RE2, which supports NO
+                # lookahead or lookbehind and no inline (?i) flag. Case
+                # insensitivity has to be spelled out with character classes,
+                # and "don't match inside the domain" has to be done by
+                # ordering: the longest forms are consumed first, so by the
+                # time the bare brand rule runs there is no "goumuve" left.
+                # Each rule emits its final spoken form, so the result is
+                # correct whether Vapi applies these in sequence or at once.
                 "replacements": [
                     {"type": "regex",
                      "regex": r"[Aa][Pp][Pp]\.[Gg][Oo][Uu][Mm][Uu][Vv][Ee]\.[Cc][Oo][Mm]",
-                     "value": "the Umuve app"},
+                     "value": "the you move app"},
                     {"type": "regex",
                      "regex": r"[Gg][Oo][Uu][Mm][Uu][Vv][Ee]\.[Cc][Oo][Mm]",
-                     "value": "the Umuve website"},
+                     "value": "the you move website"},
                     {"type": "regex",
-                     "regex": r"(?<![Gg][Oo])[Uu][Mm][Uu][Vv][Ee]",
+                     "regex": r"[Gg][Oo][Uu][Mm][Uu][Vv][Ee]",
+                     "value": "you move"},
+                    {"type": "regex",
+                     "regex": r"[Uu][Mm][Uu][Vv][Ee]",
                      "value": "you move"},
                 ],
             },
