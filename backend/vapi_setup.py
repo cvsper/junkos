@@ -529,8 +529,16 @@ assistant_config = {
             },
         },
     },
-    "firstMessage": "Thanks for calling Umuve — this is Maya. What are you looking to get rid of today?",
-    "endCallMessage": "Thanks for calling Umuve! Have a great day.",
+    # Brand spelled PHONETICALLY on purpose. The formatPlan replacements above
+    # transform "raw text from your language model" — these two strings are
+    # static config, not model output, so they appear to bypass the plan (a
+    # 8/03 greeting transcribed as "UMMove", not "you move"). Writing them
+    # phonetically is correct either way: "you move" contains no "umuve" for
+    # any replacement to re-match, so it is a no-op if the plan DOES apply.
+    # Keep the spelled form out of these two fields only — logs and prompts
+    # elsewhere still say Umuve.
+    "firstMessage": "Thanks for calling you move — this is Maya. What are you looking to get rid of today?",
+    "endCallMessage": "Thanks for calling you move! Have a great day.",
     "serverUrl": BACKEND_URL + "/api/vapi/webhook",
     "endCallFunctionEnabled": True,
     "recordingEnabled": True,
