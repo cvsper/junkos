@@ -16,6 +16,10 @@ import json
 VAPI_API_KEY = os.environ.get("VAPI_API_KEY", "")
 BACKEND_URL = os.environ.get("BACKEND_URL", "https://junkos-backend.onrender.com")
 
+class VapiUpdateError(RuntimeError):
+    """Raised when Vapi rejects an assistant update."""
+
+
 def _require_key():
     """Guard for CLI use. Not enforced at import time — this module is also
     imported by the admin sync endpoint, where a missing key must return an
@@ -500,12 +504,19 @@ assistant_config = {
         "chunkPlan": {
             "enabled": True,
             "formatPlan": {
+                # NOTE: these are compiled as JavaScript regexes. Inline flags
+                # like (?i) are Python/PCRE syntax and are rejected — spell the
+                # case-insensitivity out with character classes instead.
                 "replacements": [
-                    {"type": "regex", "regex": r"(?i)\bapp\.goumuve\.com\b",
+                    {"type": "regex",
+                     "regex": r"[Aa][Pp][Pp]\.[Gg][Oo][Uu][Mm][Uu][Vv][Ee]\.[Cc][Oo][Mm]",
                      "value": "the Umuve app"},
-                    {"type": "regex", "regex": r"(?i)\bgoumuve\.com\b",
+                    {"type": "regex",
+                     "regex": r"[Gg][Oo][Uu][Mm][Uu][Vv][Ee]\.[Cc][Oo][Mm]",
                      "value": "the Umuve website"},
-                    {"type": "regex", "regex": r"(?i)(?<!go)umuve", "value": "you move"},
+                    {"type": "regex",
+                     "regex": r"(?<![Gg][Oo])[Uu][Mm][Uu][Vv][Ee]",
+                     "value": "you move"},
                 ],
             },
         },
@@ -636,7 +647,11 @@ def update_assistant(assistant_id):
         return resp.json()
     print("Error updating assistant: {}".format(resp.status_code))
     print(resp.text)
-    return None
+    # Surface the reason to API callers instead of a bare None — a rejected
+    # config is almost always a schema complaint worth reading.
+    raise VapiUpdateError(
+        "Vapi returned {}: {}".format(resp.status_code, resp.text[:600])
+    )
 
 
 if __name__ == "__main__":

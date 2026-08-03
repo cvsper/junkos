@@ -3317,12 +3317,15 @@ def sync_vapi_assistant(user_id):
     try:
         import vapi_setup
         result = vapi_setup.update_assistant(assistant_id)
+    except vapi_setup.VapiUpdateError as exc:
+        current_app.logger.warning("Vapi rejected assistant update: %s", exc)
+        return jsonify({"error": "Vapi rejected the update", "detail": str(exc)}), 502
     except Exception as exc:
         current_app.logger.exception("Vapi assistant sync failed")
         return jsonify({"error": "sync failed", "detail": str(exc)[:300]}), 500
 
     if not result:
-        return jsonify({"error": "Vapi rejected the update (see server logs)"}), 502
+        return jsonify({"error": "Vapi returned no assistant payload"}), 502
 
     tools = [
         t.get("function", {}).get("name")
