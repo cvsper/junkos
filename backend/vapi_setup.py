@@ -16,10 +16,15 @@ import json
 VAPI_API_KEY = os.environ.get("VAPI_API_KEY", "")
 BACKEND_URL = os.environ.get("BACKEND_URL", "https://junkos-backend.onrender.com")
 
-if not VAPI_API_KEY:
-    print("Error: VAPI_API_KEY environment variable is required")
-    print("  export VAPI_API_KEY=your-key-here")
-    sys.exit(1)
+def _require_key():
+    """Guard for CLI use. Not enforced at import time — this module is also
+    imported by the admin sync endpoint, where a missing key must return an
+    error rather than kill the worker process."""
+    if not VAPI_API_KEY:
+        print("Error: VAPI_API_KEY environment variable is required")
+        print("  export VAPI_API_KEY=your-key-here")
+        sys.exit(1)
+
 
 HEADERS = {
     "Authorization": "Bearer {}".format(VAPI_API_KEY),
@@ -98,6 +103,12 @@ Miami-Dade, Broward, and Palm Beach counties ONLY. If someone is outside this ar
 - Can usually do next-day pickups
 - Same day available for a 25% surcharge
 
+## Today's Date
+Right now it is {{now}}. Always resolve "today", "tomorrow", "this weekend" and
+any bare date the caller gives you against that. NEVER guess the year — every
+booking you make is for a date in the future. If you are unsure of the year, use
+the year from {{now}}.
+
 ## Booking Flow
 When the caller wants to book:
 1. Get their name
@@ -108,6 +119,19 @@ When the caller wants to book:
 6. Get their phone number if different from caller ID
 7. Use the create_booking tool to finalize
 8. Confirm the booking details back to them
+9. Immediately call send_checkout_text to text them the payment link, then say
+   "I just texted you a secure payment link" — do NOT ask them to go find a
+   website. This is how they pay.
+
+## Saying links and booking numbers out loud
+- NEVER read a web address aloud as the way to do something. A caller cannot
+  reliably write down a spoken URL. If they need a link, TEXT it with
+  send_checkout_text and tell them it is on the way.
+- If a caller insists on a web address, say "you move dot com" slowly, but still
+  text the link as the real path.
+- When you read a booking number, read the short confirmation code the tool gives
+  you back, one character at a time, and use words for letters ("D as in David").
+  Never read a long string of random characters.
 
 ## Important Rules
 - NEVER make up prices for items not on your list — use $25 (general item price) as default
@@ -153,7 +177,7 @@ A: We price by item. Each item has a set price (for example, a sofa is $89, a ma
 A: We serve Miami-Dade County, Broward County, and Palm Beach County — all of South Florida's tri-county area. This includes Miami, Fort Lauderdale, West Palm Beach, Boca Raton, Hollywood, Coral Springs, Pembroke Pines, Hialeah, Homestead, and all surrounding cities.
 
 **Q: How do I pay?**
-A: You can pay online at app.goumuve.com. We accept all major credit and debit cards through Stripe, as well as Apple Pay. Payment is collected when you book. No cash needed — everything is handled digitally for your convenience.
+A: I'll text you a secure payment link right now — just tap it and pay from your phone. (Then call send_checkout_text.) We accept all major credit and debit cards through Stripe, as well as Apple Pay. No cash needed. Do NOT tell the caller to go find a website; send the link.
 
 **Q: Do you recycle?**
 A: Yes! We are committed to responsible disposal. We recycle and donate items whenever possible. Usable furniture and appliances are donated to organizations like Habitat for Humanity and Goodwill. Electronics are taken to certified e-waste recyclers. We aim to divert as much as possible from landfills.
@@ -315,6 +339,70 @@ assistant_config = {
             {
                 "type": "function",
                 "function": {
+                    "name": "send_checkout_text",
+                    "description": (
+                        "Text the caller a secure Stripe payment link. Use this ANY time "
+                        "payment comes up — right after create_booking, or whenever the "
+                        "caller asks how/where to pay or wants to pay by card. NEVER read "
+                        "a website address out loud as the way to pay; callers cannot "
+                        "reliably write down a spoken URL. Always send the link instead "
+                        "and tell them it is on the way."
+                    ),
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "phone": {
+                                "type": "string",
+                                "description": "Where to text the link (defaults to caller ID if omitted)",
+                            },
+                            "booking_id": {
+                                "type": "string",
+                                "description": "The booking ID returned by create_booking",
+                            },
+                            "customer_name": {
+                                "type": "string",
+                                "description": "Customer's first name, for the greeting",
+                            },
+                            "total": {
+                                "type": "number",
+                                "description": "Total amount owed in dollars",
+                            },
+                        },
+                        "required": [],
+                    },
+                },
+                "server": {
+                    "url": BACKEND_URL + "/api/vapi/tool",
+                },
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "lookup_caller",
+                    "description": (
+                        "Look up who is calling by phone number and return their history "
+                        "with us. Call this at the START of a call when the caller "
+                        "references an existing booking, a problem, or a past pickup, so "
+                        "you have their context instead of asking them to recite an ID."
+                    ),
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "phone": {
+                                "type": "string",
+                                "description": "Phone number to look up (defaults to caller ID if omitted)",
+                            },
+                        },
+                        "required": [],
+                    },
+                },
+                "server": {
+                    "url": BACKEND_URL + "/api/vapi/tool",
+                },
+            },
+            {
+                "type": "function",
+                "function": {
                     "name": "transfer_with_context",
                     "description": "Send the operator an SMS summary of the call before transferring. ALWAYS call this before using transferCall.",
                     "parameters": {
@@ -404,11 +492,20 @@ assistant_config = {
         "model": "aura-2",       # Vapi needs the bare name + model (NOT "aura-2-amalthea-en")
         # Say the brand "Umuve" as "you-move" — applied at the speech layer only,
         # so transcripts/logs keep "Umuve". Case-insensitive.
+        #
+        # Domain rule MUST come first: "goumuve.com" contains "umuve", so a bare
+        # brand replacement rewrites it to "go you move dot com" — a URL callers
+        # then try to type, and it does not resolve. The negative lookbehind on
+        # the brand rule keeps it from firing inside the domain.
         "chunkPlan": {
             "enabled": True,
             "formatPlan": {
                 "replacements": [
-                    {"type": "regex", "regex": "[Uu][Mm][Uu][Vv][Ee]", "value": "you move"},
+                    {"type": "regex", "regex": r"(?i)\bapp\.goumuve\.com\b",
+                     "value": "the Umuve app"},
+                    {"type": "regex", "regex": r"(?i)\bgoumuve\.com\b",
+                     "value": "the Umuve website"},
+                    {"type": "regex", "regex": r"(?i)(?<!go)umuve", "value": "you move"},
                 ],
             },
         },
@@ -543,6 +640,7 @@ def update_assistant(assistant_id):
 
 
 if __name__ == "__main__":
+    _require_key()
     if len(sys.argv) > 1 and sys.argv[1] == "buy-number":
         if len(sys.argv) < 3:
             print("Usage: python vapi_setup.py buy-number <assistant_id>")

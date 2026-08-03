@@ -95,17 +95,25 @@ def send_verification_sms(phone_number, code):
         return None
 
 
-def send_booking_sms(phone_number, booking_id, scheduled_date, address):
-    """Send booking confirmation via SMS. Never raises."""
+def send_booking_sms(phone_number, booking_id, scheduled_date, address,
+                     pay_url=None, confirmation_code=None):
+    """Send booking confirmation via SMS. Never raises.
+
+    When pay_url is supplied the text doubles as the payment path — phone
+    callers cannot reliably transcribe a spoken URL, so the link has to
+    arrive somewhere tappable.
+    """
     try:
-        short_id = str(booking_id)[:8] if booking_id else "N/A"
+        code = confirmation_code or (str(booking_id)[:8] if booking_id else "N/A")
         body = (
             "Umuve Booking Confirmed!\n"
             "Booking: #{}\n"
             "Date: {}\n"
-            "Address: {}\n\n"
-            "We'll send a reminder 24h before your pickup."
-        ).format(short_id, scheduled_date, address)
+            "Address: {}\n"
+        ).format(code, scheduled_date, address)
+        if pay_url:
+            body += "\nPay here to lock it in:\n{}\n".format(pay_url)
+        body += "\nWe'll send a reminder 24h before your pickup."
         return send_sms(phone_number, body)
     except Exception:
         logger.exception("Failed in send_booking_sms for %s", phone_number)

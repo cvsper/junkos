@@ -3289,3 +3289,49 @@ def notifications_health(user_id):
         "operator_phone": bool(os.environ.get("OPERATOR_PHONE")),
         "stripe": bool(os.environ.get("STRIPE_SECRET_KEY")),
     }), 200
+
+
+@admin_bp.route("/vapi/sync-assistant", methods=["POST"])
+@require_admin
+def sync_vapi_assistant(user_id):
+    """Push the local Maya assistant config (vapi_setup.assistant_config) to Vapi.
+
+    Reads VAPI_API_KEY from the host environment only, so no key ever lives in
+    the repo. Mirrors the env-gated admin bootstrap pattern.
+
+    Body (optional): {"assistant_id": "..."} — defaults to VAPI_ASSISTANT_ID env
+    or the known Maya assistant.
+    """
+    import os as _os
+
+    if not _os.environ.get("VAPI_API_KEY"):
+        return jsonify({"error": "VAPI_API_KEY not set on this host"}), 503
+
+    body = request.get_json(silent=True) or {}
+    assistant_id = (
+        body.get("assistant_id")
+        or _os.environ.get("VAPI_ASSISTANT_ID")
+        or "91198234-25c8-450a-9075-854509e9e59d"
+    )
+
+    try:
+        import vapi_setup
+        result = vapi_setup.update_assistant(assistant_id)
+    except Exception as exc:
+        current_app.logger.exception("Vapi assistant sync failed")
+        return jsonify({"error": "sync failed", "detail": str(exc)[:300]}), 500
+
+    if not result:
+        return jsonify({"error": "Vapi rejected the update (see server logs)"}), 502
+
+    tools = [
+        t.get("function", {}).get("name")
+        for t in (result.get("model", {}) or {}).get("tools", [])
+    ]
+    return jsonify({
+        "success": True,
+        "assistant_id": assistant_id,
+        "name": result.get("name"),
+        "tools": tools,
+        "updated_at": result.get("updatedAt"),
+    }), 200

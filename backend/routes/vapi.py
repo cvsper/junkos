@@ -311,7 +311,13 @@ def _handle_create_booking(args, vapi_data):
                 total_amount=total,
             )
         if phone:
-            send_booking_sms(phone, job.id, date_str, address)
+            # Always include a tappable pay link. Callers cannot reliably
+            # transcribe a spoken URL, so the text is the payment path.
+            send_booking_sms(
+                phone, job.id, date_str, address,
+                pay_url=_build_checkout_url(job.id, total),
+                confirmation_code=job.confirmation_code,
+            )
     except Exception:
         logger.exception("Failed to send booking confirmation")
 
@@ -339,7 +345,9 @@ def _handle_create_booking(args, vapi_data):
     except Exception:
         logger.exception("Failed to send operator SMS")
 
-    short_id = str(job.id)[:8]
+    # Read back the human-friendly code, not the UUID slice — callers have to
+    # be able to say this back over the phone.
+    short_id = job.confirmation_code or str(job.id)[:8]
     return (
         "Booking confirmed! Here are the details:\n"
         "Booking #{}\n"
@@ -396,6 +404,65 @@ def _handle_service_area(args):
     ).format(args["address"])
 
 
+def _build_checkout_url(booking_id, total):
+    """Create a Stripe Checkout Session for a booking and return its URL.
+
+    Returns the generic booking page if a session can't be created, so callers
+    always have something usable to send. Never raises.
+    """
+    frontend_url = os.environ.get("FRONTEND_URL", "https://app.goumuve.com")
+    fallback = "{}/book?ref=maya".format(frontend_url)
+
+    if not (booking_id and total):
+        return fallback
+
+    try:
+        import stripe as stripe_lib
+        stripe_key = os.environ.get("STRIPE_SECRET_KEY", "")
+        if not stripe_key:
+            return fallback
+        stripe_lib.api_key = stripe_key
+
+        # Look up the job for details
+        job = Job.query.get(booking_id)
+        job_address = job.address if job else "your pickup"
+
+        session = stripe_lib.checkout.Session.create(
+            payment_method_types=["card"],
+            line_items=[{
+                "price_data": {
+                    "currency": "usd",
+                    "unit_amount": int(float(total) * 100),
+                    "product_data": {
+                        "name": "Umuve Junk Removal",
+                        "description": "Pickup at {}".format(job_address),
+                    },
+                },
+                "quantity": 1,
+            }],
+            mode="payment",
+            success_url="{}/book?ref=maya&paid=true".format(frontend_url),
+            cancel_url="{}/book?ref=maya".format(frontend_url),
+            metadata={
+                "booking_id": booking_id,
+                "source": "maya_phone",
+            },
+            expires_at=int(datetime.now(timezone.utc).timestamp()) + 86400,  # 24 hours
+        )
+
+        # Link the checkout session to the payment record
+        payment = Payment.query.filter_by(job_id=booking_id).first()
+        if payment:
+            payment.stripe_payment_intent_id = session.payment_intent
+            db.session.commit()
+
+        logger.info("Stripe Checkout created for job %s: %s", booking_id, session.id)
+        return session.url
+    except Exception:
+        logger.exception("Failed to create Stripe Checkout Session")
+        return fallback
+
+
 def _handle_checkout_text(args, vapi_data):
     """Send the customer a text with a Stripe Checkout link to pay."""
     from sms_service import send_sms_async
@@ -413,56 +480,7 @@ def _handle_checkout_text(args, vapi_data):
     if not phone:
         return "I need a phone number to send the text."
 
-    frontend_url = os.environ.get("FRONTEND_URL", "https://app.goumuve.com")
-    checkout_url = "{}/book?ref=maya".format(frontend_url)
-
-    # If we have a booking with a price, create a Stripe Checkout Session
-    if booking_id and total:
-        try:
-            import stripe as stripe_lib
-            stripe_key = os.environ.get("STRIPE_SECRET_KEY", "")
-            if stripe_key:
-                stripe_lib.api_key = stripe_key
-
-                # Look up the job for details
-                job = Job.query.get(booking_id)
-                job_address = job.address if job else "your pickup"
-
-                session = stripe_lib.checkout.Session.create(
-                    payment_method_types=["card"],
-                    line_items=[{
-                        "price_data": {
-                            "currency": "usd",
-                            "unit_amount": int(float(total) * 100),
-                            "product_data": {
-                                "name": "Umuve Junk Removal",
-                                "description": "Pickup at {}".format(job_address),
-                            },
-                        },
-                        "quantity": 1,
-                    }],
-                    mode="payment",
-                    success_url="{}/book?ref=maya&paid=true".format(frontend_url),
-                    cancel_url="{}/book?ref=maya".format(frontend_url),
-                    metadata={
-                        "booking_id": booking_id,
-                        "source": "maya_phone",
-                    },
-                    expires_at=int(datetime.now(timezone.utc).timestamp()) + 86400,  # 24 hours
-                )
-                checkout_url = session.url
-
-                # Link the checkout session to the payment record
-                payment = Payment.query.filter_by(job_id=booking_id).first()
-                if payment:
-                    payment.stripe_payment_intent_id = session.payment_intent
-                    db.session.commit()
-
-                logger.info("Stripe Checkout created for job %s: %s", booking_id, session.id)
-        except Exception:
-            logger.exception("Failed to create Stripe Checkout Session")
-            # Fall back to generic booking page
-            checkout_url = "{}/book?ref=maya".format(frontend_url)
+    checkout_url = _build_checkout_url(booking_id, total)
 
     greeting = "Hi {}! ".format(customer_name) if customer_name else ""
     msg = (
@@ -1536,7 +1554,8 @@ def list_call_logs(user_id):
 
 
 @vapi_bp.route("/calls/<call_id>", methods=["GET"])
-def get_call_log(call_id):
+@require_admin
+def get_call_log(user_id, call_id):
     """Return a single call log by Vapi call_id or internal id."""
     call_log = CallLog.query.filter_by(call_id=call_id).first()
     if not call_log:
@@ -1776,7 +1795,8 @@ def analyze_call(call_id):
 
 
 @vapi_bp.route("/calls/<call_id>/insight", methods=["GET"])
-def get_call_insight(call_id):
+@require_admin
+def get_call_insight(user_id, call_id):
     """Get the AI insight for a specific call."""
     call_log = CallLog.query.filter_by(call_id=call_id).first()
     if not call_log:
