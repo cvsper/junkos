@@ -400,7 +400,7 @@ CALLS_HTML = r"""<!doctype html>
 <meta name="theme-color" content="#0B0E12" />
 <title>Umuve — Call Desk</title>
 <link rel="stylesheet" href="/va/app.css?v=3" />
-<link rel="stylesheet" href="/va/calls.css?v=1" />
+<link rel="stylesheet" href="/va/calls.css?v=2" />
 </head>
 <body>
 <div id="app">
@@ -471,6 +471,7 @@ CALLS_HTML = r"""<!doctype html>
 
 
 CALLS_CSS = r"""/* Call Desk — layers over /va/app.css tokens */
+[hidden]{display:none!important}
 .deskcard{background:var(--surface);border:1px solid var(--line);border-radius:18px;
   padding:18px 18px 16px}
 .chiprow{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
