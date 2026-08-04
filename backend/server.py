@@ -292,6 +292,14 @@ except Exception as _v_exc:
     import logging as _logging
     _logging.getLogger(__name__).warning("vahub_bp not registered: %s", _v_exc)
 
+# VA Call Desk — one-card-at-a-time calling console for the demand list
+try:
+    from va_calls import vacalls_bp
+    app.register_blueprint(vacalls_bp)
+except Exception as _vc_exc:
+    import logging as _logging
+    _logging.getLogger(__name__).warning("vacalls_bp not registered: %s", _vc_exc)
+
 # Previously built-but-never-registered public endpoints (2026-07-03 audit):
 # newsletter capture + partner signups. Both are plain lead-capture routes the
 # marketing site links to; registering them turns 404s into leads.

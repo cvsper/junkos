@@ -3705,3 +3705,67 @@ class Agreement(db.Model):
             "signer_name": self.signer_name,
             "signer_title": self.signer_title,
         }
+
+
+class CallProspect(db.Model):
+    """A demand-side business prospect worked by the VA call desk (/va/calls).
+
+    Seeded from researched call lists via the admin import endpoint. The
+    console serves one prospect at a time (due follow-ups first, then fresh
+    rows by tier) and every logged outcome updates status + schedules the
+    next touch, so the follow-up cadence lives here instead of in a
+    spreadsheet.
+    """
+    __tablename__ = "call_prospects"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    tier = Column(Integer, nullable=False, default=2, index=True)  # 1 best
+    category = Column(String(60), nullable=False, default="", index=True)
+    company = Column(String(200), nullable=False)
+    phone = Column(String(40), nullable=False)
+    phone_digits = Column(String(10), nullable=False, unique=True, index=True)  # dedup key
+    city = Column(String(80), nullable=True)
+    contact_name = Column(String(120), nullable=True)
+    why = Column(Text, nullable=True)      # why they need hauling
+    angle = Column(Text, nullable=True)    # tailored call angle
+    # queued -> (interested) -> converted, or dead
+    status = Column(String(20), nullable=False, default="queued", index=True)
+    attempts = Column(Integer, nullable=False, default=0)
+    last_outcome = Column(String(20), nullable=True)
+    last_note = Column(Text, nullable=True)
+    last_called_at = Column(DateTime, nullable=True)
+    next_followup_at = Column(DateTime, nullable=True, index=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc),
+                        onupdate=lambda: datetime.now(timezone.utc))
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "tier": self.tier,
+            "category": self.category,
+            "company": self.company,
+            "phone": self.phone,
+            "city": self.city,
+            "contact_name": self.contact_name,
+            "why": self.why,
+            "angle": self.angle,
+            "status": self.status,
+            "attempts": self.attempts,
+            "last_outcome": self.last_outcome,
+            "last_note": self.last_note,
+            "last_called_at": self.last_called_at.isoformat() if self.last_called_at else None,
+            "next_followup_at": self.next_followup_at.isoformat() if self.next_followup_at else None,
+        }
+
+
+class CallAttempt(db.Model):
+    """One logged call against a CallProspect — the audit trail behind stats."""
+    __tablename__ = "call_attempts"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    prospect_id = Column(String(36), ForeignKey("call_prospects.id"), nullable=False, index=True)
+    outcome = Column(String(20), nullable=False)
+    note = Column(Text, nullable=True)
+    va_name = Column(String(80), nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
