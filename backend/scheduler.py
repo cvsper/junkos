@@ -790,6 +790,21 @@ def init_scheduler(app):
             name="Hauler activation drip",
         )
 
+        # VA Call Desk digest to admin — daily 11:00 UTC (7am ET).
+        try:
+            from va_calls import send_caller_digest
+            scheduler.add_job(
+                send_caller_digest,
+                "cron",
+                hour=11,
+                minute=0,
+                args=[app],
+                id="caller_digest",
+                name="Call Desk morning digest",
+            )
+        except Exception:
+            logger.exception("caller digest job not registered")
+
         scheduler.start()
         logger.info("Background scheduler started with 17 jobs")
         return scheduler

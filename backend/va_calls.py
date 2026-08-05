@@ -478,6 +478,81 @@ def caller_stats(user_id):
 
 
 # ---------------------------------------------------------------------------
+# Morning digest — yesterday's desk activity to the admin (SMS + email)
+# ---------------------------------------------------------------------------
+
+def send_caller_digest(app):
+    """Daily summary of Call Desk activity to ADMIN_PHONE / ADMIN_EMAIL.
+
+    The load-bearing part is the INTERESTED list: every interested Tier 1
+    deserves a personal follow-up call the same day. Silent when the desk
+    saw no activity and nothing is awaiting follow-up.
+    """
+    with app.app_context():
+        day_start = _eastern_day_start()
+        prev_start = day_start - timedelta(days=1)
+        attempts = CallAttempt.query.filter(
+            CallAttempt.created_at >= prev_start,
+            CallAttempt.created_at < day_start,
+            CallAttempt.outcome != "skip").all()
+        interested = (CallProspect.query
+                      .filter(CallProspect.status == "interested")
+                      .order_by(CallProspect.tier.asc(),
+                                CallProspect.last_called_at.desc())
+                      .limit(15).all())
+        if not attempts and not interested:
+            logger.info("caller digest: no activity, skipping send")
+            return
+
+        by = {}
+        for a in attempts:
+            by[a.outcome] = by.get(a.outcome, 0) + 1
+        talked = by.get("interested", 0) + by.get("sent_link", 0) + \
+            by.get("not_interested", 0) + by.get("converted", 0)
+        hot = by.get("interested", 0) + by.get("sent_link", 0) + by.get("converted", 0)
+
+        sms_lines = ["Umuve Call Desk yesterday: {} calls, {} conversations, "
+                     "{} interested.".format(len(attempts), talked, hot)]
+        if interested:
+            sms_lines.append("Awaiting YOUR follow-up:")
+            for p in interested[:5]:
+                sms_lines.append("T{} {} {}".format(p.tier, p.company, p.phone))
+            if len(interested) > 5:
+                sms_lines.append("+{} more in the email.".format(len(interested) - 5))
+        admin_phone = os.environ.get("ADMIN_PHONE", "").strip()
+        if admin_phone:
+            import sms_service
+            sms_service.send_sms(admin_phone, "\n".join(sms_lines))
+
+        admin_email = os.environ.get("ADMIN_EMAIL", "").strip()
+        if admin_email:
+            rows = "".join(
+                "<tr><td style='padding:6px 10px'>T{}</td>"
+                "<td style='padding:6px 10px'><b>{}</b></td>"
+                "<td style='padding:6px 10px'>{}</td>"
+                "<td style='padding:6px 10px'>{}</td>"
+                "<td style='padding:6px 10px'>{}</td></tr>".format(
+                    p.tier, p.company, p.phone, p.category or "",
+                    (p.last_note or "").replace("<", "&lt;")[:120])
+                for p in interested) or "<tr><td>none yet</td></tr>"
+            outcome_bits = ", ".join("{}: {}".format(k, v)
+                                     for k, v in sorted(by.items())) or "no calls"
+            html = (
+                "<h2>Call Desk — yesterday</h2>"
+                "<p>{} calls logged ({}).</p>"
+                "<h3>Interested — call them back today</h3>"
+                "<table border='0' cellspacing='0' "
+                "style='border-collapse:collapse;font-size:14px'>{}</table>"
+            ).format(len(attempts), outcome_bits, rows)
+            try:
+                from email_service import send_email
+                send_email(admin_email, "Call Desk digest — {} calls, {} interested".format(
+                    len(attempts), hot), html)
+            except Exception:
+                logger.exception("caller digest email failed")
+
+
+# ---------------------------------------------------------------------------
 # Pages + assets
 # ---------------------------------------------------------------------------
 
