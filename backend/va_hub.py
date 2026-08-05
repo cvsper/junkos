@@ -340,6 +340,14 @@ VA_HUB_HTML = r"""<!doctype html>
     </header>
     <div class="body">
       <h2 class="display display-sm" id="display-hub" aria-label="After the call">AFTER THE&nbsp;CALL</h2>
+      <a class="situ rv" href="/va/calls">
+        <div class="situ-key ok-key">DESK</div>
+        <div class="situ-txt">
+          <div class="situ-t">Work the business list</div>
+          <div class="situ-d">The <b>Call Desk</b> deals one business at a time — tap the number, log what happened, follow-ups schedule themselves.</div>
+        </div>
+        <div class="situ-go">→</div>
+      </a>
       <a class="situ rv" href="/optext">
         <div class="situ-key ok-key">YES</div>
         <div class="situ-txt">

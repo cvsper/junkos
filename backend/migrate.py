@@ -62,6 +62,9 @@ COLUMN_MIGRATIONS = [
     # Maya Recruiter — last outbound recruiting call to a driver lead
     ("driver_leads", "last_recruiter_call_at", "DATETIME", "TIMESTAMP", "NULL"),
 
+    # VA Call Desk — last follow-up text sent to a demand prospect (24h dedupe)
+    ("call_prospects", "last_texted_at", "DATETIME", "TIMESTAMP", "NULL"),
+
     # Contractor onboarding fields
     ("contractors", "onboarding_status", "VARCHAR(20)", "VARCHAR(20)", "'pending'"),
     ("contractors", "background_check_status", "VARCHAR(20)", "VARCHAR(20)", "'not_started'"),

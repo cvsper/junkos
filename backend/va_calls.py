@@ -147,6 +147,70 @@ def opener_for(category):
     return OPENERS["property"]
 
 
+# Follow-up texts the desk can send from the Umuve number — server-side
+# whitelist keyed by the outcome that was just logged (same rule as /va:
+# the client never supplies free text).
+def _first_name(contact):
+    parts = (contact or "").strip().split()
+    return parts[0] if parts else ""
+
+
+def followup_text_for(outcome, prospect, va_name):
+    name = _first_name(prospect.contact_name)
+    greet = "Hi {},".format(name) if name else "Hi there,"
+    va = (va_name or "Tracy").split()[0]
+    if outcome in ("interested", "sent_link"):
+        return (
+            "{greet} it's {va} with Umuve — great talking with you. Partner "
+            "info: goumuve.com/partners — volume rates, priority scheduling, "
+            "one number for every cleanout. Save this number: text a photo of "
+            "any pile and you'll have an upfront price in minutes. Reply STOP "
+            "to opt out."
+        ).format(greet=greet, va=va)
+    if outcome in ("voicemail", "no_answer"):
+        return (
+            "{greet} it's {va} with Umuve (just tried you). We do same-day "
+            "junk & cleanout pickups for Palm Beach County businesses at "
+            "upfront prices — goumuve.com/partners. This number takes texts "
+            "if that's easier. Reply STOP to opt out."
+        ).format(greet=greet, va=va)
+    return None
+
+
+TEXT_DEDUPE_HOURS = 24
+
+
+def _run(fn):
+    try:
+        from eventlet import tpool  # type: ignore
+    except Exception:
+        tpool = None
+    if tpool is not None:
+        return tpool.execute(fn)
+    return fn()
+
+
+def maybe_send_followup_text(prospect, outcome, va_name):
+    """Send the whitelisted follow-up text for this outcome, if allowed.
+
+    Returns (sent: bool, reason: str)."""
+    body = followup_text_for(outcome, prospect, va_name)
+    if body is None:
+        return False, "no text for this outcome"
+    if len(prospect.phone_digits or "") != 10:
+        return False, "no valid mobile number"
+    now_naive = _now().replace(tzinfo=None)
+    if prospect.last_texted_at and \
+            now_naive - prospect.last_texted_at < timedelta(hours=TEXT_DEDUPE_HOURS):
+        return False, "already texted in the last day"
+    import sms_service
+    sid = _run(lambda: sms_service.send_sms(prospect.phone, body))
+    if not sid:
+        return False, "text didn't go through"
+    prospect.last_texted_at = now_naive
+    return True, "sent"
+
+
 # ---------------------------------------------------------------------------
 # Queue + cadence
 # ---------------------------------------------------------------------------
@@ -290,14 +354,60 @@ def calls_log():
     apply_outcome(p, outcome, note, va_name)
     db.session.commit()
 
+    texted, text_reason = False, None
+    if data.get("send_text"):
+        texted, text_reason = maybe_send_followup_text(p, outcome, va_name)
+        db.session.commit()
+
     nxt = next_card()
     stats = day_stats()
-    resp = {"logged": True, "stats": stats}
+    resp = {"logged": True, "stats": stats,
+            "texted": texted, "text_reason": text_reason}
     if nxt:
         resp["card"] = _card_payload(nxt, va_name)
     else:
         resp["empty"] = True
     return jsonify(resp), 200
+
+
+@vacalls_bp.route("/api/va/calls/search", methods=["POST"])
+@_ratelimit
+def calls_search():
+    """Find a prospect who called back — by name, city, or number."""
+    data = request.get_json(silent=True) or {}
+    if not _passcode_ok(data.get("code")):
+        return jsonify({"error": "That code didn't work."}), 401
+    q = (data.get("q") or "").strip()
+    if len(q) < 2:
+        return jsonify({"results": []}), 200
+    digits = re.sub(r"\D", "", q)
+    like = "%{}%".format(q)
+    filters = [CallProspect.company.ilike(like), CallProspect.city.ilike(like),
+               CallProspect.contact_name.ilike(like)]
+    if len(digits) >= 4:
+        filters.append(CallProspect.phone_digits.like("%{}%".format(digits)))
+    from sqlalchemy import or_
+    rows = (CallProspect.query.filter(or_(*filters))
+            .order_by(CallProspect.tier.asc(), CallProspect.company.asc())
+            .limit(8).all())
+    return jsonify({"results": [
+        {"id": r.id, "company": r.company, "city": r.city, "phone": r.phone,
+         "category": r.category, "tier": r.tier, "status": r.status}
+        for r in rows]}), 200
+
+
+@vacalls_bp.route("/api/va/calls/get", methods=["POST"])
+@_ratelimit
+def calls_get():
+    """Load one specific prospect as the active card (callback flow)."""
+    data = request.get_json(silent=True) or {}
+    if not _passcode_ok(data.get("code")):
+        return jsonify({"error": "That code didn't work."}), 401
+    p = db.session.get(CallProspect, data.get("prospect_id") or "")
+    if not p:
+        return jsonify({"error": "Prospect not found."}), 404
+    return jsonify({"card": _card_payload(p, data.get("va_name")),
+                    "stats": day_stats()}), 200
 
 
 # ---------------------------------------------------------------------------
@@ -400,7 +510,7 @@ CALLS_HTML = r"""<!doctype html>
 <meta name="theme-color" content="#0B0E12" />
 <title>Umuve — Call Desk</title>
 <link rel="stylesheet" href="/va/app.css?v=3" />
-<link rel="stylesheet" href="/va/calls.css?v=2" />
+<link rel="stylesheet" href="/va/calls.css?v=3" />
 </head>
 <body>
 <div id="app">
@@ -424,9 +534,15 @@ CALLS_HTML = r"""<!doctype html>
       <a class="back" href="/va" aria-label="Back to VA tools">←</a>
       <div class="wordmark">CALL&nbsp;DESK</div>
       <div class="bar-sub" id="daybar">—</div>
+      <button class="back" id="search-toggle" type="button" aria-label="Find a business">⌕</button>
     </header>
 
     <div class="body" id="deck">
+      <div id="searchbox" hidden>
+        <input id="search-q" type="search" autocomplete="off"
+               placeholder="Someone calling back? Type their name, city, or number" />
+        <div id="search-results"></div>
+      </div>
       <div id="empty" class="deskcard" hidden>
         <div class="q-chip done">QUEUE CLEAR</div>
         <h2 class="co">Nothing due right now</h2>
@@ -450,6 +566,11 @@ CALLS_HTML = r"""<!doctype html>
         <input id="note" type="text" autocomplete="off" placeholder="e.g. asked to call back Thursday" />
       </div>
 
+      <label class="textopt" id="textopt" hidden>
+        <input type="checkbox" id="send-text" />
+        <span><b>Text them after I tap</b> — the right follow-up goes out from the Umuve number (interested → partner info · no answer → who-we-are text)</span>
+      </label>
+
       <div id="outcomes" class="outcomes" hidden>
         <button class="oc oc-good" data-o="interested">Interested</button>
         <button class="oc oc-good" data-o="sent_link">Sent the link</button>
@@ -460,11 +581,12 @@ CALLS_HTML = r"""<!doctype html>
         <button class="oc-skip" data-o="skip">Skip for now — deal me another</button>
       </div>
 
+      <p id="desk-toast" class="toast" hidden></p>
       <p id="desk-err" class="err" hidden></p>
     </div>
   </section>
 </div>
-<script src="/va/calls.js?v=1"></script>
+<script src="/va/calls.js?v=3"></script>
 </body>
 </html>
 """
@@ -526,6 +648,23 @@ CALLS_CSS = r"""/* Call Desk — layers over /va/app.css tokens */
   font-size:12.5px;letter-spacing:.06em;color:var(--faint);background:transparent;
   border:1px dashed var(--line);border-radius:12px;cursor:pointer}
 .oc-skip:hover{color:var(--muted)}
+.textopt{display:flex;gap:10px;align-items:flex-start;background:var(--surface);
+  border:1px solid var(--line);border-radius:14px;padding:12px 14px;cursor:pointer}
+.textopt input{width:18px;height:18px;margin:2px 0 0;accent-color:var(--accent);flex:none}
+.textopt span{color:var(--muted);font-size:12.5px;line-height:1.5}
+.textopt b{color:var(--ink);font-family:var(--display);font-weight:700;font-size:12.5px}
+#searchbox input{margin-bottom:8px}
+.sr{display:flex;align-items:center;gap:10px;width:100%;text-align:left;
+  background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:12px 14px;margin-bottom:7px;cursor:pointer;color:var(--ink)}
+.sr:hover{border-color:rgba(255,106,44,.45)}
+.sr-t{font-family:var(--display);font-weight:700;font-size:14.5px}
+.sr-d{color:var(--faint);font-size:12px;margin-top:2px}
+.sr-status{margin-left:auto;flex:none;font-family:var(--display);font-weight:600;
+  font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint)}
+.sr-none{color:var(--faint);font-size:13px;padding:6px 2px}
+.toast{margin:0;padding:11px 14px;border-radius:12px;font-size:13.5px;
+  background:rgba(61,214,140,.12);color:var(--ok);border:1px solid rgba(61,214,140,.35)}
 @media (min-width:700px){
   .outcomes{grid-template-columns:1fr 1fr 1fr}
   .oc-skip{grid-column:1 / -1}
@@ -616,10 +755,11 @@ CALLS_JS = r"""(function(){
     var card = document.getElementById("card");
     var empty = document.getElementById("empty");
     var outcomes = document.getElementById("outcomes");
+    var textopt = document.getElementById("textopt");
     deskErr.hidden = true;
     setDaybar(resp.stats);
     if(resp.empty || !resp.card){
-      card.hidden = true; outcomes.hidden = true; empty.hidden = false;
+      card.hidden = true; outcomes.hidden = true; textopt.hidden = true; empty.hidden = false;
       if(resp.next_due){
         var d = new Date(resp.next_due + "Z");
         document.getElementById("empty-sub").textContent =
@@ -650,7 +790,7 @@ CALLS_JS = r"""(function(){
       noteEl.hidden = false;
     } else { noteEl.hidden = true; }
     document.getElementById("note").value = "";
-    card.hidden = false; outcomes.hidden = false;
+    card.hidden = false; outcomes.hidden = false; textopt.hidden = false;
     if(!reduced){
       card.style.opacity = "0"; card.style.transform = "translateY(6px)";
       requestAnimationFrame(function(){
@@ -679,6 +819,21 @@ CALLS_JS = r"""(function(){
     document.querySelectorAll("#outcomes button").forEach(function(btn){ btn.disabled = b; });
   }
 
+  var toast = document.getElementById("desk-toast");
+  var toastTimer = null;
+  function showToast(msg){
+    toast.textContent = msg; toast.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ toast.hidden = true; }, 4000);
+  }
+
+  var TEXT_KEY = "umuve_desk_send_text";
+  var sendText = document.getElementById("send-text");
+  sendText.checked = localStorage.getItem(TEXT_KEY) === "1";
+  sendText.addEventListener("change", function(){
+    localStorage.setItem(TEXT_KEY, sendText.checked ? "1" : "0");
+  });
+
   document.getElementById("outcomes").addEventListener("click", function(e){
     var btn = e.target.closest("button");
     if(!btn || busy || !current) return;
@@ -686,12 +841,68 @@ CALLS_JS = r"""(function(){
     post("/api/va/calls/log", {
       prospect_id: current.id,
       outcome: btn.dataset.o,
-      note: document.getElementById("note").value.trim()
+      note: document.getElementById("note").value.trim(),
+      send_text: sendText.checked && btn.dataset.o !== "skip"
     }).then(function(r){
       setBusy(false);
       if(r.status !== 200){ fail(r.status, r.body); return; }
+      if(r.body.texted){ showToast("Logged — and the follow-up text is on its way."); }
+      else if(sendText.checked && r.body.text_reason && btn.dataset.o !== "skip" &&
+              r.body.text_reason !== "no text for this outcome"){
+        showToast("Logged. No text went out: " + r.body.text_reason + ".");
+      }
       render(r.body);
     }).catch(function(){ setBusy(false); fail(0, {error: "No connection — that call wasn't logged. Try again."}); });
+  });
+
+  // ---- callback search ----
+  var searchbox = document.getElementById("searchbox");
+  var searchQ = document.getElementById("search-q");
+  var searchResults = document.getElementById("search-results");
+  var searchTimer = null;
+  document.getElementById("search-toggle").addEventListener("click", function(){
+    searchbox.hidden = !searchbox.hidden;
+    if(!searchbox.hidden){ searchQ.focus(); }
+    else { searchResults.textContent = ""; searchQ.value = ""; }
+  });
+  searchQ.addEventListener("input", function(){
+    clearTimeout(searchTimer);
+    var q = searchQ.value.trim();
+    if(q.length < 2){ searchResults.textContent = ""; return; }
+    searchTimer = setTimeout(function(){
+      post("/api/va/calls/search", {q: q}).then(function(r){
+        if(r.status !== 200){ fail(r.status, r.body); return; }
+        searchResults.textContent = "";
+        var rows = r.body.results || [];
+        if(!rows.length){
+          var none = document.createElement("p");
+          none.className = "sr-none";
+          none.textContent = "No business matches that — check the spelling or try the phone number.";
+          searchResults.appendChild(none);
+          return;
+        }
+        rows.forEach(function(row){
+          var b = document.createElement("button");
+          b.className = "sr"; b.type = "button";
+          var wrap = document.createElement("div");
+          var t = document.createElement("div"); t.className = "sr-t"; t.textContent = row.company;
+          var d = document.createElement("div"); d.className = "sr-d";
+          d.textContent = [row.phone, row.city].filter(Boolean).join(" · ");
+          wrap.appendChild(t); wrap.appendChild(d);
+          var s = document.createElement("div"); s.className = "sr-status"; s.textContent = row.status;
+          b.appendChild(wrap); b.appendChild(s);
+          b.addEventListener("click", function(){
+            post("/api/va/calls/get", {prospect_id: row.id}).then(function(rr){
+              if(rr.status !== 200){ fail(rr.status, rr.body); return; }
+              searchbox.hidden = true; searchResults.textContent = ""; searchQ.value = "";
+              render(rr.body);
+              showToast("Loaded " + row.company + " — log this call, then the queue continues.");
+            });
+          });
+          searchResults.appendChild(b);
+        });
+      });
+    }, 250);
   });
 
   // boot: saved code -> straight to the desk; the first API call re-verifies it

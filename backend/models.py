@@ -3734,6 +3734,7 @@ class CallProspect(db.Model):
     last_outcome = Column(String(20), nullable=True)
     last_note = Column(Text, nullable=True)
     last_called_at = Column(DateTime, nullable=True)
+    last_texted_at = Column(DateTime, nullable=True)
     next_followup_at = Column(DateTime, nullable=True, index=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc),
@@ -3755,6 +3756,7 @@ class CallProspect(db.Model):
             "last_outcome": self.last_outcome,
             "last_note": self.last_note,
             "last_called_at": self.last_called_at.isoformat() if self.last_called_at else None,
+            "last_texted_at": self.last_texted_at.isoformat() if self.last_texted_at else None,
             "next_followup_at": self.next_followup_at.isoformat() if self.next_followup_at else None,
         }
 
