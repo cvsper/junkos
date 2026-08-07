@@ -36,6 +36,8 @@ import time
 import requests
 from flask import Blueprint, request
 
+import places_search
+
 logger = logging.getLogger(__name__)
 
 # Drip cadence: days since last touch before the next one; stop after len().
@@ -94,43 +96,33 @@ def source_from_places(cfg, db, OperatorLead, max_new=40):
         return 0
     new_count = 0
     seen_ids = {pid for (pid,) in db.session.query(OperatorLead.place_id).all() if pid}
+    diag = {}
     for zip_code in cfg["zips"]:
         for query in _PLACES_QUERIES:
             if new_count >= max_new:
                 break
-            try:
-                r = requests.get(
-                    "https://maps.googleapis.com/maps/api/place/textsearch/json",
-                    params={"query": "{} in {}".format(query, zip_code), "key": cfg["places_key"]},
-                    timeout=15,
-                )
-                data = r.json() or {}
-                status = data.get("status")
-                # A denied/over-quota/legacy-not-enabled key returns HTTP 200 with
-                # empty results — surface WHY instead of silently sourcing 0.
-                if status and status not in ("OK", "ZERO_RESULTS"):
-                    cfg["_places_status"] = status
-                    cfg["_places_error"] = data.get("error_message")
-                    logger.error("Places API %s for '%s'/%s: %s",
-                                 status, query, zip_code, data.get("error_message"))
-                results = data.get("results", [])
-            except Exception:
-                logger.warning("places search failed for %s/%s", query, zip_code)
-                continue
-            for res in results:
-                pid = res.get("place_id")
+            places = places_search.text_search(
+                cfg["places_key"], "{} in {}".format(query, zip_code), diag=diag
+            )
+            if diag.get("status") or diag.get("new_api_status"):
+                cfg["_places_status"] = diag.get("status") or diag.get("new_api_status")
+                cfg["_places_error"] = diag.get("error") or diag.get("new_api_error")
+            for res in places:
+                pid = res["place_id"]
                 if not pid or pid in seen_ids:
                     continue
                 seen_ids.add(pid)
-                website, phone = _place_details(cfg, pid)
+                website, phone = res["website"], res["phone"]
+                if res.get("_needs_details"):
+                    website, phone = _place_details(cfg, pid)
                 lead = OperatorLead(
-                    business_name=res.get("name"),
+                    business_name=res["name"],
                     place_id=pid,
                     source="places",
                     category=query,
                     zip=zip_code,
-                    city=(res.get("formatted_address") or "").split(",")[1].strip()
-                    if "," in (res.get("formatted_address") or "") else None,
+                    city=res["address"].split(",")[1].strip()
+                    if "," in res["address"] else None,
                     website=website,
                     phone=phone,
                     status="new",
