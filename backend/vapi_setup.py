@@ -635,8 +635,13 @@ def buy_phone_number(assistant_id):
     return None
 
 
-def update_assistant(assistant_id):
-    """PATCH the live Vapi assistant with the latest config in this file."""
+def update_assistant(assistant_id, server_url_secret=None):
+    """PATCH the live Vapi assistant with the latest config in this file.
+
+    server_url_secret is never stored in this file or the repo — it arrives
+    at runtime (request body or host env) and is only forwarded to Vapi.
+    Omitting it leaves the assistant's existing serverUrlSecret untouched.
+    """
     update_payload = {
         "name": assistant_config["name"],
         "model": assistant_config["model"],
@@ -653,6 +658,8 @@ def update_assistant(assistant_id):
         "serverUrl": assistant_config.get("serverUrl"),
     }
     update_payload = {k: v for k, v in update_payload.items() if v is not None}
+    if server_url_secret:
+        update_payload["serverUrlSecret"] = server_url_secret
     resp = requests.patch(
         "https://api.vapi.ai/assistant/{}".format(assistant_id),
         headers=HEADERS,

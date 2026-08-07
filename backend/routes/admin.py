@@ -3314,9 +3314,17 @@ def sync_vapi_assistant(user_id):
         or "91198234-25c8-450a-9075-854509e9e59d"
     )
 
+    # serverUrlSecret comes from the request body (preferred while staging
+    # enforcement) or host env; it is forwarded to Vapi and never persisted.
+    server_url_secret = body.get("serverUrlSecret") or _os.environ.get(
+        "VAPI_SERVER_SECRET"
+    )
+
     try:
         import vapi_setup
-        result = vapi_setup.update_assistant(assistant_id)
+        result = vapi_setup.update_assistant(
+            assistant_id, server_url_secret=server_url_secret
+        )
     except vapi_setup.VapiUpdateError as exc:
         current_app.logger.warning("Vapi rejected assistant update: %s", exc)
         return jsonify({"error": "Vapi rejected the update", "detail": str(exc)}), 502
