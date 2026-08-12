@@ -69,6 +69,9 @@ COLUMN_MIGRATIONS = [
     ("call_prospects", "email", "VARCHAR(254)", "VARCHAR(254)", "NULL"),
     ("call_prospects", "last_emailed_at", "DATETIME", "TIMESTAMP", "NULL"),
 
+    # VA Call Desk — decision-maker's direct cell (vs. the front-desk line)
+    ("call_prospects", "direct_phone", "VARCHAR(40)", "VARCHAR(40)", "NULL"),
+
     # Contractor onboarding fields
     ("contractors", "onboarding_status", "VARCHAR(20)", "VARCHAR(20)", "'pending'"),
     ("contractors", "background_check_status", "VARCHAR(20)", "VARCHAR(20)", "'not_started'"),

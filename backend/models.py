@@ -3736,6 +3736,7 @@ class CallProspect(db.Model):
     last_called_at = Column(DateTime, nullable=True)
     last_texted_at = Column(DateTime, nullable=True)
     email = Column(String(254), nullable=True)   # decision-maker email, captured on calls
+    direct_phone = Column(String(40), nullable=True)  # decision-maker cell (vs. front desk)
     last_emailed_at = Column(DateTime, nullable=True)
     next_followup_at = Column(DateTime, nullable=True, index=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
@@ -3760,6 +3761,7 @@ class CallProspect(db.Model):
             "last_called_at": self.last_called_at.isoformat() if self.last_called_at else None,
             "last_texted_at": self.last_texted_at.isoformat() if self.last_texted_at else None,
             "email": self.email,
+            "direct_phone": self.direct_phone,
             "last_emailed_at": self.last_emailed_at.isoformat() if self.last_emailed_at else None,
             "next_followup_at": self.next_followup_at.isoformat() if self.next_followup_at else None,
         }

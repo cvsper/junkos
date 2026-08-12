@@ -128,3 +128,69 @@ def test_card_payload_includes_saved_email(client, prospect):
                        json={"code": "test-code", "prospect_id": prospect.id})
     assert resp.status_code == 200
     assert resp.get_json()["card"]["email"] == "saved@example.com"
+
+
+# ---------------------------------------------------------------------------
+# Decision-maker capture (/api/va/calls/contact)
+# ---------------------------------------------------------------------------
+
+def test_contact_saves_decision_maker(client, prospect):
+    resp = _post_contact(client, {"prospect_id": prospect.id,
+                                  "contact_name": "Maria Lopez",
+                                  "direct_phone": "(954) 555-0142",
+                                  "email": "Maria@Example.com"})
+    assert resp.status_code == 200
+    card = resp.get_json()["card"]
+    assert card["contact_name"] == "Maria Lopez"
+    assert card["direct_phone"] == "(954) 555-0142"
+    assert card["direct_tel"] == "tel:+19545550142"
+    assert card["email"] == "maria@example.com"
+    db.session.refresh(prospect)
+    assert prospect.direct_phone == "(954) 555-0142"
+
+
+def test_contact_empty_values_clear_fields(client, prospect):
+    prospect.contact_name = "Old Name"
+    prospect.direct_phone = "9545550142"
+    db.session.commit()
+    resp = _post_contact(client, {"prospect_id": prospect.id,
+                                  "contact_name": "", "direct_phone": ""})
+    assert resp.status_code == 200
+    db.session.refresh(prospect)
+    assert prospect.contact_name is None
+    assert prospect.direct_phone is None
+
+
+def test_contact_absent_keys_leave_fields_alone(client, prospect):
+    prospect.email = "keep@example.com"
+    db.session.commit()
+    resp = _post_contact(client, {"prospect_id": prospect.id,
+                                  "contact_name": "Just A Name"})
+    assert resp.status_code == 200
+    db.session.refresh(prospect)
+    assert prospect.email == "keep@example.com"
+
+
+def test_contact_bad_direct_phone_rejected(client, prospect):
+    resp = _post_contact(client, {"prospect_id": prospect.id,
+                                  "direct_phone": "123"})
+    assert resp.status_code == 400
+
+
+def test_contact_bad_email_rejected(client, prospect):
+    resp = _post_contact(client, {"prospect_id": prospect.id,
+                                  "email": "nope"})
+    assert resp.status_code == 400
+
+
+def test_contact_bad_passcode_rejected(client, prospect):
+    resp = client.post("/api/va/calls/contact",
+                       json={"code": "wrong", "prospect_id": prospect.id,
+                             "contact_name": "X"})
+    assert resp.status_code == 401
+
+
+def _post_contact(client, payload):
+    base = {"code": "test-code", "va_name": "Tracy"}
+    base.update(payload)
+    return client.post("/api/va/calls/contact", json=base)

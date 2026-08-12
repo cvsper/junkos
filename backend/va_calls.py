@@ -14,6 +14,9 @@ Routes:
   POST /api/va/calls/send-info -> passcode-gated; info pack by text or email,
                                   independent of outcome logging (gatekeeper
                                   flow: "send something for the manager")
+  POST /api/va/calls/contact   -> passcode-gated; save the decision-maker a
+                                  gatekeeper hands over (name / direct cell /
+                                  email) onto the prospect card
   POST /api/admin/call-prospects/import -> admin; seed/merge prospect rows
   GET  /api/admin/caller-stats          -> admin; outcomes by day + segment
 
@@ -327,6 +330,8 @@ def _card_payload(p, va_name):
     d = p.to_dict()
     d["opener"] = opener_for(p.category).format(va=(va_name or "Tracy").split()[0])
     d["tel"] = "tel:+1" + p.phone_digits if len(p.phone_digits) == 10 else "tel:" + p.phone
+    direct = _digits(p.direct_phone) if p.direct_phone else ""
+    d["direct_tel"] = "tel:+1" + direct if len(direct) == 10 else None
     d["is_followup"] = bool(p.next_followup_at)
     return d
 
@@ -496,6 +501,46 @@ def calls_send_info():
         return jsonify({"ok": True, "channel": "email", "to": to_email}), 200
 
     return jsonify({"error": "Unknown channel."}), 400
+
+
+@vacalls_bp.route("/api/va/calls/contact", methods=["POST"])
+@_ratelimit
+def calls_contact():
+    """Save the decision-maker a gatekeeper hands over.
+
+    Any of contact_name / direct_phone / email may be supplied; a present-but-
+    empty value clears the field. The name feeds "ask for X" on the card and
+    the greeting on every outgoing text/email; the direct cell becomes a
+    second tap-to-call and the default target for the info text.
+    """
+    data = request.get_json(silent=True) or {}
+    if not _passcode_ok(data.get("code")):
+        return jsonify({"error": "That code didn't work."}), 401
+    p = db.session.get(CallProspect, data.get("prospect_id") or "")
+    if not p:
+        return jsonify({"error": "Prospect not found — reload the page."}), 404
+
+    if "contact_name" in data:
+        p.contact_name = (data.get("contact_name") or "").strip()[:120] or None
+    if "direct_phone" in data:
+        raw = (data.get("direct_phone") or "").strip()
+        if raw:
+            digits = _digits(raw)
+            if len(digits) != 10:
+                return jsonify({"error": "That direct number doesn't look like "
+                                         "a valid US cell."}), 400
+            p.direct_phone = raw[:40]
+        else:
+            p.direct_phone = None
+    if "email" in data:
+        raw = (data.get("email") or "").strip().lower()
+        if raw and not _EMAIL_RE.match(raw):
+            return jsonify({"error": "Enter a valid email address."}), 400
+        p.email = raw[:254] or None
+
+    db.session.commit()
+    return jsonify({"ok": True,
+                    "card": _card_payload(p, data.get("va_name"))}), 200
 
 
 # ---------------------------------------------------------------------------
@@ -673,7 +718,7 @@ CALLS_HTML = r"""<!doctype html>
 <meta name="theme-color" content="#0B0E12" />
 <title>Umuve — Call Desk</title>
 <link rel="stylesheet" href="/va/app.css?v=3" />
-<link rel="stylesheet" href="/va/calls.css?v=4" />
+<link rel="stylesheet" href="/va/calls.css?v=5" />
 </head>
 <body>
 <div id="app">
@@ -721,9 +766,19 @@ CALLS_HTML = r"""<!doctype html>
         <h2 class="co" id="c-company">Company</h2>
         <div class="meta" id="c-meta">City</div>
         <a class="dial" id="c-tel" href="#"><span class="dial-num" id="c-phone">(561) 000-0000</span><span class="dial-hint">tap to call</span></a>
+        <a class="dial dial-direct" id="c-direct" href="#" hidden><span class="dial-num-sm" id="c-direct-num"></span><span class="dial-hint">direct line — skips the front desk</span></a>
         <div class="factrow"><div class="fact-k">Why them</div><div class="fact-v" id="c-why"></div></div>
         <div class="factrow"><div class="fact-k">Your angle</div><div class="fact-v" id="c-angle"></div></div>
         <details class="openerbox"><summary>Your opener</summary><p id="c-opener"></p></details>
+        <div class="sendinfo">
+          <div class="si-head">WHO DECIDES?</div>
+          <p class="si-sub">Receptionist gave you a name or the boss's cell? Save it — it sticks to this card and their name goes on everything we send.</p>
+          <div class="si-row">
+            <input id="dm-name" type="text" autocomplete="off" placeholder="decision-maker's name" />
+            <input id="dm-phone" type="tel" autocomplete="off" inputmode="tel" placeholder="their cell" />
+            <button class="si-btn" id="dm-save-btn" type="button">Save</button>
+          </div>
+        </div>
         <div class="sendinfo">
           <div class="si-head">THEY SAID “SEND US SOMETHING”?</div>
           <p class="si-sub">The info pack goes out from the Umuve number/email — written so a receptionist can pass it straight to the boss.</p>
@@ -735,6 +790,7 @@ CALLS_HTML = r"""<!doctype html>
             <input id="si-email" type="email" autocomplete="off" inputmode="email" placeholder="email address they gave you" />
             <button class="si-btn" id="si-email-btn" type="button">Email it</button>
           </div>
+          <p class="si-status" id="si-status" hidden></p>
         </div>
         <div class="notewrap" id="c-lastnote" hidden></div>
         <label class="lbl" for="note">Note <span class="opt">(optional — sticks to this business)</span></label>
@@ -761,7 +817,7 @@ CALLS_HTML = r"""<!doctype html>
     </div>
   </section>
 </div>
-<script src="/va/calls.js?v=4"></script>
+<script src="/va/calls.js?v=5"></script>
 </body>
 </html>
 """
@@ -804,6 +860,11 @@ CALLS_CSS = r"""/* Call Desk — layers over /va/app.css tokens */
 .openerbox p{color:var(--muted);font-size:14px;line-height:1.6;margin:10px 0 4px;
   border-left:2px solid rgba(255,106,44,.5);padding-left:12px}
 .sendinfo{border-top:1px solid var(--line);padding:12px 0 4px;margin-top:2px}
+.dial-direct{border-style:dashed;border-color:rgba(127,184,255,.5);padding:10px 12px;margin-top:-6px}
+.dial-direct .dial-hint{color:#7FB8FF}
+.dial-num-sm{font-family:var(--display);font-weight:800;color:var(--ink);
+  font-size:clamp(19px,5.5vw,24px);letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+.si-status{color:var(--ok);font-size:12px;line-height:1.5;margin:2px 0 4px}
 .si-head{font-family:var(--display);font-weight:600;font-size:10px;letter-spacing:.16em;
   text-transform:uppercase;color:var(--faint)}
 .si-sub{color:var(--faint);font-size:12px;line-height:1.5;margin:5px 0 10px}
@@ -977,8 +1038,7 @@ CALLS_JS = r"""(function(){
       noteEl.hidden = false;
     } else { noteEl.hidden = true; }
     document.getElementById("note").value = "";
-    document.getElementById("si-phone").value = c.phone || "";
-    document.getElementById("si-email").value = c.email || "";
+    syncContactUI();
     card.hidden = false; outcomes.hidden = false; textopt.hidden = false;
     if(!reduced){
       card.style.opacity = "0"; card.style.transform = "translateY(6px)";
@@ -1044,6 +1104,63 @@ CALLS_JS = r"""(function(){
     }).catch(function(){ setBusy(false); fail(0, {error: "No connection — that call wasn't logged. Try again."}); });
   });
 
+  // ---- decision-maker capture + info-sent status ----
+  function fmtDay(iso){
+    if(!iso) return null;
+    var d = new Date(iso + (iso.slice(-1) === "Z" ? "" : "Z"));
+    return d.toLocaleDateString([], {weekday:"short", month:"short", day:"numeric"});
+  }
+
+  function syncContactUI(){
+    var c = current;
+    if(!c) return;
+    var meta = [c.city, c.contact_name ? ("ask for " + c.contact_name) : null,
+                c.attempts ? ("attempt " + (c.attempts + 1)) : null];
+    document.getElementById("c-meta").textContent = meta.filter(Boolean).join(" · ");
+    var direct = document.getElementById("c-direct");
+    if(c.direct_tel){
+      document.getElementById("c-direct-num").textContent =
+        (c.contact_name ? c.contact_name + " — " : "") + c.direct_phone;
+      direct.href = c.direct_tel;
+      direct.hidden = false;
+    } else { direct.hidden = true; }
+    document.getElementById("dm-name").value = c.contact_name || "";
+    document.getElementById("dm-phone").value = c.direct_phone || "";
+    // the info text goes to the boss's cell when we have one
+    document.getElementById("si-phone").value = c.direct_phone || c.phone || "";
+    document.getElementById("si-email").value = c.email || "";
+    var bits = [];
+    if(c.last_texted_at) bits.push("texted " + fmtDay(c.last_texted_at));
+    if(c.last_emailed_at) bits.push("emailed " + fmtDay(c.last_emailed_at));
+    var status = document.getElementById("si-status");
+    if(bits.length){
+      status.textContent = "✓ Info pack already " + bits.join(" · ") +
+        " — reference it on this call.";
+      status.hidden = false;
+    } else { status.hidden = true; }
+  }
+
+  document.getElementById("dm-save-btn").addEventListener("click", function(){
+    if(!current || this.disabled) return;
+    var btn = this;
+    btn.disabled = true;
+    post("/api/va/calls/contact", {
+      prospect_id: current.id,
+      contact_name: document.getElementById("dm-name").value.trim(),
+      direct_phone: document.getElementById("dm-phone").value.trim(),
+      email: document.getElementById("si-email").value.trim()
+    }).then(function(r){
+      btn.disabled = false;
+      if(r.status !== 200){ fail(r.status, r.body); return; }
+      current = r.body.card;
+      syncContactUI();
+      showToast("Saved — it'll be on this card every time they come back.");
+    }).catch(function(){
+      btn.disabled = false;
+      fail(0, {error: "No connection — nothing was saved. Try again."});
+    });
+  });
+
   // ---- send the info pack (text or email), no outcome needed ----
   // After a text "sends", poll the real carrier status so a landline can't
   // swallow it silently (the DR BILLIARDS lesson).
@@ -1078,10 +1195,13 @@ CALLS_JS = r"""(function(){
       if(channel === "text"){
         showToast("Info text sent to " + r.body.to + " — checking it lands…");
         if(r.body.sid){ setTimeout(function(){ checkDelivery(r.body.sid, 0); }, 8000); }
+        current.last_texted_at = new Date().toISOString();
       } else {
         showToast("Info pack emailed to " + r.body.to + " ✓");
         current.email = r.body.to;
+        current.last_emailed_at = new Date().toISOString();
       }
+      syncContactUI();
     }).catch(function(){
       btn.disabled = false;
       fail(0, {error: "No connection — nothing was sent. Try again."});
