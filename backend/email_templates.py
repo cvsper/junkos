@@ -1215,3 +1215,60 @@ def operator_recruitment_5_html(first_name=None):
     )
 
     return _operator_wrap(body)
+
+
+# ---------------------------------------------------------------------------
+# VA Call Desk — partner info pack (demand side)
+# ---------------------------------------------------------------------------
+
+def va_partner_info_html(company=None, to_name=None, va_name=None):
+    """Info-pack email the Call Desk sends to a business prospect.
+
+    Built for the gatekeeper flow: the VA usually reaches a receptionist or
+    assistant who says "email us something for the manager" — so this reads
+    well forwarded, states the offer without needing the call as context, and
+    gives the decision-maker two zero-friction next steps (partner page, or
+    text a photo for a price).
+    """
+    greet = 'Hi {},'.format(_esc(str(to_name).strip())) if to_name and str(to_name).strip() else 'Hi,'
+    who = _esc(str(company).strip()) if company and str(company).strip() else 'your company'
+    va = _esc(str(va_name).strip()) if va_name and str(va_name).strip() else 'the Umuve team'
+
+    body = (
+        '<p style="font-size:16px;line-height:1.7;margin:0 0 16px;">{greet}</p>'
+        '<p style="font-size:16px;line-height:1.7;margin:0 0 16px;">'
+        'This is {va} with <strong>Umuve</strong> &mdash; following up on my call to {who} '
+        'with the info I promised. Feel free to pass this along to whoever handles '
+        'junk removal, cleanouts, or disposal.</p>'
+        '<p style="font-size:16px;line-height:1.7;margin:0 0 20px;">'
+        'Umuve is a junk-removal and cleanout service for South Florida businesses: '
+        'one number to call or text, an upfront price before we come out, and pickup '
+        'usually same or next day.</p>'
+    ).format(greet=greet, va=va, who=who)
+
+    body += (
+        '<table width="100%" cellpadding="0" cellspacing="0" style="background:#FEF2F2;'
+        'border-radius:12px;border:1px solid #FECACA;margin:0 0 24px;">'
+        '<tr><td style="padding:24px;">'
+        '<table width="100%" cellpadding="0" cellspacing="0">'
+        '<tr><td style="padding:8px 0;font-size:15px;color:#1a1a1a;">&#10003;&nbsp; <strong>Upfront pricing</strong> &mdash; text a photo of the pile, get a firm price in minutes</td></tr>'
+        '<tr><td style="padding:8px 0;font-size:15px;color:#1a1a1a;">&#10003;&nbsp; <strong>Same/next-day pickup</strong> &mdash; tenant leave-behinds, cleanouts, bulk items, debris</td></tr>'
+        '<tr><td style="padding:8px 0;font-size:15px;color:#1a1a1a;">&#10003;&nbsp; <strong>Insured local pros</strong> &mdash; licensed crews, before/after photos on every job</td></tr>'
+        '<tr><td style="padding:8px 0;font-size:15px;color:#1a1a1a;">&#10003;&nbsp; <strong>Standing accounts</strong> &mdash; volume rates and priority scheduling for businesses with recurring needs</td></tr>'
+        '<tr><td style="padding:8px 0;font-size:15px;color:#1a1a1a;">&#10003;&nbsp; <strong>Realtors:</strong> 10% referral credit on every job you send</td></tr>'
+        '</table></td></tr></table>'
+    )
+
+    body += (
+        '<p style="text-align:center;margin:0 0 20px;">'
+        '<a href="https://goumuve.com/partners" style="display:inline-block;background:#DC2626;'
+        'color:#ffffff;text-decoration:none;padding:16px 40px;border-radius:8px;font-weight:700;'
+        'font-size:16px;">See Partner Details &#8594;</a></p>'
+        '<p style="font-size:16px;line-height:1.7;margin:0 0 16px;">'
+        'Questions, or a job you want priced right now? Call or text '
+        '<strong>(561) 944-1636</strong> &mdash; that line takes photos too. '
+        'Or just reply to this email.</p>'
+        '<p style="font-size:16px;line-height:1.7;margin:0 0 4px;">&mdash; {va}, Umuve</p>'
+    ).format(va=va)
+
+    return _wrap(body)

@@ -11,6 +11,9 @@ Routes:
   GET  /va/calls.js         -> client script
   POST /api/va/calls/next   -> passcode-gated; next card + day stats
   POST /api/va/calls/log    -> passcode-gated; log outcome, return next card
+  POST /api/va/calls/send-info -> passcode-gated; info pack by text or email,
+                                  independent of outcome logging (gatekeeper
+                                  flow: "send something for the manager")
   POST /api/admin/call-prospects/import -> admin; seed/merge prospect rows
   GET  /api/admin/caller-stats          -> admin; outcomes by day + segment
 
@@ -175,6 +178,19 @@ def followup_text_for(outcome, prospect, va_name):
             "if that's easier. Reply STOP to opt out."
         ).format(greet=greet, va=va)
     return None
+
+
+def info_text_for(prospect, va_name):
+    """The standalone info-pack text — self-contained so it still makes sense
+    forwarded to a decision-maker who never heard the call."""
+    va = (va_name or "Tracy").split()[0]
+    return (
+        "Hi, it's {va} with Umuve — the info I promised, feel free to pass it "
+        "along: we do junk removal & cleanouts for South Florida businesses. "
+        "Upfront price before we come out, pickup same or next day. Details: "
+        "goumuve.com/partners. This number takes calls, texts & photos — text "
+        "a photo of any pile for a quick price. Reply STOP to opt out."
+    ).format(va=va)
 
 
 TEXT_DEDUPE_HOURS = 24
@@ -410,6 +426,78 @@ def calls_get():
                     "stats": day_stats()}), 200
 
 
+_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+
+def _va_email_from():
+    return (os.environ.get("VA_EMAIL_FROM")
+            or os.environ.get("OUTREACH_FROM") or "").strip() or None
+
+
+@vacalls_bp.route("/api/va/calls/send-info", methods=["POST"])
+@_ratelimit
+def calls_send_info():
+    """Send the partner info pack by text or email, no outcome required.
+
+    Born from the gatekeeper problem (Tracy, Aug 2026): most B2B dials reach a
+    receptionist who says "send us something for the manager" — often with a
+    different cell number or an email address. Bodies are server-side
+    templates; the client only supplies the destination.
+    """
+    data = request.get_json(silent=True) or {}
+    if not _passcode_ok(data.get("code")):
+        return jsonify({"error": "That code didn't work."}), 401
+    p = db.session.get(CallProspect, data.get("prospect_id") or "")
+    if not p:
+        return jsonify({"error": "Prospect not found — reload the page."}), 404
+    va_name = (data.get("va_name") or "").strip()[:80]
+    channel = (data.get("channel") or "").strip()
+    to = (data.get("to") or "").strip()
+
+    if channel == "text":
+        digits = _digits(to) if to else p.phone_digits
+        if len(digits or "") != 10:
+            return jsonify({"error": "That doesn't look like a valid US number."}), 400
+        import sms_service
+        sid = _run(lambda: sms_service.send_sms("+1" + digits, info_text_for(p, va_name)))
+        if not sid:
+            return jsonify({"error": "The text didn't go through — texting may be "
+                                     "down, or that's not a textable number."}), 502
+        p.last_texted_at = _now().replace(tzinfo=None)
+        db.session.commit()
+        logger.info("call desk info text sent to %s (company=%s)", digits, p.company)
+        return jsonify({"ok": True, "channel": "text",
+                        "to": "(...) " + digits[-4:], "sid": sid}), 200
+
+    if channel == "email":
+        to_email = to.lower()
+        if not _EMAIL_RE.match(to_email):
+            return jsonify({"error": "Enter a valid email address."}), 400
+        from email_templates import va_partner_info_html
+        html = va_partner_info_html(company=p.company,
+                                    to_name=_first_name(p.contact_name),
+                                    va_name=va_name)
+        subject = "Junk removal & cleanouts for {} — Umuve".format(
+            (p.company or "your business")[:80])
+        from notifications import _send_email_sync
+        from_addr = _va_email_from()
+        result = _run(lambda: _send_email_sync(to_email, subject, html,
+                                               from_override=from_addr))
+        if result is None and from_addr:
+            logger.warning("call desk email from %s failed; retrying from default sender",
+                           from_addr)
+            result = _run(lambda: _send_email_sync(to_email, subject, html))
+        if result is None:
+            return jsonify({"error": "Email isn't configured yet — ask Shamar."}), 503
+        p.email = to_email[:254]
+        p.last_emailed_at = _now().replace(tzinfo=None)
+        db.session.commit()
+        logger.info("call desk info email sent to %s (company=%s)", to_email, p.company)
+        return jsonify({"ok": True, "channel": "email", "to": to_email}), 200
+
+    return jsonify({"error": "Unknown channel."}), 400
+
+
 # ---------------------------------------------------------------------------
 # Admin: seed/merge + stats
 # ---------------------------------------------------------------------------
@@ -585,7 +673,7 @@ CALLS_HTML = r"""<!doctype html>
 <meta name="theme-color" content="#0B0E12" />
 <title>Umuve — Call Desk</title>
 <link rel="stylesheet" href="/va/app.css?v=3" />
-<link rel="stylesheet" href="/va/calls.css?v=3" />
+<link rel="stylesheet" href="/va/calls.css?v=4" />
 </head>
 <body>
 <div id="app">
@@ -636,6 +724,18 @@ CALLS_HTML = r"""<!doctype html>
         <div class="factrow"><div class="fact-k">Why them</div><div class="fact-v" id="c-why"></div></div>
         <div class="factrow"><div class="fact-k">Your angle</div><div class="fact-v" id="c-angle"></div></div>
         <details class="openerbox"><summary>Your opener</summary><p id="c-opener"></p></details>
+        <div class="sendinfo">
+          <div class="si-head">THEY SAID “SEND US SOMETHING”?</div>
+          <p class="si-sub">The info pack goes out from the Umuve number/email — written so a receptionist can pass it straight to the boss.</p>
+          <div class="si-row">
+            <input id="si-phone" type="tel" autocomplete="off" inputmode="tel" placeholder="their cell (prefilled)" />
+            <button class="si-btn" id="si-text-btn" type="button">Text it</button>
+          </div>
+          <div class="si-row">
+            <input id="si-email" type="email" autocomplete="off" inputmode="email" placeholder="email address they gave you" />
+            <button class="si-btn" id="si-email-btn" type="button">Email it</button>
+          </div>
+        </div>
         <div class="notewrap" id="c-lastnote" hidden></div>
         <label class="lbl" for="note">Note <span class="opt">(optional — sticks to this business)</span></label>
         <input id="note" type="text" autocomplete="off" placeholder="e.g. asked to call back Thursday" />
@@ -661,7 +761,7 @@ CALLS_HTML = r"""<!doctype html>
     </div>
   </section>
 </div>
-<script src="/va/calls.js?v=3"></script>
+<script src="/va/calls.js?v=4"></script>
 </body>
 </html>
 """
@@ -703,6 +803,18 @@ CALLS_CSS = r"""/* Call Desk — layers over /va/app.css tokens */
 .openerbox[open] summary::before{content:"▾ "}
 .openerbox p{color:var(--muted);font-size:14px;line-height:1.6;margin:10px 0 4px;
   border-left:2px solid rgba(255,106,44,.5);padding-left:12px}
+.sendinfo{border-top:1px solid var(--line);padding:12px 0 4px;margin-top:2px}
+.si-head{font-family:var(--display);font-weight:600;font-size:10px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--faint)}
+.si-sub{color:var(--faint);font-size:12px;line-height:1.5;margin:5px 0 10px}
+.si-row{display:flex;gap:8px;margin-bottom:8px}
+.si-row input{flex:1;min-width:0;margin:0}
+.si-btn{flex:none;padding:0 16px;font-family:var(--display);font-weight:700;font-size:13px;
+  color:var(--accent);background:var(--raise);border:1px solid rgba(255,106,44,.45);
+  border-radius:12px;cursor:pointer;transition:border-color .15s,transform .05s}
+.si-btn:hover{border-color:var(--accent)}
+.si-btn:active{transform:translateY(1px)}
+.si-btn:disabled{opacity:.45;cursor:default}
 .notewrap{margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--raise);
   border:1px solid var(--line);color:var(--muted);font-size:13px;line-height:1.5}
 .notewrap b{color:var(--faint);font-family:var(--display);font-weight:600;font-size:10px;
@@ -865,6 +977,8 @@ CALLS_JS = r"""(function(){
       noteEl.hidden = false;
     } else { noteEl.hidden = true; }
     document.getElementById("note").value = "";
+    document.getElementById("si-phone").value = c.phone || "";
+    document.getElementById("si-email").value = c.email || "";
     card.hidden = false; outcomes.hidden = false; textopt.hidden = false;
     if(!reduced){
       card.style.opacity = "0"; card.style.transform = "translateY(6px)";
@@ -928,6 +1042,57 @@ CALLS_JS = r"""(function(){
       }
       render(r.body);
     }).catch(function(){ setBusy(false); fail(0, {error: "No connection — that call wasn't logged. Try again."}); });
+  });
+
+  // ---- send the info pack (text or email), no outcome needed ----
+  // After a text "sends", poll the real carrier status so a landline can't
+  // swallow it silently (the DR BILLIARDS lesson).
+  function checkDelivery(sid, attempt){
+    fetch("/api/va/status", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({passcode: code(), sid: sid})
+    }).then(function(r){ return r.json(); }).then(function(j){
+      if(!j || !j.ok) return;
+      if(j.status === "delivered"){ showToast("Text delivered ✓"); return; }
+      if(j.status === "failed" || j.status === "undelivered"){
+        showToast("Text did NOT arrive: " + (j.reason || "delivery failed") +
+                  " Try email instead.");
+        return;
+      }
+      if(attempt < 2){ setTimeout(function(){ checkDelivery(sid, attempt + 1); }, 15000); }
+    }).catch(function(){});
+  }
+
+  function sendInfo(channel, to, btn){
+    if(!current || btn.disabled) return;
+    if(channel === "email" && !to){
+      showToast("Type the email address they gave you first."); return;
+    }
+    btn.disabled = true;
+    post("/api/va/calls/send-info", {
+      prospect_id: current.id, channel: channel, to: to
+    }).then(function(r){
+      btn.disabled = false;
+      if(r.status !== 200){ fail(r.status, r.body); return; }
+      if(channel === "text"){
+        showToast("Info text sent to " + r.body.to + " — checking it lands…");
+        if(r.body.sid){ setTimeout(function(){ checkDelivery(r.body.sid, 0); }, 8000); }
+      } else {
+        showToast("Info pack emailed to " + r.body.to + " ✓");
+        current.email = r.body.to;
+      }
+    }).catch(function(){
+      btn.disabled = false;
+      fail(0, {error: "No connection — nothing was sent. Try again."});
+    });
+  }
+
+  document.getElementById("si-text-btn").addEventListener("click", function(){
+    sendInfo("text", document.getElementById("si-phone").value.trim(), this);
+  });
+  document.getElementById("si-email-btn").addEventListener("click", function(){
+    sendInfo("email", document.getElementById("si-email").value.trim(), this);
   });
 
   // ---- callback search ----

@@ -65,6 +65,10 @@ COLUMN_MIGRATIONS = [
     # VA Call Desk — last follow-up text sent to a demand prospect (24h dedupe)
     ("call_prospects", "last_texted_at", "DATETIME", "TIMESTAMP", "NULL"),
 
+    # VA Call Desk — info-pack email (gatekeeper flow: "send it to the boss")
+    ("call_prospects", "email", "VARCHAR(254)", "VARCHAR(254)", "NULL"),
+    ("call_prospects", "last_emailed_at", "DATETIME", "TIMESTAMP", "NULL"),
+
     # Contractor onboarding fields
     ("contractors", "onboarding_status", "VARCHAR(20)", "VARCHAR(20)", "'pending'"),
     ("contractors", "background_check_status", "VARCHAR(20)", "VARCHAR(20)", "'not_started'"),
