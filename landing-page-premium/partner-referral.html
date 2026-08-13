@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Umuve Partner Program — Send Us the Job You Can't Take</title>
+    <meta name="description" content="Estate sales, senior moves, realtors, movers: when your client has a pile that isn't your job, text us a photo. Upfront price in minutes, hauled same or next day.">
+    <meta name="robots" content="noindex">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Outfit:wght@700;800&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --paper: #FFFFFF;
+            --ink: #171717;
+            --ink-soft: #4b5563;
+            --red: #C52222;
+            --kraft: #F3EAD9;
+            --kraft-line: #D9C9A8;
+            --money: #1E7A46;
+            --display: 'Outfit', sans-serif;
+            --body: 'DM Sans', sans-serif;
+            --mono: 'IBM Plex Mono', monospace;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { -webkit-text-size-adjust: 100%; }
+        body {
+            font-family: var(--body);
+            background: var(--paper);
+            color: var(--ink);
+            line-height: 1.55;
+        }
+        .sheet {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 40px 28px 56px;
+        }
+
+        /* Header */
+        .masthead {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid var(--ink);
+        }
+        .masthead img { height: 40px; width: auto; display: block; }
+        .masthead .program {
+            font-family: var(--mono);
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--red);
+            text-align: right;
+        }
+
+        /* Thesis */
+        .thesis { padding: 40px 0 8px; }
+        h1 {
+            font-family: var(--display);
+            font-weight: 800;
+            font-size: clamp(34px, 6vw, 52px);
+            line-height: 1.04;
+            letter-spacing: -0.02em;
+            max-width: 14ch;
+        }
+        h1 em {
+            font-style: normal;
+            color: var(--red);
+        }
+        .lede {
+            margin-top: 18px;
+            font-size: 17px;
+            color: var(--ink-soft);
+            max-width: 54ch;
+        }
+        .lede strong { color: var(--ink); }
+
+        /* Steps — a real sequence: photo → price → gone */
+        .steps {
+            margin-top: 36px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0;
+            border-top: 1px solid var(--ink);
+            border-bottom: 1px solid var(--ink);
+        }
+        .step {
+            padding: 20px 18px 24px 0;
+        }
+        .step + .step { padding-left: 18px; border-left: 1px dashed var(--kraft-line); }
+        .step .n {
+            font-family: var(--mono);
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--red);
+            letter-spacing: 0.1em;
+        }
+        .step h2 {
+            font-family: var(--display);
+            font-weight: 700;
+            font-size: 18px;
+            margin: 6px 0 4px;
+            letter-spacing: -0.01em;
+        }
+        .step p { font-size: 14px; color: var(--ink-soft); }
+
+        /* Signature: the referral ticket */
+        .ticket-wrap { margin: 44px 0 8px; }
+        .ticket {
+            background: var(--kraft);
+            border: 1px solid var(--kraft-line);
+            border-radius: 6px;
+            padding: 26px 28px 24px;
+            position: relative;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.08);
+        }
+        /* perforation notches */
+        .ticket::before, .ticket::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            width: 22px; height: 22px;
+            background: var(--paper);
+            border: 1px solid var(--kraft-line);
+            border-radius: 50%;
+            transform: translateY(-50%);
+        }
+        .ticket::before { left: -12px; clip-path: inset(0 0 0 50%); }
+        .ticket::after { right: -12px; clip-path: inset(0 50% 0 0); }
+        .ticket .tag {
+            font-family: var(--mono);
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: var(--ink-soft);
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            border-bottom: 1px dashed var(--kraft-line);
+            padding-bottom: 12px;
+        }
+        .ticket .num {
+            font-family: var(--display);
+            font-weight: 800;
+            font-size: clamp(30px, 7vw, 46px);
+            letter-spacing: -0.01em;
+            margin: 16px 0 2px;
+        }
+        .ticket .num a { color: var(--ink); text-decoration: none; }
+        .ticket .num a:hover, .ticket .num a:focus-visible { color: var(--red); }
+        .ticket .does {
+            font-size: 15px;
+            color: var(--ink-soft);
+        }
+        .ticket .does strong { color: var(--ink); }
+        .ticket .pin {
+            margin-top: 16px;
+            font-family: var(--mono);
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--red);
+        }
+
+        /* Proof + credit */
+        .proof {
+            margin-top: 36px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px 28px;
+            font-size: 15px;
+        }
+        .proof div { padding-left: 22px; position: relative; }
+        .proof div::before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: var(--red);
+            font-weight: 700;
+        }
+        .credit {
+            margin-top: 28px;
+            border-left: 3px solid var(--money);
+            padding: 4px 0 4px 16px;
+            font-size: 15px;
+        }
+        .credit strong { color: var(--money); }
+
+        footer {
+            margin-top: 48px;
+            padding-top: 16px;
+            border-top: 1px solid var(--kraft-line);
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            gap: 8px 20px;
+            font-size: 13px;
+            color: var(--ink-soft);
+        }
+        footer a { color: var(--ink-soft); }
+
+        @media (max-width: 620px) {
+            .steps { grid-template-columns: 1fr; }
+            .step { padding: 16px 0; }
+            .step + .step { padding-left: 0; border-left: 0; border-top: 1px dashed var(--kraft-line); }
+            .proof { grid-template-columns: 1fr; }
+        }
+        @media print {
+            .sheet { padding: 0; max-width: none; }
+            .ticket { box-shadow: none; }
+            a { text-decoration: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="sheet">
+        <header class="masthead">
+            <img src="/logo-nav.png" alt="Umuve">
+            <div class="program">Partner<br>Program</div>
+        </header>
+
+        <section class="thesis">
+            <h1>The job you can't take? <em>Send it to us.</em></h1>
+            <p class="lede">You run the estate sale, stage the listing, move the family.
+            There's always a pile left over — and hauling it isn't your job.
+            <strong>It's ours.</strong> South Florida crews, upfront pricing,
+            gone same or next day.</p>
+        </section>
+
+        <section class="steps" aria-label="How it works">
+            <div class="step">
+                <span class="n">STEP 1</span>
+                <h2>Text a photo</h2>
+                <p>Snap the pile, the garage, the leftover lot — send it to our number below.</p>
+            </div>
+            <div class="step">
+                <span class="n">STEP 2</span>
+                <h2>Price in minutes</h2>
+                <p>An upfront, all-in quote comes back by text. No site visit, no surprises.</p>
+            </div>
+            <div class="step">
+                <span class="n">STEP 3</span>
+                <h2>It's gone</h2>
+                <p>Pickup same or next day. Your client's problem solved — you look like a hero.</p>
+            </div>
+        </section>
+
+        <div class="ticket-wrap">
+            <div class="ticket">
+                <div class="tag"><span>Referral ticket</span><span>Calls · texts · photos</span></div>
+                <div class="num"><a href="tel:+15619441636">(561) 944-1636</a></div>
+                <p class="does">One number for everything — <strong>text a photo of any pile</strong>
+                for a quick price, or hand it straight to your client.</p>
+                <p class="pin">✂ Pin this above the desk. Every "can you also haul…?" has an answer now.</p>
+            </div>
+        </div>
+
+        <section class="proof">
+            <div>Upfront price before we roll — your client is never surprised</div>
+            <div>Insured, vetted local crews</div>
+            <div>Palm Beach &amp; Broward coverage</div>
+            <div>Standing accounts for repeat cleanouts</div>
+        </section>
+
+        <p class="credit"><strong>Realtors: 10% referral credit</strong> on every job you send.
+        Other businesses — ask about partner terms for regular referrals.</p>
+
+        <footer>
+            <span>Umuve · goumuve.com</span>
+            <a href="https://goumuve.com/partners">More for businesses → goumuve.com/partners</a>
+            <a href="mailto:partners@goumuve.com">partners@goumuve.com</a>
+        </footer>
+    </div>
+</body>
+</html>
