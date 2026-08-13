@@ -254,8 +254,31 @@ def _eastern_day_start(now=None):
     return (day_start_local + timedelta(hours=4)).replace(tzinfo=None)
 
 
+# Recurring-demand accounts outrank one-off jobs inside a tier: one property
+# manager with 30 doors produces move-out cleanouts every month forever, while
+# an estate sale is a single job. Rank 0 = standing institutional demand,
+# rank 1 = repeat referrers (their clients churn junk constantly), rank 2 =
+# episodic. Note "estate sales" lands in rank 2 — only "real estate" is a
+# referrer — because the recurring/referrer keyword lists are checked first.
+_RECURRING_CATS = ("property", "hoa", "apartment", "hotel", "institution",
+                   "commercial", "office", "storage")
+_REFERRER_CATS = ("real estate", "staging", "probate", "senior", "moving",
+                  "investor", "flipper")
+
+
+def _category_rank_sql():
+    from sqlalchemy import case, func
+    cat = func.lower(func.coalesce(CallProspect.category, ""))
+    return case(
+        *[(cat.contains(k), 0) for k in _RECURRING_CATS],
+        *[(cat.contains(k), 1) for k in _REFERRER_CATS],
+        else_=2,
+    )
+
+
 def next_card():
-    """Due follow-ups first (oldest due), then fresh rows by tier."""
+    """Due follow-ups first (oldest due), then fresh rows by tier with
+    recurring-demand categories served before one-off categories."""
     now_naive = _now().replace(tzinfo=None)
     workable = CallProspect.status.in_(("queued", "interested"))
     due = (CallProspect.query
@@ -268,8 +291,8 @@ def next_card():
         return due
     return (CallProspect.query
             .filter(workable, CallProspect.next_followup_at.is_(None))
-            .order_by(CallProspect.tier.asc(), CallProspect.category.asc(),
-                      CallProspect.created_at.asc())
+            .order_by(CallProspect.tier.asc(), _category_rank_sql().asc(),
+                      CallProspect.category.asc(), CallProspect.created_at.asc())
             .first())
 
 
