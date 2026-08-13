@@ -248,10 +248,9 @@ def sms_custom(to_phone, message):
 # Review request SMS (delayed after job completion)
 # ---------------------------------------------------------------------------
 
-# TODO: Replace this placeholder with the actual Google Business Profile
-# review link once the Umuve GBP is claimed. You can also set the
-# GOOGLE_REVIEW_URL environment variable on Render to override at runtime.
-_DEFAULT_GOOGLE_REVIEW_URL = "https://g.page/r/umuve/review"
+# Set GOOGLE_REVIEW_URL on Render once the Umuve Google Business Profile is
+# claimed (the old hardcoded g.page/r/umuve/review placeholder 302'd to the
+# Google homepage — worse than no link). Unset → ask for feedback by reply.
 
 
 def send_review_request_sms(phone, customer_name, city_name):
@@ -262,16 +261,24 @@ def send_review_request_sms(phone, customer_name, city_name):
     """
     try:
         import os as _os
-        review_url = _os.environ.get("GOOGLE_REVIEW_URL", _DEFAULT_GOOGLE_REVIEW_URL)
+        review_url = _os.environ.get("GOOGLE_REVIEW_URL", "").strip()
         first_name = customer_name.split()[0] if customer_name else "there"
         city = city_name or "your area"
-        body = (
-            "Hi {}! Thanks for choosing Umuve for your "
-            "junk removal in {}. We'd love your feedback — "
-            "it takes 30 seconds and helps us serve {} better.\n\n"
-            "Leave a review: {}\n\n"
-            "Thanks! — The Umuve Team"
-        ).format(first_name, city, city, review_url)
+        if review_url:
+            body = (
+                "Hi {}! Thanks for choosing Umuve for your "
+                "junk removal in {}. We'd love your feedback — "
+                "it takes 30 seconds and helps us serve {} better.\n\n"
+                "Leave a review: {}\n\n"
+                "Thanks! — The Umuve Team"
+            ).format(first_name, city, city, review_url)
+        else:
+            body = (
+                "Hi {}! Thanks for choosing Umuve for your "
+                "junk removal in {}. How did we do? Reply to this "
+                "text with a quick note or a 1-5 — it goes straight "
+                "to the team.\n\n— The Umuve Team"
+            ).format(first_name, city)
         send_sms_async(phone, body)
     except Exception:
         logger.exception("send_review_request_sms failed for %s", phone)

@@ -212,14 +212,24 @@ def email_follow_up(to_email, name):
     try:
         first_name = name.split()[0] if name else "there"
         
+        # Link only when the real GBP review URL is configured — the old
+        # hardcoded g.page placeholder 302'd to the Google homepage.
+        review_url = os.environ.get("GOOGLE_REVIEW_URL", "").strip()
+        if review_url:
+            cta = f"""
+        <p style="margin-top: 30px;">
+            <a href="{review_url}" class="button">Leave a Review</a>
+        </p>"""
+        else:
+            cta = """
+        <p style="margin-top: 30px;">Just hit reply and tell us how it went — every note gets read.</p>"""
+
         content = f"""
         <h2>How did we do?</h2>
         <p>Hi {first_name},</p>
         <p>It's been 24 hours since your Umuve pickup. We'd love to hear about your experience.</p>
         <p>Feedback helps us improve and ensures we're sending the best operators to our customers.</p>
-        <p style="margin-top: 30px;">
-            <a href="https://g.page/r/umuve/review" class="button">Leave a Review</a>
-        </p>
+        {cta}
         <p>If you had any issues, please reply to this email and our support team will get back to you immediately.</p>
         """
         

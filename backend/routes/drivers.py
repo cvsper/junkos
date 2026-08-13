@@ -831,6 +831,28 @@ def apply_job_status_transition(job, contractor, new_status, data=None):
                         {"job_id": job.id, "driver_id": contractor.id},
                     )
 
+            # Nudge the hauler for missing before/after photos — texted
+            # photos auto-attach via the SMS webhook, so this works for
+            # app operators and phone-only concierge haulers alike.
+            if not job.before_photos or not job.after_photos:
+                try:
+                    _nudge = (
+                        "Job done 💪 Before/after photos win you the next "
+                        "one — text them to this number and they'll attach "
+                        "to the job automatically. Start the text with "
+                        "'before' or 'after' if sending separately."
+                    )
+                    if contractor.user and contractor.user.phone:
+                        from sms_service import send_sms as _op_sms
+                        _op_sms(contractor.user.phone, _nudge)
+                    send_push_notification(
+                        contractor.user_id, "Add your before/after photos",
+                        _nudge, {"job_id": job.id, "category": "proof_nudge"},
+                    )
+                except Exception:
+                    logger.exception(
+                        "Proof-photo nudge failed for job %s", job.id)
+
             # Review-request SMS (2h later) now sent durably by the
             # growth_loops sweep — the threading.Timer version silently died
             # on every deploy/restart, losing a chunk of review asks.

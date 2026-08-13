@@ -159,6 +159,13 @@ def inbound_sms():
                 media_urls.append(url)
 
         if media_urls:
+            # A hauler texting photos right after a job is submitting
+            # before/after proof, not asking for a quote — attach the photos
+            # to their job and skip the quote engine entirely.
+            proof_reply = _attach_operator_proof(from_phone, body, media_urls)
+            if proof_reply:
+                return _twiml_response(proof_reply)
+
             # Process in background so Twilio gets a fast response
             from flask import current_app
             app = current_app._get_current_object()
@@ -215,6 +222,70 @@ def inbound_sms():
         "Thanks for texting Umuve! Text us a PHOTO of your junk for an instant quote, "
         "or call (844) 435-6005. Book online: app.goumuve.com"
     )
+
+
+# How long after a job's last touch a hauler's texted photos still count as
+# proof for it. Beyond this, photos fall through to the quote engine.
+PROOF_ATTACH_WINDOW_H = 72
+
+
+def _attach_operator_proof(phone, body, media_urls):
+    """Attach texted photos to the sender's active or just-finished job.
+
+    Returns the confirmation reply to send, or None when the sender isn't a
+    hauler with a recent started/completed job (→ photo-quote path).
+    Never raises.
+    """
+    try:
+        from datetime import timedelta
+        from models import db, Job, User, utcnow
+        from recruiter import normalize_phone
+        e164 = normalize_phone(phone) or phone
+        user = User.query.filter_by(phone=e164).first()
+        contractor = user.contractor_profile if user else None
+        if not contractor:
+            return None
+        cutoff = utcnow() - timedelta(hours=PROOF_ATTACH_WINDOW_H)
+        job = (Job.query
+               .filter(Job.driver_id == contractor.id,
+                       Job.status.in_(("started", "completed")),
+                       Job.updated_at >= cutoff)
+               .order_by(Job.updated_at.desc())
+               .first())
+        if not job:
+            return None
+
+        # "before"/"after" in the text wins; otherwise fill before first.
+        lower = (body or "").lower()
+        if "before" in lower:
+            side = "before"
+        elif "after" in lower:
+            side = "after"
+        else:
+            side = "before" if not job.before_photos else "after"
+
+        # JSON columns need reassignment (in-place append isn't tracked).
+        setattr(job, side + "_photos",
+                list(getattr(job, side + "_photos") or []) + media_urls)
+        job.proof_submitted_at = utcnow()
+        job.updated_at = utcnow()
+        db.session.commit()
+        logger.info("Attached %d %s photo(s) to job %s from hauler %s",
+                    len(media_urls), side, job.id, contractor.id)
+
+        if side == "before" and not job.after_photos:
+            follow = " Text the AFTER shot once the space is clear."
+        elif side == "after" and not job.before_photos:
+            follow = (" Got a before shot too? Text it with the word "
+                      "'before'.")
+        else:
+            follow = " Full before/after set — that's the good stuff."
+        n = len(media_urls)
+        return "Attached {} {} photo{} to your job.{}".format(
+            n, side, "" if n == 1 else "s", follow)
+    except Exception:
+        logger.exception("Operator proof attach failed for %s", phone)
+        return None
 
 
 def _opt_out_concierge(phone):
