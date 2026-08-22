@@ -429,6 +429,16 @@ def _run_operator_outreach(app):
         logger.exception("operator outreach job crashed")
 
 
+def _run_demand_records(app):
+    """Daily public-records demand sweep: code-enforcement citations, probate
+    and eviction filings -> DemandSignal rows + digest. Observe-only."""
+    try:
+        from demand_records import run_demand_records_cycle  # opens its own app ctx
+        run_demand_records_cycle(app)
+    except Exception:
+        logger.exception("demand records sweep crashed")
+
+
 def _run_b2b_outreach(app):
     """Daily B2B customer-acquisition outreach: source businesses -> qualify ->
     email drip to portal signup. Safe dry run until the B2B env is set."""
@@ -699,6 +709,19 @@ def init_scheduler(app):
             args=[app],
             id="doc_expiry_sweep",
             name="Daily operator document expiry sweep",
+        )
+
+        # Daily public-records demand sweep — 12:30 UTC (~7-8am ET), before the
+        # outreach engines so fresh signals are in the morning digest. Sources
+        # code-violation / probate / eviction records; contacts no one.
+        scheduler.add_job(
+            _run_demand_records,
+            "cron",
+            hour=12,
+            minute=30,
+            args=[app],
+            id="demand_records",
+            name="Daily public-records demand sweep",
         )
 
         # Daily B2B customer-acquisition outreach — 15:00 UTC (~11am ET), after

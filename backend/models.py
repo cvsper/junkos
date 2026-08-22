@@ -3539,6 +3539,62 @@ class B2BLead(db.Model):
         }
 
 
+class DemandSignal(db.Model):
+    """A public-records TRIGGER EVENT that predicts junk-removal demand.
+
+    Third leg of the acquisition stack: OperatorLead recruits supply, B2BLead
+    sells recurring commercial demand, DemandSignal intercepts one-off demand
+    at the moment it is created — a code-enforcement citation (owner has a
+    compliance deadline to remove junk), a probate filing (estate cleanout),
+    or an eviction filing (unit clearout in ~30-45 days).
+
+    Sourced by demand_records.py from county/municipal public records
+    (FL Ch. 119). v1 is source->digest only: no automated contact — rows feed
+    the daily digest + admin review, and outreach is a human decision.
+    """
+    __tablename__ = "demand_signals"
+    __table_args__ = (
+        db.UniqueConstraint("record_type", "jurisdiction", "case_number",
+                            name="uq_demand_signal_case"),
+    )
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    record_type = Column(String(20), nullable=False, index=True)  # code_violation | probate | eviction
+    jurisdiction = Column(String(60), nullable=False)             # e.g. pbc_county, west_palm_beach, pbc_clerk
+    case_number = Column(String(80), nullable=False)
+    filed_date = Column(DateTime, nullable=True, index=True)      # citation/filing date when parseable
+    property_address = Column(String(300), nullable=True)         # where the junk is
+    city = Column(String(80), nullable=True)
+    zip = Column(String(10), nullable=True, index=True)
+    party_name = Column(String(200), nullable=True)               # owner / personal rep / plaintiff-landlord
+    party_address = Column(String(300), nullable=True)            # mailing address for a letter, if listed
+    details = Column(Text, nullable=True)                         # violation description / case type / status text
+    source_url = Column(String(500), nullable=True)               # portal page or agenda PDF this came from
+    status = Column(String(20), nullable=False, default="new", index=True)  # new|reviewed|contacted|converted|skipped
+    notes = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=utcnow, index=True)
+    updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "record_type": self.record_type,
+            "jurisdiction": self.jurisdiction,
+            "case_number": self.case_number,
+            "filed_date": self.filed_date.isoformat() if self.filed_date else None,
+            "property_address": self.property_address,
+            "city": self.city,
+            "zip": self.zip,
+            "party_name": self.party_name,
+            "party_address": self.party_address,
+            "details": self.details,
+            "source_url": self.source_url,
+            "status": self.status,
+            "notes": self.notes,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
+
+
 class ReferralPayout(db.Model):
     """Ledger of actual referral-bonus transfers — one row per (referral, role).
 

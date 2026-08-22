@@ -1861,6 +1861,147 @@ def update_b2b_lead(user_id, lead_id):
     return jsonify({"success": True, "lead": lead.to_dict()}), 200
 
 
+@admin_bp.route("/demand/signals", methods=["GET"])
+@require_admin
+def demand_signals(user_id):
+    """Public-records demand signals (code violations / probate / evictions)
+    for review. ?record_type= / ?status= / ?city= filters, ?days=N recency,
+    plus a breakdown so the funnel is visible at a glance."""
+    from models import DemandSignal
+
+    record_type = (request.args.get("record_type") or "").strip()
+    status = (request.args.get("status") or "").strip()
+    city = (request.args.get("city") or "").strip()
+    limit = min(int(request.args.get("limit", 100)), 500)
+
+    query = DemandSignal.query
+    if record_type:
+        query = query.filter(DemandSignal.record_type == record_type)
+    if status:
+        query = query.filter(DemandSignal.status == status)
+    if city:
+        query = query.filter(DemandSignal.city.ilike("%{}%".format(city)))
+    days = request.args.get("days")
+    if days:
+        import datetime as _dt
+        try:
+            cutoff = _dt.datetime.utcnow() - _dt.timedelta(days=max(1, int(days)))
+            query = query.filter(DemandSignal.created_at >= cutoff)
+        except (TypeError, ValueError):
+            pass
+    rows = query.order_by(DemandSignal.created_at.desc()).limit(limit).all()
+
+    counts = {}
+    for rt, st, n in db.session.query(
+        DemandSignal.record_type, DemandSignal.status, db.func.count(DemandSignal.id)
+    ).group_by(DemandSignal.record_type, DemandSignal.status).all():
+        counts.setdefault(rt, {})[st] = n
+
+    return jsonify({
+        "success": True,
+        "counts": counts,
+        "total": sum(n for by_status in counts.values() for n in by_status.values()),
+        "signals": [s.to_dict() for s in rows],
+    }), 200
+
+
+@admin_bp.route("/demand/signals/<signal_id>", methods=["POST"])
+@require_admin
+def update_demand_signal(user_id, signal_id):
+    """Update a demand signal's status and/or append a note. Body: {status?, note?}."""
+    from models import DemandSignal, utcnow
+
+    sig = db.session.get(DemandSignal, signal_id)
+    if not sig:
+        return jsonify({"error": "Signal not found"}), 404
+
+    data = request.get_json() or {}
+    new_status = (data.get("status") or "").strip()
+    note = (data.get("note") or "").strip()
+    allowed = {"new", "reviewed", "contacted", "converted", "skipped"}
+    if new_status:
+        if new_status not in allowed:
+            return jsonify({"error": "Invalid status. Allowed: {}".format(sorted(allowed))}), 400
+        sig.status = new_status
+    if note:
+        import time as _t
+        stamp = _t.strftime("%Y-%m-%d %H:%M", _t.gmtime())
+        entry = "[{}] {}".format(stamp, note)
+        sig.notes = (sig.notes + "\n" + entry) if sig.notes else entry
+    sig.updated_at = utcnow()
+    db.session.commit()
+    return jsonify({"success": True, "signal": sig.to_dict()}), 200
+
+
+@admin_bp.route("/demand/signals.csv", methods=["GET"])
+def demand_signals_csv():
+    """CSV export of demand signals — browser-downloadable for the call desk /
+    letter runs. Secured by ADMIN_SEED_SECRET (?secret= or X-Admin-Secret),
+    same as the other CSV exports. Optional: ?status=, ?days=N."""
+    if not _check_seed_secret():
+        return jsonify({"error": "Forbidden"}), 403
+    from flask import Response
+    from models import DemandSignal
+    from demand_records import signals_csv
+
+    days = None
+    try:
+        days = max(1, int(request.args.get("days"))) if request.args.get("days") else None
+    except (TypeError, ValueError):
+        pass
+    csv_text = signals_csv(db, DemandSignal, status=request.args.get("status") or None, days=days)
+    return Response(
+        csv_text, mimetype="text/csv",
+        headers={"Content-Disposition": "attachment; filename=umuve-demand-signals.csv"},
+    )
+
+
+@admin_bp.route("/demand/ingest-report", methods=["POST"])
+@require_admin
+def demand_ingest_report(user_id):
+    """Ingest a purchased PBC Clerk Cart report (Decedent 07 probate weekly /
+    Evictions 06 weekly) into demand signals. Multipart form: file=<csv|xlsx>,
+    record_type=probate|eviction. Fuzzy header matching — returns which
+    columns mapped so a bad layout is obvious immediately."""
+    from models import DemandSignal
+    from demand_records import ingest_clerk_report
+
+    record_type = (request.form.get("record_type") or "").strip()
+    if record_type not in ("probate", "eviction"):
+        return jsonify({"error": "record_type must be 'probate' or 'eviction'"}), 400
+    f = request.files.get("file")
+    if not f:
+        return jsonify({"error": "Attach the report as multipart field 'file' (.csv or .xlsx)"}), 400
+    try:
+        report = ingest_clerk_report(db, DemandSignal, f, record_type)
+    except Exception as exc:
+        return jsonify({"error": "Could not parse report: {}".format(str(exc)[:200])}), 422
+    if not report["columns_mapped"]:
+        return jsonify({"error": "No recognizable header row found", "report": report}), 422
+    return jsonify({"success": True, "report": report}), 200
+
+
+@admin_bp.route("/demand/records-run", methods=["POST"])
+@require_admin
+def demand_records_run(user_id):
+    """Fire the public-records demand sweep on demand (vs the daily cron).
+    Background thread; digest emailed when done. Observe-only: nothing is sent
+    to the people in the records."""
+    import threading
+    from flask import current_app
+    from demand_records import run_demand_records_cycle
+
+    app_obj = current_app._get_current_object()
+    threading.Thread(
+        target=run_demand_records_cycle, args=(app_obj,), daemon=True
+    ).start()
+    return jsonify({
+        "success": True,
+        "message": "Demand-records sweep started in background.",
+        "next": "Review: GET /api/admin/demand/signals · CSV: /api/admin/demand/signals.csv?secret=…",
+    }), 202
+
+
 @admin_bp.route("/b2b-outreach-run", methods=["POST"])
 @require_admin
 def b2b_outreach_run(user_id):
