@@ -1981,12 +1981,14 @@ def demand_ingest_report(user_id):
     return jsonify({"success": True, "report": report}), 200
 
 
-@admin_bp.route("/demand/records-run", methods=["POST"])
-@require_admin
-def demand_records_run(user_id):
+@admin_bp.route("/demand/records-run", methods=["GET", "POST"])
+def demand_records_run():
     """Fire the public-records demand sweep on demand (vs the daily cron).
-    Background thread; digest emailed when done. Observe-only: nothing is sent
-    to the people in the records."""
+    ADMIN_SEED_SECRET-gated (?secret= / X-Admin-Secret) like /outreach/run so
+    it's browser/curl-triggerable. Background thread; digest emailed when
+    done. Observe-only: nothing is sent to the people in the records."""
+    if not _check_seed_secret():
+        return jsonify({"error": "Forbidden"}), 403
     import threading
     from flask import current_app
     from demand_records import run_demand_records_cycle
