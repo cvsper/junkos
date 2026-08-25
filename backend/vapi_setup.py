@@ -91,7 +91,7 @@ When a caller has a COMPLAINT, MISSED APPOINTMENT, REFUND REQUEST, or is FRUSTRA
 - Mattress: $99 (+$20 recycling fee) | Box spring: $89 (+$20 recycling fee) | Bed frame: $75 | Full bed set (mattress + box spring + frame): $149
 - Refrigerator: $129 | Washer or dryer: $99 each | Washer/dryer set: $119 | Dishwasher: $69 | Stove: $79 | Chest freezer: $79 | Upright freezer: $89 — refrigerators, freezers, washers, dryers and dishwashers each carry a $10 refrigerant/recycling fee
 - Dining table: $99 | Dining table with chairs: $129 | Kitchen table: $69 | Coffee table: $59 | End table: $49 | Desk: $69 small / $99 large
-- TV (flat screen): $89 | TV (old tube or console): $79 (+$10 recycling fee) | Treadmill: $89 | Elliptical: $99
+- TV (flat screen): $89 | TV (old tube or console): $79 (+$10 recycling fee) | Computer or desktop: $59 | Printer: $35 | Office copier: $109 | Treadmill: $89 | Elliptical: $99 | Exercise bike: $69
 - Hot tub, standard (up to 7 ft, 4-6 seats): $549 | Hot tub, large (7-9 ft, 6-8 seats, or on a raised deck): $699 — ask how many seats it has; in-ground spas, swim spas and deck tear-outs need a photo quote | Pool table: $269 | Piano: $399
 - General items: $25 each | Yard waste: $30 per cubic yard | Construction debris: $45 per cubic yard for the first 5 yards, $60 per yard beyond that
 - Whole-room and cleanout jobs are priced by truck load: 1/8 truck $179 | 1/4 truck $279 | 1/2 truck $389 | 3/4 truck $489 | full truck $579
