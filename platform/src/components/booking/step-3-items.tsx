@@ -52,6 +52,8 @@ interface ItemPreset {
   lbsPerUnit: number;
   /** Pricing-engine size variant sent with the item (booking.py CATEGORY_PRICES[cat][size]). */
   size?: string;
+  /** Pricing-engine category when it differs from the UI group (e.g. 'piano' shown under Other). */
+  category?: string;
   /** Flat specialty price (engine base) — floors the truck-load preview so step 3 never undercuts step 5. */
   minPrice?: number;
 }
@@ -122,8 +124,8 @@ const ITEM_PRESETS: Record<string, ItemPreset[]> = {
   ],
   other: [
     { label: "Tires", cuFtPerUnit: 6, lbsPerUnit: 25 },
-    { label: "Piano", cuFtPerUnit: 40, lbsPerUnit: 500, minPrice: 399 },
-    { label: "Pool Table", cuFtPerUnit: 50, lbsPerUnit: 400, minPrice: 269 },
+    { label: "Piano", cuFtPerUnit: 40, lbsPerUnit: 500, minPrice: 399, category: "piano" },
+    { label: "Pool Table", cuFtPerUnit: 50, lbsPerUnit: 400, minPrice: 269, category: "pool_table" },
     { label: "Custom / Unlisted Item", cuFtPerUnit: 10, lbsPerUnit: 50 },
   ],
 };
@@ -496,7 +498,7 @@ export function Step3Items() {
       const preset = presets.find((p) => p.label === item.name);
       return {
         ...item,
-        category: cat,
+        category: preset?.category ?? cat,
         size: preset?.size,
         minPrice: (preset?.minPrice ?? 0) * item.quantity,
         estimatedCuFt: (preset?.cuFtPerUnit ?? 10) * item.quantity,
