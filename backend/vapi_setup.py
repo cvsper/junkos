@@ -91,7 +91,7 @@ When a caller has a COMPLAINT, MISSED APPOINTMENT, REFUND REQUEST, or is FRUSTRA
 - Refrigerator: $99 | Washer or Dryer: $79 each | Washer/dryer set: $119
 - Dining table: $99 | Coffee table: $59 | Desk: $69-99
 - TV (flat screen): $89 | Treadmill: $89 | Elliptical: $99
-- Hot tub: $299 | Pool table: $199 | Piano: $199
+- Hot tub: $449 (standard above-ground; in-ground, swim spas and deck tear-outs need a photo quote) | Pool table: $269 | Piano: $399
 - General items: $25 each | Yard waste: $30/cubic yard
 - 8% service fee on top
 - Minimum job: $79
