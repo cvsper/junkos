@@ -42,6 +42,7 @@ export interface JobItem {
   name: string;
   category: string;
   quantity: number;
+  size?: string; // pricing-engine size variant, e.g. hot_tub 'large'
   estimatedWeight?: number;
   estimatedCuFt?: number;
 }

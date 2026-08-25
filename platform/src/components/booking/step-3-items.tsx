@@ -7,6 +7,7 @@ import {
   Monitor,
   HardHat,
   TreePine,
+  Waves,
   Trash2,
   Package,
   Minus,
@@ -39,6 +40,7 @@ const CATEGORIES = [
   { value: "electronics", label: "Electronics", icon: Monitor },
   { value: "construction", label: "Construction Debris", icon: HardHat },
   { value: "yard_waste", label: "Yard Waste", icon: TreePine },
+  { value: "hot_tub", label: "Hot Tub / Spa", icon: Waves },
   { value: "general", label: "General Junk", icon: Trash2 },
   { value: "other", label: "Other", icon: Package },
 ] as const;
@@ -48,6 +50,10 @@ interface ItemPreset {
   label: string;
   cuFtPerUnit: number;
   lbsPerUnit: number;
+  /** Pricing-engine size variant sent with the item (booking.py CATEGORY_PRICES[cat][size]). */
+  size?: string;
+  /** Flat specialty price (engine base) — floors the truck-load preview so step 3 never undercuts step 5. */
+  minPrice?: number;
 }
 
 const ITEM_PRESETS: Record<string, ItemPreset[]> = {
@@ -100,8 +106,11 @@ const ITEM_PRESETS: Record<string, ItemPreset[]> = {
     { label: "Soil / Dirt (bags)", cuFtPerUnit: 3, lbsPerUnit: 50 },
     { label: "Sod / Turf", cuFtPerUnit: 5, lbsPerUnit: 60 },
     { label: "Fence Sections", cuFtPerUnit: 10, lbsPerUnit: 40 },
-    { label: "Hot Tub / Spa", cuFtPerUnit: 60, lbsPerUnit: 500 },
     { label: "Other Yard Waste", cuFtPerUnit: 8, lbsPerUnit: 35 },
+  ],
+  hot_tub: [
+    { label: "Standard hot tub (up to 7 ft, 4–6 seats)", cuFtPerUnit: 60, lbsPerUnit: 500, size: "medium", minPrice: 549 },
+    { label: "Large hot tub (7–9 ft, 6–8 seats, or on a raised deck)", cuFtPerUnit: 90, lbsPerUnit: 800, size: "large", minPrice: 699 },
   ],
   general: [
     { label: "Bags of Junk", cuFtPerUnit: 4, lbsPerUnit: 25 },
@@ -113,8 +122,8 @@ const ITEM_PRESETS: Record<string, ItemPreset[]> = {
   ],
   other: [
     { label: "Tires", cuFtPerUnit: 6, lbsPerUnit: 25 },
-    { label: "Piano", cuFtPerUnit: 40, lbsPerUnit: 500 },
-    { label: "Pool Table", cuFtPerUnit: 50, lbsPerUnit: 400 },
+    { label: "Piano", cuFtPerUnit: 40, lbsPerUnit: 500, minPrice: 399 },
+    { label: "Pool Table", cuFtPerUnit: 50, lbsPerUnit: 400, minPrice: 269 },
     { label: "Custom / Unlisted Item", cuFtPerUnit: 10, lbsPerUnit: 50 },
   ],
 };
@@ -139,7 +148,14 @@ function getTruckLoad(totalCuFt: number) {
 }
 
 /** Returns the price range bracket — current load price as low, next tier as high */
-function getPriceRange(totalCuFt: number): { low: number; high: number; label: string } {
+function getPriceRange(totalCuFt: number, specialtyFloor = 0): { low: number; high: number; label: string } {
+  const r = getPriceRangeByVolume(totalCuFt);
+  // Specialty items (hot tubs, pianos, pool tables) are flat-priced by the
+  // engine regardless of volume; never preview below their base.
+  return { low: Math.max(r.low, specialtyFloor), high: Math.max(r.high, specialtyFloor), label: r.label };
+}
+
+function getPriceRangeByVolume(totalCuFt: number): { low: number; high: number; label: string } {
   const currentLoad = getTruckLoad(totalCuFt);
   const currentIdx = TRUCK_LOADS.indexOf(currentLoad);
   const nextLoad = TRUCK_LOADS[Math.min(currentIdx + 1, TRUCK_LOADS.length - 1)];
@@ -481,6 +497,8 @@ export function Step3Items() {
       return {
         ...item,
         category: cat,
+        size: preset?.size,
+        minPrice: (preset?.minPrice ?? 0) * item.quantity,
         estimatedCuFt: (preset?.cuFtPerUnit ?? 10) * item.quantity,
         estimatedWeight: (preset?.lbsPerUnit ?? 50) * item.quantity,
       };
@@ -489,7 +507,8 @@ export function Step3Items() {
 
   const totalCuFt = allItems.reduce((sum, i) => sum + (i.estimatedCuFt || 0), 0);
   const totalWeight = allItems.reduce((sum, i) => sum + (i.estimatedWeight || 0), 0);
-  const priceRange = getPriceRange(totalCuFt);
+  const specialtyFloor = allItems.reduce((sum, i) => sum + (i.minPrice || 0), 0);
+  const priceRange = getPriceRange(totalCuFt, specialtyFloor);
 
   // Sync to store
   useEffect(() => {
@@ -500,6 +519,7 @@ export function Step3Items() {
           name: item.name,
           category: item.category,
           quantity: item.quantity,
+          size: item.size,
           estimatedCuFt: item.estimatedCuFt,
           estimatedWeight: item.estimatedWeight,
         }))

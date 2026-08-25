@@ -29,6 +29,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   electronics: "Electronics",
   construction: "Construction Debris",
   yard_waste: "Yard Waste",
+  hot_tub: "Hot Tub / Spa",
   general: "General Junk",
   other: "Other",
 };

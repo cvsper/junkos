@@ -70,7 +70,7 @@ const DEFAULT_CATEGORIES: Record<string, Record<string, number>> = {
   construction: { default: 55 },
   general: { default: 30 },
   mattress: { default: 50 },
-  hot_tub: { small: 250, medium: 325, large: 400, default: 325 },
+  hot_tub: { small: 549, medium: 549, large: 699, default: 549 },
   other: { default: 30 },
 };
 
