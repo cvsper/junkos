@@ -85,7 +85,15 @@ class TestAddons:
 
 
 class TestSpecialtyPriceBumps:
-    @pytest.mark.parametrize("category,price", [("hot_tub", 449.0), ("piano", 399.0)])
+    @pytest.mark.parametrize("category,price", [("hot_tub", 549.0), ("piano", 399.0)])
     def test_specialty_prices(self, app, db_session, category, price):
         result = _est([{"category": category, "quantity": 1}])
         assert result["items_subtotal"] == price
+
+    def test_large_hot_tub_tier(self, app, db_session):
+        """Large tubs (7-9 ft / 6-8 seats / raised deck) price via size=large."""
+        large = _est([{"category": "hot_tub", "quantity": 1, "size": "large"}])
+        assert large["items_subtotal"] == 699.0
+        # unknown / small / medium sizes all fall back to the standard tier
+        for size in ("small", "medium", "weird"):
+            assert _est([{"category": "hot_tub", "quantity": 1, "size": size}])["items_subtotal"] == 549.0

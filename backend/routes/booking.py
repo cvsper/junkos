@@ -97,7 +97,10 @@ CATEGORY_PRICES = {
     "basketball_hoop_stand":{"default":  99.00},   # competitor: $145
     "lawn_mower_push":      {"default":  69.00},   # competitor: $120
     "lawn_mower_riding":    {"default": 149.00},   # competitor: $200
-    "hot_tub":              {"default": 449.00},   # competitor: $400-600; two-man + disposal + cut-up labor
+    # Hot tubs (2026-08-25 tiers): standard <=7 ft / 4-6 seats vs large 7-9 ft /
+    # 6-8 seats or raised-deck carry. Competitor all-in $500-700 standard,
+    # $700-1,200 large; crews decline sub-$400 payouts on this job.
+    "hot_tub":              {"small": 549.00, "medium": 549.00, "large": 699.00, "default": 549.00},
     "pool_table":           {"default": 269.00},   # competitor: $328; slate weight
     "piano":                {"default": 399.00},   # competitor: $350-$550; two-man minimum, weight
     # ── General / Bulk ────────────────────────────────────────────────────
