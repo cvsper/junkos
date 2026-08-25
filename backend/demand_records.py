@@ -9,7 +9,7 @@ remove junk), probate filings (estate cleanouts), eviction filings (unit
 clearouts ~30-45 days out).
 
 Pipeline (daily): pluggable per-jurisdiction fetchers -> normalize ->
-dedupe on (record_type, jurisdiction, case_number) -> store DemandSignal ->
+dedupe on (record_type, jurisdiction, case_number) -> store DemandRecord ->
 digest email + admin review (/api/admin/demand/signals).
 
 v1 deliberately does NOT contact anyone. These are consumer records, not
@@ -194,7 +194,7 @@ FETCHERS = {
 # --------------------------------------------------------------------------- #
 # Store
 # --------------------------------------------------------------------------- #
-def _store(db, DemandSignal, rows):
+def _store(db, DemandRecord, rows):
     """Insert new rows, skipping (record_type, jurisdiction, case_number) dupes.
     Returns (inserted, list_of_new_signals)."""
     if not rows:
@@ -202,7 +202,7 @@ def _store(db, DemandSignal, rows):
     existing = {
         (r.record_type, r.jurisdiction, r.case_number)
         for r in db.session.query(
-            DemandSignal.record_type, DemandSignal.jurisdiction, DemandSignal.case_number
+            DemandRecord.record_type, DemandRecord.jurisdiction, DemandRecord.case_number
         ).all()
     }
     inserted, new_signals = 0, []
@@ -214,7 +214,7 @@ def _store(db, DemandSignal, rows):
         if key in existing:
             continue
         existing.add(key)
-        sig = DemandSignal(
+        sig = DemandRecord(
             record_type=row["record_type"],
             jurisdiction=row["jurisdiction"],
             case_number=case,
@@ -287,7 +287,7 @@ def _digest_html(report, new_signals):
 def run_demand_records_cycle(app):
     """Daily entrypoint. Never raises — logs + returns a report dict."""
     with app.app_context():
-        from models import db, DemandSignal
+        from models import db, DemandRecord
         from notifications import send_email
 
         report = {"inserted": 0, "by_type": {}, "sources": {}}
@@ -297,7 +297,7 @@ def run_demand_records_cycle(app):
             try:
                 rows = fetcher() or []
                 src["fetched"] = len(rows)
-                inserted, new_signals = _store(db, DemandSignal, rows)
+                inserted, new_signals = _store(db, DemandRecord, rows)
                 src["inserted"] = inserted
                 all_new.extend(new_signals)
                 for s in new_signals:
@@ -385,8 +385,8 @@ def _report_rows(file_storage):
             yield row
 
 
-def ingest_clerk_report(db, DemandSignal, file_storage, record_type, jurisdiction="pbc_clerk"):
-    """Parse an uploaded Clerk Cart report into DemandSignal rows.
+def ingest_clerk_report(db, DemandRecord, file_storage, record_type, jurisdiction="pbc_clerk"):
+    """Parse an uploaded Clerk Cart report into DemandRecord rows.
 
     record_type: 'probate' | 'eviction'. Returns a report dict; never raises
     on malformed rows (they're counted + skipped)."""
@@ -427,7 +427,7 @@ def ingest_clerk_report(db, DemandSignal, file_storage, record_type, jurisdictio
             "details": " | ".join(details_bits) or None,
             "source_url": None,
         })
-    inserted, _ = _store(db, DemandSignal, parsed)
+    inserted, _ = _store(db, DemandRecord, parsed)
     return {
         "rows_parsed": len(parsed),
         "rows_skipped": skipped,
@@ -437,21 +437,21 @@ def ingest_clerk_report(db, DemandSignal, file_storage, record_type, jurisdictio
     }
 
 
-def signals_csv(db, DemandSignal, status=None, days=None):
+def signals_csv(db, DemandRecord, status=None, days=None):
     """CSV export used by the admin endpoint."""
     import csv
 
-    query = db.session.query(DemandSignal)
+    query = db.session.query(DemandRecord)
     if status:
-        query = query.filter(DemandSignal.status == status)
+        query = query.filter(DemandRecord.status == status)
     if days:
         cutoff = dt.datetime.utcnow() - dt.timedelta(days=days)
-        query = query.filter(DemandSignal.created_at >= cutoff)
+        query = query.filter(DemandRecord.created_at >= cutoff)
     buf = io.StringIO()
     w = csv.writer(buf)
     w.writerow(["type", "jurisdiction", "case_number", "filed_date", "property_address",
                 "city", "zip", "party_name", "party_address", "details", "status", "source_url"])
-    for s in query.order_by(DemandSignal.created_at.desc()).limit(2000).all():
+    for s in query.order_by(DemandRecord.created_at.desc()).limit(2000).all():
         w.writerow([s.record_type, s.jurisdiction, s.case_number,
                     s.filed_date.date().isoformat() if s.filed_date else "",
                     s.property_address or "", s.city or "", s.zip or "",

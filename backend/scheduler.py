@@ -431,7 +431,7 @@ def _run_operator_outreach(app):
 
 def _run_demand_records(app):
     """Daily public-records demand sweep: code-enforcement citations, probate
-    and eviction filings -> DemandSignal rows + digest. Observe-only."""
+    and eviction filings -> DemandRecord rows + digest. Observe-only."""
     try:
         from demand_records import run_demand_records_cycle  # opens its own app ctx
         run_demand_records_cycle(app)

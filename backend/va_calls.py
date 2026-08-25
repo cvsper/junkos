@@ -24,6 +24,8 @@ Cadence rules (server-side, mirrors the playbook):
   voicemail / no_answer  -> retry in 3 days, then 4 days; 3 strikes -> dead
   interested / sent_link -> status interested, follow up in 2 days
   not_interested / bad_number -> dead
+  vendor_listed -> on their vendor list / rate card on file (a soft win);
+                   light check-in every 3 weeks so we stay top of mind
   converted -> won (they booked / signed up)
   skip -> back of today's queue (4 hours)
 """
@@ -173,6 +175,13 @@ def followup_text_for(outcome, prospect, va_name):
             "any pile and you'll have an upfront price in minutes. Reply STOP "
             "to opt out."
         ).format(greet=greet, va=va)
+    if outcome == "vendor_listed":
+        return (
+            "{greet} it's {va} with Umuve — thanks for adding us to your "
+            "vendor list. Rates + volume plans: goumuve.com/partners. When a "
+            "cleanout comes up, call or text (561) 944-1636 any time, day or "
+            "night — upfront price, same-day available. Reply STOP to opt out."
+        ).format(greet=greet, va=va)
     if outcome in ("voicemail", "no_answer"):
         return (
             "{greet} it's {va} with Umuve (just tried you). We do same-day "
@@ -237,8 +246,14 @@ def maybe_send_followup_text(prospect, outcome, va_name):
 RETRY_DAYS = [3, 4]          # voicemail/no-answer touches after the first call
 MAX_SOFT_ATTEMPTS = 3        # then dead
 INTERESTED_FOLLOWUP_DAYS = 2
+VENDOR_LISTED_CHECKIN_DAYS = 21   # "still on file? anything coming up?"
 
-OUTCOMES = {"interested", "sent_link", "voicemail", "no_answer",
+# Outcomes that count as a conversation that went our way.
+WIN_OUTCOMES = ("interested", "sent_link", "vendor_listed", "converted")
+# Prospect statuses the desk keeps serving (everything else is done).
+WORKABLE_STATUSES = ("queued", "interested", "vendor_listed")
+
+OUTCOMES = {"interested", "sent_link", "vendor_listed", "voicemail", "no_answer",
             "not_interested", "bad_number", "converted", "skip"}
 
 
@@ -280,7 +295,7 @@ def next_card():
     """Due follow-ups first (oldest due), then fresh rows by tier with
     recurring-demand categories served before one-off categories."""
     now_naive = _now().replace(tzinfo=None)
-    workable = CallProspect.status.in_(("queued", "interested"))
+    workable = CallProspect.status.in_(WORKABLE_STATUSES)
     due = (CallProspect.query
            .filter(workable,
                    CallProspect.next_followup_at.isnot(None),
@@ -303,9 +318,9 @@ def day_stats():
         CallAttempt.outcome != "skip").count()
     interested_today = CallAttempt.query.filter(
         CallAttempt.created_at >= start,
-        CallAttempt.outcome.in_(("interested", "sent_link", "converted"))).count()
+        CallAttempt.outcome.in_(WIN_OUTCOMES)).count()
     now_naive = _now().replace(tzinfo=None)
-    workable = CallProspect.status.in_(("queued", "interested"))
+    workable = CallProspect.status.in_(WORKABLE_STATUSES)
     due_now = CallProspect.query.filter(
         workable, CallProspect.next_followup_at.isnot(None),
         CallProspect.next_followup_at <= now_naive).count()
@@ -339,6 +354,9 @@ def apply_outcome(prospect, outcome, note, va_name):
     elif outcome in ("not_interested", "bad_number"):
         prospect.status = "dead"
         prospect.next_followup_at = None
+    elif outcome == "vendor_listed":
+        prospect.status = "vendor_listed"
+        prospect.next_followup_at = now_naive + timedelta(days=VENDOR_LISTED_CHECKIN_DAYS)
     elif outcome == "converted":
         prospect.status = "converted"
         prospect.next_followup_at = None
@@ -373,7 +391,7 @@ def calls_next():
     stats = day_stats()
     if not p:
         nxt = (CallProspect.query
-               .filter(CallProspect.status.in_(("queued", "interested")),
+               .filter(CallProspect.status.in_(WORKABLE_STATUSES),
                        CallProspect.next_followup_at.isnot(None))
                .order_by(CallProspect.next_followup_at.asc()).first())
         return jsonify({"empty": True, "stats": stats,
@@ -623,7 +641,7 @@ def caller_stats(user_id):
         key = (p.category if p else "?") or "?"
         s = seg.setdefault(key, {"calls": 0, "interested": 0})
         s["calls"] += 1
-        if a.outcome in ("interested", "sent_link", "converted"):
+        if a.outcome in WIN_OUTCOMES:
             s["interested"] += 1
     statuses = {}
     for st, in db.session.query(CallProspect.status).all():
@@ -652,7 +670,7 @@ def send_caller_digest(app):
             CallAttempt.created_at < day_start,
             CallAttempt.outcome != "skip").all()
         interested = (CallProspect.query
-                      .filter(CallProspect.status == "interested")
+                      .filter(CallProspect.status.in_(("interested", "vendor_listed")))
                       .order_by(CallProspect.tier.asc(),
                                 CallProspect.last_called_at.desc())
                       .limit(15).all())
@@ -664,8 +682,9 @@ def send_caller_digest(app):
         for a in attempts:
             by[a.outcome] = by.get(a.outcome, 0) + 1
         talked = by.get("interested", 0) + by.get("sent_link", 0) + \
-            by.get("not_interested", 0) + by.get("converted", 0)
-        hot = by.get("interested", 0) + by.get("sent_link", 0) + by.get("converted", 0)
+            by.get("vendor_listed", 0) + by.get("not_interested", 0) + \
+            by.get("converted", 0)
+        hot = sum(by.get(o, 0) for o in WIN_OUTCOMES)
 
         sms_lines = ["Umuve Call Desk yesterday: {} calls, {} conversations, "
                      "{} interested.".format(len(attempts), talked, hot)]
@@ -741,7 +760,7 @@ CALLS_HTML = r"""<!doctype html>
 <meta name="theme-color" content="#0B0E12" />
 <title>Umuve — Call Desk</title>
 <link rel="stylesheet" href="/va/app.css?v=3" />
-<link rel="stylesheet" href="/va/calls.css?v=5" />
+<link rel="stylesheet" href="/va/calls.css?v=6" />
 </head>
 <body>
 <div id="app">
@@ -822,12 +841,13 @@ CALLS_HTML = r"""<!doctype html>
 
       <label class="textopt" id="textopt" hidden>
         <input type="checkbox" id="send-text" />
-        <span><b>Text them after I tap</b> — the right follow-up goes out from the Umuve number (interested → partner info · no answer → who-we-are text)</span>
+        <span><b>Text them after I tap</b> — the right follow-up goes out from the Umuve number (interested → partner info · on their vendor list → thanks + rates + booking number · no answer → who-we-are text)</span>
       </label>
 
       <div id="outcomes" class="outcomes" hidden>
         <button class="oc oc-good" data-o="interested">Interested</button>
         <button class="oc oc-good" data-o="sent_link">Sent the link</button>
+        <button class="oc oc-good" data-o="vendor_listed">On their vendor list</button>
         <button class="oc" data-o="voicemail">Voicemail</button>
         <button class="oc" data-o="no_answer">No answer</button>
         <button class="oc oc-bad" data-o="not_interested">Not interested</button>
@@ -840,7 +860,7 @@ CALLS_HTML = r"""<!doctype html>
     </div>
   </section>
 </div>
-<script src="/va/calls.js?v=5"></script>
+<script src="/va/calls.js?v=6"></script>
 </body>
 </html>
 """

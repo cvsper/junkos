@@ -3539,11 +3539,11 @@ class B2BLead(db.Model):
         }
 
 
-class DemandSignal(db.Model):
+class DemandRecord(db.Model):
     """A public-records TRIGGER EVENT that predicts junk-removal demand.
 
     Third leg of the acquisition stack: OperatorLead recruits supply, B2BLead
-    sells recurring commercial demand, DemandSignal intercepts one-off demand
+    sells recurring commercial demand, DemandRecord intercepts one-off demand
     at the moment it is created — a code-enforcement citation (owner has a
     compliance deadline to remove junk), a probate filing (estate cleanout),
     or an eviction filing (unit clearout in ~30-45 days).
@@ -3552,10 +3552,10 @@ class DemandSignal(db.Model):
     (FL Ch. 119). v1 is source->digest only: no automated contact — rows feed
     the daily digest + admin review, and outreach is a human decision.
     """
-    __tablename__ = "demand_signals"
+    __tablename__ = "demand_records"   # NOT demand_signals: that table is the pricing engine's
     __table_args__ = (
         db.UniqueConstraint("record_type", "jurisdiction", "case_number",
-                            name="uq_demand_signal_case"),
+                            name="uq_demand_record_case"),
     )
 
     id = Column(String(36), primary_key=True, default=generate_uuid)

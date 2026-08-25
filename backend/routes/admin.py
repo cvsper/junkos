@@ -1867,34 +1867,34 @@ def demand_signals(user_id):
     """Public-records demand signals (code violations / probate / evictions)
     for review. ?record_type= / ?status= / ?city= filters, ?days=N recency,
     plus a breakdown so the funnel is visible at a glance."""
-    from models import DemandSignal
+    from models import DemandRecord
 
     record_type = (request.args.get("record_type") or "").strip()
     status = (request.args.get("status") or "").strip()
     city = (request.args.get("city") or "").strip()
     limit = min(int(request.args.get("limit", 100)), 500)
 
-    query = DemandSignal.query
+    query = DemandRecord.query
     if record_type:
-        query = query.filter(DemandSignal.record_type == record_type)
+        query = query.filter(DemandRecord.record_type == record_type)
     if status:
-        query = query.filter(DemandSignal.status == status)
+        query = query.filter(DemandRecord.status == status)
     if city:
-        query = query.filter(DemandSignal.city.ilike("%{}%".format(city)))
+        query = query.filter(DemandRecord.city.ilike("%{}%".format(city)))
     days = request.args.get("days")
     if days:
         import datetime as _dt
         try:
             cutoff = _dt.datetime.utcnow() - _dt.timedelta(days=max(1, int(days)))
-            query = query.filter(DemandSignal.created_at >= cutoff)
+            query = query.filter(DemandRecord.created_at >= cutoff)
         except (TypeError, ValueError):
             pass
-    rows = query.order_by(DemandSignal.created_at.desc()).limit(limit).all()
+    rows = query.order_by(DemandRecord.created_at.desc()).limit(limit).all()
 
     counts = {}
     for rt, st, n in db.session.query(
-        DemandSignal.record_type, DemandSignal.status, db.func.count(DemandSignal.id)
-    ).group_by(DemandSignal.record_type, DemandSignal.status).all():
+        DemandRecord.record_type, DemandRecord.status, db.func.count(DemandRecord.id)
+    ).group_by(DemandRecord.record_type, DemandRecord.status).all():
         counts.setdefault(rt, {})[st] = n
 
     return jsonify({
@@ -1909,9 +1909,9 @@ def demand_signals(user_id):
 @require_admin
 def update_demand_signal(user_id, signal_id):
     """Update a demand signal's status and/or append a note. Body: {status?, note?}."""
-    from models import DemandSignal, utcnow
+    from models import DemandRecord, utcnow
 
-    sig = db.session.get(DemandSignal, signal_id)
+    sig = db.session.get(DemandRecord, signal_id)
     if not sig:
         return jsonify({"error": "Signal not found"}), 404
 
@@ -1941,7 +1941,7 @@ def demand_signals_csv():
     if not _check_seed_secret():
         return jsonify({"error": "Forbidden"}), 403
     from flask import Response
-    from models import DemandSignal
+    from models import DemandRecord
     from demand_records import signals_csv
 
     days = None
@@ -1949,7 +1949,7 @@ def demand_signals_csv():
         days = max(1, int(request.args.get("days"))) if request.args.get("days") else None
     except (TypeError, ValueError):
         pass
-    csv_text = signals_csv(db, DemandSignal, status=request.args.get("status") or None, days=days)
+    csv_text = signals_csv(db, DemandRecord, status=request.args.get("status") or None, days=days)
     return Response(
         csv_text, mimetype="text/csv",
         headers={"Content-Disposition": "attachment; filename=umuve-demand-signals.csv"},
@@ -1963,7 +1963,7 @@ def demand_ingest_report(user_id):
     Evictions 06 weekly) into demand signals. Multipart form: file=<csv|xlsx>,
     record_type=probate|eviction. Fuzzy header matching — returns which
     columns mapped so a bad layout is obvious immediately."""
-    from models import DemandSignal
+    from models import DemandRecord
     from demand_records import ingest_clerk_report
 
     record_type = (request.form.get("record_type") or "").strip()
@@ -1973,7 +1973,7 @@ def demand_ingest_report(user_id):
     if not f:
         return jsonify({"error": "Attach the report as multipart field 'file' (.csv or .xlsx)"}), 400
     try:
-        report = ingest_clerk_report(db, DemandSignal, f, record_type)
+        report = ingest_clerk_report(db, DemandRecord, f, record_type)
     except Exception as exc:
         return jsonify({"error": "Could not parse report: {}".format(str(exc)[:200])}), 422
     if not report["columns_mapped"]:
