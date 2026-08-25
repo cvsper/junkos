@@ -31,11 +31,11 @@ KNOWLEDGE_BASE = {
     "pricing": {
         "question": "How does pricing work?",
         "answer": (
-            "We price by item. Each item has a set price (for example, a sofa is $89, "
-            "a mattress is $75, a refrigerator is $99). There's an 8% service fee on top. "
+            "We price by item. Each item has a set price (for example, a sofa is $119, "
+            "a mattress is $99 plus a $20 recycling fee, a refrigerator is $129 plus a $10 refrigerant fee). There's an 8% service fee on top. "
             "Volume discounts apply: 10% off for 4-7 items, 15% off for 8-15 items, "
             "20% off for 16+ items. Surge pricing may apply: same-day is +25%, "
-            "next-day is +10%, weekends are +15%. Minimum job is $79."
+            "next-day is +10%, weekends are +15%. Minimum job is $119."
         ),
     },
     "service_area": {
@@ -119,7 +119,7 @@ KNOWLEDGE_BASE = {
     "minimum_charge": {
         "question": "Is there a minimum charge?",
         "answer": (
-            "Yes, our minimum job charge is $79. This covers a single small item pickup. "
+            "Yes, our minimum job charge is $119 plus the 8% service fee. This covers a single small item pickup. "
             "Most jobs end up being more than the minimum since customers typically have "
             "multiple items."
         ),
