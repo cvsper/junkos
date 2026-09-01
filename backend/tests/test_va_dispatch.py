@@ -227,6 +227,43 @@ def test_log_job_reuses_existing_customer_by_phone(client):
     assert job.customer_id == existing.id
 
 
+def test_log_job_texts_confirmation_with_pay_link_by_default(client):
+    with mock.patch("notifications.send_booking_sms", return_value="sid123") as sms, \
+         mock.patch("routes.vapi._build_checkout_url",
+                    return_value="https://pay.test/x") as pay:
+        r = _post(client, "/api/va/dispatch/log-job",
+                  customer_name="Jane Rivera", customer_phone="(561) 555-0143",
+                  address="42 Ocean Ave, WPB", price=400)
+    assert r.status_code == 200, r.get_json()
+    assert r.get_json()["texted"] is True
+    assert sms.call_count == 1
+    assert sms.call_args.kwargs["pay_url"] == "https://pay.test/x"
+    job_id = r.get_json()["job"]["id"]
+    assert pay.call_args.args == (job_id, 400.0)
+
+
+def test_log_job_skips_text_when_unchecked(client):
+    with mock.patch("notifications.send_booking_sms") as sms:
+        r = _post(client, "/api/va/dispatch/log-job",
+                  customer_name="Quiet Customer", customer_phone="(561) 555-0144",
+                  address="7 Elm St", price=200, send_confirmation=False)
+    assert r.status_code == 200
+    assert r.get_json()["texted"] is False
+    sms.assert_not_called()
+
+
+def test_log_job_survives_sms_failure(client):
+    with mock.patch("notifications.send_booking_sms",
+                    side_effect=RuntimeError("twilio down")):
+        r = _post(client, "/api/va/dispatch/log-job",
+                  customer_name="Unlucky Customer", customer_phone="(561) 555-0145",
+                  address="8 Oak St", price=300)
+    assert r.status_code == 200
+    assert r.get_json()["texted"] is False
+    # The job still landed — the text is best-effort.
+    assert db.session.get(Job, r.get_json()["job"]["id"]) is not None
+
+
 def test_log_job_validates_inputs(client):
     bad_phone = _post(client, "/api/va/dispatch/log-job",
                       customer_phone="123", address="9 Pine St", price=250)

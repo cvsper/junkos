@@ -212,10 +212,15 @@ def dispatch_assign():
 
     va_name = (data.get("va_name") or "").strip()[:80]
 
-    job = db.session.get(Job, data.get("job_id") or "")
+    # Row-lock the job so two dispatchers (or the desk + the admin dashboard)
+    # racing on the same job can't both pass the guard — the second one blocks
+    # on the lock and then sees the assignment. No-op on SQLite (tests).
+    job = (Job.query.filter(Job.id == (data.get("job_id") or ""))
+           .with_for_update().first())
     if not job:
         return jsonify({"error": "Job not found."}), 404
     if job.status not in ASSIGNABLE_STATUSES or job.driver_id or job.operator_id:
+        db.session.rollback()
         return jsonify({"error": "This job was already assigned or has moved on — refresh the board."}), 409
 
     contractor = db.session.get(Contractor, data.get("contractor_id") or "")
@@ -356,9 +361,31 @@ def dispatch_log_job():
                                  "exists in a different format — add the email "
                                  "or double-check the number."}), 409
 
+    # Confirmation text with a tappable Stripe pay link — same treatment
+    # Maya's bookings get. Phone customers can't transcribe a spoken URL,
+    # so this text IS the payment path. Optional: Tracy unchecks it when
+    # payment is already settled (cash, invoice, sevs handling it).
+    texted = False
+    if data.get("send_confirmation", True):
+        try:
+            from notifications import send_booking_sms
+            from routes.vapi import _build_checkout_url
+            date_str = (scheduled_at.strftime("%a %b %-d, %-I:%M %p")
+                        if scheduled_at else "TBD — we'll confirm the time")
+            texted = bool(send_booking_sms(
+                phone, job.id, date_str, address,
+                pay_url=_build_checkout_url(job.id, price),
+                confirmation_code=job.confirmation_code,
+            ))
+        except Exception:
+            logger.exception("Booking confirmation text failed for job %s", job.id)
+
     logger.info("VA dispatch: %s logged phone job %s ($%s)", va_name or "?", job.id, price)
-    return jsonify({"success": True, "job": _job_card(job),
-                    "message": "Job {} is on the board.".format(job.confirmation_code)}), 200
+    msg = "Job {} is on the board.".format(job.confirmation_code)
+    msg += (" Confirmation + payment link texted to the customer."
+            if texted else " No confirmation text sent.")
+    return jsonify({"success": True, "job": _job_card(job), "texted": texted,
+                    "message": msg}), 200
 
 
 # ---------------------------------------------------------------------------
@@ -394,7 +421,7 @@ DISPATCH_HTML = r"""<!doctype html>
 <meta name="theme-color" content="#0B0E12" />
 <title>Umuve — Dispatch Desk</title>
 <link rel="stylesheet" href="/va/app.css?v=3" />
-<link rel="stylesheet" href="/va/dispatch.css?v=1" />
+<link rel="stylesheet" href="/va/dispatch.css?v=2" />
 </head>
 <body>
 <div id="app">
@@ -445,6 +472,8 @@ DISPATCH_HTML = r"""<!doctype html>
             <input id="lg-items" type="text" placeholder="Sofa, mattress, hot tub…" />
             <label class="lbl" for="lg-notes">Notes <span class="opt">— optional</span></label>
             <input id="lg-notes" type="text" placeholder="Gate code, stairs, heavy items…" />
+            <label class="chk"><input id="lg-text" type="checkbox" checked />
+              <span>Text the customer a confirmation + payment link</span></label>
             <button class="btn" type="submit" id="lg-btn">Add job to the board</button>
             <p id="lg-err" class="err" hidden></p>
           </form>
@@ -476,7 +505,7 @@ DISPATCH_HTML = r"""<!doctype html>
     </div>
   </section>
 </div>
-<script src="/va/dispatch.js?v=1"></script>
+<script src="/va/dispatch.js?v=2"></script>
 </body>
 </html>
 """
@@ -534,6 +563,13 @@ DISPATCH_CSS = r"""/* Dispatch Desk — layers over /va/app.css tokens */
 .logbox summary::before{content:"▸ "}
 .logbox[open] summary::before{content:"▾ "}
 .log-sub{color:var(--faint);font-size:12.5px;line-height:1.5;margin:10px 0 2px}
+.chk{display:flex;align-items:center;gap:10px;margin:16px 0 0;color:var(--muted);
+  font-size:13.5px;cursor:pointer}
+.chk input{width:18px;height:18px;accent-color:var(--accent);margin:0;flex:none}
+.jobaddr a{color:inherit;text-decoration:none;border-bottom:1.5px dashed rgba(255,106,44,.45)}
+.haulphone{margin-top:3px}
+.haulphone a{color:var(--muted);font-size:12.5px;text-decoration:none;
+  border-bottom:1px solid rgba(127,184,255,.4)}
 
 /* recent activity */
 .recent-head{font-family:var(--display);font-weight:600;font-size:10px;letter-spacing:.2em;
@@ -669,7 +705,8 @@ DISPATCH_JS = r"""(function(){
     return '<div class="jobcard" data-id="' + esc(j.id) + '">'
       + '<div class="jobtop"><span class="jobprice">$' + Number(j.total_price || 0).toFixed(0) + '</span>'
       + '<span class="jobcode">' + esc(j.code || "") + '</span></div>'
-      + '<h2 class="jobaddr">' + esc(j.address) + '</h2>'
+      + '<h2 class="jobaddr"><a href="https://maps.google.com/?q=' + encodeURIComponent(j.address || "")
+      + '" target="_blank" rel="noopener">' + esc(j.address) + '</a></h2>'
       + '<div class="jobchips">' + chips + '</div>'
       + '<div class="jobfacts">' + facts + '</div>'
       + (withButton ? '<button class="assignbtn" type="button" data-pick="' + esc(j.id) + '">Choose a hauler →</button>' : '')
@@ -728,9 +765,13 @@ DISPATCH_JS = r"""(function(){
           if(h.total_jobs) meta.push(h.total_jobs + " jobs");
           if(h.avg_rating) meta.push(h.avg_rating + "★");
           if(h.truck_type) meta.push(h.truck_type);
+          var phone = h.phone
+            ? '<div class="haulphone"><a href="tel:' + esc(h.phone) + '">Call ' + esc(h.phone) + '</a></div>'
+            : '';
           return '<div class="haulrow">'
             + '<div class="haulmain"><div class="haulname">' + esc(h.name) + chips + '</div>'
-            + '<div class="haulmeta">' + esc(meta.join(" · ") || "No history yet") + '</div></div>'
+            + '<div class="haulmeta">' + esc(meta.join(" · ") || "No history yet") + '</div>'
+            + phone + '</div>'
             + '<button class="haulbtn" type="button" data-assign="' + esc(h.id) + '">Assign</button>'
             + '</div>';
         }).join("");
@@ -791,7 +832,8 @@ DISPATCH_JS = r"""(function(){
       price: document.getElementById("lg-price").value,
       scheduled_at: document.getElementById("lg-when").value,
       items_text: document.getElementById("lg-items").value.trim(),
-      notes: document.getElementById("lg-notes").value.trim()
+      notes: document.getElementById("lg-notes").value.trim(),
+      send_confirmation: document.getElementById("lg-text").checked
     }, function(res){
       btn.disabled = false;
       if(!res.ok){ lgErr.textContent = res.j.error || "Couldn't log the job."; lgErr.hidden = false; return; }
