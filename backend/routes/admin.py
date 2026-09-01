@@ -2726,122 +2726,15 @@ def assign_job(user_id, job_id):
     if not contractor:
         return jsonify({"error": "Contractor not found"}), 404
 
-    if contractor.approval_status != "approved":
-        return jsonify({"error": "Contractor is not approved"}), 403
-
-    # If assigning to an operator, set as delegating (operator will assign to fleet)
-    if contractor.is_operator:
-        job.operator_id = contractor.id
-        if job.status in ("pending", "confirmed"):
-            job.status = "delegating"
-        job.updated_at = utcnow()
-
-        # Notify operator
-        notification = Notification(
-            id=generate_uuid(),
-            user_id=contractor.user_id,
-            type="job_assigned",
-            title="New Job for Delegation",
-            body="A job at {} needs delegation to your fleet.".format(job.address or "an address"),
-            data={"job_id": job.id, "address": job.address, "total_price": job.total_price},
-        )
-        db.session.add(notification)
-        db.session.commit()
-
-        from socket_events import broadcast_job_status, socketio
-        broadcast_job_status(job.id, job.status, {"operator_id": contractor.id})
-        socketio.emit("operator:new-job", {
-            "job_id": job.id,
-            "address": job.address,
-            "total_price": job.total_price,
-        }, room="operator:{}".format(contractor.id))
-
-        return jsonify({"success": True, "job": job.to_dict()}), 200
-
-    # Regular contractor assignment
-    job.driver_id = contractor.id
-    if job.status in ("pending", "confirmed"):
-        job.status = "assigned"
-    job.updated_at = utcnow()
-
-    # Notify driver
-    notification = Notification(
-        id=generate_uuid(),
-        user_id=contractor.user_id,
-        type="job_assigned",
-        title="New Job Assigned",
-        body="An admin has assigned you a job at {}.".format(job.address or "an address"),
-        data={"job_id": job.id, "address": job.address, "total_price": job.total_price},
-    )
-    db.session.add(notification)
-
-    # Notify customer
-    notification_cust = Notification(
-        id=generate_uuid(),
-        user_id=job.customer_id,
-        type="job_update",
-        title="Driver Assigned",
-        body="A driver has been assigned to your job.",
-        data={"job_id": job.id, "status": "assigned"},
-    )
-    db.session.add(notification_cust)
-    db.session.commit()
-
-    # Concierge (no-app) hauler: mint an accepted offer token and SMS them the
-    # job console link — the console is their only way to run the job.
-    if contractor.is_concierge:
-        try:
-            from routes.concierge import ensure_concierge_console_link
-            ensure_concierge_console_link(job, contractor)
-        except Exception as e:
-            import logging as _log
-            _log.getLogger(__name__).exception(
-                "Concierge console link failed for job %s: %s", job.id, e)
-
-    # --- Email / SMS / Push notifications ---
-    driver_name = contractor.user.name if contractor.user else None
+    # Shared machinery with the VA Dispatch Desk — operator delegation,
+    # concierge console link, and all notifications live in dispatch_service.
+    from dispatch_service import AssignmentError, assign_contractor_to_job
     try:
-        from notifications import (
-            send_driver_assigned_email, send_driver_assigned_sms, send_push_notification,
-        )
-        customer = db.session.get(User, job.customer_id)
-        if customer:
-            if customer.email:
-                send_driver_assigned_email(customer.email, customer.name, driver_name, job.address)
-            if customer.phone:
-                send_driver_assigned_sms(customer.phone, driver_name, job.address)
-        # Push to driver: new job assigned
-        send_push_notification(
-            contractor.user_id, "New Job Assigned",
-            "New job assigned: {}".format(job.address or "an address"),
-            {"job_id": job.id},
-        )
-    except Exception as e:
-        import logging as _log
-        _log.getLogger(__name__).exception("Notification failed for job %s: %s", job.id, e)
+        job_dict = assign_contractor_to_job(job, contractor, assigned_by="An admin")
+    except AssignmentError as e:
+        return jsonify({"error": str(e)}), e.status_code
 
-    # Broadcast via SocketIO
-    from socket_events import broadcast_job_status, socketio
-    broadcast_job_status(job.id, job.status, {"driver_id": contractor.id})
-
-    socketio.emit("job:assigned", {
-        "job_id": job.id,
-        "contractor_id": contractor.id,
-        "contractor_name": contractor.user.name if contractor.user else None,
-    }, room="driver:{}".format(contractor.id))
-
-    socketio.emit("job:driver-assigned", {
-        "job_id": job.id,
-        "driver": {
-            "id": contractor.id,
-            "name": contractor.user.name if contractor.user else None,
-            "truck_type": contractor.truck_type,
-            "avg_rating": contractor.avg_rating,
-            "total_jobs": contractor.total_jobs,
-        },
-    }, room=job.id)
-
-    return jsonify({"success": True, "job": job.to_dict()}), 200
+    return jsonify({"success": True, "job": job_dict}), 200
 
 
 @admin_bp.route("/jobs/<job_id>/reschedule", methods=["PUT"])

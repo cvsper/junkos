@@ -356,6 +356,14 @@ VA_HUB_HTML = r"""<!doctype html>
         </div>
         <div class="situ-go">→</div>
       </a>
+      <a class="situ rv" href="/va/dispatch">
+        <div class="situ-key ok-key">JOBS</div>
+        <div class="situ-txt">
+          <div class="situ-t">Put a hauler on a job</div>
+          <div class="situ-d">The <b>Dispatch Desk</b> shows every open booking — pick a hauler, one tap assigns and notifies everyone.</div>
+        </div>
+        <div class="situ-go">→</div>
+      </a>
       <a class="situ rv" href="/va/text?t=voicemail">
         <div class="situ-key">VM</div>
         <div class="situ-txt">

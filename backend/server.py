@@ -300,6 +300,15 @@ except Exception as _vc_exc:
     import logging as _logging
     _logging.getLogger(__name__).warning("vacalls_bp not registered: %s", _vc_exc)
 
+# VA Dispatch Desk — job board + hauler assignment (first Maya phone close,
+# Aug 2026: phone customers need a human dispatcher to put a hauler on the job)
+try:
+    from va_dispatch import vadispatch_bp
+    app.register_blueprint(vadispatch_bp)
+except Exception as _vd_exc:
+    import logging as _logging
+    _logging.getLogger(__name__).warning("vadispatch_bp not registered: %s", _vd_exc)
+
 # Previously built-but-never-registered public endpoints (2026-07-03 audit):
 # newsletter capture + partner signups. Both are plain lead-capture routes the
 # marketing site links to; registering them turns 404s into leads.
@@ -855,7 +864,7 @@ def get_available_time_slots(requested_date=None):
 @limiter.exempt
 def health_check():
     """Health check endpoint (exempt from rate limiting)"""
-    return jsonify({"status": "healthy", "service": "Umuve API", "version": "2.2.8-maya-prices"}), 200
+    return jsonify({"status": "healthy", "service": "Umuve API", "version": "2.2.9-va-dispatch"}), 200
 
 
 def _check_admin_seed_secret(path_secret=None):

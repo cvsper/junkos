@@ -3833,3 +3833,30 @@ class CallAttempt(db.Model):
     note = Column(Text, nullable=True)
     va_name = Column(String(80), nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+
+
+class VaDispatchAction(db.Model):
+    """One action taken on the VA Dispatch Desk — who assigned/created what, when.
+
+    The desk runs on the shared VA passcode rather than per-user accounts, so
+    this table is the accountability layer: every assign and every phone-logged
+    job lands here with the VA's name.
+    """
+    __tablename__ = "va_dispatch_actions"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    job_id = Column(String(36), ForeignKey("jobs.id", ondelete="CASCADE"), nullable=False, index=True)
+    contractor_id = Column(String(36), ForeignKey("contractors.id", ondelete="SET NULL"), nullable=True, index=True)
+    action = Column(String(20), nullable=False)  # assign | log_job
+    va_name = Column(String(80), nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "job_id": self.job_id,
+            "contractor_id": self.contractor_id,
+            "action": self.action,
+            "va_name": self.va_name,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
