@@ -60,6 +60,10 @@ def format_scheduled_time(dt):
     if not dt:
         return "your scheduled time"
 
+    if hasattr(dt, "astimezone"):
+        from timeutils import to_local
+        dt = to_local(dt)  # Maya reads this aloud in Florida time
+
     day_suffix = "th"
     day = dt.day
     if day in (1, 21, 31):

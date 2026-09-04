@@ -15,6 +15,7 @@ from models import db, Job, Contractor, Rating, Payment, User, Notification, gen
 from auth_routes import require_auth
 from notifications import send_push_notification
 from storage import save_file
+from timeutils import parse_local, iso_utc
 
 jobs_bp = Blueprint("jobs", __name__, url_prefix="/api/jobs")
 
@@ -78,7 +79,7 @@ def lookup_by_confirmation_code(confirmation_code):
         "photos": job.photos or [],
         "before_photos": job.before_photos or [],
         "after_photos": job.after_photos or [],
-        "scheduled_at": job.scheduled_at.isoformat() if job.scheduled_at else None,
+        "scheduled_at": iso_utc(job.scheduled_at),
         "started_at": job.started_at.isoformat() if job.started_at else None,
         "completed_at": job.completed_at.isoformat() if job.completed_at else None,
         "total_price": job.total_price,
@@ -414,10 +415,8 @@ def reschedule_job(user_id, job_id):
 
     # Parse into a datetime
     try:
-        new_scheduled_at = datetime.strptime(
-            "{} {}".format(scheduled_date, scheduled_time), "%Y-%m-%d %H:%M"
-        ).replace(tzinfo=timezone.utc)
-    except ValueError:
+        new_scheduled_at = parse_local(scheduled_date, scheduled_time)
+    except (ValueError, TypeError):
         return jsonify({"error": "Invalid date/time format. Use YYYY-MM-DD and HH:MM"}), 400
 
     # Prevent scheduling in the past

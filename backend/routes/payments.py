@@ -17,6 +17,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from models import db, Job, Payment, Contractor, User, Notification, PromoCode, ReferralPayout, generate_uuid, utcnow
 from auth_routes import require_auth
 from extensions import limiter
+from timeutils import fmt_local, local_date_str
 
 payments_bp = Blueprint("payments", __name__, url_prefix="/api/payments")
 
@@ -1351,8 +1352,8 @@ def _handle_payment_succeeded(intent):
                 customer_name=customer.name or "",
                 booking_id=job.id,
                 address=job.address or "",
-                scheduled_date=str(job.scheduled_at.date()) if job.scheduled_at else "TBD",
-                scheduled_time=str(job.scheduled_at.strftime("%H:%M")) if job.scheduled_at else "",
+                scheduled_date=local_date_str(job.scheduled_at),
+                scheduled_time=fmt_local(job.scheduled_at, "%H:%M", ""),
                 total_amount=payment.amount,
             )
 

@@ -18,6 +18,7 @@ from flask import Blueprint, request, jsonify, current_app
 from models import db, User, Job, Payment, CallLog, ScheduledCallback, Contractor, CallerProfile, CallInsight, generate_uuid, generate_referral_code
 from auth_routes import require_auth
 from routes.admin import require_admin
+from timeutils import parse_local, fmt_local, local_date_str, local_naive_to_utc
 
 logger = logging.getLogger(__name__)
 
@@ -222,17 +223,9 @@ def _handle_create_booking(args, vapi_data):
     # Parse scheduled datetime
     scheduled_at = None
     if scheduled_date:
-        time_str = scheduled_time
-        if "-" in time_str and ":" not in time_str:
-            try:
-                start_hour = int(time_str.split("-")[0])
-                time_str = "{:02d}:00".format(start_hour)
-            except Exception:
-                time_str = "09:00"
+        # Maya speaks Florida time; parse_local stores UTC.
         try:
-            scheduled_at = datetime.strptime(
-                "{} {}".format(scheduled_date, time_str), "%Y-%m-%d %H:%M"
-            ).replace(tzinfo=timezone.utc)
+            scheduled_at = parse_local(scheduled_date, scheduled_time)
         except Exception:
             pass
 
@@ -298,7 +291,7 @@ def _handle_create_booking(args, vapi_data):
     # Send confirmation email
     try:
         from notifications import send_booking_confirmation_email, send_booking_sms
-        date_str = str(scheduled_at.date()) if scheduled_at else "TBD"
+        date_str = local_date_str(scheduled_at)
         time_display = scheduled_time or ""
         if email:
             send_booking_confirmation_email(
@@ -338,7 +331,7 @@ def _handle_create_booking(args, vapi_data):
                 name, address,
                 items_count, "s" if items_count != 1 else "",
                 total,
-                str(scheduled_at.date()) if scheduled_at else "TBD",
+                local_date_str(scheduled_at),
                 scheduled_time,
             )
             send_sms_async(operator_phone, msg)
@@ -358,7 +351,7 @@ def _handle_create_booking(args, vapi_data):
     ).format(
         short_id,
         address,
-        str(scheduled_at.date()) if scheduled_at else "TBD",
+        local_date_str(scheduled_at),
         scheduled_time,
         total,
         email,
@@ -591,8 +584,8 @@ def _handle_schedule_callback(args, vapi_data):
     try:
         from dateutil import parser as dateutil_parser
         scheduled_at = dateutil_parser.parse(callback_time, fuzzy=True)
-        if scheduled_at.tzinfo is None:
-            scheduled_at = scheduled_at.replace(tzinfo=timezone.utc)
+        # "call me back at 3" means 3 PM Florida time.
+        scheduled_at = local_naive_to_utc(scheduled_at)
     except Exception:
         # Store the raw text; operator will interpret it
         pass
@@ -1110,8 +1103,8 @@ def _handle_end_of_call_report(message):
                     customer_name=customer.name or "",
                     booking_id=recent_job.id,
                     address=recent_job.address or "",
-                    scheduled_date=str(recent_job.scheduled_at.date()) if recent_job.scheduled_at else "TBD",
-                    scheduled_time=str(recent_job.scheduled_at.strftime("%H:%M")) if recent_job.scheduled_at else "",
+                    scheduled_date=local_date_str(recent_job.scheduled_at),
+                    scheduled_time=fmt_local(recent_job.scheduled_at, "%H:%M", ""),
                     total_amount=recent_job.total_price or 0,
                 )
         except Exception:

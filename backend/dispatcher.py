@@ -16,6 +16,8 @@ import logging
 import threading
 from datetime import timedelta, timezone
 
+from timeutils import fmt_local
+
 
 def _aware_utc(dt):
     """Normalize a DB-loaded datetime for comparison against utcnow().
@@ -571,7 +573,7 @@ def _sms_operator_assigned(contractor, job):
         # Format the date nicely
         date_str = "TBD"
         if job.scheduled_at:
-            date_str = job.scheduled_at.strftime("%b %d at %I:%M %p")
+            date_str = fmt_local(job.scheduled_at, "%b %d at %I:%M %p")
 
         body = (
             "New job assigned! {} on {}. "
@@ -604,10 +606,7 @@ def _notify_admin_no_operators(job):
         amount = "${:.2f}".format(float(job.total_price)) if getattr(job, "total_price", None) else "unknown"
     except (TypeError, ValueError):
         amount = "unknown"
-    sched = (
-        job.scheduled_at.strftime("%b %d at %I:%M %p")
-        if getattr(job, "scheduled_at", None) else "ASAP/TBD"
-    )
+    sched = fmt_local(getattr(job, "scheduled_at", None), "%b %d at %I:%M %p", "ASAP/TBD")
 
     customer_name = ""
     customer_phone = ""
@@ -808,10 +807,7 @@ def _notify_admin_late_job(job, minutes_late):
     except (TypeError, ValueError):
         amount = "unknown"
 
-    sched = (
-        job.scheduled_at.strftime("%b %d at %I:%M %p")
-        if getattr(job, "scheduled_at", None) else "unknown time"
-    )
+    sched = fmt_local(getattr(job, "scheduled_at", None), "%b %d at %I:%M %p", "unknown time")
 
     # Try to surface the assigned contractor (if any) so sevs knows who to chase.
     assigned_label = "unassigned"
@@ -1112,10 +1108,7 @@ def _sms_broadcast_offer(offer, contractor, job):
             )
             return
 
-        date_str = (
-            job.scheduled_at.strftime("%b %d at %I:%M %p")
-            if job.scheduled_at else "ASAP"
-        )
+        date_str = fmt_local(job.scheduled_at, "%b %d at %I:%M %p", "ASAP")
         dist_str = (
             "~{:.0f} mi away".format(offer.distance_miles)
             if offer.distance_miles is not None else "in your area"

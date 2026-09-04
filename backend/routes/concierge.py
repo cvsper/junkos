@@ -45,6 +45,7 @@ from models import (
     generate_uuid, utcnow,
 )
 from auth_routes import require_auth
+from timeutils import fmt_local
 
 concierge_bp = Blueprint("concierge", __name__)
 
@@ -330,8 +331,7 @@ def ensure_concierge_console_link(job, contractor):
         phone = contractor.user.phone if contractor.user else None
         if phone:
             link = "{}/w/{}".format(PUBLIC_API_URL, offer.accept_token)
-            when = (job.scheduled_at.strftime("%b %d at %I:%M %p")
-                    if job.scheduled_at else "ASAP")
+            when = fmt_local(job.scheduled_at, "%b %d at %I:%M %p", "ASAP")
             send_sms_async(
                 phone,
                 "umuve JOB assigned to you: {} — {}. Run it from here "
@@ -500,8 +500,7 @@ def concierge_console(token):
     addr = html.escape(job.address or "Address unavailable")
     maps = ('https://www.google.com/maps/dir/?api=1&destination=' +
             quote(job.address)) if job.address else None
-    when = (job.scheduled_at.strftime("%a %b %d, %I:%M %p")
-            if job.scheduled_at else "ASAP")
+    when = fmt_local(job.scheduled_at, "%a %b %d, %I:%M %p", "ASAP")
 
     rows = [
         '<div class="row"><span class="k">Where</span><span class="v">{}</span></div>'.format(addr),

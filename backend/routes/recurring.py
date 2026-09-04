@@ -19,6 +19,7 @@ from models import (
     generate_uuid, utcnow,
 )
 from auth_routes import require_auth
+from timeutils import to_local, to_utc, local_now
 
 recurring_bp = Blueprint("recurring", __name__, url_prefix="/api/recurring")
 
@@ -35,8 +36,9 @@ def _compute_next_scheduled(frequency, day_of_week, day_of_month, preferred_time
     ``after`` is the reference point (defaults to now).  The returned datetime
     is always in the future relative to ``after``.
     """
-    if after is None:
-        after = datetime.now(timezone.utc)
+    # Customers pick "Mondays at 9" in Florida time, so do the calendar math
+    # in the business timezone and hand back UTC for storage.
+    after = to_local(after) if after is not None else local_now()
 
     hour, minute = 9, 0
     if preferred_time:
@@ -56,7 +58,7 @@ def _compute_next_scheduled(frequency, day_of_week, day_of_month, preferred_time
         next_dt = next_date.replace(hour=hour, minute=minute, second=0, microsecond=0)
         if frequency == "biweekly" and next_dt <= after + timedelta(days=7):
             next_dt += timedelta(weeks=1)
-        return next_dt
+        return to_utc(next_dt)
 
     if frequency == "monthly":
         target_day = day_of_month if day_of_month is not None else 1
@@ -72,10 +74,10 @@ def _compute_next_scheduled(frequency, day_of_week, day_of_month, preferred_time
             candidate = (candidate + relativedelta(months=1)).replace(
                 day=target_day, hour=hour, minute=minute, second=0, microsecond=0
             )
-        return candidate
+        return to_utc(candidate)
 
     # Fallback: 7 days from now
-    return after + timedelta(days=7)
+    return to_utc(after + timedelta(days=7))
 
 
 def _advance_next_scheduled(recurring):

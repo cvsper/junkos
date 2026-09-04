@@ -274,3 +274,18 @@ def test_log_job_validates_inputs(client):
     bad_price = _post(client, "/api/va/dispatch/log-job",
                       customer_phone="(561) 555-0100", address="9 Pine St", price="lots")
     assert bad_price.status_code == 400
+
+
+def test_log_job_picker_time_is_florida_and_stored_as_utc(client):
+    # Tracy's datetime-local picker says "Jul 15, 9:00 AM" — that is Florida
+    # time (EDT, UTC-4). The DB must hold 13:00Z and the card must say 9:00 AM.
+    r = _post(client, "/api/va/dispatch/log-job",
+              customer_name="Sam Ortiz", customer_phone=_unique_phone(),
+              address="9 Flagler Dr, WPB", price="250", items_text="Mattress",
+              scheduled_at="2026-07-15T09:00", send_confirmation=False)
+    assert r.status_code == 200, r.get_json()
+    card = r.get_json()["job"]
+    job = db.session.get(Job, card["id"])
+    assert job.scheduled_at.replace(tzinfo=None) == datetime(2026, 7, 15, 13, 0)
+    assert card["scheduled_at"] == "2026-07-15T13:00:00.000Z"
+    assert card["scheduled_human"] == "Wed Jul 15, 9:00 AM"

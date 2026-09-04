@@ -16,6 +16,8 @@ from sqlalchemy import (
 from sqlalchemy.orm import relationship
 from werkzeug.security import generate_password_hash, check_password_hash
 
+from timeutils import iso_utc
+
 db = SQLAlchemy()
 
 
@@ -409,7 +411,7 @@ class Job(db.Model):
             "before_photos": self.before_photos or [],
             "after_photos": self.after_photos or [],
             "proof_submitted_at": self.proof_submitted_at.isoformat() if self.proof_submitted_at else None,
-            "scheduled_at": self.scheduled_at.isoformat() if self.scheduled_at else None,
+            "scheduled_at": iso_utc(self.scheduled_at),
             "started_at": self.started_at.isoformat() if self.started_at else None,
             "completed_at": self.completed_at.isoformat() if self.completed_at else None,
             "base_price": self.base_price,
@@ -805,7 +807,7 @@ class RecurringBooking(db.Model):
             "items": self.items or [],
             "notes": self.notes,
             "is_active": self.is_active,
-            "next_scheduled_at": self.next_scheduled_at.isoformat() if self.next_scheduled_at else None,
+            "next_scheduled_at": iso_utc(self.next_scheduled_at),
             "total_bookings_created": self.total_bookings_created,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
@@ -1219,7 +1221,7 @@ class ScheduledCallback(db.Model):
             "phone": self.phone,
             "customer_name": self.customer_name,
             "requested_time": self.requested_time,
-            "scheduled_at": self.scheduled_at.isoformat() if self.scheduled_at else None,
+            "scheduled_at": iso_utc(self.scheduled_at),
             "status": self.status,
             "call_id": self.call_id,
             "assigned_operator_id": self.assigned_operator_id,

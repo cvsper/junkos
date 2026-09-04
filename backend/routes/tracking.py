@@ -10,6 +10,7 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from models import db, Job, Contractor, User
+from timeutils import iso_utc
 
 tracking_bp = Blueprint("tracking", __name__, url_prefix="/api/tracking")
 
@@ -31,7 +32,7 @@ def get_tracking_info(job_id):
         "job_id": job.id,
         "status": job.status,
         "address": job.address,
-        "scheduled_at": job.scheduled_at.isoformat() if job.scheduled_at else None,
+        "scheduled_at": iso_utc(job.scheduled_at),
         "items": job.items or [],
         "created_at": job.created_at.isoformat() if job.created_at else None,
     }
@@ -138,7 +139,7 @@ def get_tracking_by_code(code):
             "code": code_norm,
             "stage": stage,                 # waiting | assigned | en_route | on_site | complete | cancelled | issue
             "message": message,
-            "scheduled_at": job.scheduled_at.isoformat() if job.scheduled_at else None,
+            "scheduled_at": iso_utc(job.scheduled_at),
             "address_short": (job.address or "").split(",")[0] if job.address else None,
             "hauler": hauler,
             "before_photos": before_photos,

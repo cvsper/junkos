@@ -17,6 +17,7 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from dispatcher import accept_offer, _aware_utc
+from timeutils import fmt_local
 
 offers_bp = Blueprint("offers", __name__)
 
@@ -105,7 +106,7 @@ def offer_page(token):
     payout = "${:.2f}".format(offer.payout_amount) if offer.payout_amount else "See app"
     dist = ("{:.0f} mi away".format(offer.distance_miles)
             if offer.distance_miles is not None else "Nearby")
-    when = job.scheduled_at.strftime("%b %d, %I:%M %p") if job.scheduled_at else "ASAP"
+    when = fmt_local(job.scheduled_at, "%b %d, %I:%M %p", "ASAP")
     addr = job.address or "Address shared on accept"
 
     body = """

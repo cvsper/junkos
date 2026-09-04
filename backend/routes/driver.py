@@ -15,6 +15,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from models import db, User, Contractor, Job, Payment, utcnow
 from auth_routes import require_auth
+from timeutils import iso_utc
 
 driver_bp = Blueprint("driver", __name__, url_prefix="/api/driver")
 
@@ -99,7 +100,7 @@ def list_offers(user_id):
             "distance_miles": o.distance_miles,
             "expires_at": o.expires_at.isoformat() if o.expires_at else None,
             "address": job.address,
-            "scheduled_at": job.scheduled_at.isoformat() if job.scheduled_at else None,
+            "scheduled_at": iso_utc(job.scheduled_at),
             "items": job.items,
             "total_price": job.total_price,
         })

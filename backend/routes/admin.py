@@ -21,6 +21,7 @@ from models import (
 )
 from auth_routes import require_auth
 from notifications import send_email, render_driver_approval_email
+from timeutils import parse_local, iso_utc
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/api/admin")
 
@@ -2757,10 +2758,8 @@ def admin_reschedule_job(user_id, job_id):
         return jsonify({"error": "scheduled_date and scheduled_time are required"}), 400
 
     try:
-        new_scheduled_at = datetime.strptime(
-            "{} {}".format(scheduled_date, scheduled_time), "%Y-%m-%d %H:%M"
-        ).replace(tzinfo=timezone.utc)
-    except ValueError:
+        new_scheduled_at = parse_local(scheduled_date, scheduled_time)
+    except (ValueError, TypeError):
         return jsonify({"error": "Invalid date/time format. Use YYYY-MM-DD and HH:MM"}), 400
 
     if new_scheduled_at < datetime.now(timezone.utc):
@@ -2784,7 +2783,7 @@ def admin_reschedule_job(user_id, job_id):
     db.session.commit()
 
     from socket_events import broadcast_job_status
-    broadcast_job_status(job.id, job.status, {"scheduled_at": new_scheduled_at.isoformat()})
+    broadcast_job_status(job.id, job.status, {"scheduled_at": iso_utc(new_scheduled_at)})
 
     return jsonify({"success": True, "job": job.to_dict()}), 200
 
@@ -3381,4 +3380,121 @@ def sync_vapi_assistant(user_id):
         "name": result.get("name"),
         "tools": tools,
         "updated_at": result.get("updatedAt"),
+    }), 200
+
+
+# ---------------------------------------------------------------------------
+# One-time repair: scheduled times written before the timezone fix
+# ---------------------------------------------------------------------------
+_TZ_BACKFILL_MARK = "[tz-backfilled]"
+
+
+@admin_bp.route("/maintenance/scheduled-tz-backfill", methods=["POST"])
+@require_admin
+def scheduled_tz_backfill():
+    """Shift scheduled times written before the timezone fix into true UTC.
+
+    Until 2026-09-02 every writer stored the Florida wall-clock stamped as
+    UTC (see timeutils). Rows created before the fix deployed therefore read
+    four to five hours early once the code started treating them as real UTC.
+    This reinterprets each stored value as Florida wall-clock and rewrites it.
+
+    Body:
+      before        ISO timestamp (UTC) of the deploy that carried the fix.
+                    Required — only rows created before it are touched.
+      apply         true to write; anything else is a dry run (default).
+      include_past  true to also shift rows whose time has already passed
+                    (reporting only); default false = upcoming rows only.
+
+    Idempotent: every row it changes gets a "[tz-backfilled]" marker and is
+    skipped on the next run.
+    """
+    from timeutils import BUSINESS_TZ, UTC, fmt_local, iso_utc
+    from models import RecurringBooking, ScheduledCallback
+
+    data = request.get_json(silent=True) or {}
+    raw_before = data.get("before")
+    if not raw_before:
+        return jsonify({"error": "before (deploy timestamp, ISO, UTC) is required"}), 400
+    try:
+        before = datetime.fromisoformat(str(raw_before).replace("Z", "+00:00"))
+        if before.tzinfo is None:
+            before = before.replace(tzinfo=UTC)
+    except ValueError:
+        return jsonify({"error": "before must be an ISO timestamp"}), 400
+
+    apply = data.get("apply") is True
+    include_past = data.get("include_past") is True
+    now = utcnow()
+
+    def _shift(naive_wall_clock):
+        return naive_wall_clock.replace(tzinfo=None).replace(tzinfo=BUSINESS_TZ).astimezone(UTC)
+
+    changes = []
+
+    jobs_q = Job.query.filter(
+        Job.scheduled_at.isnot(None),
+        Job.created_at < before,
+    )
+    if not include_past:
+        jobs_q = jobs_q.filter(Job.scheduled_at >= now - timedelta(hours=6))
+    for job in jobs_q.all():
+        if _TZ_BACKFILL_MARK in (job.notes or ""):
+            continue
+        new_val = _shift(job.scheduled_at)
+        changes.append({
+            "kind": "job", "id": job.id, "code": job.confirmation_code, "status": job.status,
+            "was_stored": job.scheduled_at.isoformat(),
+            "reads_as_florida_now": fmt_local(job.scheduled_at, "%a %b %-d, %-I:%M %p"),
+            "will_read_as_florida": fmt_local(new_val, "%a %b %-d, %-I:%M %p"),
+            "new_stored": iso_utc(new_val),
+        })
+        if apply:
+            job.scheduled_at = new_val
+            job.notes = ((job.notes or "").rstrip() + " " + _TZ_BACKFILL_MARK).strip()
+
+    rec_q = RecurringBooking.query.filter(
+        RecurringBooking.next_scheduled_at.isnot(None),
+        RecurringBooking.created_at < before,
+    )
+    for rec in rec_q.all():
+        if _TZ_BACKFILL_MARK in (rec.notes or ""):
+            continue
+        new_val = _shift(rec.next_scheduled_at)
+        changes.append({
+            "kind": "recurring", "id": rec.id,
+            "was_stored": rec.next_scheduled_at.isoformat(), "new_stored": iso_utc(new_val),
+            "will_read_as_florida": fmt_local(new_val, "%a %b %-d, %-I:%M %p"),
+        })
+        if apply:
+            rec.next_scheduled_at = new_val
+            rec.notes = ((rec.notes or "").rstrip() + " " + _TZ_BACKFILL_MARK).strip()
+
+    cb_q = ScheduledCallback.query.filter(
+        ScheduledCallback.scheduled_at.isnot(None),
+        ScheduledCallback.created_at < before,
+        ScheduledCallback.status == "pending",
+    )
+    for cb in cb_q.all():
+        if _TZ_BACKFILL_MARK in (cb.requested_time or ""):
+            continue
+        new_val = _shift(cb.scheduled_at)
+        changes.append({
+            "kind": "callback", "id": cb.id, "phone": cb.phone,
+            "was_stored": cb.scheduled_at.isoformat(), "new_stored": iso_utc(new_val),
+            "will_read_as_florida": fmt_local(new_val, "%a %b %-d, %-I:%M %p"),
+        })
+        if apply:
+            cb.scheduled_at = new_val
+            cb.requested_time = ((cb.requested_time or "").rstrip() + " " + _TZ_BACKFILL_MARK).strip()
+
+    if apply and changes:
+        db.session.commit()
+
+    return jsonify({
+        "applied": apply,
+        "before": before.isoformat(),
+        "include_past": include_past,
+        "count": len(changes),
+        "changes": changes,
     }), 200

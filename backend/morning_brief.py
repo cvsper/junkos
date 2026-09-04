@@ -29,6 +29,8 @@ import os
 import sys
 from datetime import datetime, timedelta, timezone
 
+from timeutils import fmt_local
+
 logger = logging.getLogger(__name__)
 logging.basicConfig(
     level=logging.INFO,
@@ -144,10 +146,7 @@ def _section_needs_attention(now):
             "<td><b>{n}</b> — call/scramble immediately</td></tr>"
         ).format(n=len(unassigned)))
         for j in unassigned[:5]:
-            sched = (
-                j.scheduled_at.strftime("%a %I:%M %p")
-                if j.scheduled_at else "TBD"
-            )
+            sched = fmt_local(j.scheduled_at, "%a %I:%M %p")
             rows.append((
                 "<tr><td></td><td style='font-size:13px;color:#555'>"
                 "#{code} • {sched} • {addr}</td></tr>"
@@ -237,7 +236,7 @@ def _section_coming_up(now):
 
     rows = []
     for j in jobs[:20]:
-        sched = j.scheduled_at.strftime("%a %I:%M %p") if j.scheduled_at else "TBD"
+        sched = fmt_local(j.scheduled_at, "%a %I:%M %p")
         assigned = (
             "<span style='color:#070'>assigned</span>"
             if (j.driver_id or j.operator_id)

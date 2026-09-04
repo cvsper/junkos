@@ -14,6 +14,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from models import db, User, Contractor, Job, Notification, OperatorInvite, Referral, generate_uuid, utcnow
 from auth_routes import require_auth
+from timeutils import fmt_local
 
 drivers_bp = Blueprint("drivers", __name__, url_prefix="/api/drivers")
 
@@ -731,10 +732,7 @@ def apply_job_status_transition(job, contractor, new_status, data=None):
             # before this — silence they read as "they forgot me."
             if customer:
                 hauler_label = driver_name or "Your hauler"
-                when = (
-                    job.scheduled_at.strftime("%a %b %d, %I:%M %p")
-                    if job.scheduled_at else "shortly"
-                )
+                when = fmt_local(job.scheduled_at, "%a %b %d, %I:%M %p", "shortly")
                 if customer.phone:
                     from sms_service import send_sms as _customer_sms
                     _customer_sms(

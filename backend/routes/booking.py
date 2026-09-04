@@ -22,6 +22,7 @@ from models import (
 from auth_routes import require_auth, optional_auth
 from extensions import limiter
 from geofencing import is_in_service_area
+from timeutils import parse_local, fmt_local, local_date_str
 
 booking_bp = Blueprint("booking", __name__, url_prefix="/api/booking")
 
@@ -399,7 +400,11 @@ def _time_based_surge(scheduled_date_str):
     except (ValueError, TypeError):
         return 0.0, []
 
-    today = datetime.now(timezone.utc).date()
+    # Same-day / next-day are judged on the Florida calendar. Between 8 PM and
+    # midnight local the UTC date is already tomorrow, which used to mislabel
+    # a next-day booking as same-day surge.
+    from timeutils import local_now
+    today = local_now().date()
     delta_days = (sched - today).days
 
     same_day_rate, next_day_rate, weekend_rate = _get_time_surge_rates()
@@ -965,22 +970,14 @@ def create_booking(user_id):
     except (TypeError, ValueError):
         return jsonify({"error": "estimated_price must be a number"}), 400
 
-    # Parse scheduled datetime (accept camelCase from web frontend)
+    # Parse scheduled datetime (accept camelCase from web frontend).
+    # The customer picked a Florida wall-clock slot; parse_local stores UTC.
     scheduled_at = None
     scheduled_date = data.get("scheduled_date") or data.get("scheduledDate")
     scheduled_time = data.get("scheduled_time") or data.get("scheduledTimeSlot") or "09:00"
-    # Convert time slot ranges (e.g. "8-10") to HH:MM start time
-    if scheduled_time and "-" in scheduled_time and ":" not in scheduled_time:
-        try:
-            start_hour = int(scheduled_time.split("-")[0])
-            scheduled_time = "{:02d}:00".format(start_hour)
-        except (ValueError, IndexError):
-            scheduled_time = "09:00"
     if scheduled_date:
         try:
-            scheduled_at = datetime.strptime(
-                "{} {}".format(scheduled_date, scheduled_time), "%Y-%m-%d %H:%M"
-            ).replace(tzinfo=timezone.utc)
+            scheduled_at = parse_local(scheduled_date, scheduled_time)
         except (ValueError, TypeError):
             return jsonify({"error": "Invalid scheduled_date or scheduled_time format"}), 400
 
@@ -1136,8 +1133,8 @@ def create_booking(user_id):
                 to_email=customer.email,
                 name=customer.name or "",
                 job_id=job.id,
-                date=str(job.scheduled_at.date()) if job.scheduled_at else "TBD",
-                time=job.scheduled_at.strftime("%I:%M %p") if job.scheduled_at else "TBD",
+                date=local_date_str(job.scheduled_at),
+                time=fmt_local(job.scheduled_at, "%I:%M %p"),
                 address=job.address or "",
             )
     except Exception:
@@ -1161,7 +1158,7 @@ def create_booking(user_id):
         customer = db.session.get(User, user_id)
         if customer and customer.phone:
             from sms_service import send_sms_async
-            sched_str = scheduled_at.strftime("%b %d at %I:%M %p") if scheduled_at else "ASAP"
+            sched_str = fmt_local(scheduled_at, "%b %d at %I:%M %p", "ASAP")
             sms_body = (
                 "Umuve Booking Confirmed!\n"
                 "#{} — ${:.0f}\n"
@@ -1211,7 +1208,7 @@ def create_booking(user_id):
                 items_count, "s" if items_count != 1 else "",
                 total,
                 lead_source or "direct",
-                str(scheduled_at.date()) if scheduled_at else "ASAP",
+                local_date_str(scheduled_at, "ASAP"),
             )
             send_sms_async(operator_phone, msg)
     except Exception:
@@ -1224,7 +1221,7 @@ def create_booking(user_id):
         n8n_base = os.environ.get("N8N_WEBHOOK_URL", "")
         if n8n_base:
             customer = db.session.get(User, user_id)
-            sched_str = scheduled_at.strftime("%B %d, %Y") if scheduled_at else "ASAP"
+            sched_str = fmt_local(scheduled_at, "%B %d, %Y", "ASAP")
             payload = _json.dumps({
                 "booking_id": job.confirmation_code or str(job.id)[:8],
                 "customer_name": customer.name if customer else "Customer",

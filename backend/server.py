@@ -864,7 +864,7 @@ def get_available_time_slots(requested_date=None):
 @limiter.exempt
 def health_check():
     """Health check endpoint (exempt from rate limiting)"""
-    return jsonify({"status": "healthy", "service": "Umuve API", "version": "2.2.10-dispatch-hardening"}), 200
+    return jsonify({"status": "healthy", "service": "Umuve API", "version": "2.2.11-timezone"}), 200
 
 
 def _check_admin_seed_secret(path_secret=None):
@@ -1812,8 +1812,8 @@ def portal_create_booking():
     if selected_date:
         try:
             date_str = selected_date[:10] if isinstance(selected_date, str) else selected_date.strftime("%Y-%m-%d")
-            from datetime import timezone as tz
-            scheduled_at = datetime.strptime("{} {}".format(date_str, selected_time), "%Y-%m-%d %H:%M").replace(tzinfo=tz.utc)
+            from timeutils import parse_local
+            scheduled_at = parse_local(date_str, selected_time)
         except Exception:
             pass
 

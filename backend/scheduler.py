@@ -12,6 +12,8 @@ import os
 import logging
 from datetime import datetime, timezone, timedelta
 
+from timeutils import fmt_local
+
 logger = logging.getLogger(__name__)
 
 
@@ -182,8 +184,8 @@ def _send_pickup_reminders(app):
                 if not user:
                     continue
 
-                date_str = job.scheduled_at.strftime("%B %d, %Y") if job.scheduled_at else "TBD"
-                time_str = job.scheduled_at.strftime("%I:%M %p") if job.scheduled_at else "TBD"
+                date_str = fmt_local(job.scheduled_at, "%B %d, %Y")
+                time_str = fmt_local(job.scheduled_at, "%I:%M %p")
 
                 # Email reminder
                 if user.email:

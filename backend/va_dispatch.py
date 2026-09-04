@@ -38,6 +38,7 @@ from models import (
     generate_uuid,
 )
 from dispatch_service import ASSIGNABLE_STATUSES, AssignmentError, assign_contractor_to_job
+from timeutils import parse_local_iso, fmt_local, iso_utc
 
 try:
     from extensions import limiter
@@ -93,9 +94,8 @@ def _job_card(job):
         "code": job.confirmation_code,
         "status": job.status,
         "address": job.address,
-        "scheduled_at": job.scheduled_at.isoformat() if job.scheduled_at else None,
-        "scheduled_human": (job.scheduled_at.strftime("%a %b %-d, %-I:%M %p")
-                            if job.scheduled_at else "Not scheduled"),
+        "scheduled_at": iso_utc(job.scheduled_at),
+        "scheduled_human": fmt_local(job.scheduled_at, "%a %b %-d, %-I:%M %p", "Not scheduled"),
         "total_price": job.total_price,
         "items": _items_summary(job.items),
         "notes": (job.notes or "")[:400],
@@ -283,7 +283,7 @@ def dispatch_log_job():
     raw_sched = (data.get("scheduled_at") or "").strip()
     if raw_sched:
         try:
-            scheduled_at = datetime.strptime(raw_sched, "%Y-%m-%dT%H:%M")
+            scheduled_at = parse_local_iso(raw_sched)  # the picker is Florida time
         except ValueError:
             return jsonify({"error": "Couldn't read the date/time — use the picker."}), 400
 
@@ -370,8 +370,7 @@ def dispatch_log_job():
         try:
             from notifications import send_booking_sms
             from routes.vapi import _build_checkout_url
-            date_str = (scheduled_at.strftime("%a %b %-d, %-I:%M %p")
-                        if scheduled_at else "TBD — we'll confirm the time")
+            date_str = fmt_local(scheduled_at, "%a %b %-d, %-I:%M %p", "TBD — we'll confirm the time")
             texted = bool(send_booking_sms(
                 phone, job.id, date_str, address,
                 pay_url=_build_checkout_url(job.id, price),
