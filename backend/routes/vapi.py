@@ -436,18 +436,34 @@ def _build_checkout_url(booking_id, total):
             mode="payment",
             success_url="{}/book?ref=maya&paid=true".format(frontend_url),
             cancel_url="{}/book?ref=maya".format(frontend_url),
+            client_reference_id=booking_id,
             metadata={
                 "booking_id": booking_id,
                 "source": "maya_phone",
             },
+            # The PaymentIntent is created by Stripe when the customer pays,
+            # not here, so session.payment_intent is null right now. Stamp the
+            # job onto the intent's own metadata so payment_intent.succeeded
+            # can find the Payment row (see _handle_payment_succeeded's
+            # fallback) and checkout.session.completed can reconcile too.
+            payment_intent_data={
+                "metadata": {
+                    "job_id": booking_id,
+                    "booking_id": booking_id,
+                    "source": "maya_phone",
+                },
+            },
             expires_at=int(datetime.now(timezone.utc).timestamp()) + 86400,  # 24 hours
         )
 
-        # Link the checkout session to the payment record
-        payment = Payment.query.filter_by(job_id=booking_id).first()
-        if payment:
-            payment.stripe_payment_intent_id = session.payment_intent
-            db.session.commit()
+        # Older Stripe API versions populate payment_intent at creation; link
+        # it when present, otherwise the webhook adopts it on payment.
+        pi_id = getattr(session, "payment_intent", None)
+        if pi_id and isinstance(pi_id, str):
+            payment = Payment.query.filter_by(job_id=booking_id).first()
+            if payment and not payment.stripe_payment_intent_id:
+                payment.stripe_payment_intent_id = pi_id
+                db.session.commit()
 
         logger.info("Stripe Checkout created for job %s: %s", booking_id, session.id)
         return session.url

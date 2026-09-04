@@ -1717,15 +1717,75 @@ def quick_checkout():
         return jsonify({"error": "Failed to create checkout session"}), 500
 
 
+def _reconcile_booking_checkout(session, job_id):
+    """A Checkout Session tied to a Job was paid (Maya pay-link texts, the VA
+    Dispatch Desk's pay links). Link the intent to the job's Payment row and
+    run the standard confirm path.
+
+    Before 2026-09-04 these sessions were ignored here (source != quick-
+    checkout) and payment_intent.succeeded couldn't find them either (no
+    metadata on the intent), so every paid phone job sat in "pending".
+    """
+    if session.get("payment_status") not in (None, "paid"):
+        logger.info("Checkout for job %s completed but payment_status=%s — waiting",
+                    job_id, session.get("payment_status"))
+        return
+
+    job = db.session.get(Job, job_id)
+    if not job:
+        logger.warning("Checkout completed for unknown job %s", job_id)
+        return
+
+    pi_id = session.get("payment_intent") or ""
+    if not isinstance(pi_id, str):  # expanded object
+        pi_id = pi_id.get("id", "") if hasattr(pi_id, "get") else ""
+
+    payment = Payment.query.filter_by(job_id=job.id).first()
+    if not payment:
+        amount_total = session.get("amount_total") or 0
+        payment = Payment(
+            id=generate_uuid(),
+            job_id=job.id,
+            amount=round(amount_total / 100.0, 2) if amount_total else float(job.total_price or 0),
+            service_fee=float(job.service_fee or 0),
+            payment_status="pending",
+        )
+        db.session.add(payment)
+        db.session.flush()
+
+    if pi_id and payment.stripe_payment_intent_id != pi_id:
+        clash = Payment.query.filter_by(stripe_payment_intent_id=pi_id).first()
+        if clash and clash.id != payment.id:
+            logger.warning("Intent %s already belongs to payment %s; not relinking to job %s",
+                           pi_id, clash.id, job.id)
+        else:
+            payment.stripe_payment_intent_id = pi_id
+            db.session.flush()
+
+    _handle_payment_succeeded({"id": pi_id or payment.stripe_payment_intent_id or "",
+                               "metadata": {"job_id": job.id}})
+
+
 def _handle_checkout_completed(event):
-    """Process a completed checkout session — send receipt email."""
+    """Process a completed checkout session.
+
+    Booking sessions (metadata booking_id / job_id, or client_reference_id)
+    confirm the job. Quick-checkout invoices get a receipt email.
+    """
     try:
         session = event.get("data", {}).get("object", {}) if isinstance(event, dict) else event.data.object
         metadata = session.get("metadata", {}) if isinstance(session, dict) else (session.metadata or {})
+        metadata = metadata or {}
+
+        job_id = (metadata.get("booking_id") or metadata.get("job_id")
+                  or session.get("client_reference_id"))
+        if job_id:
+            _reconcile_booking_checkout(session, job_id)
+            return
 
         source = metadata.get("source", "")
         if source != "quick-checkout":
-            return  # Only handle quick-checkout sessions
+            return  # Not a session shape we know how to settle
 
         customer_email = session.get("customer_email") or session.get("customer_details", {}).get("email", "")
         if not customer_email:
