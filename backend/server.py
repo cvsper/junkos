@@ -864,7 +864,7 @@ def get_available_time_slots(requested_date=None):
 @limiter.exempt
 def health_check():
     """Health check endpoint (exempt from rate limiting)"""
-    return jsonify({"status": "healthy", "service": "Umuve API", "version": "2.2.12-paylink-reconcile"}), 200
+    return jsonify({"status": "healthy", "service": "Umuve API", "version": "2.2.13-track-url"}), 200
 
 
 def _check_admin_seed_secret(path_secret=None):

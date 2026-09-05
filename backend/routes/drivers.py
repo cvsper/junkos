@@ -738,9 +738,7 @@ def apply_job_status_transition(job, contractor, new_status, data=None):
                     _customer_sms(
                         customer.phone,
                         "Umuve: {} confirmed your pickup — arriving {}. "
-                        "Track: https://app.goumuve.com/track/{}".format(
-                            hauler_label, when,
-                            job.confirmation_code or job.id),
+                        "Track: {}".format(hauler_label, when, job.tracking_url()),
                     )
                 send_push_notification(
                     customer.id, "Hauler Confirmed",

@@ -3,6 +3,7 @@ Umuve SQLAlchemy Models
 All database entities for the on-demand junk removal marketplace.
 """
 
+import os
 import uuid
 import string
 import random
@@ -393,6 +394,18 @@ class Job(db.Model):
         Index("ix_jobs_status", "status"),
         Index("ix_jobs_location", "lat", "lng"),
     )
+
+    def tracking_url(self):
+        """Public, no-login tracking link for texts and emails.
+
+        /track/code/<CODE> is the guest page backed by GET /api/tracking/code.
+        /track/<uuid> is the logged-in customer page and calls the auth'd job
+        API, so it dead-ends for phone customers — never text that one.
+        """
+        base = os.environ.get("FRONTEND_URL", "https://app.goumuve.com").rstrip("/")
+        if self.confirmation_code:
+            return "{}/track/code/{}".format(base, self.confirmation_code)
+        return "{}/track/{}".format(base, self.id)
 
     def to_dict(self):
         return {

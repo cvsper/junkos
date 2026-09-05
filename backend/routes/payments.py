@@ -1536,9 +1536,9 @@ def _handle_payment_failed(intent):
                     _sms(customer.phone,
                          "Umuve: your payment for job {} didn't go through. "
                          "Please update your card so we can keep your booking: "
-                         "https://app.goumuve.com/track/{}".format(
+                         "{}".format(
                              job.confirmation_code or str(job.id)[:8],
-                             job.confirmation_code or job.id))
+                             job.tracking_url()))
             except Exception:
                 logger.exception("payment-failed customer SMS failed")
         # A failed charge on a live job is money walking out the door.
