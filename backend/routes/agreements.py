@@ -100,6 +100,7 @@ button.sign:hover{background:var(--red-deep)}
 button.sign:disabled{background:#c9c2b6;cursor:not-allowed}
 button.sign:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
 .err{color:var(--red-deep);font-size:13px;margin-top:8px;display:none}
+a.del{color:var(--red-deep);font-size:12px;cursor:pointer;text-decoration:underline;white-space:nowrap}
 .okmsg{display:none;margin-top:12px;font-size:13px}
 .okmsg input{margin-top:6px}
 footer{margin-top:30px;padding-top:12px;border-top:3px solid var(--ink);font-size:11px;color:var(--muted);display:flex;justify-content:space-between;gap:12px}
@@ -172,11 +173,27 @@ _CONSOLE_JS = """
     .then(function(r){return r.json();})
     .then(function(j){
       var rows=(j.agreements||[]).map(function(a){
-        return '<tr><td>'+a.client_company+'</td><td>'+a.client_name+'</td>'+
-          '<td class="mono">'+a.status+'</td><td class="mono">'+
-          (a.signed_at||a.created_at||'').slice(0,10)+'</td></tr>';}).join('');
+        return '<tr><td>'+esc(a.client_company)+'</td><td>'+esc(a.client_name)+'</td>'+
+          '<td class="mono">'+esc(a.status)+'</td><td class="mono">'+
+          (a.signed_at||a.created_at||'').slice(0,10)+'</td>'+
+          '<td><a class="del" data-id="'+esc(a.id)+'" data-co="'+esc(a.client_company)+'">Delete</a></td></tr>';}).join('');
       document.getElementById('listOut').innerHTML=
-        '<table><tr><th>Company</th><th>Contact</th><th>Status</th><th>Date</th></tr>'+rows+'</table>';});
+        '<table><tr><th>Company</th><th>Contact</th><th>Status</th><th>Date</th><th></th></tr>'+rows+'</table>';});
+  });
+  function esc(x){return String(x==null?'':x).replace(/[&<>"']/g,function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+  document.getElementById('listOut').addEventListener('click',function(e){
+    var a=e.target.closest('a.del'); if(!a) return;
+    var co=a.getAttribute('data-co');
+    var typed=window.prompt('Permanently delete this agreement record?\n\n'+
+      'Signed copies already emailed are NOT recalled. Type the company name to confirm:\n'+co);
+    if(typed===null) return;
+    fetch('/api/agreements/delete',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({passcode:v('pc'),id:a.getAttribute('data-id'),confirm_company:typed})})
+    .then(function(r){return r.json().then(function(j){return {ok:r.ok,j:j};});})
+    .then(function(res){
+      if(res.ok){document.getElementById('listBtn').click();}
+      else{window.alert(res.j.error||'Delete failed');}});
   });
 })();
 """
@@ -559,3 +576,33 @@ def list_agreements():
     rows = (Agreement.query.order_by(Agreement.created_at.desc())
             .limit(50).all())
     return jsonify({"agreements": [a.to_dict() for a in rows]}), 200
+
+
+@agreements_bp.route("/api/agreements/delete", methods=["POST"])
+@limiter.limit("10 per minute")
+def delete_agreement():
+    """Hard-delete one agreement row (test rows, mistaken sends, voided deals).
+
+    Passcode-gated like the rest of the console, plus the caller must retype
+    the client company exactly -- a fat-finger guard, since this also destroys
+    the executed snapshot of a signed agreement. Emailed copies are not
+    recalled; both parties keep whatever was already sent.
+    """
+    data = request.get_json() or {}
+    if not _passcode_ok(data.get("passcode")):
+        return jsonify({"error": "Invalid access code"}), 403
+
+    ag_id = (data.get("id") or "").strip()
+    ag = db.session.get(Agreement, ag_id) if ag_id else None
+    if ag is None:
+        return jsonify({"error": "Agreement not found"}), 404
+
+    confirm = (data.get("confirm_company") or "").strip()
+    if not hmac.compare_digest(confirm, ag.client_company.strip()):
+        return jsonify({"error": "Company name did not match \u2014 nothing deleted."}), 400
+
+    logger.warning("agreement %s deleted via console: %s / %s (status=%s)",
+                   ag.id, ag.client_company, ag.client_email, ag.status)
+    db.session.delete(ag)
+    db.session.commit()
+    return jsonify({"success": True, "deleted_id": ag_id}), 200

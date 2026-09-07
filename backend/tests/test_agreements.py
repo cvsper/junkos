@@ -122,3 +122,48 @@ class TestList:
         assert resp.status_code == 200
         rows = resp.get_json()["agreements"]
         assert any(r["client_company"] == "Rivera Demolition LLC" for r in rows)
+
+
+class TestDelete:
+    def _id(self, client):
+        return _create(client).get_json()["agreement"]["id"]
+
+    def test_delete_requires_passcode(self, client):
+        ag_id = self._id(client)
+        resp = client.post("/api/agreements/delete", json={
+            "passcode": "wrong", "id": ag_id,
+            "confirm_company": "Rivera Demolition LLC"})
+        assert resp.status_code == 403
+        assert db.session.get(Agreement, ag_id) is not None
+
+    def test_delete_requires_exact_company_retype(self, client):
+        ag_id = self._id(client)
+        resp = client.post("/api/agreements/delete", json={
+            "passcode": PASSCODE, "id": ag_id,
+            "confirm_company": "rivera demolition"})
+        assert resp.status_code == 400
+        assert db.session.get(Agreement, ag_id) is not None
+
+    def test_delete_unknown_id_404(self, client):
+        resp = client.post("/api/agreements/delete", json={
+            "passcode": PASSCODE, "id": "nope", "confirm_company": "x"})
+        assert resp.status_code == 404
+
+    def test_delete_removes_row_and_signing_link(self, client):
+        body = _create(client).get_json()["agreement"]
+        resp = client.post("/api/agreements/delete", json={
+            "passcode": PASSCODE, "id": body["id"],
+            "confirm_company": "Rivera Demolition LLC"})
+        assert resp.status_code == 200
+        assert db.session.get(Agreement, body["id"]) is None
+        assert client.get("/sign/{}".format(body["token"])).status_code == 404
+
+    def test_delete_signed_row_allowed_with_retype(self, client):
+        body = _create(client).get_json()["agreement"]
+        client.post("/api/sign/{}".format(body["token"]), json={
+            "signer_name": "Marcos Rivera", "consent": True})
+        resp = client.post("/api/agreements/delete", json={
+            "passcode": PASSCODE, "id": body["id"],
+            "confirm_company": "Rivera Demolition LLC"})
+        assert resp.status_code == 200
+        assert db.session.get(Agreement, body["id"]) is None
