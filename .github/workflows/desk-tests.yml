@@ -1,0 +1,43 @@
+name: Call Desk tests
+
+on:
+  push:
+    branches: [main, staging]
+    paths: ["backend/**", ".github/workflows/desk-tests.yml"]
+  pull_request:
+    paths: ["backend/**"]
+
+jobs:
+  unit:
+    name: Unit + API
+    runs-on: ubuntu-latest
+    defaults:
+      run: { working-directory: backend }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install -r requirements.txt pytest pytest-mock
+      - run: pytest -o addopts="" -p no:cacheprovider tests -q --deselect tests/test_portal
+        env:
+          TRIXIE_ASSISTANT_PASSCODE: ci-code
+
+  browser:
+    name: Browser (Playwright)
+    runs-on: ubuntu-latest
+    needs: unit
+    defaults:
+      run: { working-directory: backend }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install -r requirements.txt pytest pytest-playwright
+      - run: python -m playwright install --with-deps chromium
+      - run: pytest -o addopts="" -p no:cacheprovider tests/e2e -q --browser chromium
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: e2e-server-log
+          path: /tmp/pytest-of-runner/**/server.log
+          if-no-files-found: ignore

@@ -1347,7 +1347,7 @@ CALLS_HTML = r"""<!doctype html>
     </div>
   </div>
 </div>
-<script src="/va/calls.js?v=20"></script>
+<script src="/va/calls.js?v=21"></script>
 </body>
 </html>
 """
@@ -1783,6 +1783,7 @@ CALLS_JS = r"""(function(){
     var who = document.getElementById("who"); var m = me();
     if(m && m.name){ who.textContent = m.name + (m.is_manager ? " · manager" : ""); who.hidden = false; }
     else if(vaName()){ who.textContent = vaName(); who.hidden = false; } else { who.hidden = true; }
+    syncRoleUI();
     deskBoot();
   }
   function signOut(msg){
@@ -2321,7 +2322,11 @@ CALLS_JS = r"""(function(){
   }
   document.getElementById("tb-mine").addEventListener("click", function(){ tbView = "mine"; loadHours(); });
   document.getElementById("tb-team").addEventListener("click", function(){ tbView = "team"; loadHours(); });
-  if(jwt() && !isManager()){ document.getElementById("tb-team").hidden = true; }
+  function syncRoleUI(){
+    var vaOnly = !!jwt() && !isManager();
+    document.getElementById("tb-team").hidden = vaOnly;
+    if(vaOnly && tbView === "team"){ tbView = "mine"; }
+  }
   function showTime(){ hideQueue(); searchbox.hidden = true; tbStatus.hidden = true; timebox.hidden = false; deck.classList.add("time-open"); loadHours(); window.scrollTo(0, 0); }
   function hideTime(){ timebox.hidden = true; deck.classList.remove("time-open"); }
   clockChip.addEventListener("click", function(){ if(timebox.hidden) showTime(); else hideTime(); });

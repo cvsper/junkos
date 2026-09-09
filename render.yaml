@@ -35,6 +35,69 @@ services:
       - key: DISPATCH_MODE
         value: "assign"
 
+  # ---------------------------------------------------------------------------
+  # STAGING (added 2026-09-09): same code, deploys from the `staging` branch,
+  # own database, own desk number — so Call Desk changes are exercised before
+  # they reach Tracy. One-time: Render → Blueprints → sync this repo. Then
+  # `git push origin main:staging` deploys here; merging to main still deploys
+  # production. Buy the staging desk number with
+  #   scripts/desk_line_setup.py --friendly "Umuve Call Desk STAGING"
+  # and set the printed env here (sync: false keys are set by hand).
+  - type: web
+    name: umuve-backend-staging
+    env: python
+    rootDir: backend
+    branch: staging
+    autoDeploy: true
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn server:app --bind 0.0.0.0:$PORT --worker-class eventlet --workers 1 --timeout 120
+    healthCheckPath: /api/health
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: API_KEY
+        generateValue: true
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: umuve-staging-db
+          property: connectionString
+      - key: BACKEND_URL
+        value: https://umuve-backend-staging.onrender.com
+      - key: ENABLE_SCHEDULER
+        value: "true"
+      - key: DISPATCH_MODE
+        value: "assign"
+      - key: FEATURE_PASSCODE_LOGIN
+        value: "on"
+      - key: TRIXIE_ASSISTANT_PASSCODE
+        sync: false
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: TWILIO_FROM_NUMBER
+        sync: false
+      - key: DESK_TWILIO_NUMBER
+        sync: false
+      - key: TWILIO_TWIML_APP_SID
+        sync: false
+      - key: TWILIO_API_KEY_SID
+        sync: false
+      - key: TWILIO_API_KEY_SECRET
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: SENTRY_DSN
+        sync: false
+      - key: ADMIN_EMAIL
+        sync: false
+
   # Portal v1 scheduled tasks (spec 04 §9) — recurring_tick + invoice_monthly,
   # plus the customer drip / Vapi review + reminder calls — were MIGRATED off
   # this Celery worker into the web's APScheduler on 2026-06-19 (see
@@ -46,3 +109,7 @@ databases:
   - name: umuve-db
     databaseName: umuve
     user: umuve
+  - name: umuve-staging-db
+    databaseName: umuve_staging
+    user: umuve
+    plan: basic-256mb
