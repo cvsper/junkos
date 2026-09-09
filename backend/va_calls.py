@@ -819,6 +819,13 @@ def merge_rows(rows):
     status and history — re-running a list is safe. Returns (added, skipped, invalid)."""
     added, skipped, invalid = 0, 0, 0
     seen = set()
+    try:
+        from compliance import filter_rows      # drop do-not-call numbers before they enter the queue
+        before = len(rows)
+        rows = filter_rows(rows)
+        skipped += before - len(rows)           # blocked numbers count as skipped, never as invalid
+    except Exception:
+        logger.exception("compliance.filter_rows failed; importing unfiltered")
     for r in rows:
         digits = _digits(r.get("phone"))
         company = (r.get("company") or "").strip()
@@ -1373,7 +1380,7 @@ CALLS_HTML = r"""<!doctype html>
 </div>
 <script src="/static/desk-crm.js?v=1"></script>
 <script src="/static/desk-compliance.js?v=1"></script>
-<script src="/va/calls.js?v=22"></script>
+<script src="/va/calls.js?v=23"></script>
 </body>
 </html>
 """
@@ -1978,6 +1985,7 @@ CALLS_JS = r"""(function(){
     deskErr.hidden = false;
   }
 
+  window.addEventListener("desk:refresh", function(){ fetchNext(); });
   function fetchNext(){
     post("/api/va/calls/next", {}).then(function(r){
       if(r.status !== 200){ fail(r.status, r.body); return; }
@@ -2813,6 +2821,7 @@ CALLS_JS = r"""(function(){
     return msg + (code ? " (" + code + ")" : "");
   }
   function startDeskCall(to){
+    if(window.__deskCallsBlocked){ showToast("Calling window is closed right now."); return; }
     if(!device || !deskReady || !current || activeCall) return;
     stripWho.textContent = current.company; stripState.textContent = "Starting…"; stripTime.textContent = "";
     strip.hidden = false; strip.classList.remove("live", "failed");
@@ -2955,6 +2964,7 @@ CALLS_JS = r"""(function(){
   }
   function pdCancel(){ if(pdCountdown){ clearInterval(pdCountdown); pdCountdown = null; } pdRender(); }
   function pdStartCountdown(){
+    if(window.__deskCallsBlocked){ showToast("Calling window is closed — power dial paused."); return; }
     if(!powerOn || !deskReady || !current || activeCall || recordingVm) return;
     var left = PD_DELAY;
     var who = current.company;
