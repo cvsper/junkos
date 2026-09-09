@@ -366,6 +366,7 @@ def apply_outcome(prospect, outcome, note, va_name):
 
     db.session.add(CallAttempt(prospect_id=prospect.id, outcome=outcome,
                                note=note or None, va_name=va_name or None))
+    from crm import on_outcome; on_outcome(prospect, outcome, note, va_name)  # CRM (Phase 3)
 
 
 def _card_payload(p, va_name):
@@ -375,6 +376,7 @@ def _card_payload(p, va_name):
     direct = _digits(p.direct_phone) if p.direct_phone else ""
     d["direct_tel"] = "tel:+1" + direct if len(direct) == 10 else None
     d["is_followup"] = bool(p.next_followup_at)
+    from crm import crm_card_fields; d.update(crm_card_fields(p))  # CRM (Phase 3)
     return d
 
 
@@ -1360,6 +1362,7 @@ CALLS_HTML = r"""<!doctype html>
     </div>
   </div>
 </div>
+<script src="/static/desk-crm.js?v=1"></script>
 <script src="/va/calls.js?v=22"></script>
 </body>
 </html>

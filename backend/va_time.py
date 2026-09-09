@@ -182,6 +182,7 @@ def clock():
         if note:
             sh.note = note
         db.session.commit()
+        from crm import end_of_shift_report; end_of_shift_report(va, sh)  # CRM (Phase 3)
         audit("clock_out", "shift", sh.id, {"seconds": sh.seconds})
         return jsonify(dict(state_payload(va), closed=sh.to_dict())), 200
     return jsonify({"error": "action must be 'in' or 'out'."}), 400

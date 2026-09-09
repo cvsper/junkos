@@ -325,6 +325,15 @@ except Exception as _dl_exc:  # pragma: no cover
     import logging as _logging
     _logging.getLogger(__name__).warning("deskline_bp not registered: %s", _dl_exc)
 
+# Call Desk CRM (Phase 3) — stages, tags, claims, accounts, shift reports
+try:
+    import models_crm  # noqa: F401  (tables for create_all)
+    from crm import crm_bp
+    app.register_blueprint(crm_bp)
+except Exception as _crm_exc:  # pragma: no cover
+    import logging as _logging
+    _logging.getLogger(__name__).warning("crm_bp not registered: %s", _crm_exc)
+
 # VA Dispatch Desk — job board + hauler assignment (first Maya phone close,
 # Aug 2026: phone customers need a human dispatcher to put a hauler on the job)
 try:
