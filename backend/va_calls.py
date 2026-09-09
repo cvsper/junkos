@@ -760,7 +760,7 @@ CALLS_HTML = r"""<!doctype html>
 <meta name="theme-color" content="#0B0E12" />
 <title>Umuve — Call Desk</title>
 <link rel="stylesheet" href="/va/app.css?v=3" />
-<link rel="stylesheet" href="/va/calls.css?v=6" />
+<link rel="stylesheet" href="/va/calls.css?v=7" />
 </head>
 <body>
 <div id="app">
@@ -784,14 +784,26 @@ CALLS_HTML = r"""<!doctype html>
       <a class="back" href="/va" aria-label="Back to VA tools">←</a>
       <div class="wordmark">CALL&nbsp;DESK</div>
       <div class="bar-sub" id="daybar">—</div>
+      <button class="back inbox" id="inbox-toggle" type="button" aria-label="Replies and callbacks">✉<span class="badge" id="inbox-badge" hidden>0</span></button>
       <button class="back" id="search-toggle" type="button" aria-label="Find a business">⌕</button>
     </header>
+    <div id="callstrip" class="callstrip" hidden>
+      <div class="cs-dot"></div>
+      <div class="cs-txt"><div class="cs-who" id="cs-who">—</div><div class="cs-state" id="cs-state">Calling…</div></div>
+      <div class="cs-time" id="cs-time"></div>
+      <button class="cs-btn" id="cs-mute" type="button">Mute</button>
+      <button class="cs-btn cs-hang" id="cs-hang" type="button">Hang up</button>
+    </div>
 
     <div class="body" id="deck">
       <div id="searchbox" hidden>
         <input id="search-q" type="search" autocomplete="off"
                placeholder="Someone calling back? Type their name, city, or number" />
         <div id="search-results"></div>
+      </div>
+      <div id="inboxbox" hidden>
+        <div class="ib-head">Replies and callbacks</div>
+        <div id="inbox-list"></div>
       </div>
       <div id="empty" class="deskcard" hidden>
         <div class="q-chip done">QUEUE CLEAR</div>
@@ -809,9 +821,19 @@ CALLS_HTML = r"""<!doctype html>
         <div class="meta" id="c-meta">City</div>
         <a class="dial" id="c-tel" href="#"><span class="dial-num" id="c-phone">(561) 000-0000</span><span class="dial-hint">tap to call</span></a>
         <a class="dial dial-direct" id="c-direct" href="#" hidden><span class="dial-num-sm" id="c-direct-num"></span><span class="dial-hint">direct line — skips the front desk</span></a>
+        <button class="deskcall" id="desk-call-btn" type="button" hidden><span class="dc-l">Call from this browser</span><span class="dc-h">they see the Umuve desk number</span></button>
         <div class="factrow"><div class="fact-k">Why them</div><div class="fact-v" id="c-why"></div></div>
         <div class="factrow"><div class="fact-k">Your angle</div><div class="fact-v" id="c-angle"></div></div>
         <details class="openerbox"><summary>Your opener</summary><p id="c-opener"></p></details>
+        <div class="thread">
+          <div class="th-head">Texts and calls<span class="th-num" id="th-num"></span></div>
+          <div class="th-list" id="th-list"></div>
+          <p class="th-empty" id="th-empty" hidden>Nothing yet. Texts you send here, and anything they text or call back, land in this thread.</p>
+          <form id="th-form" class="th-form" autocomplete="off">
+            <input id="th-input" type="text" maxlength="640" placeholder="Text them — replies come back here" />
+            <button class="si-btn" type="submit">Send</button>
+          </form>
+        </div>
         <div class="sendinfo">
           <div class="si-head">WHO DECIDES?</div>
           <p class="si-sub">Receptionist gave you a name or the boss's cell? Save it — it sticks to this card and their name goes on everything we send.</p>
@@ -860,7 +882,17 @@ CALLS_HTML = r"""<!doctype html>
     </div>
   </section>
 </div>
-<script src="/va/calls.js?v=6"></script>
+<div id="incoming" class="incoming" hidden>
+  <div class="inc-card">
+    <div class="inc-l">Incoming call on the desk line</div>
+    <div class="inc-who" id="inc-who">—</div>
+    <div class="inc-row">
+      <button class="inc-btn inc-decline" id="inc-decline" type="button">Decline</button>
+      <button class="inc-btn inc-answer" id="inc-answer" type="button">Answer</button>
+    </div>
+  </div>
+</div>
+<script src="/va/calls.js?v=7"></script>
 </body>
 </html>
 """
@@ -960,6 +992,76 @@ CALLS_CSS = r"""/* Call Desk — layers over /va/app.css tokens */
   .outcomes{grid-template-columns:1fr 1fr 1fr}
   .oc-skip{grid-column:1 / -1}
 }
+
+/* desk line: thread, inbox, dialer */
+.inbox{position:relative}
+.badge{position:absolute;top:-4px;right:-6px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;
+  background:#7FB8FF;color:#0B0E12;font-family:var(--display);font-weight:800;font-size:10.5px;
+  line-height:18px;text-align:center}
+.ib-head{font-family:var(--display);font-weight:600;font-size:10px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--faint);margin:2px 0 8px}
+.sr-w{min-width:0;flex:1}
+.sr-d{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sr-unread{border-color:rgba(127,184,255,.55)}
+.sr-unread .sr-t::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;
+  background:#7FB8FF;margin-right:7px;vertical-align:2px}
+.deskcall{display:flex;flex-direction:column;align-items:center;gap:2px;width:100%;margin:-6px 0 14px;
+  padding:12px;background:transparent;border:1.5px solid rgba(61,214,140,.45);border-radius:16px;
+  cursor:pointer;color:var(--ink);transition:border-color .15s,transform .06s}
+.deskcall:hover{border-color:var(--ok)}
+.deskcall:active{transform:scale(.985)}
+.dc-l{font-family:var(--display);font-weight:800;font-size:17px;letter-spacing:-.01em}
+.dc-h{font-family:var(--display);font-weight:600;font-size:10.5px;letter-spacing:.22em;
+  text-transform:uppercase;color:var(--ok)}
+.thread{border-top:1px solid var(--line);padding:12px 0 4px}
+.th-head{font-family:var(--display);font-weight:600;font-size:10px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--faint);margin-bottom:8px}
+.th-num{color:var(--muted);letter-spacing:.06em;text-transform:none;font-weight:500;margin-left:6px}
+.th-list{display:flex;flex-direction:column;gap:6px;max-height:260px;overflow-y:auto;padding:2px 0 6px;
+  scroll-behavior:smooth}
+.msg{max-width:86%;display:flex;flex-direction:column;gap:2px}
+.msg-in{align-self:flex-start}
+.msg-out{align-self:flex-end;align-items:flex-end}
+.msg-b{padding:9px 12px;border-radius:14px;font-size:13.5px;line-height:1.45;color:var(--ink);
+  white-space:pre-wrap;word-break:break-word;background:var(--raise);border:1px solid var(--line)}
+.msg-in .msg-b{background:rgba(127,184,255,.12);border-color:rgba(127,184,255,.35);border-bottom-left-radius:5px}
+.msg-out .msg-b{border-bottom-right-radius:5px}
+.msg-call .msg-b{background:transparent;border-style:dashed}
+.msg-call-l{font-family:var(--display);font-weight:700;font-size:11.5px;letter-spacing:.06em;
+  color:var(--muted);margin-bottom:2px}
+.msg-m{font-size:10.5px;color:var(--faint);padding:0 4px}
+.msg-rec{display:inline-block;margin-top:4px;color:#7FB8FF;font-size:12.5px}
+.th-empty{color:var(--faint);font-size:12.5px;line-height:1.5;margin:0 0 8px}
+.th-form{display:flex;gap:8px}
+.th-form input{flex:1;min-width:0;margin:0}
+.callstrip{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--surface);
+  border-bottom:1px solid var(--line)}
+.cs-dot{width:10px;height:10px;border-radius:50%;background:var(--accent);flex:none}
+.callstrip.live .cs-dot{background:var(--ok);animation:cs-pulse 1.6s ease-in-out infinite}
+@keyframes cs-pulse{0%,100%{box-shadow:0 0 0 0 rgba(61,214,140,.55)}50%{box-shadow:0 0 0 7px rgba(61,214,140,0)}}
+.cs-txt{min-width:0;flex:1}
+.cs-who{font-family:var(--display);font-weight:800;font-size:14.5px;white-space:nowrap;overflow:hidden;
+  text-overflow:ellipsis}
+.cs-state{font-size:11.5px;color:var(--faint)}
+.cs-time{font-family:var(--display);font-weight:700;font-size:13px;color:var(--muted);
+  font-variant-numeric:tabular-nums;min-width:38px;text-align:right}
+.cs-btn{padding:8px 12px;font-family:var(--display);font-weight:700;font-size:12.5px;color:var(--ink);
+  background:var(--raise);border:1px solid var(--line);border-radius:10px;cursor:pointer}
+.cs-hang{color:#FF7A5C;border-color:rgba(255,122,92,.45)}
+.incoming{position:fixed;inset:0;display:flex;align-items:flex-end;justify-content:center;
+  background:rgba(11,14,18,.72);z-index:50;padding:16px}
+.inc-card{width:100%;max-width:440px;background:var(--surface);border:1px solid rgba(127,184,255,.45);
+  border-radius:20px;padding:18px 18px 16px}
+.inc-l{font-family:var(--display);font-weight:600;font-size:10.5px;letter-spacing:.2em;
+  text-transform:uppercase;color:#7FB8FF}
+.inc-who{font-family:var(--display);font-weight:900;font-size:clamp(26px,8vw,36px);letter-spacing:-.01em;
+  margin:6px 0 14px;font-variant-numeric:tabular-nums}
+.inc-row{display:flex;gap:10px}
+.inc-btn{flex:1;padding:15px;font-family:var(--display);font-weight:800;font-size:15px;border-radius:14px;
+  cursor:pointer;border:1px solid var(--line);background:var(--raise);color:var(--ink)}
+.inc-answer{background:var(--ok);border-color:var(--ok);color:#0B0E12}
+.inc-decline{color:#FF7A5C;border-color:rgba(255,122,92,.45)}
+@media (prefers-reduced-motion: reduce){.callstrip.live .cs-dot{animation:none}}
 """
 
 
@@ -1002,7 +1104,7 @@ CALLS_JS = r"""(function(){
 
   function code(){ return localStorage.getItem(KEY) || ""; }
   function vaName(){ return localStorage.getItem(VA_KEY) || ""; }
-  function showTool(){ gate.hidden = true; tool.hidden = false; }
+  function showTool(){ gate.hidden = true; tool.hidden = false; deskBoot(); }
   function showGate(msg){
     tool.hidden = true; gate.hidden = false; reveal(gate);
     if(msg && gateErr){ gateErr.textContent = msg; gateErr.hidden = false; }
@@ -1057,6 +1159,8 @@ CALLS_JS = r"""(function(){
           "Next follow-up comes due " + d.toLocaleString([], {weekday:"long", hour:"numeric", minute:"2-digit"}) + ". Check back then.";
       }
       current = null;
+      loadThread(null);
+      deskCallBtn.hidden = true;
       return;
     }
     var c = resp.card;
@@ -1082,6 +1186,8 @@ CALLS_JS = r"""(function(){
     } else { noteEl.hidden = true; }
     document.getElementById("note").value = "";
     syncContactUI();
+    loadThread(c);
+    deskCallBtn.hidden = !deskReady;
     card.hidden = false; outcomes.hidden = false; textopt.hidden = false;
     if(!reduced){
       card.style.opacity = "0"; card.style.transform = "translateY(6px)";
@@ -1265,6 +1371,7 @@ CALLS_JS = r"""(function(){
   var searchTimer = null;
   document.getElementById("search-toggle").addEventListener("click", function(){
     searchbox.hidden = !searchbox.hidden;
+    if(!searchbox.hidden) inboxbox.hidden = true;
     if(!searchbox.hidden){ searchQ.focus(); }
     else { searchResults.textContent = ""; searchQ.value = ""; }
   });
@@ -1306,6 +1413,257 @@ CALLS_JS = r"""(function(){
         });
       });
     }, 250);
+  });
+
+  // ---- desk line: conversation thread ----
+  var thList = document.getElementById("th-list");
+  var thEmpty = document.getElementById("th-empty");
+  var thForm = document.getElementById("th-form");
+  var thInput = document.getElementById("th-input");
+  var thNum = document.getElementById("th-num");
+  var threadFor = null;
+
+  function prettyNum(e){
+    var d = (e || "").replace(/\D/g, "").slice(-10);
+    return d.length === 10 ? "(" + d.slice(0,3) + ") " + d.slice(3,6) + "-" + d.slice(6) : (e || "");
+  }
+  function fmtWhen(iso){
+    if(!iso) return "";
+    var d = new Date(iso + (iso.slice(-1) === "Z" ? "" : "Z"));
+    var t = d.toLocaleTimeString([], {hour:"numeric", minute:"2-digit"});
+    if(d.toDateString() === new Date().toDateString()) return t;
+    return d.toLocaleDateString([], {month:"short", day:"numeric"}) + " " + t;
+  }
+  function fmtDur(s){ s = s | 0; return Math.floor(s / 60) + ":" + ("0" + (s % 60)).slice(-2); }
+
+  function renderThread(msgs){
+    thList.textContent = "";
+    if(!msgs || !msgs.length){ thEmpty.hidden = false; return; }
+    thEmpty.hidden = true;
+    msgs.forEach(function(m){
+      var row = document.createElement("div");
+      row.className = "msg " + (m.direction === "in" ? "msg-in" : "msg-out") + (m.kind === "call" ? " msg-call" : "");
+      var b = document.createElement("div"); b.className = "msg-b";
+      if(m.kind === "call"){
+        var label = m.direction === "in" ? "They called" : "You called";
+        if(m.status === "completed") label += " · " + fmtDur(m.duration || 0);
+        else if(m.status === "voicemail") label = "Voicemail";
+        else if(m.status === "no-answer") label = "Missed call";
+        else if(m.status && m.status !== "ringing") label += " · " + m.status.replace("-", " ");
+        var l = document.createElement("div"); l.className = "msg-call-l"; l.textContent = label; b.appendChild(l);
+        if(m.body) b.appendChild(document.createTextNode(m.body));
+        if(m.recording_url){
+          var a = document.createElement("a"); a.href = m.recording_url + ".mp3"; a.target = "_blank";
+          a.rel = "noopener"; a.className = "msg-rec"; a.textContent = "Play recording"; b.appendChild(a);
+        }
+      } else {
+        if(m.body) b.appendChild(document.createTextNode(m.body));
+        (m.media || []).forEach(function(u){
+          var a2 = document.createElement("a"); a2.href = u; a2.target = "_blank"; a2.rel = "noopener";
+          a2.className = "msg-rec"; a2.textContent = "Photo"; b.appendChild(a2);
+        });
+      }
+      var meta = document.createElement("div"); meta.className = "msg-m";
+      var st = "";
+      if(m.direction === "out" && m.kind === "sms" && m.status){
+        if(m.status === "delivered") st = " · delivered";
+        else if(m.status.indexOf("failed") === 0 || m.status.indexOf("undelivered") === 0) st = " · not delivered";
+      }
+      meta.textContent = fmtWhen(m.created_at) + st;
+      row.appendChild(b); row.appendChild(meta);
+      thList.appendChild(row);
+    });
+    thList.scrollTop = thList.scrollHeight;
+  }
+
+  function loadThread(c){
+    threadFor = c ? c.id : null;
+    thList.textContent = ""; thEmpty.hidden = true;
+    if(!c) return;
+    post("/api/va/desk/thread", {prospect_id: c.id}).then(function(r){
+      if(r.status !== 200 || threadFor !== c.id) return;
+      renderThread(r.body.messages);
+      setUnread(r.body.unread);
+      thNum.textContent = r.body.desk_number ? "from " + prettyNum(r.body.desk_number) : "from the Umuve number";
+    }).catch(function(){});
+  }
+
+  thForm.addEventListener("submit", function(e){
+    e.preventDefault();
+    if(!current) return;
+    var body = thInput.value.trim();
+    if(!body){ thInput.focus(); return; }
+    var btn = thForm.querySelector("button"); btn.disabled = true;
+    post("/api/va/desk/text", {prospect_id: current.id, body: body}).then(function(r){
+      btn.disabled = false;
+      if(r.status !== 200){ fail(r.status, r.body); return; }
+      thInput.value = "";
+      renderThread(r.body.messages);
+      current.last_texted_at = new Date().toISOString();
+      syncContactUI();
+      showToast("Sent to " + r.body.to);
+    }).catch(function(){ btn.disabled = false; fail(0, {error: "No connection — nothing was sent. Try again."}); });
+  });
+
+  // ---- inbox: replies + callbacks across every prospect ----
+  var inboxbox = document.getElementById("inboxbox");
+  var inboxList = document.getElementById("inbox-list");
+  var badge = document.getElementById("inbox-badge");
+  function setUnread(n){ n = n | 0; badge.textContent = n > 99 ? "99+" : String(n); badge.hidden = n === 0; }
+  function unreadNow(){ return badge.hidden ? 0 : (parseInt(badge.textContent, 10) || 0); }
+
+  function loadInbox(){
+    post("/api/va/desk/inbox", {}).then(function(r){
+      if(r.status !== 200){ fail(r.status, r.body); return; }
+      setUnread(r.body.unread);
+      inboxList.textContent = "";
+      var items = r.body.items || [];
+      if(!items.length){
+        var none = document.createElement("p"); none.className = "sr-none";
+        none.textContent = "No replies or callbacks yet. They show up here the moment someone texts or calls the desk line.";
+        inboxList.appendChild(none); return;
+      }
+      items.forEach(function(it){
+        var b = document.createElement("button"); b.className = "sr" + (it.unread ? " sr-unread" : ""); b.type = "button";
+        var wrap = document.createElement("div"); wrap.className = "sr-w";
+        var t = document.createElement("div"); t.className = "sr-t"; t.textContent = it.company || it.phone;
+        var d = document.createElement("div"); d.className = "sr-d";
+        d.textContent = (it.kind === "call" ? "☎ " : "") + (it.preview || "");
+        wrap.appendChild(t); wrap.appendChild(d);
+        var s = document.createElement("div"); s.className = "sr-status"; s.textContent = fmtWhen(it.at);
+        b.appendChild(wrap); b.appendChild(s);
+        b.addEventListener("click", function(){
+          if(!it.prospect_id){ showToast("Unknown number " + it.phone + " — not on any list. Call them back from your phone."); return; }
+          post("/api/va/calls/get", {prospect_id: it.prospect_id}).then(function(rr){
+            if(rr.status !== 200){ fail(rr.status, rr.body); return; }
+            inboxbox.hidden = true; render(rr.body);
+          });
+        });
+        inboxList.appendChild(b);
+      });
+    }).catch(function(){});
+  }
+  document.getElementById("inbox-toggle").addEventListener("click", function(){
+    inboxbox.hidden = !inboxbox.hidden;
+    if(!inboxbox.hidden){ searchbox.hidden = true; loadInbox(); }
+  });
+  var unreadTimer = null;
+  function pollUnread(){
+    clearInterval(unreadTimer);
+    unreadTimer = setInterval(function(){
+      if(document.hidden) return;
+      post("/api/va/desk/unread", {}).then(function(r){
+        if(r.status !== 200) return;
+        var before = unreadNow();
+        setUnread(r.body.unread);
+        if(r.body.unread > before){
+          if(current) loadThread(current);
+          if(!inboxbox.hidden) loadInbox();
+        }
+      }).catch(function(){});
+    }, 45000);
+  }
+
+  // ---- browser dialer (Twilio Voice) — only when the desk line is provisioned ----
+  var device = null, activeCall = null, callTimer = null, callStart = 0, deskReady = false, deskBooted = false;
+  var strip = document.getElementById("callstrip");
+  var stripWho = document.getElementById("cs-who");
+  var stripState = document.getElementById("cs-state");
+  var stripTime = document.getElementById("cs-time");
+  var muteBtn = document.getElementById("cs-mute");
+  var hangBtn = document.getElementById("cs-hang");
+  var deskCallBtn = document.getElementById("desk-call-btn");
+  var incoming = document.getElementById("incoming");
+  var incWho = document.getElementById("inc-who");
+  var pendingIncoming = null;
+
+  function loadSdk(){
+    return new Promise(function(res, rej){
+      if(window.Twilio && window.Twilio.Device){ res(); return; }
+      var s = document.createElement("script");
+      s.src = "https://cdn.jsdelivr.net/npm/@twilio/voice-sdk@2/dist/twilio.min.js";
+      s.onload = res; s.onerror = rej;
+      document.head.appendChild(s);
+    });
+  }
+  function deskBoot(){
+    if(deskBooted) return; deskBooted = true;
+    pollUnread();
+    post("/api/va/desk/unread", {}).then(function(r){ if(r.status === 200) setUnread(r.body.unread); }).catch(function(){});
+    post("/api/va/desk/token", {}).then(function(r){
+      if(r.status !== 200 || !r.body.enabled) return;
+      return loadSdk().then(function(){ initDevice(r.body.token); });
+    }).catch(function(){ deskReady = false; });
+  }
+  function refreshToken(){
+    post("/api/va/desk/token", {}).then(function(r){
+      if(r.status === 200 && r.body.enabled && device) device.updateToken(r.body.token);
+    }).catch(function(){});
+  }
+  function initDevice(token){
+    try {
+      device = new Twilio.Device(token, {codecPreferences: ["opus", "pcmu"], closeProtection: true});
+    } catch(e){ return; }
+    device.on("registered", function(){ deskReady = true; if(current) deskCallBtn.hidden = false; });
+    device.on("unregistered", function(){ deskReady = false; deskCallBtn.hidden = true; });
+    device.on("tokenWillExpire", refreshToken);
+    device.on("error", function(e){ showToast("Dialer: " + (e && e.message ? e.message : "error")); });
+    device.on("incoming", function(call){
+      pendingIncoming = call;
+      incWho.textContent = call.parameters && call.parameters.From ? prettyNum(call.parameters.From) : "Unknown number";
+      incoming.hidden = false;
+      call.on("cancel", function(){ pendingIncoming = null; incoming.hidden = true; });
+      call.on("disconnect", function(){ pendingIncoming = null; incoming.hidden = true; });
+    });
+    device.register();
+  }
+  function tick(){ stripTime.textContent = fmtDur((Date.now() - callStart) / 1000); }
+  function bindCall(call, who){
+    activeCall = call;
+    stripWho.textContent = who;
+    stripState.textContent = "Calling…"; stripTime.textContent = "";
+    strip.hidden = false; strip.classList.remove("live");
+    muteBtn.textContent = "Mute";
+    call.on("accept", function(){
+      stripState.textContent = "Connected"; strip.classList.add("live");
+      callStart = Date.now(); clearInterval(callTimer); callTimer = setInterval(tick, 1000); tick();
+    });
+    function done(){
+      clearInterval(callTimer); strip.hidden = true; strip.classList.remove("live");
+      activeCall = null;
+      if(current) setTimeout(function(){ loadThread(current); }, 1500);
+    }
+    call.on("disconnect", done); call.on("cancel", done); call.on("reject", done);
+    call.on("error", function(e){ showToast("Call error: " + (e && e.message ? e.message : "unknown")); done(); });
+  }
+  deskCallBtn.addEventListener("click", function(){
+    if(!device || !deskReady || !current || activeCall) return;
+    var to = (current.direct_tel || current.tel || "").replace("tel:", "");
+    device.connect({params: {To: to, prospect_id: current.id, va_name: vaName()}}).then(function(call){
+      bindCall(call, current.company);
+    }).catch(function(e){ showToast("Couldn't start the call: " + (e && e.message ? e.message : "microphone blocked?")); });
+  });
+  hangBtn.addEventListener("click", function(){ if(activeCall) activeCall.disconnect(); });
+  muteBtn.addEventListener("click", function(){
+    if(!activeCall) return;
+    var m = !activeCall.isMuted(); activeCall.mute(m); muteBtn.textContent = m ? "Unmute" : "Mute";
+  });
+  document.getElementById("inc-answer").addEventListener("click", function(){
+    var call = pendingIncoming; if(!call) return;
+    pendingIncoming = null; incoming.hidden = true;
+    bindCall(call, incWho.textContent); call.accept();
+    var digits = incWho.textContent.replace(/\D/g, "");
+    if(digits.length === 10){
+      post("/api/va/calls/search", {q: digits}).then(function(r){
+        if(r.status === 200 && r.body.results && r.body.results.length === 1){
+          post("/api/va/calls/get", {prospect_id: r.body.results[0].id}).then(function(rr){ if(rr.status === 200) render(rr.body); });
+        }
+      }).catch(function(){});
+    }
+  });
+  document.getElementById("inc-decline").addEventListener("click", function(){
+    var call = pendingIncoming; if(!call) return;
+    pendingIncoming = null; incoming.hidden = true; call.reject();
   });
 
   // boot: saved code -> straight to the desk; the first API call re-verifies it

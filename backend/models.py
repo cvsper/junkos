@@ -3875,3 +3875,46 @@ class VaDispatchAction(db.Model):
             "va_name": self.va_name,
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }
+
+
+class DeskActivity(db.Model):
+    """One text or call on the Call Desk line, in either direction.
+
+    The desk line replaced Quo (Sep 2026): Tracy's outbound calls/texts and
+    every reply or callback land here, keyed to the prospect when we know
+    them. `read_at` drives the unread badge on the desk.
+    """
+    __tablename__ = "desk_activities"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    prospect_id = Column(String(36), ForeignKey("call_prospects.id", ondelete="SET NULL"),
+                         nullable=True, index=True)
+    phone_digits = Column(String(10), nullable=False, index=True)
+    kind = Column(String(8), nullable=False)          # sms | call
+    direction = Column(String(4), nullable=False)     # in | out
+    body = Column(Text, nullable=True)                # text body or voicemail transcript
+    media = Column(JSON, nullable=True)               # list of MMS urls
+    twilio_sid = Column(String(64), nullable=True, index=True)
+    status = Column(String(24), nullable=True)        # queued/sent/delivered/failed | ringing/completed/no-answer/voicemail
+    duration = Column(Integer, nullable=True)         # seconds, calls only
+    recording_url = Column(String(300), nullable=True)
+    va_name = Column(String(80), nullable=True)
+    read_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "prospect_id": self.prospect_id,
+            "phone_digits": self.phone_digits,
+            "kind": self.kind,
+            "direction": self.direction,
+            "body": self.body,
+            "media": self.media or [],
+            "status": self.status,
+            "duration": self.duration,
+            "recording_url": self.recording_url,
+            "va_name": self.va_name,
+            "read": self.read_at is not None,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }

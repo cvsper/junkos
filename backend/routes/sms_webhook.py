@@ -92,6 +92,19 @@ def inbound_sms():
 
     logger.info("Inbound SMS from %s: body=%r media=%d", from_phone, body[:100], num_media)
 
+    # Call Desk thread: if this sender is a known prospect (Tracy's B2B list),
+    # mirror the text into the desk inbox. Observe-only — routing below is
+    # unchanged, and customer texts never match a prospect.
+    try:
+        from desk_line import match_prospect, record_inbound_text, _digits as _dl_digits
+        _p = match_prospect(_dl_digits(from_phone))
+        if _p is not None:
+            _urls = [request.form.get("MediaUrl{}".format(i), "") for i in range(num_media)]
+            record_inbound_text(from_phone, body, [u for u in _urls if u],
+                                sid=request.form.get("MessageSid"), prospect=_p)
+    except Exception:
+        logger.exception("desk-thread mirror failed; continuing")
+
     # --- Hauler self-signup + opt-out (Tier 1-A): runs before everything so a
     # "JOBS" text becomes supply instead of getting auto-quoted, and a "STOP"
     # from a concierge hauler removes them from the offer wave. Consent-clean:
