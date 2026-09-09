@@ -42,10 +42,11 @@ import logging
 import os
 import re
 from datetime import datetime, timedelta, timezone
+from urllib.parse import quote
 
 from flask import Blueprint, Response, jsonify, request
 
-from models import db, CallProspect, DeskActivity
+from models import db, CallProspect, DeskActivity, DeskSetting
 
 try:
     from extensions import limiter
@@ -300,7 +301,9 @@ def _finish_call(sid, dial_status, duration, missed_status="no-answer"):
     act = DeskActivity.query.filter_by(twilio_sid=sid, kind="call").first()
     if not act:
         return None
-    if dial_status == "completed":
+    if act.status == "vm_dropped":
+        act.read_at = act.read_at or _now_naive()
+    elif dial_status == "completed":
         act.status = "completed"
         act.read_at = act.read_at or _now_naive()
     else:
@@ -369,6 +372,18 @@ def _record_attr():
     return {"record": "record-from-answer-dual"} if _env("DESK_RECORD_CALLS").lower() == "on" else {}
 
 
+def _vm_key(va_name):
+    return "vm_url:" + (va_name or "desk").strip().lower()[:60]
+
+
+def voicemail_for(va_name):
+    return DeskSetting.get(_vm_key(va_name))
+
+
+def _slug(v):
+    return re.sub(r"[^a-z0-9]+", "-", (v or "").lower())[:40]
+
+
 @deskline_bp.route("/api/desk/twilio/voice", methods=["POST"])
 def twilio_voice_outbound():
     """TwiML App voice URL: the browser dialer asked to call `To`."""
@@ -376,6 +391,15 @@ def twilio_voice_outbound():
         return Response("Forbidden", status=403)
     from twilio.twiml.voice_response import VoiceResponse
     resp = VoiceResponse()
+    va_name = (request.form.get("va_name") or "").strip()[:80]
+    if request.form.get("mode") == "record_vm":
+        # The VA records the voicemail that gets dropped on answering machines.
+        resp.say("After the beep, record the voicemail you want left on answering machines. "
+                 "Press pound when you're done.", voice="Polly.Joanna")
+        resp.record(max_length=60, play_beep=True, finish_on_key="#", trim="trim-silence",
+                    action=_base_url() + "/api/desk/twilio/voice/vm-recorded?va=" + quote(va_name))
+        resp.hangup()
+        return _twiml(resp)
     to_digits = _digits(request.form.get("To", ""))
     to = _e164(to_digits)
     frm = desk_number()
@@ -389,13 +413,79 @@ def twilio_voice_outbound():
         prospect = db.session.get(CallProspect, pid)
     if prospect is None:
         prospect = match_prospect(to_digits)
-    _log_call("out", to_digits, request.form.get("CallSid"), prospect,
-              va_name=request.form.get("va_name"))
+    parent_sid = request.form.get("CallSid") or ""
+    _log_call("out", to_digits, parent_sid, prospect, va_name=va_name)
     dial = resp.dial(caller_id=frm, timeout=30,
                      action=_base_url() + "/api/desk/twilio/voice/after-out",
                      **_record_attr())
-    dial.number(to)
+    number_kwargs = {}
+    if request.form.get("amd") == "1":
+        # Power dial: detect answering machines; the AMD callback drops the
+        # VA's recorded voicemail into the callee leg and hangs it up.
+        number_kwargs = {
+            "machine_detection": "DetectMessageEnd",
+            "machine_detection_timeout": 20,
+            "amd_status_callback": (_base_url() + "/api/desk/twilio/voice/amd?parent=" + parent_sid
+                                    + "&va=" + quote(va_name)),
+            "amd_status_callback_method": "POST",
+        }
+    dial.number(to, **number_kwargs)
     return _twiml(resp)
+
+
+@deskline_bp.route("/api/desk/twilio/voice/vm-recorded", methods=["POST"])
+def twilio_voice_vm_recorded():
+    if not _validate():
+        return Response("Forbidden", status=403)
+    from twilio.twiml.voice_response import VoiceResponse
+    resp = VoiceResponse()
+    url = request.form.get("RecordingUrl") or ""
+    va = (request.args.get("va") or "").strip()[:80]
+    dur = request.form.get("RecordingDuration") or "0"
+    if url:
+        DeskSetting.put(_vm_key(va), url)
+        DeskSetting.put(_vm_key(va) + ":seconds", str(dur))
+        resp.say("Saved. That voicemail will be left on answering machines when you power dial.",
+                 voice="Polly.Joanna")
+    else:
+        resp.say("Nothing was recorded. Try again from the desk.", voice="Polly.Joanna")
+    resp.hangup()
+    return _twiml(resp)
+
+
+@deskline_bp.route("/api/desk/twilio/voice/amd", methods=["POST"])
+def twilio_voice_amd():
+    """Answering-machine result for a power-dialed leg. On a machine, play the
+    VA's recorded voicemail into that leg and end it; the browser leg then
+    drops and the card can advance."""
+    if not _validate():
+        return Response("Forbidden", status=403)
+    answered_by = (request.form.get("AnsweredBy") or "").lower()
+    child_sid = request.form.get("CallSid") or ""
+    parent_sid = request.args.get("parent") or ""
+    va = (request.args.get("va") or "").strip()[:80]
+    act = DeskActivity.query.filter_by(twilio_sid=parent_sid, kind="call").first() if parent_sid else None
+    if act:
+        act.body = ((act.body + " · ") if act.body else "") + "AMD: " + answered_by
+        db.session.commit()
+    if not answered_by.startswith("machine"):
+        return Response("", status=204)
+    vm = voicemail_for(va)
+    client = _client()
+    if not vm or not client or not child_sid:
+        if act:
+            act.status = "machine"
+            db.session.commit()
+        return Response("", status=204)
+    try:
+        twiml = "<Response><Play>{}</Play><Hangup/></Response>".format(vm)
+        _run(lambda: client.calls(child_sid).update(twiml=twiml))
+        if act:
+            act.status = "vm_dropped"
+            db.session.commit()
+    except Exception:
+        logger.exception("voicemail drop failed on %s", child_sid)
+    return Response("", status=204)
 
 
 @deskline_bp.route("/api/desk/twilio/voice/after-out", methods=["POST"])
@@ -620,6 +710,39 @@ def desk_templates():
         "info": info_text_for(p, va_name),
         "followup": followup_text_for("interested", p, va_name),
     }), 200
+
+
+@deskline_bp.route("/api/va/desk/voicemail", methods=["POST"])
+@_ratelimit
+def desk_voicemail():
+    """{"action": "status"|"clear"} — the VA's recorded voicemail-drop."""
+    data = request.get_json(silent=True) or {}
+    if not _passcode_ok(data.get("code")):
+        return jsonify({"error": "That code didn't work."}), 401
+    va = (data.get("va_name") or "").strip()[:80]
+    if (data.get("action") or "status") == "clear":
+        DeskSetting.put(_vm_key(va), None)
+        DeskSetting.put(_vm_key(va) + ":seconds", None)
+    url = voicemail_for(va)
+    secs = DeskSetting.get(_vm_key(va) + ":seconds")
+    return jsonify({"has_voicemail": bool(url), "seconds": int(secs) if secs else None,
+                    "play_url": (url + ".mp3") if url else None}), 200
+
+
+@deskline_bp.route("/api/va/desk/last-call", methods=["POST"])
+@_ratelimit
+def desk_last_call():
+    """Most recent outbound call on this prospect — the power dialer reads its
+    status (vm_dropped / machine / completed / no-answer) to decide what to do next."""
+    data = request.get_json(silent=True) or {}
+    if not _passcode_ok(data.get("code")):
+        return jsonify({"error": "That code didn't work."}), 401
+    p = db.session.get(CallProspect, data.get("prospect_id") or "")
+    if not p:
+        return jsonify({"error": "Prospect not found."}), 404
+    act = (_thread_query(p).filter(DeskActivity.kind == "call", DeskActivity.direction == "out")
+           .order_by(DeskActivity.created_at.desc()).first())
+    return jsonify({"call": act.to_dict() if act else None}), 200
 
 
 def unread_count():

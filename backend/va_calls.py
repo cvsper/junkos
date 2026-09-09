@@ -1059,7 +1059,7 @@ CALLS_HTML = r"""<!doctype html>
 <meta name="theme-color" content="#0B0E12" />
 <title>Umuve — Call Desk</title>
 <link rel="stylesheet" href="/va/app.css?v=3" />
-<link rel="stylesheet" href="/va/calls.css?v=14" />
+<link rel="stylesheet" href="/va/calls.css?v=15" />
 </head>
 <body>
 <div id="app">
@@ -1248,7 +1248,16 @@ CALLS_HTML = r"""<!doctype html>
             <div class="ln-num" id="th-num"></div>
           </div>
           <button class="ln-btn ln-call" id="desk-call-btn" type="button" hidden>Call</button>
+          <button class="ln-btn" id="pd-toggle" type="button" hidden title="Power dial: the next card dials itself after you log an outcome; answering machines get your recorded voicemail">Power</button>
           <button class="ln-btn" id="inbox-toggle" type="button" aria-label="Replies and callbacks">Replies<span class="badge" id="inbox-badge" hidden>0</span></button>
+        </div>
+        <div class="pdbar" id="pdbar" hidden>
+          <div class="pd-txt" id="pd-txt">Power dial is on</div>
+          <div class="pd-btns">
+            <button type="button" class="pd-btn" id="pd-record">Record voicemail</button>
+            <button type="button" class="pd-btn" id="pd-play" hidden>Play</button>
+            <button type="button" class="pd-btn pd-stop" id="pd-skip" hidden>Stop countdown</button>
+          </div>
         </div>
         <div class="ln-body" id="ln-thread">
           <div class="th-list" id="th-list"></div>
@@ -1286,7 +1295,7 @@ CALLS_HTML = r"""<!doctype html>
     </div>
   </div>
 </div>
-<script src="/va/calls.js?v=17"></script>
+<script src="/va/calls.js?v=18"></script>
 </body>
 </html>
 """
@@ -1485,6 +1494,17 @@ CALLS_CSS = r"""/* Call Desk — layers over /va/app.css tokens */
 .inc-answer{background:var(--ok);border-color:var(--ok);color:#0B0E12}
 .inc-decline{color:#FF7A5C;border-color:rgba(255,122,92,.45)}
 @media (prefers-reduced-motion: reduce){.callstrip.live .cs-dot{animation:none}}
+/* power dial */
+#pd-toggle.on{color:var(--ok);border-color:rgba(61,214,140,.45)}
+.pdbar{display:flex;align-items:center;gap:10px;padding:8px 14px;border-bottom:1px solid var(--line);
+  background:rgba(61,214,140,.06)}
+.pd-txt{flex:1;min-width:0;font-size:12px;color:var(--muted);line-height:1.4}
+.pd-txt b{color:var(--ok);font-family:var(--display);font-weight:700}
+.pd-txt.count b{color:var(--accent)}
+.pd-btns{display:flex;gap:6px;flex:none}
+.pd-btn{font-family:var(--display);font-weight:700;font-size:11.5px;color:var(--ink);background:var(--raise);
+  border:1px solid var(--line);border-radius:9px;padding:6px 10px;cursor:pointer}
+.pd-stop{color:#FF7A5C;border-color:rgba(255,122,92,.45)}
 /* rate card */
 .rc-row{display:flex;flex-direction:column;gap:8px;padding:10px 12px;margin:2px 0 8px;background:var(--raise);
   border:1px dashed rgba(255,106,44,.4);border-radius:12px}
@@ -1777,6 +1797,7 @@ CALLS_JS = r"""(function(){
     loadKit(c);
     document.getElementById("callback").hidden = false;
     syncDialUI();
+    if(pdArmed){ pdArmed = false; setTimeout(pdStartCountdown, 400); }
     card.hidden = false; outcomes.hidden = false; textopt.hidden = false;
     if(!reduced){
       card.style.opacity = "0"; card.style.transform = "translateY(6px)";
@@ -1833,6 +1854,7 @@ CALLS_JS = r"""(function(){
     }).then(function(r){
       setBusy(false);
       if(r.status !== 200){ fail(r.status, r.body); return; }
+      pdArmed = true;
       if(r.body.texted){ showToast("Logged — and the follow-up text is on its way."); }
       else if(sendText.checked && r.body.text_reason && btn.dataset.o !== "skip" &&
               r.body.text_reason !== "no text for this outcome"){
@@ -2302,7 +2324,7 @@ CALLS_JS = r"""(function(){
       setBusy(false);
       if(r.status !== 200){ fail(r.status, r.body); return; }
       showToast("Callback set for " + r.body.callback_local + " — it'll be dealt back to you then.");
-      render(r.body);
+      pdArmed = true; render(r.body);
     }).catch(function(){ setBusy(false); fail(0, {error: "No connection — the callback wasn't saved. Try again."}); });
   }
   cbBox.addEventListener("click", function(e){
@@ -2549,7 +2571,7 @@ CALLS_JS = r"""(function(){
     try {
       device = new Twilio.Device(token, {codecPreferences: ["opus", "pcmu"], closeProtection: true});
     } catch(e){ return; }
-    device.on("registered", function(){ deskReady = true; syncDialUI(); setDialerStatus("desk line ready · " + prettyNum(deskNumber)); });
+    device.on("registered", function(){ deskReady = true; syncDialUI(); setDialerStatus("desk line ready · " + prettyNum(deskNumber)); pdToggle.hidden = false; loadVm(); pdRender(); });
     device.on("unregistered", function(){ deskReady = false; syncDialUI(); setDialerStatus("desk line offline — reload"); });
     device.on("tokenWillExpire", refreshToken);
     device.on("error", function(e){
@@ -2600,7 +2622,7 @@ CALLS_JS = r"""(function(){
     if(!device || !deskReady || !current || activeCall) return;
     stripWho.textContent = current.company; stripState.textContent = "Starting…"; stripTime.textContent = "";
     strip.hidden = false; strip.classList.remove("live", "failed");
-    device.connect({params: {To: to, prospect_id: current.id, va_name: vaName()}}).then(function(call){
+    device.connect({params: {To: to, prospect_id: current.id, va_name: vaName(), amd: powerOn ? "1" : "0"}}).then(function(call){
       bindCall(call, current.company);
     }).catch(function(e){
       strip.classList.add("failed"); stripState.textContent = "Call failed: " + callErrorText(e);
@@ -2623,6 +2645,85 @@ CALLS_JS = r"""(function(){
   document.getElementById("c-direct").addEventListener("click", function(e){
     if(deskReady && current && current.direct_tel){ e.preventDefault(); startDeskCall(current.direct_tel.replace("tel:", "")); }
   });
+  // ---- power dial: auto-advance + voicemail drop ----
+  var PD_KEY = "umuve_desk_power_dial";
+  var pdToggle = document.getElementById("pd-toggle");
+  var pdBar = document.getElementById("pdbar");
+  var pdTxt = document.getElementById("pd-txt");
+  var pdSkip = document.getElementById("pd-skip");
+  var pdPlay = document.getElementById("pd-play");
+  var powerOn = localStorage.getItem(PD_KEY) === "1";
+  var pdArmed = false, pdCountdown = null, pdVm = {has_voicemail: false}, recordingVm = false;
+  var PD_DELAY = 4;
+  function pdRender(){
+    pdToggle.classList.toggle("on", powerOn);
+    pdBar.hidden = !(powerOn && deskReady);
+    pdPlay.hidden = !pdVm.has_voicemail;
+    if(pdCountdown) return;
+    pdTxt.className = "pd-txt";
+    if(!pdVm.has_voicemail){
+      pdTxt.innerHTML = "<b>Power dial on.</b> No voicemail recorded yet — machines will ring through to you. Record one to drop it automatically.";
+    } else {
+      pdTxt.innerHTML = "<b>Power dial on.</b> Log an outcome and the next card dials itself. Machines get your " + (pdVm.seconds ? pdVm.seconds + "s " : "") + "voicemail and move on.";
+    }
+    pdSkip.hidden = true;
+  }
+  function loadVm(){
+    post("/api/va/desk/voicemail", {action: "status"}).then(function(r){ if(r.status === 200){ pdVm = r.body; pdRender(); } }).catch(function(){});
+  }
+  function pdCancel(){ if(pdCountdown){ clearInterval(pdCountdown); pdCountdown = null; } pdRender(); }
+  function pdStartCountdown(){
+    if(!powerOn || !deskReady || !current || activeCall || recordingVm) return;
+    var left = PD_DELAY;
+    var who = current.company;
+    pdCancel();
+    function paint(){ pdTxt.className = "pd-txt count"; pdTxt.innerHTML = "Dialing <b>" + who + "</b> in " + left + "…"; pdSkip.hidden = false; }
+    paint();
+    pdCountdown = setInterval(function(){
+      left -= 1;
+      if(left <= 0){ clearInterval(pdCountdown); pdCountdown = null; pdRender();
+        if(current && current.company === who) startDeskCall((current.direct_tel || current.tel || "").replace("tel:", ""));
+        return; }
+      paint();
+    }, 1000);
+  }
+  pdSkip.addEventListener("click", pdCancel);
+  pdToggle.addEventListener("click", function(){
+    powerOn = !powerOn; localStorage.setItem(PD_KEY, powerOn ? "1" : "0");
+    if(!powerOn) pdCancel(); else loadVm();
+    pdRender();
+    showToast(powerOn ? "Power dial on — the next card dials after you log an outcome." : "Power dial off.");
+  });
+  document.getElementById("pd-record").addEventListener("click", function(){
+    if(!device || !deskReady || activeCall) return;
+    recordingVm = true;
+    device.connect({params: {mode: "record_vm", va_name: vaName()}}).then(function(call){
+      bindCall(call, "Recording your voicemail — press # when done");
+      call.on("disconnect", function(){ recordingVm = false; setTimeout(loadVm, 1500); });
+    }).catch(function(e){ recordingVm = false; showToast("Couldn't start recording: " + callErrorText(e)); });
+  });
+  pdPlay.addEventListener("click", function(){ if(pdVm.play_url) window.open(pdVm.play_url, "_blank", "noopener"); });
+  function pdAfterCall(){
+    // Decide what to do once a power-dialed call ends: machine → log voicemail and advance.
+    if(!powerOn || !current) return;
+    var pid = current.id;
+    post("/api/va/desk/last-call", {prospect_id: pid}).then(function(r){
+      if(r.status !== 200 || !r.body.call || !current || current.id !== pid) return;
+      var st = r.body.call.status || "";
+      if(st === "vm_dropped" || st === "machine"){
+        setBusy(true);
+        post("/api/va/calls/log", {prospect_id: pid, outcome: "voicemail", note: document.getElementById("note").value.trim(),
+                                   send_text: sendText.checked}).then(function(rr){
+          setBusy(false);
+          if(rr.status !== 200){ fail(rr.status, rr.body); return; }
+          showToast(st === "vm_dropped" ? "Machine — your voicemail was dropped. Next card." : "Machine — logged as voicemail. Next card.");
+          pdArmed = true; render(rr.body);
+        }).catch(function(){ setBusy(false); });
+      } else {
+        pdTxt.className = "pd-txt"; pdTxt.innerHTML = "<b>Call ended.</b> Tap what happened and the next card dials itself.";
+      }
+    }).catch(function(){});
+  }
   function tick(){ stripTime.textContent = fmtDur((Date.now() - callStart) / 1000); }
   function bindCall(call, who){
     activeCall = call;
@@ -2637,7 +2738,7 @@ CALLS_JS = r"""(function(){
     function done(){
       clearInterval(callTimer); strip.hidden = true; strip.classList.remove("live", "failed");
       activeCall = null;
-      if(current) setTimeout(function(){ loadThread(current); }, 1500);
+      if(current) setTimeout(function(){ loadThread(current); if(!recordingVm) pdAfterCall(); }, 1800);
     }
     function failed(msg){
       clearInterval(callTimer); activeCall = null;

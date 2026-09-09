@@ -3953,3 +3953,28 @@ class VaShift(db.Model):
             "note": self.note,
             "auto_closed": self.auto_closed,
         }
+
+
+class DeskSetting(db.Model):
+    """Tiny key/value store for the VA desk (e.g. a VA's voicemail-drop recording)."""
+    __tablename__ = "desk_settings"
+
+    key = Column(String(120), primary_key=True)
+    value = Column(Text, nullable=True)
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc),
+                        onupdate=lambda: datetime.now(timezone.utc))
+
+    @classmethod
+    def get(cls, key, default=None):
+        row = db.session.get(cls, key)
+        return row.value if row and row.value is not None else default
+
+    @classmethod
+    def put(cls, key, value):
+        row = db.session.get(cls, key)
+        if row is None:
+            row = cls(key=key)
+            db.session.add(row)
+        row.value = value
+        db.session.commit()
+        return row
