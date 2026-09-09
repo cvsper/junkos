@@ -21,6 +21,9 @@ FLAGS = {
     "browser_calling": {"default": True, "desc": "Call from the browser on the desk line"},
     "passcode_login": {"default": True,  "desc": "Allow the legacy shared passcode to open the desk (turn off once every VA has an account)"},
     "queue_import":   {"default": True,  "desc": "Load a CSV / add a business from the desk"},
+    "maya_prequal":   {"default": False, "desc": "Maya pre-qualifies fresh supply-side cards by phone before a VA dials (also needs PREQUAL_ENABLED=true)"},
+    "auto_ingest":    {"default": True,  "desc": "Sourced operator / B2B leads flow into the call queue daily"},
+    "push_notifications": {"default": True, "desc": "Web Push to installed desks when a prospect replies"},
 }
 
 

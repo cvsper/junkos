@@ -849,6 +849,31 @@ def init_scheduler(app):
         except Exception:
             logger.exception("caller digest job not registered")
 
+        # Call Desk growth: sourced leads → queue daily 15:30 UTC; Maya pre-qual
+        # hourly (acts only 10:00-16:00 ET Mon-Sat, flag + env kill-switched).
+        try:
+            from growth import run_auto_ingest
+            from prequal import run_prequal_job
+            scheduler.add_job(
+                run_auto_ingest,
+                "cron",
+                hour=15,
+                minute=30,
+                args=[app],
+                id="growth_auto_ingest",
+                name="Call Desk auto-ingest (sourced leads → queue)",
+            )
+            scheduler.add_job(
+                run_prequal_job,
+                "cron",
+                minute=5,
+                args=[app],
+                id="growth_maya_prequal",
+                name="Call Desk Maya pre-qualification",
+            )
+        except Exception:
+            logger.exception("growth jobs not registered")
+
         scheduler.start()
         logger.info("Background scheduler started with 17 jobs")
         return scheduler

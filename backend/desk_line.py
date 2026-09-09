@@ -232,6 +232,10 @@ def record_inbound_text(from_phone, body, media_urls=None, sid=None, prospect=No
                 # Surface on the desk right now: replies outrank the queue.
                 prospect.next_followup_at = _now_naive()
     db.session.commit()
+    try:
+        from growth import notify_reply; notify_reply(prospect, (body or "").strip() or "(photo)")
+    except Exception:
+        logger.exception("notify_reply failed")
     return act
 
 
@@ -631,6 +635,10 @@ def twilio_voice_transcript():
         prospect = db.session.get(CallProspect, act.prospect_id) if act.prospect_id else None
         if text:
             _ping_forward(prospect, _e164(act.phone_digits), "Voicemail: " + text)
+        try:
+            from growth import notify_reply; notify_reply(prospect, "Voicemail: " + (text or "(no transcript)"))
+        except Exception:
+            logger.exception("notify_reply failed")
     return Response("", status=204)
 
 

@@ -325,6 +325,16 @@ except Exception as _dl_exc:  # pragma: no cover
     import logging as _logging
     _logging.getLogger(__name__).warning("deskline_bp not registered: %s", _dl_exc)
 
+# Call Desk Phase 5 — growth: auto-ingest, Maya pre-qual, installable desk + push,
+# calendar feed, HubSpot export
+try:
+    import models_growth  # noqa: F401  (tables must exist before create_all)
+    from growth import growth_bp
+    app.register_blueprint(growth_bp)
+except Exception as _gr_exc:  # pragma: no cover
+    import logging as _logging
+    _logging.getLogger(__name__).warning("growth_bp not registered: %s", _gr_exc)
+
 # VA Dispatch Desk — job board + hauler assignment (first Maya phone close,
 # Aug 2026: phone customers need a human dispatcher to put a hauler on the job)
 try:
