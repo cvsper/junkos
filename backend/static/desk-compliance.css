@@ -1,0 +1,16 @@
+/* Call Desk — compliance layer. Layers over /va/app.css tokens + /va/calls.css. */
+.dncchip{color:#FF7A5C;border-color:rgba(255,122,92,.5);background:rgba(255,122,92,.08)}
+.oc-dnc{grid-column:1 / -1}
+.cw-banner{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line,#26262a);
+  background:rgba(255,106,44,.07);color:var(--ink,#f1efe9);font-size:13px;line-height:1.35}
+.cw-banner::before{content:"";flex:0 0 8px;width:8px;height:8px;border-radius:50%;background:var(--accent,#FF6A2C)}
+body.calls-closed #c-tel,body.calls-closed #c-direct,body.calls-closed #desk-call-btn{opacity:.55}
+.cmp-note{margin:0;padding:8px 14px;border-bottom:1px solid var(--line,#26262a);color:var(--muted,#9a9892);
+  font-size:12px;line-height:1.45}
+.cmp-toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:60;margin:0;padding:11px 14px;
+  border-radius:12px;background:var(--raise,#1c1c1f);border:1px solid var(--line,#26262a);color:var(--ink,#f1efe9);
+  font-size:13.5px;line-height:1.35;box-shadow:0 10px 32px rgba(0,0,0,.45);max-width:min(92vw,520px);text-align:center}
+@media (prefers-reduced-motion: no-preference){
+  .cmp-toast{animation:cmp-in .18s ease}
+  @keyframes cmp-in{from{opacity:0;transform:translate(-50%,6px)}to{opacity:1;transform:translate(-50%,0)}}
+}

@@ -52,6 +52,16 @@ def _check_desk_health(app):
         logger.exception("desk health job failed")
 
 
+def _run_retention(app):
+    """Nightly Call Desk compliance retention (transcripts, call bodies, audit). See compliance.py."""
+    try:
+        from compliance import run_retention
+        with app.app_context():
+            run_retention()
+    except Exception:
+        logger.exception("compliance retention job failed")
+
+
 def _check_twilio_health(app):
     """Probe Twilio; email-alert if the account is down (e.g. billing suspension
     → all SMS silently failing). Email-only alert, so it survives a Twilio
@@ -572,6 +582,17 @@ def init_scheduler(app):
             args=[app],
             id="desk_health",
             name="Call Desk line health",
+        )
+
+        # Call Desk compliance retention — nightly 03:30 UTC (compliance.py)
+        scheduler.add_job(
+            _run_retention,
+            "cron",
+            hour=3,
+            minute=30,
+            args=[app],
+            id="compliance_retention",
+            name="Call Desk compliance retention sweep",
         )
 
         # Generate recurring jobs every hour

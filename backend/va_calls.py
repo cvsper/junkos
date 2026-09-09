@@ -375,6 +375,7 @@ def _card_payload(p, va_name):
     direct = _digits(p.direct_phone) if p.direct_phone else ""
     d["direct_tel"] = "tel:+1" + direct if len(direct) == 10 else None
     d["is_followup"] = bool(p.next_followup_at)
+    from compliance import compliance_for_card; d["compliance"] = compliance_for_card(p)  # Phase 2 (compliance.py)
     return d
 
 
@@ -1360,6 +1361,7 @@ CALLS_HTML = r"""<!doctype html>
     </div>
   </div>
 </div>
+<script src="/static/desk-compliance.js?v=1"></script>
 <script src="/va/calls.js?v=22"></script>
 </body>
 </html>
