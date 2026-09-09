@@ -981,7 +981,7 @@ CALLS_HTML = r"""<!doctype html>
 <meta name="theme-color" content="#0B0E12" />
 <title>Umuve — Call Desk</title>
 <link rel="stylesheet" href="/va/app.css?v=3" />
-<link rel="stylesheet" href="/va/calls.css?v=12" />
+<link rel="stylesheet" href="/va/calls.css?v=13" />
 </head>
 <body>
 <div id="app">
@@ -1040,6 +1040,8 @@ CALLS_HTML = r"""<!doctype html>
           </div>
           <button type="button" class="tb-btn" id="tb-toggle">Clock in</button>
           <p class="qb-status" id="tb-status" hidden></p>
+          <div class="tb-views"><button type="button" class="kit-tab is-on" id="tb-mine">My shifts</button><button type="button" class="kit-tab" id="tb-team">Everyone</button></div>
+          <div id="tb-team-totals" hidden></div>
           <div id="tb-list"></div>
         </div>
         <div id="queuebox" class="deskcard" hidden>
@@ -1198,7 +1200,7 @@ CALLS_HTML = r"""<!doctype html>
     </div>
   </div>
 </div>
-<script src="/va/calls.js?v=15"></script>
+<script src="/va/calls.js?v=16"></script>
 </body>
 </html>
 """
@@ -1464,6 +1466,11 @@ CALLS_CSS = r"""/* Call Desk — layers over /va/app.css tokens */
 .tb-row .h{font-family:var(--display);font-weight:800;font-variant-numeric:tabular-nums}
 .tb-row .c{color:var(--faint);font-size:11.5px;min-width:56px;text-align:right}
 .tb-row.open .h{color:var(--ok)}
+.tb-views{display:flex;gap:4px;margin:2px 0 8px}
+.tb-who{font-family:var(--display);font-weight:600;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);min-width:56px}
+.tb-tot{display:flex;gap:14px;align-items:baseline;padding:8px 2px;border-bottom:1px solid var(--line);font-size:13px}
+.tb-tot b{font-family:var(--display);font-weight:800;font-size:15px}
+.tb-tot span{color:var(--muted)}
 @media (max-width:480px){.clock #clock-label{display:none}.clock{padding:0 10px}}
 /* queue panel */
 .qb-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:12px}
@@ -2000,11 +2007,13 @@ CALLS_JS = r"""(function(){
     post("/api/va/time/status", {}).then(function(r){ if(r.status === 200) setClockState(r.body); }).catch(function(){});
   }
   function tbSay(msg, isErr){ tbStatus.textContent = msg; tbStatus.hidden = false; tbStatus.className = "qb-status" + (isErr ? " err" : ""); }
-  function renderShifts(rows){
+  var tbView = "mine";
+  function renderShifts(rows, showWho){
     tbList.textContent = "";
-    if(!rows || !rows.length){ tbList.appendChild(el("p", "sr-none", "No shifts yet. Clock in when you start calling.")); return; }
+    if(!rows || !rows.length){ tbList.appendChild(el("p", "sr-none", showWho ? "Nobody has clocked in yet." : "No shifts yet. Clock in when you start calling.")); return; }
     rows.forEach(function(s){
       var row = el("div", "tb-row" + (s.open ? " open" : ""));
+      if(showWho) row.appendChild(el("span", "tb-who", s.va_name));
       row.appendChild(el("span", "d", s.day));
       row.appendChild(el("span", "t", s.start_local + " – " + (s.end_local || "now") + (s.auto_closed ? " · auto-closed at 12h" : "") + (s.note ? " · " + s.note : "")));
       row.appendChild(el("span", "c", s.calls + (s.calls === 1 ? " call" : " calls")));
@@ -2012,14 +2021,40 @@ CALLS_JS = r"""(function(){
       tbList.appendChild(row);
     });
   }
+  var tbTeamTotals = document.getElementById("tb-team-totals");
   function loadHours(){
+    document.getElementById("tb-mine").classList.toggle("is-on", tbView === "mine");
+    document.getElementById("tb-team").classList.toggle("is-on", tbView === "team");
+    if(tbView === "team"){
+      document.getElementById("tb-name").hidden = true;
+      post("/api/va/time/team", {days: 45}).then(function(r){
+        if(r.status !== 200){ tbSay((r.body && r.body.error) || "Couldn't load hours.", true); return; }
+        tbTeamTotals.textContent = ""; tbTeamTotals.hidden = false;
+        var names = r.body.vas || [];
+        if(!names.length){ tbTeamTotals.hidden = true; }
+        names.forEach(function(n){
+          var t = r.body.totals[n] || {};
+          var row = el("div", "tb-tot");
+          row.appendChild(el("b", null, n));
+          row.appendChild(el("span", null, "today " + hm(t.today_seconds)));
+          row.appendChild(el("span", null, "week " + hm(t.week_seconds)));
+          row.appendChild(el("span", null, (t.period_label || "pay period") + " " + hm(t.period_seconds)));
+          tbTeamTotals.appendChild(row);
+        });
+        renderShifts(r.body.shifts, true);
+      }).catch(function(){ tbSay("No connection — couldn't load hours.", true); });
+      return;
+    }
+    tbTeamTotals.hidden = true;
     if(!vaName()){ document.getElementById("tb-name").hidden = false; tbList.textContent = ""; return; }
     document.getElementById("tb-name").hidden = true;
     post("/api/va/time/hours", {days: 45}).then(function(r){
       if(r.status !== 200){ tbSay((r.body && r.body.error) || "Couldn't load hours.", true); return; }
-      setClockState(r.body); renderShifts(r.body.shifts);
+      setClockState(r.body); renderShifts(r.body.shifts, false);
     }).catch(function(){ tbSay("No connection — couldn't load hours.", true); });
   }
+  document.getElementById("tb-mine").addEventListener("click", function(){ tbView = "mine"; loadHours(); });
+  document.getElementById("tb-team").addEventListener("click", function(){ tbView = "team"; loadHours(); });
   function showTime(){ hideQueue(); searchbox.hidden = true; tbStatus.hidden = true; timebox.hidden = false; deck.classList.add("time-open"); loadHours(); window.scrollTo(0, 0); }
   function hideTime(){ timebox.hidden = true; deck.classList.remove("time-open"); }
   clockChip.addEventListener("click", function(){ if(timebox.hidden) showTime(); else hideTime(); });

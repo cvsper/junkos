@@ -231,6 +231,18 @@ def hours():
     return jsonify(rep), 200
 
 
+@vatime_bp.route("/api/va/time/team", methods=["POST"])
+@_ratelimit
+def team():
+    """Everyone's hours (desk passcode) — the owner's view from the same panel."""
+    data = request.get_json(silent=True) or {}
+    if not _passcode_ok(data.get("code")):
+        return jsonify({"error": "That code didn't work."}), 401
+    for name in {sh.va_name for sh in VaShift.query.filter_by(ended_at=None).all()}:
+        auto_close_stale(name)
+    return jsonify(hours_report(None, data.get("days") or 45)), 200
+
+
 @vatime_bp.route("/api/admin/va-hours", methods=["GET"])
 def admin_hours():
     from va_calls import require_admin

@@ -94,3 +94,16 @@ def test_other_va_hours_are_separate(client):
     db.session.commit()
     assert totals_for("Tracy")["today_seconds"] == 0
     assert totals_for("Trixie")["today_seconds"] >= 3595
+
+
+def test_team_view_lists_everyone(client):
+    db.session.add_all([
+        VaShift(va_name="Tracy", started_at=_now() - timedelta(hours=2), ended_at=_now() - timedelta(hours=1)),
+        VaShift(va_name="Trixie", started_at=_now() - timedelta(hours=1)),
+    ])
+    db.session.commit()
+    rep = _va(client, "/api/va/time/team", {}).get_json()
+    assert rep["vas"] == ["Tracy", "Trixie"]
+    assert rep["totals"]["Tracy"]["today_seconds"] >= 3595 and rep["totals"]["Trixie"]["today_seconds"] >= 3595
+    assert {s["va_name"] for s in rep["shifts"]} == {"Tracy", "Trixie"}
+    assert client.post("/api/va/time/team", json={"code": "wrong"}).status_code == 401
