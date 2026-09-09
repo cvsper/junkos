@@ -116,3 +116,14 @@ def test_queue_view_orders_due_then_fresh(client):
     assert q["counts"]["by_tier"] == {"1": 1, "2": 1}
     assert q["counts"]["by_status"]["dead"] == 1
     assert q["due"][0]["last_outcome"] == "callback"
+
+
+def test_next_distinguishes_empty_queue_from_quiet_queue(client):
+    b = _va(client, "/api/va/calls/next", {}).get_json()
+    assert b["empty"] and b["total"] == 0 and b["scheduled"] == 0
+    db.session.add(CallProspect(tier=1, category="storage", company="Later", phone="5615550013",
+                                phone_digits="5615550013",
+                                next_followup_at=datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(days=1)))
+    db.session.commit()
+    b = _va(client, "/api/va/calls/next", {}).get_json()
+    assert b["empty"] and b["total"] == 1 and b["scheduled"] == 1 and b["next_due"]

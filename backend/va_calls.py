@@ -394,7 +394,11 @@ def calls_next():
                .filter(CallProspect.status.in_(WORKABLE_STATUSES),
                        CallProspect.next_followup_at.isnot(None))
                .order_by(CallProspect.next_followup_at.asc()).first())
-        return jsonify({"empty": True, "stats": stats,
+        total = CallProspect.query.count()
+        scheduled = CallProspect.query.filter(
+            CallProspect.status.in_(WORKABLE_STATUSES),
+            CallProspect.next_followup_at.isnot(None)).count()
+        return jsonify({"empty": True, "stats": stats, "total": total, "scheduled": scheduled,
                         "next_due": nxt.next_followup_at.isoformat() if nxt else None}), 200
     return jsonify({"card": _card_payload(p, data.get("va_name")), "stats": stats}), 200
 
@@ -1041,9 +1045,10 @@ CALLS_HTML = r"""<!doctype html>
           <div id="qb-list"></div>
         </div>
         <div id="empty" class="deskcard" hidden>
-          <div class="q-chip done">QUEUE CLEAR</div>
-          <h2 class="co">Nothing due right now</h2>
+          <div class="q-chip done" id="empty-chip">QUEUE CLEAR</div>
+          <h2 class="co" id="empty-t">Nothing due right now</h2>
           <p class="whytext" id="empty-sub">Every prospect is either scheduled for a future touch or finished. Replies and callbacks are in the line panel.</p>
+          <button type="button" class="si-btn" id="empty-load" hidden>Load a list or add a business</button>
         </div>
 
         <div id="card" class="deskcard" hidden>
@@ -1174,7 +1179,7 @@ CALLS_HTML = r"""<!doctype html>
     </div>
   </div>
 </div>
-<script src="/va/calls.js?v=10"></script>
+<script src="/va/calls.js?v=11"></script>
 </body>
 </html>
 """
@@ -1568,10 +1573,23 @@ CALLS_JS = r"""(function(){
     setDaybar(resp.stats);
     if(resp.empty || !resp.card){
       card.hidden = true; outcomes.hidden = true; textopt.hidden = true; empty.hidden = false;
-      if(resp.next_due){
-        var d = new Date(resp.next_due + "Z");
+      var emptyLoad = document.getElementById("empty-load");
+      if(!resp.total){
+        document.getElementById("empty-chip").textContent = "QUEUE EMPTY";
+        document.getElementById("empty-t").textContent = "No businesses loaded yet";
         document.getElementById("empty-sub").textContent =
-          "Next follow-up comes due " + d.toLocaleString([], {weekday:"long", hour:"numeric", minute:"2-digit"}) + ". Check back then.";
+          "Nothing is in the queue. Load a call list (CSV) or add a business, and the first card deals itself.";
+        emptyLoad.hidden = false;
+      } else {
+        document.getElementById("empty-chip").textContent = "QUEUE CLEAR";
+        document.getElementById("empty-t").textContent = "Nothing due right now";
+        var sub = (resp.scheduled || 0) + " scheduled for later, " + resp.total + " in the list.";
+        if(resp.next_due){
+          var d = new Date(resp.next_due + "Z");
+          sub += " Next one comes due " + d.toLocaleString([], {weekday:"long", hour:"numeric", minute:"2-digit"}) + ".";
+        }
+        document.getElementById("empty-sub").textContent = sub;
+        emptyLoad.hidden = true;
       }
       current = null;
       loadThread(null);
@@ -1955,6 +1973,7 @@ CALLS_JS = r"""(function(){
     if(queuebox.hidden) showQueue(); else hideQueue();
   });
   document.getElementById("queue-close").addEventListener("click", hideQueue);
+  document.getElementById("empty-load").addEventListener("click", showQueue);
   document.getElementById("qb-file").addEventListener("change", function(){
     var f = this.files && this.files[0]; this.value = "";
     if(!f) return;
