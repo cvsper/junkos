@@ -1082,7 +1082,7 @@ CALLS_HTML = r"""<!doctype html>
 <meta name="theme-color" content="#0B0E12" />
 <title>Umuve — Call Desk</title>
 <link rel="stylesheet" href="/va/app.css?v=3" />
-<link rel="stylesheet" href="/va/calls.css?v=17" />
+<link rel="stylesheet" href="/va/calls.css?v=18" />
 </head>
 <body>
 <div id="app">
@@ -1116,7 +1116,7 @@ CALLS_HTML = r"""<!doctype html>
       <a class="back" href="/va" aria-label="Back to VA tools">←</a>
       <div class="wordmark">CALL&nbsp;DESK</div>
       <div class="bar-sub" id="daybar">—</div>
-      <span class="who" id="who" hidden></span>
+      <button class="who who-btn" id="who" type="button" hidden title="Account"></button>
       <button class="clock" id="clock-chip" type="button" aria-label="Time clock"><span class="ck-dot"></span><span id="clock-label">Clock in</span></button>
       <button class="back" id="queue-toggle" type="button" aria-label="Your queue">☰</button>
       <button class="back" id="search-toggle" type="button" aria-label="Find a business">⌕</button>
@@ -1135,6 +1135,19 @@ CALLS_HTML = r"""<!doctype html>
           <input id="search-q" type="search" autocomplete="off"
                  placeholder="Someone calling back? Type their name, city, or number" />
           <div id="search-results"></div>
+        </div>
+        <div id="acctbox" class="deskcard" hidden>
+          <div class="qb-head">
+            <div><div class="qb-t">Your account</div><div class="qb-sub" id="ac-sub">—</div></div>
+            <button type="button" class="si-btn" id="acct-close">Back to the card</button>
+          </div>
+          <form id="pw-form" class="qb-addform" autocomplete="on">
+            <input id="pw-cur" type="password" autocomplete="current-password" placeholder="Current password" required />
+            <input id="pw-new" type="password" autocomplete="new-password" placeholder="New password (8+ characters)" required minlength="8" />
+            <button class="si-btn" type="submit">Change password</button>
+          </form>
+          <p class="qb-status" id="ac-status" hidden></p>
+          <button type="button" class="tb-btn out" id="sign-out">Sign out</button>
         </div>
         <div id="timebox" class="deskcard" hidden>
           <div class="qb-head">
@@ -1347,7 +1360,7 @@ CALLS_HTML = r"""<!doctype html>
     </div>
   </div>
 </div>
-<script src="/va/calls.js?v=21"></script>
+<script src="/va/calls.js?v=22"></script>
 </body>
 </html>
 """
@@ -1456,10 +1469,15 @@ CALLS_CSS = r"""/* Call Desk — layers over /va/app.css tokens */
 .gate-alt form{display:flex;flex-direction:column;gap:8px;margin-top:10px}
 .btn-alt{background:var(--raise);color:var(--ink);border:1px solid var(--line)}
 .who{font-family:var(--display);font-weight:700;font-size:11.5px;color:var(--faint);margin-right:8px;white-space:nowrap}
+.who-btn{background:transparent;border:1px solid transparent;border-radius:8px;padding:6px 8px;cursor:pointer}
+.who-btn:hover{border-color:var(--line);color:var(--muted)}
+.qb-addform #pw-cur,.qb-addform #pw-new{grid-column:1 / -1}
 /* desk line: two-pane desk, thread, inbox, dialer */
 .col-main{display:contents}
 .col-main>*{order:5}
-#timebox{order:0}#queuebox{order:0}#searchbox{order:1}#empty{order:2}#card{order:3}
+#acctbox{order:0}#timebox{order:0}#queuebox{order:0}#searchbox{order:1}#empty{order:2}#card{order:3}
+.desk.acct-open #card,.desk.acct-open #empty,.desk.acct-open #textopt,.desk.acct-open #callback,
+.desk.acct-open #outcomes,.desk.acct-open #queuebox,.desk.acct-open #timebox{display:none}
 .desk.time-open #card,.desk.time-open #empty,.desk.time-open #textopt,.desk.time-open #callback,
 .desk.time-open #outcomes,.desk.time-open #queuebox{display:none}
 .desk.queue-open #card,.desk.queue-open #empty,.desk.queue-open #textopt,.desk.queue-open #callback,
@@ -1723,7 +1741,7 @@ CALLS_CSS = r"""/* Call Desk — layers over /va/app.css tokens */
   .body.desk{display:grid;grid-template-columns:minmax(0,720px) minmax(380px,460px);gap:20px;
     justify-content:center;align-items:start;width:100%}
   .col-main{display:flex;flex-direction:column;gap:14px;min-width:0}
-  #timebox{order:0}#queuebox{order:0}#searchbox{order:1}#empty{order:2}#card{order:3}
+  #acctbox{order:0}#timebox{order:0}#queuebox{order:0}#searchbox{order:1}#empty{order:2}#card{order:3}
   .line{position:sticky;top:16px;height:calc(100vh - 32px);max-height:900px}
   #ln-thread{max-height:none}
   .outcomes{grid-template-columns:1fr 1fr 1fr}
@@ -2234,6 +2252,31 @@ CALLS_JS = r"""(function(){
     loadKit(current);
   });
 
+  // ---- account: change password, sign out ----
+  var acctbox = document.getElementById("acctbox");
+  function showAcct(){
+    hideQueue(); hideTime(); searchbox.hidden = true;
+    var m = me();
+    document.getElementById("ac-sub").textContent = m ? (m.full_name || m.name) + " · " + (m.email || "") + (m.is_manager ? " · manager" : "") : (vaName() || "") + " · signed in with the access code";
+    document.getElementById("pw-form").hidden = !jwt();
+    document.getElementById("ac-status").hidden = true;
+    acctbox.hidden = false; deck.classList.add("acct-open"); window.scrollTo(0, 0);
+  }
+  function hideAcct(){ acctbox.hidden = true; deck.classList.remove("acct-open"); }
+  document.getElementById("who").addEventListener("click", function(){ if(acctbox.hidden) showAcct(); else hideAcct(); });
+  document.getElementById("acct-close").addEventListener("click", hideAcct);
+  document.getElementById("sign-out").addEventListener("click", function(){ hideAcct(); signOut("Signed out."); });
+  document.getElementById("pw-form").addEventListener("submit", function(e){
+    e.preventDefault();
+    var st = document.getElementById("ac-status"); var btn = this.querySelector("button"); btn.disabled = true;
+    post("/api/desk/change-password", {current: document.getElementById("pw-cur").value, new: document.getElementById("pw-new").value}).then(function(r){
+      btn.disabled = false; st.hidden = false;
+      if(r.status !== 200){ st.className = "qb-status err"; st.textContent = (r.body && r.body.error) || "That didn't work."; return; }
+      st.className = "qb-status"; st.textContent = "Password changed. Use the new one next time you sign in.";
+      document.getElementById("pw-form").reset();
+    }).catch(function(){ btn.disabled = false; st.hidden = false; st.className = "qb-status err"; st.textContent = "No connection — nothing changed."; });
+  });
+
   // ---- time clock ----
   var timebox = document.getElementById("timebox");
   var clockChip = document.getElementById("clock-chip");
@@ -2327,7 +2370,7 @@ CALLS_JS = r"""(function(){
     document.getElementById("tb-team").hidden = vaOnly;
     if(vaOnly && tbView === "team"){ tbView = "mine"; }
   }
-  function showTime(){ hideQueue(); searchbox.hidden = true; tbStatus.hidden = true; timebox.hidden = false; deck.classList.add("time-open"); loadHours(); window.scrollTo(0, 0); }
+  function showTime(){ hideQueue(); hideAcct(); searchbox.hidden = true; tbStatus.hidden = true; timebox.hidden = false; deck.classList.add("time-open"); loadHours(); window.scrollTo(0, 0); }
   function hideTime(){ timebox.hidden = true; deck.classList.remove("time-open"); }
   clockChip.addEventListener("click", function(){ if(timebox.hidden) showTime(); else hideTime(); });
   document.getElementById("time-close").addEventListener("click", hideTime);
@@ -2405,7 +2448,7 @@ CALLS_JS = r"""(function(){
     }).catch(function(){ fail(0, {error: "No connection — couldn't load the queue."}); });
   }
   var deck = document.getElementById("deck");
-  function showQueue(){ hideTime(); searchbox.hidden = true; qbStatus.hidden = true; queuebox.hidden = false; deck.classList.add("queue-open"); loadQueue(); window.scrollTo(0, 0); }
+  function showQueue(){ hideTime(); hideAcct(); searchbox.hidden = true; qbStatus.hidden = true; queuebox.hidden = false; deck.classList.add("queue-open"); loadQueue(); window.scrollTo(0, 0); }
   function hideQueue(){ queuebox.hidden = true; deck.classList.remove("queue-open"); }
   document.getElementById("queue-toggle").addEventListener("click", function(){
     if(queuebox.hidden) showQueue(); else hideQueue();

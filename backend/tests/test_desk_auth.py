@@ -152,3 +152,18 @@ def test_passcode_can_bootstrap_only_the_first_accounts(client):
     r = client.post("/api/admin/desk-users", json={"code": "test-code", "va_name": "Dommo",
                                                    "email": "tracy@goumuve.com", "name": "Tracy", "role": "va"})
     assert r.status_code == 403
+
+
+def test_change_password(client, accounts):
+    tok = _login(client, "tracy@goumuve.com", "pw-tracy").get_json()["token"]
+    r = client.post("/api/desk/change-password", json={"current": "wrong", "new": "brand-new-1"}, headers=_h(tok))
+    assert r.status_code == 401
+    r = client.post("/api/desk/change-password", json={"current": "pw-tracy", "new": "short"}, headers=_h(tok))
+    assert r.status_code == 400
+    r = client.post("/api/desk/change-password", json={"current": "pw-tracy", "new": "brand-new-1"}, headers=_h(tok))
+    assert r.status_code == 200
+    assert _login(client, "tracy@goumuve.com", "pw-tracy").status_code == 401
+    assert _login(client, "tracy@goumuve.com", "brand-new-1").status_code == 200
+    # the passcode can't change anyone's password
+    assert client.post("/api/desk/change-password", json={"code": "test-code", "va_name": "x", "current": "a", "new": "bbbbbbbbb"}).status_code == 401
+    assert AuditEvent.query.filter_by(action="password_changed").count() == 1

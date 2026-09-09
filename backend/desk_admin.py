@@ -53,6 +53,29 @@ def desk_login():
                     "is_manager": user.role in MANAGER_ROLES}), 200
 
 
+@deskadmin_bp.route("/api/desk/change-password", methods=["POST"])
+@_login_limit
+def desk_change_password():
+    """{current, new} — account holders only (not the passcode)."""
+    data = request.get_json(silent=True) or {}
+    ident = desk_identity(data)
+    if not ident or ident["via"] != "jwt":
+        return jsonify({"error": "Sign in with your account to change the password."}), 401
+    user = db.session.get(User, ident["user_id"])
+    if not user or not user.check_password(data.get("current") or ""):
+        audit("password_change_failed", "user", ident["user_id"])
+        return jsonify({"error": "Your current password didn't match."}), 401
+    new = data.get("new") or ""
+    if len(new) < 8:
+        return jsonify({"error": "Use at least 8 characters."}), 400
+    if new == (data.get("current") or ""):
+        return jsonify({"error": "Pick a password you haven't used here."}), 400
+    user.set_password(new)
+    db.session.commit()
+    audit("password_changed", "user", user.id)
+    return jsonify({"ok": True}), 200
+
+
 @deskadmin_bp.route("/api/desk/me", methods=["GET", "POST"])
 def desk_me():
     ident = desk_identity(request.get_json(silent=True) or {})
