@@ -603,6 +603,25 @@ def desk_text():
                     "messages": thread_for(p)}), 200
 
 
+@deskline_bp.route("/api/va/desk/templates", methods=["POST"])
+@_ratelimit
+def desk_templates():
+    """Canned texts for the composer — server-side copy the VA can edit before sending."""
+    data = request.get_json(silent=True) or {}
+    if not _passcode_ok(data.get("code")):
+        return jsonify({"error": "That code didn't work."}), 401
+    p = db.session.get(CallProspect, data.get("prospect_id") or "")
+    if not p:
+        return jsonify({"error": "Prospect not found — reload the page."}), 404
+    va_name = (data.get("va_name") or "").strip()[:80]
+    from va_calls import followup_text_for, info_text_for
+    return jsonify({
+        "intro": followup_text_for("voicemail", p, va_name),
+        "info": info_text_for(p, va_name),
+        "followup": followup_text_for("interested", p, va_name),
+    }), 200
+
+
 def unread_count():
     return DeskActivity.query.filter(DeskActivity.direction == "in",
                                      DeskActivity.read_at.is_(None)).count()

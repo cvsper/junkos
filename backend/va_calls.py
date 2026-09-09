@@ -760,7 +760,7 @@ CALLS_HTML = r"""<!doctype html>
 <meta name="theme-color" content="#0B0E12" />
 <title>Umuve — Call Desk</title>
 <link rel="stylesheet" href="/va/app.css?v=3" />
-<link rel="stylesheet" href="/va/calls.css?v=7" />
+<link rel="stylesheet" href="/va/calls.css?v=8" />
 </head>
 <body>
 <div id="app">
@@ -784,7 +784,6 @@ CALLS_HTML = r"""<!doctype html>
       <a class="back" href="/va" aria-label="Back to VA tools">←</a>
       <div class="wordmark">CALL&nbsp;DESK</div>
       <div class="bar-sub" id="daybar">—</div>
-      <button class="back inbox" id="inbox-toggle" type="button" aria-label="Replies and callbacks">✉<span class="badge" id="inbox-badge" hidden>0</span></button>
       <button class="back" id="search-toggle" type="button" aria-label="Find a business">⌕</button>
     </header>
     <div id="callstrip" class="callstrip" hidden>
@@ -795,90 +794,111 @@ CALLS_HTML = r"""<!doctype html>
       <button class="cs-btn cs-hang" id="cs-hang" type="button">Hang up</button>
     </div>
 
-    <div class="body" id="deck">
-      <div id="searchbox" hidden>
-        <input id="search-q" type="search" autocomplete="off"
-               placeholder="Someone calling back? Type their name, city, or number" />
-        <div id="search-results"></div>
-      </div>
-      <div id="inboxbox" hidden>
-        <div class="ib-head">Replies and callbacks</div>
-        <div id="inbox-list"></div>
-      </div>
-      <div id="empty" class="deskcard" hidden>
-        <div class="q-chip done">QUEUE CLEAR</div>
-        <h2 class="co">Nothing due right now</h2>
-        <p class="whytext" id="empty-sub">Every prospect is either scheduled for a future touch or finished. Nice work.</p>
+    <div class="body desk" id="deck">
+      <div class="col-main">
+        <div id="searchbox" hidden>
+          <input id="search-q" type="search" autocomplete="off"
+                 placeholder="Someone calling back? Type their name, city, or number" />
+          <div id="search-results"></div>
+        </div>
+        <div id="empty" class="deskcard" hidden>
+          <div class="q-chip done">QUEUE CLEAR</div>
+          <h2 class="co">Nothing due right now</h2>
+          <p class="whytext" id="empty-sub">Every prospect is either scheduled for a future touch or finished. Replies and callbacks are in the line panel.</p>
+        </div>
+
+        <div id="card" class="deskcard" hidden>
+          <div class="chiprow">
+            <span class="chip tierchip" id="c-tier">T1</span>
+            <span class="chip" id="c-cat">Category</span>
+            <span class="chip followchip" id="c-follow" hidden>FOLLOW-UP</span>
+          </div>
+          <h2 class="co" id="c-company">Company</h2>
+          <div class="meta" id="c-meta">City</div>
+          <a class="dial" id="c-tel" href="#"><span class="dial-num" id="c-phone">(561) 000-0000</span><span class="dial-hint">tap to call</span></a>
+          <a class="dial dial-direct" id="c-direct" href="#" hidden><span class="dial-num-sm" id="c-direct-num"></span><span class="dial-hint">direct line — skips the front desk</span></a>
+          <div class="factrow"><div class="fact-k">Why them</div><div class="fact-v" id="c-why"></div></div>
+          <div class="factrow"><div class="fact-k">Your angle</div><div class="fact-v" id="c-angle"></div></div>
+          <details class="openerbox"><summary>Your opener</summary><p id="c-opener"></p></details>
+          <div class="sendinfo">
+            <div class="si-head">WHO DECIDES?</div>
+            <p class="si-sub">Receptionist gave you a name or the boss's cell? Save it — it sticks to this card and their name goes on everything we send.</p>
+            <div class="si-row">
+              <input id="dm-name" type="text" autocomplete="off" placeholder="decision-maker's name" />
+              <input id="dm-phone" type="tel" autocomplete="off" inputmode="tel" placeholder="their cell" />
+              <button class="si-btn" id="dm-save-btn" type="button">Save</button>
+            </div>
+          </div>
+          <div class="sendinfo">
+            <div class="si-head">THEY SAID “SEND US SOMETHING”?</div>
+            <p class="si-sub">The info pack goes out from the Umuve number/email — written so a receptionist can pass it straight to the boss.</p>
+            <div class="si-row">
+              <input id="si-phone" type="tel" autocomplete="off" inputmode="tel" placeholder="their cell (prefilled)" />
+              <button class="si-btn" id="si-text-btn" type="button">Text it</button>
+            </div>
+            <div class="si-row">
+              <input id="si-email" type="email" autocomplete="off" inputmode="email" placeholder="email address they gave you" />
+              <button class="si-btn" id="si-email-btn" type="button">Email it</button>
+            </div>
+            <p class="si-status" id="si-status" hidden></p>
+          </div>
+          <div class="notewrap" id="c-lastnote" hidden></div>
+          <label class="lbl" for="note">Note <span class="opt">(optional — sticks to this business)</span></label>
+          <input id="note" type="text" autocomplete="off" placeholder="e.g. asked to call back Thursday" />
+        </div>
+
+        <label class="textopt" id="textopt" hidden>
+          <input type="checkbox" id="send-text" />
+          <span><b>Text them after I tap</b> — the right follow-up goes out from the Umuve number (interested → partner info · on their vendor list → thanks + rates + booking number · no answer → who-we-are text)</span>
+        </label>
+
+        <div id="outcomes" class="outcomes" hidden>
+          <button class="oc oc-good" data-o="interested">Interested</button>
+          <button class="oc oc-good" data-o="sent_link">Sent the link</button>
+          <button class="oc oc-good" data-o="vendor_listed">On their vendor list</button>
+          <button class="oc" data-o="voicemail">Voicemail</button>
+          <button class="oc" data-o="no_answer">No answer</button>
+          <button class="oc oc-bad" data-o="not_interested">Not interested</button>
+          <button class="oc oc-bad" data-o="bad_number">Bad number</button>
+          <button class="oc-skip" data-o="skip">Skip for now — deal me another</button>
+        </div>
+
+        <p id="desk-toast" class="toast" hidden></p>
+        <p id="desk-err" class="err" hidden></p>
       </div>
 
-      <div id="card" class="deskcard" hidden>
-        <div class="chiprow">
-          <span class="chip tierchip" id="c-tier">T1</span>
-          <span class="chip" id="c-cat">Category</span>
-          <span class="chip followchip" id="c-follow" hidden>FOLLOW-UP</span>
+      <aside class="line" id="line" aria-label="Desk line">
+        <div class="ln-head">
+          <div class="ln-title">
+            <div class="ln-who" id="ln-who">Desk line</div>
+            <div class="ln-num" id="th-num"></div>
+          </div>
+          <button class="ln-btn ln-call" id="desk-call-btn" type="button" hidden>Call</button>
+          <button class="ln-btn" id="inbox-toggle" type="button" aria-label="Replies and callbacks">Replies<span class="badge" id="inbox-badge" hidden>0</span></button>
         </div>
-        <h2 class="co" id="c-company">Company</h2>
-        <div class="meta" id="c-meta">City</div>
-        <a class="dial" id="c-tel" href="#"><span class="dial-num" id="c-phone">(561) 000-0000</span><span class="dial-hint">tap to call</span></a>
-        <a class="dial dial-direct" id="c-direct" href="#" hidden><span class="dial-num-sm" id="c-direct-num"></span><span class="dial-hint">direct line — skips the front desk</span></a>
-        <button class="deskcall" id="desk-call-btn" type="button" hidden><span class="dc-l">Call from this browser</span><span class="dc-h">they see the Umuve desk number</span></button>
-        <div class="factrow"><div class="fact-k">Why them</div><div class="fact-v" id="c-why"></div></div>
-        <div class="factrow"><div class="fact-k">Your angle</div><div class="fact-v" id="c-angle"></div></div>
-        <details class="openerbox"><summary>Your opener</summary><p id="c-opener"></p></details>
-        <div class="thread">
-          <div class="th-head">Texts and calls<span class="th-num" id="th-num"></span></div>
+        <div class="ln-body" id="ln-thread">
           <div class="th-list" id="th-list"></div>
-          <p class="th-empty" id="th-empty" hidden>Nothing yet. Texts you send here, and anything they text or call back, land in this thread.</p>
+          <div class="th-empty" id="th-empty" hidden>
+            <div class="th-empty-t">No texts or calls yet</div>
+            <p>Send the first one below. Anything they text or call back lands here, on this card.</p>
+          </div>
+        </div>
+        <div class="ln-body" id="inboxbox" hidden>
+          <div class="ib-head"><span>Replies and callbacks</span><button class="ib-back" id="inbox-close" type="button" hidden>Back to this business</button></div>
+          <div id="inbox-list"></div>
+        </div>
+        <div class="ln-foot" id="ln-foot">
+          <div class="th-quick" id="th-quick">
+            <button type="button" data-t="intro">Who we are</button>
+            <button type="button" data-t="info">Info pack</button>
+            <button type="button" data-t="followup">Follow-up</button>
+          </div>
           <form id="th-form" class="th-form" autocomplete="off">
-            <input id="th-input" type="text" maxlength="640" placeholder="Text them — replies come back here" />
-            <button class="si-btn" type="submit">Send</button>
+            <textarea id="th-input" rows="1" maxlength="640" placeholder="Text them — replies come back here"></textarea>
+            <button class="th-send" type="submit">Send</button>
           </form>
         </div>
-        <div class="sendinfo">
-          <div class="si-head">WHO DECIDES?</div>
-          <p class="si-sub">Receptionist gave you a name or the boss's cell? Save it — it sticks to this card and their name goes on everything we send.</p>
-          <div class="si-row">
-            <input id="dm-name" type="text" autocomplete="off" placeholder="decision-maker's name" />
-            <input id="dm-phone" type="tel" autocomplete="off" inputmode="tel" placeholder="their cell" />
-            <button class="si-btn" id="dm-save-btn" type="button">Save</button>
-          </div>
-        </div>
-        <div class="sendinfo">
-          <div class="si-head">THEY SAID “SEND US SOMETHING”?</div>
-          <p class="si-sub">The info pack goes out from the Umuve number/email — written so a receptionist can pass it straight to the boss.</p>
-          <div class="si-row">
-            <input id="si-phone" type="tel" autocomplete="off" inputmode="tel" placeholder="their cell (prefilled)" />
-            <button class="si-btn" id="si-text-btn" type="button">Text it</button>
-          </div>
-          <div class="si-row">
-            <input id="si-email" type="email" autocomplete="off" inputmode="email" placeholder="email address they gave you" />
-            <button class="si-btn" id="si-email-btn" type="button">Email it</button>
-          </div>
-          <p class="si-status" id="si-status" hidden></p>
-        </div>
-        <div class="notewrap" id="c-lastnote" hidden></div>
-        <label class="lbl" for="note">Note <span class="opt">(optional — sticks to this business)</span></label>
-        <input id="note" type="text" autocomplete="off" placeholder="e.g. asked to call back Thursday" />
-      </div>
-
-      <label class="textopt" id="textopt" hidden>
-        <input type="checkbox" id="send-text" />
-        <span><b>Text them after I tap</b> — the right follow-up goes out from the Umuve number (interested → partner info · on their vendor list → thanks + rates + booking number · no answer → who-we-are text)</span>
-      </label>
-
-      <div id="outcomes" class="outcomes" hidden>
-        <button class="oc oc-good" data-o="interested">Interested</button>
-        <button class="oc oc-good" data-o="sent_link">Sent the link</button>
-        <button class="oc oc-good" data-o="vendor_listed">On their vendor list</button>
-        <button class="oc" data-o="voicemail">Voicemail</button>
-        <button class="oc" data-o="no_answer">No answer</button>
-        <button class="oc oc-bad" data-o="not_interested">Not interested</button>
-        <button class="oc oc-bad" data-o="bad_number">Bad number</button>
-        <button class="oc-skip" data-o="skip">Skip for now — deal me another</button>
-      </div>
-
-      <p id="desk-toast" class="toast" hidden></p>
-      <p id="desk-err" class="err" hidden></p>
+      </aside>
     </div>
   </section>
 </div>
@@ -892,7 +912,7 @@ CALLS_HTML = r"""<!doctype html>
     </div>
   </div>
 </div>
-<script src="/va/calls.js?v=7"></script>
+<script src="/va/calls.js?v=8"></script>
 </body>
 </html>
 """
@@ -993,32 +1013,30 @@ CALLS_CSS = r"""/* Call Desk — layers over /va/app.css tokens */
   .oc-skip{grid-column:1 / -1}
 }
 
-/* desk line: thread, inbox, dialer */
-.inbox{position:relative}
-.badge{position:absolute;top:-4px;right:-6px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;
+/* desk line: two-pane desk, thread, inbox, dialer */
+.col-main{display:contents}
+.col-main>*{order:5}
+#searchbox{order:1}#empty{order:2}#card{order:3}
+.line{order:4;display:flex;flex-direction:column;background:var(--surface);
+  border:1px solid var(--line);border-radius:18px;overflow:hidden;min-height:0}
+.ln-head{display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid var(--line)}
+.ln-title{min-width:0;flex:1}
+.ln-who{font-family:var(--display);font-weight:800;font-size:15px;letter-spacing:-.01em;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ln-num{color:var(--faint);font-size:11.5px;margin-top:1px;font-variant-numeric:tabular-nums}
+.ln-btn{position:relative;flex:none;padding:8px 12px;font-family:var(--display);font-weight:700;
+  font-size:12.5px;color:var(--ink);background:var(--raise);border:1px solid var(--line);
+  border-radius:10px;cursor:pointer;transition:border-color .15s}
+.ln-btn:hover{border-color:rgba(255,106,44,.45)}
+.ln-call{color:var(--ok);border-color:rgba(61,214,140,.45);padding-left:26px}
+.ln-call::before{content:"";position:absolute;left:11px;top:50%;width:8px;height:8px;margin-top:-4px;
+  border-radius:50%;background:var(--ok)}
+.badge{position:absolute;top:-7px;right:-7px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;
   background:#7FB8FF;color:#0B0E12;font-family:var(--display);font-weight:800;font-size:10.5px;
   line-height:18px;text-align:center}
-.ib-head{font-family:var(--display);font-weight:600;font-size:10px;letter-spacing:.16em;
-  text-transform:uppercase;color:var(--faint);margin:2px 0 8px}
-.sr-w{min-width:0;flex:1}
-.sr-d{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.sr-unread{border-color:rgba(127,184,255,.55)}
-.sr-unread .sr-t::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;
-  background:#7FB8FF;margin-right:7px;vertical-align:2px}
-.deskcall{display:flex;flex-direction:column;align-items:center;gap:2px;width:100%;margin:-6px 0 14px;
-  padding:12px;background:transparent;border:1.5px solid rgba(61,214,140,.45);border-radius:16px;
-  cursor:pointer;color:var(--ink);transition:border-color .15s,transform .06s}
-.deskcall:hover{border-color:var(--ok)}
-.deskcall:active{transform:scale(.985)}
-.dc-l{font-family:var(--display);font-weight:800;font-size:17px;letter-spacing:-.01em}
-.dc-h{font-family:var(--display);font-weight:600;font-size:10.5px;letter-spacing:.22em;
-  text-transform:uppercase;color:var(--ok)}
-.thread{border-top:1px solid var(--line);padding:12px 0 4px}
-.th-head{font-family:var(--display);font-weight:600;font-size:10px;letter-spacing:.16em;
-  text-transform:uppercase;color:var(--faint);margin-bottom:8px}
-.th-num{color:var(--muted);letter-spacing:.06em;text-transform:none;font-weight:500;margin-left:6px}
-.th-list{display:flex;flex-direction:column;gap:6px;max-height:260px;overflow-y:auto;padding:2px 0 6px;
-  scroll-behavior:smooth}
+.ln-body{flex:1;min-height:0;overflow-y:auto;padding:12px 14px;scroll-behavior:smooth}
+#ln-thread{max-height:360px}
+.th-list{display:flex;flex-direction:column;gap:6px}
 .msg{max-width:86%;display:flex;flex-direction:column;gap:2px}
 .msg-in{align-self:flex-start}
 .msg-out{align-self:flex-end;align-items:flex-end}
@@ -1031,9 +1049,34 @@ CALLS_CSS = r"""/* Call Desk — layers over /va/app.css tokens */
   color:var(--muted);margin-bottom:2px}
 .msg-m{font-size:10.5px;color:var(--faint);padding:0 4px}
 .msg-rec{display:inline-block;margin-top:4px;color:#7FB8FF;font-size:12.5px}
-.th-empty{color:var(--faint);font-size:12.5px;line-height:1.5;margin:0 0 8px}
-.th-form{display:flex;gap:8px}
-.th-form input{flex:1;min-width:0;margin:0}
+.th-empty{padding:18px 6px;text-align:center}
+.th-empty-t{font-family:var(--display);font-weight:800;font-size:15px;margin-bottom:4px}
+.th-empty p{color:var(--faint);font-size:12.5px;line-height:1.5;margin:0}
+.ib-head{display:flex;align-items:center;justify-content:space-between;gap:8px;
+  font-family:var(--display);font-weight:600;font-size:10px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--faint);margin:2px 0 10px}
+.ib-back{font-family:var(--display);font-weight:600;font-size:11px;letter-spacing:.02em;text-transform:none;
+  color:var(--accent);background:transparent;border:0;cursor:pointer;padding:0}
+.sr-w{min-width:0;flex:1}
+.sr-d{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sr-unread{border-color:rgba(127,184,255,.55)}
+.sr-unread .sr-t::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;
+  background:#7FB8FF;margin-right:7px;vertical-align:2px}
+.ln-foot{border-top:1px solid var(--line);padding:10px 14px 12px;background:var(--surface)}
+.th-quick{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.th-quick button{font-family:var(--display);font-weight:600;font-size:11.5px;color:var(--muted);
+  background:transparent;border:1px solid var(--line);border-radius:999px;padding:5px 11px;cursor:pointer;
+  transition:border-color .15s,color .15s}
+.th-quick button:hover{color:var(--ink);border-color:rgba(255,106,44,.45)}
+.th-quick button:disabled{opacity:.4;cursor:default}
+.th-form{display:flex;gap:8px;align-items:flex-end}
+.th-form textarea{flex:1;min-width:0;margin:0;resize:none;min-height:44px;max-height:140px;
+  font:inherit;font-size:14px;line-height:1.4;color:var(--ink);background:var(--raise);
+  border:1px solid var(--line);border-radius:12px;padding:11px 12px}
+.th-form textarea:focus{outline:none;border-color:rgba(255,106,44,.6)}
+.th-send{flex:none;height:44px;padding:0 16px;font-family:var(--display);font-weight:800;font-size:13.5px;
+  color:#0B0E12;background:var(--accent);border:0;border-radius:12px;cursor:pointer}
+.th-send:disabled{opacity:.45;cursor:default}
 .callstrip{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--surface);
   border-bottom:1px solid var(--line)}
 .cs-dot{width:10px;height:10px;border-radius:50%;background:var(--accent);flex:none}
@@ -1062,6 +1105,33 @@ CALLS_CSS = r"""/* Call Desk — layers over /va/app.css tokens */
 .inc-answer{background:var(--ok);border-color:var(--ok);color:#0B0E12}
 .inc-decline{color:#FF7A5C;border-color:rgba(255,122,92,.45)}
 @media (prefers-reduced-motion: reduce){.callstrip.live .cs-dot{animation:none}}
+/* phones: the line is a bottom sheet — header always visible, tap to open */
+@media (max-width:959px){
+  .body.desk{padding-bottom:96px}
+  .line{position:fixed;left:0;right:0;bottom:0;z-index:40;border-radius:18px 18px 0 0;
+    border-bottom:0;max-height:78vh;box-shadow:0 -12px 40px rgba(0,0,0,.55)}
+  .line .ln-head{cursor:pointer;padding-right:44px}
+  .line .ln-head::after{content:"";position:absolute;right:18px;top:50%;width:9px;height:9px;
+    margin-top:-7px;border-right:2px solid var(--faint);border-bottom:2px solid var(--faint);
+    transform:rotate(-135deg);transition:transform .18s}
+  .line.open .ln-head::after{transform:rotate(45deg);margin-top:-3px}
+  .line:not(.open) .ln-body,.line:not(.open) .ln-foot{display:none}
+  .ln-head{position:relative}
+  #ln-thread{max-height:none}
+}
+/* wide screens: card on the left, the line pinned on the right */
+@media (min-width:960px){
+  #app{max-width:1240px;overflow:visible}
+  .bar{max-width:1240px;width:100%;margin:0 auto}
+  .body.desk{display:grid;grid-template-columns:minmax(0,720px) minmax(380px,460px);gap:20px;
+    justify-content:center;align-items:start;width:100%}
+  .col-main{display:flex;flex-direction:column;gap:14px;min-width:0}
+  #searchbox{order:0}#empty{order:1}#card{order:2}
+  .line{position:sticky;top:16px;height:calc(100vh - 32px);max-height:900px}
+  #ln-thread{max-height:none}
+  .outcomes{grid-template-columns:1fr 1fr 1fr}
+  .oc-skip{grid-column:1 / -1}
+}
 """
 
 
@@ -1161,11 +1231,15 @@ CALLS_JS = r"""(function(){
       current = null;
       loadThread(null);
       deskCallBtn.hidden = true;
+      setLineWho(null);
+      showInboxPane(true);
       return;
     }
     var c = resp.card;
     current = c;
     empty.hidden = true;
+    setLineWho(c.company);
+    showThreadPane();
     document.getElementById("c-tier").textContent = "T" + c.tier;
     document.getElementById("c-cat").textContent = c.category || "Prospect";
     document.getElementById("c-follow").hidden = !c.is_followup;
@@ -1371,7 +1445,6 @@ CALLS_JS = r"""(function(){
   var searchTimer = null;
   document.getElementById("search-toggle").addEventListener("click", function(){
     searchbox.hidden = !searchbox.hidden;
-    if(!searchbox.hidden) inboxbox.hidden = true;
     if(!searchbox.hidden){ searchQ.focus(); }
     else { searchResults.textContent = ""; searchQ.value = ""; }
   });
@@ -1436,6 +1509,32 @@ CALLS_JS = r"""(function(){
   }
   function fmtDur(s){ s = s | 0; return Math.floor(s / 60) + ":" + ("0" + (s % 60)).slice(-2); }
 
+  var lnThread = document.getElementById("ln-thread");
+  var lnFoot = document.getElementById("ln-foot");
+  var inboxClose = document.getElementById("inbox-close");
+  function setLineWho(name){
+    document.getElementById("ln-who").textContent = name || "No business on the card";
+    thQuick.querySelectorAll("button").forEach(function(b){ b.disabled = !name; });
+    thInput.disabled = !name;
+    thForm.querySelector("button").disabled = !name;
+  }
+  var line = document.getElementById("line");
+  var lnHead = line.querySelector(".ln-head");
+  function isSheet(){ return window.matchMedia("(max-width:959px)").matches; }
+  lnHead.addEventListener("click", function(e){
+    if(e.target.closest("button") || !isSheet()) return;
+    line.classList.toggle("open");
+    if(line.classList.contains("open")) lnThread.scrollTop = lnThread.scrollHeight;
+  });
+  function showThreadPane(){
+    inboxbox.hidden = true; lnThread.hidden = false; lnFoot.hidden = false;
+  }
+  function showInboxPane(noCard){
+    if(isSheet()) line.classList.add("open");
+    lnThread.hidden = true; lnFoot.hidden = true; inboxbox.hidden = false;
+    inboxClose.hidden = !!noCard || !current;
+    loadInbox();
+  }
   function renderThread(msgs){
     thList.textContent = "";
     if(!msgs || !msgs.length){ thEmpty.hidden = false; return; }
@@ -1473,7 +1572,7 @@ CALLS_JS = r"""(function(){
       row.appendChild(b); row.appendChild(meta);
       thList.appendChild(row);
     });
-    thList.scrollTop = thList.scrollHeight;
+    lnThread.scrollTop = lnThread.scrollHeight;
   }
 
   function loadThread(c){
@@ -1484,10 +1583,25 @@ CALLS_JS = r"""(function(){
       if(r.status !== 200 || threadFor !== c.id) return;
       renderThread(r.body.messages);
       setUnread(r.body.unread);
-      thNum.textContent = r.body.desk_number ? "from " + prettyNum(r.body.desk_number) : "from the Umuve number";
+      thNum.textContent = r.body.desk_number ? "on " + prettyNum(r.body.desk_number) : "on the Umuve number";
     }).catch(function(){});
   }
 
+  function autosize(){ thInput.style.height = "auto"; thInput.style.height = Math.min(140, thInput.scrollHeight) + "px"; }
+  thInput.addEventListener("input", autosize);
+  thInput.addEventListener("keydown", function(e){
+    if(e.key === "Enter" && !e.shiftKey){ e.preventDefault(); thForm.requestSubmit(); }
+  });
+  var thQuick = document.getElementById("th-quick");
+  thQuick.addEventListener("click", function(e){
+    var b = e.target.closest("button"); if(!b || !current || b.disabled) return;
+    post("/api/va/desk/templates", {prospect_id: current.id}).then(function(r){
+      if(r.status !== 200){ fail(r.status, r.body); return; }
+      var t = r.body[b.dataset.t]; if(!t) return;
+      thInput.value = t; autosize(); thInput.focus();
+      thInput.setSelectionRange(thInput.value.length, thInput.value.length);
+    }).catch(function(){});
+  });
   thForm.addEventListener("submit", function(e){
     e.preventDefault();
     if(!current) return;
@@ -1497,7 +1611,7 @@ CALLS_JS = r"""(function(){
     post("/api/va/desk/text", {prospect_id: current.id, body: body}).then(function(r){
       btn.disabled = false;
       if(r.status !== 200){ fail(r.status, r.body); return; }
-      thInput.value = "";
+      thInput.value = ""; autosize();
       renderThread(r.body.messages);
       current.last_texted_at = new Date().toISOString();
       syncContactUI();
@@ -1536,7 +1650,7 @@ CALLS_JS = r"""(function(){
           if(!it.prospect_id){ showToast("Unknown number " + it.phone + " — not on any list. Call them back from your phone."); return; }
           post("/api/va/calls/get", {prospect_id: it.prospect_id}).then(function(rr){
             if(rr.status !== 200){ fail(rr.status, rr.body); return; }
-            inboxbox.hidden = true; render(rr.body);
+            render(rr.body);
           });
         });
         inboxList.appendChild(b);
@@ -1544,9 +1658,9 @@ CALLS_JS = r"""(function(){
     }).catch(function(){});
   }
   document.getElementById("inbox-toggle").addEventListener("click", function(){
-    inboxbox.hidden = !inboxbox.hidden;
-    if(!inboxbox.hidden){ searchbox.hidden = true; loadInbox(); }
+    if(inboxbox.hidden) showInboxPane(false); else if(current) showThreadPane();
   });
+  inboxClose.addEventListener("click", function(){ showThreadPane(); });
   var unreadTimer = null;
   function pollUnread(){
     clearInterval(unreadTimer);
@@ -1600,6 +1714,7 @@ CALLS_JS = r"""(function(){
       if(r.status === 200 && r.body.enabled && device) device.updateToken(r.body.token);
     }).catch(function(){});
   }
+  deskCallBtn.textContent = "Call";
   function initDevice(token){
     try {
       device = new Twilio.Device(token, {codecPreferences: ["opus", "pcmu"], closeProtection: true});

@@ -263,3 +263,10 @@ def test_token_issued_when_provisioned(client):
     assert body["enabled"] is True
     assert body["token"].count(".") == 2                  # a JWT
     assert body["desk_number"] == "+15615550999"
+
+
+def test_templates_render_for_prospect(client, prospect):
+    body = _va(client, "/api/va/desk/templates", {"prospect_id": prospect.id}).get_json()
+    assert set(body) == {"intro", "info", "followup"}
+    assert "Pat" in body["followup"] and "Tracy" in body["info"]
+    assert client.post("/api/va/desk/templates", json={"code": "wrong"}).status_code == 401
