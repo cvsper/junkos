@@ -341,8 +341,12 @@ def test_shift_report_never_breaks_clock_out(client):
 def test_card_payload_carries_crm_fields_on_next(client):
     p = _p()
     _va(client, "/api/va/crm/tags", {"prospect_id": p.id, "add": ["hot"]})
+    # another VA holds it → the desk skips it for me (queue empty)
     _va(client, "/api/va/crm/claim", {"prospect_id": p.id}, name="Trixie")
+    assert _va(client, "/api/va/calls/next").get_json().get("empty") is True
+    _va(client, "/api/va/crm/release", {"prospect_id": p.id}, name="Trixie")
+    _va(client, "/api/va/crm/claim", {"prospect_id": p.id})
     card = _va(client, "/api/va/calls/next").get_json()["card"]
     assert card["id"] == p.id and card["stage"] == "new" and card["tags"] == ["hot"]
-    assert card["claimed_by"] == "Trixie" and card["claimed_until"]
+    assert card["claimed_by"] == "Tracy" and card["claimed_until"]
     assert card["history"] == [] and card["account"] is None

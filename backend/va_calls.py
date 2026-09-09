@@ -391,7 +391,8 @@ def calls_next():
     ident = desk_identity(data)
     if not ident:
         return jsonify({"error": "Sign in to the desk first."}), 401
-    p = next_card()
+    from crm import next_unclaimed
+    p = next_unclaimed(desk_va_name(data))
     stats = day_stats()
     if not p:
         nxt = (CallProspect.query
@@ -431,7 +432,8 @@ def calls_log():
         texted, text_reason = maybe_send_followup_text(p, outcome, va_name)
         db.session.commit()
 
-    nxt = next_card()
+    from crm import next_unclaimed
+    nxt = next_unclaimed(va_name)
     stats = day_stats()
     resp = {"logged": True, "stats": stats,
             "texted": texted, "text_reason": text_reason}
@@ -718,6 +720,11 @@ def schedule_callback(prospect, when_utc, note, va_name):
         prospect.last_note = note
     db.session.add(CallAttempt(prospect_id=prospect.id, outcome="callback",
                                note=note or None, va_name=va_name or None))
+    try:
+        from crm import on_outcome
+        on_outcome(prospect, "callback", note, va_name)
+    except Exception:
+        logger.exception("crm on_outcome(callback) failed")
 
 
 @vacalls_bp.route("/api/va/calls/callback", methods=["POST"])
@@ -754,7 +761,8 @@ def calls_callback():
     schedule_callback(p, when, note, va_name)
     db.session.commit()
     audit("callback", "prospect", p.id, {"at": when.isoformat(), "company": p.company})
-    nxt = next_card()
+    from crm import next_unclaimed
+    nxt = next_unclaimed(va_name)
     resp = {"logged": True, "callback_at": when.isoformat(),
             "callback_local": to_local(when).strftime("%a %b %-d, %-I:%M %p"),
             "stats": day_stats()}
