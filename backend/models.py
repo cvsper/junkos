@@ -3918,3 +3918,38 @@ class DeskActivity(db.Model):
             "read": self.read_at is not None,
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }
+
+
+class VaShift(db.Model):
+    """One clock-in → clock-out span on the VA desk.
+
+    The desk runs on a shared passcode, so `va_name` (the name the VA types
+    once into the desk) is the identity. `auto_closed` marks shifts the
+    system ended because nobody clocked out.
+    """
+    __tablename__ = "va_shifts"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    va_name = Column(String(80), nullable=False, index=True)
+    started_at = Column(DateTime, nullable=False, index=True)
+    ended_at = Column(DateTime, nullable=True, index=True)
+    note = Column(String(300), nullable=True)
+    auto_closed = Column(Boolean, nullable=False, default=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    @property
+    def seconds(self):
+        end = self.ended_at or datetime.now(timezone.utc).replace(tzinfo=None)
+        return max(0, int((end - self.started_at).total_seconds()))
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "va_name": self.va_name,
+            "started_at": self.started_at.isoformat() if self.started_at else None,
+            "ended_at": self.ended_at.isoformat() if self.ended_at else None,
+            "open": self.ended_at is None,
+            "seconds": self.seconds,
+            "note": self.note,
+            "auto_closed": self.auto_closed,
+        }

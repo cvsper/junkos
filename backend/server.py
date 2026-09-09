@@ -300,6 +300,14 @@ except Exception as _vc_exc:
     import logging as _logging
     _logging.getLogger(__name__).warning("vacalls_bp not registered: %s", _vc_exc)
 
+# VA time clock — clock in/out + hours on the desk
+try:
+    from va_time import vatime_bp
+    app.register_blueprint(vatime_bp)
+except Exception as _vt_exc:  # pragma: no cover
+    import logging as _logging
+    _logging.getLogger(__name__).warning("vatime_bp not registered: %s", _vt_exc)
+
 # Call Desk line — texting, browser calling, inbox on a dedicated Twilio number
 # (replaced Quo, Sep 2026)
 try:

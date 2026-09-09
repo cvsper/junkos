@@ -981,7 +981,7 @@ CALLS_HTML = r"""<!doctype html>
 <meta name="theme-color" content="#0B0E12" />
 <title>Umuve — Call Desk</title>
 <link rel="stylesheet" href="/va/app.css?v=3" />
-<link rel="stylesheet" href="/va/calls.css?v=11" />
+<link rel="stylesheet" href="/va/calls.css?v=12" />
 </head>
 <body>
 <div id="app">
@@ -1005,6 +1005,7 @@ CALLS_HTML = r"""<!doctype html>
       <a class="back" href="/va" aria-label="Back to VA tools">←</a>
       <div class="wordmark">CALL&nbsp;DESK</div>
       <div class="bar-sub" id="daybar">—</div>
+      <button class="clock" id="clock-chip" type="button" aria-label="Time clock"><span class="ck-dot"></span><span id="clock-label">Clock in</span></button>
       <button class="back" id="queue-toggle" type="button" aria-label="Your queue">☰</button>
       <button class="back" id="search-toggle" type="button" aria-label="Find a business">⌕</button>
     </header>
@@ -1022,6 +1023,24 @@ CALLS_HTML = r"""<!doctype html>
           <input id="search-q" type="search" autocomplete="off"
                  placeholder="Someone calling back? Type their name, city, or number" />
           <div id="search-results"></div>
+        </div>
+        <div id="timebox" class="deskcard" hidden>
+          <div class="qb-head">
+            <div><div class="qb-t">Your hours</div><div class="qb-sub" id="tb-sub">—</div></div>
+            <button type="button" class="si-btn" id="time-close">Back to the card</button>
+          </div>
+          <div class="tb-name" id="tb-name" hidden>
+            <input id="tb-name-input" type="text" autocomplete="off" placeholder="Your first name (once)" />
+            <button type="button" class="si-btn" id="tb-name-save">Save</button>
+          </div>
+          <div class="tb-tiles">
+            <div class="tb-tile"><div class="tb-k">Today</div><div class="tb-v" id="tb-today">0:00</div></div>
+            <div class="tb-tile"><div class="tb-k">This week</div><div class="tb-v" id="tb-week">0:00</div></div>
+            <div class="tb-tile"><div class="tb-k" id="tb-period-k">Pay period</div><div class="tb-v" id="tb-period">0:00</div></div>
+          </div>
+          <button type="button" class="tb-btn" id="tb-toggle">Clock in</button>
+          <p class="qb-status" id="tb-status" hidden></p>
+          <div id="tb-list"></div>
         </div>
         <div id="queuebox" class="deskcard" hidden>
           <div class="qb-head">
@@ -1179,7 +1198,7 @@ CALLS_HTML = r"""<!doctype html>
     </div>
   </div>
 </div>
-<script src="/va/calls.js?v=14"></script>
+<script src="/va/calls.js?v=15"></script>
 </body>
 </html>
 """
@@ -1283,7 +1302,9 @@ CALLS_CSS = r"""/* Call Desk — layers over /va/app.css tokens */
 /* desk line: two-pane desk, thread, inbox, dialer */
 .col-main{display:contents}
 .col-main>*{order:5}
-#queuebox{order:0}#searchbox{order:1}#empty{order:2}#card{order:3}
+#timebox{order:0}#queuebox{order:0}#searchbox{order:1}#empty{order:2}#card{order:3}
+.desk.time-open #card,.desk.time-open #empty,.desk.time-open #textopt,.desk.time-open #callback,
+.desk.time-open #outcomes,.desk.time-open #queuebox{display:none}
 .desk.queue-open #card,.desk.queue-open #empty,.desk.queue-open #textopt,.desk.queue-open #callback,
 .desk.queue-open #outcomes{display:none}
 .line{order:4;display:flex;flex-direction:column;background:var(--surface);
@@ -1419,6 +1440,31 @@ CALLS_CSS = r"""/* Call Desk — layers over /va/app.css tokens */
 .kt-links a{font-family:var(--display);font-weight:700;font-size:12.5px;color:var(--ink);text-decoration:none;
   background:var(--raise);border:1px solid var(--line);border-radius:10px;padding:9px 12px}
 .kt-links a:hover{border-color:rgba(255,106,44,.45)}
+/* time clock */
+.clock{display:inline-flex;align-items:center;gap:7px;height:38px;padding:0 12px;margin-right:6px;
+  font-family:var(--display);font-weight:700;font-size:12px;color:var(--muted);background:var(--surface);
+  border:1px solid var(--line);border-radius:12px;cursor:pointer;white-space:nowrap;font-variant-numeric:tabular-nums}
+.clock.on{color:var(--ok);border-color:rgba(61,214,140,.45)}
+.ck-dot{width:8px;height:8px;border-radius:50%;background:var(--faint)}
+.clock.on .ck-dot{background:var(--ok);box-shadow:0 0 0 3px rgba(61,214,140,.18)}
+.tb-name{display:flex;gap:8px;margin-bottom:12px}
+.tb-name input{flex:1;margin:0}
+.tb-tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.tb-tile{background:var(--raise);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.tb-k{font-family:var(--display);font-weight:600;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint)}
+.tb-v{font-family:var(--display);font-weight:900;font-size:clamp(20px,5vw,26px);letter-spacing:-.01em;
+  font-variant-numeric:tabular-nums;margin-top:2px}
+.tb-btn{width:100%;padding:14px;font-family:var(--display);font-weight:800;font-size:15px;border-radius:14px;
+  cursor:pointer;border:1px solid rgba(61,214,140,.45);background:transparent;color:var(--ok);margin-bottom:10px}
+.tb-btn.out{color:#FF7A5C;border-color:rgba(255,122,92,.45)}
+.tb-btn:disabled{opacity:.45;cursor:default}
+.tb-row{display:flex;align-items:center;gap:10px;padding:9px 2px;border-bottom:1px solid var(--line);font-size:13px}
+.tb-row .d{font-family:var(--display);font-weight:700;min-width:84px}
+.tb-row .t{color:var(--muted);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tb-row .h{font-family:var(--display);font-weight:800;font-variant-numeric:tabular-nums}
+.tb-row .c{color:var(--faint);font-size:11.5px;min-width:56px;text-align:right}
+.tb-row.open .h{color:var(--ok)}
+@media (max-width:480px){.clock #clock-label{display:none}.clock{padding:0 10px}}
 /* queue panel */
 .qb-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:12px}
 .qb-t{font-family:var(--display);font-weight:800;font-size:20px;letter-spacing:-.02em}
@@ -1478,7 +1524,7 @@ CALLS_CSS = r"""/* Call Desk — layers over /va/app.css tokens */
   .body.desk{display:grid;grid-template-columns:minmax(0,720px) minmax(380px,460px);gap:20px;
     justify-content:center;align-items:start;width:100%}
   .col-main{display:flex;flex-direction:column;gap:14px;min-width:0}
-  #queuebox{order:0}#searchbox{order:1}#empty{order:2}#card{order:3}
+  #timebox{order:0}#queuebox{order:0}#searchbox{order:1}#empty{order:2}#card{order:3}
   .line{position:sticky;top:16px;height:calc(100vh - 32px);max-height:900px}
   #ln-thread{max-height:none}
   .outcomes{grid-template-columns:1fr 1fr 1fr}
@@ -1914,6 +1960,89 @@ CALLS_JS = r"""(function(){
     loadKit(current);
   });
 
+  // ---- time clock ----
+  var timebox = document.getElementById("timebox");
+  var clockChip = document.getElementById("clock-chip");
+  var clockLabel = document.getElementById("clock-label");
+  var tbToggle = document.getElementById("tb-toggle");
+  var tbStatus = document.getElementById("tb-status");
+  var tbList = document.getElementById("tb-list");
+  var clockState = null, clockTimer = null;
+  function hm(sec){ sec = sec | 0; var h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60); return h + ":" + ("0" + m).slice(-2); }
+  function hms(sec){ sec = sec | 0; return hm(sec) + ":" + ("0" + (sec % 60)).slice(-2); }
+  function liveShiftSeconds(){
+    if(!clockState || !clockState.shift) return 0;
+    var start = new Date(clockState.shift.started_at + (clockState.shift.started_at.slice(-1) === "Z" ? "" : "Z"));
+    return Math.max(0, (Date.now() - start.getTime()) / 1000);
+  }
+  function renderClock(){
+    var on = !!(clockState && clockState.on_clock);
+    clockChip.classList.toggle("on", on);
+    clockLabel.textContent = on ? "On the clock · " + hm(liveShiftSeconds()) : "Clock in";
+    tbToggle.textContent = on ? "Clock out" : "Clock in";
+    tbToggle.classList.toggle("out", on);
+    if(clockState){
+      var extra = on ? (Date.now() / 1000 - (clockState._at || Date.now() / 1000)) : 0;
+      document.getElementById("tb-today").textContent = hm((clockState.today_seconds || 0) + extra);
+      document.getElementById("tb-week").textContent = hm((clockState.week_seconds || 0) + extra);
+      document.getElementById("tb-period").textContent = hm((clockState.period_seconds || 0) + extra);
+      document.getElementById("tb-period-k").textContent = "Pay period · " + (clockState.period_label || "");
+      document.getElementById("tb-sub").textContent = (vaName() ? vaName() + " · " : "") +
+        (on ? "on the clock since " + new Date(clockState.shift.started_at + "Z").toLocaleTimeString([], {hour:"numeric", minute:"2-digit"}) : "off the clock");
+    }
+  }
+  function setClockState(st){ clockState = st; clockState._at = Date.now() / 1000; renderClock(); }
+  function pollClock(){
+    clearInterval(clockTimer);
+    clockTimer = setInterval(function(){ if(clockState && clockState.on_clock) renderClock(); }, 30000);
+  }
+  function loadClock(){
+    post("/api/va/time/status", {}).then(function(r){ if(r.status === 200) setClockState(r.body); }).catch(function(){});
+  }
+  function tbSay(msg, isErr){ tbStatus.textContent = msg; tbStatus.hidden = false; tbStatus.className = "qb-status" + (isErr ? " err" : ""); }
+  function renderShifts(rows){
+    tbList.textContent = "";
+    if(!rows || !rows.length){ tbList.appendChild(el("p", "sr-none", "No shifts yet. Clock in when you start calling.")); return; }
+    rows.forEach(function(s){
+      var row = el("div", "tb-row" + (s.open ? " open" : ""));
+      row.appendChild(el("span", "d", s.day));
+      row.appendChild(el("span", "t", s.start_local + " – " + (s.end_local || "now") + (s.auto_closed ? " · auto-closed at 12h" : "") + (s.note ? " · " + s.note : "")));
+      row.appendChild(el("span", "c", s.calls + (s.calls === 1 ? " call" : " calls")));
+      row.appendChild(el("span", "h", hm(s.seconds)));
+      tbList.appendChild(row);
+    });
+  }
+  function loadHours(){
+    if(!vaName()){ document.getElementById("tb-name").hidden = false; tbList.textContent = ""; return; }
+    document.getElementById("tb-name").hidden = true;
+    post("/api/va/time/hours", {days: 45}).then(function(r){
+      if(r.status !== 200){ tbSay((r.body && r.body.error) || "Couldn't load hours.", true); return; }
+      setClockState(r.body); renderShifts(r.body.shifts);
+    }).catch(function(){ tbSay("No connection — couldn't load hours.", true); });
+  }
+  function showTime(){ hideQueue(); searchbox.hidden = true; tbStatus.hidden = true; timebox.hidden = false; deck.classList.add("time-open"); loadHours(); window.scrollTo(0, 0); }
+  function hideTime(){ timebox.hidden = true; deck.classList.remove("time-open"); }
+  clockChip.addEventListener("click", function(){ if(timebox.hidden) showTime(); else hideTime(); });
+  document.getElementById("time-close").addEventListener("click", hideTime);
+  document.getElementById("tb-name-save").addEventListener("click", function(){
+    var v = document.getElementById("tb-name-input").value.trim();
+    if(!v){ return; }
+    localStorage.setItem(VA_KEY, v); loadHours();
+  });
+  tbToggle.addEventListener("click", function(){
+    if(!vaName()){ document.getElementById("tb-name").hidden = false; document.getElementById("tb-name-input").focus(); return; }
+    var on = !!(clockState && clockState.on_clock);
+    tbToggle.disabled = true;
+    post("/api/va/time/clock", {action: on ? "out" : "in"}).then(function(r){
+      tbToggle.disabled = false;
+      if(r.status !== 200){ tbSay((r.body && r.body.error) || "That didn't work.", true); return; }
+      setClockState(r.body);
+      if(on && r.body.closed){ tbSay("Clocked out — that shift was " + hm(r.body.closed.seconds) + "."); showToast("Clocked out. " + hm(r.body.closed.seconds) + " on that shift."); }
+      else if(!on){ tbSay("Clocked in at " + new Date().toLocaleTimeString([], {hour:"numeric", minute:"2-digit"}) + "."); showToast("On the clock."); }
+      loadHours();
+    }).catch(function(){ tbToggle.disabled = false; tbSay("No connection — nothing changed.", true); });
+  });
+
   // ---- queue panel: the whole list, load a CSV, add one business ----
   var queuebox = document.getElementById("queuebox");
   var qbList = document.getElementById("qb-list");
@@ -1969,7 +2098,7 @@ CALLS_JS = r"""(function(){
     }).catch(function(){ fail(0, {error: "No connection — couldn't load the queue."}); });
   }
   var deck = document.getElementById("deck");
-  function showQueue(){ searchbox.hidden = true; qbStatus.hidden = true; queuebox.hidden = false; deck.classList.add("queue-open"); loadQueue(); window.scrollTo(0, 0); }
+  function showQueue(){ hideTime(); searchbox.hidden = true; qbStatus.hidden = true; queuebox.hidden = false; deck.classList.add("queue-open"); loadQueue(); window.scrollTo(0, 0); }
   function hideQueue(){ queuebox.hidden = true; deck.classList.remove("queue-open"); }
   document.getElementById("queue-toggle").addEventListener("click", function(){
     if(queuebox.hidden) showQueue(); else hideQueue();
@@ -2251,7 +2380,7 @@ CALLS_JS = r"""(function(){
   }
   function deskBoot(){
     if(deskBooted) return; deskBooted = true;
-    pollUnread();
+    pollUnread(); loadClock(); pollClock();
     post("/api/va/desk/unread", {}).then(function(r){ if(r.status === 200) setUnread(r.body.unread); }).catch(function(){});
     post("/api/va/desk/token", {}).then(function(r){
       if(r.status !== 200) return;
