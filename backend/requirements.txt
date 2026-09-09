@@ -58,3 +58,6 @@ pypdf>=4.0
 
 # PDF rate cards for the Call Desk (pure Python)
 fpdf2==2.8.1
+
+# Call Desk Phase 5 — Web Push (VAPID) to installed desks
+pywebpush==2.5.0
