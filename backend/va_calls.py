@@ -959,7 +959,7 @@ def _no_cache(resp):
 
 @vacalls_bp.route("/va/calls", methods=["GET"])
 def calls_page():
-    return Response(CALLS_HTML, mimetype="text/html")
+    return _no_cache(Response(CALLS_HTML, mimetype="text/html"))
 
 
 @vacalls_bp.route("/va/calls.css", methods=["GET"])
@@ -1179,7 +1179,7 @@ CALLS_HTML = r"""<!doctype html>
     </div>
   </div>
 </div>
-<script src="/va/calls.js?v=11"></script>
+<script src="/va/calls.js?v=12"></script>
 </body>
 </html>
 """
@@ -1627,7 +1627,7 @@ CALLS_JS = r"""(function(){
     loadThread(c);
     loadKit(c);
     document.getElementById("callback").hidden = false;
-    deskCallBtn.hidden = !deskReady;
+    syncDialUI();
     card.hidden = false; outcomes.hidden = false; textopt.hidden = false;
     if(!reduced){
       card.style.opacity = "0"; card.style.transform = "translateY(6px)";
@@ -2130,7 +2130,7 @@ CALLS_JS = r"""(function(){
       if(r.status !== 200 || threadFor !== c.id) return;
       renderThread(r.body.messages);
       setUnread(r.body.unread);
-      thNum.textContent = r.body.desk_number ? "on " + prettyNum(r.body.desk_number) : "on the Umuve number";
+      if(!deskReady) thNum.textContent = r.body.desk_number ? "on " + prettyNum(r.body.desk_number) : "on the Umuve number";
     }).catch(function(){});
   }
 
@@ -2226,7 +2226,7 @@ CALLS_JS = r"""(function(){
   }
 
   // ---- browser dialer (Twilio Voice) — only when the desk line is provisioned ----
-  var device = null, activeCall = null, callTimer = null, callStart = 0, deskReady = false, deskBooted = false;
+  var device = null, activeCall = null, callTimer = null, callStart = 0, deskReady = false, deskBooted = false, deskNumber = "";
   var strip = document.getElementById("callstrip");
   var stripWho = document.getElementById("cs-who");
   var stripState = document.getElementById("cs-state");
@@ -2252,8 +2252,12 @@ CALLS_JS = r"""(function(){
     pollUnread();
     post("/api/va/desk/unread", {}).then(function(r){ if(r.status === 200) setUnread(r.body.unread); }).catch(function(){});
     post("/api/va/desk/token", {}).then(function(r){
-      if(r.status !== 200 || !r.body.enabled) return;
-      return loadSdk().then(function(){ initDevice(r.body.token); });
+      if(r.status !== 200) return;
+      if(!r.body.enabled){ setDialerStatus(r.body.reason || "browser calling isn't set up"); return; }
+      deskNumber = r.body.desk_number || "";
+      setDialerStatus("connecting the desk line…");
+      return loadSdk().then(function(){ initDevice(r.body.token); })
+        .catch(function(){ setDialerStatus("dialer script blocked — check the network or ad blocker"); });
     }).catch(function(){ deskReady = false; });
   }
   function refreshToken(){
@@ -2266,10 +2270,13 @@ CALLS_JS = r"""(function(){
     try {
       device = new Twilio.Device(token, {codecPreferences: ["opus", "pcmu"], closeProtection: true});
     } catch(e){ return; }
-    device.on("registered", function(){ deskReady = true; if(current) deskCallBtn.hidden = false; });
-    device.on("unregistered", function(){ deskReady = false; deskCallBtn.hidden = true; });
+    device.on("registered", function(){ deskReady = true; syncDialUI(); setDialerStatus("desk line ready · " + prettyNum(deskNumber)); });
+    device.on("unregistered", function(){ deskReady = false; syncDialUI(); setDialerStatus("desk line offline — reload"); });
     device.on("tokenWillExpire", refreshToken);
-    device.on("error", function(e){ showToast("Dialer: " + (e && e.message ? e.message : "error")); });
+    device.on("error", function(e){
+      var msg = e && e.message ? e.message : "error";
+      showToast("Dialer: " + msg); setDialerStatus("dialer error: " + msg.slice(0, 60));
+    });
     device.on("incoming", function(call){
       pendingIncoming = call;
       incWho.textContent = call.parameters && call.parameters.From ? prettyNum(call.parameters.From) : "Unknown number";
@@ -2279,6 +2286,38 @@ CALLS_JS = r"""(function(){
     });
     device.register();
   }
+  function setDialerStatus(msg){
+    var n = document.getElementById("th-num");
+    if(msg){ n.textContent = msg; }
+  }
+  function syncDialUI(){
+    var tel = document.getElementById("c-tel");
+    var direct = document.getElementById("c-direct");
+    var hint = tel.querySelector(".dial-hint");
+    var dhint = direct.querySelector(".dial-hint");
+    if(deskReady && current){
+      tel.href = "#"; hint.textContent = "call from the desk";
+      direct.href = "#"; dhint.textContent = "direct line — call from the desk";
+      deskCallBtn.hidden = false;
+    } else if(current){
+      tel.href = current.tel; hint.textContent = "tap to call";
+      if(current.direct_tel) direct.href = current.direct_tel;
+      dhint.textContent = "direct line — skips the front desk";
+      deskCallBtn.hidden = true;
+    }
+  }
+  function startDeskCall(to){
+    if(!device || !deskReady || !current || activeCall) return;
+    device.connect({params: {To: to, prospect_id: current.id, va_name: vaName()}}).then(function(call){
+      bindCall(call, current.company);
+    }).catch(function(e){ showToast("Couldn't start the call: " + (e && e.message ? e.message : "microphone blocked?")); });
+  }
+  document.getElementById("c-tel").addEventListener("click", function(e){
+    if(deskReady && current){ e.preventDefault(); startDeskCall((current.tel || "").replace("tel:", "")); }
+  });
+  document.getElementById("c-direct").addEventListener("click", function(e){
+    if(deskReady && current && current.direct_tel){ e.preventDefault(); startDeskCall(current.direct_tel.replace("tel:", "")); }
+  });
   function tick(){ stripTime.textContent = fmtDur((Date.now() - callStart) / 1000); }
   function bindCall(call, who){
     activeCall = call;
@@ -2299,11 +2338,8 @@ CALLS_JS = r"""(function(){
     call.on("error", function(e){ showToast("Call error: " + (e && e.message ? e.message : "unknown")); done(); });
   }
   deskCallBtn.addEventListener("click", function(){
-    if(!device || !deskReady || !current || activeCall) return;
-    var to = (current.direct_tel || current.tel || "").replace("tel:", "");
-    device.connect({params: {To: to, prospect_id: current.id, va_name: vaName()}}).then(function(call){
-      bindCall(call, current.company);
-    }).catch(function(e){ showToast("Couldn't start the call: " + (e && e.message ? e.message : "microphone blocked?")); });
+    if(!current) return;
+    startDeskCall((current.direct_tel || current.tel || "").replace("tel:", ""));
   });
   hangBtn.addEventListener("click", function(){ if(activeCall) activeCall.disconnect(); });
   muteBtn.addEventListener("click", function(){
