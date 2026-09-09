@@ -668,42 +668,179 @@ def calls_callback():
 # Admin: seed/merge + stats
 # ---------------------------------------------------------------------------
 
-@vacalls_bp.route("/api/admin/call-prospects/import", methods=["POST"])
-@require_admin
-def import_prospects(user_id):
-    """Body: {"rows": [{tier, category, company, phone, city, contact_name,
-    why, angle}]}. Merges on phone digits — existing rows keep their status."""
-    data = request.get_json(silent=True) or {}
-    rows = data.get("rows") or []
+_TIER_RE = re.compile(r"(\d)")
+_CSV_ALIASES = {
+    "tier": "tier", "company": "company", "business": "company", "name": "company",
+    "phone": "phone", "number": "phone", "city": "city", "area": "city",
+    "what they do": "category", "category": "category", "type": "category",
+    "contact": "contact_name", "contact_name": "contact_name", "contact name": "contact_name",
+    "notes": "why", "why": "why", "angle": "angle", "email": "email",
+}
+
+
+def parse_tier(raw):
+    """'Tier 1 — Palm Beach County (LAUNCH…)' / 'Tier 2 — 2' / '3' → 1..3 (default 2)."""
+    m = _TIER_RE.search(str(raw or ""))
+    t = int(m.group(1)) if m else 2
+    return t if t in (1, 2, 3) else (3 if t > 3 else 2)
+
+
+def rows_from_csv(text):
+    """Turn a call-list CSV (the Desktop weekly/re-touch shape, or plain
+    tier/company/phone/... headers) into import rows. Unknown columns are
+    ignored; 'Call status' / 'Outcome' / '#' never come along."""
+    import csv
+    import io
+    reader = csv.DictReader(io.StringIO(text))
+    rows = []
+    for raw in reader:
+        row = {}
+        for k, v in raw.items():
+            key = _CSV_ALIASES.get((k or "").strip().lower())
+            if key and v is not None:
+                row[key] = str(v).strip()
+        if row.get("company") or row.get("phone"):
+            rows.append(row)
+    return rows
+
+
+def merge_rows(rows):
+    """Insert prospects, merging on phone digits. Existing rows keep their
+    status and history — re-running a list is safe. Returns (added, skipped, invalid)."""
     added, skipped, invalid = 0, 0, 0
+    seen = set()
     for r in rows:
         digits = _digits(r.get("phone"))
-        if len(digits) != 10 or not (r.get("company") or "").strip():
+        company = (r.get("company") or "").strip()
+        if len(digits) != 10 or not company:
             invalid += 1
             continue
-        if CallProspect.query.filter_by(phone_digits=digits).first():
+        if digits in seen or CallProspect.query.filter_by(phone_digits=digits).first():
             skipped += 1
             continue
-        try:
-            tier = int(str(r.get("tier") or "2").strip()[0])
-        except (ValueError, IndexError):
-            tier = 2
+        seen.add(digits)
+        email = (r.get("email") or "").strip().lower()
         db.session.add(CallProspect(
-            tier=tier if tier in (1, 2, 3) else 2,
+            tier=parse_tier(r.get("tier")),
             category=(r.get("category") or "").strip()[:60],
-            company=r["company"].strip()[:200],
+            company=company[:200],
             phone=(r.get("phone") or "").strip()[:40],
             phone_digits=digits,
             city=(r.get("city") or "").strip()[:80] or None,
             contact_name=(r.get("contact_name") or "").strip()[:120] or None,
             why=(r.get("why") or "").strip() or None,
             angle=(r.get("angle") or "").strip() or None,
+            email=email[:254] if email and _EMAIL_RE.match(email) else None,
         ))
         added += 1
     db.session.commit()
-    total = CallProspect.query.count()
-    return jsonify({"success": True, "added": added, "skipped_dupes": skipped,
-                    "invalid": invalid, "total": total}), 200
+    return added, skipped, invalid
+
+
+def _import_response(added, skipped, invalid):
+    return {"success": True, "added": added, "skipped_dupes": skipped, "invalid": invalid,
+            "total": CallProspect.query.count(), "stats": day_stats()}
+
+
+@vacalls_bp.route("/api/admin/call-prospects/import", methods=["POST"])
+@require_admin
+def import_prospects(user_id):
+    """Body: {"rows": [{tier, category, company, phone, city, contact_name,
+    why, angle}]} or {"csv": "..."}. Merges on phone digits."""
+    data = request.get_json(silent=True) or {}
+    rows = data.get("rows") or (rows_from_csv(data["csv"]) if data.get("csv") else [])
+    return jsonify(_import_response(*merge_rows(rows))), 200
+
+
+_import_ratelimit = limiter.limit("20 per hour") if limiter is not None else (lambda f: f)
+
+
+@vacalls_bp.route("/api/va/calls/import", methods=["POST"])
+@_import_ratelimit
+def va_import_prospects():
+    """Same merge, gated by the desk passcode so a list can be loaded from
+    the desk itself (drag a CSV in) or by the ops CLI without an admin login."""
+    data = request.get_json(silent=True) or {}
+    if not _passcode_ok(data.get("code")):
+        return jsonify({"error": "That code didn't work."}), 401
+    rows = data.get("rows") or (rows_from_csv(data["csv"]) if data.get("csv") else [])
+    if not rows:
+        return jsonify({"error": "No rows found — check the file has a header row with "
+                                 "Company and Phone."}), 400
+    if len(rows) > 2000:
+        return jsonify({"error": "That's more than 2,000 rows — split the file."}), 400
+    return jsonify(_import_response(*merge_rows(rows))), 200
+
+
+@vacalls_bp.route("/api/va/calls/add", methods=["POST"])
+@_ratelimit
+def va_add_prospect():
+    """One business, typed in on the desk (a callback from an unknown number,
+    a referral, a walk-in). Returns the card so it can be worked right now."""
+    data = request.get_json(silent=True) or {}
+    if not _passcode_ok(data.get("code")):
+        return jsonify({"error": "That code didn't work."}), 401
+    digits = _digits(data.get("phone"))
+    if len(digits) != 10:
+        return jsonify({"error": "That doesn't look like a valid US number."}), 400
+    if not (data.get("company") or "").strip():
+        return jsonify({"error": "Give the business a name."}), 400
+    existing = CallProspect.query.filter_by(phone_digits=digits).first()
+    if existing:
+        return jsonify({"exists": True, "card": _card_payload(existing, data.get("va_name")),
+                        "stats": day_stats()}), 200
+    merge_rows([{"tier": data.get("tier") or "1", "company": data.get("company"),
+                 "phone": data.get("phone"), "city": data.get("city"),
+                 "category": data.get("category"), "contact_name": data.get("contact_name"),
+                 "why": data.get("why"), "email": data.get("email")}])
+    p = CallProspect.query.filter_by(phone_digits=digits).first()
+    return jsonify({"exists": False, "card": _card_payload(p, data.get("va_name")),
+                    "stats": day_stats()}), 200
+
+
+def _queue_row(p):
+    return {"id": p.id, "company": p.company, "city": p.city, "category": p.category,
+            "tier": p.tier, "status": p.status, "attempts": p.attempts or 0,
+            "contact_name": p.contact_name, "last_outcome": p.last_outcome,
+            "due_at": p.next_followup_at.isoformat() if p.next_followup_at else None}
+
+
+@vacalls_bp.route("/api/va/calls/queue", methods=["POST"])
+@_ratelimit
+def va_queue():
+    """The whole list, in the order the desk will deal it: due follow-ups
+    first, then fresh cards by tier and category rank."""
+    data = request.get_json(silent=True) or {}
+    if not _passcode_ok(data.get("code")):
+        return jsonify({"error": "That code didn't work."}), 401
+    now_naive = _now().replace(tzinfo=None)
+    workable = CallProspect.status.in_(WORKABLE_STATUSES)
+    due = (CallProspect.query.filter(workable, CallProspect.next_followup_at.isnot(None),
+                                     CallProspect.next_followup_at <= now_naive)
+           .order_by(CallProspect.next_followup_at.asc()).limit(60).all())
+    later = (CallProspect.query.filter(workable, CallProspect.next_followup_at.isnot(None),
+                                       CallProspect.next_followup_at > now_naive)
+             .order_by(CallProspect.next_followup_at.asc()).limit(40).all())
+    fresh = (CallProspect.query.filter(workable, CallProspect.next_followup_at.is_(None))
+             .order_by(CallProspect.tier.asc(), _category_rank_sql().asc(),
+                       CallProspect.category.asc(), CallProspect.created_at.asc())
+             .limit(80).all())
+    from sqlalchemy import func
+    by_status = dict(db.session.query(CallProspect.status, func.count(CallProspect.id))
+                     .group_by(CallProspect.status).all())
+    fresh_total = CallProspect.query.filter(workable, CallProspect.next_followup_at.is_(None)).count()
+    by_tier = dict(db.session.query(CallProspect.tier, func.count(CallProspect.id))
+                   .filter(workable, CallProspect.next_followup_at.is_(None))
+                   .group_by(CallProspect.tier).all())
+    return jsonify({
+        "due": [_queue_row(p) for p in due],
+        "later": [_queue_row(p) for p in later],
+        "fresh": [_queue_row(p) for p in fresh],
+        "counts": {"due": len(due), "fresh": fresh_total,
+                   "by_tier": {str(k): v for k, v in by_tier.items()},
+                   "by_status": by_status, "total": CallProspect.query.count()},
+        "stats": day_stats(),
+    }), 200
 
 
 @vacalls_bp.route("/api/admin/caller-stats", methods=["GET"])
@@ -840,7 +977,7 @@ CALLS_HTML = r"""<!doctype html>
 <meta name="theme-color" content="#0B0E12" />
 <title>Umuve — Call Desk</title>
 <link rel="stylesheet" href="/va/app.css?v=3" />
-<link rel="stylesheet" href="/va/calls.css?v=9" />
+<link rel="stylesheet" href="/va/calls.css?v=10" />
 </head>
 <body>
 <div id="app">
@@ -864,6 +1001,7 @@ CALLS_HTML = r"""<!doctype html>
       <a class="back" href="/va" aria-label="Back to VA tools">←</a>
       <div class="wordmark">CALL&nbsp;DESK</div>
       <div class="bar-sub" id="daybar">—</div>
+      <button class="back" id="queue-toggle" type="button" aria-label="Your queue">☰</button>
       <button class="back" id="search-toggle" type="button" aria-label="Find a business">⌕</button>
     </header>
     <div id="callstrip" class="callstrip" hidden>
@@ -880,6 +1018,27 @@ CALLS_HTML = r"""<!doctype html>
           <input id="search-q" type="search" autocomplete="off"
                  placeholder="Someone calling back? Type their name, city, or number" />
           <div id="search-results"></div>
+        </div>
+        <div id="queuebox" class="deskcard" hidden>
+          <div class="qb-head">
+            <div><div class="qb-t">Your queue</div><div class="qb-sub" id="qb-sub">—</div></div>
+            <button type="button" class="si-btn" id="queue-close">Back to the card</button>
+          </div>
+          <div class="qb-tools">
+            <label class="qb-load"><input type="file" id="qb-file" accept=".csv,text/csv" hidden /><span>Load a list (CSV)</span></label>
+            <button type="button" class="qb-load" id="qb-add-toggle">Add a business</button>
+          </div>
+          <form id="qb-add" class="qb-addform" autocomplete="off" hidden>
+            <input id="qa-company" type="text" placeholder="Business name" required />
+            <input id="qa-phone" type="tel" inputmode="tel" placeholder="Phone" required />
+            <input id="qa-city" type="text" placeholder="City" />
+            <input id="qa-category" type="text" placeholder="What they do (e.g. property management, junk removal)" />
+            <input id="qa-contact" type="text" placeholder="Contact name (optional)" />
+            <input id="qa-why" type="text" placeholder="Why them / how they reached us (optional)" />
+            <button class="si-btn" type="submit">Add and open the card</button>
+          </form>
+          <p class="qb-status" id="qb-status" hidden></p>
+          <div id="qb-list"></div>
         </div>
         <div id="empty" class="deskcard" hidden>
           <div class="q-chip done">QUEUE CLEAR</div>
@@ -1015,7 +1174,7 @@ CALLS_HTML = r"""<!doctype html>
     </div>
   </div>
 </div>
-<script src="/va/calls.js?v=9"></script>
+<script src="/va/calls.js?v=10"></script>
 </body>
 </html>
 """
@@ -1119,7 +1278,9 @@ CALLS_CSS = r"""/* Call Desk — layers over /va/app.css tokens */
 /* desk line: two-pane desk, thread, inbox, dialer */
 .col-main{display:contents}
 .col-main>*{order:5}
-#searchbox{order:1}#empty{order:2}#card{order:3}
+#queuebox{order:0}#searchbox{order:1}#empty{order:2}#card{order:3}
+.desk.queue-open #card,.desk.queue-open #empty,.desk.queue-open #textopt,.desk.queue-open #callback,
+.desk.queue-open #outcomes{display:none}
 .line{order:4;display:flex;flex-direction:column;background:var(--surface);
   border:1px solid var(--line);border-radius:18px;overflow:hidden;min-height:0}
 .ln-head{display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid var(--line)}
@@ -1251,6 +1412,33 @@ CALLS_CSS = r"""/* Call Desk — layers over /va/app.css tokens */
 .kt-links a{font-family:var(--display);font-weight:700;font-size:12.5px;color:var(--ink);text-decoration:none;
   background:var(--raise);border:1px solid var(--line);border-radius:10px;padding:9px 12px}
 .kt-links a:hover{border-color:rgba(255,106,44,.45)}
+/* queue panel */
+.qb-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:12px}
+.qb-t{font-family:var(--display);font-weight:800;font-size:20px;letter-spacing:-.02em}
+.qb-sub{color:var(--faint);font-size:12.5px;margin-top:2px}
+.qb-tools{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.qb-load{display:inline-flex;align-items:center;font-family:var(--display);font-weight:700;font-size:12.5px;
+  color:var(--ink);background:var(--raise);border:1px dashed var(--line);border-radius:10px;padding:9px 12px;
+  cursor:pointer;transition:border-color .15s}
+.qb-load:hover{border-color:rgba(255,106,44,.45)}
+.qb-addform{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.qb-addform input{margin:0;min-width:0}
+.qb-addform #qa-category,.qb-addform #qa-why,.qb-addform button{grid-column:1 / -1}
+.qb-status{color:var(--ok);font-size:12.5px;line-height:1.5;margin:0 0 10px}
+.qb-status.err{color:#FF7A5C}
+.qb-sec{font-family:var(--display);font-weight:600;font-size:10px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--faint);margin:12px 0 6px;display:flex;justify-content:space-between}
+.qb-sec:first-child{margin-top:0}
+.qr{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:transparent;
+  border:0;border-bottom:1px solid var(--line);padding:9px 2px;cursor:pointer;color:var(--ink)}
+.qr:hover .qr-t{color:var(--accent)}
+.qr-tier{flex:none;font-family:var(--display);font-weight:700;font-size:10.5px;color:var(--accent);
+  border:1px solid rgba(255,106,44,.4);border-radius:6px;padding:2px 5px;min-width:24px;text-align:center}
+.qr-w{min-width:0;flex:1}
+.qr-t{font-family:var(--display);font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.qr-d{color:var(--faint);font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.qr-s{flex:none;font-family:var(--display);font-weight:600;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+.qr-s.due{color:#7FB8FF}
 /* callback scheduler */
 .callback{background:var(--surface);border:1px dashed rgba(127,184,255,.45);border-radius:14px;padding:11px 12px}
 .cb-l{font-family:var(--display);font-weight:600;font-size:10px;letter-spacing:.16em;text-transform:uppercase;
@@ -1283,7 +1471,7 @@ CALLS_CSS = r"""/* Call Desk — layers over /va/app.css tokens */
   .body.desk{display:grid;grid-template-columns:minmax(0,720px) minmax(380px,460px);gap:20px;
     justify-content:center;align-items:start;width:100%}
   .col-main{display:flex;flex-direction:column;gap:14px;min-width:0}
-  #searchbox{order:0}#empty{order:1}#card{order:2}
+  #queuebox{order:0}#searchbox{order:1}#empty{order:2}#card{order:3}
   .line{position:sticky;top:16px;height:calc(100vh - 32px);max-height:900px}
   #ln-thread{max-height:none}
   .outcomes{grid-template-columns:1fr 1fr 1fr}
@@ -1704,6 +1892,105 @@ CALLS_JS = r"""(function(){
     if(!current || !kitData) return;
     kitSideOverride[current.id] = kitData.side === "supply" ? "demand" : "supply";
     loadKit(current);
+  });
+
+  // ---- queue panel: the whole list, load a CSV, add one business ----
+  var queuebox = document.getElementById("queuebox");
+  var qbList = document.getElementById("qb-list");
+  var qbStatus = document.getElementById("qb-status");
+  var qbAdd = document.getElementById("qb-add");
+  function qbSay(msg, isErr){ qbStatus.textContent = msg; qbStatus.hidden = false; qbStatus.className = "qb-status" + (isErr ? " err" : ""); }
+  function fmtDue(iso){
+    if(!iso) return "";
+    var d = new Date(iso + (iso.slice(-1) === "Z" ? "" : "Z"));
+    return d.toLocaleString([], {weekday:"short", hour:"numeric", minute:"2-digit"});
+  }
+  function queueRow(r, kind){
+    var b = el("button", "qr"); b.type = "button";
+    b.appendChild(el("span", "qr-tier", "T" + r.tier));
+    var w = el("div", "qr-w");
+    w.appendChild(el("div", "qr-t", r.company));
+    w.appendChild(el("div", "qr-d", [r.city, r.category, r.contact_name ? "ask for " + r.contact_name : null].filter(Boolean).join(" · ")));
+    b.appendChild(w);
+    var s = el("span", "qr-s" + (kind === "due" ? " due" : ""),
+      kind === "due" ? (r.last_outcome === "callback" ? "callback" : "due") :
+      kind === "later" ? fmtDue(r.due_at) : (r.attempts ? "try " + (r.attempts + 1) : "new"));
+    b.appendChild(s);
+    b.addEventListener("click", function(){
+      post("/api/va/calls/get", {prospect_id: r.id}).then(function(rr){
+        if(rr.status !== 200){ fail(rr.status, rr.body); return; }
+        hideQueue(); render(rr.body);
+      });
+    });
+    return b;
+  }
+  function loadQueue(){
+    qbList.textContent = "";
+    post("/api/va/calls/queue", {}).then(function(r){
+      if(r.status !== 200){ fail(r.status, r.body); return; }
+      var q = r.body, c = q.counts;
+      setDaybar(q.stats);
+      var tiers = Object.keys(c.by_tier || {}).sort().map(function(t){ return "T" + t + " " + c.by_tier[t]; }).join(" · ");
+      document.getElementById("qb-sub").textContent =
+        c.due + " due now · " + c.fresh + " fresh" + (tiers ? " (" + tiers + ")" : "") +
+        " · " + ((c.by_status || {}).interested || 0) + " interested · " + c.total + " total";
+      function section(title, rows, kind, note){
+        if(!rows.length) return;
+        var h = el("div", "qb-sec"); h.appendChild(el("span", null, title)); h.appendChild(el("span", null, note || rows.length));
+        qbList.appendChild(h);
+        rows.forEach(function(row){ qbList.appendChild(queueRow(row, kind)); });
+      }
+      section("Due now", q.due, "due");
+      section("Fresh — dealt in this order", q.fresh, "fresh", c.fresh > q.fresh.length ? q.fresh.length + " of " + c.fresh : null);
+      section("Coming up", q.later, "later");
+      if(!q.due.length && !q.fresh.length && !q.later.length){
+        qbList.appendChild(el("p", "sr-none", "The queue is empty. Load a list or add a business above."));
+      }
+    }).catch(function(){ fail(0, {error: "No connection — couldn't load the queue."}); });
+  }
+  var deck = document.getElementById("deck");
+  function showQueue(){ searchbox.hidden = true; qbStatus.hidden = true; queuebox.hidden = false; deck.classList.add("queue-open"); loadQueue(); window.scrollTo(0, 0); }
+  function hideQueue(){ queuebox.hidden = true; deck.classList.remove("queue-open"); }
+  document.getElementById("queue-toggle").addEventListener("click", function(){
+    if(queuebox.hidden) showQueue(); else hideQueue();
+  });
+  document.getElementById("queue-close").addEventListener("click", hideQueue);
+  document.getElementById("qb-file").addEventListener("change", function(){
+    var f = this.files && this.files[0]; this.value = "";
+    if(!f) return;
+    qbSay("Reading " + f.name + "…");
+    var reader = new FileReader();
+    reader.onload = function(){
+      post("/api/va/calls/import", {csv: String(reader.result || "")}).then(function(r){
+        if(r.status !== 200){ qbSay((r.body && r.body.error) || "That file didn't load.", true); if(r.status === 401) fail(401, r.body); return; }
+        var b = r.body;
+        qbSay("Loaded " + f.name + ": " + b.added + " added, " + b.skipped_dupes + " already in the queue, " +
+              b.invalid + " skipped (no usable phone or name). " + b.total + " businesses total.");
+        loadQueue();
+      }).catch(function(){ qbSay("No connection — the list wasn't loaded.", true); });
+    };
+    reader.readAsText(f);
+  });
+  document.getElementById("qb-add-toggle").addEventListener("click", function(){
+    qbAdd.hidden = !qbAdd.hidden; if(!qbAdd.hidden) document.getElementById("qa-company").focus();
+  });
+  qbAdd.addEventListener("submit", function(e){
+    e.preventDefault();
+    var btn = qbAdd.querySelector("button"); btn.disabled = true;
+    post("/api/va/calls/add", {
+      company: document.getElementById("qa-company").value.trim(),
+      phone: document.getElementById("qa-phone").value.trim(),
+      city: document.getElementById("qa-city").value.trim(),
+      category: document.getElementById("qa-category").value.trim(),
+      contact_name: document.getElementById("qa-contact").value.trim(),
+      why: document.getElementById("qa-why").value.trim()
+    }).then(function(r){
+      btn.disabled = false;
+      if(r.status !== 200){ qbSay((r.body && r.body.error) || "Couldn't add them.", true); return; }
+      qbAdd.reset(); qbAdd.hidden = true; hideQueue();
+      render(r.body);
+      showToast(r.body.exists ? "They were already in the queue — here's their card." : "Added — here's their card.");
+    }).catch(function(){ btn.disabled = false; qbSay("No connection — nothing was added.", true); });
   });
 
   // ---- callback scheduler ----
