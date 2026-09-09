@@ -1059,7 +1059,7 @@ CALLS_HTML = r"""<!doctype html>
 <meta name="theme-color" content="#0B0E12" />
 <title>Umuve — Call Desk</title>
 <link rel="stylesheet" href="/va/app.css?v=3" />
-<link rel="stylesheet" href="/va/calls.css?v=15" />
+<link rel="stylesheet" href="/va/calls.css?v=16" />
 </head>
 <body>
 <div id="app">
@@ -1249,6 +1249,7 @@ CALLS_HTML = r"""<!doctype html>
           </div>
           <button class="ln-btn ln-call" id="desk-call-btn" type="button" hidden>Call</button>
           <button class="ln-btn" id="pd-toggle" type="button" hidden title="Power dial: the next card dials itself after you log an outcome; answering machines get your recorded voicemail">Power</button>
+          <button class="ln-btn" id="cp-toggle" type="button" hidden title="Copilot: live transcript, objection cues while they talk, and a written-up note after the call. The other side hears a recording notice.">Copilot</button>
           <button class="ln-btn" id="inbox-toggle" type="button" aria-label="Replies and callbacks">Replies<span class="badge" id="inbox-badge" hidden>0</span></button>
         </div>
         <div class="pdbar" id="pdbar" hidden>
@@ -1258,6 +1259,23 @@ CALLS_HTML = r"""<!doctype html>
             <button type="button" class="pd-btn" id="pd-play" hidden>Play</button>
             <button type="button" class="pd-btn pd-stop" id="pd-skip" hidden>Stop countdown</button>
           </div>
+        </div>
+        <div class="cp" id="cp" hidden>
+          <div class="cp-cue" id="cp-cue" hidden>
+            <div class="cp-cue-k">They just said</div>
+            <div class="cp-cue-q" id="cp-cue-q"></div>
+            <div class="cp-cue-k cp-cue-k2">Say this</div>
+            <div class="cp-cue-r" id="cp-cue-r"></div>
+          </div>
+          <div class="cp-sum" id="cp-sum" hidden>
+            <div class="cp-cue-k">Call summary</div>
+            <div class="cp-sum-t" id="cp-sum-t"></div>
+            <div class="cp-sum-btns">
+              <button type="button" class="pd-btn" id="cp-use-note">Use as note</button>
+              <button type="button" class="pd-btn cp-log" id="cp-log" hidden></button>
+            </div>
+          </div>
+          <div class="cp-lines" id="cp-lines"></div>
         </div>
         <div class="ln-body" id="ln-thread">
           <div class="th-list" id="th-list"></div>
@@ -1295,7 +1313,7 @@ CALLS_HTML = r"""<!doctype html>
     </div>
   </div>
 </div>
-<script src="/va/calls.js?v=18"></script>
+<script src="/va/calls.js?v=19"></script>
 </body>
 </html>
 """
@@ -1505,6 +1523,24 @@ CALLS_CSS = r"""/* Call Desk — layers over /va/app.css tokens */
 .pd-btn{font-family:var(--display);font-weight:700;font-size:11.5px;color:var(--ink);background:var(--raise);
   border:1px solid var(--line);border-radius:9px;padding:6px 10px;cursor:pointer}
 .pd-stop{color:#FF7A5C;border-color:rgba(255,122,92,.45)}
+/* copilot */
+#cp-toggle.on{color:#7FB8FF;border-color:rgba(127,184,255,.5)}
+.cp{border-bottom:1px solid var(--line);padding:10px 14px;max-height:46%;overflow-y:auto;background:rgba(127,184,255,.04)}
+.cp-cue{background:rgba(61,214,140,.1);border:1px solid rgba(61,214,140,.4);border-radius:12px;padding:10px 12px;margin-bottom:10px}
+.cp-cue-k{font-family:var(--display);font-weight:700;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint)}
+.cp-cue-k2{margin-top:8px;color:var(--ok)}
+.cp-cue-q{font-size:12.5px;color:var(--muted);font-style:italic;margin-top:2px}
+.cp-cue-r{font-size:14px;line-height:1.5;color:var(--ink);margin-top:3px}
+.cp-sum{background:var(--raise);border:1px solid rgba(127,184,255,.4);border-radius:12px;padding:10px 12px;margin-bottom:10px}
+.cp-sum-t{font-size:13.5px;line-height:1.5;color:var(--ink);margin:4px 0 8px}
+.cp-sum-btns{display:flex;gap:6px;flex-wrap:wrap}
+.cp-log{color:var(--ok);border-color:rgba(61,214,140,.45)}
+.cp-lines{display:flex;flex-direction:column;gap:4px}
+.cp-ln{font-size:13px;line-height:1.45;color:var(--muted)}
+.cp-ln b{font-family:var(--display);font-weight:700;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;margin-right:6px;color:var(--faint)}
+.cp-ln.them{color:var(--ink)}
+.cp-ln.them b{color:#7FB8FF}
+.cp-empty{font-size:12px;color:var(--faint)}
 /* rate card */
 .rc-row{display:flex;flex-direction:column;gap:8px;padding:10px 12px;margin:2px 0 8px;background:var(--raise);
   border:1px dashed rgba(255,106,44,.4);border-radius:12px}
@@ -1798,6 +1834,7 @@ CALLS_JS = r"""(function(){
     document.getElementById("callback").hidden = false;
     syncDialUI();
     if(pdArmed){ pdArmed = false; setTimeout(pdStartCountdown, 400); }
+    if(!activeCall){ cpBox.hidden = true; }
     card.hidden = false; outcomes.hidden = false; textopt.hidden = false;
     if(!reduced){
       card.style.opacity = "0"; card.style.transform = "translateY(6px)";
@@ -2571,7 +2608,7 @@ CALLS_JS = r"""(function(){
     try {
       device = new Twilio.Device(token, {codecPreferences: ["opus", "pcmu"], closeProtection: true});
     } catch(e){ return; }
-    device.on("registered", function(){ deskReady = true; syncDialUI(); setDialerStatus("desk line ready · " + prettyNum(deskNumber)); pdToggle.hidden = false; loadVm(); pdRender(); });
+    device.on("registered", function(){ deskReady = true; syncDialUI(); setDialerStatus("desk line ready · " + prettyNum(deskNumber)); pdToggle.hidden = false; loadVm(); pdRender(); cpToggle.hidden = false; cpRender(); });
     device.on("unregistered", function(){ deskReady = false; syncDialUI(); setDialerStatus("desk line offline — reload"); });
     device.on("tokenWillExpire", refreshToken);
     device.on("error", function(e){
@@ -2622,8 +2659,9 @@ CALLS_JS = r"""(function(){
     if(!device || !deskReady || !current || activeCall) return;
     stripWho.textContent = current.company; stripState.textContent = "Starting…"; stripTime.textContent = "";
     strip.hidden = false; strip.classList.remove("live", "failed");
-    device.connect({params: {To: to, prospect_id: current.id, va_name: vaName(), amd: powerOn ? "1" : "0"}}).then(function(call){
+    device.connect({params: {To: to, prospect_id: current.id, va_name: vaName(), amd: powerOn ? "1" : "0", copilot: copilotOn ? "1" : "0"}}).then(function(call){
       bindCall(call, current.company);
+      cpStart();
     }).catch(function(e){
       strip.classList.add("failed"); stripState.textContent = "Call failed: " + callErrorText(e);
       showToast("Couldn't start the call: " + callErrorText(e));
@@ -2645,6 +2683,93 @@ CALLS_JS = r"""(function(){
   document.getElementById("c-direct").addEventListener("click", function(e){
     if(deskReady && current && current.direct_tel){ e.preventDefault(); startDeskCall(current.direct_tel.replace("tel:", "")); }
   });
+  // ---- copilot: live transcript, cues, post-call summary ----
+  var CP_KEY = "umuve_desk_copilot";
+  var cpToggle = document.getElementById("cp-toggle");
+  var cpBox = document.getElementById("cp");
+  var cpLines = document.getElementById("cp-lines");
+  var cpCue = document.getElementById("cp-cue");
+  var cpSum = document.getElementById("cp-sum");
+  var copilotOn = localStorage.getItem(CP_KEY) === "1";
+  var cpTimer = null, cpSeq = -1, cpFor = null, cpLastCue = "", cpSuggested = null;
+  function cpRender(){ cpToggle.classList.toggle("on", copilotOn); if(!copilotOn){ cpBox.hidden = true; } }
+  cpToggle.addEventListener("click", function(){
+    copilotOn = !copilotOn; localStorage.setItem(CP_KEY, copilotOn ? "1" : "0"); cpRender();
+    showToast(copilotOn ? "Copilot on — the other side will hear a recording notice." : "Copilot off.");
+  });
+  function cpReset(){
+    cpLines.textContent = ""; cpCue.hidden = true; cpSum.hidden = true; cpSeq = -1; cpLastCue = ""; cpSuggested = null;
+    cpLines.appendChild(el("p", "cp-empty", "Listening… the transcript shows up here a sentence at a time."));
+  }
+  function cpAppend(lines){
+    if(!lines.length) return;
+    var empty = cpLines.querySelector(".cp-empty"); if(empty) empty.remove();
+    lines.forEach(function(l){
+      var row = el("div", "cp-ln " + (l.track === "them" ? "them" : "you"));
+      row.appendChild(el("b", null, l.track === "them" ? "Them" : "You"));
+      row.appendChild(document.createTextNode(l.text));
+      cpLines.appendChild(row);
+      if(l.seq > cpSeq) cpSeq = l.seq;
+    });
+    cpBox.scrollTop = cpBox.scrollHeight;
+  }
+  function cpPoll(){
+    if(!current || !copilotOn) return;
+    var pid = current.id;
+    post("/api/va/desk/transcript", {prospect_id: pid, after_seq: cpSeq, side: kitData ? kitData.side : null}).then(function(r){
+      if(r.status !== 200 || !current || current.id !== pid) return;
+      cpAppend(r.body.lines || []);
+      var cue = r.body.cue;
+      if(cue && cue.say !== cpLastCue){
+        cpLastCue = cue.say;
+        document.getElementById("cp-cue-q").textContent = "“" + cue.quote + "”";
+        document.getElementById("cp-cue-r").textContent = cue.reply;
+        cpCue.hidden = false;
+      }
+    }).catch(function(){});
+  }
+  function cpStart(){
+    if(!copilotOn) return;
+    cpFor = current ? current.id : null; cpReset(); cpBox.hidden = false;
+    clearInterval(cpTimer); cpTimer = setInterval(cpPoll, 2500); setTimeout(cpPoll, 1200);
+  }
+  function cpStop(){ clearInterval(cpTimer); cpTimer = null; }
+  function cpSummarize(){
+    if(!copilotOn || !current) return;
+    var pid = current.id;
+    setTimeout(function(){ cpPoll(); }, 800);
+    setTimeout(function(){
+      post("/api/va/desk/summarize", {prospect_id: pid, side: kitData ? kitData.side : null}).then(function(r){
+        if(r.status !== 200 || !current || current.id !== pid) return;
+        var b = r.body;
+        if(!b.lines){ return; }
+        cpSuggested = b;
+        var t = (b.note || "No clear takeaway from the transcript.");
+        if(b.callback) t += " Callback: " + b.callback + ".";
+        document.getElementById("cp-sum-t").textContent = t;
+        var logBtn = document.getElementById("cp-log");
+        var labels = {interested: "Interested", sent_link: "Sent the link", vendor_listed: "On their vendor list",
+                      voicemail: "Voicemail", no_answer: "No answer", not_interested: "Not interested", bad_number: "Bad number"};
+        if(b.outcome && labels[b.outcome]){ logBtn.textContent = "Log as " + labels[b.outcome]; logBtn.dataset.o = b.outcome; logBtn.hidden = false; }
+        else if(b.outcome === "callback"){ logBtn.textContent = "Schedule the callback below"; logBtn.dataset.o = ""; logBtn.hidden = false; }
+        else { logBtn.hidden = true; }
+        cpSum.hidden = false; cpBox.hidden = false; cpBox.scrollTop = 0;
+      }).catch(function(){});
+    }, 3500);
+  }
+  document.getElementById("cp-use-note").addEventListener("click", function(){
+    if(!cpSuggested) return;
+    document.getElementById("note").value = (cpSuggested.note || "").slice(0, 1000);
+    showToast("Note filled in — edit it if you like, then tap the outcome.");
+  });
+  document.getElementById("cp-log").addEventListener("click", function(){
+    var o = this.dataset.o;
+    if(!o){ document.getElementById("callback").scrollIntoView({behavior: "smooth", block: "center"}); return; }
+    if(!document.getElementById("note").value.trim() && cpSuggested) document.getElementById("note").value = (cpSuggested.note || "").slice(0, 1000);
+    var btn = document.querySelector('#outcomes button[data-o="' + o + '"]');
+    if(btn) btn.click();
+  });
+
   // ---- power dial: auto-advance + voicemail drop ----
   var PD_KEY = "umuve_desk_power_dial";
   var pdToggle = document.getElementById("pd-toggle");
@@ -2738,6 +2863,8 @@ CALLS_JS = r"""(function(){
     function done(){
       clearInterval(callTimer); strip.hidden = true; strip.classList.remove("live", "failed");
       activeCall = null;
+      cpStop();
+      if(current && !recordingVm) cpSummarize();
       if(current) setTimeout(function(){ loadThread(current); if(!recordingVm) pdAfterCall(); }, 1800);
     }
     function failed(msg){

@@ -3978,3 +3978,20 @@ class DeskSetting(db.Model):
         row.value = value
         db.session.commit()
         return row
+
+
+class DeskTranscriptLine(db.Model):
+    """One final sentence from Twilio Real-Time Transcription on a desk call."""
+    __tablename__ = "desk_transcript_lines"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    call_sid = Column(String(64), nullable=False, index=True)      # parent (browser) CallSid
+    prospect_id = Column(String(36), nullable=True, index=True)
+    track = Column(String(8), nullable=False)                       # va | them
+    text = Column(Text, nullable=False)
+    seq = Column(Integer, nullable=False, default=0)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+
+    def to_dict(self):
+        return {"id": self.id, "track": self.track, "text": self.text, "seq": self.seq,
+                "at": self.created_at.isoformat() if self.created_at else None}

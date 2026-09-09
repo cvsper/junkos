@@ -38,6 +38,7 @@ Env:
 from __future__ import annotations
 
 import hmac
+import json
 import logging
 import os
 import re
@@ -46,7 +47,8 @@ from urllib.parse import quote
 
 from flask import Blueprint, Response, jsonify, request
 
-from models import db, CallProspect, DeskActivity, DeskSetting
+from models import db, CallProspect, DeskActivity, DeskSetting, DeskTranscriptLine
+from xml.sax.saxutils import quoteattr
 
 try:
     from extensions import limiter
@@ -429,8 +431,58 @@ def twilio_voice_outbound():
                                     + "&va=" + quote(va_name)),
             "amd_status_callback_method": "POST",
         }
+    if request.form.get("copilot") == "1":
+        # Two-party consent: the callee hears a recording notice before the bridge.
+        number_kwargs["url"] = _base_url() + "/api/desk/twilio/voice/whisper"
     dial.number(to, **number_kwargs)
+    xml = str(resp)
+    if request.form.get("copilot") == "1":
+        cb = _base_url() + "/api/desk/twilio/transcript-rt?parent=" + parent_sid
+        start = ("<Start><Transcription statusCallbackUrl={} track=\"both_tracks\" partialResults=\"false\" "
+                 "languageCode=\"en-US\" enableAutomaticPunctuation=\"true\" name={}/></Start>"
+                 ).format(quoteattr(cb), quoteattr("desk-" + parent_sid))
+        xml = xml.replace("<Response>", "<Response>" + start, 1)
+    return Response(xml, mimetype="text/xml")
+
+
+@deskline_bp.route("/api/desk/twilio/voice/whisper", methods=["POST"])
+def twilio_voice_whisper():
+    """Played to the callee before the bridge when Copilot is on."""
+    if not _validate():
+        return Response("Forbidden", status=403)
+    from twilio.twiml.voice_response import VoiceResponse
+    resp = VoiceResponse()
+    resp.say("This call may be recorded for quality.", voice="Polly.Joanna")
     return _twiml(resp)
+
+
+@deskline_bp.route("/api/desk/twilio/transcript-rt", methods=["POST"])
+def twilio_transcript_rt():
+    """Twilio Real-Time Transcription events → transcript lines."""
+    if not _validate():
+        return Response("Forbidden", status=403)
+    if request.form.get("TranscriptionEvent") != "transcription-content":
+        return Response("", status=204)
+    parent = request.args.get("parent") or request.form.get("CallSid") or ""
+    try:
+        data = json.loads(request.form.get("TranscriptionData") or "{}")
+    except ValueError:
+        data = {}
+    text = (data.get("transcript") or "").strip()
+    if not parent or not text:
+        return Response("", status=204)
+    if (request.form.get("Final") or "true").lower() == "false":
+        return Response("", status=204)
+    track = "va" if (request.form.get("Track") or "").startswith("inbound") else "them"
+    act = DeskActivity.query.filter_by(twilio_sid=parent, kind="call").first()
+    try:
+        seq = int(request.form.get("SequenceId") or 0)
+    except ValueError:
+        seq = 0
+    db.session.add(DeskTranscriptLine(call_sid=parent, prospect_id=act.prospect_id if act else None,
+                                      track=track, text=text[:2000], seq=seq))
+    db.session.commit()
+    return Response("", status=204)
 
 
 @deskline_bp.route("/api/desk/twilio/voice/vm-recorded", methods=["POST"])
@@ -743,6 +795,69 @@ def desk_last_call():
     act = (_thread_query(p).filter(DeskActivity.kind == "call", DeskActivity.direction == "out")
            .order_by(DeskActivity.created_at.desc()).first())
     return jsonify({"call": act.to_dict() if act else None}), 200
+
+
+def _last_out_call(p):
+    return (_thread_query(p).filter(DeskActivity.kind == "call", DeskActivity.direction == "out")
+            .order_by(DeskActivity.created_at.desc()).first())
+
+
+@deskline_bp.route("/api/va/desk/transcript", methods=["POST"])
+@_ratelimit
+def desk_transcript():
+    """Lines for this prospect's latest outbound call, plus a live cue when
+    their last sentence trips an objection trigger."""
+    data = request.get_json(silent=True) or {}
+    if not _passcode_ok(data.get("code")):
+        return jsonify({"error": "That code didn't work."}), 401
+    p = db.session.get(CallProspect, data.get("prospect_id") or "")
+    if not p:
+        return jsonify({"error": "Prospect not found."}), 404
+    act = _last_out_call(p)
+    if not act or not act.twilio_sid:
+        return jsonify({"call_sid": None, "lines": [], "cue": None}), 200
+    try:
+        after = int(data.get("after_seq") or -1)
+    except (TypeError, ValueError):
+        after = -1
+    q = DeskTranscriptLine.query.filter_by(call_sid=act.twilio_sid)
+    all_lines = q.order_by(DeskTranscriptLine.seq.asc(), DeskTranscriptLine.created_at.asc()).all()
+    new = [l.to_dict() for l in all_lines if l.seq > after]
+    from call_kit import build_kit, detect_side
+    from copilot import cue_for
+    side = data.get("side") if data.get("side") in ("supply", "demand") else detect_side(p)
+    kit = build_kit(p, va_name=data.get("va_name"), side=side)
+    cue = cue_for([l.to_dict() for l in all_lines], kit, side)
+    return jsonify({"call_sid": act.twilio_sid, "status": act.status, "lines": new,
+                    "total": len(all_lines), "cue": cue}), 200
+
+
+@deskline_bp.route("/api/va/desk/summarize", methods=["POST"])
+@_ratelimit
+def desk_summarize():
+    """After the call: note + suggested outcome from the transcript. Nothing is logged here."""
+    data = request.get_json(silent=True) or {}
+    if not _passcode_ok(data.get("code")):
+        return jsonify({"error": "That code didn't work."}), 401
+    p = db.session.get(CallProspect, data.get("prospect_id") or "")
+    if not p:
+        return jsonify({"error": "Prospect not found."}), 404
+    act = _last_out_call(p)
+    lines = []
+    if act and act.twilio_sid:
+        lines = [l.to_dict() for l in DeskTranscriptLine.query.filter_by(call_sid=act.twilio_sid)
+                 .order_by(DeskTranscriptLine.seq.asc(), DeskTranscriptLine.created_at.asc()).all()]
+    from call_kit import detect_side
+    from copilot import summarize
+    side = data.get("side") if data.get("side") in ("supply", "demand") else detect_side(p)
+    res = _run(lambda: summarize(lines, p, side))
+    res["lines"] = len(lines)
+    if act and lines and not act.body:
+        # keep the transcript on the call itself so the thread has it
+        act.body = "Transcript: " + " ".join(
+            ("[them] " if l["track"] == "them" else "[you] ") + l["text"] for l in lines)[:1900]
+        db.session.commit()
+    return jsonify(res), 200
 
 
 def unread_count():
