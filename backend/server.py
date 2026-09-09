@@ -300,6 +300,14 @@ except Exception as _vc_exc:
     import logging as _logging
     _logging.getLogger(__name__).warning("vacalls_bp not registered: %s", _vc_exc)
 
+# Desk accounts, flags, audit, health
+try:
+    from desk_admin import deskadmin_bp
+    app.register_blueprint(deskadmin_bp)
+except Exception as _da_exc:  # pragma: no cover
+    import logging as _logging
+    _logging.getLogger(__name__).warning("deskadmin_bp not registered: %s", _da_exc)
+
 # VA time clock — clock in/out + hours on the desk
 try:
     from va_time import vatime_bp

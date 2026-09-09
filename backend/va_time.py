@@ -21,6 +21,7 @@ from datetime import datetime, timedelta, timezone
 
 from flask import Blueprint, jsonify, request
 
+from desk_auth import desk_identity, desk_va_name, audit, is_manager
 from models import db, CallAttempt, VaShift
 
 try:
@@ -148,15 +149,16 @@ def state_payload(va_name):
 
 
 def _va_name(data):
-    return (data.get("va_name") or "").strip()[:80]
+    return desk_va_name(data)
 
 
 @vatime_bp.route("/api/va/time/clock", methods=["POST"])
 @_ratelimit
 def clock():
     data = request.get_json(silent=True) or {}
-    if not _passcode_ok(data.get("code")):
-        return jsonify({"error": "That code didn't work."}), 401
+    ident = desk_identity(data)
+    if not ident:
+        return jsonify({"error": "Sign in to the desk first."}), 401
     va = _va_name(data)
     if not va:
         return jsonify({"error": "Type your name on the desk first so the hours are yours."}), 400
@@ -170,6 +172,7 @@ def clock():
         db.session.add(VaShift(va_name=va, started_at=now,
                                note=(data.get("note") or "").strip()[:300] or None))
         db.session.commit()
+        audit("clock_in", "va", va)
         return jsonify(state_payload(va)), 200
     if action == "out":
         if not sh:
@@ -179,6 +182,7 @@ def clock():
         if note:
             sh.note = note
         db.session.commit()
+        audit("clock_out", "shift", sh.id, {"seconds": sh.seconds})
         return jsonify(dict(state_payload(va), closed=sh.to_dict())), 200
     return jsonify({"error": "action must be 'in' or 'out'."}), 400
 
@@ -187,8 +191,9 @@ def clock():
 @_ratelimit
 def status():
     data = request.get_json(silent=True) or {}
-    if not _passcode_ok(data.get("code")):
-        return jsonify({"error": "That code didn't work."}), 401
+    ident = desk_identity(data)
+    if not ident:
+        return jsonify({"error": "Sign in to the desk first."}), 401
     va = _va_name(data)
     if not va:
         return jsonify({"on_clock": False, "va_name": "", "today_seconds": 0,
@@ -220,8 +225,9 @@ def hours_report(va_name=None, days=30):
 @_ratelimit
 def hours():
     data = request.get_json(silent=True) or {}
-    if not _passcode_ok(data.get("code")):
-        return jsonify({"error": "That code didn't work."}), 401
+    ident = desk_identity(data)
+    if not ident:
+        return jsonify({"error": "Sign in to the desk first."}), 401
     va = _va_name(data)
     if not va:
         return jsonify({"error": "Type your name on the desk first."}), 400
@@ -236,8 +242,11 @@ def hours():
 def team():
     """Everyone's hours (desk passcode) — the owner's view from the same panel."""
     data = request.get_json(silent=True) or {}
-    if not _passcode_ok(data.get("code")):
-        return jsonify({"error": "That code didn't work."}), 401
+    ident = desk_identity(data)
+    if not ident:
+        return jsonify({"error": "Sign in to the desk first."}), 401
+    if ident["via"] == "jwt" and not is_manager(ident):
+        return jsonify({"error": "Everyone's hours need a manager login."}), 403
     for name in {sh.va_name for sh in VaShift.query.filter_by(ended_at=None).all()}:
         auto_close_stale(name)
     return jsonify(hours_report(None, data.get("days") or 45)), 200

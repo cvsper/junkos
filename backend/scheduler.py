@@ -43,6 +43,15 @@ def _sweep_expired_broadcasts(app):
         logger.exception("Broadcast re-offer sweep failed")
 
 
+def _check_desk_health(app):
+    """Desk line dependencies (Twilio balance/webhooks/browser-calling env). See desk_health.py."""
+    try:
+        from desk_health import run_desk_health
+        run_desk_health(app)
+    except Exception:
+        logger.exception("desk health job failed")
+
+
 def _check_twilio_health(app):
     """Probe Twilio; email-alert if the account is down (e.g. billing suspension
     → all SMS silently failing). Email-only alert, so it survives a Twilio
@@ -554,6 +563,16 @@ def init_scheduler(app):
         from apscheduler.schedulers.background import BackgroundScheduler
 
         scheduler = BackgroundScheduler(daemon=True)
+
+        # Call Desk line health — every 30 min, alerts on state change
+        scheduler.add_job(
+            _check_desk_health,
+            "interval",
+            minutes=30,
+            args=[app],
+            id="desk_health",
+            name="Call Desk line health",
+        )
 
         # Generate recurring jobs every hour
         scheduler.add_job(

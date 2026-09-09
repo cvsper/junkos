@@ -40,6 +40,7 @@ from functools import wraps
 
 from flask import Blueprint, Response, jsonify, request
 
+from desk_auth import desk_identity, desk_va_name, audit, is_manager
 from models import db, CallAttempt, CallProspect, User
 from auth_routes import require_auth
 
@@ -385,8 +386,9 @@ def _card_payload(p, va_name):
 @_ratelimit
 def calls_next():
     data = request.get_json(silent=True) or {}
-    if not _passcode_ok(data.get("code")):
-        return jsonify({"error": "That code didn't work."}), 401
+    ident = desk_identity(data)
+    if not ident:
+        return jsonify({"error": "Sign in to the desk first."}), 401
     p = next_card()
     stats = day_stats()
     if not p:
@@ -400,15 +402,16 @@ def calls_next():
             CallProspect.next_followup_at.isnot(None)).count()
         return jsonify({"empty": True, "stats": stats, "total": total, "scheduled": scheduled,
                         "next_due": nxt.next_followup_at.isoformat() if nxt else None}), 200
-    return jsonify({"card": _card_payload(p, data.get("va_name")), "stats": stats}), 200
+    return jsonify({"card": _card_payload(p, desk_va_name(data)), "stats": stats}), 200
 
 
 @vacalls_bp.route("/api/va/calls/log", methods=["POST"])
 @_ratelimit
 def calls_log():
     data = request.get_json(silent=True) or {}
-    if not _passcode_ok(data.get("code")):
-        return jsonify({"error": "That code didn't work."}), 401
+    ident = desk_identity(data)
+    if not ident:
+        return jsonify({"error": "Sign in to the desk first."}), 401
     outcome = (data.get("outcome") or "").strip()
     if outcome not in OUTCOMES:
         return jsonify({"error": "Unknown outcome."}), 400
@@ -416,9 +419,10 @@ def calls_log():
     if not p:
         return jsonify({"error": "Prospect not found — reload the page."}), 404
     note = (data.get("note") or "").strip()[:1000]
-    va_name = (data.get("va_name") or "").strip()[:80]
+    va_name = desk_va_name(data)
     apply_outcome(p, outcome, note, va_name)
     db.session.commit()
+    audit("outcome", "prospect", p.id, {"outcome": outcome, "company": p.company})
 
     texted, text_reason = False, None
     if data.get("send_text"):
@@ -441,8 +445,9 @@ def calls_log():
 def calls_search():
     """Find a prospect who called back — by name, city, or number."""
     data = request.get_json(silent=True) or {}
-    if not _passcode_ok(data.get("code")):
-        return jsonify({"error": "That code didn't work."}), 401
+    ident = desk_identity(data)
+    if not ident:
+        return jsonify({"error": "Sign in to the desk first."}), 401
     q = (data.get("q") or "").strip()
     if len(q) < 2:
         return jsonify({"results": []}), 200
@@ -467,12 +472,13 @@ def calls_search():
 def calls_get():
     """Load one specific prospect as the active card (callback flow)."""
     data = request.get_json(silent=True) or {}
-    if not _passcode_ok(data.get("code")):
-        return jsonify({"error": "That code didn't work."}), 401
+    ident = desk_identity(data)
+    if not ident:
+        return jsonify({"error": "Sign in to the desk first."}), 401
     p = db.session.get(CallProspect, data.get("prospect_id") or "")
     if not p:
         return jsonify({"error": "Prospect not found."}), 404
-    return jsonify({"card": _card_payload(p, data.get("va_name")),
+    return jsonify({"card": _card_payload(p, desk_va_name(data)),
                     "stats": day_stats()}), 200
 
 
@@ -495,12 +501,13 @@ def calls_send_info():
     templates; the client only supplies the destination.
     """
     data = request.get_json(silent=True) or {}
-    if not _passcode_ok(data.get("code")):
-        return jsonify({"error": "That code didn't work."}), 401
+    ident = desk_identity(data)
+    if not ident:
+        return jsonify({"error": "Sign in to the desk first."}), 401
     p = db.session.get(CallProspect, data.get("prospect_id") or "")
     if not p:
         return jsonify({"error": "Prospect not found — reload the page."}), 404
-    va_name = (data.get("va_name") or "").strip()[:80]
+    va_name = desk_va_name(data)
     channel = (data.get("channel") or "").strip()
     to = (data.get("to") or "").strip()
 
@@ -515,6 +522,7 @@ def calls_send_info():
                                      "down, or that's not a textable number."}), 502
         p.last_texted_at = _now().replace(tzinfo=None)
         db.session.commit()
+        audit("info_text", "prospect", p.id, {"to_last4": digits[-4:]})
         logger.info("call desk info text sent to %s (company=%s)", digits, p.company)
         return jsonify({"ok": True, "channel": "text",
                         "to": "(...) " + digits[-4:], "sid": sid}), 200
@@ -542,6 +550,7 @@ def calls_send_info():
         p.email = to_email[:254]
         p.last_emailed_at = _now().replace(tzinfo=None)
         db.session.commit()
+        audit("info_email", "prospect", p.id, {"to": to_email})
         logger.info("call desk info email sent to %s (company=%s)", to_email, p.company)
         return jsonify({"ok": True, "channel": "email", "to": to_email}), 200
 
@@ -559,8 +568,9 @@ def calls_contact():
     second tap-to-call and the default target for the info text.
     """
     data = request.get_json(silent=True) or {}
-    if not _passcode_ok(data.get("code")):
-        return jsonify({"error": "That code didn't work."}), 401
+    ident = desk_identity(data)
+    if not ident:
+        return jsonify({"error": "Sign in to the desk first."}), 401
     p = db.session.get(CallProspect, data.get("prospect_id") or "")
     if not p:
         return jsonify({"error": "Prospect not found — reload the page."}), 404
@@ -584,8 +594,9 @@ def calls_contact():
         p.email = raw[:254] or None
 
     db.session.commit()
+    audit("contact_saved", "prospect", p.id)
     return jsonify({"ok": True,
-                    "card": _card_payload(p, data.get("va_name"))}), 200
+                    "card": _card_payload(p, desk_va_name(data))}), 200
 
 
 @vacalls_bp.route("/rate-card/<prospect_id>.pdf", methods=["GET"])
@@ -612,12 +623,13 @@ def calls_rate_card():
     """Text a link to, or email, the personalized PDF rate card."""
     from rate_card import public_url, build_rate_card_pdf
     data = request.get_json(silent=True) or {}
-    if not _passcode_ok(data.get("code")):
-        return jsonify({"error": "That code didn't work."}), 401
+    ident = desk_identity(data)
+    if not ident:
+        return jsonify({"error": "Sign in to the desk first."}), 401
     p = db.session.get(CallProspect, data.get("prospect_id") or "")
     if not p:
         return jsonify({"error": "Prospect not found — reload the page."}), 404
-    va_name = (data.get("va_name") or "").strip()[:80]
+    va_name = desk_va_name(data)
     va = (va_name or "Tracy").split()[0]
     channel = (data.get("channel") or "").strip()
     to = (data.get("to") or "").strip()
@@ -637,6 +649,7 @@ def calls_rate_card():
         if not sid:
             return jsonify({"error": "The text didn't go through — texting may be down, "
                                      "or that's not a textable number."}), 502
+        audit("rate_card_text", "prospect", p.id, {"to_last4": digits[-4:]})
         return jsonify({"ok": True, "channel": "text", "to": "(...) " + digits[-4:], "url": url}), 200
     if channel == "email":
         to_email = to.lower()
@@ -662,6 +675,7 @@ def calls_rate_card():
         p.email = to_email[:254]
         p.last_emailed_at = _now().replace(tzinfo=None)
         db.session.commit()
+        audit("rate_card_email", "prospect", p.id, {"to": to_email})
         return jsonify({"ok": True, "channel": "email", "to": to_email, "url": url}), 200
     return jsonify({"error": "Unknown channel."}), 400
 
@@ -673,13 +687,14 @@ def calls_kit():
     lookups — keyed to whether we're selling them (demand) or recruiting
     them (supply). `side` lets the VA override the guess."""
     data = request.get_json(silent=True) or {}
-    if not _passcode_ok(data.get("code")):
-        return jsonify({"error": "That code didn't work."}), 401
+    ident = desk_identity(data)
+    if not ident:
+        return jsonify({"error": "Sign in to the desk first."}), 401
     p = db.session.get(CallProspect, data.get("prospect_id") or "")
     if not p:
         return jsonify({"error": "Prospect not found — reload the page."}), 404
     from call_kit import build_kit
-    return jsonify(build_kit(p, va_name=data.get("va_name"), side=data.get("side"))), 200
+    return jsonify(build_kit(p, va_name=desk_va_name(data), side=data.get("side"))), 200
 
 
 CALLBACK_PRESETS = {
@@ -711,8 +726,9 @@ def calls_callback():
     'callback' attempt, pins next_followup_at, deals the next card."""
     from timeutils import local_now, local_naive_to_utc, parse_local_iso, to_local
     data = request.get_json(silent=True) or {}
-    if not _passcode_ok(data.get("code")):
-        return jsonify({"error": "That code didn't work."}), 401
+    ident = desk_identity(data)
+    if not ident:
+        return jsonify({"error": "Sign in to the desk first."}), 401
     p = db.session.get(CallProspect, data.get("prospect_id") or "")
     if not p:
         return jsonify({"error": "Prospect not found — reload the page."}), 404
@@ -732,9 +748,10 @@ def calls_callback():
     if when <= _now():
         return jsonify({"error": "That time already passed — pick a later one."}), 400
     note = (data.get("note") or "").strip()[:1000]
-    va_name = (data.get("va_name") or "").strip()[:80]
+    va_name = desk_va_name(data)
     schedule_callback(p, when, note, va_name)
     db.session.commit()
+    audit("callback", "prospect", p.id, {"at": when.isoformat(), "company": p.company})
     nxt = next_card()
     resp = {"logged": True, "callback_at": when.isoformat(),
             "callback_local": to_local(when).strftime("%a %b %-d, %-I:%M %p"),
@@ -843,15 +860,18 @@ def va_import_prospects():
     """Same merge, gated by the desk passcode so a list can be loaded from
     the desk itself (drag a CSV in) or by the ops CLI without an admin login."""
     data = request.get_json(silent=True) or {}
-    if not _passcode_ok(data.get("code")):
-        return jsonify({"error": "That code didn't work."}), 401
+    ident = desk_identity(data)
+    if not ident:
+        return jsonify({"error": "Sign in to the desk first."}), 401
     rows = data.get("rows") or (rows_from_csv(data["csv"]) if data.get("csv") else [])
     if not rows:
         return jsonify({"error": "No rows found — check the file has a header row with "
                                  "Company and Phone."}), 400
     if len(rows) > 2000:
         return jsonify({"error": "That's more than 2,000 rows — split the file."}), 400
-    return jsonify(_import_response(*merge_rows(rows))), 200
+    added, skipped, invalid = merge_rows(rows)
+    audit("import", "queue", None, {"added": added, "skipped": skipped, "invalid": invalid})
+    return jsonify(_import_response(added, skipped, invalid)), 200
 
 
 @vacalls_bp.route("/api/va/calls/add", methods=["POST"])
@@ -860,8 +880,9 @@ def va_add_prospect():
     """One business, typed in on the desk (a callback from an unknown number,
     a referral, a walk-in). Returns the card so it can be worked right now."""
     data = request.get_json(silent=True) or {}
-    if not _passcode_ok(data.get("code")):
-        return jsonify({"error": "That code didn't work."}), 401
+    ident = desk_identity(data)
+    if not ident:
+        return jsonify({"error": "Sign in to the desk first."}), 401
     digits = _digits(data.get("phone"))
     if len(digits) != 10:
         return jsonify({"error": "That doesn't look like a valid US number."}), 400
@@ -869,14 +890,15 @@ def va_add_prospect():
         return jsonify({"error": "Give the business a name."}), 400
     existing = CallProspect.query.filter_by(phone_digits=digits).first()
     if existing:
-        return jsonify({"exists": True, "card": _card_payload(existing, data.get("va_name")),
+        return jsonify({"exists": True, "card": _card_payload(existing, desk_va_name(data)),
                         "stats": day_stats()}), 200
     merge_rows([{"tier": data.get("tier") or "1", "company": data.get("company"),
                  "phone": data.get("phone"), "city": data.get("city"),
                  "category": data.get("category"), "contact_name": data.get("contact_name"),
                  "why": data.get("why"), "email": data.get("email")}])
     p = CallProspect.query.filter_by(phone_digits=digits).first()
-    return jsonify({"exists": False, "card": _card_payload(p, data.get("va_name")),
+    audit("add_business", "prospect", p.id, {"company": p.company})
+    return jsonify({"exists": False, "card": _card_payload(p, desk_va_name(data)),
                     "stats": day_stats()}), 200
 
 
@@ -893,8 +915,9 @@ def va_queue():
     """The whole list, in the order the desk will deal it: due follow-ups
     first, then fresh cards by tier and category rank."""
     data = request.get_json(silent=True) or {}
-    if not _passcode_ok(data.get("code")):
-        return jsonify({"error": "That code didn't work."}), 401
+    ident = desk_identity(data)
+    if not ident:
+        return jsonify({"error": "Sign in to the desk first."}), 401
     now_naive = _now().replace(tzinfo=None)
     workable = CallProspect.status.in_(WORKABLE_STATUSES)
     due = (CallProspect.query.filter(workable, CallProspect.next_followup_at.isnot(None),
@@ -1059,7 +1082,7 @@ CALLS_HTML = r"""<!doctype html>
 <meta name="theme-color" content="#0B0E12" />
 <title>Umuve — Call Desk</title>
 <link rel="stylesheet" href="/va/app.css?v=3" />
-<link rel="stylesheet" href="/va/calls.css?v=16" />
+<link rel="stylesheet" href="/va/calls.css?v=17" />
 </head>
 <body>
 <div id="app">
@@ -1068,13 +1091,23 @@ CALLS_HTML = r"""<!doctype html>
       <img class="brand-lg rv" src="/va/logo.png" alt="Umuve" /><div class="eyebrow rv">Internal · VA suite</div>
       <h1 class="display" id="display-gate" aria-label="Call Desk">CALL&nbsp;DESK</h1>
       <p class="sub rv">One card at a time. Tap the number, make the call, tap what happened.</p>
-      <form id="gate-form" autocomplete="off" class="rv">
-        <label class="lbl" for="code">Access code</label>
-        <input id="code" type="password" autocomplete="off" placeholder="Enter your code" />
-        <button class="btn" type="submit">Open the desk</button>
+      <form id="gate-form" autocomplete="on" class="rv">
+        <label class="lbl" for="g-email">Email</label>
+        <input id="g-email" type="email" autocomplete="username" placeholder="you@goumuve.com" />
+        <label class="lbl" for="g-pass">Password</label>
+        <input id="g-pass" type="password" autocomplete="current-password" placeholder="Your password" />
+        <button class="btn" type="submit">Sign in</button>
         <p id="gate-err" class="err" hidden></p>
       </form>
-      <p class="hint rv">Same code as your other VA tools.</p>
+      <details class="gate-alt rv" id="gate-alt">
+        <summary>Have an access code instead?</summary>
+        <form id="gate-code-form" autocomplete="off">
+          <input id="code" type="password" autocomplete="off" placeholder="Access code" />
+          <input id="code-name" type="text" autocomplete="off" placeholder="Your first name" />
+          <button class="btn btn-alt" type="submit">Open with the code</button>
+        </form>
+      </details>
+      <p class="hint rv">No account yet? Ask Shamar to add you.</p>
     </div>
   </section>
 
@@ -1083,6 +1116,7 @@ CALLS_HTML = r"""<!doctype html>
       <a class="back" href="/va" aria-label="Back to VA tools">←</a>
       <div class="wordmark">CALL&nbsp;DESK</div>
       <div class="bar-sub" id="daybar">—</div>
+      <span class="who" id="who" hidden></span>
       <button class="clock" id="clock-chip" type="button" aria-label="Time clock"><span class="ck-dot"></span><span id="clock-label">Clock in</span></button>
       <button class="back" id="queue-toggle" type="button" aria-label="Your queue">☰</button>
       <button class="back" id="search-toggle" type="button" aria-label="Find a business">⌕</button>
@@ -1313,7 +1347,7 @@ CALLS_HTML = r"""<!doctype html>
     </div>
   </div>
 </div>
-<script src="/va/calls.js?v=19"></script>
+<script src="/va/calls.js?v=20"></script>
 </body>
 </html>
 """
@@ -1414,6 +1448,14 @@ CALLS_CSS = r"""/* Call Desk — layers over /va/app.css tokens */
   .oc-skip{grid-column:1 / -1}
 }
 
+/* sign-in */
+.gate-alt{margin-top:14px}
+.gate-alt summary{cursor:pointer;color:var(--faint);font-size:12.5px;list-style:none}
+.gate-alt summary::before{content:"▸ "}
+.gate-alt[open] summary::before{content:"▾ "}
+.gate-alt form{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.btn-alt{background:var(--raise);color:var(--ink);border:1px solid var(--line)}
+.who{font-family:var(--display);font-weight:700;font-size:11.5px;color:var(--faint);margin-right:8px;white-space:nowrap}
 /* desk line: two-pane desk, thread, inbox, dialer */
 .col-main{display:contents}
 .col-main>*{order:5}
@@ -1691,8 +1733,14 @@ CALLS_CSS = r"""/* Call Desk — layers over /va/app.css tokens */
 
 
 CALLS_JS = r"""(function(){
-  var KEY = "umuve_coach_code";      // shared login across the VA suite
+  var KEY = "umuve_coach_code";      // legacy shared code across the VA suite
   var VA_KEY = "umuve_va_name";
+  var JWT_KEY = "umuve_desk_jwt";
+  var ME_KEY = "umuve_desk_me";
+  var flags = {};
+  function jwt(){ return localStorage.getItem(JWT_KEY) || ""; }
+  function me(){ try { return JSON.parse(localStorage.getItem(ME_KEY) || "null"); } catch(e){ return null; } }
+  function isManager(){ var m = me(); return !!(m && m.is_manager); }
   var gate = document.getElementById("gate");
   var tool = document.getElementById("tool");
   var gateErr = document.getElementById("gate-err");
@@ -1728,35 +1776,81 @@ CALLS_JS = r"""(function(){
   }
 
   function code(){ return localStorage.getItem(KEY) || ""; }
-  function vaName(){ return localStorage.getItem(VA_KEY) || ""; }
-  function showTool(){ gate.hidden = true; tool.hidden = false; deskBoot(); }
+  function vaName(){ var m = me(); return (m && m.name) || localStorage.getItem(VA_KEY) || ""; }
+  function signedIn(){ return !!jwt() || !!code(); }
+  function showTool(){
+    gate.hidden = true; tool.hidden = false;
+    var who = document.getElementById("who"); var m = me();
+    if(m && m.name){ who.textContent = m.name + (m.is_manager ? " · manager" : ""); who.hidden = false; }
+    else if(vaName()){ who.textContent = vaName(); who.hidden = false; } else { who.hidden = true; }
+    deskBoot();
+  }
+  function signOut(msg){
+    localStorage.removeItem(JWT_KEY); localStorage.removeItem(ME_KEY); localStorage.removeItem(KEY);
+    showGate(msg);
+  }
   function showGate(msg){
     tool.hidden = true; gate.hidden = false; reveal(gate);
     if(msg && gateErr){ gateErr.textContent = msg; gateErr.hidden = false; }
-    var c = document.getElementById("code"); if(c) c.focus();
+    var c = document.getElementById("g-email"); if(c) c.focus();
   }
 
   var gateForm = document.getElementById("gate-form");
   if(gateForm){
     gateForm.addEventListener("submit", function(e){
       e.preventDefault();
+      var email = document.getElementById("g-email").value.trim();
+      var pass = document.getElementById("g-pass").value;
+      if(!email || !pass){ gateErr.textContent = "Enter your email and password."; gateErr.hidden = false; return; }
+      var btn = gateForm.querySelector("button"); btn.disabled = true;
+      fetch("/api/desk/login", {method: "POST", headers: {"Content-Type": "application/json"},
+                                 body: JSON.stringify({email: email, password: pass})})
+        .then(function(r){ return r.json().then(function(j){ return {status: r.status, body: j}; }); })
+        .then(function(r){
+          btn.disabled = false;
+          if(r.status !== 200){ gateErr.textContent = (r.body && r.body.error) || "Sign-in failed."; gateErr.hidden = false; return; }
+          localStorage.setItem(JWT_KEY, r.body.token);
+          localStorage.setItem(ME_KEY, JSON.stringify({name: r.body.name, full_name: r.body.full_name, email: r.body.email, role: r.body.role, is_manager: r.body.is_manager}));
+          localStorage.setItem(VA_KEY, r.body.name || "");
+          localStorage.removeItem(KEY);
+          gateErr.hidden = true;
+          showTool(); fetchNext();
+        }).catch(function(){ btn.disabled = false; gateErr.textContent = "No connection — try again."; gateErr.hidden = false; });
+    });
+  }
+  var gateCodeForm = document.getElementById("gate-code-form");
+  if(gateCodeForm){
+    gateCodeForm.addEventListener("submit", function(e){
+      e.preventDefault();
       var v = document.getElementById("code").value.trim();
-      if(!v){ gateErr.textContent = "Enter your access code."; gateErr.hidden = false; return; }
-      localStorage.setItem(KEY, v);
+      var n = document.getElementById("code-name").value.trim();
+      if(!v){ gateErr.textContent = "Enter the access code."; gateErr.hidden = false; return; }
+      if(!n){ gateErr.textContent = "Enter your first name so your work is yours."; gateErr.hidden = false; return; }
+      localStorage.setItem(KEY, v); localStorage.setItem(VA_KEY, n); localStorage.removeItem(JWT_KEY); localStorage.removeItem(ME_KEY);
+      gateErr.hidden = true;
       showTool(); fetchNext();
     });
   }
 
   function post(path, body){
-    body.code = code();
-    body.va_name = vaName();
+    var headers = {"Content-Type": "application/json"};
+    if(jwt()) headers["Authorization"] = "Bearer " + jwt();
+    else { body.code = code(); body.va_name = vaName(); }
     return fetch(path, {
       method: "POST",
-      headers: {"Content-Type": "application/json"},
+      headers: headers,
       body: JSON.stringify(body)
     }).then(function(r){
       return r.json().then(function(j){ return {status: r.status, body: j}; });
     });
+  }
+  function applyFlags(){
+    var off = function(id, on){ var el = document.getElementById(id); if(el && !on) el.hidden = true; };
+    if(flags.power_dial === false){ off("pd-toggle", false); off("pdbar", false); }
+    if(flags.copilot === false){ off("cp-toggle", false); }
+    if(flags.rate_card === false){ var rc = document.querySelector(".rc-row"); if(rc) rc.hidden = true; }
+    if(flags.queue_import === false){ var l = document.querySelector(".qb-tools"); if(l) l.hidden = true; }
+    if(flags.passcode_login === false){ var alt = document.getElementById("gate-alt"); if(alt) alt.hidden = true; }
   }
 
   function fmtPhone(p){ return p; }
@@ -1847,7 +1941,7 @@ CALLS_JS = r"""(function(){
   }
 
   function fail(status, body){
-    if(status === 401){ localStorage.removeItem(KEY); showGate(body.error || "That code didn't work."); return; }
+    if(status === 401){ signOut((body && body.error) || "Please sign in again."); return; }
     deskErr.textContent = (body && body.error) || "Something went wrong — try again.";
     deskErr.hidden = false;
   }
@@ -2227,6 +2321,7 @@ CALLS_JS = r"""(function(){
   }
   document.getElementById("tb-mine").addEventListener("click", function(){ tbView = "mine"; loadHours(); });
   document.getElementById("tb-team").addEventListener("click", function(){ tbView = "team"; loadHours(); });
+  if(jwt() && !isManager()){ document.getElementById("tb-team").hidden = true; }
   function showTime(){ hideQueue(); searchbox.hidden = true; tbStatus.hidden = true; timebox.hidden = false; deck.classList.add("time-open"); loadHours(); window.scrollTo(0, 0); }
   function hideTime(){ timebox.hidden = true; deck.classList.remove("time-open"); }
   clockChip.addEventListener("click", function(){ if(timebox.hidden) showTime(); else hideTime(); });
@@ -2587,6 +2682,7 @@ CALLS_JS = r"""(function(){
   }
   function deskBoot(){
     if(deskBooted) return; deskBooted = true;
+    post("/api/va/flags", {}).then(function(r){ if(r.status === 200){ flags = r.body.flags || {}; applyFlags(); } }).catch(function(){});
     pollUnread(); loadClock(); pollClock();
     post("/api/va/desk/unread", {}).then(function(r){ if(r.status === 200) setUnread(r.body.unread); }).catch(function(){});
     post("/api/va/desk/token", {}).then(function(r){
@@ -2608,7 +2704,7 @@ CALLS_JS = r"""(function(){
     try {
       device = new Twilio.Device(token, {codecPreferences: ["opus", "pcmu"], closeProtection: true});
     } catch(e){ return; }
-    device.on("registered", function(){ deskReady = true; syncDialUI(); setDialerStatus("desk line ready · " + prettyNum(deskNumber)); pdToggle.hidden = false; loadVm(); pdRender(); cpToggle.hidden = false; cpRender(); });
+    device.on("registered", function(){ deskReady = true; syncDialUI(); setDialerStatus("desk line ready · " + prettyNum(deskNumber)); pdToggle.hidden = flags.power_dial === false; loadVm(); pdRender(); cpToggle.hidden = flags.copilot === false; cpRender(); applyFlags(); });
     device.on("unregistered", function(){ deskReady = false; syncDialUI(); setDialerStatus("desk line offline — reload"); });
     device.on("tokenWillExpire", refreshToken);
     device.on("error", function(e){
@@ -2904,8 +3000,8 @@ CALLS_JS = r"""(function(){
     pendingIncoming = null; incoming.hidden = true; call.reject();
   });
 
-  // boot: saved code -> straight to the desk; the first API call re-verifies it
-  if(code()){ showTool(); fetchNext(); } else { showGate(); }
+  // boot: a saved login goes straight to the desk; the first API call re-verifies it
+  if(signedIn()){ showTool(); fetchNext(); } else { showGate(); }
   reveal(document);
 })();
 """

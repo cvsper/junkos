@@ -3995,3 +3995,26 @@ class DeskTranscriptLine(db.Model):
     def to_dict(self):
         return {"id": self.id, "track": self.track, "text": self.text, "seq": self.seq,
                 "at": self.created_at.isoformat() if self.created_at else None}
+
+
+class AuditEvent(db.Model):
+    """Who did what on the desk. Append-only."""
+    __tablename__ = "audit_events"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    actor_user_id = Column(String(36), nullable=True, index=True)
+    actor_name = Column(String(120), nullable=True, index=True)
+    actor_role = Column(String(20), nullable=True)
+    via = Column(String(20), nullable=True)            # jwt | passcode | twilio | system
+    action = Column(String(60), nullable=False, index=True)
+    target_type = Column(String(40), nullable=True)
+    target_id = Column(String(64), nullable=True, index=True)
+    meta = Column(JSON, nullable=True)
+    ip = Column(String(64), nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+
+    def to_dict(self):
+        return {"id": self.id, "actor": self.actor_name, "actor_user_id": self.actor_user_id,
+                "role": self.actor_role, "via": self.via, "action": self.action,
+                "target_type": self.target_type, "target_id": self.target_id, "meta": self.meta or {},
+                "at": self.created_at.isoformat() if self.created_at else None}

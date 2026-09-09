@@ -47,6 +47,7 @@ from urllib.parse import quote
 
 from flask import Blueprint, Response, jsonify, request
 
+from desk_auth import desk_identity, desk_va_name, audit, is_manager
 from models import db, CallProspect, DeskActivity, DeskSetting, DeskTranscriptLine
 from xml.sax.saxutils import quoteattr
 
@@ -647,8 +648,9 @@ def voice_config():
 @_ratelimit
 def desk_token():
     data = request.get_json(silent=True) or {}
-    if not _passcode_ok(data.get("code")):
-        return jsonify({"error": "That code didn't work."}), 401
+    ident = desk_identity(data)
+    if not ident:
+        return jsonify({"error": "Sign in to the desk first."}), 401
     missing = voice_config()
     if missing:
         return jsonify({"enabled": False,
@@ -706,8 +708,9 @@ def thread_for(p, mark_read=True):
 @_ratelimit
 def desk_thread():
     data = request.get_json(silent=True) or {}
-    if not _passcode_ok(data.get("code")):
-        return jsonify({"error": "That code didn't work."}), 401
+    ident = desk_identity(data)
+    if not ident:
+        return jsonify({"error": "Sign in to the desk first."}), 401
     p = db.session.get(CallProspect, data.get("prospect_id") or "")
     if not p:
         return jsonify({"error": "Prospect not found — reload the page."}), 404
@@ -720,8 +723,9 @@ def desk_thread():
 @_ratelimit
 def desk_text():
     data = request.get_json(silent=True) or {}
-    if not _passcode_ok(data.get("code")):
-        return jsonify({"error": "That code didn't work."}), 401
+    ident = desk_identity(data)
+    if not ident:
+        return jsonify({"error": "Sign in to the desk first."}), 401
     p = db.session.get(CallProspect, data.get("prospect_id") or "")
     if not p:
         return jsonify({"error": "Prospect not found — reload the page."}), 404
@@ -736,11 +740,12 @@ def desk_text():
     digits = _digits(to) if to else (_digits(p.direct_phone) if p.direct_phone else p.phone_digits)
     if len(digits or "") != 10:
         return jsonify({"error": "That doesn't look like a valid US number."}), 400
-    va_name = (data.get("va_name") or "").strip()[:80]
+    va_name = desk_va_name(data)
     sid = send_desk_text(digits, body, prospect=p, va_name=va_name)
     if not sid:
         return jsonify({"error": "The text didn't go through — texting may be down, "
                                  "or that's not a textable number."}), 502
+    audit("text", "prospect", p.id, {"to_last4": digits[-4:], "chars": len(body)})
     return jsonify({"ok": True, "sid": sid, "to": "(...) " + digits[-4:],
                     "messages": thread_for(p)}), 200
 
@@ -750,12 +755,13 @@ def desk_text():
 def desk_templates():
     """Canned texts for the composer — server-side copy the VA can edit before sending."""
     data = request.get_json(silent=True) or {}
-    if not _passcode_ok(data.get("code")):
-        return jsonify({"error": "That code didn't work."}), 401
+    ident = desk_identity(data)
+    if not ident:
+        return jsonify({"error": "Sign in to the desk first."}), 401
     p = db.session.get(CallProspect, data.get("prospect_id") or "")
     if not p:
         return jsonify({"error": "Prospect not found — reload the page."}), 404
-    va_name = (data.get("va_name") or "").strip()[:80]
+    va_name = desk_va_name(data)
     from va_calls import followup_text_for, info_text_for
     return jsonify({
         "intro": followup_text_for("voicemail", p, va_name),
@@ -769,12 +775,14 @@ def desk_templates():
 def desk_voicemail():
     """{"action": "status"|"clear"} — the VA's recorded voicemail-drop."""
     data = request.get_json(silent=True) or {}
-    if not _passcode_ok(data.get("code")):
-        return jsonify({"error": "That code didn't work."}), 401
+    ident = desk_identity(data)
+    if not ident:
+        return jsonify({"error": "Sign in to the desk first."}), 401
     va = (data.get("va_name") or "").strip()[:80]
     if (data.get("action") or "status") == "clear":
         DeskSetting.put(_vm_key(va), None)
         DeskSetting.put(_vm_key(va) + ":seconds", None)
+        audit("voicemail_cleared", "va", va)
     url = voicemail_for(va)
     secs = DeskSetting.get(_vm_key(va) + ":seconds")
     return jsonify({"has_voicemail": bool(url), "seconds": int(secs) if secs else None,
@@ -787,8 +795,9 @@ def desk_last_call():
     """Most recent outbound call on this prospect — the power dialer reads its
     status (vm_dropped / machine / completed / no-answer) to decide what to do next."""
     data = request.get_json(silent=True) or {}
-    if not _passcode_ok(data.get("code")):
-        return jsonify({"error": "That code didn't work."}), 401
+    ident = desk_identity(data)
+    if not ident:
+        return jsonify({"error": "Sign in to the desk first."}), 401
     p = db.session.get(CallProspect, data.get("prospect_id") or "")
     if not p:
         return jsonify({"error": "Prospect not found."}), 404
@@ -808,8 +817,9 @@ def desk_transcript():
     """Lines for this prospect's latest outbound call, plus a live cue when
     their last sentence trips an objection trigger."""
     data = request.get_json(silent=True) or {}
-    if not _passcode_ok(data.get("code")):
-        return jsonify({"error": "That code didn't work."}), 401
+    ident = desk_identity(data)
+    if not ident:
+        return jsonify({"error": "Sign in to the desk first."}), 401
     p = db.session.get(CallProspect, data.get("prospect_id") or "")
     if not p:
         return jsonify({"error": "Prospect not found."}), 404
@@ -826,7 +836,7 @@ def desk_transcript():
     from call_kit import build_kit, detect_side
     from copilot import cue_for
     side = data.get("side") if data.get("side") in ("supply", "demand") else detect_side(p)
-    kit = build_kit(p, va_name=data.get("va_name"), side=side)
+    kit = build_kit(p, va_name=desk_va_name(data), side=side)
     cue = cue_for([l.to_dict() for l in all_lines], kit, side)
     return jsonify({"call_sid": act.twilio_sid, "status": act.status, "lines": new,
                     "total": len(all_lines), "cue": cue}), 200
@@ -837,8 +847,9 @@ def desk_transcript():
 def desk_summarize():
     """After the call: note + suggested outcome from the transcript. Nothing is logged here."""
     data = request.get_json(silent=True) or {}
-    if not _passcode_ok(data.get("code")):
-        return jsonify({"error": "That code didn't work."}), 401
+    ident = desk_identity(data)
+    if not ident:
+        return jsonify({"error": "Sign in to the desk first."}), 401
     p = db.session.get(CallProspect, data.get("prospect_id") or "")
     if not p:
         return jsonify({"error": "Prospect not found."}), 404
@@ -869,8 +880,9 @@ def unread_count():
 @_ratelimit
 def desk_inbox():
     data = request.get_json(silent=True) or {}
-    if not _passcode_ok(data.get("code")):
-        return jsonify({"error": "That code didn't work."}), 401
+    ident = desk_identity(data)
+    if not ident:
+        return jsonify({"error": "Sign in to the desk first."}), 401
     since = (_now() - timedelta(days=30)).replace(tzinfo=None)
     rows = (DeskActivity.query
             .filter(DeskActivity.direction == "in", DeskActivity.created_at >= since)
@@ -911,6 +923,7 @@ def desk_inbox():
 @_ratelimit
 def desk_unread():
     data = request.get_json(silent=True) or {}
-    if not _passcode_ok(data.get("code")):
-        return jsonify({"error": "That code didn't work."}), 401
+    ident = desk_identity(data)
+    if not ident:
+        return jsonify({"error": "Sign in to the desk first."}), 401
     return jsonify({"unread": unread_count()}), 200
