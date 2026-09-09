@@ -868,6 +868,11 @@ def desk_summarize():
         act.body = "Transcript: " + " ".join(
             ("[them] " if l["track"] == "them" else "[you] ") + l["text"] for l in lines)[:1900]
         db.session.commit()
+    if act and lines:
+        try:
+            from coaching import score_call_async; score_call_async(act, lines, p)
+        except Exception:
+            logger.exception("coaching hook failed")
     return jsonify(res), 200
 
 
