@@ -981,7 +981,7 @@ CALLS_HTML = r"""<!doctype html>
 <meta name="theme-color" content="#0B0E12" />
 <title>Umuve — Call Desk</title>
 <link rel="stylesheet" href="/va/app.css?v=3" />
-<link rel="stylesheet" href="/va/calls.css?v=10" />
+<link rel="stylesheet" href="/va/calls.css?v=11" />
 </head>
 <body>
 <div id="app">
@@ -1179,7 +1179,7 @@ CALLS_HTML = r"""<!doctype html>
     </div>
   </div>
 </div>
-<script src="/va/calls.js?v=13"></script>
+<script src="/va/calls.js?v=14"></script>
 </body>
 </html>
 """
@@ -1360,6 +1360,8 @@ CALLS_CSS = r"""/* Call Desk — layers over /va/app.css tokens */
 .cs-btn{padding:8px 12px;font-family:var(--display);font-weight:700;font-size:12.5px;color:var(--ink);
   background:var(--raise);border:1px solid var(--line);border-radius:10px;cursor:pointer}
 .cs-hang{color:#FF7A5C;border-color:rgba(255,122,92,.45)}
+.callstrip.failed .cs-dot{background:#FF7A5C}
+.callstrip.failed .cs-state{color:#FF7A5C;font-weight:600}
 .incoming{position:fixed;inset:0;display:flex;align-items:flex-end;justify-content:center;
   background:rgba(11,14,18,.72);z-index:50;padding:16px}
 .inc-card{width:100%;max-width:440px;background:var(--surface);border:1px solid rgba(127,184,255,.45);
@@ -2306,12 +2308,38 @@ CALLS_JS = r"""(function(){
       deskCallBtn.hidden = true;
     }
   }
+  function callErrorText(e){
+    var code = e && e.code ? e.code : 0;
+    var msg = e && e.message ? e.message : "unknown error";
+    if(code === 31401 || code === 31402 || /permission|NotAllowed|getUserMedia/i.test(msg))
+      return "microphone blocked — click the lock icon in the address bar, allow Microphone, then reload (" + code + ")";
+    if(code === 31208) return "no microphone found — plug in a headset and reload (31208)";
+    if(code === 31005 || code === 31009) return "lost the connection to Twilio — check the internet (" + code + ")";
+    if(code === 20101 || code === 20104) return "desk line token expired — reload the page (" + code + ")";
+    if(code === 31002 || code === 31003) return "the other side didn't pick up or rejected (" + code + ")";
+    return msg + (code ? " (" + code + ")" : "");
+  }
   function startDeskCall(to){
     if(!device || !deskReady || !current || activeCall) return;
+    stripWho.textContent = current.company; stripState.textContent = "Starting…"; stripTime.textContent = "";
+    strip.hidden = false; strip.classList.remove("live", "failed");
     device.connect({params: {To: to, prospect_id: current.id, va_name: vaName()}}).then(function(call){
       bindCall(call, current.company);
-    }).catch(function(e){ showToast("Couldn't start the call: " + (e && e.message ? e.message : "microphone blocked?")); });
+    }).catch(function(e){
+      strip.classList.add("failed"); stripState.textContent = "Call failed: " + callErrorText(e);
+      showToast("Couldn't start the call: " + callErrorText(e));
+      setTimeout(function(){ strip.hidden = true; strip.classList.remove("failed"); }, 9000);
+    });
   }
+  // surface a blocked microphone before the first call
+  try {
+    if(navigator.permissions && navigator.permissions.query){
+      navigator.permissions.query({name: "microphone"}).then(function(p){
+        function show(){ if(p.state === "denied") setDialerStatus("microphone BLOCKED — click the lock icon in the address bar, allow Microphone, reload"); }
+        show(); p.onchange = show;
+      }).catch(function(){});
+    }
+  } catch(e){}
   document.getElementById("c-tel").addEventListener("click", function(e){
     if(deskReady && current){ e.preventDefault(); startDeskCall((current.tel || "").replace("tel:", "")); }
   });
@@ -2330,12 +2358,19 @@ CALLS_JS = r"""(function(){
       callStart = Date.now(); clearInterval(callTimer); callTimer = setInterval(tick, 1000); tick();
     });
     function done(){
-      clearInterval(callTimer); strip.hidden = true; strip.classList.remove("live");
+      clearInterval(callTimer); strip.hidden = true; strip.classList.remove("live", "failed");
       activeCall = null;
       if(current) setTimeout(function(){ loadThread(current); }, 1500);
     }
+    function failed(msg){
+      clearInterval(callTimer); activeCall = null;
+      strip.classList.remove("live"); strip.classList.add("failed");
+      stripState.textContent = "Call failed: " + msg; stripTime.textContent = "";
+      showToast("Call failed: " + msg);
+      setTimeout(function(){ strip.hidden = true; strip.classList.remove("failed"); }, 9000);
+    }
     call.on("disconnect", done); call.on("cancel", done); call.on("reject", done);
-    call.on("error", function(e){ showToast("Call error: " + (e && e.message ? e.message : "unknown")); done(); });
+    call.on("error", function(e){ failed(callErrorText(e)); });
   }
   deskCallBtn.addEventListener("click", function(){
     if(!current) return;
