@@ -550,11 +550,23 @@ def set_security_headers(response):
         # Internal VA tools (call coach + send-setup-link + VA hub) and the
         # agreements e-sign pages: load their own same-origin CSS/JS and call
         # same-origin APIs. Everything else locked.
-        response.headers["Content-Security-Policy"] = (
-            "default-src 'self'; img-src 'self' data:; style-src 'self'; "
-            "script-src 'self'; connect-src 'self'; base-uri 'none'; "
-            "form-action 'self'; frame-ancestors 'none'"
-        )
+        if request.path.startswith("/va/calls"):
+            # Call Desk runs the (self-hosted) Twilio Voice SDK: it opens a
+            # signaling websocket to Twilio and plays ringtones from Twilio's
+            # sound CDN. Scripts stay same-origin.
+            response.headers["Content-Security-Policy"] = (
+                "default-src 'self'; img-src 'self' data:; style-src 'self'; "
+                "script-src 'self'; "
+                "connect-src 'self' https://*.twilio.com wss://*.twilio.com; "
+                "media-src 'self' https://sdk.twilio.com https://media.twiliocdn.com; "
+                "base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
+            )
+        else:
+            response.headers["Content-Security-Policy"] = (
+                "default-src 'self'; img-src 'self' data:; style-src 'self'; "
+                "script-src 'self'; connect-src 'self'; base-uri 'none'; "
+                "form-action 'self'; frame-ancestors 'none'"
+            )
     else:
         response.headers["Content-Security-Policy"] = "default-src 'none'"
     if not _is_development:

@@ -1179,7 +1179,7 @@ CALLS_HTML = r"""<!doctype html>
     </div>
   </div>
 </div>
-<script src="/va/calls.js?v=12"></script>
+<script src="/va/calls.js?v=13"></script>
 </body>
 </html>
 """
@@ -2242,7 +2242,7 @@ CALLS_JS = r"""(function(){
     return new Promise(function(res, rej){
       if(window.Twilio && window.Twilio.Device){ res(); return; }
       var s = document.createElement("script");
-      s.src = "https://cdn.jsdelivr.net/npm/@twilio/voice-sdk@2/dist/twilio.min.js";
+      s.src = "/static/twilio-voice-2.18.4.min.js";
       s.onload = res; s.onerror = rej;
       document.head.appendChild(s);
     });
