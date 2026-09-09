@@ -21,6 +21,8 @@ FLAGS = {
     "browser_calling": {"default": True, "desc": "Call from the browser on the desk line"},
     "passcode_login": {"default": True,  "desc": "Allow the legacy shared passcode to open the desk (turn off once every VA has an account)"},
     "queue_import":   {"default": True,  "desc": "Load a CSV / add a business from the desk"},
+    "inbound_customers": {"default": True, "desc": "Inbound calls ring clocked-in VAs first with customer intake on the desk (off = legacy browser + cell ring, then voicemail)"},
+    "maya_fallback":  {"default": True,  "desc": "Send unanswered / after-hours inbound calls to Maya instead of voicemail"},
 }
 
 

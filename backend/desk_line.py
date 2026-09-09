@@ -562,14 +562,50 @@ def twilio_voice_inbound():
     resp = VoiceResponse()
     from_digits = _digits(request.form.get("From", ""))
     prospect = match_prospect(from_digits)
-    _log_call("in", from_digits, request.form.get("CallSid"), prospect)
+    call_sid = request.form.get("CallSid")
+    act = _log_call("in", from_digits, call_sid, prospect)
 
     fwd = forward_number()
-    dial = resp.dial(timeout=25, action=_base_url() + "/api/desk/twilio/voice/after-in",
-                     **_record_attr())
-    dial.client("desk")
-    if fwd:
-        dial.number(fwd)
+    import inbound
+    if not inbound.inbound_enabled():
+        # Legacy line: browser + cell together, voicemail on a miss.
+        dial = resp.dial(timeout=25, action=_base_url() + "/api/desk/twilio/voice/after-in",
+                         **_record_attr())
+        dial.client("desk")
+        if fwd:
+            dial.number(fwd)
+        return _twiml(resp)
+
+    # Phase 6: customers (LSA) ring the humans first, Maya second.
+    kind = "prospect" if prospect else inbound.classify_caller(from_digits)[0]
+    in_hours = inbound.in_human_hours()
+    try:
+        inbound.record_call(call_sid, from_digits, kind, in_hours=1 if in_hours else 0,
+                            disposition="ringing")
+    except Exception:
+        logger.exception("inbound_calls insert failed for %s", call_sid)
+        db.session.rollback()
+    resp.say("Thanks for calling Umuve.", voice="Polly.Joanna")
+    if in_hours:
+        dial = resp.dial(timeout=inbound.RING_SECONDS,
+                         action=_base_url() + "/api/desk/twilio/voice/after-in",
+                         **_record_attr())
+        for identity in inbound.ring_identities():
+            dial.client(identity)
+        if fwd:
+            dial.number(fwd)
+        return _twiml(resp)
+    # Outside human hours: straight to Maya (or voicemail when she's off).
+    if inbound.maya_fallback_enabled():
+        act.status = "to_maya"
+        db.session.commit()
+        inbound.touch_call(call_sid, disposition="to_maya")
+        inbound.maya_twiml(resp, _base_url())
+        return _twiml(resp)
+    act.status = "voicemail"
+    db.session.commit()
+    inbound.touch_call(call_sid, disposition="voicemail")
+    inbound.voicemail_twiml(resp, _base_url())
     return _twiml(resp)
 
 
@@ -580,20 +616,72 @@ def twilio_voice_after_in():
     from twilio.twiml.voice_response import VoiceResponse
     resp = VoiceResponse()
     status = request.form.get("DialCallStatus")
-    act = _finish_call(request.form.get("CallSid"), status,
-                       request.form.get("DialCallDuration"))
+    call_sid = request.form.get("CallSid")
+    duration = request.form.get("DialCallDuration")
+    act = _finish_call(call_sid, status, duration)
+    import inbound
+    phase6 = inbound.inbound_enabled()
     if status == "completed":
+        if phase6 and act:
+            act.status = "answered_by_human"
+            db.session.commit()
+            try:
+                inbound.touch_call(call_sid, disposition="answered_by_human",
+                                   duration=int(duration) if duration else None,
+                                   answered_by=(request.form.get("DialCallTo") or "")[:80] or None)
+            except Exception:
+                logger.exception("inbound_calls update failed for %s", call_sid)
+                db.session.rollback()
         resp.hangup()
+        return _twiml(resp)
+    if phase6 and inbound.maya_fallback_enabled():
+        # Nobody picked up — hand the caller to Maya rather than a mailbox.
+        if act:
+            act.status = "to_maya"
+            db.session.commit()
+        inbound.touch_call(call_sid, disposition="to_maya")
+        inbound.maya_twiml(resp, _base_url())
         return _twiml(resp)
     if act:
         act.status = "voicemail"
         db.session.commit()
+    if phase6:
+        inbound.touch_call(call_sid, disposition="voicemail")
     resp.say("You've reached Umuve. Leave your name, number, and what you need, "
              "and we'll call you right back.", voice="Polly.Joanna")
     resp.record(max_length=120, play_beep=True, transcribe=True,
                 transcribe_callback=_base_url() + "/api/desk/twilio/voice/transcript",
                 action=_base_url() + "/api/desk/twilio/voice/vm-done")
     resp.hangup()
+    return _twiml(resp)
+
+
+@deskline_bp.route("/api/desk/twilio/voice/after-maya", methods=["POST"])
+def twilio_voice_after_maya():
+    """The Maya leg ended. A clean hand-off hangs up; if her line didn't
+    answer, the caller still gets the mailbox instead of dead air."""
+    if not _validate():
+        return Response("Forbidden", status=403)
+    from twilio.twiml.voice_response import VoiceResponse
+    import inbound
+    resp = VoiceResponse()
+    status = request.form.get("DialCallStatus")
+    call_sid = request.form.get("CallSid")
+    duration = request.form.get("DialCallDuration")
+    if status == "completed":
+        try:
+            inbound.touch_call(call_sid, disposition="to_maya",
+                               duration=int(duration) if duration else None)
+        except Exception:
+            db.session.rollback()
+        resp.hangup()
+        return _twiml(resp)
+    act = DeskActivity.query.filter_by(twilio_sid=call_sid, kind="call").first()
+    if act:
+        act.status = "voicemail"
+        db.session.commit()
+    inbound.touch_call(call_sid, disposition="voicemail")
+    inbound.voicemail_twiml(resp, _base_url())
     return _twiml(resp)
 
 
@@ -661,14 +749,21 @@ def desk_token():
         from twilio.jwt.access_token import AccessToken
         from twilio.jwt.access_token.grants import VoiceGrant
         ttl = 3600
+        # Per-VA identity (desk-<slug>) so inbound calls can ring exactly the
+        # people on the clock; the legacy shared "desk" stays the fallback.
+        try:
+            from inbound import client_identity
+            identity = client_identity(ident.get("name"))
+        except Exception:
+            identity = "desk"
         token = AccessToken(_env("TWILIO_ACCOUNT_SID"), _env("TWILIO_API_KEY_SID"),
-                            _env("TWILIO_API_KEY_SECRET"), identity="desk", ttl=ttl)
+                            _env("TWILIO_API_KEY_SECRET"), identity=identity, ttl=ttl)
         token.add_grant(VoiceGrant(outgoing_application_sid=_env("TWILIO_TWIML_APP_SID"),
                                    incoming_allow=True))
         jwt = token.to_jwt()
         if isinstance(jwt, bytes):
             jwt = jwt.decode("utf-8")
-        return jsonify({"enabled": True, "token": jwt, "ttl": ttl,
+        return jsonify({"enabled": True, "token": jwt, "ttl": ttl, "identity": identity,
                         "desk_number": desk_number()}), 200
     except Exception:
         logger.exception("desk token build failed")
