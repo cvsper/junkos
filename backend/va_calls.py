@@ -588,6 +588,84 @@ def calls_contact():
                     "card": _card_payload(p, data.get("va_name"))}), 200
 
 
+@vacalls_bp.route("/rate-card/<prospect_id>.pdf", methods=["GET"])
+def rate_card_pdf(prospect_id):
+    """Public, signed: the personalized rate card. Linked from texts, attached to emails."""
+    from rate_card import check_sig, build_rate_card_pdf
+    if not check_sig(prospect_id, request.args.get("s")):
+        return Response("Not found", status=404)
+    p = db.session.get(CallProspect, prospect_id)
+    if not p:
+        return Response("Not found", status=404)
+    from desk_line import desk_number
+    pdf = build_rate_card_pdf(p, va_name=request.args.get("va"), desk_number=desk_number())
+    resp = Response(pdf, mimetype="application/pdf")
+    resp.headers["Content-Disposition"] = 'inline; filename="Umuve-rate-card-{}.pdf"'.format(
+        re.sub(r"[^A-Za-z0-9]+", "-", p.company or "prospect").strip("-")[:40])
+    resp.headers["Cache-Control"] = "private, max-age=600"
+    return resp
+
+
+@vacalls_bp.route("/api/va/calls/rate-card", methods=["POST"])
+@_ratelimit
+def calls_rate_card():
+    """Text a link to, or email, the personalized PDF rate card."""
+    from rate_card import public_url, build_rate_card_pdf
+    data = request.get_json(silent=True) or {}
+    if not _passcode_ok(data.get("code")):
+        return jsonify({"error": "That code didn't work."}), 401
+    p = db.session.get(CallProspect, data.get("prospect_id") or "")
+    if not p:
+        return jsonify({"error": "Prospect not found — reload the page."}), 404
+    va_name = (data.get("va_name") or "").strip()[:80]
+    va = (va_name or "Tracy").split()[0]
+    channel = (data.get("channel") or "").strip()
+    to = (data.get("to") or "").strip()
+    url = public_url(p.id) + "&va=" + va
+    if channel == "preview":
+        return jsonify({"ok": True, "url": url}), 200
+    if channel == "text":
+        digits = _digits(to) if to else (_digits(p.direct_phone) if p.direct_phone else p.phone_digits)
+        if len(digits or "") != 10:
+            return jsonify({"error": "That doesn't look like a valid US number."}), 400
+        body = ("Hi{}, it's {} with Umuve - here's the rate card for {}: {} "
+                "Text a photo of any pile to this number for an exact price. Reply STOP to opt out."
+                ).format(" " + _first_name(p.contact_name) if p.contact_name else "", va,
+                         (p.company or "your business")[:60], url)
+        from desk_line import send_desk_text
+        sid = _run(lambda: send_desk_text(digits, body, prospect=p, va_name=va_name))
+        if not sid:
+            return jsonify({"error": "The text didn't go through — texting may be down, "
+                                     "or that's not a textable number."}), 502
+        return jsonify({"ok": True, "channel": "text", "to": "(...) " + digits[-4:], "url": url}), 200
+    if channel == "email":
+        to_email = to.lower()
+        if not _EMAIL_RE.match(to_email):
+            return jsonify({"error": "Enter a valid email address."}), 400
+        from desk_line import desk_number
+        pdf = build_rate_card_pdf(p, va_name=va_name, desk_number=desk_number())
+        from email_templates import va_partner_info_html
+        html = va_partner_info_html(company=p.company, to_name=_first_name(p.contact_name), va_name=va_name)
+        html = html.replace("</body>", '<p style="font:14px/1.5 -apple-system,Helvetica,Arial;color:#333">'
+                            'Your rate card is attached as a PDF, or open it here: '
+                            '<a href="{}">rate card for {}</a>.</p></body>'.format(url, (p.company or "")[:60]))
+        subject = "Rate card for {} - Umuve".format((p.company or "your business")[:70])
+        from notifications import _send_email_resend
+        fname = "Umuve-rate-card-{}.pdf".format(re.sub(r"[^A-Za-z0-9]+", "-", p.company or "prospect").strip("-")[:40])
+        result = _run(lambda: _send_email_resend(to_email, subject, html, from_override=_va_email_from(),
+                                                 attachments=[{"filename": fname, "content": pdf}]))
+        if result is None and _va_email_from():
+            result = _run(lambda: _send_email_resend(to_email, subject, html,
+                                                     attachments=[{"filename": fname, "content": pdf}]))
+        if result is None:
+            return jsonify({"error": "Email isn't configured yet — ask Shamar."}), 503
+        p.email = to_email[:254]
+        p.last_emailed_at = _now().replace(tzinfo=None)
+        db.session.commit()
+        return jsonify({"ok": True, "channel": "email", "to": to_email, "url": url}), 200
+    return jsonify({"error": "Unknown channel."}), 400
+
+
 @vacalls_bp.route("/api/va/calls/kit", methods=["POST"])
 @_ratelimit
 def calls_kit():
@@ -981,7 +1059,7 @@ CALLS_HTML = r"""<!doctype html>
 <meta name="theme-color" content="#0B0E12" />
 <title>Umuve — Call Desk</title>
 <link rel="stylesheet" href="/va/app.css?v=3" />
-<link rel="stylesheet" href="/va/calls.css?v=13" />
+<link rel="stylesheet" href="/va/calls.css?v=14" />
 </head>
 <body>
 <div id="app">
@@ -1118,6 +1196,14 @@ CALLS_HTML = r"""<!doctype html>
               <input id="si-email" type="email" autocomplete="off" inputmode="email" placeholder="email address they gave you" />
               <button class="si-btn" id="si-email-btn" type="button">Email it</button>
             </div>
+            <div class="rc-row">
+              <div class="rc-l"><b>Rate card</b> - a one-page PDF with their name on it and today's prices</div>
+              <div class="rc-btns">
+                <button class="si-btn" id="rc-text-btn" type="button">Text the link</button>
+                <button class="si-btn" id="rc-email-btn" type="button">Email the PDF</button>
+                <button class="si-btn rc-prev" id="rc-prev-btn" type="button">Preview</button>
+              </div>
+            </div>
             <p class="si-status" id="si-status" hidden></p>
           </div>
           <div class="notewrap" id="c-lastnote" hidden></div>
@@ -1200,7 +1286,7 @@ CALLS_HTML = r"""<!doctype html>
     </div>
   </div>
 </div>
-<script src="/va/calls.js?v=16"></script>
+<script src="/va/calls.js?v=17"></script>
 </body>
 </html>
 """
@@ -1399,6 +1485,14 @@ CALLS_CSS = r"""/* Call Desk — layers over /va/app.css tokens */
 .inc-answer{background:var(--ok);border-color:var(--ok);color:#0B0E12}
 .inc-decline{color:#FF7A5C;border-color:rgba(255,122,92,.45)}
 @media (prefers-reduced-motion: reduce){.callstrip.live .cs-dot{animation:none}}
+/* rate card */
+.rc-row{display:flex;flex-direction:column;gap:8px;padding:10px 12px;margin:2px 0 8px;background:var(--raise);
+  border:1px dashed rgba(255,106,44,.4);border-radius:12px}
+.rc-l{color:var(--muted);font-size:12.5px;line-height:1.5}
+.rc-l b{color:var(--ink);font-family:var(--display);font-weight:700}
+.rc-btns{display:flex;gap:8px;flex-wrap:wrap}
+.rc-btns .si-btn{padding:9px 12px;font-size:12.5px}
+.rc-prev{color:var(--muted);border-color:var(--line)}
 /* call kit */
 .kit{border-top:1px solid var(--line);padding:10px 0 4px}
 .kit-bar{display:flex;align-items:center;gap:8px;margin-bottom:10px}
@@ -1851,6 +1945,25 @@ CALLS_JS = r"""(function(){
       fail(0, {error: "No connection — nothing was sent. Try again."});
     });
   }
+
+  function sendRateCard(channel, btn){
+    if(!current || btn.disabled) return;
+    var to = channel === "email" ? document.getElementById("si-email").value.trim()
+           : channel === "text" ? document.getElementById("si-phone").value.trim() : "";
+    if(channel === "email" && !to){ showToast("Type the email address they gave you first."); return; }
+    btn.disabled = true;
+    post("/api/va/calls/rate-card", {prospect_id: current.id, channel: channel, to: to}).then(function(r){
+      btn.disabled = false;
+      if(r.status !== 200){ fail(r.status, r.body); return; }
+      if(channel === "preview"){ window.open(r.body.url, "_blank", "noopener"); return; }
+      if(channel === "text"){ showToast("Rate card link texted to " + r.body.to + "."); current.last_texted_at = new Date().toISOString(); if(current) loadThread(current); }
+      else { showToast("Rate card PDF emailed to " + r.body.to + "."); current.email = r.body.to; current.last_emailed_at = new Date().toISOString(); }
+      syncContactUI();
+    }).catch(function(){ btn.disabled = false; fail(0, {error: "No connection — nothing was sent. Try again."}); });
+  }
+  document.getElementById("rc-text-btn").addEventListener("click", function(){ sendRateCard("text", this); });
+  document.getElementById("rc-email-btn").addEventListener("click", function(){ sendRateCard("email", this); });
+  document.getElementById("rc-prev-btn").addEventListener("click", function(){ sendRateCard("preview", this); });
 
   document.getElementById("si-text-btn").addEventListener("click", function(){
     sendInfo("text", document.getElementById("si-phone").value.trim(), this);

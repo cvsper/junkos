@@ -297,8 +297,11 @@ def render_operator_approval_email(name):
     return ("Welcome to Umuve — Operator Approved!", html)
 
 
-def _send_email_resend(to_email, subject, html_content, from_override=None):
-    """Send via the Resend API. Returns the response id or None."""
+def _send_email_resend(to_email, subject, html_content, from_override=None, attachments=None):
+    """Send via the Resend API. Returns the response id or None.
+
+    `attachments`: list of {"filename": str, "content": bytes} (Resend takes
+    base64; encoded here)."""
     try:
         import resend
         resend.api_key = RESEND_API_KEY
@@ -309,6 +312,12 @@ def _send_email_resend(to_email, subject, html_content, from_override=None):
             "subject": subject,
             "html": html_content,
         }
+        if attachments:
+            import base64
+            params["attachments"] = [
+                {"filename": a["filename"],
+                 "content": base64.b64encode(a["content"]).decode("ascii")}
+                for a in attachments]
         response = resend.Emails.send(params)
         logger.info("Email sent via Resend to %s (id: %s)", to_email, response.get("id"))
         return response.get("id")
