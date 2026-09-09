@@ -341,6 +341,21 @@ try:
 except Exception as _cp_exc:  # pragma: no cover
     import logging as _logging
     _logging.getLogger(__name__).warning("compliance_bp not registered: %s", _cp_exc)
+# Call Desk Phase 4 — analytics + coaching (scorecards). models_analytics is
+# imported first so create_all() sees the call_scores table.
+try:
+    import models_analytics  # noqa: F401
+    from analytics import analytics_bp
+    app.register_blueprint(analytics_bp)
+except Exception as _an_exc:  # pragma: no cover
+    import logging as _logging
+    _logging.getLogger(__name__).warning("analytics_bp not registered: %s", _an_exc)
+try:
+    from coaching import coaching_bp
+    app.register_blueprint(coaching_bp)
+except Exception as _co_exc:  # pragma: no cover
+    import logging as _logging
+    _logging.getLogger(__name__).warning("coaching_bp not registered: %s", _co_exc)
 
 # VA Dispatch Desk — job board + hauler assignment (first Maya phone close,
 # Aug 2026: phone customers need a human dispatcher to put a hauler on the job)

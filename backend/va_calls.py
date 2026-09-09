@@ -1381,6 +1381,8 @@ CALLS_HTML = r"""<!doctype html>
 <script src="/static/desk-crm.js?v=1"></script>
 <script src="/static/desk-compliance.js?v=1"></script>
 <script src="/va/calls.js?v=23"></script>
+<script src="/static/desk-analytics.js?v=1"></script>
+<script src="/va/calls.js?v=22"></script>
 </body>
 </html>
 """
