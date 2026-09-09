@@ -1382,10 +1382,9 @@ CALLS_HTML = r"""<!doctype html>
 <script src="/static/desk-crm.js?v=1"></script>
 <script src="/static/desk-compliance.js?v=1"></script>
 <script src="/static/desk-analytics.js?v=1"></script>
-<script src="/va/calls.js?v=23"></script>
 <script src="/static/desk-growth.js?v=1"></script>
 <script src="/static/desk-inbound.js?v=1"></script>
-<script src="/va/calls.js?v=22"></script>
+<script src="/va/calls.js?v=24"></script>
 </body>
 </html>
 """
@@ -2777,6 +2776,7 @@ CALLS_JS = r"""(function(){
   function initDevice(token){
     try {
       device = new Twilio.Device(token, {codecPreferences: ["opus", "pcmu"], closeProtection: true});
+      window.__deskDevice = device;   // inbound customer desk (desk-inbound.js) dials through it
     } catch(e){ return; }
     device.on("registered", function(){ deskReady = true; syncDialUI(); setDialerStatus("desk line ready · " + prettyNum(deskNumber)); pdToggle.hidden = flags.power_dial === false; loadVm(); pdRender(); cpToggle.hidden = flags.copilot === false; cpRender(); applyFlags(); });
     device.on("unregistered", function(){ deskReady = false; syncDialUI(); setDialerStatus("desk line offline — reload"); });
