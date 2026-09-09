@@ -214,6 +214,9 @@ def record_inbound_text(from_phone, body, media_urls=None, sid=None, prospect=No
         twilio_sid=sid, status="opted_out" if opted_out else "received",
     )
     db.session.add(act)
+    if opted_out:
+        from compliance import register_opt_out  # Phase 2: STOP lands on the DNC registry
+        register_opt_out(digits, source="sms_stop", note=(body or "")[:120] or None)
 
     if prospect:
         snippet = (body or "").replace("\n", " ").strip()[:200]
@@ -255,6 +258,12 @@ def send_desk_text(to_phone, body, prospect=None, va_name=None, log=True):
     digits = _digits(to_phone)
     to = _e164(digits)
     if not to:
+        return None
+    # Phase 2 compliance guard: never text a number on the do-not-call list.
+    from compliance import text_allowed
+    ok, why = text_allowed(digits)
+    if not ok:
+        logger.warning("desk text to ...%s blocked: %s", digits[-4:], why)
         return None
     sid = None
     frm = desk_number()

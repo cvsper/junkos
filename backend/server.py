@@ -333,6 +333,14 @@ try:
 except Exception as _crm_exc:  # pragma: no cover
     import logging as _logging
     _logging.getLogger(__name__).warning("crm_bp not registered: %s", _crm_exc)
+# Call Desk compliance — do-not-call registry, calling hours, retention, data rights
+try:
+    import models_compliance  # noqa: F401  (joins db.metadata before create_all below)
+    from compliance import compliance_bp
+    app.register_blueprint(compliance_bp)
+except Exception as _cp_exc:  # pragma: no cover
+    import logging as _logging
+    _logging.getLogger(__name__).warning("compliance_bp not registered: %s", _cp_exc)
 
 # VA Dispatch Desk — job board + hauler assignment (first Maya phone close,
 # Aug 2026: phone customers need a human dispatcher to put a hauler on the job)
