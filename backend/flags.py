@@ -24,6 +24,8 @@ FLAGS = {
     "maya_prequal":   {"default": False, "desc": "Maya pre-qualifies fresh supply-side cards by phone before a VA dials (also needs PREQUAL_ENABLED=true)"},
     "auto_ingest":    {"default": True,  "desc": "Sourced operator / B2B leads flow into the call queue daily"},
     "push_notifications": {"default": True, "desc": "Web Push to installed desks when a prospect replies"},
+    "inbound_customers": {"default": True, "desc": "Inbound calls ring clocked-in VAs first with customer intake on the desk (off = legacy browser + cell ring, then voicemail)"},
+    "maya_fallback":  {"default": True,  "desc": "Send unanswered / after-hours inbound calls to Maya instead of voicemail"},
 }
 
 

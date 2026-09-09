@@ -365,6 +365,15 @@ try:
 except Exception as _gr_exc:  # pragma: no cover
     import logging as _logging
     _logging.getLogger(__name__).warning("growth_bp not registered: %s", _gr_exc)
+# Inbound customer calls (Phase 6) — ring clocked-in VAs first, Maya second;
+# intake + quote + booking + pay link from the desk. Tables in models_inbound.
+try:
+    import models_inbound  # noqa: F401  — registers inbound_calls / callback_requests
+    from inbound import inbound_bp
+    app.register_blueprint(inbound_bp)
+except Exception as _ib_exc:  # pragma: no cover
+    import logging as _logging
+    _logging.getLogger(__name__).warning("inbound_bp not registered: %s", _ib_exc)
 
 # VA Dispatch Desk — job board + hauler assignment (first Maya phone close,
 # Aug 2026: phone customers need a human dispatcher to put a hauler on the job)

@@ -19,6 +19,7 @@ def env():
         "DESK_TWILIO_NUMBER": "+15615550999",
         "DESK_FORWARD_NUMBER": "+15615550777",
         "BACKEND_URL": "https://api.test",
+        "FEATURE_INBOUND_CUSTOMERS": "off",   # legacy line behaviour; Phase 6 lives in test_inbound.py
     }):
         yield
 
