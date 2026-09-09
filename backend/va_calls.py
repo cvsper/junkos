@@ -135,8 +135,8 @@ _CATEGORY_OPENER = [
     (("property", "hoa", "apartment", "commercial", "office", "institution",
       "hotel"), "property"),
     (("storage",), "storage"),
-    (("estate", "auction", "antiques", "thrift"), "estate"),
     (("real estate", "staging", "probate"), "realtor"),
+    (("estate", "auction", "antiques", "thrift"), "estate"),
     (("investor", "flipper"), "flipper"),
     (("senior",), "senior"),
     (("moving",), "mover"),
@@ -584,6 +584,86 @@ def calls_contact():
                     "card": _card_payload(p, data.get("va_name"))}), 200
 
 
+@vacalls_bp.route("/api/va/calls/kit", methods=["POST"])
+@_ratelimit
+def calls_kit():
+    """Mid-call kit: talk track, objection replies, fact sheet, live prices,
+    lookups — keyed to whether we're selling them (demand) or recruiting
+    them (supply). `side` lets the VA override the guess."""
+    data = request.get_json(silent=True) or {}
+    if not _passcode_ok(data.get("code")):
+        return jsonify({"error": "That code didn't work."}), 401
+    p = db.session.get(CallProspect, data.get("prospect_id") or "")
+    if not p:
+        return jsonify({"error": "Prospect not found — reload the page."}), 404
+    from call_kit import build_kit
+    return jsonify(build_kit(p, va_name=data.get("va_name"), side=data.get("side"))), 200
+
+
+CALLBACK_PRESETS = {
+    "tomorrow_am": (1, 9), "tomorrow_pm": (1, 14),
+    "two_days": (2, 9), "next_week": (7, 9),
+}
+
+
+def schedule_callback(prospect, when_utc, note, va_name):
+    """They asked for a specific time: pin the follow-up, log the touch."""
+    now_naive = _now().replace(tzinfo=None)
+    prospect.attempts = (prospect.attempts or 0) + 1
+    prospect.last_called_at = now_naive
+    prospect.last_outcome = "callback"
+    if prospect.status not in WORKABLE_STATUSES:
+        prospect.status = "interested"
+    prospect.next_followup_at = when_utc.replace(tzinfo=None)
+    if note:
+        prospect.last_note = note
+    db.session.add(CallAttempt(prospect_id=prospect.id, outcome="callback",
+                               note=note or None, va_name=va_name or None))
+
+
+@vacalls_bp.route("/api/va/calls/callback", methods=["POST"])
+@_ratelimit
+def calls_callback():
+    """Body: {prospect_id, preset | at, note}. `preset` is one of
+    CALLBACK_PRESETS; `at` is 'YYYY-MM-DDTHH:MM' in Florida time. Logs a
+    'callback' attempt, pins next_followup_at, deals the next card."""
+    from timeutils import local_now, local_naive_to_utc, parse_local_iso, to_local
+    data = request.get_json(silent=True) or {}
+    if not _passcode_ok(data.get("code")):
+        return jsonify({"error": "That code didn't work."}), 401
+    p = db.session.get(CallProspect, data.get("prospect_id") or "")
+    if not p:
+        return jsonify({"error": "Prospect not found — reload the page."}), 404
+    preset = (data.get("preset") or "").strip()
+    at = (data.get("at") or "").strip()
+    try:
+        if preset in CALLBACK_PRESETS:
+            days, hour = CALLBACK_PRESETS[preset]
+            local = local_now().replace(tzinfo=None) + timedelta(days=days)
+            when = local_naive_to_utc(local.replace(hour=hour, minute=0, second=0, microsecond=0))
+        elif at:
+            when = parse_local_iso(at)
+        else:
+            return jsonify({"error": "Pick a time for the callback."}), 400
+    except (ValueError, TypeError):
+        return jsonify({"error": "That date/time didn't make sense."}), 400
+    if when <= _now():
+        return jsonify({"error": "That time already passed — pick a later one."}), 400
+    note = (data.get("note") or "").strip()[:1000]
+    va_name = (data.get("va_name") or "").strip()[:80]
+    schedule_callback(p, when, note, va_name)
+    db.session.commit()
+    nxt = next_card()
+    resp = {"logged": True, "callback_at": when.isoformat(),
+            "callback_local": to_local(when).strftime("%a %b %-d, %-I:%M %p"),
+            "stats": day_stats()}
+    if nxt:
+        resp["card"] = _card_payload(nxt, va_name)
+    else:
+        resp["empty"] = True
+    return jsonify(resp), 200
+
+
 # ---------------------------------------------------------------------------
 # Admin: seed/merge + stats
 # ---------------------------------------------------------------------------
@@ -760,7 +840,7 @@ CALLS_HTML = r"""<!doctype html>
 <meta name="theme-color" content="#0B0E12" />
 <title>Umuve — Call Desk</title>
 <link rel="stylesheet" href="/va/app.css?v=3" />
-<link rel="stylesheet" href="/va/calls.css?v=8" />
+<link rel="stylesheet" href="/va/calls.css?v=9" />
 </head>
 <body>
 <div id="app">
@@ -819,7 +899,20 @@ CALLS_HTML = r"""<!doctype html>
           <a class="dial dial-direct" id="c-direct" href="#" hidden><span class="dial-num-sm" id="c-direct-num"></span><span class="dial-hint">direct line — skips the front desk</span></a>
           <div class="factrow"><div class="fact-k">Why them</div><div class="fact-v" id="c-why"></div></div>
           <div class="factrow"><div class="fact-k">Your angle</div><div class="fact-v" id="c-angle"></div></div>
-          <details class="openerbox"><summary>Your opener</summary><p id="c-opener"></p></details>
+          <p id="c-opener" hidden></p>
+          <div class="kit" id="kit">
+            <div class="kit-bar">
+              <div class="kit-tabs" role="tablist">
+                <button type="button" class="kit-tab is-on" data-k="track">Script</button>
+                <button type="button" class="kit-tab" data-k="objections">Objections</button>
+                <button type="button" class="kit-tab" data-k="answers">Answers</button>
+                <button type="button" class="kit-tab" data-k="prices">Prices</button>
+                <button type="button" class="kit-tab" data-k="lookup">Look up</button>
+              </div>
+              <button type="button" class="kit-side" id="kit-side" title="Switch between selling them and recruiting them">—</button>
+            </div>
+            <div class="kit-body" id="kit-body"><p class="kit-loading">Loading the kit…</p></div>
+          </div>
           <div class="sendinfo">
             <div class="si-head">WHO DECIDES?</div>
             <p class="si-sub">Receptionist gave you a name or the boss's cell? Save it — it sticks to this card and their name goes on everything we send.</p>
@@ -852,6 +945,16 @@ CALLS_HTML = r"""<!doctype html>
           <span><b>Text them after I tap</b> — the right follow-up goes out from the Umuve number (interested → partner info · on their vendor list → thanks + rates + booking number · no answer → who-we-are text)</span>
         </label>
 
+        <div id="callback" class="callback" hidden>
+          <div class="cb-l">They asked you to call back</div>
+          <div class="cb-row">
+            <button type="button" class="cb" data-p="tomorrow_am">Tomorrow 9am</button>
+            <button type="button" class="cb" data-p="tomorrow_pm">Tomorrow 2pm</button>
+            <button type="button" class="cb" data-p="two_days">In 2 days</button>
+            <button type="button" class="cb" data-p="next_week">Next week</button>
+            <label class="cb cb-pick"><span>Pick a time</span><input type="datetime-local" id="cb-at" /></label>
+          </div>
+        </div>
         <div id="outcomes" class="outcomes" hidden>
           <button class="oc oc-good" data-o="interested">Interested</button>
           <button class="oc oc-good" data-o="sent_link">Sent the link</button>
@@ -912,7 +1015,7 @@ CALLS_HTML = r"""<!doctype html>
     </div>
   </div>
 </div>
-<script src="/va/calls.js?v=8"></script>
+<script src="/va/calls.js?v=9"></script>
 </body>
 </html>
 """
@@ -1105,6 +1208,60 @@ CALLS_CSS = r"""/* Call Desk — layers over /va/app.css tokens */
 .inc-answer{background:var(--ok);border-color:var(--ok);color:#0B0E12}
 .inc-decline{color:#FF7A5C;border-color:rgba(255,122,92,.45)}
 @media (prefers-reduced-motion: reduce){.callstrip.live .cs-dot{animation:none}}
+/* call kit */
+.kit{border-top:1px solid var(--line);padding:10px 0 4px}
+.kit-bar{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.kit-tabs{display:flex;gap:4px;flex:1;min-width:0;overflow-x:auto;scrollbar-width:none}
+.kit-tabs::-webkit-scrollbar{display:none}
+.kit-tab{flex:none;font-family:var(--display);font-weight:700;font-size:12px;letter-spacing:.02em;
+  color:var(--faint);background:transparent;border:1px solid transparent;border-radius:999px;
+  padding:6px 11px;cursor:pointer;transition:color .15s,border-color .15s,background .15s}
+.kit-tab:hover{color:var(--muted)}
+.kit-tab.is-on{color:var(--ink);background:var(--raise);border-color:var(--line)}
+.kit-side{flex:none;font-family:var(--display);font-weight:700;font-size:10.5px;letter-spacing:.12em;
+  text-transform:uppercase;padding:6px 10px;border-radius:8px;cursor:pointer;background:transparent;
+  border:1px dashed var(--line);color:var(--faint)}
+.kit-side.supply{color:var(--ok);border-color:rgba(61,214,140,.4)}
+.kit-side.demand{color:var(--accent);border-color:rgba(255,106,44,.4)}
+.kit-body{min-height:60px}
+.kit-loading,.kit-note{color:var(--faint);font-size:12px;line-height:1.5;margin:0 0 8px}
+.kt-step{display:grid;grid-template-columns:78px 1fr;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
+.kt-step:first-child{border-top:0;padding-top:0}
+.kt-k{font-family:var(--display);font-weight:700;font-size:10px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--accent);padding-top:3px}
+.kt-v{color:var(--ink);font-size:13.5px;line-height:1.55}
+.kt-v ol{margin:0;padding-left:18px}
+.kt-v li{margin:0 0 4px}
+.kt-v li:last-child{margin:0}
+.kt-obj{border-top:1px solid var(--line)}
+.kt-obj summary{list-style:none;cursor:pointer;padding:9px 0;font-family:var(--display);font-weight:700;
+  font-size:13.5px;color:var(--ink);display:flex;gap:8px;align-items:baseline}
+.kt-obj summary::-webkit-details-marker{display:none}
+.kt-obj summary::before{content:"“";color:var(--faint);font-family:Georgia,serif;font-size:18px;line-height:0}
+.kt-obj p{margin:0 0 10px;padding-left:12px;border-left:2px solid rgba(61,214,140,.5);
+  color:var(--muted);font-size:13.5px;line-height:1.55}
+.kt-ans{display:grid;grid-template-columns:110px 1fr;gap:8px 12px;font-size:13px;line-height:1.5}
+.kt-ans dt{font-family:var(--display);font-weight:700;color:var(--ink);font-size:12.5px;padding-top:1px}
+.kt-ans dd{margin:0;color:var(--muted)}
+.kt-price{display:grid;grid-template-columns:1fr 1fr;gap:4px 16px}
+.kt-price div{display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px dashed var(--line);
+  font-size:13px;color:var(--muted)}
+.kt-price b{font-family:var(--display);font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums}
+.kt-links{display:flex;flex-wrap:wrap;gap:8px}
+.kt-links a{font-family:var(--display);font-weight:700;font-size:12.5px;color:var(--ink);text-decoration:none;
+  background:var(--raise);border:1px solid var(--line);border-radius:10px;padding:9px 12px}
+.kt-links a:hover{border-color:rgba(255,106,44,.45)}
+/* callback scheduler */
+.callback{background:var(--surface);border:1px dashed rgba(127,184,255,.45);border-radius:14px;padding:11px 12px}
+.cb-l{font-family:var(--display);font-weight:600;font-size:10px;letter-spacing:.16em;text-transform:uppercase;
+  color:#7FB8FF;margin-bottom:8px}
+.cb-row{display:flex;flex-wrap:wrap;gap:6px}
+.cb{font-family:var(--display);font-weight:700;font-size:12.5px;color:var(--ink);background:var(--raise);
+  border:1px solid var(--line);border-radius:10px;padding:8px 11px;cursor:pointer;transition:border-color .15s}
+.cb:hover{border-color:#7FB8FF}
+.cb:disabled{opacity:.45;cursor:default}
+.cb-pick{position:relative;overflow:hidden;color:var(--muted)}
+.cb-pick input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
 /* phones: the line is a bottom sheet — header always visible, tap to open */
 @media (max-width:959px){
   .body.desk{padding-bottom:96px}
@@ -1230,6 +1387,7 @@ CALLS_JS = r"""(function(){
       }
       current = null;
       loadThread(null);
+      document.getElementById("callback").hidden = true;
       deskCallBtn.hidden = true;
       setLineWho(null);
       showInboxPane(true);
@@ -1261,6 +1419,8 @@ CALLS_JS = r"""(function(){
     document.getElementById("note").value = "";
     syncContactUI();
     loadThread(c);
+    loadKit(c);
+    document.getElementById("callback").hidden = false;
     deskCallBtn.hidden = !deskReady;
     card.hidden = false; outcomes.hidden = false; textopt.hidden = false;
     if(!reduced){
@@ -1288,7 +1448,7 @@ CALLS_JS = r"""(function(){
 
   function setBusy(b){
     busy = b;
-    document.querySelectorAll("#outcomes button").forEach(function(btn){ btn.disabled = b; });
+    document.querySelectorAll("#outcomes button, #callback button").forEach(function(btn){ btn.disabled = b; });
   }
 
   var toast = document.getElementById("desk-toast");
@@ -1486,6 +1646,87 @@ CALLS_JS = r"""(function(){
         });
       });
     }, 250);
+  });
+
+  // ---- call kit ----
+  var kitBody = document.getElementById("kit-body");
+  var kitSideBtn = document.getElementById("kit-side");
+  var kitTab = "track", kitData = null, kitFor = null, kitSideOverride = {};
+  function el(tag, cls, text){ var e = document.createElement(tag); if(cls) e.className = cls; if(text != null) e.textContent = text; return e; }
+  function renderKit(){
+    kitBody.textContent = "";
+    if(!kitData){ kitBody.appendChild(el("p", "kit-loading", "Loading the kit…")); return; }
+    var d = kitData;
+    kitSideBtn.textContent = d.side === "supply" ? "Recruiting a hauler" : "Selling a customer";
+    kitSideBtn.className = "kit-side " + d.side;
+    if(kitTab === "track"){
+      var steps = [["Open", d.track.opener], ["Ask", d.track.discover], ["Pitch", d.track.pitch], ["Close", d.track.close]];
+      steps.forEach(function(st){
+        var row = el("div", "kt-step"); row.appendChild(el("div", "kt-k", st[0]));
+        var v = el("div", "kt-v");
+        if(Array.isArray(st[1])){ var ol = el("ol"); st[1].forEach(function(q){ ol.appendChild(el("li", null, q)); }); v.appendChild(ol); }
+        else v.textContent = st[1];
+        row.appendChild(v); kitBody.appendChild(row);
+      });
+    } else if(kitTab === "objections"){
+      d.objections.forEach(function(o){
+        var det = el("details", "kt-obj"); det.appendChild(el("summary", null, o.say));
+        det.appendChild(el("p", null, o.reply)); kitBody.appendChild(det);
+      });
+    } else if(kitTab === "answers"){
+      var dl = el("dl", "kt-ans");
+      d.answers.forEach(function(a){ dl.appendChild(el("dt", null, a.q)); dl.appendChild(el("dd", null, a.a)); });
+      kitBody.appendChild(dl);
+    } else if(kitTab === "prices"){
+      kitBody.appendChild(el("p", "kit-note", d.price_note));
+      var grid = el("div", "kt-price");
+      d.prices.forEach(function(p){ var row = el("div"); row.appendChild(el("span", null, p.label)); row.appendChild(el("b", null, "$" + p.from)); grid.appendChild(row); });
+      kitBody.appendChild(grid);
+    } else if(kitTab === "lookup"){
+      var wrap = el("div", "kt-links");
+      d.lookup.forEach(function(l){ var a = el("a", null, l.label); a.href = l.url; a.target = "_blank"; a.rel = "noopener"; wrap.appendChild(a); });
+      kitBody.appendChild(wrap);
+    }
+  }
+  function loadKit(c){
+    kitFor = c.id; kitData = null; renderKit();
+    post("/api/va/calls/kit", {prospect_id: c.id, side: kitSideOverride[c.id] || null}).then(function(r){
+      if(r.status !== 200 || kitFor !== c.id) return;
+      kitData = r.body; renderKit();
+    }).catch(function(){ kitBody.textContent = ""; kitBody.appendChild(el("p", "kit-loading", "Couldn't load the kit — check your connection.")); });
+  }
+  document.querySelector(".kit-tabs").addEventListener("click", function(e){
+    var b = e.target.closest(".kit-tab"); if(!b) return;
+    document.querySelectorAll(".kit-tab").forEach(function(t){ t.classList.toggle("is-on", t === b); });
+    kitTab = b.dataset.k; renderKit();
+  });
+  kitSideBtn.addEventListener("click", function(){
+    if(!current || !kitData) return;
+    kitSideOverride[current.id] = kitData.side === "supply" ? "demand" : "supply";
+    loadKit(current);
+  });
+
+  // ---- callback scheduler ----
+  var cbBox = document.getElementById("callback");
+  function scheduleCallback(payload){
+    if(!current || busy) return;
+    setBusy(true);
+    payload.prospect_id = current.id;
+    payload.note = document.getElementById("note").value.trim();
+    post("/api/va/calls/callback", payload).then(function(r){
+      setBusy(false);
+      if(r.status !== 200){ fail(r.status, r.body); return; }
+      showToast("Callback set for " + r.body.callback_local + " — it'll be dealt back to you then.");
+      render(r.body);
+    }).catch(function(){ setBusy(false); fail(0, {error: "No connection — the callback wasn't saved. Try again."}); });
+  }
+  cbBox.addEventListener("click", function(e){
+    var b = e.target.closest("button.cb"); if(!b) return;
+    scheduleCallback({preset: b.dataset.p});
+  });
+  document.getElementById("cb-at").addEventListener("change", function(){
+    if(this.value) scheduleCallback({at: this.value});
+    this.value = "";
   });
 
   // ---- desk line: conversation thread ----
