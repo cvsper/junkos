@@ -36,6 +36,32 @@ def passcode():
              "~/.config/umuve-va-passcode and chmod 600 it.")
 
 
+def _post(url, payload):
+    """POST JSON. The python.org macOS build often lacks root certs for
+    urllib, so fall back to curl (which uses the system trust store)."""
+    data = json.dumps(payload).encode()
+    try:
+        req = urllib.request.Request(url, data=data,
+                                     headers={"Content-Type": "application/json"}, method="POST")
+        with urllib.request.urlopen(req, timeout=120) as resp:
+            return json.load(resp)
+    except urllib.error.HTTPError as e:
+        try:
+            return json.load(e)
+        except Exception:
+            return {"error": "{} {}".format(e.code, e.reason)}
+    except urllib.error.URLError as e:
+        if "CERTIFICATE_VERIFY_FAILED" not in str(e):
+            raise
+    import subprocess
+    out = subprocess.run(["curl", "-sS", "-m", "120", "-X", "POST", url,
+                          "-H", "Content-Type: application/json", "--data-binary", "@-"],
+                         input=data, capture_output=True)
+    if out.returncode != 0:
+        sys.exit("curl failed: {}".format(out.stderr.decode().strip()))
+    return json.loads(out.stdout.decode() or "{}")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("file")
@@ -58,18 +84,9 @@ def main():
         return
 
     payload["code"] = passcode()
-    req = urllib.request.Request(BASE + "/api/va/calls/import",
-                                 data=json.dumps(payload).encode(),
-                                 headers={"Content-Type": "application/json"}, method="POST")
-    try:
-        with urllib.request.urlopen(req, timeout=120) as resp:
-            body = json.load(resp)
-    except urllib.error.HTTPError as e:
-        try:
-            msg = json.load(e).get("error")
-        except Exception:
-            msg = e.reason
-        sys.exit("Import failed ({}): {}".format(e.code, msg))
+    body = _post(BASE + "/api/va/calls/import", payload)
+    if not body.get("success"):
+        sys.exit("Import failed: {}".format(body.get("error") or body))
     print("added {added}  ·  already in queue {skipped_dupes}  ·  skipped {invalid}  ·  "
           "queue total {total}".format(**body))
 
