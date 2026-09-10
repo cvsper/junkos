@@ -66,6 +66,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("file")
     ap.add_argument("--dry-run", action="store_true", help="parse and count, send nothing")
+    ap.add_argument("--side", choices=["supply", "demand"], help="which script the desk should use for every row in this file")
     args = ap.parse_args()
 
     path = Path(args.file).expanduser()
@@ -74,9 +75,21 @@ def main():
     text = path.read_text(encoding="utf-8-sig")
     if path.suffix.lower() == ".json":
         rows = json.loads(text).get("rows") or []
+        if args.side:
+            for r in rows:
+                r["side"] = args.side
         payload = {"rows": rows}
         n = len(rows)
     else:
+        if args.side:
+            # add a side column to every CSV row
+            import csv as _csv, io as _io
+            reader = _csv.DictReader(_io.StringIO(text))
+            rows = []
+            for r in reader:
+                r = dict(r); r["side"] = args.side; rows.append(r)
+            buf = _io.StringIO(); w = _csv.DictWriter(buf, fieldnames=list(rows[0].keys()) if rows else ["side"])
+            w.writeheader(); w.writerows(rows); text = buf.getvalue()
         payload = {"csv": text}
         n = max(0, text.count("\n") - 1)
     print("{}: ~{} rows".format(path.name, n))

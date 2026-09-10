@@ -154,6 +154,36 @@ def _places_lookup(api_key, query):
     return places[0] if places else None
 
 
+_STOP = {"the", "and", "of", "llc", "inc", "co", "company", "corp", "services", "service", "group", "fl", "florida"}
+_GENERIC = {"movers", "moving", "mover", "junk", "removal", "hauling", "haul", "dumpster", "dumpsters", "storage",
+            "estate", "sales", "property", "properties", "management", "cleaning", "pressure", "appliance",
+            "appliances", "recycling", "trash", "waste", "cleanouts", "cleanout", "demolition", "demo", "realty",
+            "real", "solutions", "pros", "pro", "team", "boca", "raton", "palm", "beach", "west", "fort",
+            "lauderdale", "miami", "delray", "lake", "worth", "county", "south"}
+
+
+def _tokens(s):
+    return {t for t in re.sub(r"[^a-z0-9 ]", " ", (s or "").lower()).split() if t and t not in _STOP}
+
+
+def name_matches(company, place_name, company_phone=None, place_phone=None):
+    """True when the Google result is plausibly the same business: phone digits
+    equal, or at least half of the company's meaningful words appear in the
+    listing name (and vice-versa for one-word names)."""
+    cp = re.sub(r"\D", "", company_phone or "")[-10:]
+    pp = re.sub(r"\D", "", place_phone or "")[-10:]
+    if cp and pp and cp == pp:
+        return True
+    a, b = _tokens(company), _tokens(place_name)
+    if not a or not b:
+        return False
+    # industry words don't identify a business ("Luxury Movers" vs "City Movers")
+    da, db_ = a - _GENERIC, b - _GENERIC
+    if da:
+        return bool(da & db_) and len(a & b) / len(a) >= 0.5
+    return a <= b                      # all-generic names must match wholesale
+
+
 def _shape(place):
     if not place:
         return {"found": False}
@@ -192,7 +222,11 @@ def enrich_prospect(p, force=False):
         return {"found": False, "reason": "no places key"}
     q = " ".join(x for x in [p.company, p.city, "FL"] if x)
     try:
-        d = _shape(_places_lookup(api_key, q))
+        place = _places_lookup(api_key, q)
+        d = _shape(place)
+        if d.get("found") and not name_matches(p.company, d.get("name"), p.phone, d.get("phone")):
+            logger.info("enrich: rejected '%s' for '%s'", d.get("name"), p.company)
+            d = {"found": False, "reason": "no confident match", "rejected": d.get("name")}
     except Exception:
         logger.exception("enrich failed for %s", p.id)
         return {"found": False, "reason": "lookup failed"}

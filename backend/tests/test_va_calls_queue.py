@@ -127,3 +127,23 @@ def test_next_distinguishes_empty_queue_from_quiet_queue(client):
     db.session.commit()
     b = _va(client, "/api/va/calls/next", {}).get_json()
     assert b["empty"] and b["total"] == 1 and b["scheduled"] == 1 and b["next_due"]
+
+
+def test_import_side_column_sets_and_backfills_side(client):
+    from call_kit import detect_side
+    rows = [{"tier": "2", "category": "moving company", "company": "Luxury Movers", "phone": "(561) 555-0301"}]
+    _va(client, "/api/va/calls/import", {"rows": rows})
+    p = CallProspect.query.filter_by(phone_digits="5615550301").one()
+    assert p.side is None and detect_side(p) == "demand"          # keyword guess: movers are referrers
+    # the same list re-loaded with side=supply stamps the existing row
+    rows[0]["side"] = "supply"
+    b = _va(client, "/api/va/calls/import", {"rows": rows}).get_json()
+    assert b["skipped_dupes"] == 1
+    db.session.refresh(p)
+    assert p.side == "supply" and detect_side(p) == "supply"
+    # new rows carry it from the start; garbage is ignored
+    b = _va(client, "/api/va/calls/import", {"rows": [{"company": "X", "phone": "5615550302", "side": "supply"},
+                                                      {"company": "Y", "phone": "5615550303", "side": "banana"}]}).get_json()
+    assert b["added"] == 2
+    assert CallProspect.query.filter_by(phone_digits="5615550302").one().side == "supply"
+    assert CallProspect.query.filter_by(phone_digits="5615550303").one().side is None

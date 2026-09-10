@@ -23,8 +23,23 @@ def _va(client, path, payload, name="Tracy"):
     return client.post(path, json=base)
 
 
+
+def _frozen_utc():
+    """20:00 America/New_York today, as an aware UTC datetime."""
+    from timeutils import to_local, local_naive_to_utc
+    d = to_local(datetime.now(timezone.utc)).date()
+    return local_naive_to_utc(datetime.combine(d, datetime.min.time()).replace(hour=20))
+
+
+@pytest.fixture(autouse=True)
+def _freeze_clock():
+    fixed = _frozen_utc()
+    with mock.patch("va_time._now_utc", return_value=fixed):
+        yield
+
+
 def _now():
-    return datetime.now(timezone.utc).replace(tzinfo=None)
+    return _frozen_utc().replace(tzinfo=None)
 
 
 def test_period_bounds_are_two_weeks_from_anchor():

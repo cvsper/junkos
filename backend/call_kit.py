@@ -36,6 +36,9 @@ _DEMAND_CATS = ("property", "hoa", "apartment", "commercial", "office", "storage
 
 
 def detect_side(prospect):
+    explicit = (getattr(prospect, "side", None) or "").strip().lower()
+    if explicit in ("supply", "demand"):
+        return explicit
     cat = (prospect.category or "").lower()
     blob = " ".join([prospect.why or "", prospect.angle or ""]).lower()
     if any(k in cat for k in _SUPPLY_CATS):
@@ -139,6 +142,7 @@ _DEMAND_TRACKS["thrift"] = {
 }
 
 _DEMAND_SEGMENT_KEYS = [
+    (("moving", "mover", "movers", "fletes", "mudanza"), "mover"),
     (("property", "hoa", "apartment", "commercial", "office", "institution", "hotel"), "property"),
     (("storage",), "storage"),
     (("real estate", "staging", "probate", "realtor", "broker"), "realtor"),
@@ -146,7 +150,6 @@ _DEMAND_SEGMENT_KEYS = [
     (("thrift", "donation"), "thrift"),
     (("investor", "flipper"), "flipper"),
     (("senior",), "senior"),
-    (("moving", "mover"), "mover"),
     (("contractor", "flooring", "restoration", "handyman", "painting", "roof"), "contractor"),
 ]
 

@@ -56,6 +56,7 @@ COLUMN_MIGRATIONS = [
     # Contractor table
     ("contractors", "is_operator", "BOOLEAN", "BOOLEAN", "FALSE"),
     ("contractors", "last_heartbeat_at", "DATETIME", "TIMESTAMP", "NULL"),
+    ("call_prospects", "side", "VARCHAR(8)", "VARCHAR(8)", "NULL"),
     ("contractors", "operator_id", "VARCHAR(36)", "VARCHAR(36)", "NULL"),
     ("contractors", "operator_commission_rate", "FLOAT", "FLOAT", "0.15"),
     ("contractors", "is_concierge", "BOOLEAN", "BOOLEAN", "FALSE"),

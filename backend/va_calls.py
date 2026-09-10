@@ -133,6 +133,7 @@ OPENERS = {
 }
 
 _CATEGORY_OPENER = [
+    (("moving", "mover", "fletes", "mudanza"), "mover"),
     (("property", "hoa", "apartment", "commercial", "office", "institution",
       "hotel"), "property"),
     (("storage",), "storage"),
@@ -140,7 +141,6 @@ _CATEGORY_OPENER = [
     (("estate", "auction", "antiques", "thrift"), "estate"),
     (("investor", "flipper"), "flipper"),
     (("senior",), "senior"),
-    (("moving",), "mover"),
     (("contractor", "flooring", "restoration", "handyman", "painting"),
      "contractor"),
 ]
@@ -791,7 +791,7 @@ _CSV_ALIASES = {
     "phone": "phone", "number": "phone", "city": "city", "area": "city",
     "what they do": "category", "category": "category", "type": "category",
     "contact": "contact_name", "contact_name": "contact_name", "contact name": "contact_name",
-    "notes": "why", "why": "why", "angle": "angle", "email": "email",
+    "notes": "why", "why": "why", "angle": "angle", "email": "email", "side": "side",
 }
 
 
@@ -839,7 +839,12 @@ def merge_rows(rows):
         if len(digits) != 10 or not company:
             invalid += 1
             continue
-        if digits in seen or CallProspect.query.filter_by(phone_digits=digits).first():
+        side = (r.get("side") or "").strip().lower()
+        side = side if side in ("supply", "demand") else None
+        existing = None if digits in seen else CallProspect.query.filter_by(phone_digits=digits).first()
+        if digits in seen or existing:
+            if existing is not None and side and not existing.side:
+                existing.side = side          # a list may tell us which side an old row is on
             skipped += 1
             continue
         seen.add(digits)
@@ -855,6 +860,7 @@ def merge_rows(rows):
             why=(r.get("why") or "").strip() or None,
             angle=(r.get("angle") or "").strip() or None,
             email=email[:254] if email and _EMAIL_RE.match(email) else None,
+            side=side,
         ))
         added += 1
     db.session.commit()

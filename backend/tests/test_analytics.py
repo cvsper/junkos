@@ -25,13 +25,28 @@ def env(app):
     db.session.commit()
 
 
+
+def _frozen_utc():
+    """20:00 America/New_York today, as an aware UTC datetime."""
+    from timeutils import to_local, local_naive_to_utc
+    d = to_local(datetime.now(timezone.utc)).date()
+    return local_naive_to_utc(datetime.combine(d, datetime.min.time()).replace(hour=20))
+
+
+@pytest.fixture(autouse=True)
+def _freeze_clock():
+    fixed = _frozen_utc()
+    with mock.patch("analytics._now", return_value=fixed.replace(tzinfo=None)):
+        yield
+
+
 def _now():
-    return datetime.now(timezone.utc).replace(tzinfo=None)
+    return _frozen_utc().replace(tzinfo=None)
 
 
 def _at_local(hour, days_ago=0):
     """Naive-UTC instant for `hour`:00 business time, `days_ago` days back."""
-    d = (to_local(_now()) - timedelta(days=days_ago)).date()
+    d = (to_local(_now().replace(tzinfo=timezone.utc)) - timedelta(days=days_ago)).date()
     return local_naive_to_utc(datetime.combine(d, datetime.min.time()).replace(hour=hour)).replace(tzinfo=None)
 
 
@@ -44,7 +59,7 @@ def _prospect(company, phone, category="property management", tier=1, created=No
 
 
 def _attempt(p, outcome, va="Tracy", at=None):
-    a = CallAttempt(prospect_id=p.id, outcome=outcome, va_name=va, created_at=at or _now())
+    a = CallAttempt(prospect_id=p.id, outcome=outcome, va_name=va, created_at=at or (_now() - timedelta(minutes=1)))
     db.session.add(a)
     db.session.commit()
     return a

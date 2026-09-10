@@ -3799,7 +3799,8 @@ class CallProspect(db.Model):
     city = Column(String(80), nullable=True)
     contact_name = Column(String(120), nullable=True)
     why = Column(Text, nullable=True)      # why they need hauling
-    angle = Column(Text, nullable=True)    # tailored call angle
+    angle = Column(Text, nullable=True)
+    side = Column(String(8), nullable=True)      # supply | demand — set by the list; overrides keyword detection    # tailored call angle
     # queued -> (interested) -> converted, or dead
     status = Column(String(20), nullable=False, default="queued", index=True)
     attempts = Column(Integer, nullable=False, default=0)

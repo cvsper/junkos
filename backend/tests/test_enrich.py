@@ -112,3 +112,20 @@ def test_enrich_lookup_cache_and_dom_fallback(client):
     r3 = _va(client, "/api/va/calls/enrich", {"prospect_id": p.id, "force": True}).get_json()
     assert r3["found"] is False and r3["reason"] == "no places key"
     assert _va(client, "/api/va/calls/enrich", {"company": "Nobody Inc", "phone": "000"}).status_code == 404
+
+
+def test_name_guard_rejects_lookalikes():
+    assert enrich.name_matches("Luxury Movers", "Luxury Movers Boca") is True
+    assert enrich.name_matches("Luxury Movers", "City Movers Boca Raton") is False
+    assert enrich.name_matches("Palm Coast Property Group", "Palm Coast Property Management LLC") is True
+    assert enrich.name_matches("Dahill Junk Removal", "Junk King", "(954) 235-1601", "(954) 235-1601") is True   # phone wins
+    assert enrich.name_matches("Sunrise Estate Sales", "Sunset Movers") is False
+
+
+def test_enrich_rejects_wrong_business(client):
+    p = _p(company="Luxury Movers", city="Boca Raton")
+    place = {"displayName": {"text": "City Movers Boca Raton"}, "rating": 4.9, "userRatingCount": 196,
+             "nationalPhoneNumber": "(561) 555-9999"}
+    with mock.patch.dict(os.environ, {"GOOGLE_PLACES_API_KEY": "k"}), mock.patch("enrich._places_lookup", return_value=place):
+        r = _va(client, "/api/va/calls/enrich", {"prospect_id": p.id}).get_json()
+    assert r["found"] is False and r["reason"] == "no confident match" and r["rejected"] == "City Movers Boca Raton"
