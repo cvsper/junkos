@@ -826,6 +826,7 @@ def merge_rows(rows):
     status and history — re-running a list is safe. Returns (added, skipped, invalid)."""
     added, skipped, invalid = 0, 0, 0
     seen = set()
+    _hand_angles = []
     try:
         from compliance import filter_rows      # drop do-not-call numbers before they enter the queue
         before = len(rows)
@@ -843,8 +844,14 @@ def merge_rows(rows):
         side = side if side in ("supply", "demand") else None
         existing = None if digits in seen else CallProspect.query.filter_by(phone_digits=digits).first()
         if digits in seen or existing:
-            if existing is not None and side and not existing.side:
+            if existing is not None and side and existing.side != side:
                 existing.side = side          # a list may tell us which side an old row is on
+                try:
+                    from enrich import angle_source
+                    if angle_source(existing) != "hand":
+                        existing.angle = None     # generated under the other side → regenerate
+                except Exception:
+                    pass
             skipped += 1
             continue
         seen.add(digits)
@@ -862,8 +869,19 @@ def merge_rows(rows):
             email=email[:254] if email and _EMAIL_RE.match(email) else None,
             side=side,
         ))
+        if (r.get("angle") or "").strip():
+            _hand_angles.append(digits)
         added += 1
     db.session.commit()
+    if _hand_angles:
+        try:
+            from enrich import mark_angle_source
+            for d in _hand_angles:
+                p = CallProspect.query.filter_by(phone_digits=d).first()
+                if p:
+                    mark_angle_source(p, "hand")
+        except Exception:
+            logger.exception("angle source marking failed")
     return added, skipped, invalid
 
 

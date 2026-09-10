@@ -3827,6 +3827,7 @@ class CallProspect(db.Model):
             "contact_name": self.contact_name,
             "why": self.why,
             "angle": self.angle,
+            "side": self.side,
             "status": self.status,
             "attempts": self.attempts,
             "last_outcome": self.last_outcome,

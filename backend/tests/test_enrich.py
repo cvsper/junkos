@@ -129,3 +129,30 @@ def test_enrich_rejects_wrong_business(client):
     with mock.patch.dict(os.environ, {"GOOGLE_PLACES_API_KEY": "k"}), mock.patch("enrich._places_lookup", return_value=place):
         r = _va(client, "/api/va/calls/enrich", {"prospect_id": p.id}).get_json()
     assert r["found"] is False and r["reason"] == "no confident match" and r["rejected"] == "City Movers Boca Raton"
+
+
+def test_reconcile_regenerates_only_generated_angles_under_a_new_side(client):
+    # generated under "demand" (keyword guess), then the list says supply
+    p = _p(category="moving company", angle=None, phone_digits="5615550501", phone="(561) 555-0501", company="Luxury Movers")
+    enrich.fill_missing_angles(use_llm=False)
+    db.session.refresh(p)
+    assert enrich.angle_source(p) == "demand" and "leftovers" in p.angle
+    # hand-written angle imported with a side is marked and never touched
+    _va(client, "/api/va/calls/import", {"rows": [{"company": "Hand Co", "phone": "5615550502", "side": "supply",
+                                                   "angle": "Written by a human", "category": "junk removal"}]})
+    hand = CallProspect.query.filter_by(phone_digits="5615550502").one()
+    assert enrich.angle_source(hand) == "hand"
+    # re-import stamps the mover as supply → its generated angle is cleared, then the job regenerates it
+    _va(client, "/api/va/calls/import", {"rows": [{"company": "Luxury Movers", "phone": "(561) 555-0501", "side": "supply"}]})
+    db.session.refresh(p)
+    assert p.side == "supply" and p.angle is None
+    enrich.fill_missing_angles(use_llm=False)
+    db.session.refresh(p); db.session.refresh(hand)
+    assert enrich.angle_source(p) == "supply" and "keep the majority" in p.angle
+    assert hand.angle == "Written by a human"
+    # a row already stamped supply but generated earlier under demand (no marker) → reconciled once
+    q = _p(category="junk removal", side="supply", angle="Old demand-framed angle", phone_digits="5615550503", phone="(561) 555-0503", company="Rob's Hauling")
+    assert enrich.reconcile_angles(use_llm=False) == 1
+    db.session.refresh(q)
+    assert "keep the majority" in q.angle and enrich.angle_source(q) == "supply"
+    assert enrich.reconcile_angles(use_llm=False) == 0

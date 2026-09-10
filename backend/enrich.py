@@ -98,20 +98,60 @@ def generate_angle(p, use_llm=True):
     return (llm_angle(p, side) if use_llm else None) or template_angle(p)
 
 
+def angle_source(p):
+    """'hand' (came with the list), 'supply'/'demand' (we generated it under that side), or None."""
+    return DeskSetting.get("angle_src:" + p.id)
+
+
+def mark_angle_source(p, source):
+    DeskSetting.put("angle_src:" + p.id, source)
+
+
+def reconcile_angles(limit=250, use_llm=True):
+    """Prospects with an explicit side whose angle we generated under a different
+    side (or before sides existed) get a fresh one. Hand-written angles are never touched."""
+    from call_kit import detect_side
+    rows = (CallProspect.query.filter(CallProspect.side.isnot(None), CallProspect.angle.isnot(None))
+            .order_by(CallProspect.created_at.asc()).limit(2000).all())
+    n = 0
+    for p in rows:
+        src = angle_source(p)
+        if src == "hand":
+            continue
+        side = detect_side(p)
+        if src == side:
+            continue
+        try:
+            p.angle = generate_angle(p, use_llm=use_llm)
+            mark_angle_source(p, side)
+            n += 1
+        except Exception:
+            logger.exception("angle reconcile failed for %s", p.id)
+        if n >= limit:
+            break
+    if n:
+        db.session.commit()
+    return n
+
+
 def fill_missing_angles(limit=200, use_llm=True):
     """Fill blank angles, oldest first. Returns count filled."""
     rows = (CallProspect.query.filter((CallProspect.angle.is_(None)) | (CallProspect.angle == ""))
             .order_by(CallProspect.created_at.asc()).limit(limit).all())
+    from call_kit import detect_side
     n = 0
     for p in rows:
         try:
             p.angle = generate_angle(p, use_llm=use_llm)
+            mark_angle_source(p, detect_side(p))
             n += 1
         except Exception:
             logger.exception("angle generation failed for %s", p.id)
     if n:
         db.session.commit()
-    DeskSetting.put("angles:last", json.dumps({"filled": n, "at": datetime.now(timezone.utc).isoformat()}))
+    fixed = reconcile_angles(use_llm=use_llm)
+    DeskSetting.put("angles:last", json.dumps({"filled": n, "reconciled": fixed,
+                                               "at": datetime.now(timezone.utc).isoformat()}))
     return n
 
 
