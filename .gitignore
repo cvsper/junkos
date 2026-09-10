@@ -69,3 +69,9 @@ marketing/outreach/pbc-targets.csv
 
 # ASC API tool — holds key-id/issuer-id; never publish in public repo
 JunkOS-Driver/app-store/asc.py
+
+# Lead/prospect data and build noise — this repo is PUBLIC
+marketing/outreach/
+marketing/pbc-meta-adset.md
+*.tsbuildinfo
+JunkOS-Driver/app-store/screenshots/orig-backup/
