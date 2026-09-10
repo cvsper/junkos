@@ -72,7 +72,7 @@ def _places_search_text(api_key, query):
     r = requests.post(
         "https://places.googleapis.com/v1/places:searchText",
         json={"textQuery": query, "maxResultCount": 1, "regionCode": "US",
-              "locationBias": {"circle": {"center": {"latitude": 26.5, "longitude": -80.2}, "radius": 120000.0}}},
+              "locationBias": {"circle": {"center": {"latitude": 26.45, "longitude": -80.15}, "radius": 50000.0}}},
         headers={"X-Goog-Api-Key": api_key, "X-Goog-FieldMask": "places.location,places.formattedAddress",
                  "Content-Type": "application/json"},
         timeout=8,
@@ -93,7 +93,12 @@ def geocode(text):
     if cached:
         try:
             d = json.loads(cached)
-            return (d["lat"], d["lng"]) if d.get("lat") is not None else None
+            if d.get("lat") is not None:
+                return (d["lat"], d["lng"])
+            # a failed lookup is remembered for an hour only (transient API errors must not stick)
+            at = d.get("at")
+            if at and (_now_utc() - datetime.fromisoformat(at)).total_seconds() < 3600:
+                return None
         except Exception:
             pass
     api_key = os.environ.get("GOOGLE_PLACES_API_KEY", "").strip()
@@ -108,7 +113,7 @@ def geocode(text):
                 return float(lat), float(lng)
     except Exception:
         logger.exception("geocode failed for %r", q)
-    DeskSetting.put(key, json.dumps({"lat": None}))
+    DeskSetting.put(key, json.dumps({"lat": None, "at": _now_utc().isoformat()}))
     return None
 
 

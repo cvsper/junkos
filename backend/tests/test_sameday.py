@@ -182,3 +182,22 @@ def test_wave_async_only_for_today(app):
         sameday.wave_async(today.id, app)
         sameday.wave_async(tomorrow.id, app)
     assert w.call_count == 1 and w.call_args[0][0].id == today.id
+
+
+def test_geocode_failure_is_not_cached_forever():
+    with mock.patch.dict(os.environ, {"GOOGLE_PLACES_API_KEY": "k"}):
+        with mock.patch("sameday._places_search_text", side_effect=RuntimeError("400 INVALID_ARGUMENT")):
+            assert sameday.geocode("33461") is None
+        # a stale negative entry (no timestamp, as written by the first deploy) is retried
+        DeskSetting.put("geo:33462, fl", json.dumps({"lat": None}))
+        with mock.patch("sameday._places_search_text", return_value=[{"location": {"latitude": 26.6, "longitude": -80.1}}]) as ts:
+            assert sameday.geocode("33462") == (26.6, -80.1)
+            assert ts.call_count == 1
+            # fresh negative entry within the hour is honored
+            assert sameday.geocode("33461") is None and ts.call_count == 1
+        # radius sent to Google stays within its 50 km limit
+        with mock.patch("requests.post") as post:
+            post.return_value.json.return_value = {"places": []}
+            post.return_value.raise_for_status = lambda: None
+            sameday._places_search_text("k", "33463, FL")
+            assert post.call_args.kwargs["json"]["locationBias"]["circle"]["radius"] <= 50000
