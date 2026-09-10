@@ -43,6 +43,15 @@ def _sweep_expired_broadcasts(app):
         logger.exception("Broadcast re-offer sweep failed")
 
 
+def _angle_backfill(app):
+    """Fill blank prospect angles (Claude when keyed, template otherwise). See enrich.py."""
+    try:
+        from enrich import run_angle_backfill
+        run_angle_backfill(app)
+    except Exception:
+        logger.exception("angle backfill job failed")
+
+
 def _sameday_online_sweep(app):
     """Hourly: app haulers with a stale heartbeat go offline (sameday.sweep_stale_online)."""
     try:
@@ -591,6 +600,18 @@ def init_scheduler(app):
         from apscheduler.schedulers.background import BackgroundScheduler
 
         scheduler = BackgroundScheduler(daemon=True)
+
+        # Prospect angles — 60s after boot, then every 30 min (only blanks)
+        from datetime import datetime as _dt, timedelta as _td
+        scheduler.add_job(
+            _angle_backfill,
+            "interval",
+            minutes=30,
+            next_run_time=_dt.now() + _td(seconds=60),
+            args=[app],
+            id="angle_backfill",
+            name="Fill blank prospect angles",
+        )
 
         # Online-flag aging — hourly
         scheduler.add_job(

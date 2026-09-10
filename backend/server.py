@@ -300,6 +300,14 @@ except Exception as _vc_exc:
     import logging as _logging
     _logging.getLogger(__name__).warning("vacalls_bp not registered: %s", _vc_exc)
 
+# Card prep: generated angles + live Google listing
+try:
+    from enrich import enrich_bp
+    app.register_blueprint(enrich_bp)
+except Exception as _en_exc:  # pragma: no cover
+    import logging as _logging
+    _logging.getLogger(__name__).warning("enrich_bp not registered: %s", _en_exc)
+
 # Same-day dispatch from the desk (capacity, offer wave, standby roster)
 try:
     import models_sameday  # noqa: F401  (tables for create_all)

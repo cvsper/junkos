@@ -378,6 +378,13 @@ def _card_payload(p, va_name):
     d["is_followup"] = bool(p.next_followup_at)
     from crm import crm_card_fields; d.update(crm_card_fields(p))  # CRM (Phase 3)
     from compliance import compliance_for_card; d["compliance"] = compliance_for_card(p)  # Phase 2 (compliance.py)
+    if not (d.get("angle") or "").strip():
+        try:
+            from enrich import template_angle       # instant stand-in until the backfill writes a real one
+            d["angle"] = template_angle(p)
+            d["angle_generated"] = True
+        except Exception:
+            pass
     return d
 
 
@@ -1385,6 +1392,7 @@ CALLS_HTML = r"""<!doctype html>
 <script src="/static/desk-growth.js?v=1"></script>
 <script src="/static/desk-inbound.js?v=1"></script>
 <script src="/static/desk-sameday.js?v=1"></script>
+<script src="/static/desk-enrich.js?v=1"></script>
 <script src="/va/calls.js?v=24"></script>
 </body>
 </html>
