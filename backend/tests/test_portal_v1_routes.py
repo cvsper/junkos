@@ -38,7 +38,7 @@ _backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if _backend_dir not in sys.path:
     sys.path.insert(0, _backend_dir)
 
-from models import db, User, Org, OrgMember, Job, PortalProperty
+from models import db, User, Org, OrgMember, Job, PortalProperty, Contract
 from portal_v1_models import (
     PortalUnit, PortalRecurringSchedule, PortalV1AuditLog,
 )
@@ -275,6 +275,15 @@ def test_recurring_generator_creates_jobs(client, db_session):
         headers=_hdr(token),
     ).get_json()
 
+    # A rate card must be on file — the generator refuses to create $0 jobs
+    # for an org with no contract (audit F24).
+    db.session.add(Contract(
+        org_id=org["id"], tier="pro", monthly_base_cents=199900,
+        metered_per_pickup_cents=5500, included_pickups=60,
+        effective_from=_dt.datetime.utcnow() - _dt.timedelta(days=1),
+    ))
+    db.session.commit()
+
     # Due right now
     past = (_dt.datetime.utcnow() - _dt.timedelta(minutes=1)).isoformat()
     r = client.post(
@@ -296,6 +305,8 @@ def test_recurring_generator_creates_jobs(client, db_session):
     assert job is not None
     assert job.org_id == org["id"]
     assert job.status == "pending"
+    # Priced from the contract's marginal rate, never $0.
+    assert job.total_price == 55.0
 
     # next_run_at advanced
     sched = db.session.query(PortalRecurringSchedule).first()

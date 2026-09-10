@@ -834,6 +834,48 @@ class RecurringBooking(db.Model):
 
 
 # ---------------------------------------------------------------------------
+# RecurringOccurrence — one row per materialised (schedule, occurrence_at)
+# ---------------------------------------------------------------------------
+class RecurringOccurrence(db.Model):
+    """Uniqueness key for recurring job generation (audit F24).
+
+    Both generators (residential ``routes/recurring.py`` and portal
+    ``portal_recurring.py``) insert a row here BEFORE creating the Job, inside
+    a per-occurrence savepoint. The unique (schedule_id, occurrence_at)
+    constraint makes a concurrent or repeated run a no-op for that occurrence
+    instead of a duplicate job. ``status`` records what happened when nothing
+    was created (``needs_contract``, ``skipped``, ``failed``).
+    """
+    __tablename__ = "recurring_occurrences"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    kind = Column(String(16), nullable=False, default="residential")  # residential | portal
+    schedule_id = Column(String(36), nullable=False, index=True)
+    occurrence_at = Column(DateTime, nullable=False)
+    job_id = Column(String(36), ForeignKey("jobs.id", ondelete="SET NULL"), nullable=True, index=True)
+    # created | awaiting_payment | needs_contract | skipped | failed
+    status = Column(String(24), nullable=False, default="created")
+    detail = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=utcnow)
+
+    __table_args__ = (
+        db.UniqueConstraint("schedule_id", "occurrence_at", name="uq_recurring_occurrence"),
+    )
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "kind": self.kind,
+            "schedule_id": self.schedule_id,
+            "occurrence_at": iso_utc(self.occurrence_at),
+            "job_id": self.job_id,
+            "status": self.status,
+            "detail": self.detail,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
+
+
+# ---------------------------------------------------------------------------
 # Referral
 # ---------------------------------------------------------------------------
 class Referral(db.Model):
@@ -3355,7 +3397,12 @@ class PortalInvoice(db.Model):
     stripe_invoice_id = Column(String(64), nullable=True)
     due_at = Column(DateTime, nullable=True)
     paid_at = Column(DateTime, nullable=True)
+    # sent_at = when the Stripe invoice was finalized (delivered). NULL with
+    # a non-zero total means delivery is still owed and is retried each run.
     sent_at = Column(DateTime, nullable=True)
+    delivery_attempts = Column(Integer, default=0)
+    delivery_error = Column(Text, nullable=True)
+    last_delivery_attempt_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=utcnow)
 
     __table_args__ = (
@@ -3403,6 +3450,9 @@ class PortalInvoiceLineItem(db.Model):
     quantity = Column(Float, default=1.0)
     unit_cents = Column(Integer, nullable=False, default=0)
     amount_cents = Column(Integer, nullable=False, default=0)
+    # base_fee | overage | usage | job — drives the base-fee idempotency check
+    kind = Column(String(16), nullable=True)
+    stripe_invoice_item_id = Column(String(64), nullable=True)
 
     def to_dict(self):
         return {

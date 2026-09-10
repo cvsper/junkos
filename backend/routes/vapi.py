@@ -24,35 +24,27 @@ logger = logging.getLogger(__name__)
 
 vapi_bp = Blueprint("vapi", __name__, url_prefix="/api/vapi")
 
-# Warn-once flag for the missing VAPI_SERVER_SECRET fail-open path.
-_vapi_secret_warned = False
-
-
 def _verify_vapi_secret():
     """Shared-secret gate for the Vapi /tool and /webhook endpoints.
 
     Vapi sends its serverUrlSecret in the X-Vapi-Secret header. When
     VAPI_SERVER_SECRET is set here, the header must match (constant-time).
 
-    Fail-open when the env var is NOT set: the secret has to be configured in
-    BOTH the Vapi dashboard (serverUrlSecret) and Render before enforcement
-    can start — rejecting before then would brick Maya. We log a warning once
-    so the gap is visible.
+    Missing secret (audit F23): in production the endpoints REJECT (401) and
+    the gap is logged once — set the same value on Render and as
+    serverUrlSecret in the Vapi dashboard. In development the request is
+    accepted so local Maya testing works without the dashboard secret.
 
     Returns True when the request may proceed.
     """
-    global _vapi_secret_warned
+    from webhook_guard import allow_when_secret_missing
+
     expected = os.environ.get("VAPI_SERVER_SECRET", "")
     if not expected:
-        if not _vapi_secret_warned:
-            logger.warning(
-                "VAPI_SERVER_SECRET is not set — /api/vapi/tool and "
-                "/api/vapi/webhook are UNAUTHENTICATED. Set the same secret "
-                "in Render and as serverUrlSecret in the Vapi dashboard to "
-                "enforce."
-            )
-            _vapi_secret_warned = True
-        return True
+        return allow_when_secret_missing(
+            "vapi", "Maya tool calls and call reports are unauthenticated "
+            "until the secret is set on Render AND as serverUrlSecret in Vapi.",
+        )
 
     provided = request.headers.get("X-Vapi-Secret", "")
     return hmac.compare_digest(
@@ -872,6 +864,15 @@ def handle_webhook():
 
     message = data.get("message", {})
     msg_type = message.get("type", "")
+
+    # Vapi redelivers end-of-call reports on timeout; the call id is stable.
+    # Persist it so a retry can't book/register/log the same call twice.
+    if msg_type == "end-of-call-report":
+        _call_id = ((message.get("call") or {}).get("id") or "")
+        if _call_id:
+            from webhook_guard import record_provider_event
+            if not record_provider_event("vapi", _call_id, event_type=msg_type):
+                return jsonify({"ok": True, "duplicate": True})
 
     # Maya Recruiter calls carry a metadata marker — route their outcomes to the
     # auto-registration handler instead of the customer-call pipeline.
@@ -1926,37 +1927,48 @@ def meta_leads_webhook():
 
     We fetch the actual lead data from Meta's API, then trigger a Vapi call.
     """
-    # Verify Meta's payload signature when META_APP_SECRET is configured
-    # (X-Hub-Signature-256 = "sha256=" + HMAC-SHA256 of the raw body).
-    # Fail-open when unset so leads keep flowing until the secret is added.
+    # Verify Meta's payload signature (X-Hub-Signature-256 = "sha256=" +
+    # HMAC-SHA256 of the raw body). Audit F23: a missing META_APP_SECRET
+    # rejects in production (401, logged once) and only fails open in dev.
+    from webhook_guard import allow_when_secret_missing, allow_on_validator_error
+
     app_secret = os.environ.get("META_APP_SECRET", "")
     if app_secret:
-        signature = request.headers.get("X-Hub-Signature-256", "")
-        expected_sig = "sha256=" + hmac.new(
-            app_secret.encode("utf-8"), request.get_data(), hashlib.sha256
-        ).hexdigest()
-        if not hmac.compare_digest(
-            signature.encode("utf-8"), expected_sig.encode("utf-8")
-        ):
+        try:
+            signature = request.headers.get("X-Hub-Signature-256", "")
+            expected_sig = "sha256=" + hmac.new(
+                app_secret.encode("utf-8"), request.get_data(), hashlib.sha256
+            ).hexdigest()
+            valid = hmac.compare_digest(
+                signature.encode("utf-8"), expected_sig.encode("utf-8")
+            )
+        except Exception as exc:
+            valid = allow_on_validator_error("meta_leads", exc)
+        if not valid:
             logger.warning("Meta leads webhook: X-Hub-Signature-256 mismatch — rejecting")
             return jsonify({"error": "Invalid signature"}), 403
-    else:
-        logger.warning(
-            "META_APP_SECRET is not set — accepting Meta leads webhook "
-            "without signature verification"
-        )
+    elif not allow_when_secret_missing(
+        "meta_leads", "Lead Ads submissions are dropped until META_APP_SECRET is set.",
+    ):
+        return jsonify({"error": "Unauthorized"}), 401
 
-    data = request.get_json()
+    data = request.get_json(silent=True)
     if not data:
         return jsonify({"ok": True})
 
     app = current_app._get_current_object()
+    from webhook_guard import record_provider_event
 
     for entry in data.get("entry", []):
         for change in entry.get("changes", []):
             if change.get("field") == "leadgen":
                 value = change.get("value", {})
                 leadgen_id = value.get("leadgen_id", "")
+                # Meta retries deliveries; a leadgen_id is processed once.
+                if leadgen_id and not record_provider_event(
+                    "meta_leads", leadgen_id, event_type="leadgen",
+                ):
+                    continue
                 if leadgen_id:
                     t = threading.Thread(
                         target=_process_meta_lead,
