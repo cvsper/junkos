@@ -198,14 +198,27 @@ def standby_ids(day=None):
 
 
 def capacity(lat=None, lng=None):
+    """Haulers who could actually take a same-day job near (lat, lng).
+
+    Counts only haulers that ``assignment.eligibility`` would let us assign
+    (audit F16) — approved, documents valid, truck free, no live decline
+    exclusion — so "we have coverage" and "we can assign" can't disagree. The
+    live/standby heartbeat rule and the radius stay as the desk knows them.
+    """
+    from assignment import eligibility, point_job
     today = _local_today()
     on_standby = standby_ids(today)
     now = _now_utc().replace(tzinfo=None)
+    probe = point_job(lat, lng, scheduled_at=now)
     rows, unconfirmed = [], 0
     for c in Contractor.query.filter_by(approval_status="approved").all():
         live = is_live(c, now, on_standby)
         if not live and not c.is_online:
             continue
+        verdict = eligibility(probe, c, now, mode="accept", on_standby=on_standby,
+                              radius_miles=RADIUS_MILES)
+        if not verdict.ok:
+            continue          # can't be assigned -> isn't coverage
         dist = None
         if lat is not None and lng is not None and c.current_lat is not None and c.current_lng is not None:
             dist = round(_haversine(lat, lng, c.current_lat, c.current_lng), 1)
@@ -279,11 +292,16 @@ def wave(job, limit=WAVE_SIZE, va_name=None):
     confirmed = [e for e in pool if is_live(e["contractor"], now, on_standby)]
     eligible = confirmed if confirmed else pool
     tier = "confirmed" if confirmed else "unconfirmed"
-    # standby haulers count even when the app says offline
+    # standby haulers count even when the app says offline — but they go
+    # through the same eligibility gate (audit F16), so an expired-document,
+    # double-booked or recently-declining hauler isn't texted the job.
     if on_standby:
+        from assignment import eligibility as _eligibility
         seen = {e["contractor"].id for e in eligible}
         for c in Contractor.query.filter(Contractor.id.in_(list(on_standby)), Contractor.approval_status == "approved").all():
             if c.id in seen or c.id in already:
+                continue
+            if not _eligibility(job, c, now, mode="accept", on_standby=on_standby).ok:
                 continue
             dist = None
             if job.lat is not None and c.current_lat is not None:

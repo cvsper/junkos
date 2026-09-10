@@ -403,12 +403,18 @@ def send_driver_assigned_email(to_email, customer_name, driver_name, address,
         return None
 
 
-def send_driver_assigned_sms(to_number, driver_name, address):
-    """SMS customer that a driver has been assigned. Never raises."""
+def send_driver_assigned_sms(to_number, driver_name, address, pin=None):
+    """SMS customer that a driver has been assigned. Never raises.
+
+    ``pin`` (optional) appends the customer's 4-digit handoff PIN — the
+    hauler enters it at completion as proof of handoff (assignment.py)."""
     try:
         body = "Umuve: Driver {} assigned to your pickup at {}".format(
             driver_name or "your driver", address or "your location"
         )
+        if pin:
+            from assignment import pin_sms_line
+            body += "." + pin_sms_line(pin)
         return send_sms(to_number, body)
     except Exception:
         logger.exception("Failed in send_driver_assigned_sms for %s", to_number)

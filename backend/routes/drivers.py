@@ -295,7 +295,16 @@ def _with_driver_payout(job):
 @drivers_bp.route("/jobs/<job_id>/accept", methods=["POST"])
 @require_auth
 def accept_job(user_id, job_id):
-    """Accept a pending/confirmed/assigned job."""
+    """Accept a confirmed/broadcasting job, or confirm one pre-assigned to you.
+
+    The claim runs through ``assignment.assign_job`` (audit F15/F16): the job
+    row is locked and flipped with a conditional UPDATE on (status, version,
+    driver_id IS NULL), eligibility is re-validated at acceptance, and the
+    hauler's time window is reserved — so two concurrent accepts can't both
+    win and one truck can't be booked for two overlapping jobs.
+    """
+    from assignment import assign_job, transition_job
+
     contractor = Contractor.query.filter_by(user_id=user_id).first()
     if not contractor:
         return jsonify({"error": "Contractor profile not found"}), 404
@@ -315,41 +324,26 @@ def accept_job(user_id, job_id):
     if not job:
         return jsonify({"error": "Job not found"}), 404
 
-    # Atomic claim (same pattern as the broadcast accept path): a conditional
-    # UPDATE so two concurrent accepts can't both win, a driver can't steal a
-    # job already assigned to someone else, and unpaid ("pending") jobs can't
-    # be accepted — payment confirmation is what makes a job claimable.
-    now = utcnow()
-    if job.driver_id == contractor.id and job.status == "assigned":
-        # Dispatcher pre-assigned this driver; accepting flips assigned->accepted.
-        claim = (
-            Job.__table__.update()
-            .where(Job.id == job_id)
-            .where(Job.driver_id == contractor.id)
-            .where(Job.status == "assigned")
-            .values(status="accepted", updated_at=now)
-        )
-    else:
-        _values = {"driver_id": contractor.id, "status": "accepted", "updated_at": now}
-        if contractor.operator_id:
-            _values["operator_id"] = contractor.operator_id
-        claim = (
-            Job.__table__.update()
-            .where(Job.id == job_id)
-            .where(Job.driver_id.is_(None))
-            .where(Job.status.in_(("confirmed", "broadcasting")))
-            .values(**_values)
-        )
+    data = request.get_json(silent=True) or {}
+    actor = {"user_id": user_id, "role": "driver",
+             "name": contractor.user.name if contractor.user else None}
 
-    result = db.session.execute(claim)
-    if result.rowcount != 1:
-        db.session.rollback()
-        db.session.refresh(job)
-        if job.driver_id and job.driver_id != contractor.id:
-            return jsonify({"error": "That job was just taken by another hauler"}), 409
-        if job.status == "pending":
-            return jsonify({"error": "Job is awaiting payment and cannot be accepted yet"}), 409
-        return jsonify({"error": "Job cannot be accepted (current status: {})".format(job.status)}), 409
+    if job.driver_id == contractor.id and job.status == "assigned":
+        # Dispatcher pre-assigned this driver; accepting flips assigned->accepted
+        # through the same versioned transition every other status change uses.
+        ok, payload, code = transition_job(job, "accepted", actor, data, contractor=contractor,
+                                           expected_version=data.get("version"))
+        if not ok:
+            return jsonify(payload), code
+    else:
+        result = assign_job(job.id, contractor.id, actor, "driver_accept",
+                            target_status="accepted", expected_version=data.get("version"))
+        if not result.ok:
+            return jsonify({"error": result.message, "code": result.code,
+                            "reasons": result.reasons}), result.http_status
+        job = result.job
+        if result.code == "already_assigned":
+            return jsonify({"success": True, "job": _with_driver_payout(job)}), 200
 
     db.session.refresh(job)
 
@@ -406,7 +400,15 @@ def accept_job(user_id, job_id):
 @drivers_bp.route("/jobs/<job_id>/decline", methods=["POST"])
 @require_auth
 def decline_job(user_id, job_id):
-    """Decline an assigned job (only if assigned to this driver)."""
+    """Decline an assigned job (only if assigned to this driver).
+
+    Audit F16: the decline is PERSISTED (job_offers.declined_at /
+    exclude_until) so the next dispatch wave skips this hauler for this job
+    instead of handing it straight back to them. Fleet attribution is cleared
+    with the release so the operator doesn't keep a job their driver dropped.
+    """
+    from assignment import mark_offer_declined, release_job
+
     contractor = Contractor.query.filter_by(user_id=user_id).first()
     if not contractor:
         return jsonify({"error": "Contractor profile not found"}), 404
@@ -421,11 +423,20 @@ def decline_job(user_id, job_id):
     if job.status not in ("assigned", "accepted"):
         return jsonify({"error": "Cannot decline job in status: {}".format(job.status)}), 409
 
-    # Unassign driver, revert to confirmed
-    job.driver_id = None
-    job.status = "confirmed"
-    job.updated_at = utcnow()
-    db.session.commit()
+    data = request.get_json(silent=True) or {}
+    reason = (data.get("reason") or "").strip() or None
+
+    # Record the exclusion first so it's durable even if the release races.
+    mark_offer_declined(job, contractor, reason=reason)
+    if job.operator_id and contractor.operator_id == job.operator_id:
+        job.operator_id = None
+
+    ok, code = release_job(job, {"user_id": user_id, "role": "driver",
+                                 "name": contractor.user.name if contractor.user else None},
+                           reason=reason, source="driver_decline",
+                           expected_version=data.get("version"))
+    if not ok:
+        return jsonify({"error": "This job changed — refresh and try again.", "code": code}), 409
 
     # Re-run auto-dispatch to find another driver in background
     try:
@@ -440,13 +451,10 @@ def decline_job(user_id, job_id):
     return jsonify({"success": True, "job": job.to_dict()}), 200
 
 
-VALID_STATUS_TRANSITIONS = {
-    "assigned": ["accepted", "cancelled"],
-    "accepted": ["en_route", "cancelled"],
-    "en_route": ["arrived", "cancelled"],
-    "arrived": ["started", "cancelled"],
-    "started": ["completed"],
-}
+# The state machine lives in assignment.py (one source of truth for the
+# driver app, the concierge console and the admin override). Re-exported here
+# because callers and tests have imported it from this module for a while.
+from assignment import VALID_STATUS_TRANSITIONS  # noqa: E402,F401
 
 
 @drivers_bp.route("/jobs/<job_id>/status", methods=["PUT"])
@@ -461,47 +469,60 @@ def update_job_status(user_id, job_id):
     if not job:
         return jsonify({"error": "Job not found"}), 404
 
-    if job.driver_id != contractor.id:
-        return jsonify({"error": "You are not assigned to this job"}), 403
-
     data = request.get_json() or {}
     new_status = data.get("status")
 
     if not new_status:
         return jsonify({"error": "status is required"}), 400
 
-    ok, payload, code = apply_job_status_transition(job, contractor, new_status, data)
+    # Actor guard (audit F17) lives in assignment.transition_job: only the
+    # assigned contractor's user may advance the job; an admin may override
+    # with an audited override_reason.
+    ok, payload, code = apply_job_status_transition(
+        job, contractor, new_status, data,
+        actor={"user_id": user_id, "role": (contractor.user.role if contractor.user else "driver"),
+               "name": contractor.user.name if contractor.user else None},
+    )
     return jsonify(payload), code
 
 
-def apply_job_status_transition(job, contractor, new_status, data=None):
+def apply_job_status_transition(job, contractor, new_status, data=None, actor=None):
     """Advance a job through its lifecycle with every side effect the driver
     app relies on (timestamps, referrals, auto-payout, customer email/SMS/push).
 
     Shared by the authenticated driver route above and the concierge
     (phone-only hauler) console in routes/concierge.py so the two paths can
     never drift. Returns ``(ok, payload, http_code)``.
-    """
-    data = data or {}
 
-    allowed = VALID_STATUS_TRANSITIONS.get(job.status, [])
-    if new_status not in allowed:
-        return False, {
-            "error": "Cannot transition from {} to {}".format(job.status, new_status),
-            "allowed": allowed,
-        }, 409
+    The state change itself is ``assignment.transition_job`` (audit F17):
+    a conditional UPDATE on (status, version) — 409 on a stale writer —
+    with actor guards, an arrival-acknowledgment gate on start, proof /
+    change-order / settlement gates on completion, and an immutable
+    ``job_events`` row per transition. Everything below runs only AFTER that
+    transition committed, so a notification or payout hiccup can never roll
+    the status back — and a refused completion never triggers a payout.
+    """
+    from assignment import transition_job
+
+    data = data or {}
+    actor = actor or {"user_id": getattr(contractor, "user_id", None), "role": "driver",
+                      "name": contractor.user.name if getattr(contractor, "user", None) else None}
+
+    ok, payload, code = transition_job(job, new_status, actor, data, contractor=contractor,
+                                       expected_version=data.get("version"))
+    if not ok:
+        return False, payload, code
 
     # Driver-initiated "cancelled" releases the job back to the pool instead of
-    # killing the customer's paid booking: clear the driver, requeue, re-dispatch,
-    # and tell the customer + admin. (Previously this flipped a paid job to
-    # cancelled with no refund, no cleanup, and no word to guest customers.)
+    # killing the customer's paid booking: the driver is cleared and the job
+    # requeued by transition_job; here we tell the customer + admin and
+    # re-dispatch. (Previously this flipped a paid job to cancelled with no
+    # refund, no cleanup, and no word to guest customers.)
     if new_status == "cancelled":
         reason = (data.get("reason") or data.get("cancellation_reason") or "").strip()
-        job.driver_id = None
         if job.operator_id and contractor.operator_id == job.operator_id:
             job.operator_id = None
-        job.status = "confirmed"
-        job.updated_at = utcnow()
+            job.updated_at = utcnow()
         db.session.add(Notification(
             id=generate_uuid(),
             user_id=job.customer_id,
@@ -547,15 +568,9 @@ def apply_job_status_transition(job, contractor, new_status, data=None):
         except Exception:
             logger.exception("Re-dispatch after driver cancel failed for job %s", job.id)
 
-        return True, {"success": True, "job": job.to_dict(), "released": True}, 200
+        return True, dict(payload, released=True), 200
 
-    job.status = new_status
-    job.updated_at = utcnow()
-
-    if new_status == "started":
-        job.started_at = utcnow()
-    elif new_status == "completed":
-        job.completed_at = utcnow()
+    if new_status == "completed":
         contractor.total_jobs = (contractor.total_jobs or 0) + 1
 
         # Rescue Engine v1: capture the hauler's disposition outcome + reason,
@@ -591,19 +606,14 @@ def apply_job_status_transition(job, contractor, new_status, data=None):
             logger.exception("Graduation-ladder hook failed for contractor %s",
                              contractor.id)
 
-        # Warn if proof photos have not been submitted
-        has_before = bool(job.before_photos)
-        has_after = bool(job.after_photos)
-        if not has_before or not has_after:
-            missing = []
-            if not has_before:
-                missing.append("before_photos")
-            if not has_after:
-                missing.append("after_photos")
+        # Proof gating happens in assignment.transition_job (an after-photo,
+        # the customer's handoff PIN, or an audited exception is required).
+        # A missing BEFORE photo is still only a warning — it isn't proof of
+        # completion, and the SMS auto-attach flow often backfills it.
+        if not job.before_photos:
             logger.warning(
-                "Job %s completed without proof photos (missing: %s). "
-                "Driver: %s",
-                job.id, ", ".join(missing), contractor.id,
+                "Job %s completed without a before photo. Driver: %s",
+                job.id, contractor.id,
             )
 
         # --- Referral completion: check if this customer was referred ---
@@ -690,11 +700,6 @@ def apply_job_status_transition(job, contractor, new_status, data=None):
             logger.warning("Failed to reset winback flag on job completion: %s", e)
 
 
-    if data.get("before_photos"):
-        job.before_photos = data["before_photos"]
-    if data.get("after_photos"):
-        job.after_photos = data["after_photos"]
-
     notification = Notification(
         id=generate_uuid(),
         user_id=job.customer_id,
@@ -707,8 +712,10 @@ def apply_job_status_transition(job, contractor, new_status, data=None):
     db.session.commit()
 
     # --- Auto-payout the hauler the moment the job is completed ---
-    # Job completion is already committed above, so a payout hiccup can never
-    # roll it back. attempt_payout is idempotent and never raises; if the
+    # Reached only when the versioned completion transition SUCCEEDED and
+    # committed (audit F17), so a job that failed its proof / change-order /
+    # settlement gates never pays out, and a payout hiccup can never roll the
+    # completion back. attempt_payout is idempotent and never raises; if the
     # contractor hasn't connected Stripe yet it's marked pending_connect.
     if new_status == "completed":
         try:

@@ -15,43 +15,51 @@ from __future__ import annotations
 import logging
 
 from models import db, Notification, User, generate_uuid, utcnow
+from assignment import ASSIGNABLE_STATUSES, assign_job, pin_sms_line  # noqa: F401  (re-exported)
 
 logger = logging.getLogger(__name__)
 
-# Job statuses a new assignment is allowed to start from.
-ASSIGNABLE_STATUSES = ("pending", "confirmed")
-
 
 class AssignmentError(Exception):
-    """Assignment refused — .status_code and str(exc) explain why."""
+    """Assignment refused — .status_code, .code and str(exc) explain why."""
 
-    def __init__(self, message, status_code=400):
+    def __init__(self, message, status_code=400, code=None, reasons=None):
         super().__init__(message)
         self.status_code = status_code
+        self.code = code
+        self.reasons = list(reasons or [])
 
 
-def assign_contractor_to_job(job, contractor, assigned_by=None):
+def assign_contractor_to_job(job, contractor, assigned_by=None, actor=None, source=None,
+                             force=False, reason=None):
     """Assign `contractor` to `job` and fire all downstream effects.
 
-    Returns the refreshed job dict. Raises AssignmentError when the
-    contractor isn't approved. `assigned_by` is a free-text attribution
-    ("admin", "Tracy (VA desk)") used only in logs.
+    The assignment itself is ``assignment.assign_job`` (audit F15): row lock,
+    conditional UPDATE, reservation, job_events row — one transaction. This
+    wrapper only adds the notifications. Returns the refreshed job dict.
+    Raises AssignmentError with the domain reason when refused.
+
+    `assigned_by` is a free-text attribution ("admin", "Tracy (VA desk)") used
+    in the hauler's notification; `actor` (dict with user_id/role/name) is
+    what gets audited; `force` lets an admin override soft eligibility
+    reasons (offline, out of radius, ...) — never hard ones.
     """
-    if contractor.approval_status != "approved":
-        raise AssignmentError("Contractor is not approved", 403)
+    src = source or ("va_desk" if "desk" in (assigned_by or "").lower() else "admin")
+    result = assign_job(job.id, contractor.id, actor or assigned_by or "admin", src,
+                        force=force, reason=reason)
+    if not result.ok:
+        raise AssignmentError(result.message, result.http_status, code=result.code, reasons=result.reasons)
+    job = result.job
+    if result.code == "already_assigned":
+        return job.to_dict()
 
     if contractor.is_operator:
-        return _assign_operator(job, contractor)
-    return _assign_driver(job, contractor, assigned_by)
+        return _notify_operator(job, contractor)
+    return notify_driver_assigned(job, contractor, assigned_by, pin=result.pin)
 
 
-def _assign_operator(job, contractor):
-    """Operator gets the job for delegation to their fleet."""
-    job.operator_id = contractor.id
-    if job.status in ASSIGNABLE_STATUSES:
-        job.status = "delegating"
-    job.updated_at = utcnow()
-
+def _notify_operator(job, contractor):
+    """Operator got the job for delegation to their fleet — tell them."""
     notification = Notification(
         id=generate_uuid(),
         user_id=contractor.user_id,
@@ -74,13 +82,11 @@ def _assign_operator(job, contractor):
     return job.to_dict()
 
 
-def _assign_driver(job, contractor, assigned_by=None):
-    """Direct driver assignment — app hauler or concierge hauler."""
-    job.driver_id = contractor.id
-    if job.status in ASSIGNABLE_STATUSES:
-        job.status = "assigned"
-    job.updated_at = utcnow()
-
+def notify_driver_assigned(job, contractor, assigned_by=None, pin=None):
+    """Every downstream effect of a direct driver assignment (app hauler or
+    concierge hauler): in-app notifications, concierge console link, customer
+    email/SMS (with the handoff PIN), hauler push, socket events. The job row
+    is already assigned + committed by assignment.assign_job."""
     notification = Notification(
         id=generate_uuid(),
         user_id=contractor.user_id,
@@ -123,7 +129,7 @@ def _assign_driver(job, contractor, assigned_by=None):
             if customer.email:
                 send_driver_assigned_email(customer.email, customer.name, driver_name, job.address)
             if customer.phone:
-                send_driver_assigned_sms(customer.phone, driver_name, job.address)
+                send_driver_assigned_sms(customer.phone, driver_name, job.address, pin=pin)
         send_push_notification(
             contractor.user_id, "New Job Assigned",
             "New job assigned: {}".format(job.address or "an address"),

@@ -209,100 +209,46 @@ def _has_schedule_conflict(contractor, scheduled_at, Job):
 def find_best_operator(job):
     """Score and rank available operators/drivers for the given job.
 
+    Candidates come from ``assignment.assignable_contractors(mode="auto")`` —
+    the same eligibility rule set the offer wave, same-day capacity and
+    acceptance use (audit F16): approved, online with a fresh heartbeat, in
+    radius, documents valid through the slot, truck big enough when both sizes
+    are known, no reservation / schedule conflict, not a recent decliner, and
+    never a concierge (phone-only) hauler — they can't act on a silent assign.
+
     Returns a list of up to 3 candidate dicts:
         [{"contractor": <Contractor>, "score": float, "breakdown": {...}}, ...]
 
     Returns an empty list if no candidates qualify.  Never raises.
     """
     try:
-        from models import Contractor, Job as JobModel
+        from assignment import assignable_contractors
 
-        # Build base query: approved, online
-        query = Contractor.query.filter_by(
-            is_online=True,
-            approval_status="approved",
-        )
-
-        # Concierge (phone-only) haulers can't act on a silent app auto-assign
-        # — they are reached through the broadcast offer wave instead.
-        query = query.filter(Contractor.is_concierge.isnot(True))
-
-        # Scope to operator fleet if job belongs to an operator
-        if job.operator_id:
-            query = query.filter_by(operator_id=job.operator_id)
-        else:
-            # Eligible to do jobs = independent contractors AND operator fleet
-            # drivers (geo-routing). Exclude only the operator accounts
-            # themselves -- they manage a fleet, they don't haul. A fleet
-            # driver who wins gets the job attributed to their operator for
-            # commission (see auto_assign_job).
-            query = query.filter(Contractor.is_operator.is_(False))
-
-        contractors = query.all()
-
-        if not contractors:
-            logger.info(
-                "No online approved contractors found for job %s",
-                job.id,
-            )
+        eligible = assignable_contractors(job, mode="auto")
+        if not eligible:
+            logger.info("No eligible contractors for auto-assign of job %s", job.id)
             return []
 
         candidates = []
-        for c in contractors:
-            # --- Disqualifiers ---
-
-            # Schedule conflict
-            if _has_schedule_conflict(c, job.scheduled_at, JobModel):
-                logger.debug(
-                    "Contractor %s disqualified: schedule conflict", c.id
-                )
-                continue
-
-            # Distance check (requires both locations)
-            dist = float("inf")
-            if (
-                job.lat is not None
-                and job.lng is not None
-                and c.current_lat is not None
-                and c.current_lng is not None
-            ):
-                dist = haversine(c.current_lat, c.current_lng, job.lat, job.lng)
-                if dist > MAX_RADIUS_MILES:
-                    logger.debug(
-                        "Contractor %s disqualified: %.1f mi > %d mi radius",
-                        c.id, dist, MAX_RADIUS_MILES,
-                    )
-                    continue
-            else:
-                # No location data — use neutral distance score
-                dist = MAX_RADIUS_MILES * 0.5  # middle-of-range default
-
-            # Capacity hard-disqualify
+        for e in eligible:
+            c = e["contractor"]
+            dist = e["distance_miles"]
+            if dist is None:
+                dist = MAX_RADIUS_MILES * 0.5  # unknown location — neutral distance score
             cap = _capacity_score(c.truck_capacity, job.volume_estimate)
-            if cap == 0.0:
-                logger.debug(
-                    "Contractor %s disqualified: truck too small (%.1f < %.1f)",
-                    c.id,
-                    c.truck_capacity or 0,
-                    job.volume_estimate or 0,
-                )
-                continue
-
-            # --- Score ---
             d_score = _distance_score(dist)
             r_score = _rating_score(c.avg_rating)
             e_score = _experience_score(c.total_jobs)
-
             total = (
                 d_score * WEIGHT_DISTANCE
                 + r_score * WEIGHT_RATING
                 + cap * WEIGHT_CAPACITY
                 + e_score * WEIGHT_EXPERIENCE
             )
-
             candidates.append({
                 "contractor": c,
                 "score": round(total, 4),
+                "warnings": list(e["verdict"].warnings),
                 "breakdown": {
                     "distance_miles": round(dist, 1),
                     "distance_score": round(d_score, 3),
@@ -312,26 +258,12 @@ def find_best_operator(job):
                 },
             })
 
-        # Sort descending by score
         candidates.sort(key=lambda c: c["score"], reverse=True)
-
         top = candidates[:3]
-        if top:
-            logger.info(
-                "Dispatch candidates for job %s: %s",
-                job.id,
-                [
-                    {"id": c["contractor"].id, "score": c["score"]}
-                    for c in top
-                ],
-            )
-        else:
-            logger.info(
-                "No qualifying contractors for job %s (checked %d)",
-                job.id,
-                len(contractors),
-            )
-
+        logger.info(
+            "Dispatch candidates for job %s: %s", job.id,
+            [{"id": c["contractor"].id, "score": c["score"]} for c in top],
+        )
         return top
 
     except Exception:
@@ -393,19 +325,27 @@ def auto_assign_job(job_id, app=None):
                 broadcast_job(job_id)
                 return
 
-            # Assign top candidate
-            best = candidates[0]
-            contractor = best["contractor"]
-
-            job.driver_id = contractor.id
-            job.status = "assigned"
-            job.updated_at = utcnow()
-            # Fleet driver -> attribute the job to their operator so the
-            # operator's commission pays out (payments.py keys off operator_id).
-            # Independent contractors have operator_id=None, so this is a no-op
-            # for them.
-            if contractor.operator_id:
-                job.operator_id = contractor.operator_id
+            # Assign the best candidate that still passes the atomic guard
+            # (audit F15): assign_job locks + conditionally updates the job row
+            # and reserves the truck's window; if the top pick lost a race to a
+            # concurrent path, fall through to the next candidate.
+            from assignment import assign_job
+            best = contractor = result = None
+            for cand in candidates:
+                r = assign_job(job_id, cand["contractor"].id, {"role": "system", "name": "auto-dispatch"}, "auto")
+                if r.ok and r.code == "assigned":
+                    best, contractor, result = cand, cand["contractor"], r
+                    break
+                if r.code in ("taken", "already_assigned", "cancelled", "terminal", "not_assignable", "version_conflict"):
+                    logger.info("auto_assign_job: job %s no longer assignable (%s) — stopping", job_id, r.code)
+                    return
+                logger.info("auto_assign_job: candidate %s rejected for job %s (%s: %s)",
+                            cand["contractor"].id, job_id, r.code, r.reasons)
+            if contractor is None:
+                logger.warning("auto_assign_job: every candidate for job %s was refused — falling back to an offer wave", job_id)
+                broadcast_job(job_id)
+                return
+            job = db.session.get(Job, job_id)
 
             # Log the dispatch decision
             logger.info(
@@ -689,12 +629,12 @@ def has_active_coverage(lat, lng, radius_miles=MAX_RADIUS_MILES):
         except (TypeError, ValueError):
             return True
 
-        from models import Contractor
-        contractors = Contractor.query.filter_by(approval_status="approved").all()
-        for c in contractors:
-            if c.current_lat is None or c.current_lng is None:
-                continue
-            if haversine(lat_f, lng_f, c.current_lat, c.current_lng) <= radius_miles:
+        # Same rule set as assignment (audit F16): approved, documents valid,
+        # not an operator account, no conflicting reservation — independent of
+        # the online flag (manual mode only flags it), but must be in radius.
+        from assignment import assignable_contractors, point_job
+        for e in assignable_contractors(point_job(lat_f, lng_f), mode="manual", radius_miles=radius_miles):
+            if e["distance_miles"] is not None and e["distance_miles"] <= radius_miles:
                 return True
         return False
     except Exception:
@@ -896,48 +836,21 @@ def find_eligible_operators(job):
     """Like find_best_operator, but returns ALL eligible contractors (not the
     top 3) so the job can be broadcast to every hauler who could take it.
 
-    Returns a list of {"contractor", "distance_miles"} dicts sorted nearest
-    first. Empty list if none qualify. Never raises.
+    Pool = ``assignment.assignable_contractors(mode="offer")``: approved,
+    online (or on today's standby roster), in radius, documents valid, truck
+    fits, no reservation / schedule conflict, not a recent decliner. A stale
+    heartbeat is a *warning* here (sameday.wave tiers on it), not a block.
+
+    Returns a list of {"contractor", "distance_miles", "warnings"} dicts sorted
+    nearest first. Empty list if none qualify. Never raises.
     """
     try:
-        from models import Contractor, Job as JobModel
-
-        query = Contractor.query.filter_by(
-            is_online=True,
-            approval_status="approved",
-        )
-        if job.operator_id:
-            query = query.filter_by(operator_id=job.operator_id)
-        else:
-            # Independent contractors AND operator fleet drivers (geo-routing);
-            # exclude only operator accounts (they manage, don't haul).
-            query = query.filter(Contractor.is_operator.is_(False))
-
-        eligible = []
-        for c in query.all():
-            if _has_schedule_conflict(c, job.scheduled_at, JobModel):
-                continue
-
-            dist = None
-            if (
-                job.lat is not None and job.lng is not None
-                and c.current_lat is not None and c.current_lng is not None
-            ):
-                dist = haversine(c.current_lat, c.current_lng, job.lat, job.lng)
-                if dist > MAX_RADIUS_MILES:
-                    continue
-
-            # Capacity hard-disqualify (truck too small for the load)
-            if _capacity_score(c.truck_capacity, job.volume_estimate) == 0.0:
-                continue
-
-            eligible.append({
-                "contractor": c,
-                "distance_miles": round(dist, 1) if dist is not None else None,
-            })
-
-        # Nearest first (unknown distance sorts last)
-        eligible.sort(key=lambda e: e["distance_miles"] if e["distance_miles"] is not None else 1e9)
+        from assignment import assignable_contractors
+        eligible = [
+            {"contractor": e["contractor"], "distance_miles": e["distance_miles"],
+             "warnings": list(e["verdict"].warnings)}
+            for e in assignable_contractors(job, mode="offer")
+        ]
         logger.info(
             "Broadcast eligibility for job %s: %d hauler(s)",
             job.id, len(eligible),
@@ -1142,13 +1055,17 @@ def accept_offer(token):
     """First-to-accept claim of a broadcast offer. Atomic and idempotent.
 
     Returns a dict: {"ok": bool, "status": str, "message": str, "job": <dict or None>}
-      status one of: accepted | already_yours | taken | expired | invalid | error
+      status one of: accepted | already_yours | taken | expired | cancelled |
+                     ineligible | invalid | error
 
-    The race is resolved with a conditional UPDATE on the job row: only the
-    transaction that flips ``driver_id`` from NULL wins. Never raises.
+    Redemption runs through ``assignment.assign_job(source="offer")`` (audit
+    F15/F16): row lock + conditional UPDATE on the job, eligibility
+    re-validated at acceptance, the truck's window reserved, siblings
+    superseded — all in one transaction. Never raises.
     """
     try:
         from models import db, Job, JobOffer, Contractor, utcnow
+        from assignment import assign_job
 
         offer = JobOffer.query.filter_by(accept_token=token).first()
         if not offer:
@@ -1160,83 +1077,47 @@ def accept_offer(token):
             return {"ok": False, "status": "invalid",
                     "message": "This job no longer exists.", "job": None}
 
-        # Already claimed?
-        if job.driver_id:
-            if job.driver_id == offer.contractor_id:
+        contractor = db.session.get(Contractor, offer.contractor_id)
+        actor = {"user_id": contractor.user_id if contractor else None, "role": "driver",
+                 "name": (contractor.user.name if contractor and contractor.user else None) or "hauler"}
+        result = assign_job(job.id, offer.contractor_id, actor, "offer", offer=offer)
+
+        if result.ok:
+            if result.code == "already_assigned":
                 return {"ok": True, "status": "already_yours",
                         "message": "This job is already yours. See you there!",
-                        "job": job.to_dict()}
-            return {"ok": False, "status": "taken",
-                    "message": "Sorry — another hauler grabbed this job first.",
-                    "job": None}
+                        "job": result.job.to_dict()}
+            logger.info("OFFER ACCEPTED: job %s claimed by contractor %s", job.id, offer.contractor_id)
+            if contractor:
+                _notify_assignment(result.job, contractor)
+            return {"ok": True, "status": "accepted",
+                    "message": "Job accepted! Details are in your umuve app.",
+                    "job": result.job.to_dict()}
 
-        # Expired?
-        if offer.expires_at and utcnow() > _aware_utc(offer.expires_at):
+        if result.code == "offer_expired":
             offer.status = "expired"
             offer.responded_at = utcnow()
             db.session.commit()
             return {"ok": False, "status": "expired",
                     "message": "This offer has expired.", "job": None}
-
-        # --- Atomic claim: only succeeds if driver_id is still NULL ---
-        # Attribute the job to the accepting hauler's operator (if any) in the
-        # same atomic update, so the operator's commission pays out and we avoid
-        # an ORM write-back race on the raw update.
-        from models import Contractor as _Contractor
-        _accepting = db.session.get(_Contractor, offer.contractor_id)
-        _claim_values = {
-            "driver_id": offer.contractor_id,
-            "status": "assigned",
-            "updated_at": utcnow(),
-        }
-        if _accepting and _accepting.operator_id:
-            _claim_values["operator_id"] = _accepting.operator_id
-        claimed = (
-            Job.__table__.update()
-            .where(Job.id == job.id)
-            .where(Job.driver_id.is_(None))
-            # Status guard: a cancelled (or already-progressed) job must not be
-            # resurrectable by a stale SMS accept link — the hauler would drive
-            # to a dead pickup.
-            .where(Job.status.in_(("pending", "confirmed", "broadcasting")))
-            .values(**_claim_values)
-        )
-        result = db.session.execute(claimed)
-        if result.rowcount != 1:
-            # Lost the race between the read above and this update — or the job
-            # was cancelled/progressed out from under the link.
-            db.session.rollback()
-            db.session.refresh(job)
-            if job.status == "cancelled":
-                return {"ok": False, "status": "cancelled",
-                        "message": "This job was cancelled by the customer.",
-                        "job": None}
-            return {"ok": False, "status": "taken",
-                    "message": "Sorry — another hauler grabbed this job first.",
+        if result.code == "cancelled":
+            return {"ok": False, "status": "cancelled",
+                    "message": "This job was cancelled by the customer.", "job": None}
+        if result.code in ("taken", "terminal", "not_assignable", "version_conflict", "reservation_conflict"):
+            msg = ("Sorry — another hauler grabbed this job first."
+                   if result.code != "reservation_conflict"
+                   else "You're already booked for an overlapping job.")
+            return {"ok": False, "status": "taken", "message": msg, "job": None}
+        if result.code in ("ineligible", "not_approved", "payment_blocked", "payment_pending"):
+            return {"ok": False, "status": "ineligible",
+                    "message": "You can't take this job right now ({}).".format(
+                        ", ".join(result.reasons) or result.code),
                     "job": None}
-
-        offer.status = "accepted"
-        offer.responded_at = utcnow()
-        # Supersede all sibling offers for this job.
-        JobOffer.query.filter(
-            JobOffer.job_id == job.id,
-            JobOffer.id != offer.id,
-            JobOffer.status == "sent",
-        ).update({"status": "superseded", "responded_at": utcnow()},
-                 synchronize_session=False)
-        db.session.commit()
-
-        db.session.refresh(job)
-        contractor = db.session.get(Contractor, offer.contractor_id)
-        logger.info(
-            "OFFER ACCEPTED: job %s claimed by contractor %s", job.id, offer.contractor_id
-        )
-        if contractor:
-            _notify_assignment(job, contractor)
-
-        return {"ok": True, "status": "accepted",
-                "message": "Job accepted! Details are in your umuve app.",
-                "job": job.to_dict()}
+        if result.code in ("job_not_found", "contractor_not_found", "offer_mismatch"):
+            return {"ok": False, "status": "invalid",
+                    "message": "This job offer link is not valid.", "job": None}
+        return {"ok": False, "status": "error",
+                "message": "Something went wrong. Please try again.", "job": None}
     except Exception:
         logger.exception("accept_offer failed for token %s", token)
         try:

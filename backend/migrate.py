@@ -56,6 +56,19 @@ COLUMN_MIGRATIONS = [
     ("jobs", "operator_id", "VARCHAR(36)", "VARCHAR(36)", "NULL"),
     ("jobs", "delegated_at", "DATETIME", "TIMESTAMP", "NULL"),
 
+    # Audit F15/F17 — versioned transitions, arrival ack, change-order gate, handoff PIN
+    ("jobs", "version", "INTEGER", "INTEGER", "1"),
+    ("jobs", "arrived_at", "DATETIME", "TIMESTAMP", "NULL"),
+    ("jobs", "has_open_change_order", "BOOLEAN", "BOOLEAN", "FALSE"),
+    ("jobs", "completion_pin_hash", "VARCHAR(64)", "VARCHAR(64)", "NULL"),
+    ("jobs", "completion_pin_salt", "VARCHAR(16)", "VARCHAR(16)", "NULL"),
+    ("jobs", "completion_pin_verified_at", "DATETIME", "TIMESTAMP", "NULL"),
+    ("jobs", "completion_exception_reason", "TEXT", "TEXT", "NULL"),
+    # Audit F16 — decline exclusion on job_offers
+    ("job_offers", "declined_at", "DATETIME", "TIMESTAMP", "NULL"),
+    ("job_offers", "exclude_until", "DATETIME", "TIMESTAMP", "NULL"),
+    ("job_offers", "decline_reason", "VARCHAR(200)", "VARCHAR(200)", "NULL"),
+
     # Contractor table
     ("contractors", "is_operator", "BOOLEAN", "BOOLEAN", "FALSE"),
     ("contractors", "last_heartbeat_at", "DATETIME", "TIMESTAMP", "NULL"),
@@ -2145,6 +2158,63 @@ _PROMO_REDEMPTIONS_PG = dedent("""\
 NEW_TABLES_SQLITE.extend([_CHANGE_ORDERS_SQLITE, _PROMO_REDEMPTIONS_SQLITE])
 NEW_TABLES_PG.extend([_CHANGE_ORDERS_PG, _PROMO_REDEMPTIONS_PG])
 NEW_TABLE_NAMES.extend(["change_orders", "promo_redemptions"])
+
+# ---------------------------------------------------------------------------
+# contractor_reservations + job_events — audit F15/F17 (assignment.py)
+# ---------------------------------------------------------------------------
+_RESERVATIONS_SQLITE = dedent("""\
+    CREATE TABLE IF NOT EXISTS contractor_reservations (
+        id VARCHAR(36) PRIMARY KEY,
+        contractor_id VARCHAR(36) NOT NULL REFERENCES contractors(id) ON DELETE CASCADE,
+        job_id VARCHAR(36) NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+        starts_at DATETIME NOT NULL,
+        ends_at DATETIME NOT NULL,
+        status VARCHAR(16) NOT NULL DEFAULT 'active',
+        source VARCHAR(24),
+        created_at DATETIME,
+        released_at DATETIME,
+        CONSTRAINT uq_contractor_reservation_job UNIQUE (contractor_id, job_id)
+    )""")
+_RESERVATIONS_PG = dedent("""\
+    CREATE TABLE IF NOT EXISTS contractor_reservations (
+        id VARCHAR(36) PRIMARY KEY,
+        contractor_id VARCHAR(36) NOT NULL REFERENCES contractors(id) ON DELETE CASCADE,
+        job_id VARCHAR(36) NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+        starts_at TIMESTAMP NOT NULL,
+        ends_at TIMESTAMP NOT NULL,
+        status VARCHAR(16) NOT NULL DEFAULT 'active',
+        source VARCHAR(24),
+        created_at TIMESTAMP,
+        released_at TIMESTAMP,
+        CONSTRAINT uq_contractor_reservation_job UNIQUE (contractor_id, job_id)
+    )""")
+_JOB_EVENTS_SQLITE = dedent("""\
+    CREATE TABLE IF NOT EXISTS job_events (
+        id VARCHAR(36) PRIMARY KEY,
+        job_id VARCHAR(36) NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+        from_status VARCHAR(30),
+        to_status VARCHAR(30),
+        actor_user_id VARCHAR(36),
+        actor_role VARCHAR(20),
+        reason TEXT,
+        meta TEXT,
+        created_at DATETIME
+    )""")
+_JOB_EVENTS_PG = dedent("""\
+    CREATE TABLE IF NOT EXISTS job_events (
+        id VARCHAR(36) PRIMARY KEY,
+        job_id VARCHAR(36) NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+        from_status VARCHAR(30),
+        to_status VARCHAR(30),
+        actor_user_id VARCHAR(36),
+        actor_role VARCHAR(20),
+        reason TEXT,
+        meta JSON,
+        created_at TIMESTAMP
+    )""")
+NEW_TABLES_SQLITE.extend([_RESERVATIONS_SQLITE, _JOB_EVENTS_SQLITE])
+NEW_TABLES_PG.extend([_RESERVATIONS_PG, _JOB_EVENTS_PG])
+NEW_TABLE_NAMES.extend(["contractor_reservations", "job_events"])
 
 # Tables that require Postgres Row-Level Security. On SQLite the app-layer
 # tenant_guard middleware is the sole enforcer. Spec 04 §3.

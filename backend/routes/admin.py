@@ -2728,14 +2728,92 @@ def assign_job(user_id, job_id):
         return jsonify({"error": "Contractor not found"}), 404
 
     # Shared machinery with the VA Dispatch Desk — operator delegation,
-    # concierge console link, and all notifications live in dispatch_service.
+    # concierge console link, and all notifications live in dispatch_service;
+    # the assignment itself is assignment.assign_job (audit F15: row lock +
+    # conditional UPDATE + truck reservation + job_events). Terminal jobs are
+    # refused here — use PUT /jobs/<id>/reassign with a reason for corrections.
     from dispatch_service import AssignmentError, assign_contractor_to_job
     try:
-        job_dict = assign_contractor_to_job(job, contractor, assigned_by="An admin")
+        job_dict = assign_contractor_to_job(
+            job, contractor, assigned_by="An admin",
+            actor={"user_id": user_id, "role": "admin"}, source="admin",
+            force=bool(data.get("force")), reason=(data.get("reason") or "").strip() or None)
     except AssignmentError as e:
-        return jsonify({"error": str(e)}), e.status_code
+        return jsonify({"error": str(e), "code": e.code, "reasons": e.reasons}), e.status_code
 
     return jsonify({"success": True, "job": job_dict}), 200
+
+
+@admin_bp.route("/jobs/<job_id>/reassign", methods=["PUT"])
+@require_admin
+def reassign_job(user_id, job_id):
+    """Audited correction: move a live (non-terminal) job to another hauler.
+
+    Body: {contractor_id, reason (required), force?: bool}. Releases the
+    current hauler's reservation, records why, and runs the normal assignment
+    guards for the new one. Completed / cancelled jobs are refused — their
+    assignment and payout recipient are history."""
+    data = request.get_json(silent=True) or {}
+    contractor_id = data.get("contractor_id")
+    reason = (data.get("reason") or "").strip()
+    if not contractor_id:
+        return jsonify({"error": "contractor_id is required"}), 400
+    if not reason:
+        return jsonify({"error": "reason is required for a reassignment"}), 400
+    contractor = db.session.get(Contractor, contractor_id)
+    if not contractor:
+        return jsonify({"error": "Contractor not found"}), 404
+
+    from assignment import reassign_job as _reassign
+    result = _reassign(job_id, contractor_id, {"user_id": user_id, "role": "admin"}, reason,
+                       force=bool(data.get("force")))
+    if not result.ok:
+        return jsonify({"error": result.message, "code": result.code, "reasons": result.reasons}), result.http_status
+
+    from dispatch_service import notify_driver_assigned
+    try:
+        job_dict = notify_driver_assigned(result.job, contractor, "An admin", pin=result.pin)
+    except Exception:
+        current_app.logger.exception("reassign notifications failed for job %s", job_id)
+        job_dict = result.job.to_dict()
+    return jsonify({"success": True, "job": job_dict, "warnings": result.warnings}), 200
+
+
+@admin_bp.route("/jobs/<job_id>/transition", methods=["PUT"])
+@require_admin
+def admin_transition_job(user_id, job_id):
+    """Admin override of a job's status with a mandatory audited reason.
+
+    Body: {status, override_reason (required), exception_reason?, handoff_pin?,
+    version?}. Runs the same versioned transition the hauler app does (audit
+    F17) — 409 on a stale version, 422 when completion proof is missing unless
+    an exception_reason is supplied."""
+    job = db.session.get(Job, job_id)
+    if not job:
+        return jsonify({"error": "Job not found"}), 404
+    data = request.get_json(silent=True) or {}
+    new_status = data.get("status")
+    if not new_status:
+        return jsonify({"error": "status is required"}), 400
+    if not (data.get("override_reason") or "").strip():
+        return jsonify({"error": "override_reason is required"}), 400
+
+    from assignment import transition_job
+    contractor = db.session.get(Contractor, job.driver_id) if job.driver_id else None
+    ok, payload, code = transition_job(job, new_status, {"user_id": user_id, "role": "admin"},
+                                       data, contractor=contractor,
+                                       expected_version=data.get("version"))
+    return jsonify(payload), code
+
+
+@admin_bp.route("/jobs/<job_id>/events", methods=["GET"])
+@require_admin
+def job_events_history(user_id, job_id):
+    """Immutable assignment / transition history for a job (job_events)."""
+    if not db.session.get(Job, job_id):
+        return jsonify({"error": "Job not found"}), 404
+    from assignment import job_events
+    return jsonify({"success": True, "events": [e.to_dict() for e in job_events(job_id)]}), 200
 
 
 @admin_bp.route("/jobs/<job_id>/reschedule", methods=["PUT"])

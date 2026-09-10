@@ -29,6 +29,7 @@ FLAGS = {
     "sameday_wave":   {"default": True,  "desc": "Desk can text booked same-day jobs to the nearest haulers with one-tap accept"},
     "sameday_wave_maya": {"default": True, "desc": "Maya's same-day bookings run the same hauler offer wave automatically"},
     "auto_instant_payout": {"default": True, "desc": "Push every completed job's payout to the hauler's debit card the same day (Umuve covers the instant fee; standard payout + text if no card)"},
+    "completion_pin_required": {"default": False, "desc": "Completing a job requires the customer's 4-digit handoff PIN (texted at assignment); off = PIN is optional proof alongside after-photos"},
 }
 
 

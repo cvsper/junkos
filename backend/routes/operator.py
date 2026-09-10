@@ -265,10 +265,16 @@ def delegate_job(user_id, operator, job_id):
     if contractor.approval_status != "approved":
         return jsonify({"error": "Contractor is not approved"}), 403
 
-    job.driver_id = contractor.id
-    job.status = "assigned"
-    job.delegated_at = utcnow()
-    job.updated_at = utcnow()
+    # Audit F15: the assignment itself is the shared domain operation — row
+    # lock, conditional UPDATE, truck reservation, job_events row.
+    from assignment import assign_job
+    result = assign_job(job.id, contractor.id, {"user_id": user_id, "role": "operator"},
+                        "fleet_delegate", expected_version=(request.get_json(silent=True) or {}).get("version"))
+    if not result.ok:
+        return jsonify({"error": result.message, "code": result.code, "reasons": result.reasons}), result.http_status
+    job = result.job
+    if result.code == "already_assigned":
+        return jsonify({"success": True, "job": job.to_dict()}), 200
 
     # Notify the fleet contractor
     notification = Notification(
@@ -304,7 +310,7 @@ def delegate_job(user_id, operator, job_id):
             if customer.email:
                 send_driver_assigned_email(customer.email, customer.name, driver_name, job.address)
             if customer.phone:
-                send_driver_assigned_sms(customer.phone, driver_name, job.address)
+                send_driver_assigned_sms(customer.phone, driver_name, job.address, pin=result.pin)
         # Push to driver: new job assigned
         send_push_notification(
             contractor.user_id, "New Job Assigned",

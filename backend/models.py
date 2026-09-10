@@ -422,6 +422,22 @@ class Job(db.Model):
     disposition_notes = Column(Text, nullable=True)
     impact_summary = Column(Text, nullable=True)                  # cached customer-facing receipt copy
 
+    # --- Concurrency + proof (audit F15/F17, assignment.py) ---
+    # Optimistic-lock counter: every assignment / status transition is a
+    # conditional UPDATE ... WHERE version = <expected>; a stale writer gets 409.
+    version = Column(Integer, nullable=False, default=1, server_default="1")
+    arrived_at = Column(DateTime, nullable=True)                  # start requires an arrival ack
+    # Generic "a price/scope change is awaiting the customer" gate for
+    # completion. The versioned change-order feature sets/clears this; the
+    # legacy volume_adjustment_proposed flag is honoured alongside it.
+    has_open_change_order = Column(Boolean, default=False, server_default="0")
+    # Customer handoff PIN (4 digits) minted at assignment, stored hashed;
+    # accepted at completion as proof alongside / instead of after-photos.
+    completion_pin_hash = Column(String(64), nullable=True)
+    completion_pin_salt = Column(String(16), nullable=True)
+    completion_pin_verified_at = Column(DateTime, nullable=True)
+    completion_exception_reason = Column(Text, nullable=True)     # audited "no proof" reason
+
     created_at = Column(DateTime, default=utcnow)
     updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
 
@@ -501,6 +517,12 @@ class Job(db.Model):
             "disposition_outcome": self.disposition_outcome,
             "disposition_notes": self.disposition_notes,
             "impact_summary": self.impact_summary,
+            "version": self.version or 1,
+            "arrived_at": self.arrived_at.isoformat() if self.arrived_at else None,
+            "has_open_change_order": bool(self.has_open_change_order),
+            "completion_pin_set": bool(self.completion_pin_hash),
+            "completion_pin_verified_at": (
+                self.completion_pin_verified_at.isoformat() if self.completion_pin_verified_at else None),
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
@@ -535,6 +557,11 @@ class JobOffer(db.Model):
     sent_at = Column(DateTime, default=utcnow)
     responded_at = Column(DateTime, nullable=True)
     expires_at = Column(DateTime, nullable=True)
+    # Decline bookkeeping (audit F16): a declined hauler is excluded from
+    # re-dispatch of THIS job until exclude_until (assignment.eligibility).
+    declined_at = Column(DateTime, nullable=True)
+    exclude_until = Column(DateTime, nullable=True)
+    decline_reason = Column(String(200), nullable=True)
 
     created_at = Column(DateTime, default=utcnow)
 
@@ -560,6 +587,82 @@ class JobOffer(db.Model):
             "sent_at": self.sent_at.isoformat() if self.sent_at else None,
             "responded_at": self.responded_at.isoformat() if self.responded_at else None,
             "expires_at": self.expires_at.isoformat() if self.expires_at else None,
+            "declined_at": self.declined_at.isoformat() if self.declined_at else None,
+            "exclude_until": self.exclude_until.isoformat() if self.exclude_until else None,
+            "decline_reason": self.decline_reason,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
+
+
+# ---------------------------------------------------------------------------
+# ContractorReservation  (audit F15 — a truck's time window is RESERVED, not
+# merely read-checked, when a job is assigned)
+# ---------------------------------------------------------------------------
+class ContractorReservation(db.Model):
+    """One contractor's reserved time window for one job.
+
+    Written inside the same transaction as the job's assignment CAS
+    (assignment.assign_job). Overlap is checked with a conditional INSERT
+    (plus a per-contractor advisory lock on Postgres) so two jobs can't
+    concurrently reserve the same truck. A reservation is only "live" while
+    status == 'active' AND its job is still assigned to that contractor and
+    not terminal — so a cancelled job never blocks the truck.
+    """
+
+    __tablename__ = "contractor_reservations"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    contractor_id = Column(String(36), ForeignKey("contractors.id", ondelete="CASCADE"), nullable=False, index=True)
+    job_id = Column(String(36), ForeignKey("jobs.id", ondelete="CASCADE"), nullable=False, index=True)
+    starts_at = Column(DateTime, nullable=False)
+    ends_at = Column(DateTime, nullable=False)
+    status = Column(String(16), nullable=False, default="active", index=True)   # active | released
+    source = Column(String(24), nullable=True)                                  # auto | offer | admin | ...
+    created_at = Column(DateTime, default=utcnow)
+    released_at = Column(DateTime, nullable=True)
+
+    __table_args__ = (
+        db.UniqueConstraint("contractor_id", "job_id", name="uq_contractor_reservation_job"),
+        Index("ix_contractor_reservations_window", "contractor_id", "status", "starts_at", "ends_at"),
+    )
+
+    def to_dict(self):
+        return {
+            "id": self.id, "contractor_id": self.contractor_id, "job_id": self.job_id,
+            "starts_at": self.starts_at.isoformat() if self.starts_at else None,
+            "ends_at": self.ends_at.isoformat() if self.ends_at else None,
+            "status": self.status, "source": self.source,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "released_at": self.released_at.isoformat() if self.released_at else None,
+        }
+
+
+# ---------------------------------------------------------------------------
+# JobEvent  (audit F17 — immutable per-transition history)
+# ---------------------------------------------------------------------------
+class JobEvent(db.Model):
+    """Append-only record of every job assignment / release / status
+    transition: who did it, from what, to what, why, and any proof metadata.
+    Never updated or deleted by application code."""
+
+    __tablename__ = "job_events"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    job_id = Column(String(36), ForeignKey("jobs.id", ondelete="CASCADE"), nullable=False, index=True)
+    from_status = Column(String(30), nullable=True)
+    to_status = Column(String(30), nullable=True)
+    actor_user_id = Column(String(36), nullable=True, index=True)
+    actor_role = Column(String(20), nullable=True)      # driver | admin | operator | va | system | customer
+    reason = Column(Text, nullable=True)
+    meta = Column(JSON, nullable=True)
+    created_at = Column(DateTime, default=utcnow, index=True)
+
+    def to_dict(self):
+        return {
+            "id": self.id, "job_id": self.job_id,
+            "from_status": self.from_status, "to_status": self.to_status,
+            "actor_user_id": self.actor_user_id, "actor_role": self.actor_role,
+            "reason": self.reason, "meta": self.meta or {},
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }
 
