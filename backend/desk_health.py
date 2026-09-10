@@ -119,6 +119,18 @@ def check_desk_health(alert=False):
     except Exception as e:
         put("stripe_balance", "warn", "balance check failed: " + type(e).__name__)
 
+    try:
+        from ops_sentinel import stranded_summary
+        st = stranded_summary()
+        n, old_d = st["total"], st["oldest_days"]
+        state = "ok" if n == 0 else ("fail" if st["buckets"]["over_30d"] or st["buckets"]["7d_30d"] else "warn")
+        reason = ("no jobs stranded" if n == 0 else
+                  "{} open job(s) with no movement, oldest {} days — customers waiting or haulers unpaid".format(n, old_d))
+        put("stranded_jobs", state, reason, total=n, buckets=st["buckets"],
+            by_status=st["by_status"], jobs=st["jobs"])
+    except Exception as e:
+        put("stranded_jobs", "warn", "stranded check failed: " + type(e).__name__)
+
     put("sentry", "ok" if _env("SENTRY_DSN") else "warn",
         "configured" if _env("SENTRY_DSN") else "SENTRY_DSN not set — backend errors go unreported")
 

@@ -227,3 +227,52 @@ def run_sentinel(app):
                                  "Pay + mark in the concierge console"], budget)
 
         logger.info("sentinel sweep done (sms budget left %d)", budget)
+
+
+# ---------------------------------------------------------------------------
+# Stranded-job census (read-only)
+# ---------------------------------------------------------------------------
+# The sentinel alerts on stalls, but anything older than STALE_JOB_CUTOFF_DAYS
+# collapses into one daily digest line — so a job that quietly sat in
+# "assigned" for weeks is easy to miss entirely. This is the standing count,
+# safe to expose on the unauthenticated health page: buckets and job codes
+# only, never a customer name, address, phone or price.
+OPEN_STUCK_STATUSES = ("confirmed", "assigned", "accepted", "en_route", "arrived",
+                       "started", "in_progress")
+
+
+def stranded_summary(min_hours=12, limit=25):
+    """Open jobs with no forward movement, bucketed by age. No customer PII."""
+    from models import Job
+
+    now = _utcnow()
+    cutoff = now - timedelta(hours=min_hours)
+    rows = Job.query.filter(Job.status.in_(OPEN_STUCK_STATUSES)).all()
+    buckets = {"12h_2d": 0, "2d_7d": 0, "7d_30d": 0, "over_30d": 0}
+    by_status, jobs = {}, []
+    for job in rows:
+        anchor = _aware(job.scheduled_at) or _aware(job.updated_at) or _aware(job.created_at)
+        if not anchor or anchor > cutoff:
+            continue
+        age_h = (now - anchor).total_seconds() / 3600.0
+        if age_h < 48:
+            buckets["12h_2d"] += 1
+        elif age_h < 24 * 7:
+            buckets["2d_7d"] += 1
+        elif age_h < 24 * 30:
+            buckets["7d_30d"] += 1
+        else:
+            buckets["over_30d"] += 1
+        by_status[job.status] = by_status.get(job.status, 0) + 1
+        jobs.append({
+            "code": job.confirmation_code or str(job.id)[:8],
+            "status": job.status,
+            "age_days": round(age_h / 24.0, 1),
+            "has_driver": bool(job.driver_id),
+        })
+    jobs.sort(key=lambda j: j["age_days"], reverse=True)
+    return {
+        "total": len(jobs), "buckets": buckets, "by_status": by_status,
+        "oldest_days": jobs[0]["age_days"] if jobs else 0,
+        "jobs": jobs[:limit],
+    }
