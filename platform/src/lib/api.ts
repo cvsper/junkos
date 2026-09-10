@@ -309,7 +309,7 @@ export const bookingApi = {
   },
 
   submit: (bookingData: BookingFormData) =>
-    apiFetch<Job>("/api/booking", {
+    apiFetch<BookingSubmitResponse>("/api/booking", {
       method: "POST",
       body: JSON.stringify(bookingData),
     }),
@@ -479,9 +479,35 @@ export const quotesApi = {
 // Payments API
 // ---------------------------------------------------------------------------
 
+/**
+ * POST /api/booking answers { success, job, payment, checkout_token }.
+ * `checkout_token` is a booking-scoped capability: the public payment routes
+ * accept it in place of a login so a guest can pay for exactly this booking
+ * and nobody else can replace or cancel its payment attempt.
+ */
+export type BookingSubmitResponse = Job & {
+  success?: boolean;
+  job?: Job & { confirmation_code?: string };
+  payment?: { id: string; amount: number; payment_status: string };
+  checkout_token?: string;
+};
+
 interface CreatePaymentIntentResponse {
   clientSecret: string;
   paymentIntentId: string;
+  attemptId?: string;
+  /** true when the server returned the intent it already minted for this submission_key */
+  reused?: boolean;
+  amount?: number;
+}
+
+export interface CreateIntentOptions {
+  /** uuid generated once per booking and persisted (sessionStorage) — makes a
+   * retry after a timeout / declined card return the SAME intent instead of
+   * minting a second payable one. */
+  submissionKey: string;
+  /** capability from the booking response; omit when the user is logged in */
+  checkoutToken?: string;
 }
 
 interface ConfirmPaymentResponse {
@@ -494,12 +520,17 @@ interface ConfirmPaymentResponse {
 }
 
 export const paymentsApi = {
-  createIntent: (bookingId: string, amount: number) =>
+  createIntent: (bookingId: string, amount: number, opts: CreateIntentOptions) =>
     apiFetch<CreatePaymentIntentResponse>(
       "/api/payments/create-intent-simple",
       {
         method: "POST",
-        body: JSON.stringify({ bookingId, amount }),
+        body: JSON.stringify({
+          bookingId,
+          amount,
+          submission_key: opts.submissionKey,
+          ...(opts.checkoutToken ? { checkout_token: opts.checkoutToken } : {}),
+        }),
       }
     ),
 

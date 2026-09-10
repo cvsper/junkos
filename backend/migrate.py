@@ -57,6 +57,14 @@ COLUMN_MIGRATIONS = [
     ("contractors", "is_operator", "BOOLEAN", "BOOLEAN", "FALSE"),
     ("contractors", "last_heartbeat_at", "DATETIME", "TIMESTAMP", "NULL"),
     # same-day hauler pay (sameday_pay.py)
+    # audit F13/F14 (routes/payments.py)
+    ("payments", "refunded_amount", "FLOAT", "FLOAT", "0.0"),
+    ("payments", "split_operator_id", "VARCHAR(36)", "VARCHAR(36)", "NULL"),
+    # audit F07 durable webhook inbox
+    ("webhook_events", "attempts", "INTEGER", "INTEGER", "0"),
+    ("webhook_events", "leased_until", "DATETIME", "TIMESTAMP", "NULL"),
+    ("webhook_events", "processed_at", "DATETIME", "TIMESTAMP", "NULL"),
+    ("webhook_events", "last_error", "TEXT", "TEXT", "NULL"),
     ("payments", "payout_method", "VARCHAR(20)", "VARCHAR(20)", "NULL"),
     ("payments", "instant_payout_id", "VARCHAR(64)", "VARCHAR(64)", "NULL"),
     ("payments", "payout_arrival_at", "DATETIME", "TIMESTAMP", "NULL"),
@@ -1916,6 +1924,55 @@ NEW_TABLES_PG.extend(_PORTAL_V1_PG)
 NEW_TABLES_PG.extend(_OPS_V1_PG)
 NEW_TABLES_PG.extend(_PORTAL_SSO_PG)
 
+# audit F06 / F13 — payment_attempts, payouts (models_payments.py)
+_PAYMENTS_LEDGER_SQLITE = [
+    dedent("""\
+    CREATE TABLE IF NOT EXISTS payment_attempts (
+        id VARCHAR(36) PRIMARY KEY,
+        job_id VARCHAR(36) NOT NULL,
+        payment_id VARCHAR(36),
+        client_submission_key VARCHAR(64) NOT NULL,
+        stripe_intent_id VARCHAR(255) UNIQUE,
+        client_secret VARCHAR(255),
+        amount_cents INTEGER NOT NULL DEFAULT 0,
+        currency VARCHAR(8) NOT NULL DEFAULT 'usd',
+        status VARCHAR(24) NOT NULL DEFAULT 'created',
+        actor VARCHAR(24),
+        user_id VARCHAR(36),
+        superseded_by VARCHAR(36),
+        last_error TEXT,
+        created_at DATETIME,
+        updated_at DATETIME,
+        CONSTRAINT uq_attempt_job_submission UNIQUE (job_id, client_submission_key)
+    )"""),
+    dedent("""\
+    CREATE TABLE IF NOT EXISTS payouts (
+        id VARCHAR(36) PRIMARY KEY,
+        job_id VARCHAR(36) NOT NULL,
+        payment_id VARCHAR(36),
+        recipient_type VARCHAR(16) NOT NULL,
+        contractor_id VARCHAR(36),
+        operator_id VARCHAR(36),
+        amount_cents INTEGER NOT NULL DEFAULT 0,
+        currency VARCHAR(8) NOT NULL DEFAULT 'usd',
+        stripe_transfer_id VARCHAR(255),
+        status VARCHAR(24) NOT NULL DEFAULT 'pending',
+        method VARCHAR(20),
+        idempotency_key VARCHAR(80),
+        reversal_required BOOLEAN NOT NULL DEFAULT 0,
+        last_error TEXT,
+        created_at DATETIME,
+        updated_at DATETIME,
+        CONSTRAINT uq_payout_job_recipient UNIQUE (job_id, recipient_type)
+    )"""),
+]
+_PAYMENTS_LEDGER_PG = [
+    d.replace("DATETIME", "TIMESTAMP").replace("DEFAULT 0,\n        last_error", "DEFAULT FALSE,\n        last_error")
+    for d in _PAYMENTS_LEDGER_SQLITE
+]
+NEW_TABLES_SQLITE.extend(_PAYMENTS_LEDGER_SQLITE)
+NEW_TABLES_PG.extend(_PAYMENTS_LEDGER_PG)
+
 # Table names for the new tables (used for reporting)
 NEW_TABLE_NAMES = [
     "referrals",
@@ -1975,6 +2032,7 @@ NEW_TABLE_NAMES.extend(_OPS_NAMES)
 NEW_TABLE_NAMES.extend(_PORTAL_V1_NAMES)
 NEW_TABLE_NAMES.extend(_OPS_V1_NAMES)
 NEW_TABLE_NAMES.extend(_PORTAL_SSO_NAMES)
+NEW_TABLE_NAMES.extend(["payment_attempts", "payouts"])
 
 # ---------------------------------------------------------------------------
 # job_offers — marketplace broadcast / first-to-accept (Growth-1)

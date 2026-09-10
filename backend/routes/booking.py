@@ -788,9 +788,19 @@ def get_pricing_info():
 @booking_bp.route("", methods=["POST"])
 @limiter.limit("10 per minute")
 @optional_auth
-def create_booking(user_id):
+def create_booking_route(user_id):
+    """POST /api/booking — see create_booking() for the payload contract."""
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "Request body is required"}), 400
+    return create_booking(data, user_id)
+
+
+def create_booking(data, user_id):
     """
-    Create a new job / booking.
+    Create a new job / booking. The one code path for POST /api/booking and
+    POST /api/jobs (routes/jobs.py, customer iOS app). Returns a Flask
+    (response, status) tuple.
 
     Body JSON:
         address: str
@@ -803,10 +813,6 @@ def create_booking(user_id):
         notes: str (optional)
         estimated_price: float
     """
-    data = request.get_json()
-    if not data:
-        return jsonify({"error": "Request body is required"}), 400
-
     # --- Validate required fields (accept both camelCase and snake_case) ---
     address = data.get("address")
     if isinstance(address, dict):
@@ -1246,10 +1252,19 @@ def create_booking(user_id):
     except Exception:
         pass  # n8n webhooks must never block the booking flow
 
+    # Scoped checkout capability for the (possibly guest) client: the public
+    # create-intent route accepts it in place of the owner's JWT (audit F06).
+    try:
+        from routes.payments import checkout_token as _checkout_token
+        _ck = _checkout_token(job.id)
+    except Exception:
+        _ck = None
+
     return jsonify({
         "success": True,
         "job": job.to_dict(),
         "payment": payment.to_dict(),
+        "checkout_token": _ck,
     }), 201
 
 

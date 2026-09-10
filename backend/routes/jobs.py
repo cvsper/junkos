@@ -12,7 +12,7 @@ from datetime import datetime, timezone, timedelta
 from werkzeug.utils import secure_filename
 
 from models import db, Job, Contractor, Rating, Payment, User, Notification, generate_uuid, utcnow
-from auth_routes import require_auth
+from auth_routes import require_auth, optional_auth
 from notifications import send_push_notification
 from storage import save_file
 from timeutils import parse_local, iso_utc
@@ -42,6 +42,56 @@ def _ensure_upload_dir():
 # ---------------------------------------------------------------------------
 # GET /api/jobs/lookup/<confirmation_code>  (PUBLIC -- no auth required)
 # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# POST /api/jobs  (customer iOS app — audit F05)
+# The iOS wizard charges through this contract (Services/APIClient.swift
+# createJob -> POST /api/jobs) but the route never existed. Thin adapter
+# over the canonical booking path so web and app bookings are one code path;
+# returns the job id + checkout_token the app needs to create its payment
+# attempt (create-intent-simple) and confirm it (confirm-simple).
+# ---------------------------------------------------------------------------
+@jobs_bp.route("", methods=["POST"])
+@optional_auth
+def create_job_from_app(user_id):
+    data = request.get_json(silent=True) or {}
+    if not data:
+        return jsonify({"success": False, "error": "Request body is required"}), 400
+
+    payload = dict(data)
+    # iOS sends photo_urls / service_type / volume_tier; booking speaks
+    # photos / items. Map without losing anything the caller sent.
+    if "photos" not in payload and payload.get("photo_urls") is not None:
+        payload["photos"] = payload.get("photo_urls") or []
+    if not payload.get("items"):
+        category = (payload.get("service_type") or payload.get("serviceType") or "other")
+        size = payload.get("volume_tier") or payload.get("volumeTier")
+        item = {"category": str(category), "quantity": 1}
+        if size:
+            item["size"] = str(size)
+        payload["items"] = [item]
+    if "promo_code" not in payload and payload.get("promoCode"):
+        payload["promo_code"] = payload["promoCode"]
+    for src, dst in (("email", "customerEmail"), ("name", "customerName"), ("phone", "customerPhone")):
+        if payload.get(src) and not payload.get(dst):
+            payload[dst] = payload[src]
+    if not payload.get("lead_source") and not payload.get("leadSource"):
+        payload["lead_source"] = "ios_app"
+
+    from routes.booking import create_booking
+    resp, status = create_booking(payload, user_id)
+    if status != 201:
+        body = resp.get_json(silent=True) or {}
+        body.setdefault("success", False)
+        body.setdefault("message", body.get("error"))
+        return jsonify(body), status
+    body = resp.get_json() or {}
+    job = body.get("job") or {}
+    body["job_id"] = job.get("id")
+    body["confirmation_code"] = job.get("confirmation_code")
+    body["message"] = "Booking created"
+    return jsonify(body), 201
+
+
 @jobs_bp.route("/lookup/<confirmation_code>", methods=["GET"])
 def lookup_by_confirmation_code(confirmation_code):
     """

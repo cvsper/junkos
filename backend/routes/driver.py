@@ -152,7 +152,10 @@ def earnings(user_id):
         total_earned = round(total_earned, 2)
         avg_per_job = round(total_earned / total_jobs, 2) if total_jobs > 0 else 0.0
 
-        # Pending payout: driver_payout_amount from payments where payout_status is pending
+        # Pending payout: everything still OWED — pending, a failed transfer,
+        # or waiting on Stripe onboarding (audit F13: failed/pending_connect
+        # were excluded before, so the app under-reported what the hauler is owed).
+        from routes.payments import PAYOUT_OWED_STATUSES
         pending_payout_result = (
             db.session.query(func.coalesce(func.sum(Payment.driver_payout_amount), 0.0))
             .join(Job, Job.id == Payment.job_id)
@@ -160,7 +163,7 @@ def earnings(user_id):
                 Job.driver_id == contractor.id,
                 Job.status == "completed",
                 Payment.payment_status == "succeeded",
-                Payment.payout_status == "pending",
+                Payment.payout_status.in_(PAYOUT_OWED_STATUSES),
             )
             .scalar()
         )
