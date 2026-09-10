@@ -43,6 +43,15 @@ def _sweep_expired_broadcasts(app):
         logger.exception("Broadcast re-offer sweep failed")
 
 
+def _sameday_online_sweep(app):
+    """Hourly: app haulers with a stale heartbeat go offline (sameday.sweep_stale_online)."""
+    try:
+        from sameday import run_online_sweep
+        run_online_sweep(app)
+    except Exception:
+        logger.exception("online sweep job failed")
+
+
 def _sameday_standby_ask(app):
     """Morning 'available for same-day jobs today?' text to approved haulers. See sameday.py."""
     try:
@@ -582,6 +591,16 @@ def init_scheduler(app):
         from apscheduler.schedulers.background import BackgroundScheduler
 
         scheduler = BackgroundScheduler(daemon=True)
+
+        # Online-flag aging — hourly
+        scheduler.add_job(
+            _sameday_online_sweep,
+            "interval",
+            hours=1,
+            args=[app],
+            id="sameday_online_sweep",
+            name="Age out stale hauler online flags",
+        )
 
         # Same-day standby roster — 08:45 Florida time (Sundays skipped inside)
         scheduler.add_job(

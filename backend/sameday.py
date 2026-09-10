@@ -134,6 +134,61 @@ def _hauler_phone(c):
     return c.user.phone if getattr(c, "user", None) and c.user.phone else None
 
 
+ONLINE_TTL_HOURS = float(os.environ.get("HAULER_ONLINE_TTL_HOURS", "12") or 12)
+
+
+def is_live(c, now=None, on_standby=None):
+    """Would this hauler actually pick up a same-day job right now?
+    - on today's standby roster (said Y this morning) → yes
+    - app hauler: online flag AND a heartbeat (online toggle / location ping) within the TTL
+    - concierge (SMS-only) hauler: never "live" by flag alone — the flag is set at signup and
+      never changes, so only the standby answer counts."""
+    if on_standby and c.id in on_standby:
+        return True
+    if getattr(c, "is_concierge", False):
+        return False
+    if not c.is_online:
+        return False
+    hb = getattr(c, "last_heartbeat_at", None)
+    if hb is None:
+        return False
+    now = now or _now_utc().replace(tzinfo=None)
+    return (now - hb) <= timedelta(hours=ONLINE_TTL_HOURS)
+
+
+def sweep_stale_online(app=None):
+    """Hourly: app haulers whose online flag outlived the heartbeat TTL go offline.
+    Concierge haulers are left alone (their flag means 'receives offer texts')."""
+    def _do():
+        now = _now_utc().replace(tzinfo=None)
+        cutoff = now - timedelta(hours=ONLINE_TTL_HOURS)
+        flipped = 0
+        for c in Contractor.query.filter_by(is_online=True).all():
+            if getattr(c, "is_concierge", False):
+                continue
+            hb = getattr(c, "last_heartbeat_at", None)
+            if hb is None or hb < cutoff:
+                c.is_online = False
+                flipped += 1
+        if flipped:
+            db.session.commit()
+            logger.info("online sweep: %d stale app haulers set offline", flipped)
+        DeskSetting.put("online_sweep:last", json.dumps({"at": now.isoformat(), "flipped": flipped}))
+        return flipped
+    if app is not None:
+        with app.app_context():
+            try:
+                return _do()
+            except Exception:
+                logger.exception("online sweep failed")
+    else:
+        return _do()
+
+
+def run_online_sweep(app):
+    sweep_stale_online(app)
+
+
 # ---------------------------------------------------------------------------
 # 1. capacity
 # ---------------------------------------------------------------------------
@@ -145,16 +200,20 @@ def standby_ids(day=None):
 def capacity(lat=None, lng=None):
     today = _local_today()
     on_standby = standby_ids(today)
-    rows = []
+    now = _now_utc().replace(tzinfo=None)
+    rows, unconfirmed = [], 0
     for c in Contractor.query.filter_by(approval_status="approved").all():
-        available = bool(c.is_online) or c.id in on_standby
-        if not available:
+        live = is_live(c, now, on_standby)
+        if not live and not c.is_online:
             continue
         dist = None
         if lat is not None and lng is not None and c.current_lat is not None and c.current_lng is not None:
             dist = round(_haversine(lat, lng, c.current_lat, c.current_lng), 1)
             if dist > RADIUS_MILES:
                 continue
+        if not live:
+            unconfirmed += 1          # flag says online, nobody has confirmed it today
+            continue
         rows.append({"id": c.id, "name": _hauler_name(c), "miles": dist,
                      "online": bool(c.is_online), "standby": c.id in on_standby,
                      "rating": round(float(c.avg_rating or 0), 1)})
@@ -162,15 +221,18 @@ def capacity(lat=None, lng=None):
     n = len(rows)
     level = "green" if n >= 3 else ("amber" if n >= 1 else "red")
     nearest = rows[0] if rows else None
-    if lat is None:
-        note = "{} hauler{} available today (no location for this zip yet)".format(n, "" if n == 1 else "s")
-    elif n == 0:
-        note = "No haulers within {:.0f} miles right now — book tomorrow's first window".format(RADIUS_MILES)
+    where = "within {:.0f} mi".format(RADIUS_MILES) if lat is not None else "(no location for this zip yet)"
+    if n == 0:
+        note = "No hauler has confirmed availability today {}".format(where)
+        note += " — {} unconfirmed on the list; the offer wave will try them".format(unconfirmed) if unconfirmed else " — book tomorrow's first window"
     else:
-        note = "Same day: {} hauler{} within {:.0f} mi".format(n, "" if n == 1 else "s", RADIUS_MILES)
+        note = "Same day: {} confirmed hauler{} {}".format(n, "" if n == 1 else "s", where)
         if nearest and nearest["miles"] is not None:
             note += ", nearest {} mi ({})".format(nearest["miles"], nearest["name"])
-    return {"level": level, "count": n, "nearest": nearest, "haulers": rows[:8], "note": note,
+        if unconfirmed:
+            note += " · {} more unconfirmed".format(unconfirmed)
+    return {"level": level, "count": n, "unconfirmed": unconfirmed, "nearest": nearest, "haulers": rows[:8],
+            "note": note,
             "online_total": Contractor.query.filter_by(approval_status="approved", is_online=True).count(),
             "standby_total": len(on_standby), "geocoded": lat is not None}
 
@@ -210,9 +272,14 @@ def wave(job, limit=WAVE_SIZE, va_name=None):
         return {"sent": [], "reason": "already assigned"}
     _ensure_job_geo(job)
     already = _offered_ids(job)
-    eligible = [e for e in find_eligible_operators(job) if e["contractor"].id not in already]
-    # standby haulers count even when the app says offline
     on_standby = standby_ids(_local_date_of(job.scheduled_at) or _local_today())
+    now = _now_utc().replace(tzinfo=None)
+    pool = [e for e in find_eligible_operators(job) if e["contractor"].id not in already]
+    # confirmed (live/standby) first; the unconfirmed online flag is a fallback tier
+    confirmed = [e for e in pool if is_live(e["contractor"], now, on_standby)]
+    eligible = confirmed if confirmed else pool
+    tier = "confirmed" if confirmed else "unconfirmed"
+    # standby haulers count even when the app says offline
     if on_standby:
         seen = {e["contractor"].id for e in eligible}
         for c in Contractor.query.filter(Contractor.id.in_(list(on_standby)), Contractor.approval_status == "approved").all():
@@ -247,7 +314,7 @@ def wave(job, limit=WAVE_SIZE, va_name=None):
             logger.exception("offer sms failed for %s", c.id)
     audit("sameday_wave", "job", job.id, {"count": len(sent), "va": va_name})
     return {"sent": [{"name": _hauler_name(c), "miles": o.distance_miles} for o, c in sent],
-            "payout": payout, "expires_minutes": OFFER_EXPIRY_MINUTES}
+            "tier": tier, "payout": payout, "expires_minutes": OFFER_EXPIRY_MINUTES}
 
 
 def wave_async(job_id, app):

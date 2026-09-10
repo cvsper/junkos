@@ -155,6 +155,7 @@ class Contractor(db.Model):
     # no login, no Stripe. Excluded from app auto-assign (they can't act on
     # it); reached via the broadcast offer wave. Payouts settle by hand.
     is_concierge = Column(Boolean, default=False)
+    last_heartbeat_at = Column(DateTime, nullable=True)   # app online toggle / location update; ages the online flag
 
     created_at = Column(DateTime, default=utcnow)
     updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)

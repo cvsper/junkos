@@ -27,7 +27,8 @@ def _hauler(name, phone, lat, lng, online=True, approved="approved"):
     u = User(email=name.lower().replace(" ", "") + "@sd.test", name=name, phone=phone, role="driver")
     db.session.add(u); db.session.flush()
     c = Contractor(user_id=u.id, is_online=online, approval_status=approved, current_lat=lat, current_lng=lng,
-                   avg_rating=4.5, truck_capacity=12.0)
+                   avg_rating=4.5, truck_capacity=12.0,
+                   last_heartbeat_at=(datetime.now(timezone.utc).replace(tzinfo=None) if online else None))
     db.session.add(c); db.session.commit()
     return c
 
@@ -201,3 +202,51 @@ def test_geocode_failure_is_not_cached_forever():
             post.return_value.raise_for_status = lambda: None
             sameday._places_search_text("k", "33463, FL")
             assert post.call_args.kwargs["json"]["locationBias"]["circle"]["radius"] <= 50000
+
+
+def test_online_flag_ages_out_and_concierge_needs_standby():
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    fresh = _hauler("Fresh App", "+15615550401", 26.63, -80.05)
+    stale = _hauler("Stale App", "+15615550402", 26.63, -80.05)
+    stale.last_heartbeat_at = now - timedelta(hours=30); db.session.commit()
+    conc = _hauler("Concierge Carl", "+15615550403", 26.63, -80.05)
+    conc.is_concierge = True; conc.last_heartbeat_at = None; db.session.commit()
+    cap = sameday.capacity(26.62, -80.05)
+    assert [h["name"] for h in cap["haulers"]] == ["Fresh App"]
+    assert cap["unconfirmed"] == 2 and "2 more unconfirmed" in cap["note"]
+    # concierge says Y this morning → confirmed
+    db.session.add(HaulerStandby(day=sameday._local_today(), contractor_id=conc.id, available=True)); db.session.commit()
+    cap = sameday.capacity(26.62, -80.05)
+    assert sorted(h["name"] for h in cap["haulers"]) == ["Concierge Carl", "Fresh App"]
+    # the sweep flips only the stale APP hauler; concierge flag untouched
+    assert sameday.sweep_stale_online() == 1
+    db.session.refresh(stale); db.session.refresh(conc); db.session.refresh(fresh)
+    assert stale.is_online is False and conc.is_online is True and fresh.is_online is True
+    assert json.loads(DeskSetting.get("online_sweep:last"))["flipped"] == 1
+
+
+def test_wave_prefers_confirmed_then_falls_back(client):
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    unconf = _hauler("Unconfirmed U", "+15615550501", 26.63, -80.05)
+    unconf.last_heartbeat_at = now - timedelta(days=3); db.session.commit()
+    job = _job()
+    with mock.patch("dispatcher._sms_broadcast_offer"):
+        b = _va(client, "/api/va/sameday/find", {"job_id": job.id}).get_json()
+    assert b["tier"] == "unconfirmed" and [s["name"] for s in b["sent"]] == ["Unconfirmed U"]
+    live = _hauler("Live L", "+15615550502", 26.64, -80.05)
+    job2 = _job()
+    with mock.patch("dispatcher._sms_broadcast_offer"):
+        b2 = _va(client, "/api/va/sameday/find", {"job_id": job2.id, "limit": 3}).get_json()
+    assert b2["tier"] == "confirmed" and [s["name"] for s in b2["sent"]] == ["Live L"]
+
+
+def test_driver_endpoints_stamp_heartbeat(client):
+    from datetime import datetime as _dt
+    c = _hauler("App Andy", "+15615550601", 26.6, -80.0, online=False)
+    c.last_heartbeat_at = None; db.session.commit()
+    from auth_routes import generate_token
+    tok = generate_token(c.user_id)
+    r = client.put("/api/drivers/availability", json={"is_online": True}, headers={"Authorization": "Bearer " + tok})
+    assert r.status_code in (200, 201), r.get_json()
+    db.session.refresh(c)
+    assert c.last_heartbeat_at is not None and c.is_online is True

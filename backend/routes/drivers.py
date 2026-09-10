@@ -121,6 +121,7 @@ def update_availability(user_id):
     was_online = bool(contractor.is_online)
     if "is_online" in data:
         contractor.is_online = bool(data["is_online"])
+        contractor.last_heartbeat_at = datetime.utcnow()
     if "availability_schedule" in data:
         contractor.availability_schedule = data["availability_schedule"]
 
@@ -189,6 +190,7 @@ def update_location(user_id):
 
     try:
         contractor.current_lat = float(lat)
+        contractor.last_heartbeat_at = datetime.utcnow()
         contractor.current_lng = float(lng)
     except (TypeError, ValueError):
         return jsonify({"error": "lat and lng must be numbers"}), 400
