@@ -288,6 +288,16 @@ def _handle_create_booking(args, vapi_data):
     db.session.add(payment)
     db.session.commit()
 
+    # Same-day booking → offer wave to the nearest haulers (desk shows replies)
+    try:
+        from flags import flag as _flag
+        if _flag("sameday_wave_maya"):
+            from flask import current_app as _ca
+            from sameday import wave_async
+            wave_async(job.id, _ca._get_current_object())
+    except Exception:
+        logger.exception("maya same-day wave hook failed")
+
     # Send confirmation email
     try:
         from notifications import send_booking_confirmation_email, send_booking_sms

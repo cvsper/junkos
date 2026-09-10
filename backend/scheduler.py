@@ -43,6 +43,15 @@ def _sweep_expired_broadcasts(app):
         logger.exception("Broadcast re-offer sweep failed")
 
 
+def _sameday_standby_ask(app):
+    """Morning 'available for same-day jobs today?' text to approved haulers. See sameday.py."""
+    try:
+        from sameday import run_standby_ask
+        run_standby_ask(app)
+    except Exception:
+        logger.exception("standby ask job failed")
+
+
 def _check_desk_health(app):
     """Desk line dependencies (Twilio balance/webhooks/browser-calling env). See desk_health.py."""
     try:
@@ -573,6 +582,16 @@ def init_scheduler(app):
         from apscheduler.schedulers.background import BackgroundScheduler
 
         scheduler = BackgroundScheduler(daemon=True)
+
+        # Same-day standby roster — 08:45 Florida time (Sundays skipped inside)
+        scheduler.add_job(
+            _sameday_standby_ask,
+            "cron",
+            hour=8, minute=45, timezone="America/New_York",
+            args=[app],
+            id="sameday_standby_ask",
+            name="Same-day standby roster text",
+        )
 
         # Call Desk line health — every 30 min, alerts on state change
         scheduler.add_job(

@@ -109,6 +109,16 @@ def inbound_sms():
     # "JOBS" text becomes supply instead of getting auto-quoted, and a "STOP"
     # from a concierge hauler removes them from the offer wave. Consent-clean:
     # the hauler initiated the message. ---
+    # --- Same-day standby answers (Y / N from a known hauler) ---
+    if num_media == 0 and body:
+        try:
+            from sameday import record_standby_reply
+            _standby_reply = record_standby_reply(from_phone, body, via="sms")
+            if _standby_reply:
+                return _twiml_response(_standby_reply)
+        except Exception:
+            logger.exception("standby reply check failed; falling through")
+
     if num_media == 0 and body:
         try:
             from recruiter import is_signup_keyword, register_concierge

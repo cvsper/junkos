@@ -26,6 +26,8 @@ FLAGS = {
     "push_notifications": {"default": True, "desc": "Web Push to installed desks when a prospect replies"},
     "inbound_customers": {"default": True, "desc": "Inbound calls ring clocked-in VAs first with customer intake on the desk (off = legacy browser + cell ring, then voicemail)"},
     "maya_fallback":  {"default": True,  "desc": "Send unanswered / after-hours inbound calls to Maya instead of voicemail"},
+    "sameday_wave":   {"default": True,  "desc": "Desk can text booked same-day jobs to the nearest haulers with one-tap accept"},
+    "sameday_wave_maya": {"default": True, "desc": "Maya's same-day bookings run the same hauler offer wave automatically"},
 }
 
 

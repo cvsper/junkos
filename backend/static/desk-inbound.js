@@ -292,6 +292,7 @@
     post("/api/va/inbound/book", payload()).then(function(r){
       setBusy(false);
       if(r.status !== 200){ status((r.body && r.body.error) || "Couldn't book it.", true); return; }
+      try { window.__lastBookedJob = r.body.job || null; } catch(e){}
       done("Booked " + (r.body.job && r.body.job.code ? r.body.job.code : "") + " — " + money(r.body.total) + ". " +
            (r.body.texted ? "Confirmation + pay link texted." : "Text didn't go — read them the total."));
     }).catch(function(){ setBusy(false); status("No connection — nothing was booked.", true); });
