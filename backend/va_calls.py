@@ -1131,14 +1131,14 @@ CALLS_HTML = r"""<!doctype html>
 <meta name="theme-color" content="#0B0E12" />
 <title>Umuve — Call Desk</title>
 <link rel="stylesheet" href="/va/app.css?v=3" />
-<link rel="stylesheet" href="/va/calls.css?v=18" />
+<link rel="stylesheet" href="/va/calls.css?v=22" />
 <link rel="manifest" href="/static/desk-manifest.json" />
 </head>
 <body>
 <div id="app">
   <section id="gate" class="gate">
     <div class="gatewrap">
-      <img class="brand-lg rv" src="/va/logo.png" alt="Umuve" /><div class="eyebrow rv">Internal · VA suite</div>
+      <img class="brand-hero rv" src="/static/brand-logo.png" alt="Umuve" /><div class="eyebrow rv">Internal · VA suite</div>
       <h1 class="display" id="display-gate" aria-label="Call Desk">CALL&nbsp;DESK</h1>
       <p class="sub rv">One card at a time. Tap the number, make the call, tap what happened.</p>
       <form id="gate-form" autocomplete="on" class="rv">
@@ -1164,13 +1164,14 @@ CALLS_HTML = r"""<!doctype html>
   <section id="tool" class="tool" hidden>
     <header class="bar">
       <a class="back" href="/va" aria-label="Back to VA tools">←</a>
-      <div class="wordmark">CALL&nbsp;DESK</div>
+      <div class="brand"><img class="brand-mark" src="/static/brand-logo.png" alt="" /><div class="wordmark">CALL&nbsp;DESK</div></div>
       <div class="bar-sub" id="daybar">—</div>
       <button class="who who-btn" id="who" type="button" hidden title="Account"></button>
       <button class="clock" id="clock-chip" type="button" aria-label="Time clock"><span class="ck-dot"></span><span id="clock-label">Clock in</span></button>
       <button class="back" id="queue-toggle" type="button" aria-label="Your queue">☰</button>
       <button class="back" id="search-toggle" type="button" aria-label="Find a business">⌕</button>
     </header>
+    <div class="statsbar" id="daybar2">—</div>
     <div id="callstrip" class="callstrip" hidden>
       <div class="cs-dot"></div>
       <div class="cs-txt"><div class="cs-who" id="cs-who">—</div><div class="cs-state" id="cs-state">Calling…</div></div>
@@ -1417,7 +1418,7 @@ CALLS_HTML = r"""<!doctype html>
 <script src="/static/desk-inbound.js?v=1"></script>
 <script src="/static/desk-sameday.js?v=1"></script>
 <script src="/static/desk-enrich.js?v=1"></script>
-<script src="/va/calls.js?v=24"></script>
+<script src="/va/calls.js?v=25"></script>
 </body>
 </html>
 """
@@ -1518,6 +1519,41 @@ CALLS_CSS = r"""/* Call Desk — layers over /va/app.css tokens */
   .oc-skip{grid-column:1 / -1}
 }
 
+/* sign-in headline: fit the column at every width (app.css lets it bleed) */
+.gate .gatewrap{max-width:520px}
+.gate .display{font-size:clamp(40px,11vw,84px);margin-left:0;letter-spacing:-.03em;line-height:.95;
+  overflow-wrap:anywhere;max-width:100%}
+/* header + brand */
+.brand{display:flex;align-items:center;gap:9px;min-width:0}
+.brand-mark{width:30px;height:30px;object-fit:contain;flex:none}
+.brand-hero{height:72px;width:auto;display:block;margin-bottom:18px}
+.bar{gap:8px}
+.bar .back{flex:none}
+.bar-sub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.statsbar{display:none;padding:6px 14px 7px;color:var(--faint);font-size:12px;border-bottom:1px solid var(--line);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dial-num-sm{display:flex;flex-direction:column;align-items:center;line-height:1.15}
+.dn-name{font-size:.72em;color:var(--muted);font-weight:700;letter-spacing:0}
+@media (max-width:640px){
+  .bar{padding-left:10px;padding-right:10px;gap:6px}
+  .bar .wordmark{font-size:12px;letter-spacing:.18em}
+  .brand-mark{width:26px;height:26px}
+  .bar-sub{display:none}
+  .statsbar{display:block}
+  .who{display:none}
+  .clock{padding:0 9px;margin-right:0}
+  .bar .back{width:34px;height:34px;font-size:15px}
+  .dial-num{font-size:clamp(26px,8.2vw,36px)}
+  .dial-num-sm{font-size:clamp(17px,5.2vw,22px)}
+  .dial-hint{letter-spacing:.18em;font-size:10px;text-align:center}
+  .kit-bar{flex-wrap:wrap}
+  .kit-side{width:100%;text-align:center}
+  .ln-head{padding:10px 12px}
+  .si-row{flex-wrap:wrap}
+  .si-row input{flex:1 1 100%}
+  .si-row .si-btn{flex:1 1 auto}
+  .rc-btns .si-btn{flex:1 1 auto}
+}
 /* sign-in */
 .gate-alt{margin-top:14px}
 .gate-alt summary{cursor:pointer;color:var(--faint);font-size:12.5px;list-style:none}
@@ -1933,10 +1969,11 @@ CALLS_JS = r"""(function(){
 
   function setDaybar(stats){
     if(!stats) return;
-    var el = document.getElementById("daybar");
-    el.textContent = stats.calls_today + " calls today · " +
+    var txt = stats.calls_today + " calls today · " +
       stats.interested_today + " interested · " +
       (stats.due_now + stats.fresh) + " in queue";
+    document.getElementById("daybar").textContent = txt;
+    var d2 = document.getElementById("daybar2"); if(d2) d2.textContent = txt;
   }
 
   function render(resp){
@@ -2087,8 +2124,9 @@ CALLS_JS = r"""(function(){
     document.getElementById("c-meta").textContent = meta.filter(Boolean).join(" · ");
     var direct = document.getElementById("c-direct");
     if(c.direct_tel){
-      document.getElementById("c-direct-num").textContent =
-        (c.contact_name ? c.contact_name + " — " : "") + c.direct_phone;
+      var dn = document.getElementById("c-direct-num"); dn.textContent = "";
+      if(c.contact_name){ var nm = document.createElement("span"); nm.className = "dn-name"; nm.textContent = c.contact_name; dn.appendChild(nm); }
+      var nb = document.createElement("span"); nb.className = "dn-num"; nb.textContent = c.direct_phone; dn.appendChild(nb);
       direct.href = c.direct_tel;
       direct.hidden = false;
     } else { direct.hidden = true; }
