@@ -360,3 +360,25 @@ class TestPushRegistration:
         }, headers=headers)
 
         assert resp.status_code == 400
+
+
+def test_readiness_webhooks_reads_the_flat_secret_map():
+    """webhook_guard returns {name: bool}; the readiness shim keyed off a
+    "ready" key that shape never has, so webhooks read "missing" in production
+    even with every secret configured."""
+    from unittest import mock
+    import server
+
+    with mock.patch("webhook_guard.webhook_secrets_ready",
+                    return_value={"twilio": True, "vapi": True, "stripe": True}):
+        out = server._check_webhooks()
+    assert out["ok"] is True and out["status"] == "configured" and "missing" not in out
+
+    with mock.patch("webhook_guard.webhook_secrets_ready",
+                    return_value={"twilio": True, "vapi": False, "meta_leads": False}):
+        out = server._check_webhooks()
+    assert out["ok"] is False and out["missing"] == ["meta_leads", "vapi"]
+
+    # the richer {"ready": ...} shape still works
+    with mock.patch("webhook_guard.webhook_secrets_ready", return_value={"ready": True}):
+        assert server._check_webhooks()["ok"] is True

@@ -1025,7 +1025,7 @@ def get_available_time_slots(requested_date=None):
 # ---------------------------------------------------------------------------
 # Legacy API Routes (kept for backward compatibility)
 # ---------------------------------------------------------------------------
-APP_VERSION = "2.2.18-audit-remediation"
+APP_VERSION = "2.2.19-audit-remediation"
 
 
 # ---------------------------------------------------------------------------
@@ -1100,10 +1100,21 @@ def _check_webhooks():
         result = webhook_secrets_ready()
     except Exception as exc:  # pragma: no cover
         return {"ok": None, "status": "unknown", "error": str(exc)[:200]}
-    # Accept either a bool or a richer dict from the module.
+    # Accept a bool, a richer {"ready": ...} dict, or the flat
+    # {webhook name: configured?} map webhook_guard actually returns. The flat
+    # shape has no "ready" key, so keying off one reported "missing" forever
+    # even with every secret set.
     if isinstance(result, dict):
-        ok = bool(result.get("ready", result.get("ok")))
-        return {"ok": ok, "status": "configured" if ok else "missing", "detail": result}
+        if "ready" in result or "ok" in result:
+            ok = bool(result.get("ready", result.get("ok")))
+        else:
+            flags = [bool(v) for v in result.values() if isinstance(v, bool)]
+            ok = all(flags) if flags else None
+        missing = sorted(k for k, v in result.items() if isinstance(v, bool) and not v)
+        out = {"ok": ok, "status": "configured" if ok else "missing", "detail": result}
+        if missing:
+            out["missing"] = missing
+        return out
     ok = bool(result)
     return {"ok": ok, "status": "configured" if ok else "missing"}
 
