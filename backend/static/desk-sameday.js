@@ -28,7 +28,7 @@
     ".sd-off{display:flex;justify-content:space-between;gap:8px;padding:7px 2px;border-bottom:1px solid var(--line);font-size:13px;color:var(--muted)}",
     ".sd-off b{color:var(--ink);font-family:var(--display)}.sd-off .acc{color:var(--ok);font-weight:700}.sd-off .dec{color:#FF7A5C}",
     ".sd-note{font-size:12px;color:var(--faint);margin:6px 0 0;line-height:1.45}",
-    ".sd-standby{display:block;font-family:var(--display);font-weight:600;font-size:10.5px;color:var(--faint);white-space:nowrap;margin-top:2px}"
+    ".sd-standby{font-family:var(--display);font-weight:600;font-size:10.5px;color:var(--faint);white-space:nowrap}"
   ]);
 
   // ---- 1. capacity under the zip / address
@@ -130,8 +130,8 @@
     var chip = document.getElementById("sd-standby");
     if(!chip){
       chip = el("span", "sd-standby"); chip.id = "sd-standby"; chip.title = "Haulers who said they can take same-day jobs today";
-      var num = document.getElementById("th-num");
-      if(num && num.parentNode){ num.parentNode.appendChild(chip); } else { head.appendChild(chip); }
+      var status = head.querySelector(".ln-status") || document.getElementById("th-num").parentNode;
+      status.appendChild(chip);
     }
     post("/api/va/sameday/standby", {}).then(function(r){
       if(r.status !== 200) return;

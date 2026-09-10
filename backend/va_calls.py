@@ -1131,7 +1131,7 @@ CALLS_HTML = r"""<!doctype html>
 <meta name="theme-color" content="#0B0E12" />
 <title>Umuve — Call Desk</title>
 <link rel="stylesheet" href="/va/app.css?v=3" />
-<link rel="stylesheet" href="/va/calls.css?v=22" />
+<link rel="stylesheet" href="/va/calls.css?v=24" />
 <link rel="manifest" href="/static/desk-manifest.json" />
 </head>
 <body>
@@ -1343,12 +1343,14 @@ CALLS_HTML = r"""<!doctype html>
         <div class="ln-head">
           <div class="ln-title">
             <div class="ln-who" id="ln-who">Desk line</div>
-            <div class="ln-num" id="th-num"></div>
           </div>
-          <button class="ln-btn ln-call" id="desk-call-btn" type="button" hidden>Call</button>
-          <button class="ln-btn" id="pd-toggle" type="button" hidden title="Power dial: the next card dials itself after you log an outcome; answering machines get your recorded voicemail">Power</button>
-          <button class="ln-btn" id="cp-toggle" type="button" hidden title="Copilot: live transcript, objection cues while they talk, and a written-up note after the call. The other side hears a recording notice.">Copilot</button>
           <button class="ln-btn" id="inbox-toggle" type="button" aria-label="Replies and callbacks">Replies<span class="badge" id="inbox-badge" hidden>0</span></button>
+          <div class="ln-status"><span class="ln-num" id="th-num"></span></div>
+          <div class="ln-tools" id="ln-tools">
+            <button class="ln-btn ln-call" id="desk-call-btn" type="button" hidden>Call</button>
+            <button class="ln-btn" id="pd-toggle" type="button" hidden title="Power dial: the next card dials itself after you log an outcome; answering machines get your recorded voicemail">Power</button>
+            <button class="ln-btn" id="cp-toggle" type="button" hidden title="Copilot: live transcript, objection cues while they talk, and a written-up note after the call. The other side hears a recording notice.">Copilot</button>
+          </div>
         </div>
         <div class="pdbar" id="pdbar" hidden>
           <div class="pd-txt" id="pd-txt">Power dial is on</div>
@@ -1577,11 +1579,18 @@ CALLS_CSS = r"""/* Call Desk — layers over /va/app.css tokens */
 .desk.queue-open #outcomes{display:none}
 .line{order:4;display:flex;flex-direction:column;background:var(--surface);
   border:1px solid var(--line);border-radius:18px;overflow:hidden;min-height:0}
-.ln-head{display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid var(--line)}
+.ln-head{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--line)}
+.ln-status{flex:1 1 100%;display:flex;flex-wrap:wrap;gap:4px 14px;align-items:center;min-height:14px;
+  font-size:11px;color:var(--faint);font-variant-numeric:tabular-nums}
+.ln-status:empty{display:none}
+.ln-tools{flex:1 1 100%;display:flex;gap:6px;flex-wrap:wrap;margin-top:2px}
+.ln-tools:not(:has(button:not([hidden]))){display:none}
+.ln-tools .ln-btn{flex:1 1 auto;text-align:center}
+.ln-tools .ln-call{flex:2 1 auto}
 .ln-title{min-width:0;flex:1}
 .ln-who{font-family:var(--display);font-weight:800;font-size:15px;letter-spacing:-.01em;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ln-num{color:var(--faint);font-size:11.5px;margin-top:1px;font-variant-numeric:tabular-nums}
+.ln-num{color:var(--faint);font-size:11px;white-space:nowrap}
 .ln-btn{position:relative;flex:none;padding:8px 12px;font-family:var(--display);font-weight:700;
   font-size:12.5px;color:var(--ink);background:var(--raise);border:1px solid var(--line);
   border-radius:10px;cursor:pointer;transition:border-color .15s}
