@@ -890,10 +890,38 @@ class DeviceToken(db.Model):
     user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     token = Column(String(512), unique=True, nullable=False)
     platform = Column(String(10), nullable=False, default="ios")  # "ios" or "android"
+
+    # Which of the two iOS apps this token belongs to. A device token is only
+    # meaningful together with its APNs topic (the bundle id), and the two apps
+    # have different ones -- com.goumuve.app (customer) and com.goumuve.pro
+    # (driver). Sending with the wrong topic is rejected by Apple, so a single
+    # global APNS_BUNDLE_ID could only ever reach one of the apps (F27).
+    #
+    # Existing rows default to "driver": Umuve Pro is the app that registers
+    # today (JunkOS-Driver/Services/DriverAPIClient.swift:registerPushToken).
+    app = Column(String(16), nullable=False, default="driver", server_default="driver", index=True)
+
+    # APNs gateway this token was minted against. Sandbox tokens are rejected
+    # by the production gateway and vice versa, so it has to travel with the
+    # token rather than being inferred from the server's own FLASK_ENV.
+    environment = Column(
+        String(12), nullable=False, default="production", server_default="production"
+    )
+
+    # 410 Gone / BadDeviceToken deactivates rather than deletes, so the
+    # delivery ledger keeps pointing at something real.
+    active = Column(Boolean, nullable=False, default=True, server_default="1")
+    deactivated_at = Column(DateTime, nullable=True)
+    last_used_at = Column(DateTime, nullable=True)
+
     created_at = Column(DateTime, default=utcnow)
 
     __table_args__ = (
         CheckConstraint("platform IN ('ios', 'android')", name="ck_device_token_platform"),
+        CheckConstraint("app IN ('customer', 'driver')", name="ck_device_token_app"),
+        CheckConstraint(
+            "environment IN ('sandbox', 'production')", name="ck_device_token_environment"
+        ),
     )
 
     user = relationship("User", back_populates="device_tokens")
@@ -904,6 +932,65 @@ class DeviceToken(db.Model):
             "user_id": self.user_id,
             "token": self.token,
             "platform": self.platform,
+            "app": self.app,
+            "environment": self.environment,
+            "active": bool(self.active) if self.active is not None else True,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
+
+
+# ---------------------------------------------------------------------------
+# NotificationDelivery -- one row per push attempt
+# ---------------------------------------------------------------------------
+class NotificationDelivery(db.Model):
+    """Audit + retry ledger for push notifications.
+
+    Before this existed, a failed push returned False into a caller that mostly
+    ignored it: an offer, a receipt or a status change simply never arrived and
+    nothing recorded that it hadn't (F27). Every attempt now leaves a row, and
+    retryable failures are picked back up by the scheduler.
+    """
+
+    __tablename__ = "notification_deliveries"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    user_id = Column(String(36), nullable=True, index=True)
+    # Not a foreign key on purpose: the ledger outlives the token row.
+    device_token_id = Column(String(36), nullable=True, index=True)
+    token_suffix = Column(String(16), nullable=True)   # last chars only, never the token
+
+    app = Column(String(16), nullable=True)
+    environment = Column(String(12), nullable=True)
+    platform = Column(String(10), nullable=True)
+    topic = Column(String(128), nullable=True)
+
+    title = Column(String(255), nullable=True)
+    payload = Column(JSON, nullable=True)              # title/body/data/badge/category
+
+    # sent | failed | pending_retry | dead | undeliverable | skipped
+    status = Column(String(20), nullable=False, default="pending_retry", index=True)
+    reason = Column(String(255), nullable=True)
+    status_code = Column(Integer, nullable=True)
+    attempts = Column(Integer, nullable=False, default=0)
+    next_attempt_at = Column(DateTime, nullable=True, index=True)
+
+    created_at = Column(DateTime, default=utcnow)
+    updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "user_id": self.user_id,
+            "app": self.app,
+            "environment": self.environment,
+            "platform": self.platform,
+            "topic": self.topic,
+            "title": self.title,
+            "status": self.status,
+            "reason": self.reason,
+            "status_code": self.status_code,
+            "attempts": self.attempts,
+            "next_attempt_at": self.next_attempt_at.isoformat() if self.next_attempt_at else None,
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }
 

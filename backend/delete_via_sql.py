@@ -1,13 +1,28 @@
 #!/usr/bin/env python3
-"""Delete jobs without category field via direct SQL"""
-import psycopg2
+"""Delete jobs without category field via direct SQL.
+
+The database URL comes from the environment ONLY. There is deliberately no
+hardcoded fallback: this repository is public, and a connection string in a
+tracked file is a credential leak the moment it is committed (see the 2026-09
+audit, finding F04). Export DATABASE_URL from your secret store before running:
+
+    export DATABASE_URL="$(cat ~/.config/umuve-database-url)"
+    python3 delete_via_sql.py
+"""
 import json
 import os
+import sys
 
-# Get database URL from environment (same as Flask app uses)
-DATABASE_URL = os.getenv("DATABASE_URL")
+import psycopg2
+
+DATABASE_URL = os.environ.get("DATABASE_URL", "").strip()
 if not DATABASE_URL:
-    DATABASE_URL = "postgresql://junkos_db_user:9VcwYdvLAMkxB0wH4FvmG6i3dCJZS28V@dpg-d02lk7btq21c738mhe00-a.oregon-postgres.render.com/junkos_db"
+    sys.exit(
+        "DATABASE_URL is not set.\n"
+        "This script refuses to run without it — it will never carry an "
+        "embedded connection string.\n"
+        'Set it first, e.g.  export DATABASE_URL="postgresql://USER:PASSWORD@HOST/DBNAME"'
+    )
 
 # Connect to database with SSL
 conn = psycopg2.connect(DATABASE_URL, sslmode='require')

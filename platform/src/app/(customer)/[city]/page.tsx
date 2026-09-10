@@ -38,12 +38,13 @@ export function generateStaticParams() {
   return CITIES.map((city) => ({ city: city.slug }));
 }
 
-export function generateMetadata({
+export async function generateMetadata({
   params,
 }: {
-  params: { city: string };
-}): Metadata {
-  const city = getCityBySlug(params.city);
+  params: Promise<{ city: string }>;
+}): Promise<Metadata> {
+  const { city: citySlug } = await params;
+  const city = getCityBySlug(citySlug);
   const name = city?.name ?? "Your City";
 
   return {
@@ -53,10 +54,10 @@ export function generateMetadata({
       title: `Junk Removal in ${name}, FL | Umuve`,
       description: `Affordable junk removal in ${name}, Florida. We donate first, dispose last. Starting at $119.`,
       type: "website",
-      url: `https://app.goumuve.com/${params.city}`,
+      url: `https://app.goumuve.com/${citySlug}`,
     },
     alternates: {
-      canonical: `https://app.goumuve.com/${params.city}`,
+      canonical: `https://app.goumuve.com/${citySlug}`,
     },
   };
 }
@@ -184,8 +185,13 @@ const WHY_UMUVE = [
   },
 ];
 
-export default function CityPage({ params }: { params: { city: string } }) {
-  const city = getCityBySlug(params.city);
+export default async function CityPage({
+  params,
+}: {
+  params: Promise<{ city: string }>;
+}) {
+  const { city: citySlug } = await params;
+  const city = getCityBySlug(citySlug);
   const cityName = city?.name ?? "Your City";
 
   const jsonLd = {
@@ -193,7 +199,7 @@ export default function CityPage({ params }: { params: { city: string } }) {
     "@type": "LocalBusiness",
     name: `Umuve Junk Removal - ${cityName}, FL`,
     description: `Professional junk removal services in ${cityName}, Florida. Furniture, appliances, yard waste, construction debris and more.`,
-    url: `https://app.goumuve.com/${params.city}`,
+    url: `https://app.goumuve.com/${citySlug}`,
     telephone: "+1-561-944-1636",
     address: {
       "@type": "PostalAddress",
@@ -238,7 +244,7 @@ export default function CityPage({ params }: { params: { city: string } }) {
           </p>
           <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
-              href={`/book?utm_source=seo_city&utm_campaign=${params.city}`}
+              href={`/book?utm_source=seo_city&utm_campaign=${citySlug}`}
               className="inline-flex items-center justify-center rounded-xl bg-white text-red-700 font-bold text-lg px-8 py-4 shadow-lg hover:bg-red-50 transition-colors"
             >
               Book a Pickup
@@ -332,7 +338,7 @@ export default function CityPage({ params }: { params: { city: string } }) {
             Book your junk removal pickup in {cityName} in under 2 minutes. Same-day service available.
           </p>
           <Link
-            href={`/book?utm_source=seo_city&utm_campaign=${params.city}`}
+            href={`/book?utm_source=seo_city&utm_campaign=${citySlug}`}
             className="mt-8 inline-flex items-center justify-center rounded-xl bg-white text-red-700 font-bold text-lg px-8 py-4 shadow-lg hover:bg-red-50 transition-colors"
           >
             Book a Pickup Now
@@ -346,7 +352,7 @@ export default function CityPage({ params }: { params: { city: string } }) {
           Also Serving Nearby Cities
         </h2>
         <div className="flex flex-wrap gap-2">
-          {CITIES.filter((c) => c.slug !== params.city).map((c) => (
+          {CITIES.filter((c) => c.slug !== citySlug).map((c) => (
             <Link
               key={c.slug}
               href={`/${c.slug}`}

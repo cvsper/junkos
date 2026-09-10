@@ -1,0 +1,74 @@
+# Gitleaks configuration for the Umuve monorepo.
+#
+# This repo is PUBLIC. The secret-scan workflow (.github/workflows/secret-scan.yml)
+# runs gitleaks with this config on every push and pull request and FAILS the
+# build on any finding. Nothing here weakens detection of real credentials — the
+# allowlist below only silences documented placeholders and development-mode
+# sentinels that the codebase deliberately contains.
+#
+# Adding a new allowlist entry is a review-worthy change: prefer fixing the
+# sample so it does not look like a credential (use USER / PASSWORD / xxx).
+
+title = "Umuve secret scan"
+
+# Start from the upstream ruleset, then narrow with the allowlist below.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Documented placeholders, test fixtures and dev-mode sentinels"
+
+paths = [
+  # Lockfiles carry integrity hashes that trip entropy rules.
+  '''(^|/)package-lock\.json$''',
+  '''(^|/)yarn\.lock$''',
+  '''(^|/)pnpm-lock\.yaml$''',
+  '''(^|/)Package\.resolved$''',
+  # Compiled/vendored trees.
+  '''(^|/)node_modules/''',
+  '''(^|/)\.next/''',
+  '''(^|/)dist/''',
+  '''(^|/)build/''',
+  # Xcode project state.
+  '''\.xcodeproj/project\.xcworkspace/''',
+]
+
+regexes = [
+  # ---- Stripe test / development sentinels -------------------------------
+  # Real keys are sk_live_… / sk_test_… followed by 24+ random chars; these are
+  # the literal placeholders used in .env.example files and docs.
+  '''sk_test_(x+|xxx.*|123.*|your.*|REPLACE.*)''',
+  '''sk_live_(x+|xxx.*|123\.\.\..*|xxxxx.*|REPLACE.*)''',
+  '''pk_test_(x+|xxx.*|REPLACE.*)''',
+  '''whsec_(x+|xxx.*|test.*|REPLACE.*)''',
+  # backend/routes/payments.py fabricates these ids ONLY outside production
+  # (fail-closed guard in app_config.is_production). They are not credentials.
+  '''pi_dev_[A-Za-z0-9_-]*''',
+  '''acct_dev_[A-Za-z0-9_-]*''',
+  '''po_mock_[A-Za-z0-9_-]*''',
+  '''tr_dev_[A-Za-z0-9_-]*''',
+
+  # ---- Documentation / compose placeholders ------------------------------
+  # e.g. postgresql://user:pass@host:5432/dbname in DEPLOYMENT.md, and the
+  # ALL-CAPS shape shown in backend/delete_via_sql.py's docstring.
+  '''postgres(ql)?://(user|username|USER|postgres|umuveadmin|junkos):(pass|password|PASSWORD|PASS|PASSWORD_HERE|postgres|yourpassword)@''',
+  '''postgres(ql)?://[A-Z_]+:[A-Z_]+@[A-Z_]+''',
+  # CI service containers use throwaway credentials on localhost.
+  '''postgres(ql)?://(test|umuve_test|umuve):(test|umuve_test|umuve|test_password)@(localhost|postgres|127\.0\.0\.1)''',
+  # docker-compose variable interpolation, not a literal.
+  '''\$\{POSTGRES_[A-Z_]+(:-[^}]*)?\}''',
+  # Angle-bracket / ellipsis placeholders.
+  '''(?i)(secret|token|key|password)\s*[:=]\s*["']?(<[^>]+>|your[-_ ]?[a-z-]*|xxx+|\.\.\.|change[-_ ]?me|REPLACE[A-Z_]*)["']?''',
+
+  # ---- Test fixtures ------------------------------------------------------
+  '''(test|ci|e2e|dev)[-_](jwt|api|secret)[-_]?(key|secret|token)?["']?''',
+  '''test-jwt-secret-do-not-use-in-production''',
+  '''dev-only-''',
+]
+
+stopwords = [
+  "example",
+  "placeholder",
+  "changeme",
+  "your-secret-here",
+]

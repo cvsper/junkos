@@ -1,0 +1,31 @@
+// Blocking dependency gate for the platform app.
+// Run by .github/workflows/security-scan.yml (job: dependency-gate).
+//
+//   npx --yes audit-ci@^7 --config audit-ci.jsonc
+//
+// Fails the build on any HIGH or CRITICAL advisory that is not listed below.
+// An allowlist entry is a promise to come back to it: give the advisory id,
+// why it is not exploitable here, and what actually fixes it.
+{
+  "$schema": "https://raw.githubusercontent.com/IBM/audit-ci/main/docs/schema.json",
+  "high": true,
+  "allowlist": [
+    // ---- PostCSS, vendored inside next@15.5.25 --------------------------
+    // Fixed only in next@16.3.4, which is a major upgrade (React 19 +
+    // its own migration). Deliberately deferred: audit F28 says upgrade to a
+    // patched release, not rewrite the framework. 15.5.x is the Maintenance
+    // LTS line and carries the May + August 2026 security fixes.
+    //
+    // Exposure here is build-time only: these are source-map auto-loading and
+    // CSS-stringify issues that require attacker-controlled CSS or source
+    // maps. Both apps compile only first-party CSS (Tailwind + our own
+    // files), so nothing untrusted reaches PostCSS.
+    //
+    // REMOVE these when moving to Next 16.
+    // (Two further PostCSS advisories from the same vendored copy --
+    // GHSA-qx2v-qp2m-jg93 and GHSA-fxqj-rqcc-2cmp -- are moderate and so fall
+    // below this gate's threshold; they are fixed by the same Next 16 move.)
+    "GHSA-6g55-p6wh-862q", // high - arbitrary file read via source maps
+    "GHSA-r28c-9q8g-f849"  // high - path traversal in source-map loading
+  ]
+}

@@ -1,8 +1,14 @@
 name: Security Audit
 
 on:
-  # No longer runs on every push (was draining Actions minutes). Kept the cheap
-  # weekly scan + a manual trigger.
+  # The BLOCKING dependency gate runs on every PR and on pushes to the deploy
+  # branches -- a gate that only runs weekly cannot stop a vulnerable
+  # dependency from shipping (audit finding F26). The expensive best-effort
+  # scans below stay on the weekly schedule to conserve Actions minutes; each
+  # is guarded with an `if:` so PRs only pay for the gate.
+  push:
+    branches: [main, staging]
+  pull_request:
   schedule:
     # Run every Monday at 2 AM UTC
     - cron: '0 2 * * 1'
@@ -12,10 +18,103 @@ env:
   PYTHON_VERSION: '3.11'
   NODE_VERSION: '20'
 
+# =============================================================================
+# BLOCKING GATE -- this job must pass before code merges or deploys.
+# Everything below it is best-effort reporting that runs weekly.
+# =============================================================================
 jobs:
+  dependency-gate:
+    name: Dependency gate (blocking)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      # ---- Python -------------------------------------------------------
+      # pip-audit has no severity filter, so this fails on ANY advisory that is
+      # not explicitly triaged below. Adding an --ignore-vuln line is a
+      # deliberate, reviewable act: say why, and link the follow-up.
+      #
+      # TRIAGED BACKLOG (2026-09-10, audit F26): werkzeug 3.0.1, pyjwt 2.10.1,
+      # gunicorn 21.2.0 and python-dotenv are pinned behind their fixed
+      # releases. They are ignored here so the gate can go blocking TODAY
+      # against NEW findings instead of being switched off on day one.
+      # Bumping them touches auth (pyjwt) and the WSGI stack (werkzeug), so it
+      # is its own change with its own test run -- see docs/RUNBOOK-deploy.md.
+      - name: pip-audit (blocking)
+        working-directory: backend
+        run: |
+          pip install --upgrade pip pip-audit
+          pip-audit -r requirements.txt --desc \
+            --ignore-vuln PYSEC-2025-183 \
+            --ignore-vuln PYSEC-2026-120 \
+            --ignore-vuln PYSEC-2026-175 \
+            --ignore-vuln PYSEC-2026-176 \
+            --ignore-vuln PYSEC-2026-177 \
+            --ignore-vuln PYSEC-2026-178 \
+            --ignore-vuln PYSEC-2026-179 \
+            --ignore-vuln PYSEC-2026-1433 \
+            --ignore-vuln PYSEC-2026-1434 \
+            --ignore-vuln PYSEC-2026-2043 \
+            --ignore-vuln PYSEC-2026-2044 \
+            --ignore-vuln PYSEC-2026-2045 \
+            --ignore-vuln PYSEC-2026-2046 \
+            --ignore-vuln PYSEC-2026-2270 \
+            --ignore-vuln PYSEC-2026-2320 \
+            --ignore-vuln PYSEC-2026-3417
+
+      # ---- Node ---------------------------------------------------------
+      # Only the two deployed Next apps. `dashboard/` has no lockfile, so it
+      # cannot be audited reproducibly and is not deployed from CI.
+      #
+      # audit-ci wraps `npm audit` and fails on HIGH + CRITICAL, with a
+      # per-advisory allowlist that plain npm audit does not support. The
+      # allowlist and the reason for each entry live in each app's
+      # audit-ci.jsonc, next to the code -- not buried in this file.
+      - name: npm install -- platform
+        working-directory: platform
+        run: npm ci --no-audit --no-fund
+
+      - name: Dependency audit -- platform (high + critical, blocking)
+        working-directory: platform
+        run: npx --yes audit-ci@^7 --config audit-ci.jsonc
+
+      - name: npm install -- portal
+        working-directory: portal
+        run: npm ci --no-audit --no-fund
+
+      - name: Dependency audit -- portal (high + critical, blocking)
+        working-directory: portal
+        run: npx --yes audit-ci@^7 --config audit-ci.jsonc
+
+      - name: Gate summary
+        if: always()
+        run: |
+          cat >> "$GITHUB_STEP_SUMMARY" <<'EOF'
+          ## Dependency gate
+
+          Blocking checks: `pip-audit` (backend) and `audit-ci` at high+critical
+          (platform, portal). Secret detection is its own blocking workflow:
+          `.github/workflows/secret-scan.yml`.
+
+          To triage a finding, fix the version. Only add an `--ignore-vuln` /
+          audit exception with a written reason and a follow-up owner.
+          EOF
+
   python-dependency-scan:
     name: Python Dependency Vulnerabilities
     runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     
     steps:
       - uses: actions/checkout@v4
@@ -61,9 +160,10 @@ jobs:
   npm-dependency-scan:
     name: NPM Dependency Vulnerabilities
     runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     strategy:
       matrix:
-        service: [frontend, dashboard]
+        service: [platform, portal]
     
     steps:
       - uses: actions/checkout@v4
@@ -106,6 +206,7 @@ jobs:
   sast-scan:
     name: Static Application Security Testing
     runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     
     steps:
       - uses: actions/checkout@v4
@@ -201,6 +302,7 @@ jobs:
   semgrep-scan:
     name: Semgrep Security Scan
     runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     
     steps:
       - uses: actions/checkout@v4
@@ -225,6 +327,7 @@ jobs:
   docker-image-scan:
     name: Docker Image Security Scan
     runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     strategy:
       matrix:
         service: [backend, frontend, dashboard]
@@ -284,33 +387,16 @@ jobs:
             --severity CRITICAL,HIGH \
             umuve-${{ matrix.service }}:scan || true
 
-  secret-scan:
-    name: Secret Detection
-    runs-on: ubuntu-latest
-    
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      
-      - name: Run Gitleaks
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITLEAKS_ENABLE_SUMMARY: true
-        continue-on-error: true
-      
-      - name: TruffleHog Secret Scan
-        uses: trufflesecurity/trufflehog@main
-        with:
-          path: ./
-          base: ${{ github.event.repository.default_branch }}
-          head: HEAD
-        continue-on-error: true
+  # Secret detection moved to its own BLOCKING workflow so it can be a
+  # required status check on its own: .github/workflows/secret-scan.yml.
+  # It ran here with continue-on-error, which meant a committed credential
+  # produced a green tick (that is how the F04 connection string survived).
+  # Running gitleaks twice would just double the bill.
 
   license-scan:
     name: License Compliance Check
     runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     
     steps:
       - uses: actions/checkout@v4
@@ -390,7 +476,6 @@ jobs:
       - npm-dependency-scan
       - sast-scan
       - docker-image-scan
-      - secret-scan
       - license-scan
     if: always()
     
@@ -414,7 +499,7 @@ jobs:
           | NPM Dependencies | ${{ needs.npm-dependency-scan.result == 'success' && '✅' || '❌' }} |
           | SAST (Bandit/ESLint) | ${{ needs.sast-scan.result == 'success' && '✅' || '❌' }} |
           | Docker Images | ${{ needs.docker-image-scan.result == 'success' && '✅' || '❌' }} |
-          | Secret Detection | ${{ needs.secret-scan.result == 'success' && '✅' || '❌' }} |
+          | Secret Detection | see the blocking `Secret Scan` workflow |
           | License Compliance | ${{ needs.license-scan.result == 'success' && '✅' || '❌' }} |
           
           ## 📊 Detailed Reports
