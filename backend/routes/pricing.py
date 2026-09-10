@@ -4,6 +4,8 @@ Exposes the v2 pricing engine, pricing rules, surge zones, and category
 catalogue for admin and frontend consumption.
 """
 
+import logging
+
 from flask import Blueprint, request, jsonify
 from datetime import datetime, timezone
 
@@ -24,6 +26,8 @@ from routes.booking import (
 )
 
 pricing_bp = Blueprint("pricing", __name__, url_prefix="/api/pricing")
+
+logger = logging.getLogger(__name__)
 
 COMMISSION_RATE = 0.20
 
@@ -70,6 +74,24 @@ def get_estimate():
     scheduled_date = data.get("scheduledDate") or data.get("scheduled_date")
 
     result = calculate_estimate(items, scheduled_date=scheduled_date, lat=lat, lng=lng)
+
+    # Stamp the same server-issued price version the booking route verifies
+    # (audit F09). Without it the native app books on the legacy
+    # "echo estimated_price" path, which 409s the moment a schedule surcharge
+    # makes the quote and the booking disagree.
+    try:
+        from price_version import compute_price_version, normalize_schedule
+        scheduled_time = data.get("scheduledTimeSlot") or data.get("scheduled_time")
+        address_text = address.get("street") or address.get("formatted") or data.get("address") or ""
+        if not isinstance(address_text, str):
+            address_text = ""
+        date_part, slot = normalize_schedule(scheduled_date, scheduled_time)
+        result["price_version"] = compute_price_version(
+            items, lat, lng, address_text, date_part, slot, None,
+            None, 0.0, result.get("service_fee"), result.get("total"),
+        )
+    except Exception:
+        logger.exception("price_version stamp failed on /api/pricing/estimate")
 
     return jsonify({
         "success": True,
