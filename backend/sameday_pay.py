@@ -103,6 +103,15 @@ def instant_after_transfer(payment, contractor, amount):
         return dict(result, reason="hauler opted out")
     cid = contractor.stripe_connect_id or ""
     if not cid or cid.startswith("acct_dev_"):
+        from app_config import is_production
+        if is_production():
+            # Fail closed (audit F08): a missing/mock Connect id in production
+            # is never a payout destination — no fake po_mock success.
+            logger.error("instant payout refused for job %s: contractor %s has no real Connect account",
+                         payment.job_id, contractor.id)
+            payment.payout_method = "standard"
+            db.session.commit()
+            return dict(result, reason="payments unavailable: no real payout account")
         payment.payout_method = "instant"
         payment.instant_payout_id = "po_mock"
         payment.payout_arrival_at = _now().replace(tzinfo=None)

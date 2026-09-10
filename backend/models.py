@@ -620,6 +620,11 @@ class Payment(db.Model):
     instant_payout_id = Column(String(64), nullable=True)
     payout_arrival_at = Column(DateTime, nullable=True)
     payout_fee_cover = Column(Float, default=0.0)            # instant fee Umuve absorbed
+    # audit F14: cumulative refunded dollars (partial vs full lives here, not in a label)
+    refunded_amount = Column(Float, default=0.0)
+    # audit F13: which fleet operator the split was last computed for, so a
+    # delegation after payment success triggers a recompute before payout
+    split_operator_id = Column(String(36), nullable=True)
 
     created_at = Column(DateTime, default=utcnow)
     updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
@@ -639,6 +644,7 @@ class Payment(db.Model):
             "payout_status": self.payout_status,
             "payment_status": self.payment_status,
             "tip_amount": self.tip_amount,
+            "refunded_amount": self.refunded_amount or 0.0,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
@@ -1003,8 +1009,13 @@ class WebhookEvent(db.Model):
     stripe_event_id = Column(String(255), nullable=True, unique=True, index=True)
     event_type = Column(String(100), nullable=False)
     payload = Column(JSON, nullable=True)
+    # received | processing | processed | failed | orphan  (audit F07 durable inbox)
     status = Column(String(20), nullable=False, default="processed")
     error_message = Column(Text, nullable=True)
+    attempts = Column(Integer, nullable=False, default=0)
+    leased_until = Column(DateTime, nullable=True)
+    processed_at = Column(DateTime, nullable=True)
+    last_error = Column(Text, nullable=True)
     created_at = Column(DateTime, default=utcnow)
 
     def to_dict(self):
@@ -1014,6 +1025,10 @@ class WebhookEvent(db.Model):
             "event_type": self.event_type,
             "status": self.status,
             "error_message": self.error_message,
+            "attempts": self.attempts or 0,
+            "leased_until": self.leased_until.isoformat() if self.leased_until else None,
+            "processed_at": self.processed_at.isoformat() if self.processed_at else None,
+            "last_error": self.last_error,
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }
 

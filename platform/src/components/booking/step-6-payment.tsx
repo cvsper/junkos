@@ -45,6 +45,49 @@ const stripePromise = loadStripe(
 // Helpers
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Checkout session (audit F06): one submission key per booking, persisted in
+// sessionStorage so a reload / timeout / second click retries the SAME payment
+// attempt instead of creating a second payable intent. The checkout token is
+// the booking-scoped capability the backend hands back on booking creation.
+// ---------------------------------------------------------------------------
+const CHECKOUT_SESSION_KEY = "umuve.checkout.v1";
+
+interface CheckoutSession {
+  bookingId: string;
+  submissionKey: string;
+  checkoutToken?: string;
+  confirmationCode?: string;
+  fingerprint: string;
+}
+
+function newSubmissionKey(): string {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
+  }
+  return `sk-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
+}
+
+function readCheckoutSession(): CheckoutSession | null {
+  try {
+    const raw = sessionStorage.getItem(CHECKOUT_SESSION_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as CheckoutSession;
+    return parsed && parsed.bookingId && parsed.submissionKey ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeCheckoutSession(session: CheckoutSession | null) {
+  try {
+    if (session) sessionStorage.setItem(CHECKOUT_SESSION_KEY, JSON.stringify(session));
+    else sessionStorage.removeItem(CHECKOUT_SESSION_KEY);
+  } catch {
+    /* private mode / quota — the in-memory ref still covers this tab */
+  }
+}
+
 function formatPhoneNumber(value: string): string {
   const digits = value.replace(/\D/g, "");
   if (digits.length === 0) return "";
@@ -170,6 +213,65 @@ function PaymentFormInner() {
   // Booking created on a previous submit attempt (e.g. a declined card).
   // Reused on retry so we never create duplicate Jobs.
   const createdBookingIdRef = useRef<string | null>(null);
+  // Per-booking checkout session (submission key + checkout token). Restored
+  // from sessionStorage when the cart is unchanged, so a reload mid-checkout
+  // resumes the same booking and the same payment attempt.
+  const checkoutSessionRef = useRef<CheckoutSession | null>(null);
+
+  const cartFingerprint = JSON.stringify({
+    address:
+      typeof address === "object"
+        ? (address as Record<string, string>).street || JSON.stringify(address)
+        : address,
+    items,
+    scheduledDate,
+    scheduledTimeSlot,
+    finalPrice,
+  });
+
+  useEffect(() => {
+    const stored = readCheckoutSession();
+    if (stored && stored.fingerprint === cartFingerprint) {
+      checkoutSessionRef.current = stored;
+      createdBookingIdRef.current = stored.bookingId;
+      if (stored.confirmationCode) setConfirmationCode(stored.confirmationCode);
+    } else if (stored) {
+      // cart changed since that booking was created — don't pay for a stale one
+      writeCheckoutSession(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /** Remember a freshly created booking with a brand-new submission key. */
+  const rememberBooking = (bookingResult: Record<string, unknown>, id: string) => {
+    const jobData = bookingResult.job as Record<string, unknown> | undefined;
+    const session: CheckoutSession = {
+      bookingId: id,
+      submissionKey: newSubmissionKey(),
+      checkoutToken: (bookingResult.checkout_token as string | undefined) || undefined,
+      confirmationCode: (jobData?.confirmation_code as string | undefined) || undefined,
+      fingerprint: cartFingerprint,
+    };
+    checkoutSessionRef.current = session;
+    writeCheckoutSession(session);
+    return session;
+  };
+
+  /** The intent options for THIS booking (same key on every retry). */
+  const intentOptions = (id: string) => {
+    let session = checkoutSessionRef.current;
+    if (!session || session.bookingId !== id) {
+      session = { bookingId: id, submissionKey: newSubmissionKey(), fingerprint: cartFingerprint };
+      checkoutSessionRef.current = session;
+      writeCheckoutSession(session);
+    }
+    return { submissionKey: session.submissionKey, checkoutToken: session.checkoutToken };
+  };
+
+  const forgetCheckoutSession = () => {
+    checkoutSessionRef.current = null;
+    writeCheckoutSession(null);
+  };
 
   // ---------------------------------------------------------------------------
   // Beacon abandoned booking to backend for email drip recovery
@@ -288,15 +390,17 @@ function PaymentFormInner() {
             );
           }
           createdBookingIdRef.current = newBookingId;
+          rememberBooking(bookingResult as unknown as Record<string, unknown>, newBookingId);
           // Extract confirmation code from nested job response
           const jobData = (bookingResult as unknown as Record<string, unknown>).job as Record<string, unknown> | undefined;
           setConfirmationCode((jobData?.confirmation_code as string) || "");
         }
 
-        // 2. Create payment intent
+        // 2. Create (or resume) THE payment attempt for this booking
         const piResult = await paymentsApi.createIntent(
           newBookingId,
-          finalPrice
+          finalPrice,
+          intentOptions(newBookingId)
         );
 
         // InitiateCheckout — same event_id as the server CAPI event (dedup)
@@ -340,6 +444,7 @@ function PaymentFormInner() {
         setBookingId(newBookingId);
         trackBookingConversion({ bookingId: newBookingId, value: finalPrice });
         clearAbandonedBooking();
+        forgetCheckoutSession();
         setIsSuccess(true);
       } catch (err) {
         ev.complete("fail");
@@ -480,15 +585,18 @@ function PaymentFormInner() {
           );
         }
         createdBookingIdRef.current = newBookingId;
+        rememberBooking(bookingResult as unknown as Record<string, unknown>, newBookingId);
         // Extract confirmation code from nested job response
         const jobData = (bookingResult as unknown as Record<string, unknown>).job as Record<string, unknown> | undefined;
         setConfirmationCode((jobData?.confirmation_code as string) || "");
       }
 
-      // 2. Create payment intent on the server
+      // 2. Create (or resume) THE payment attempt on the server — the same
+      // submission key on every retry means the same intent comes back.
       const paymentIntentResult = await paymentsApi.createIntent(
         newBookingId,
-        finalPrice
+        finalPrice,
+        intentOptions(newBookingId)
       );
 
       // InitiateCheckout — same event_id as the server CAPI event (dedup)
@@ -529,6 +637,7 @@ function PaymentFormInner() {
       setBookingId(newBookingId);
       trackBookingConversion({ bookingId: newBookingId, value: finalPrice });
       clearAbandonedBooking();
+      forgetCheckoutSession();
       setIsSuccess(true);
     } catch (err) {
       const message =
@@ -648,6 +757,7 @@ function PaymentFormInner() {
           onClick={() => {
             useBookingStore.getState().reset();
             createdBookingIdRef.current = null;
+            forgetCheckoutSession();
             setIsSuccess(false);
             setName("");
             setEmail("");
