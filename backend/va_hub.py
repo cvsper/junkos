@@ -301,7 +301,13 @@ _LOGO_PNG = _b64.b64decode("""iVBORw0KGgoAAAANSUhEUgAAALAAAACwCAIAAAAg1XMJAAAAAX
 
 @vahub_bp.route("/va/logo.png", methods=["GET"])
 def va_logo():
-    resp = Response(_LOGO_PNG, mimetype="image/png")
+    # The real Umuve U-truck mark (static/brand-logo.png); the old base64 icon is the fallback.
+    try:
+        with open(os.path.join(os.path.dirname(__file__), "static", "brand-logo.png"), "rb") as f:
+            png = f.read()
+    except Exception:
+        png = _LOGO_PNG
+    resp = Response(png, mimetype="image/png")
     resp.headers["Cache-Control"] = "public, max-age=86400"
     return resp
 
@@ -314,7 +320,7 @@ VA_HUB_HTML = r"""<!doctype html>
 <meta name="robots" content="noindex, nofollow" />
 <meta name="theme-color" content="#0B0E12" />
 <title>Umuve — VA Tools</title>
-<link rel="stylesheet" href="/va/app.css?v=3" />
+<link rel="stylesheet" href="/va/app.css?v=4" />
 </head>
 <body>
 <div id="app">
@@ -413,7 +419,7 @@ VA_TEXT_HTML = r"""<!doctype html>
 <meta name="robots" content="noindex, nofollow" />
 <meta name="theme-color" content="#0B0E12" />
 <title>Umuve — Send a Text</title>
-<link rel="stylesheet" href="/va/app.css?v=3" />
+<link rel="stylesheet" href="/va/app.css?v=4" />
 </head>
 <body>
 <div id="app">
@@ -595,8 +601,8 @@ body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
   animation:ember 16s ease-in-out infinite alternate}
 @keyframes ember{from{opacity:.75;transform:translateY(0)}to{opacity:1;transform:translateY(-2.5vh)}}
 #app{position:relative;z-index:1}
-.brand{height:20px;display:block}
-.brand-lg{height:34px;display:block;margin-bottom:18px}
+.brand{height:30px;display:block}
+.brand-lg{height:64px;display:block;margin-bottom:18px}
 .display-sm{position:relative;padding-bottom:10px}
 .display-sm::after{content:"";position:absolute;left:1vw;bottom:0;width:58px;height:4px;
   border-radius:2px;background:var(--accent);transform-origin:left;transform:scaleX(0)}
@@ -829,7 +835,7 @@ VA_EMAIL_HTML = r"""<!doctype html>
 <meta name="robots" content="noindex, nofollow" />
 <meta name="theme-color" content="#0B0E12" />
 <title>Umuve — Send an Email</title>
-<link rel="stylesheet" href="/va/app.css?v=3" />
+<link rel="stylesheet" href="/va/app.css?v=4" />
 </head>
 <body>
 <div id="app">

@@ -419,7 +419,7 @@ DISPATCH_HTML = r"""<!doctype html>
 <meta name="robots" content="noindex, nofollow" />
 <meta name="theme-color" content="#0B0E12" />
 <title>Umuve — Dispatch Desk</title>
-<link rel="stylesheet" href="/va/app.css?v=3" />
+<link rel="stylesheet" href="/va/app.css?v=4" />
 <link rel="stylesheet" href="/va/dispatch.css?v=2" />
 </head>
 <body>

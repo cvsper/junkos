@@ -501,7 +501,7 @@ MANAGER_HTML = r"""<!doctype html>
 <meta name="robots" content="noindex, nofollow" />
 <meta name="theme-color" content="#0B0E12" />
 <title>Umuve — Desk manager</title>
-<link rel="stylesheet" href="/va/app.css?v=3" />
+<link rel="stylesheet" href="/va/app.css?v=4" />
 <link rel="stylesheet" href="/static/manager.css?v=1" />
 </head>
 <body class="mgr">
