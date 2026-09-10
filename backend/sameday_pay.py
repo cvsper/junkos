@@ -40,6 +40,7 @@ INSTANT_FEE_RATE = float(os.environ.get("INSTANT_PAYOUT_FEE_RATE", "0.015") or 0
 INSTANT_FEE_MIN = float(os.environ.get("INSTANT_PAYOUT_FEE_MIN", "0.50") or 0.50)
 INSTANT_MIN_CENTS = 100          # Stripe minimum instant payout is $1.00
 MIN_BALANCE = float(os.environ.get("STRIPE_MIN_BALANCE", "500") or 500)
+ONE_PAYOUT = float(os.environ.get("STRIPE_ONE_PAYOUT", "150") or 150)
 UNPAID_STATUSES = ("pending_connect", "failed")
 
 
@@ -372,8 +373,13 @@ def balance_check():
         available, pending, expected, due["count"], "" if due["count"] == 1 else "s")
     if available < expected:
         state, reason = "fail", soon + " — transfers will fail until it settles"
-    elif available < floor:
+    elif expected > 0 and available < floor:
         state, reason = "warn", soon + ", below the ${:.0f} operating floor".format(floor)
+    elif expected <= 0 and available < ONE_PAYOUT:
+        # Nothing is due, so an arbitrary floor is not worth a warning — but
+        # too little to cover a single typical payout still is.
+        state, reason = "warn", ("${:.2f} available and nothing due, but that will not cover one "
+                                 "typical payout when a job lands").format(available)
     else:
         state, reason = "ok", soon
     return {"state": state, "reason": reason, "available": available, "pending": pending,

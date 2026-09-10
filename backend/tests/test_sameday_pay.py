@@ -294,7 +294,28 @@ def test_balance_check_reports_settling_money():
         available=[mock.MagicMock(amount=10000, currency="usd")],
         pending=[mock.MagicMock(amount=250000, currency="usd")],
     )
-    with mock.patch("routes.payments._get_stripe", return_value=s):
+    due = {"total": 900.0, "count": 2, "jobs": []}
+    with mock.patch("routes.payments._get_stripe", return_value=s), \
+         mock.patch("sameday_pay.expected_payouts", return_value=due):
         b = sameday_pay.balance_check()
     assert b["available"] == 100.0 and b["pending"] == 2500.0
-    assert "settling" in b["reason"]
+    # the operator needs to see that the money is arriving, not just missing
+    assert "settling" in b["reason"] and "$2500.00" in b["reason"]
+    assert b["state"] == "fail" and b["expected"] == 900.0
+
+
+def test_balance_floor_does_not_nag_when_nothing_is_due():
+    """A health check that is permanently yellow gets ignored. With no payouts
+    due, being under the operating floor is not a warning; being unable to
+    cover a single payout still is."""
+    s = _fake_stripe(platform_available_cents=29857)
+    s.Balance.retrieve.side_effect = None
+    s.Balance.retrieve.return_value = mock.MagicMock(
+        available=[mock.MagicMock(amount=29857, currency="usd")], pending=[])
+    with mock.patch("routes.payments._get_stripe", return_value=s):
+        assert sameday_pay.balance_check()["state"] == "ok"          # $298 available, $0 due
+    s.Balance.retrieve.return_value = mock.MagicMock(
+        available=[mock.MagicMock(amount=1200, currency="usd")], pending=[])
+    with mock.patch("routes.payments._get_stripe", return_value=s):
+        b = sameday_pay.balance_check()
+    assert b["state"] == "warn" and "one typical payout" in b["reason"]
