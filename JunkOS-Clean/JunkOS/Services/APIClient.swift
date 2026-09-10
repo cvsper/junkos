@@ -323,58 +323,14 @@ class APIClient {
         return uploadResponse.urls
     }
 
-    /// Create a new job/booking
-    func createJob(
-        serviceType: String,
-        address: String,
-        lat: Double,
-        lng: Double,
-        photoUrls: [String],
-        scheduledDate: String,
-        scheduledTime: String,
-        estimatedPrice: Double,
-        volumeTier: String?,
-        distance: Double?,
-        promoCode: String? = nil
-    ) async throws -> JobCreationResponse {
-        var requestBody: [String: Any] = [
-            "service_type": serviceType,
-            "address": address,
-            "lat": lat,
-            "lng": lng,
-            "photo_urls": photoUrls,
-            "scheduled_date": scheduledDate,
-            "scheduled_time": scheduledTime,
-            "estimated_price": estimatedPrice
-        ]
+    // NOTE (audit F05): `createJob()` — POST /api/jobs with service_type +
+    // volume_tier — was removed. It ran AFTER the card had already been
+    // charged, and the route it targeted collapses the whole cart into a
+    // single synthetic line item, so even when it succeeded the job carried
+    // none of the customer's real items. The wizard now books first through
+    // POST /api/booking (the same call the production web client makes) via
+    // `submitBooking(_:)` below, and pays second.
 
-        if let volumeTier = volumeTier {
-            requestBody["volume_tier"] = volumeTier
-        }
-
-        // Backend (server.py:1002) reads `promoCode` (camelCase) and applies
-        // the discount server-side, recording the credit on the booking row.
-        // Without this, customers see the discount in the Stripe charge but
-        // the booking record over-counts revenue.
-        if let promoCode, !promoCode.isEmpty {
-            requestBody["promoCode"] = promoCode
-        }
-
-        if let distance = distance {
-            requestBody["distance"] = distance
-        }
-
-        let body = try JSONSerialization.data(withJSONObject: requestBody)
-
-        let request = try createRequest(
-            endpoint: "/api/jobs",
-            method: "POST",
-            body: body
-        )
-
-        return try await performRequest(request)
-    }
-    
     /// Get customer's bookings
     func getCustomerBookings(email: String) async throws -> [BookingResponse] {
         let body = try JSONEncoder().encode(["email": email])
@@ -427,9 +383,17 @@ class APIClient {
             }
         }
 
-        // Include address coordinates if available
+        // Include address coordinates if available.
+        //
+        // The key is `address` (and top-level lat/lng), NOT `pickup_address`:
+        // routes/pricing.py reads `data["address"]["lat"]` or `data["lat"]`
+        // and ignores anything else, so the old `pickup_address` payload meant
+        // every iOS quote was priced with no location at all — no surge zone,
+        // no distance. Both forms are sent so either reader works.
         if let lat = pickupLat, let lng = pickupLng {
-            requestBody["pickup_address"] = ["lat": lat, "lng": lng]
+            requestBody["address"] = ["lat": lat, "lng": lng]
+            requestBody["lat"] = lat
+            requestBody["lng"] = lng
         }
 
         // Include scheduled date if available
@@ -554,5 +518,131 @@ class APIClient {
             throw APIClientError.serverError("Failed to decline volume adjustment")
         }
         return (try? JSONSerialization.jsonObject(with: data) as? [String: Any]) ?? [:]
+    }
+}
+
+// MARK: - Book-first checkout (audit F05)
+
+extension APIClient: BookingCheckoutAPI {
+
+    /// Step 1 — POST /api/booking. Creates User + Job + Payment and returns
+    /// the job (with its server-computed total) plus a `checkout_token`
+    /// capability scoped to that one booking. Nothing is charged here.
+    func submitBooking(_ request: BookingSubmitRequest) async throws -> BookingSubmitResponse {
+        let body = try JSONSerialization.data(withJSONObject: request.jsonObject())
+        return try await performCheckoutRequest(
+            endpoint: "/api/booking", body: body, as: BookingSubmitResponse.self
+        )
+    }
+
+    /// Step 2 — POST /api/payments/create-intent-simple for an EXISTING
+    /// booking. `submissionKey` makes this idempotent: the same key returns
+    /// the same PaymentIntent rather than minting a second payable one, which
+    /// is what lets a retry after a timeout be safe.
+    func createPaymentIntent(
+        bookingId: String,
+        submissionKey: String,
+        checkoutToken: String?,
+        amount: Double,
+        customerEmail: String?,
+        promoCode: String?,
+        priceVersion: String?
+    ) async throws -> CheckoutIntentResponse {
+        var payload: [String: Any] = [
+            "bookingId": bookingId,
+            "submission_key": submissionKey,
+            // Advisory: the server charges the job's own total_price.
+            "amount": amount,
+        ]
+        if let checkoutToken, !checkoutToken.isEmpty { payload["checkout_token"] = checkoutToken }
+        if let customerEmail, !customerEmail.isEmpty { payload["customerEmail"] = customerEmail }
+        if let promoCode, !promoCode.isEmpty { payload["promoCode"] = promoCode }
+        if let priceVersion, !priceVersion.isEmpty { payload["price_version"] = priceVersion }
+
+        let body = try JSONSerialization.data(withJSONObject: payload)
+        return try await performCheckoutRequest(
+            endpoint: "/api/payments/create-intent-simple", body: body,
+            as: CheckoutIntentResponse.self
+        )
+    }
+
+    /// Step 3 — POST /api/payments/confirm-simple. `bookingId` is sent so the
+    /// server can adopt an intent whose Payment row it can't find by id yet.
+    func confirmPayment(paymentIntentId: String, bookingId: String) async throws -> CheckoutConfirmResponse {
+        let body = try JSONSerialization.data(withJSONObject: [
+            "paymentIntentId": paymentIntentId,
+            "bookingId": bookingId,
+            "paymentMethodType": "card",
+        ])
+        return try await performCheckoutRequest(
+            endpoint: "/api/payments/confirm-simple", body: body,
+            as: CheckoutConfirmResponse.self
+        )
+    }
+
+    /// Recovery read — GET /api/booking/<job_id>. Public (the UUID is the
+    /// capability) and carries the payment status, which is all the resume
+    /// path needs to decide between "done", "still owed", and "cancelled".
+    func fetchBookingStatus(jobId: String) async throws -> BookingStatusSnapshot {
+        let encoded = jobId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? jobId
+        return try await performCheckoutRequest(
+            endpoint: "/api/booking/\(encoded)", method: "GET", body: nil,
+            as: BookingStatusSnapshot.self
+        )
+    }
+
+    // MARK: Transport
+
+    /// One request path for the money flow, mapping every failure onto
+    /// `CheckoutAPIError` so callers can branch on the server's `code`
+    /// (`amount_changed`, `attempt_in_progress`, `already_paid`, …) and on
+    /// whether a retry could plausibly help.
+    private func performCheckoutRequest<T: Decodable>(
+        endpoint: String,
+        method: String = "POST",
+        body: Data?,
+        as type: T.Type
+    ) async throws -> T {
+        let request: URLRequest
+        do {
+            request = try createRequest(endpoint: endpoint, method: method, body: body)
+        } catch {
+            throw CheckoutAPIError(statusCode: 0, code: "invalid_request",
+                                   message: "Could not build the request.")
+        }
+
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await session.data(for: request)
+        } catch {
+            // No HTTP response at all. Status 0 marks it retryable — a lost
+            // response is never proof that the server didn't act.
+            throw CheckoutAPIError.transport(error)
+        }
+
+        guard let http = response as? HTTPURLResponse else {
+            throw CheckoutAPIError(statusCode: 0, code: "invalid_response",
+                                   message: "Invalid server response.")
+        }
+
+        guard (200...299).contains(http.statusCode) else {
+            let envelope = try? JSONDecoder().decode(CheckoutErrorBody.self, from: data)
+            throw CheckoutAPIError(
+                statusCode: http.statusCode,
+                code: envelope?.code,
+                message: envelope?.error ?? envelope?.message
+                    ?? "Request failed (\(http.statusCode)).",
+                retryAfter: envelope?.retryAfter
+            )
+        }
+
+        do {
+            return try JSONDecoder().decode(T.self, from: data)
+        } catch {
+            // A 2xx we can't read is not retryable — the server did the work.
+            throw CheckoutAPIError(statusCode: http.statusCode, code: "decoding",
+                                   message: "We couldn't read the server's response.")
+        }
     }
 }

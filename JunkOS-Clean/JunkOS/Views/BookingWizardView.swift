@@ -97,6 +97,13 @@ struct BookingWizardView: View {
         }
         .environmentObject(bookingData)
         .environmentObject(wizardVM)
+        // Entering the wizard is a natural moment to reconcile a checkout that
+        // was interrupted mid-payment (audit F05). Silent when there is
+        // nothing pending; the banner lives in MainTabView so it shows
+        // wherever the customer happens to be.
+        .task {
+            await CheckoutRecoveryService.shared.resumeIfNeeded()
+        }
         .onChange(of: wizardVM.currentStep) { _ in
             // Refresh pricing when step changes
             Task {
