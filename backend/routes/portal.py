@@ -51,6 +51,13 @@ from models import (
     PortalInvoice,
     PortalAuditLog,
 )
+from app_config import is_production
+from auth_routes import (
+    JWT_SECRET as _SHARED_JWT_SECRET,
+    authenticate_access_token,
+    normalize_email as _normalize_email_safe,
+    password_policy_error,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -58,25 +65,55 @@ portal_bp = Blueprint("portal", __name__, url_prefix="/portal/v1")
 
 
 # ---------------------------------------------------------------------------
-# JWT — portal tokens carry org/role claims so RBAC is a header check,
-# not a per-request DB roundtrip. Signed with JWT_SECRET shared w/ auth.
+# JWT — portal tokens carry org/role claims for routing, but (audit F20)
+# portal_auth re-reads the CURRENT membership, role and account state from
+# the DB on every request, so a removed member or suspended user is locked
+# out immediately. Signed with the JWT_SECRET shared with auth_routes.
 # ---------------------------------------------------------------------------
-JWT_SECRET = os.environ.get("JWT_SECRET", "dev-fallback-do-not-use")
+def _load_portal_jwt_secret(env=None):
+    """Fail closed: no fixed development fallback in production."""
+    env = os.environ if env is None else env
+    secret = env.get("JWT_SECRET", "")
+    if secret:
+        return secret
+    if is_production():
+        raise RuntimeError(
+            "FATAL: JWT_SECRET must be set in production (portal). Refusing "
+            "to sign portal tokens with a development fallback."
+        )
+    # Development only: share auth_routes' per-process random secret so the
+    # user-JWT -> portal-JWT exchange still works locally.
+    return _SHARED_JWT_SECRET
+
+
+JWT_SECRET = _load_portal_jwt_secret()
 PORTAL_TOKEN_TTL_DAYS = 7
 INVITE_TTL_DAYS = 14
+PORTAL_URL = os.environ.get("PORTAL_URL", "https://portal.goumuve.com")
 
 # Sales-only bootstrap endpoint: called by ops CLI / internal tooling,
 # never from the portal UI.
 SALES_SERVICE_TOKEN = os.environ.get("PORTAL_SALES_SERVICE_TOKEN", "")
 
 
+def _token_version(user):
+    return int(getattr(user, "token_version", 0) or 0)
+
+
+def _account_active(user):
+    return user is not None and (getattr(user, "status", None) or "active") == "active"
+
+
 def mint_portal_token(user_id, org_id, role, scopes=None):
-    """Return a short-lived JWT carrying the tenant claim set."""
+    """Return a short-lived JWT carrying the tenant claim set plus the
+    user's session version (``tv``) so revocation applies to portal tokens."""
+    user = db.session.get(User, user_id)
     payload = {
         "user_id": user_id,
         "org_id": org_id,
         "role": role,
         "scopes": list(scopes or []),
+        "tv": _token_version(user) if user else 0,
         "exp": _dt.datetime.utcnow() + _dt.timedelta(days=PORTAL_TOKEN_TTL_DAYS),
         "iat": _dt.datetime.utcnow(),
         "typ": "portal",
@@ -99,9 +136,38 @@ def _decode_portal_token(token):
 # ---------------------------------------------------------------------------
 # Middleware: portal_auth + RBAC
 # ---------------------------------------------------------------------------
+def _portal_user_from_claims(claims):
+    """User behind a decoded portal token, or None if the account is not
+    active or the token's session version is stale (missing claim = 0)."""
+    user = db.session.get(User, claims.get("user_id"))
+    if not _account_active(user):
+        return None
+    if int(claims.get("tv", 0) or 0) != _token_version(user):
+        return None
+    return user
+
+
+def _resolve_portal_principal(claims):
+    """(user, member) for a decoded portal token after re-checking the DB:
+    account active, session version current, and a JOINED membership in the
+    token's org still exists. Role/scopes come from the row, not the token."""
+    user = _portal_user_from_claims(claims)
+    if user is None:
+        return None, None
+    member = (
+        db.session.query(OrgMember)
+        .filter_by(user_id=user.id, org_id=claims.get("org_id"))
+        .first()
+    )
+    if member is None or member.joined_at is None:
+        return None, None
+    return user, member
+
+
 def portal_auth(f):
-    """Require a valid portal JWT. Populates flask.g.{user_id,org_id,role,
-    scopes} and binds Postgres RLS via SET LOCAL."""
+    """Require a valid portal JWT whose membership is still current.
+    Populates flask.g.{user_id,org_id,role,scopes} from the DB row and binds
+    Postgres RLS via SET LOCAL."""
 
     @wraps(f)
     def wrapper(*args, **kwargs):
@@ -111,11 +177,14 @@ def portal_auth(f):
         claims = _decode_portal_token(raw)
         if not claims:
             return jsonify({"error": "unauthorized"}), 401
+        user, member = _resolve_portal_principal(claims)
+        if member is None:
+            return jsonify({"error": "unauthorized"}), 401
 
-        g.user_id = claims["user_id"]
-        g.org_id = claims["org_id"]
-        g.role = claims["role"]
-        g.scopes = claims.get("scopes", [])
+        g.user_id = user.id
+        g.org_id = member.org_id
+        g.role = member.role
+        g.scopes = member.scopes or []
 
         # Defense-in-depth: bind org_id into PG session so RLS policy fires.
         # SQLite ignores this; no-op via text() + error swallow.
@@ -212,14 +281,10 @@ def auth_exchange_token():
     if not user_token or not org_id:
         return jsonify({"error": "user_token and org_id required"}), 400
 
-    try:
-        claims = jwt.decode(user_token, JWT_SECRET, algorithms=["HS256"])
-    except jwt.InvalidTokenError:
+    user, _reason = authenticate_access_token(user_token)
+    if user is None:
         return jsonify({"error": "invalid user_token"}), 401
-
-    user_id = claims.get("user_id")
-    if not user_id:
-        return jsonify({"error": "invalid user_token"}), 401
+    user_id = user.id
 
     member = _member_or_403(user_id, org_id)
     if not member or member.joined_at is None:
@@ -258,7 +323,61 @@ except Exception:  # pragma: no cover - limiter optional in some contexts
 
 
 def _norm_email(v):
-    return (v or "").strip().lower()
+    return _normalize_email_safe(v) or ""
+
+
+def _send_invite_email(to_email, org_name, invite_token, role):
+    """Deliver the invite link to the invitee's mailbox — the ONLY place the
+    token goes (audit F02). Fire-and-forget; never raises."""
+    try:
+        from email_service import _wrap_template, send_email_async
+        link = "{}/invite?token={}".format(PORTAL_URL, invite_token)
+        send_email_async(
+            to_email,
+            "You've been invited to {} on Umuve".format(org_name or "a business account"),
+            _wrap_template(
+                "<h2>You're invited</h2>"
+                "<p>{org} added you as <b>{role}</b> on their Umuve business "
+                "account.</p>"
+                "<p style='margin-top:30px'><a href='{link}' class='button'>"
+                "Accept invite</a></p>"
+                "<p>This link is single-use and expires in {days} days. If you "
+                "already have an Umuve account, sign in with it to accept.</p>".format(
+                    org=org_name or "A business", role=role, link=link,
+                    days=INVITE_TTL_DAYS)),
+        )
+    except Exception:
+        logger.exception("invite email failed for %s", to_email)
+
+
+def _bearer_user():
+    """User authenticated by the Authorization header — a base access token
+    or a portal token — with status and session version checked."""
+    raw = request.headers.get("Authorization", "").replace("Bearer ", "").strip()
+    if not raw:
+        return None
+    user, _reason = authenticate_access_token(raw)
+    if user is not None:
+        return user
+    claims = _decode_portal_token(raw)
+    if claims:
+        return _portal_user_from_claims(claims)
+    return None
+
+
+def _has_credentials(user):
+    """True when the row is an established identity someone can already sign
+    in as (password, Apple ID, phone login, or a joined org membership /
+    SSO). Such accounts must authenticate to accept an invite; only bare
+    rows provisioned by an invite may set their first password."""
+    if user.password_hash or user.apple_id or user.phone or user.phone_verified_at:
+        return True
+    joined = (
+        db.session.query(OrgMember)
+        .filter(OrgMember.user_id == user.id, OrgMember.joined_at.isnot(None))
+        .first()
+    )
+    return joined is not None
 
 
 def _valid_email(email):
@@ -295,24 +414,23 @@ def auth_register():
         return jsonify({"error": "Enter a valid email address."}), 400
 
     user = db.session.query(User).filter_by(email=email).first()
-    if user and user.password_hash:
+    if user is not None:
+        # Audit F02: never set a password on an existing row from an
+        # unauthenticated request — a guest / Apple / phone / sales-
+        # provisioned identity could be claimed by anyone typing the email.
+        # They sign in, or prove mailbox control via the reset flow.
         return jsonify(
             {
-                "error": "That email already has an account. Sign in instead.",
+                "error": "That email already has an account. Sign in instead, "
+                         "or reset your password.",
                 "code": "email_exists",
             }
         ), 409
 
-    if user is None:
-        user = User(email=email, name=contact_name, phone=phone, role="customer")
-        user.set_password(password)
-        db.session.add(user)
-        db.session.flush()
-    else:
-        # Sales-provisioned user with no password yet — let them claim it.
-        user.set_password(password)
-        if contact_name and not user.name:
-            user.name = contact_name
+    user = User(email=email, name=contact_name, phone=phone, role="customer")
+    user.set_password(password)
+    db.session.add(user)
+    db.session.flush()
 
     org = Org(
         name=business,
@@ -496,20 +614,23 @@ def create_org():
         role="owner",
         scopes=["*"],
         invite_token=invite_token,
+        invited_at=_dt.datetime.utcnow(),
     )
     db.session.add(member)
     db.session.commit()
+    _send_invite_email(owner_email, org.name, invite_token, "owner")
 
+    # The token is returned here ONLY because this endpoint is gated by the
+    # sales service secret (internal ops tooling), never by a portal user.
+    # Redemption still requires the owner to authenticate if that email is
+    # already an established account (see accept_invite).
     return jsonify(
         {
             "org": org.to_dict(),
             "owner_user_id": owner.id,
             "owner_email": owner_email,
             "invite_token": invite_token,
-            "invite_url": "{}/invite?token={}".format(
-                os.environ.get("PORTAL_URL", "https://portal.goumuve.com"),
-                invite_token,
-            ),
+            "invite_url": "{}/invite?token={}".format(PORTAL_URL, invite_token),
         }
     ), 201
 
@@ -518,11 +639,23 @@ def create_org():
 # Invite redemption — turns invite_token into an active membership + token
 # ---------------------------------------------------------------------------
 @portal_bp.route("/orgs/invite/accept", methods=["POST"])
+@_rl("10 per minute")
 def accept_invite():
-    """Redeem an invite_token. The user must already exist OR provide a
-    password to create one. Returns a portal JWT on success."""
+    """Redeem a single-use, expiring invite_token (audit F02).
+
+    Body: {invite_token, password?, email?}
+      * Invitee is an ESTABLISHED account (has a password / Apple ID / phone
+        login / another joined membership): they must prove it is theirs —
+        either ``Authorization: Bearer <base or portal JWT>`` for that same
+        user, or ``password`` matching the account's existing password. The
+        invite never sets or changes their password.
+      * Invitee is a bare row provisioned by the invite itself: ``password``
+        (policy: 8+ chars) creates their first credential. The row's email is
+        the invited email; if ``email`` is supplied it must match.
+    Returns a portal JWT for the invite's org on success.
+    """
     data = request.get_json(silent=True) or {}
-    token_str = data.get("invite_token", "")
+    token_str = (data.get("invite_token") or "").strip()
     if not token_str:
         return jsonify({"error": "invite_token required"}), 400
 
@@ -533,19 +666,57 @@ def accept_invite():
         return jsonify({"error": "invalid invite"}), 404
     if member.joined_at is not None:
         return jsonify({"error": "invite already redeemed"}), 409
-    if member.invited_at and (
-        _dt.datetime.utcnow() - member.invited_at
-    ) > _dt.timedelta(days=INVITE_TTL_DAYS):
+    now = _dt.datetime.utcnow()
+    if member.invited_at is None or (now - member.invited_at) > _dt.timedelta(days=INVITE_TTL_DAYS):
         return jsonify({"error": "invite expired"}), 410
 
-    password = data.get("password")
     user = db.session.get(User, member.user_id)
-    if user and password:
+    if user is None:
+        return jsonify({"error": "invalid invite"}), 404
+    if not _account_active(user):
+        return jsonify({"error": "account is not active"}), 403
+
+    supplied_email = _norm_email(data.get("email"))
+    if supplied_email and supplied_email != (user.email or ""):
+        return jsonify(
+            {"error": "This invite was sent to a different email address.",
+             "code": "email_mismatch"}
+        ), 403
+
+    password = data.get("password")
+    if _has_credentials(user):
+        principal = _bearer_user()
+        if principal is None and password and user.password_hash and user.check_password(password):
+            principal = user
+        if principal is None:
+            return jsonify(
+                {"error": "Sign in to your existing Umuve account to accept this invite.",
+                 "code": "auth_required"}
+            ), 401
+        if principal.id != user.id:
+            return jsonify(
+                {"error": "This invite was sent to a different account.",
+                 "code": "wrong_account"}
+            ), 403
+        # Established account: credentials are never touched here.
+    else:
+        if not password:
+            return jsonify(
+                {"error": "Choose a password to finish creating your account.",
+                 "code": "password_required"}
+            ), 400
+        policy_error = password_policy_error(password)
+        if policy_error:
+            return jsonify({"error": policy_error, "code": "weak_password"}), 400
         user.set_password(password)
 
-    member.joined_at = _dt.datetime.utcnow()
+    member.joined_at = now
     member.invite_token = None
     db.session.commit()
+
+    g.user_id = user.id
+    g.org_id = member.org_id
+    audit("member.invite_accept", "org_member", member.id, None, member.to_dict())
 
     token = mint_portal_token(
         member.user_id, member.org_id, member.role, member.scopes or []
@@ -653,19 +824,24 @@ def invite_member():
         scopes=data.get("scopes") or [],
         invited_by=g.user_id,
         invite_token=invite_token,
+        invited_at=_dt.datetime.utcnow(),
     )
     db.session.add(member)
     db.session.commit()
     audit("member.invite", "org_member", member.id, None, member.to_dict())
 
+    org = db.session.get(Org, g.org_id)
+    _send_invite_email(email, org.name if org else None, invite_token, role)
+
+    # Audit F02: the invite token is delivered to the invitee's mailbox only.
+    # Returning it to the inviter let an attacker-owned org redeem invites
+    # for arbitrary existing accounts.
     return jsonify(
         {
             "member": member.to_dict(),
             "email": email,
-            "invite_url": "{}/invite?token={}".format(
-                os.environ.get("PORTAL_URL", "https://portal.goumuve.com"),
-                invite_token,
-            ),
+            "invited": True,
+            "expires_in_days": INVITE_TTL_DAYS,
         }
     ), 201
 
@@ -680,7 +856,13 @@ def remove_member(member_id):
     if m.role == "owner" and g.role != "owner":
         return jsonify({"error": "only owner can remove owner"}), 403
     before = m.to_dict()
+    removed_user = db.session.get(User, m.user_id)
     db.session.delete(m)
+    if removed_user is not None:
+        # Audit F20: revoke every outstanding token for the removed member
+        # (portal_auth also re-checks membership per request, so even a
+        # still-valid version can't reach this org any more).
+        removed_user.revoke_sessions()
     db.session.commit()
     audit("member.remove", "org_member", member_id, before, None)
     return jsonify({"ok": True})

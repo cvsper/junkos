@@ -12,7 +12,7 @@ from datetime import datetime, timezone
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import (
     Column, String, Float, Boolean, Integer, Text, DateTime, ForeignKey, JSON,
-    CheckConstraint, Index
+    CheckConstraint, Index, event
 )
 from sqlalchemy.orm import relationship
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -54,6 +54,17 @@ class User(db.Model):
     apple_id = Column(String(255), nullable=True, unique=True)
     referral_code = Column(String(8), unique=True, nullable=True, index=True, default=generate_referral_code)
 
+    # Audit F19/F20 (2026-09-10): phone identities are persisted (E.164 in
+    # `phone`) and `token_version` is the session version embedded in every
+    # JWT as `tv`. Bumping it revokes every outstanding token for the user.
+    # Auto-bumped by the listeners below on password / role / status changes;
+    # bumped explicitly on org-membership removal. Tokens minted before this
+    # column existed carry no `tv` claim and are treated as version 0 — they
+    # keep working until the user's next login (which sunsets them) or until
+    # any security event bumps the version.
+    phone_verified_at = Column(DateTime, nullable=True)
+    token_version = Column(Integer, nullable=False, default=0, server_default="0")
+
     winback_called = Column(Boolean, default=False)
     last_winback_at = Column(DateTime, nullable=True)
 
@@ -70,6 +81,11 @@ class User(db.Model):
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
+
+    def revoke_sessions(self):
+        """Invalidate every JWT issued so far (base + portal) for this user."""
+        self.token_version = (self.token_version or 0) + 1
+        return self.token_version
 
     def check_password(self, password):
         """Verify password with Werkzeug and legacy sha256 fallback."""
@@ -102,6 +118,27 @@ class User(db.Model):
         if include_private:
             data["stripe_customer_id"] = self.stripe_customer_id
         return data
+
+
+def _bump_token_version_on_change(target, value, oldvalue, initiator):
+    """Auto-revoke sessions when a persisted user's password, role or
+    status changes (audit F20). Skipped for transient/pending rows so INSERTs
+    and fixtures don't bump; only real changes on loaded rows count."""
+    from sqlalchemy import inspect as _sa_inspect
+    from sqlalchemy.orm.base import NO_VALUE, NEVER_SET
+    if oldvalue in (NO_VALUE, NEVER_SET) or value == oldvalue:
+        return
+    try:
+        state = _sa_inspect(target)
+    except Exception:  # pragma: no cover
+        return
+    if not state.persistent:
+        return
+    target.token_version = (target.token_version or 0) + 1
+
+
+for _attr in (User.password_hash, User.role, User.status):
+    event.listen(_attr, "set", _bump_token_version_on_change, retval=False)
 
 
 # ---------------------------------------------------------------------------

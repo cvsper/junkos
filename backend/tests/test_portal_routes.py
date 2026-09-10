@@ -272,7 +272,11 @@ def test_owner_can_invite_admin(client, db_session):
     assert resp.status_code == 201, resp.get_json()
     body = resp.get_json()
     assert body["member"]["role"] == "admin"
-    assert body["invite_url"].startswith("http")
+    # Audit F02: the invite token/link is emailed to the invitee only — it
+    # must never come back to the inviter.
+    assert "invite_url" not in body
+    assert "invite_token" not in body
+    assert body["invited"] is True
 
 
 def test_viewer_cannot_invite(client, db_session):

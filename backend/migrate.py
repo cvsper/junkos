@@ -45,6 +45,9 @@ def _is_sqlite(url):
 COLUMN_MIGRATIONS = [
     # User table
     ("users", "referral_code", "VARCHAR(8)", "VARCHAR(8)", "NULL"),
+    # audit F19/F20 (2026-09-10): persisted phone identity + session version
+    ("users", "phone_verified_at", "DATETIME", "TIMESTAMP", "NULL"),
+    ("users", "token_version", "INTEGER", "INTEGER", "0"),
 
     # Job table
     ("jobs", "before_photos", "TEXT", "JSON", "NULL"),       # JSON stored as TEXT in SQLite
