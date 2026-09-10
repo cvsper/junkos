@@ -40,7 +40,14 @@ def server(tmp_path_factory):
         if stale.exists():
             stale.unlink()
     env = dict(os.environ)
+    # tests/conftest.py is this directory's PARENT conftest, so importing it
+    # has already pointed this process at the unit suite's scratch SQLite file
+    # and asked server.py to skip its startup work. The e2e server is a real
+    # boot against its own scratch DB, so drop all three before handing the
+    # environment to the subprocess.
     env.pop("DATABASE_URL", None)
+    env.pop("SQLALCHEMY_DATABASE_URI", None)
+    env.pop("UMUVE_SKIP_STARTUP", None)
     env.update({
         "TRIXIE_ASSISTANT_PASSCODE": CODE, "ENABLE_SCHEDULER": "", "API_KEY": "e2e-api-key",
         "JWT_SECRET": "e2e-jwt", "SECRET_KEY": "e2e-secret", "DATABASE_PATH": str(work / "legacy.db"),

@@ -5,7 +5,10 @@ services:
     rootDir: backend
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn server:app --bind 0.0.0.0:$PORT --worker-class eventlet --workers 1 --timeout 120
-    healthCheckPath: /api/health
+    # /api/ready (not /api/health): health is liveness and answers 200
+    # for a worker that booted with an unmigrated schema or no Stripe
+    # key. Readiness fails the deploy instead of promoting it (F26).
+    healthCheckPath: /api/ready
     envVars:
       - key: FLASK_ENV
         value: production
@@ -51,7 +54,10 @@ services:
     autoDeploy: true
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn server:app --bind 0.0.0.0:$PORT --worker-class eventlet --workers 1 --timeout 120
-    healthCheckPath: /api/health
+    # /api/ready (not /api/health): health is liveness and answers 200
+    # for a worker that booted with an unmigrated schema or no Stripe
+    # key. Readiness fails the deploy instead of promoting it (F26).
+    healthCheckPath: /api/ready
     envVars:
       - key: FLASK_ENV
         value: production

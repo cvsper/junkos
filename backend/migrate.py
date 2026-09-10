@@ -73,6 +73,15 @@ COLUMN_MIGRATIONS = [
     ("payments", "payout_arrival_at", "DATETIME", "TIMESTAMP", "NULL"),
     ("payments", "payout_fee_cover", "REAL", "DOUBLE PRECISION", "0"),
     ("call_prospects", "side", "VARCHAR(8)", "VARCHAR(8)", "NULL"),
+
+    # Push: which of the two iOS apps a token belongs to, and which APNs
+    # gateway it was minted against (F27). Existing rows default to the
+    # driver app -- Umuve Pro is the only app registering tokens today.
+    ("device_tokens", "app", "VARCHAR(16)", "VARCHAR(16)", "'driver'"),
+    ("device_tokens", "environment", "VARCHAR(12)", "VARCHAR(12)", "'production'"),
+    ("device_tokens", "active", "BOOLEAN", "BOOLEAN", "TRUE"),
+    ("device_tokens", "deactivated_at", "DATETIME", "TIMESTAMP", "NULL"),
+    ("device_tokens", "last_used_at", "DATETIME", "TIMESTAMP", "NULL"),
     ("contractors", "operator_id", "VARCHAR(36)", "VARCHAR(36)", "NULL"),
     ("contractors", "operator_commission_rate", "FLOAT", "FLOAT", "0.15"),
     ("contractors", "is_concierge", "BOOLEAN", "BOOLEAN", "FALSE"),
@@ -252,8 +261,15 @@ NEW_TABLES_SQLITE = [
         user_id VARCHAR(36) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         token VARCHAR(512) UNIQUE NOT NULL,
         platform VARCHAR(10) NOT NULL DEFAULT 'ios',
+        app VARCHAR(16) NOT NULL DEFAULT 'driver',
+        environment VARCHAR(12) NOT NULL DEFAULT 'production',
+        active BOOLEAN NOT NULL DEFAULT 1,
+        deactivated_at DATETIME,
+        last_used_at DATETIME,
         created_at DATETIME,
-        CONSTRAINT ck_device_token_platform CHECK (platform IN ('ios', 'android'))
+        CONSTRAINT ck_device_token_platform CHECK (platform IN ('ios', 'android')),
+        CONSTRAINT ck_device_token_app CHECK (app IN ('customer', 'driver')),
+        CONSTRAINT ck_device_token_environment CHECK (environment IN ('sandbox', 'production'))
     )"""),
     # pricing_config
     dedent("""\
@@ -1136,8 +1152,15 @@ NEW_TABLES_PG = [
         user_id VARCHAR(36) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         token VARCHAR(512) UNIQUE NOT NULL,
         platform VARCHAR(10) NOT NULL DEFAULT 'ios',
+        app VARCHAR(16) NOT NULL DEFAULT 'driver',
+        environment VARCHAR(12) NOT NULL DEFAULT 'production',
+        active BOOLEAN NOT NULL DEFAULT TRUE,
+        deactivated_at TIMESTAMP,
+        last_used_at TIMESTAMP,
         created_at TIMESTAMP,
-        CONSTRAINT ck_device_token_platform CHECK (platform IN ('ios', 'android'))
+        CONSTRAINT ck_device_token_platform CHECK (platform IN ('ios', 'android')),
+        CONSTRAINT ck_device_token_app CHECK (app IN ('customer', 'driver')),
+        CONSTRAINT ck_device_token_environment CHECK (environment IN ('sandbox', 'production'))
     )"""),
     # pricing_config
     dedent("""\
@@ -2073,6 +2096,49 @@ _JOB_OFFERS_PG = dedent("""\
 NEW_TABLES_SQLITE.append(_JOB_OFFERS_SQLITE)
 NEW_TABLES_PG.append(_JOB_OFFERS_PG)
 NEW_TABLE_NAMES.append("job_offers")
+
+# ---------------------------------------------------------------------------
+# notification_deliveries -- push attempt ledger + retry queue (F27)
+# ---------------------------------------------------------------------------
+_NOTIFICATION_DELIVERIES_SQLITE = dedent("""\
+    CREATE TABLE IF NOT EXISTS notification_deliveries (
+        id VARCHAR(36) PRIMARY KEY,
+        user_id VARCHAR(36),
+        device_token_id VARCHAR(36),
+        token_suffix VARCHAR(16),
+        app VARCHAR(16),
+        environment VARCHAR(12),
+        platform VARCHAR(10),
+        topic VARCHAR(128),
+        title VARCHAR(255),
+        payload TEXT,
+        status VARCHAR(20) NOT NULL DEFAULT 'pending_retry',
+        reason VARCHAR(255),
+        status_code INTEGER,
+        attempts INTEGER NOT NULL DEFAULT 0,
+        next_attempt_at DATETIME,
+        created_at DATETIME,
+        updated_at DATETIME
+    )""")
+_NOTIFICATION_DELIVERIES_PG = (
+    _NOTIFICATION_DELIVERIES_SQLITE
+    .replace("DATETIME", "TIMESTAMP")
+    .replace("payload TEXT", "payload JSON")
+)
+NEW_TABLES_SQLITE.append(_NOTIFICATION_DELIVERIES_SQLITE)
+NEW_TABLES_PG.append(_NOTIFICATION_DELIVERIES_PG)
+NEW_TABLE_NAMES.append("notification_deliveries")
+
+_NOTIFICATION_DELIVERY_INDEXES = [
+    "CREATE INDEX IF NOT EXISTS ix_notif_deliveries_status "
+    "ON notification_deliveries (status)",
+    "CREATE INDEX IF NOT EXISTS ix_notif_deliveries_next_attempt "
+    "ON notification_deliveries (next_attempt_at)",
+    "CREATE INDEX IF NOT EXISTS ix_notif_deliveries_user "
+    "ON notification_deliveries (user_id)",
+]
+_OPS_INDEXES_SQLITE.extend(_NOTIFICATION_DELIVERY_INDEXES)
+_OPS_INDEXES_PG.extend(_NOTIFICATION_DELIVERY_INDEXES)
 
 # Tables that require Postgres Row-Level Security. On SQLite the app-layer
 # tenant_guard middleware is the sole enforcer. Spec 04 §3.

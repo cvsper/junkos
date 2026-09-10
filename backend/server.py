@@ -18,7 +18,7 @@ import logging
 from sanitize import sanitize_dict
 from extensions import limiter
 
-from app_config import Config
+from app_config import Config, is_production
 from database import Database
 from auth_routes import auth_bp, require_auth
 from models import db as sqlalchemy_db
@@ -106,15 +106,49 @@ app = Flask(__name__)
 app.config.from_object(Config)
 
 # ---------------------------------------------------------------------------
+# Startup mode
+# ---------------------------------------------------------------------------
+# UMUVE_SKIP_STARTUP=1 imports the app WITHOUT touching a database: no
+# create_all, no migrations, no admin bootstrap, no catalog seeding, no
+# scheduler. The test suite sets it (tests/conftest.py) so that importing
+# server.py can never mutate whatever database happens to be configured —
+# before this existed, running pytest wiped backend/instance/umuve.db, the
+# local dev database (audit finding F25).
+_skip_startup = (os.environ.get("UMUVE_SKIP_STARTUP") or "").strip().lower() in (
+    "1", "true", "yes", "on",
+)
+if _skip_startup:
+    # Flask's own TESTING flag is the signal the rest of the app already knows.
+    app.config["TESTING"] = True
+
+# ---------------------------------------------------------------------------
 # SQLAlchemy configuration
 # ---------------------------------------------------------------------------
-database_url = os.environ.get("DATABASE_URL", "")
+# Resolve the URL from the environment BEFORE sqlalchemy_db.init_app() below:
+# Flask-SQLAlchemy reads SQLALCHEMY_DATABASE_URI at init time, so a fixture
+# that rewrites app.config afterwards does NOT rebind the engine — it just
+# runs its drop_all against whatever was bound first.
+#
+# SQLALCHEMY_DATABASE_URI wins over DATABASE_URL so a test harness can point
+# the app at a scratch database without having to unset the deploy variable.
+database_url = (
+    os.environ.get("SQLALCHEMY_DATABASE_URI")
+    or os.environ.get("DATABASE_URL")
+    or ""
+).strip()
 if database_url:
     # Fix postgres:// to postgresql:// for SQLAlchemy 2.x
     if database_url.startswith("postgres://"):
         database_url = database_url.replace("postgres://", "postgresql://", 1)
     app.config["SQLALCHEMY_DATABASE_URI"] = database_url
+else:
+    # Fallback to SQLite for local development
+    database_url = "sqlite:///umuve.db"
+    app.config["SQLALCHEMY_DATABASE_URI"] = database_url
 
+# SQLite (dev + tests) rejects the QueuePool arguments below, so pool
+# hardening applies to server-backed databases only.
+if not database_url.startswith("sqlite"):
     # Connection-pool hardening for Render Postgres.
     # Render closes idle DB connections (~5 min) and spins web services down
     # when idle; without pre-ping, SQLAlchemy hands out a dead pooled
@@ -130,9 +164,6 @@ if database_url:
         "max_overflow": 5,
         "pool_timeout": 30,
     }
-else:
-    # Fallback to SQLite for local development
-    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///umuve.db"
 
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16 MB max request body
@@ -662,110 +693,138 @@ def set_security_headers(response):
 # ---------------------------------------------------------------------------
 # Create all SQLAlchemy tables on startup
 # ---------------------------------------------------------------------------
-with app.app_context():
-    sqlalchemy_db.create_all()
-    # Auto-run column migrations on startup (idempotent)
-    try:
-        from migrate import run_migrations
-        run_migrations(app.config["SQLALCHEMY_DATABASE_URI"])
-    except Exception as exc:
-        app.logger.warning("Auto-migration on startup skipped: %s", exc)
+if _skip_startup:
+    _startup_logger.info(
+        "UMUVE_SKIP_STARTUP=1 — skipping schema creation, migrations, "
+        "admin bootstrap, seeding and the scheduler. The app is importable "
+        "but touches no database on import."
+    )
+else:
+    with app.app_context():
+        sqlalchemy_db.create_all()
+        # Auto-run column migrations on startup (idempotent).
+        #
+        # In production this is FATAL. Logging and continuing (the old
+        # behaviour) boots a web service whose schema does not match the code
+        # that is serving money endpoints: the failure surfaces later as
+        # scattered 500s on a column that was never added, and the deploy is
+        # already marked healthy. Refusing to boot makes Render keep the last
+        # good instance serving and fail the deploy loudly instead (F26).
+        try:
+            from migrate import run_migrations
+            run_migrations(app.config["SQLALCHEMY_DATABASE_URI"])
+        except Exception as exc:
+            if is_production():
+                _startup_logger.critical(
+                    "FATAL: startup migration failed in production: %s. "
+                    "Refusing to boot with a schema that does not match this "
+                    "build — the previous instance keeps serving. Fix the "
+                    "migration (or run it manually via POST /api/run-migrate/"
+                    "<ADMIN_SEED_SECRET>) and redeploy.",
+                    exc,
+                )
+                raise RuntimeError(
+                    "FATAL: startup migration failed in production: {}".format(exc)
+                ) from exc
+            app.logger.warning("Auto-migration on startup skipped: %s", exc)
 
-    # ----------------------------------------------------------------------
-    # One-time admin bootstrap (no shell required).
-    #
-    # Set BOOTSTRAP_ADMIN_EMAIL on the host (Render Environment tab) to promote
-    # that user to admin on boot. Optionally set BOOTSTRAP_ADMIN_PASSWORD to
-    # create the user if missing / reset the password. Reads creds from the
-    # host env only (never hardcoded), so it is safe in a public repo: an
-    # attacker can't set the host's env. Idempotent. REMOVE the password env
-    # var once you've signed in.
-    # ----------------------------------------------------------------------
-    try:
-        _boot_email = (os.environ.get("BOOTSTRAP_ADMIN_EMAIL") or "").strip().lower()
-        if _boot_email:
+        # ----------------------------------------------------------------------
+        # One-time admin bootstrap (no shell required).
+        #
+        # Set BOOTSTRAP_ADMIN_EMAIL on the host (Render Environment tab) to promote
+        # that user to admin on boot. Optionally set BOOTSTRAP_ADMIN_PASSWORD to
+        # create the user if missing / reset the password. Reads creds from the
+        # host env only (never hardcoded), so it is safe in a public repo: an
+        # attacker can't set the host's env. Idempotent. REMOVE the password env
+        # var once you've signed in.
+        # ----------------------------------------------------------------------
+        try:
+            _boot_email = (os.environ.get("BOOTSTRAP_ADMIN_EMAIL") or "").strip().lower()
+            if _boot_email:
+                from sqlalchemy import func as _sa_func
+                from models import User as _User
+                _bu = (
+                    sqlalchemy_db.session.query(_User)
+                    .filter(_sa_func.lower(_User.email) == _boot_email)
+                    .first()
+                )
+                _boot_pw = os.environ.get("BOOTSTRAP_ADMIN_PASSWORD")
+                if _bu is None:
+                    if _boot_pw:
+                        _bu = _User(
+                            email=_boot_email,
+                            name=_boot_email.split("@")[0],
+                            role="admin",
+                        )
+                        _bu.set_password(_boot_pw)
+                        sqlalchemy_db.session.add(_bu)
+                        app.logger.info("admin-bootstrap: created admin %s", _boot_email)
+                    else:
+                        app.logger.warning(
+                            "admin-bootstrap: no user %s and no BOOTSTRAP_ADMIN_PASSWORD "
+                            "to create one; skipping.", _boot_email,
+                        )
+                else:
+                    if _boot_pw:
+                        _bu.set_password(_boot_pw)
+                    if _bu.role != "admin":
+                        _bu.role = "admin"
+                    app.logger.info("admin-bootstrap: promoted %s to admin", _boot_email)
+                sqlalchemy_db.session.commit()
+        except Exception as exc:
+            sqlalchemy_db.session.rollback()
+            app.logger.warning("admin-bootstrap skipped: %s", exc)
+
+        # ----------------------------------------------------------------------
+        # Launch-promo guard (2026-07-17). PBC25 shipped with min_order_amount=0,
+        # which let the code zero-out small jobs we still pay a hauler to run.
+        # Raise the floor to $75 once; admins can still lower it deliberately via
+        # the promos API — this only corrects the unset (0/None) state.
+        # ----------------------------------------------------------------------
+        try:
             from sqlalchemy import func as _sa_func
-            from models import User as _User
-            _bu = (
-                sqlalchemy_db.session.query(_User)
-                .filter(_sa_func.lower(_User.email) == _boot_email)
+            from models import PromoCode as _PromoCode
+            _pbc = (
+                sqlalchemy_db.session.query(_PromoCode)
+                .filter(_sa_func.upper(_PromoCode.code) == "PBC25")
                 .first()
             )
-            _boot_pw = os.environ.get("BOOTSTRAP_ADMIN_PASSWORD")
-            if _bu is None:
-                if _boot_pw:
-                    _bu = _User(
-                        email=_boot_email,
-                        name=_boot_email.split("@")[0],
-                        role="admin",
-                    )
-                    _bu.set_password(_boot_pw)
-                    sqlalchemy_db.session.add(_bu)
-                    app.logger.info("admin-bootstrap: created admin %s", _boot_email)
-                else:
-                    app.logger.warning(
-                        "admin-bootstrap: no user %s and no BOOTSTRAP_ADMIN_PASSWORD "
-                        "to create one; skipping.", _boot_email,
-                    )
-            else:
-                if _boot_pw:
-                    _bu.set_password(_boot_pw)
-                if _bu.role != "admin":
-                    _bu.role = "admin"
-                app.logger.info("admin-bootstrap: promoted %s to admin", _boot_email)
-            sqlalchemy_db.session.commit()
-    except Exception as exc:
-        sqlalchemy_db.session.rollback()
-        app.logger.warning("admin-bootstrap skipped: %s", exc)
+            if _pbc is not None and not (_pbc.min_order_amount or 0):
+                _pbc.min_order_amount = 75.0
+                sqlalchemy_db.session.commit()
+                app.logger.info("promo-guard: PBC25 min_order_amount set to 75.0")
+        except Exception as exc:
+            sqlalchemy_db.session.rollback()
+            app.logger.warning("promo-guard skipped: %s", exc)
 
-    # ----------------------------------------------------------------------
-    # Launch-promo guard (2026-07-17). PBC25 shipped with min_order_amount=0,
-    # which let the code zero-out small jobs we still pay a hauler to run.
-    # Raise the floor to $75 once; admins can still lower it deliberately via
-    # the promos API — this only corrects the unset (0/None) state.
-    # ----------------------------------------------------------------------
-    try:
-        from sqlalchemy import func as _sa_func
-        from models import PromoCode as _PromoCode
-        _pbc = (
-            sqlalchemy_db.session.query(_PromoCode)
-            .filter(_sa_func.upper(_PromoCode.code) == "PBC25")
-            .first()
-        )
-        if _pbc is not None and not (_pbc.min_order_amount or 0):
-            _pbc.min_order_amount = 75.0
-            sqlalchemy_db.session.commit()
-            app.logger.info("promo-guard: PBC25 min_order_amount set to 75.0")
-    except Exception as exc:
-        sqlalchemy_db.session.rollback()
-        app.logger.warning("promo-guard skipped: %s", exc)
+        # Seed the Post-Haul Attach Upsell Engine offer catalog (idempotent)
+        try:
+            from attach_catalog import seed_catalog
+            seeded = seed_catalog(sqlalchemy_db, logger=app.logger)
+            if seeded:
+                app.logger.info("offer_catalog: seeded/updated %d rows", seeded)
+        except Exception as exc:
+            app.logger.warning("offer_catalog seeding skipped: %s", exc)
 
-    # Seed the Post-Haul Attach Upsell Engine offer catalog (idempotent)
-    try:
-        from attach_catalog import seed_catalog
-        seeded = seed_catalog(sqlalchemy_db, logger=app.logger)
-        if seeded:
-            app.logger.info("offer_catalog: seeded/updated %d rows", seeded)
-    except Exception as exc:
-        app.logger.warning("offer_catalog seeding skipped: %s", exc)
-
-    # Seed South Florida landfill facilities (spec 06, idempotent).
-    try:
-        from seed_landfills import seed_landfill_facilities
-        from models import LandfillFacility, TipFee, generate_uuid
-        seeded = seed_landfill_facilities(
-            sqlalchemy_db.session, LandfillFacility, TipFee, generate_uuid,
-        )
-        if seeded:
-            app.logger.info("landfill_facilities: seeded %d rows", seeded)
-    except Exception as exc:
-        app.logger.warning("landfill_facility seeding skipped: %s", exc)
+        # Seed South Florida landfill facilities (spec 06, idempotent).
+        try:
+            from seed_landfills import seed_landfill_facilities
+            from models import LandfillFacility, TipFee, generate_uuid
+            seeded = seed_landfill_facilities(
+                sqlalchemy_db.session, LandfillFacility, TipFee, generate_uuid,
+            )
+            if seeded:
+                app.logger.info("landfill_facilities: seeded %d rows", seeded)
+        except Exception as exc:
+            app.logger.warning("landfill_facility seeding skipped: %s", exc)
 
 # ---------------------------------------------------------------------------
 # Background scheduler (recurring jobs, pickup reminders)
 # ---------------------------------------------------------------------------
 from scheduler import init_scheduler
-_scheduler = init_scheduler(app)
+# Never start background jobs on import under test: they would run real
+# outreach/payout work against the test database (F25).
+_scheduler = None if _skip_startup else init_scheduler(app)
 
 
 # ---------------------------------------------------------------------------
@@ -966,11 +1025,185 @@ def get_available_time_slots(requested_date=None):
 # ---------------------------------------------------------------------------
 # Legacy API Routes (kept for backward compatibility)
 # ---------------------------------------------------------------------------
+APP_VERSION = "2.2.17-sameday-pay"
+
+
+# ---------------------------------------------------------------------------
+# Readiness (F26)
+# ---------------------------------------------------------------------------
+# /api/health answers "is this process alive" and always returns 200 while the
+# worker can serve a request. That is the wrong question for a deploy gate: a
+# worker that boots with an unmigrated schema, no Stripe key and a dead
+# scheduler answers it perfectly while being unable to take a single booking.
+#
+# /api/ready answers "can this instance transact" and returns 503 when it
+# cannot, so Render stops a bad release instead of promoting it.
+#
+# Hard dependencies (failure ⇒ 503):
+#   * database connectivity AND the core schema (jobs, payments)
+#   * Stripe configuration, in production only — money must be able to move
+#   * the scheduler, when this instance was asked to run it
+# Soft dependencies are reported but never fail the check: storage falls back
+# to local disk, and webhook-secret verification is reported as "unknown"
+# until the webhook_guard module lands.
+
+def _check_database():
+    """Connectivity + core schema. Cheap SELECTs against the money tables."""
+    from sqlalchemy import text
+
+    detail = {"ok": False, "connected": False, "schema": False, "engine": None}
+    try:
+        detail["engine"] = sqlalchemy_db.engine.url.get_backend_name()
+    except Exception:
+        pass
+    try:
+        sqlalchemy_db.session.execute(text("SELECT 1"))
+        detail["connected"] = True
+        # LIMIT 1 with no rows still proves the table and its columns exist.
+        for table in ("jobs", "payments"):
+            sqlalchemy_db.session.execute(text("SELECT id FROM {} LIMIT 1".format(table)))
+        detail["schema"] = True
+        detail["ok"] = True
+    except Exception as exc:
+        detail["error"] = str(exc)[:300]
+        # A failed statement poisons the session for every later check.
+        try:
+            sqlalchemy_db.session.rollback()
+        except Exception:
+            pass
+    return detail
+
+
+def _check_payments():
+    """Stripe configuration. Hard requirement in production only."""
+    try:
+        from routes.payments import payments_ready
+    except Exception as exc:  # pragma: no cover - import guard
+        return {"ok": False, "status": "unknown", "error": str(exc)[:200]}
+    try:
+        ready = bool(payments_ready())
+    except Exception as exc:  # pragma: no cover
+        return {"ok": False, "status": "unknown", "error": str(exc)[:200]}
+    return {
+        "ok": ready,
+        "status": "configured" if ready else "missing_stripe_key",
+    }
+
+
+def _check_webhooks():
+    """Webhook signing secrets. Reported as unknown until webhook_guard lands."""
+    try:
+        from webhook_guard import webhook_secrets_ready
+    except Exception:
+        return {"ok": None, "status": "unknown", "detail": "webhook_guard not available"}
+    try:
+        result = webhook_secrets_ready()
+    except Exception as exc:  # pragma: no cover
+        return {"ok": None, "status": "unknown", "error": str(exc)[:200]}
+    # Accept either a bool or a richer dict from the module.
+    if isinstance(result, dict):
+        ok = bool(result.get("ready", result.get("ok")))
+        return {"ok": ok, "status": "configured" if ok else "missing", "detail": result}
+    ok = bool(result)
+    return {"ok": ok, "status": "configured" if ok else "missing"}
+
+
+def _check_storage():
+    """Upload storage. Local-disk fallback is degraded, not fatal."""
+    try:
+        import storage
+        if storage._use_s3():
+            return {"ok": True, "status": "s3", "bucket_configured": True}
+        return {"ok": True, "status": "local_disk", "bucket_configured": False}
+    except Exception as exc:  # pragma: no cover
+        return {"ok": False, "status": "unknown", "error": str(exc)[:200]}
+
+
+def _check_scheduler():
+    """Background scheduler liveness (heartbeat + last-run stamps)."""
+    try:
+        from scheduler import scheduler_status
+        status = scheduler_status()
+        status["ok"] = bool(status.get("healthy"))
+        return status
+    except Exception as exc:  # pragma: no cover
+        return {"ok": False, "status": "unknown", "error": str(exc)[:200]}
+
+
+def _readiness_report():
+    """Run every readiness check. Returns (report, ok)."""
+    production = is_production()
+
+    database = _check_database()
+    payments = _check_payments()
+    webhooks = _check_webhooks()
+    storage_check = _check_storage()
+    scheduler_check = _check_scheduler()
+
+    # Which failures actually block traffic.
+    blocking = []
+    if not database["ok"]:
+        blocking.append("database")
+    if production and not payments["ok"]:
+        blocking.append("payments")
+    if scheduler_check.get("enabled") and not scheduler_check.get("ok"):
+        blocking.append("scheduler")
+
+    report = {
+        "ready": not blocking,
+        "service": "Umuve API",
+        "version": APP_VERSION,
+        "environment": "production" if production else "development",
+        "blocking": blocking,
+        "checks": {
+            "database": database,
+            "payments": payments,
+            "webhooks": webhooks,
+            "storage": storage_check,
+            "scheduler": scheduler_check,
+        },
+    }
+    return report, not blocking
+
+
 @app.route("/api/health", methods=["GET"])
 @limiter.exempt
 def health_check():
-    """Health check endpoint (exempt from rate limiting)"""
-    return jsonify({"status": "healthy", "service": "Umuve API", "version": "2.2.17-sameday-pay"}), 200
+    """Liveness: 200 whenever this process can serve a request.
+
+    Deliberately shallow -- a monitor hitting this must not be able to take the
+    service out by hammering the database. It carries a `ready` hint so a human
+    reading it knows to look at /api/ready, which is the gating check.
+    """
+    try:
+        _, ready = _readiness_report()
+    except Exception:
+        app.logger.exception("readiness probe failed inside /api/health")
+        ready = False
+    return jsonify({
+        "status": "healthy",
+        "service": "Umuve API",
+        "version": APP_VERSION,
+        "ready": ready,
+    }), 200
+
+
+@app.route("/api/ready", methods=["GET"])
+@limiter.exempt
+def readiness_check():
+    """Readiness: 503 when this instance cannot transact. Deploy/LB gate."""
+    try:
+        report, ok = _readiness_report()
+    except Exception as exc:
+        app.logger.exception("readiness probe raised")
+        return jsonify({
+            "ready": False,
+            "service": "Umuve API",
+            "version": APP_VERSION,
+            "blocking": ["readiness_probe"],
+            "error": str(exc)[:300],
+        }), 503
+    return jsonify(report), (200 if ok else 503)
 
 
 def _check_admin_seed_secret(path_secret=None):

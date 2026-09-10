@@ -1,9 +1,4 @@
-import dynamic from "next/dynamic";
-
-const TrackingPage = dynamic(
-  () => import("@/components/tracking/tracking-page"),
-  { ssr: false }
-);
+import TrackingPageClient from "@/components/tracking/tracking-page-client";
 
 export default async function TrackJobPage({
   params,
@@ -12,5 +7,5 @@ export default async function TrackJobPage({
 }) {
   const { jobId } = await params;
 
-  return <TrackingPage jobId={jobId} />;
+  return <TrackingPageClient jobId={jobId} />;
 }

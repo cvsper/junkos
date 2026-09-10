@@ -17,6 +17,123 @@ from timeutils import fmt_local
 logger = logging.getLogger(__name__)
 
 
+# ---------------------------------------------------------------------------
+# Liveness state (read by GET /api/ready -- see server.py)
+# ---------------------------------------------------------------------------
+# The scheduler shares a process with the web worker, so "the deploy is up"
+# says nothing about whether background work is still firing. These stamps are
+# what readiness actually inspects: a heartbeat job proves the scheduler thread
+# is alive even during quiet hours, and the event listener records the last
+# time each real job ran so a wedged job is visible (audit finding F26).
+_SCHEDULER = None
+_SCHEDULER_STARTED_AT = None
+_LAST_JOB_RUN = {}          # job_id -> {"at": datetime, "ok": bool, "error": str|None}
+_HEARTBEAT_JOB_ID = "readiness_heartbeat"
+# Heartbeat runs every 5 minutes; readiness allows 3 missed beats before it
+# calls the scheduler dead, so a single slow pass is not an outage.
+_HEARTBEAT_MINUTES = 5
+_HEARTBEAT_STALE_AFTER = timedelta(minutes=_HEARTBEAT_MINUTES * 3)
+
+
+def _readiness_heartbeat():
+    """Cheap no-op job whose only product is a fresh timestamp."""
+    logger.debug("scheduler heartbeat")
+
+
+def _stamp_job_event(event):
+    """APScheduler listener: record the outcome of every job execution."""
+    try:
+        _LAST_JOB_RUN[event.job_id] = {
+            "at": datetime.now(timezone.utc),
+            "ok": getattr(event, "exception", None) is None,
+            "error": (
+                str(event.exception)[:200]
+                if getattr(event, "exception", None) is not None
+                else None
+            ),
+        }
+    except Exception:  # pragma: no cover - a listener must never raise
+        logger.exception("scheduler event listener failed")
+
+
+def scheduler_status():
+    """Readiness snapshot of the background scheduler.
+
+    Returns a dict with ``enabled`` (was it asked to run), ``running`` (is the
+    thread alive), ``healthy`` (enabled ⇒ running with a fresh heartbeat) and
+    per-job last-run stamps. Never raises.
+    """
+    enabled = (os.environ.get("ENABLE_SCHEDULER", "").lower() == "true")
+    status = {
+        "enabled": enabled,
+        "running": False,
+        "healthy": (not enabled),      # not asked to run ⇒ nothing to be unhealthy about
+        "jobs": 0,
+        "started_at": None,
+        "last_heartbeat_at": None,
+        "heartbeat_age_seconds": None,
+        "last_job_runs": {},
+        "failing_jobs": [],
+    }
+    try:
+        if _SCHEDULER_STARTED_AT is not None:
+            status["started_at"] = _SCHEDULER_STARTED_AT.isoformat()
+        status["running"] = bool(_SCHEDULER is not None and _SCHEDULER.running)
+        if _SCHEDULER is not None:
+            try:
+                status["jobs"] = len(_SCHEDULER.get_jobs())
+            except Exception:
+                pass
+
+        now = datetime.now(timezone.utc)
+        beat = _LAST_JOB_RUN.get(_HEARTBEAT_JOB_ID, {}).get("at")
+        # Before the first beat fires, boot time is the reference point --
+        # otherwise every fresh deploy would report the scheduler as dead.
+        reference = beat or _SCHEDULER_STARTED_AT
+        if beat is not None:
+            status["last_heartbeat_at"] = beat.isoformat()
+        if reference is not None:
+            age = (now - reference).total_seconds()
+            status["heartbeat_age_seconds"] = round(age, 1)
+
+        status["last_job_runs"] = {
+            job_id: {
+                "at": info["at"].isoformat(),
+                "ok": info["ok"],
+                "error": info["error"],
+            }
+            for job_id, info in _LAST_JOB_RUN.items()
+        }
+        status["failing_jobs"] = sorted(
+            job_id for job_id, info in _LAST_JOB_RUN.items() if not info["ok"]
+        )
+
+        if enabled:
+            fresh = (
+                reference is not None
+                and (now - reference) < _HEARTBEAT_STALE_AFTER
+            )
+            status["healthy"] = bool(status["running"] and fresh)
+    except Exception:  # pragma: no cover
+        logger.exception("scheduler_status failed")
+    return status
+
+
+def _retry_failed_pushes(app):
+    """Re-send push notifications that failed transiently (F27).
+
+    A 5xx from APNs or a dropped connection used to mean the notification was
+    simply gone. Deliveries are now recorded, and this sweep retries the
+    retryable ones with exponential backoff up to 3 attempts.
+    """
+    try:
+        from push_notifications import retry_pending_pushes
+        with app.app_context():
+            retry_pending_pushes()
+    except Exception:
+        logger.exception("push retry sweep failed")
+
+
 def _run_noshow_watchdog():
     """No-show watchdog pass: T-30 unassigned + T+15 late-start alerts.
 
@@ -601,14 +718,28 @@ def init_scheduler(app):
 
     Only runs if ENABLE_SCHEDULER=true env var is set.
     """
+    global _SCHEDULER, _SCHEDULER_STARTED_AT
+
     if os.environ.get("ENABLE_SCHEDULER", "").lower() != "true":
         logger.info("Scheduler disabled (set ENABLE_SCHEDULER=true to enable)")
         return None
 
     try:
         from apscheduler.schedulers.background import BackgroundScheduler
+        from apscheduler.events import EVENT_JOB_EXECUTED, EVENT_JOB_ERROR
 
         scheduler = BackgroundScheduler(daemon=True)
+
+        # Liveness plumbing for GET /api/ready (F26). Additive: it records what
+        # the existing jobs do, and adds one no-op heartbeat.
+        scheduler.add_listener(_stamp_job_event, EVENT_JOB_EXECUTED | EVENT_JOB_ERROR)
+        scheduler.add_job(
+            _readiness_heartbeat,
+            "interval",
+            minutes=_HEARTBEAT_MINUTES,
+            id=_HEARTBEAT_JOB_ID,
+            name="Readiness heartbeat",
+        )
 
         # Prospect angles — 60s after boot, then every 30 min (only blanks)
         from datetime import datetime as _dt, timedelta as _td
@@ -620,6 +751,16 @@ def init_scheduler(app):
             args=[app],
             id="angle_backfill",
             name="Fill blank prospect angles",
+        )
+
+        # Push delivery retries — every 2 min (backoff lives in the rows)
+        scheduler.add_job(
+            _retry_failed_pushes,
+            "interval",
+            minutes=2,
+            args=[app],
+            id="push_retry_sweep",
+            name="Retry transiently failed push notifications",
         )
 
         # Online-flag aging — hourly
@@ -974,7 +1115,9 @@ def init_scheduler(app):
             logger.exception("growth jobs not registered")
 
         scheduler.start()
-        logger.info("Background scheduler started with 17 jobs")
+        _SCHEDULER = scheduler
+        _SCHEDULER_STARTED_AT = datetime.now(timezone.utc)
+        logger.info("Background scheduler started with %d jobs", len(scheduler.get_jobs()))
         return scheduler
     except ImportError:
         logger.warning("APScheduler not installed — scheduler disabled")

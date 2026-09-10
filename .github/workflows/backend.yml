@@ -11,11 +11,21 @@
 name: Backend Tests
 
 on:
-  # PR-only to conserve Actions minutes; Render deploys from git separately.
+  # Render deploys from git on push to main, so main MUST be gated here too.
+  # PR-only CI (the old setting) meant a direct push, a merge that bypassed a
+  # PR, or a hotfix commit reached production with nothing run against it
+  # (audit finding F26).
+  push:
+    branches: [main, staging]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend.yml'
   pull_request:
     branches: [main]
     paths:
       - 'backend/**'
+      - '.github/workflows/backend.yml'
+  workflow_dispatch:
 
 env:
   PYTHON_VERSION: '3.11'
@@ -38,10 +48,29 @@ jobs:
       - name: Install flake8
         run: pip install flake8
 
-      - name: Run flake8
+      # BLOCKING: real defects only -- syntax errors, undefined names, broken
+      # f-strings. This subset is green, so it can gate.
+      #
+      # The full style pass below is ADVISORY on purpose. It reports ~945
+      # findings across the backend, so making it blocking today would fail
+      # every run; because the `test` job needs this one, that is exactly why
+      # the unit suite has not actually been running (audit finding F26).
+      # Flip `continue-on-error` off once the style backlog is cleared.
+      - name: flake8 -- defects (blocking)
         working-directory: backend
         run: |
           flake8 . \
+            --count \
+            --select=E9,F63,F7,F82 \
+            --show-source \
+            --exclude=venv,__pycache__,migrations,umuve.db,uploads
+
+      - name: flake8 -- style (advisory)
+        working-directory: backend
+        continue-on-error: true
+        run: |
+          flake8 . \
+            --count \
             --max-line-length=120 \
             --ignore=E501,W503 \
             --exclude=venv,__pycache__,migrations,umuve.db,uploads
@@ -70,8 +99,17 @@ jobs:
         working-directory: backend
         env:
           DATABASE_URL: ""
-          FLASK_ENV: testing
+          # app_config._require_in_production() treats anything that is not
+          # literally "development" as production and refuses to start without
+          # these, so every module import failed here. Supply throwaway values
+          # AND use FLASK_ENV=development, which is what the suite uses.
+          FLASK_ENV: development
           SECRET_KEY: ci-test-secret-key
+          JWT_SECRET: ci-test-jwt-secret
+          API_KEY: ci-test-api-key
+          # Import the app without creating schema / running migrations /
+          # starting the scheduler -- this job checks imports, nothing else.
+          UMUVE_SKIP_STARTUP: "1"
         run: |
           python -c "
           import importlib, sys, os
@@ -136,58 +174,28 @@ jobs:
     runs-on: ubuntu-latest
     needs: [lint, import-check]
 
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_DB: umuve_test
-          POSTGRES_USER: test
-          POSTGRES_PASSWORD: test
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
-
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          cache: 'pip'
-          cache-dependency-path: backend/requirements*.txt
+          enable-cache: true
 
-      - name: Install dependencies
-        working-directory: backend
-        run: |
-          pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install -r requirements-test.txt
-
-      - name: Run pytest
+      # The suite pins its own database: tests/conftest.py points the app at a
+      # per-session scratch SQLite file and refuses to run destructive
+      # statements against anything else (F25). No Postgres service is needed,
+      # and none is provided on purpose -- a real database URL in this job is
+      # exactly the mistake the guard exists to catch.
+      - name: Run unit suite
         working-directory: backend
         env:
-          DATABASE_URL: postgresql://test:test@localhost:5432/umuve_test
-          FLASK_ENV: testing
+          FLASK_ENV: development
           SECRET_KEY: ci-test-secret-key
+          JWT_SECRET: ci-test-jwt-secret
         run: |
-          pytest \
-            --cov=. \
-            --cov-report=xml \
-            --cov-report=term-missing \
-            --maxfail=10 \
-            -v \
-            || echo "::warning::pytest exited with non-zero status -- check output above"
-
-      - name: Upload coverage to Codecov
-        if: always()
-        uses: codecov/codecov-action@v4
-        with:
-          files: ./backend/coverage.xml
-          flags: backend
-          fail_ci_if_error: false
-        continue-on-error: true
+          uv run --python 3.12 \
+            --with-requirements requirements.txt \
+            --with pytest --with pytest-mock \
+            python -m pytest -o addopts="" -p no:cacheprovider tests -q \
+              --deselect tests/test_portal --ignore=tests/e2e
