@@ -45,6 +45,7 @@ from routes.booking import (  # noqa: E402
     calculate_estimate,
     _get_item_price,
 )
+from price_version import quote_scope_hash, quote_claim_token  # noqa: E402
 
 quotes_bp = Blueprint("quotes", __name__, url_prefix="/api/v1/quotes")
 logger = logging.getLogger(__name__)
@@ -355,7 +356,8 @@ def estimate_quote():
     scheduled_date = data.get("scheduledDate") or data.get("scheduled_date")
     guest_phone = (data.get("guest_phone") or data.get("guestPhone") or None)
     guest_email = (data.get("guest_email") or data.get("guestEmail") or None)
-    user_id = data.get("user_id") or None
+    # Audit F11: ownership comes from the bearer token, never a body user_id.
+    user_id = _current_user_id()
 
     provider, api_key, model_name = _select_provider()
 
@@ -413,6 +415,8 @@ def estimate_quote():
     ]
     breakdown = calculate_estimate(pricing_items, scheduled_date=scheduled_date)
     price_cents = int(round(breakdown["total"] * 100))
+    # Immutable scope the binding price is bound to (items + ZIP + date).
+    scope_hash = quote_scope_hash(pricing_items, zip_code, scheduled_date)
 
     binding = origin == "vision" and confidence >= BINDING_CONFIDENCE_THRESHOLD
     if binding:
@@ -449,6 +453,7 @@ def estimate_quote():
         expires_at=now + timedelta(hours=QUOTE_TTL_HOURS),
         created_at=now,
         photo_urls=_public_photo_urls(images),
+        scope_hash=scope_hash,
     )
     db.session.add(quote)
 
@@ -496,10 +501,26 @@ def estimate_quote():
         logger.error("Failed to persist quote: %s", exc)
         return jsonify({"success": False, "error": "Could not save quote."}), 500
 
-    return jsonify({
-        "success": True,
-        "quote": _serialize_quote(quote, items, breakdown),
-    }), 200
+    payload = _serialize_quote(quote, items, breakdown)
+    # Bearer proof for anonymous quotes (no user, no email): required to
+    # convert the quote into a booking. Issued exactly once, here.
+    if not user_id and not guest_email:
+        payload["quote_token"] = quote_claim_token(quote.id)
+    return jsonify({"success": True, "quote": payload}), 200
+
+
+def _current_user_id():
+    """Authenticated user id from the bearer token, or None."""
+    try:
+        from auth_routes import verify_token
+        from models import User
+        token = request.headers.get("Authorization", "").replace("Bearer ", "")
+        uid = verify_token(token) if token else None
+        if uid and not db.session.get(User, uid):
+            return None
+        return uid
+    except Exception:
+        return None
 
 
 def _estimate_cost_cents(provider, in_tok, out_tok):
@@ -531,6 +552,7 @@ def _serialize_quote(quote, items, breakdown):
         "hazmat": quote.hazmat_flag,
         "model_version": quote.model_version,
         "expires_at": quote.expires_at.isoformat() if quote.expires_at else None,
+        "scope_hash": quote.scope_hash,
         "items": [
             {
                 "category": i["category"],

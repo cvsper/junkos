@@ -77,14 +77,22 @@ def create_job_from_app(user_id):
     if not payload.get("lead_source") and not payload.get("leadSource"):
         payload["lead_source"] = "ios_app"
 
-    from routes.booking import create_booking
-    resp, status = create_booking(payload, user_id)
+    from routes.booking import create_booking, BookingError
+    try:
+        body, status = create_booking(payload, user_id)
+    except BookingError as exc:
+        # 400 invalid items / 409 price_changed or quote_* / 422 coordinates —
+        # the app must re-quote and re-confirm, never charge (audit F05 + F09).
+        body = exc.to_dict()
+        body.setdefault("success", False)
+        body.setdefault("message", body.get("error"))
+        return jsonify(body), exc.status
     if status != 201:
-        body = resp.get_json(silent=True) or {}
+        body = dict(body or {})
         body.setdefault("success", False)
         body.setdefault("message", body.get("error"))
         return jsonify(body), status
-    body = resp.get_json() or {}
+    body = dict(body or {})
     job = body.get("job") or {}
     body["job_id"] = job.get("id")
     body["confirmation_code"] = job.get("confirmation_code")
@@ -255,264 +263,261 @@ def get_job(user_id, job_id):
     return jsonify({"success": True, "job": job_dict}), 200
 
 
+def _manage_token_from_request():
+    data = request.get_json(silent=True) or {}
+    return (request.args.get("token") or request.args.get("manage_token")
+            or data.get("manage_token") or data.get("token") or "")
+
+
+def _load_customer_job(job_id, user_id):
+    """Job + authorization for customer self-service (JWT owner or guest manage token)."""
+    from cancellation import customer_may_act
+    job = db.session.get(Job, job_id)
+    if not job or not customer_may_act(job, user_id, _manage_token_from_request()):
+        return None
+    return job
+
+
+@jobs_bp.route("/<job_id>/cancel-preview", methods=["GET"])
+@optional_auth
+def cancel_preview(user_id, job_id):
+    """Disclose the cancellation outcome (fee / refund) before the customer commits."""
+    from cancellation import cancellation_outcome
+    job = _load_customer_job(job_id, user_id)
+    if not job:
+        return jsonify({"error": "Job not found"}), 404
+    o = cancellation_outcome(job, "customer")
+    return jsonify({
+        "success": True,
+        "allowed": o.allowed,
+        "cancellation_fee": o.fee,
+        "refund_amount": o.refund_amount,
+        "reason_code": o.reason_code,
+        "requires_confirmation": o.requires_confirmation,
+        "message": o.message,
+    }), 200
+
+
 @jobs_bp.route("/<job_id>/cancel", methods=["POST", "PUT"])
-@require_auth
+@optional_auth
 def cancel_job(user_id, job_id):
     """
-    Cancel a job.
+    Cancel a job (customer self-service).
 
-    Rules:
-    - Only the customer who created the job can cancel it.
-    - Cancellable statuses: pending, confirmed, assigned.
-    - Cancellation fee based on time until scheduled pickup:
-        - >24 hrs before: free
-        - <24 hrs before: $25
-        - <2 hrs before:  $50
-    - If cancelled after driver assignment, notify the driver via push.
-    - Creates a Notification record for the customer.
+    Policy lives in cancellation.cancellation_outcome (audit F18):
+    - never assigned a hauler       -> always allowed, $0 fee, full refund
+    - assigned, before en-route     -> allowed, time-based fee (<24h $25, <2h $50)
+    - en_route / arrived            -> allowed as a REQUEST: the outcome is
+      disclosed and the call must carry ``{"confirm": true}`` (else 409 with
+      the outcome so the UI can ask)
+    Auth: the owner's JWT or a guest manage token (``?token=``/``manage_token``).
     """
-    job = db.session.get(Job, job_id)
-    if not job or job.customer_id != user_id:
+    from cancellation import execute_cancellation, notify_customer_cancelled
+    job = _load_customer_job(job_id, user_id)
+    if not job:
         return jsonify({"error": "Job not found"}), 404
 
-    # "broadcasting" must be cancellable: a paid job whose offer waves found no
-    # hauler would otherwise be stuck un-cancellable while the customer waits.
-    cancellable = ("pending", "confirmed", "assigned", "broadcasting")
-    if job.status not in cancellable:
-        return jsonify({"error": "Job cannot be cancelled in its current status"}), 409
-
-    # --- Calculate cancellation fee ---
-    cancellation_fee = 0.0
-    now = datetime.utcnow()
-    if job.scheduled_at:
-        # Ensure both are naive UTC for comparison
-        scheduled = job.scheduled_at.replace(tzinfo=None) if job.scheduled_at.tzinfo else job.scheduled_at
-        time_until = scheduled - now
-        if time_until < timedelta(hours=2):
-            cancellation_fee = 50.0
-        elif time_until < timedelta(hours=24):
-            cancellation_fee = 25.0
-        # else: > 24 hrs, free
-
-    # --- Update job ---
-    had_driver = job.driver_id is not None
-    job.status = "cancelled"
-    job.cancelled_at = utcnow()
-    job.cancellation_fee = cancellation_fee
-
-    # --- Void any outstanding dispatch offers so a hauler tapping a stale SMS
-    # accept-link can't resurrect this cancelled job and drive to a dead pickup.
-    try:
-        from models import JobOffer
-        JobOffer.query.filter_by(job_id=job.id, status="sent").update(
-            {"status": "expired"}, synchronize_session=False,
-        )
-    except Exception:
-        pass  # offers table may not exist in older deploys
-
-    # --- Refund a paid job (minus the cancellation fee) ---
-    # Without this, cancelling a paid booking flips the status but silently
-    # keeps the customer's money. Refund failure never blocks the cancel —
-    # it records a failed Refund row for the admin sweep instead.
-    refund_amount = 0.0
-    payment = job.payment
-    if payment and payment.payment_status == "succeeded":
-        from models import Refund
-        refund_amount = max(0.0, round((payment.amount or 0.0) - cancellation_fee, 2))
-        refund_row = Refund(
-            id=generate_uuid(),
-            payment_id=payment.id,
-            amount=refund_amount,
-            reason="customer_cancelled (fee ${:.2f})".format(cancellation_fee),
-            status="pending",
-        )
-        db.session.add(refund_row)
-        intent_id = payment.stripe_payment_intent_id or ""
-        stripe_key = os.environ.get("STRIPE_SECRET_KEY", "")
-        if refund_amount <= 0:
-            refund_row.status = "cancelled"  # fee consumed the full amount
-        elif intent_id.startswith("pi_dev_") or not stripe_key:
-            refund_row.status = "succeeded"  # dev mode — no real charge existed
-            payment.payment_status = "refunded" if cancellation_fee <= 0 else "partially_refunded"
-        else:
-            try:
-                import stripe as _stripe_sdk
-                _stripe_sdk.api_key = stripe_key
-                sr = _stripe_sdk.Refund.create(
-                    payment_intent=intent_id,
-                    amount=int(round(refund_amount * 100)),
-                    reason="requested_by_customer",
-                    idempotency_key="refund_{}".format(job.id),
-                )
-                refund_row.stripe_refund_id = sr.id
-                refund_row.status = "succeeded"
-                payment.payment_status = "refunded" if cancellation_fee <= 0 else "partially_refunded"
-                payment.updated_at = utcnow()
-            except Exception as e:
-                refund_row.status = "failed"
-                refund_row.reason = "{} | stripe_error: {}".format(refund_row.reason, str(e)[:200])
-                db.session.add(Notification(
-                    id=generate_uuid(),
-                    user_id=user_id,
-                    type="refund_pending",
-                    title="Refund Processing",
-                    body="Your refund of ${:.2f} is being processed and may take a little longer than usual.".format(refund_amount),
-                    data={"job_id": job.id, "amount": refund_amount},
-                ))
-                try:
-                    from sms_service import send_sms
-                    send_sms(
-                        os.environ.get("ADMIN_PHONE", ""),
-                        "UMUVE ALERT: refund FAILED for cancelled job {} (${:.2f}) — issue manually in Stripe.".format(str(job.id)[:8], refund_amount),
-                    )
-                except Exception:
-                    pass
-                import logging as _logging
-                _logging.getLogger(__name__).error(
-                    "Refund failed for job %s ($%.2f) — manual Stripe action needed",
-                    job.id, refund_amount,
-                )
-
-    # --- Notify assigned driver via push ---
-    if had_driver:
-        driver = db.session.get(Contractor, job.driver_id)
-        if driver:
-            send_push_notification(
-                driver.user_id,
-                "Job Cancelled",
-                "Job #{} has been cancelled by the customer.".format(str(job.id)[:8]),
-                {"job_id": job.id, "status": "cancelled"},
-            )
-            # Notification record for the driver
-            driver_notif = Notification(
-                id=generate_uuid(),
-                user_id=driver.user_id,
-                type="job_cancelled",
-                title="Job Cancelled",
-                body="Job #{} has been cancelled by the customer.".format(str(job.id)[:8]),
-                data={"job_id": job.id},
-            )
-            db.session.add(driver_notif)
-
-    # --- Notification record for the customer ---
-    fee_msg = ""
-    if cancellation_fee > 0:
-        fee_msg = " A cancellation fee of ${:.2f} applies.".format(cancellation_fee)
-    customer_notif = Notification(
-        id=generate_uuid(),
-        user_id=user_id,
-        type="job_cancelled",
-        title="Job Cancelled",
-        body="Your job #{} has been cancelled.{}".format(str(job.id)[:8], fee_msg),
-        data={"job_id": job.id, "cancellation_fee": cancellation_fee},
+    data = request.get_json(silent=True) or {}
+    confirmed = bool(data.get("confirm"))
+    outcome, result = execute_cancellation(
+        job, "customer", actor_user_id=job.customer_id,
+        reason=(data.get("reason") or "customer_cancelled")[:120], confirmed=confirmed,
     )
-    db.session.add(customer_notif)
+    if not outcome.allowed:
+        return jsonify({"error": outcome.message, "reason_code": outcome.reason_code}), 409
+    if not result["applied"]:
+        # On-the-way: disclose the fee and ask for explicit confirmation.
+        return jsonify({
+            "error": outcome.message,
+            "code": "confirmation_required",
+            "requires_confirmation": True,
+            "cancellation_fee": outcome.fee,
+            "refund_amount": outcome.refund_amount,
+            "reason_code": outcome.reason_code,
+        }), 409
 
     db.session.commit()
-
-    # --- Send cancellation email to customer ---
-    try:
-        customer = db.session.get(User, user_id)
-        if customer and customer.email:
-            from notifications import send_job_status_update_email
-            send_job_status_update_email(
-                customer.email, customer.name, job.id, "cancelled",
-            )
-    except Exception:
-        pass  # Notifications must never block the main flow
+    notify_customer_cancelled(job)
 
     return jsonify({
         "success": True,
         "job": job.to_dict(),
-        "cancellation_fee": cancellation_fee,
+        "cancellation_fee": outcome.fee,
+        "refund_amount": outcome.refund_amount,
+        "reason_code": outcome.reason_code,
+        "refund_status": result["refund_status"],
     }), 200
 
 
 @jobs_bp.route("/<job_id>/reschedule", methods=["PUT"])
-@require_auth
+@optional_auth
 def reschedule_job(user_id, job_id):
     """
     Reschedule a job to a new date/time.
 
-    Rules:
-    - Only the customer who created the job can reschedule.
-    - Reschedulable statuses: pending, confirmed, assigned.
-    - Accepts ``scheduled_date`` (YYYY-MM-DD) and ``scheduled_time`` (HH:MM)
-      in the request body. These are combined into ``scheduled_at``.
-    - Increments ``rescheduled_count``.
-    - If a driver is assigned, notify them of the change via push.
-    - Creates Notification records.
+    Audit F18: rescheduling
+    - re-prices the schedule surcharge and invalidates ``price_version``: if
+      the total changes, the request must echo the new ``price_version`` (409
+      ``price_changed`` carries it) — a paid job settles the delta through a
+      change order (separate charge / partial refund);
+    - re-qualifies the assigned hauler (released + re-dispatched on conflict)
+      and voids outstanding offers;
+    - resets the reminder / no-show / rescue timers keyed off scheduled_at.
+    Auth: owner JWT or guest manage token.
     """
-    job = db.session.get(Job, job_id)
-    if not job or job.customer_id != user_id:
+    from price_version import compute_price_version, normalize_schedule
+    from routes.booking import calculate_estimate
+
+    job = _load_customer_job(job_id, user_id)
+    if not job:
         return jsonify({"error": "Job not found"}), 404
 
-    reschedulable = ("pending", "confirmed", "assigned")
+    reschedulable = ("pending", "confirmed", "assigned", "accepted", "broadcasting")
     if job.status not in reschedulable:
         return jsonify({"error": "Job cannot be rescheduled in its current status"}), 409
 
     data = request.get_json(silent=True) or {}
-    scheduled_date = data.get("scheduled_date")
-    scheduled_time = data.get("scheduled_time")
+    scheduled_date = data.get("scheduled_date") or data.get("scheduledDate")
+    scheduled_time = data.get("scheduled_time") or data.get("scheduledTimeSlot")
 
     if not scheduled_date or not scheduled_time:
         return jsonify({"error": "scheduled_date and scheduled_time are required"}), 400
 
-    # Parse into a datetime
     try:
         new_scheduled_at = parse_local(scheduled_date, scheduled_time)
     except (ValueError, TypeError):
         return jsonify({"error": "Invalid date/time format. Use YYYY-MM-DD and HH:MM"}), 400
 
-    # Prevent scheduling in the past
     if new_scheduled_at < datetime.now(timezone.utc):
         return jsonify({"error": "Cannot schedule a job in the past"}), 400
 
-    # --- Update job ---
+    # --- Re-price the schedule surcharge (only the date-driven delta moves) ---
+    items = [i for i in (job.items or []) if isinstance(i, dict)]
+    delta = 0.0
+    surge_reasons = []
+    if items:
+        try:
+            from timeutils import local_date_str as _lds
+            old_date = _lds(job.scheduled_at) if job.scheduled_at else None
+            old_est = calculate_estimate(items, scheduled_date=old_date, lat=job.lat, lng=job.lng)
+            new_est = calculate_estimate(items, scheduled_date=scheduled_date, lat=job.lat, lng=job.lng)
+            delta = round(new_est["total"] - old_est["total"], 2)
+            surge_reasons = new_est.get("surge_reasons") or []
+        except Exception:
+            delta = 0.0
+    new_total = round(float(job.total_price or 0.0) + delta, 2)
+    date_part, slot = normalize_schedule(scheduled_date, scheduled_time)
+    version = compute_price_version(
+        items, job.lat, job.lng, job.address, date_part, slot, None,
+        job.promo_code.code if job.promo_code else "", job.discount_amount or 0.0,
+        job.service_fee or 0.0, new_total,
+    )
+    client_version = (data.get("price_version") or data.get("priceVersion") or "").strip()
+    if abs(delta) >= 0.01 and client_version != version:
+        return jsonify({
+            "error": "This date changes your price — please confirm the updated total.",
+            "code": "price_changed",
+            "old_total": round(float(job.total_price or 0.0), 2),
+            "total": new_total,
+            "delta": delta,
+            "surge_reasons": surge_reasons,
+            "price_version": version,
+        }), 409
+
     old_scheduled_at = job.scheduled_at
     job.scheduled_at = new_scheduled_at
     job.rescheduled_count = (job.rescheduled_count or 0) + 1
+    job.price_version = version
 
-    # --- Notify assigned driver ---
+    settlement = None
+    if abs(delta) >= 0.01:
+        from change_orders import propose_change_order, accept_change_order
+        order = propose_change_order(job, "customer", job.customer_id, new_total,
+                                     scope={"scheduled_date": date_part, "scheduled_time": slot},
+                                     reason="reschedule")
+        accept_change_order(job, order)  # consent = the echoed price_version
+        settlement = order.to_dict()
+
+    # --- Reset rescue / reminder timers keyed off scheduled_at ---
+    job.noshow_t30_alerted = False
+    job.noshow_late_alerted = False
+    job.reminder_sent = False
+    job.reminder_call_id = None
+
+    # --- Void outstanding offers; re-qualify / release the assigned hauler ---
+    try:
+        from models import JobOffer
+        JobOffer.query.filter_by(job_id=job.id, status="sent").update(
+            {"status": "expired"}, synchronize_session=False)
+    except Exception:
+        pass
+
+    released_driver = None
+    redispatch = False
+    paid = bool(job.payment and job.payment.payment_status in ("succeeded", "partially_refunded"))
     if job.driver_id:
         driver = db.session.get(Contractor, job.driver_id)
+        conflict = False
         if driver:
+            try:
+                from dispatcher import _has_schedule_conflict
+                conflict = _has_schedule_conflict(driver, new_scheduled_at, Job)
+            except Exception:
+                conflict = False
+        if driver and not conflict:
             send_push_notification(
-                driver.user_id,
-                "Job Rescheduled",
-                "Job #{} has been rescheduled to {} at {}.".format(
-                    str(job.id)[:8], scheduled_date, scheduled_time
-                ),
+                driver.user_id, "Job Rescheduled",
+                "Job #{} has been rescheduled to {} at {}.".format(str(job.id)[:8], scheduled_date, scheduled_time),
                 {"job_id": job.id, "scheduled_date": scheduled_date, "scheduled_time": scheduled_time},
             )
-            driver_notif = Notification(
-                id=generate_uuid(),
-                user_id=driver.user_id,
-                type="job_rescheduled",
+            db.session.add(Notification(
+                id=generate_uuid(), user_id=driver.user_id, type="job_rescheduled",
                 title="Job Rescheduled",
-                body="Job #{} has been rescheduled to {} at {}.".format(
-                    str(job.id)[:8], scheduled_date, scheduled_time
-                ),
+                body="Job #{} has been rescheduled to {} at {}.".format(str(job.id)[:8], scheduled_date, scheduled_time),
                 data={"job_id": job.id, "scheduled_date": scheduled_date, "scheduled_time": scheduled_time},
-            )
-            db.session.add(driver_notif)
+            ))
+        else:
+            released_driver = job.driver_id
+            if driver:
+                send_push_notification(
+                    driver.user_id, "Job Released",
+                    "Job #{} was rescheduled to a time you're not available — it has been released.".format(str(job.id)[:8]),
+                    {"job_id": job.id, "status": "released"},
+                )
+            job.driver_id = None
+            job.status = "confirmed" if paid else "pending"
+            redispatch = paid
+    elif job.status == "broadcasting":
+        job.status = "confirmed" if paid else "pending"
+        redispatch = paid
 
-    # --- Notification record for the customer ---
-    customer_notif = Notification(
-        id=generate_uuid(),
-        user_id=user_id,
-        type="job_rescheduled",
+    db.session.add(Notification(
+        id=generate_uuid(), user_id=job.customer_id, type="job_rescheduled",
         title="Job Rescheduled",
-        body="Your job #{} has been rescheduled to {} at {}.".format(
-            str(job.id)[:8], scheduled_date, scheduled_time
-        ),
-        data={"job_id": job.id, "scheduled_date": scheduled_date, "scheduled_time": scheduled_time},
-    )
-    db.session.add(customer_notif)
-
+        body="Your job #{} has been rescheduled to {} at {}.".format(str(job.id)[:8], scheduled_date, scheduled_time),
+        data={"job_id": job.id, "scheduled_date": scheduled_date, "scheduled_time": scheduled_time,
+              "price_delta": delta},
+    ))
+    job.updated_at = utcnow()
     db.session.commit()
 
-    return jsonify({"success": True, "job": job.to_dict()}), 200
+    if redispatch:
+        try:
+            from flask import current_app
+            from dispatcher import auto_assign_job_async
+            auto_assign_job_async(job.id, current_app._get_current_object())
+        except Exception:
+            pass
+
+    return jsonify({
+        "success": True,
+        "job": job.to_dict(),
+        "price_delta": delta,
+        "price_version": version,
+        "released_driver": released_driver,
+        "settlement": settlement,
+        "previous_scheduled_at": iso_utc(old_scheduled_at),
+    }), 200
 
 
 @jobs_bp.route("/<job_id>/proof", methods=["GET"])
@@ -759,110 +764,118 @@ def upload_after_photos(user_id, job_id):
     return jsonify(response), 201
 
 
+@jobs_bp.route("/<job_id>/change-orders", methods=["GET"])
+@optional_auth
+def list_change_orders(user_id, job_id):
+    """Customer view of every proposed/decided change order for the job."""
+    from models import ChangeOrder
+    job = _load_customer_job(job_id, user_id)
+    if not job:
+        return jsonify({"error": "Job not found"}), 404
+    orders = (ChangeOrder.query.filter_by(job_id=job.id)
+              .order_by(ChangeOrder.version.desc()).all())
+    return jsonify({"success": True, "change_orders": [o.to_dict() for o in orders]}), 200
+
+
+def _open_change_order(job):
+    from models import ChangeOrder
+    return (ChangeOrder.query.filter_by(job_id=job.id, status="proposed")
+            .order_by(ChangeOrder.version.desc()).first())
+
+
 @jobs_bp.route("/<job_id>/volume/approve", methods=["POST"])
-@require_auth
-def approve_volume_adjustment(user_id, job_id):
-    """Customer approves the driver's proposed volume adjustment."""
-    import stripe
+@jobs_bp.route("/<job_id>/change-orders/<order_id>/accept", methods=["POST"])
+@optional_auth
+def approve_volume_adjustment(user_id, job_id, order_id=None):
+    """Customer accepts the open change order (audit F12).
+
+    The captured PaymentIntent is never modified: an increase is charged as a
+    separate intent, a decrease refunded. The split uses the shared
+    recompute_payment_split, not a fixed 20/80.
+    """
+    from change_orders import accept_change_order
     from socket_events import socketio
     import logging
-
     logger = logging.getLogger(__name__)
 
-    job = db.session.get(Job, job_id)
+    job = _load_customer_job(job_id, user_id)
     if not job:
         return jsonify({"error": "Job not found"}), 404
 
-    if job.customer_id != user_id:
-        return jsonify({"error": "Only the customer can approve volume adjustments"}), 403
-
-    if not job.volume_adjustment_proposed:
+    order = _open_change_order(job)
+    if order is None or (order_id and order.id != order_id):
         return jsonify({"error": "No volume adjustment is pending"}), 409
 
-    # Update Stripe PaymentIntent to new price
     try:
-        if job.payment and job.payment.stripe_payment_intent_id:
-            stripe.PaymentIntent.modify(
-                job.payment.stripe_payment_intent_id,
-                amount=int(job.adjusted_price * 100)
-            )
-            # Update payment record
-            job.payment.amount = job.adjusted_price
-            job.payment.commission = job.adjusted_price * 0.20
-            job.payment.driver_payout_amount = job.adjusted_price * 0.80
-    except Exception as e:
-        logger.warning("Failed to update Stripe PaymentIntent for approved volume adjustment: %s", e)
-
-    # Update job with approved values
-    job.total_price = job.adjusted_price
-    job.volume_estimate = job.adjusted_volume
-    job.volume_adjustment_proposed = False
-    job.updated_at = utcnow()
-
+        accept_change_order(job, order)
+    except ValueError as exc:
+        db.session.commit()
+        return jsonify({"error": str(exc), "code": "change_order_closed"}), 409
     db.session.commit()
 
-    # Emit socket event to driver
     try:
-        socketio.emit("volume:approved", {"job_id": job_id}, room=f"driver:{job.driver_id}")
+        socketio.emit("volume:approved", {"job_id": job_id, "change_order_id": order.id},
+                      room=f"driver:{job.driver_id}")
     except Exception as e:
         logger.warning("Failed to emit volume:approved socket event: %s", e)
 
-    logger.info("Volume adjustment approved for job %s by customer %s", job_id, user_id)
+    logger.info("Change order %s v%s accepted for job %s", order.id, order.version, job_id)
+    body = {"success": True, "change_order": order.to_dict(), "total_price": job.total_price}
+    client_secret = getattr(order, "client_secret", None)
+    if client_secret:
+        body["client_secret"] = client_secret  # confirm the additional charge in-app
+    return jsonify(body), 200
 
-    return jsonify({"success": True}), 200
+
+@jobs_bp.route("/<job_id>/change-orders/<order_id>/confirm", methods=["POST"])
+@optional_auth
+def confirm_change_order_charge(user_id, job_id, order_id):
+    """Finalise a ``requires_action`` additional charge after in-app confirmation."""
+    from models import ChangeOrder
+    from change_orders import confirm_settlement
+    job = _load_customer_job(job_id, user_id)
+    if not job:
+        return jsonify({"error": "Job not found"}), 404
+    order = db.session.get(ChangeOrder, order_id)
+    if order is None or order.job_id != job.id:
+        return jsonify({"error": "Change order not found"}), 404
+    confirm_settlement(job, order)
+    db.session.commit()
+    return jsonify({"success": True, "change_order": order.to_dict()}), 200
 
 
 @jobs_bp.route("/<job_id>/volume/decline", methods=["POST"])
-@require_auth
-def decline_volume_adjustment(user_id, job_id):
-    """Customer declines the driver's proposed volume adjustment - charges trip fee and cancels job."""
-    import stripe
+@jobs_bp.route("/<job_id>/change-orders/<order_id>/decline", methods=["POST"])
+@optional_auth
+def decline_volume_adjustment(user_id, job_id, order_id=None):
+    """Customer declines the change order: the original scope and price stand.
+
+    No trip fee, no cancellation — the hauler completes the booked scope. If
+    the crew cannot, the operator cancels (no customer fee; cancellation.py).
+    """
+    from change_orders import decline_change_order
     from socket_events import socketio
     import logging
-
     logger = logging.getLogger(__name__)
 
-    TRIP_FEE = 50.0
-
-    job = db.session.get(Job, job_id)
+    job = _load_customer_job(job_id, user_id)
     if not job:
         return jsonify({"error": "Job not found"}), 404
 
-    if job.customer_id != user_id:
-        return jsonify({"error": "Only the customer can decline volume adjustments"}), 403
-
-    if not job.volume_adjustment_proposed:
+    order = _open_change_order(job)
+    if order is None or (order_id and order.id != order_id):
         return jsonify({"error": "No volume adjustment is pending"}), 409
 
-    # Update Stripe PaymentIntent to trip fee
-    try:
-        if job.payment and job.payment.stripe_payment_intent_id:
-            stripe.PaymentIntent.modify(
-                job.payment.stripe_payment_intent_id,
-                amount=int(TRIP_FEE * 100)
-            )
-            # Update payment record
-            job.payment.amount = TRIP_FEE
-            job.payment.commission = TRIP_FEE * 0.20
-            job.payment.driver_payout_amount = TRIP_FEE * 0.80
-    except Exception as e:
-        logger.warning("Failed to update Stripe PaymentIntent for declined volume adjustment: %s", e)
-
-    # Cancel job with trip fee
-    job.status = "cancelled"
-    job.cancelled_at = utcnow()
-    job.cancellation_fee = TRIP_FEE
-    job.volume_adjustment_proposed = False
-    job.updated_at = utcnow()
-
+    decline_change_order(job, order)
     db.session.commit()
 
-    # Emit socket event to driver
     try:
-        socketio.emit("volume:declined", {"job_id": job_id, "trip_fee": TRIP_FEE}, room=f"driver:{job.driver_id}")
+        socketio.emit("volume:declined", {"job_id": job_id, "change_order_id": order.id,
+                                          "original_price": job.total_price},
+                      room=f"driver:{job.driver_id}")
     except Exception as e:
         logger.warning("Failed to emit volume:declined socket event: %s", e)
 
-    logger.info("Volume adjustment declined for job %s by customer %s - charging $%.2f trip fee", job_id, user_id, TRIP_FEE)
-
-    return jsonify({"success": True, "trip_fee": TRIP_FEE}), 200
+    logger.info("Change order %s declined for job %s — original price stands", order.id, job_id)
+    return jsonify({"success": True, "change_order": order.to_dict(),
+                    "total_price": job.total_price, "trip_fee": 0.0}), 200

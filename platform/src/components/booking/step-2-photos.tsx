@@ -13,7 +13,7 @@ const MAX_FILES = 10;
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 export function Step2Photos() {
-  const { photos, photoPreviewUrls, addPhotos, removePhoto, aiAnalysis, aiAnalyzing, setAiAnalysis, setAiAnalyzing, address, scheduledDate, setQuoteId, setQuoteBinding, setEstimatedPrice } =
+  const { photos, photoPreviewUrls, addPhotos, removePhoto, aiAnalysis, aiAnalyzing, setAiAnalysis, setAiAnalyzing, address, scheduledDate, setQuoteId, setQuoteBinding, setQuoteToken, setEstimatedPrice } =
     useBookingStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -254,6 +254,10 @@ export function Step2Photos() {
                 // locked price. Only mirror the price into the UI when it's a
                 // binding quote (the backend recomputes non-binding ones).
                 setQuoteId(q.id);
+                // Anonymous quotes come with a one-time claim token — it is
+                // what proves ownership at conversion (audit F11: a body
+                // user_id is never trusted).
+                setQuoteToken(q.quote_token || null);
                 const binding = q.binding && typeof q.price === "number";
                 setQuoteBinding(binding);
                 if (binding) {

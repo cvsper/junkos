@@ -130,6 +130,9 @@ COLUMN_MIGRATIONS = [
     ("jobs", "volume_adjustment_proposed", "BOOLEAN", "BOOLEAN", "FALSE"),
     ("jobs", "adjusted_volume", "FLOAT", "FLOAT", "NULL"),
     ("jobs", "adjusted_price", "FLOAT", "FLOAT", "NULL"),
+    # Audit F09/F11 — server-issued price version + binding-quote scope hash
+    ("jobs", "price_version", "VARCHAR(64)", "VARCHAR(64)", "NULL"),
+    ("quotes", "scope_hash", "VARCHAR(64)", "VARCHAR(64)", "NULL"),
     ("jobs", "volume_estimate", "FLOAT", "FLOAT", "NULL"),
     ("jobs", "volume_price", "FLOAT", "FLOAT", "0.0"),
     ("jobs", "item_total", "FLOAT", "FLOAT", "0.0"),
@@ -2073,6 +2076,75 @@ _JOB_OFFERS_PG = dedent("""\
 NEW_TABLES_SQLITE.append(_JOB_OFFERS_SQLITE)
 NEW_TABLES_PG.append(_JOB_OFFERS_PG)
 NEW_TABLE_NAMES.append("job_offers")
+
+# ---------------------------------------------------------------------------
+# change_orders (audit F12) + promo_redemptions (audit F09)
+# ---------------------------------------------------------------------------
+_CHANGE_ORDERS_SQLITE = dedent("""\
+    CREATE TABLE IF NOT EXISTS change_orders (
+        id VARCHAR(36) PRIMARY KEY,
+        job_id VARCHAR(36) NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+        version INTEGER NOT NULL DEFAULT 1,
+        status VARCHAR(24) NOT NULL DEFAULT 'proposed',
+        reason VARCHAR(40) NOT NULL DEFAULT 'volume_adjustment',
+        proposed_by_type VARCHAR(20),
+        proposed_by_id VARCHAR(36),
+        scope TEXT,
+        evidence_photos TEXT,
+        old_price FLOAT NOT NULL DEFAULT 0.0,
+        new_price FLOAT NOT NULL DEFAULT 0.0,
+        delta FLOAT NOT NULL DEFAULT 0.0,
+        expires_at DATETIME,
+        decided_at DATETIME,
+        settlement_status VARCHAR(24),
+        settlement_intent_id VARCHAR(255),
+        settlement_refund_id VARCHAR(255),
+        settlement_error TEXT,
+        created_at DATETIME,
+        updated_at DATETIME
+    )""")
+_CHANGE_ORDERS_PG = dedent("""\
+    CREATE TABLE IF NOT EXISTS change_orders (
+        id VARCHAR(36) PRIMARY KEY,
+        job_id VARCHAR(36) NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+        version INTEGER NOT NULL DEFAULT 1,
+        status VARCHAR(24) NOT NULL DEFAULT 'proposed',
+        reason VARCHAR(40) NOT NULL DEFAULT 'volume_adjustment',
+        proposed_by_type VARCHAR(20),
+        proposed_by_id VARCHAR(36),
+        scope JSON,
+        evidence_photos JSON,
+        old_price DOUBLE PRECISION NOT NULL DEFAULT 0.0,
+        new_price DOUBLE PRECISION NOT NULL DEFAULT 0.0,
+        delta DOUBLE PRECISION NOT NULL DEFAULT 0.0,
+        expires_at TIMESTAMP,
+        decided_at TIMESTAMP,
+        settlement_status VARCHAR(24),
+        settlement_intent_id VARCHAR(255),
+        settlement_refund_id VARCHAR(255),
+        settlement_error TEXT,
+        created_at TIMESTAMP,
+        updated_at TIMESTAMP
+    )""")
+_PROMO_REDEMPTIONS_SQLITE = dedent("""\
+    CREATE TABLE IF NOT EXISTS promo_redemptions (
+        id VARCHAR(36) PRIMARY KEY,
+        promo_code_id VARCHAR(36) NOT NULL REFERENCES promo_codes(id) ON DELETE CASCADE,
+        job_id VARCHAR(36) NOT NULL UNIQUE REFERENCES jobs(id) ON DELETE CASCADE,
+        discount_amount FLOAT DEFAULT 0.0,
+        created_at DATETIME
+    )""")
+_PROMO_REDEMPTIONS_PG = dedent("""\
+    CREATE TABLE IF NOT EXISTS promo_redemptions (
+        id VARCHAR(36) PRIMARY KEY,
+        promo_code_id VARCHAR(36) NOT NULL REFERENCES promo_codes(id) ON DELETE CASCADE,
+        job_id VARCHAR(36) NOT NULL UNIQUE REFERENCES jobs(id) ON DELETE CASCADE,
+        discount_amount DOUBLE PRECISION DEFAULT 0.0,
+        created_at TIMESTAMP
+    )""")
+NEW_TABLES_SQLITE.extend([_CHANGE_ORDERS_SQLITE, _PROMO_REDEMPTIONS_SQLITE])
+NEW_TABLES_PG.extend([_CHANGE_ORDERS_PG, _PROMO_REDEMPTIONS_PG])
+NEW_TABLE_NAMES.extend(["change_orders", "promo_redemptions"])
 
 # Tables that require Postgres Row-Level Security. On SQLite the app-layer
 # tenant_guard middleware is the sole enforcer. Spec 04 §3.

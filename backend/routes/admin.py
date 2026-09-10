@@ -2796,17 +2796,24 @@ def admin_cancel_job(user_id, job_id):
     if not job:
         return jsonify({"error": "Job not found"}), 404
 
-    if job.status in ("completed", "cancelled"):
-        return jsonify({"error": "Job cannot be cancelled in its current status"}), 409
-
-    job.status = "cancelled"
-    job.updated_at = utcnow()
+    # Audit F18: same policy engine as every other cancel path. Admin
+    # cancellations never charge the customer and refund in full.
+    from cancellation import execute_cancellation, notify_customer_cancelled
+    data = request.get_json(silent=True) or {}
+    actor = "safety" if data.get("safety") else "admin"
+    outcome, result = execute_cancellation(
+        job, actor, actor_user_id=user_id,
+        reason=(data.get("reason") or "{}_cancelled".format(actor))[:120],
+    )
+    if not outcome.allowed:
+        return jsonify({"error": outcome.message, "reason_code": outcome.reason_code}), 409
     db.session.commit()
+    notify_customer_cancelled(job)
 
     from socket_events import broadcast_job_status
-    broadcast_job_status(job.id, "cancelled", {})
+    broadcast_job_status(job.id, "cancelled", {"reason_code": outcome.reason_code})
 
-    return jsonify({"success": True, "job": job.to_dict()}), 200
+    return jsonify({"success": True, "job": job.to_dict(), "cancellation": result}), 200
 
 
 @admin_bp.route("/notifications", methods=["GET"])

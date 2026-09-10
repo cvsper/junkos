@@ -1377,9 +1377,11 @@ def create_simple_payment_intent():
     base = float(job_obj.total_price or 0)
     if base <= 0:
         return jsonify({"error": "Booking has no price yet"}), 409
-    discount = float(job_obj.discount_amount or 0)
+    # audit F09: booking already netted discount_amount into total_price —
+    # subtracting it again here charged $150 on a $175 job.
+    discount = 0.0
     # Apply a promo passed now only if one wasn't already applied at booking.
-    if promo_code and discount <= 0:
+    if promo_code and not job_obj.promo_code_id:
         from routes.promos import validate_promo_code
         promo, disc, err = validate_promo_code(promo_code, base)
         if err:

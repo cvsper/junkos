@@ -13,8 +13,16 @@ interface BookingState {
   notes: string;
   dispositionPreference: DispositionPreference;
   estimatedPrice: number;
+  /**
+   * Server-issued price version from /api/booking/estimate (audit F09).
+   * Null whenever any price input changed since the last estimate — the
+   * booking cannot be submitted until a fresh estimate re-issues it.
+   */
+  priceVersion: string | null;
   quoteId: string | null;
   quoteBinding: boolean;
+  /** Claim token for an anonymous photo quote (issued once at creation). */
+  quoteToken: string | null;
   isSubmitting: boolean;
   leadSource: string;
 
@@ -57,14 +65,17 @@ interface BookingState {
   setNotes: (notes: string) => void;
   setDispositionPreference: (preference: DispositionPreference) => void;
   setEstimatedPrice: (price: number) => void;
+  setPriceVersion: (priceVersion: string | null) => void;
   setQuoteId: (quoteId: string | null) => void;
   setQuoteBinding: (quoteBinding: boolean) => void;
+  setQuoteToken: (quoteToken: string | null) => void;
+  clearQuote: () => void;
   setIsSubmitting: (isSubmitting: boolean) => void;
   setLeadSource: (leadSource: string) => void;
 
   // Promo code actions
   setPromoCode: (code: string) => void;
-  applyPromo: (code: string, discount: number) => void;
+  applyPromo: (code: string, discount: number, priceVersion?: string | null) => void;
   clearPromo: () => void;
 
   // AI analysis actions
@@ -86,8 +97,10 @@ const initialState = {
   notes: "",
   dispositionPreference: "best" as DispositionPreference,
   estimatedPrice: 0,
+  priceVersion: null,
   quoteId: null,
   quoteBinding: false,
+  quoteToken: null,
   isSubmitting: false,
   leadSource: "",
   promoCode: "",
@@ -97,6 +110,16 @@ const initialState = {
   aiAnalyzing: false,
 };
 
+/** Canonical pricing scope of a cart — order-independent (category, quantity, size). */
+export function itemsScopeKey(items: JobItem[]): string {
+  return items
+    .map((i) => `${(i.category || "").toLowerCase()}:${i.quantity}:${(i.size || "").toLowerCase()}`)
+    .sort()
+    .join("|");
+}
+
+const QUOTE_CLEARED = { quoteId: null, quoteBinding: false, quoteToken: null } as const;
+
 export const useBookingStore = create<BookingState>((set, get) => ({
   ...initialState,
 
@@ -105,9 +128,21 @@ export const useBookingStore = create<BookingState>((set, get) => ({
   nextStep: () => set((state) => ({ step: Math.min(state.step + 1, 6) })),
   prevStep: () => set((state) => ({ step: Math.max(state.step - 1, 1) })),
 
-  // Address
+  // Address — any change to the street text or coordinates invalidates the
+  // price version and a binding photo quote (audit F10/F11): the quote was
+  // issued for a specific place, and the price for specific coordinates.
   setAddress: (address) =>
-    set((state) => ({ address: { ...state.address, ...address } })),
+    set((state) => {
+      const next = { ...state.address, ...address };
+      const locationChanged =
+        next.street !== state.address.street ||
+        next.lat !== state.address.lat ||
+        next.lng !== state.address.lng ||
+        next.zip !== state.address.zip;
+      return locationChanged
+        ? { address: next, priceVersion: null, ...QUOTE_CLEARED }
+        : { address: next };
+    }),
 
   // Photos
   addPhotos: (files) =>
@@ -131,33 +166,57 @@ export const useBookingStore = create<BookingState>((set, get) => ({
       };
     }),
 
-  // Items
-  setItems: (items) => set({ items }),
-  addItem: (item) => set((state) => ({ items: [...state.items, item] })),
+  // Items — a changed pricing scope invalidates the price version and any
+  // binding quote. Re-setting an identical cart (step 3 re-syncs on mount)
+  // keeps both.
+  setItems: (items) =>
+    set((state) =>
+      itemsScopeKey(items) === itemsScopeKey(state.items)
+        ? { items }
+        : { items, priceVersion: null, ...QUOTE_CLEARED }
+    ),
+  addItem: (item) =>
+    set((state) => ({ items: [...state.items, item], priceVersion: null, ...QUOTE_CLEARED })),
   removeItem: (id) =>
     set((state) => ({
       items: state.items.filter((item) => item.id !== id),
+      priceVersion: null,
+      ...QUOTE_CLEARED,
     })),
 
-  // Schedule
+  // Schedule — surcharges depend on the date, so the version is stale. The
+  // quote is kept: the server re-checks whether the date adds a surcharge.
   setSchedule: (scheduledDate, scheduledTimeSlot) =>
-    set({ scheduledDate, scheduledTimeSlot }),
+    set((state) =>
+      scheduledDate === state.scheduledDate && scheduledTimeSlot === state.scheduledTimeSlot
+        ? { scheduledDate, scheduledTimeSlot }
+        : { scheduledDate, scheduledTimeSlot, priceVersion: null }
+    ),
 
   // Misc
   setNotes: (notes) => set({ notes }),
   setDispositionPreference: (dispositionPreference) => set({ dispositionPreference }),
   setEstimatedPrice: (estimatedPrice) => set({ estimatedPrice }),
-  setQuoteId: (quoteId) => set({ quoteId }),
+  setPriceVersion: (priceVersion) => set({ priceVersion }),
+  setQuoteId: (quoteId) => set({ quoteId, priceVersion: null }),
   setQuoteBinding: (quoteBinding) => set({ quoteBinding }),
+  setQuoteToken: (quoteToken) => set({ quoteToken }),
+  clearQuote: () => set({ ...QUOTE_CLEARED, priceVersion: null }),
   setIsSubmitting: (isSubmitting) => set({ isSubmitting }),
   setLeadSource: (leadSource) => set({ leadSource }),
 
-  // Promo code
+  // Promo code — the discount is priced server-side; the version that covers
+  // the discounted total travels with it.
   setPromoCode: (promoCode) => set({ promoCode }),
-  applyPromo: (promoCode, promoDiscount) =>
-    set({ promoCode, promoDiscount, promoApplied: true }),
+  applyPromo: (promoCode, promoDiscount, priceVersion) =>
+    set((state) => ({
+      promoCode,
+      promoDiscount,
+      promoApplied: true,
+      priceVersion: priceVersion === undefined ? state.priceVersion : priceVersion,
+    })),
   clearPromo: () =>
-    set({ promoCode: "", promoDiscount: 0, promoApplied: false }),
+    set({ promoCode: "", promoDiscount: 0, promoApplied: false, priceVersion: null }),
 
   // AI analysis
   setAiAnalysis: (aiAnalysis) => set({ aiAnalysis }),

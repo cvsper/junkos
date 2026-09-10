@@ -13,7 +13,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { useBookingStore } from "@/stores/booking-store";
-import { bookingApi } from "@/lib/api";
+import { bookingApi, asPriceConflict } from "@/lib/api";
 
 const TIME_SLOT_LABELS: Record<string, string> = {
   "8-10": "8-10 AM",
@@ -36,40 +36,15 @@ const CATEGORY_LABELS: Record<string, string> = {
   other: "Other",
 };
 
-const CATEGORY_MULTIPLIERS: Record<string, number> = {
-  appliances: 1.3,
-  construction: 1.2,
-};
-
 interface PriceBreakdown {
   label: string;
   amount: number;
 }
 
-function calculateFallbackPrice(
-  category: string,
-  quantity: number
-): { total: number; breakdown: PriceBreakdown[] } {
-  const basePrice = 99;
-  const perItem = 35;
-  const multiplier = CATEGORY_MULTIPLIERS[category] || 1.0;
-  const itemsSubtotal = perItem * quantity * multiplier;
-  const subtotal = basePrice + itemsSubtotal;
-  const serviceFee = Math.round(subtotal * 0.08 * 100) / 100;
-  const total = Math.round((subtotal + serviceFee) * 100) / 100;
-
-  return {
-    total,
-    breakdown: [
-      { label: "Base Price", amount: basePrice },
-      {
-        label: `Items Subtotal (${quantity} x $${perItem}${multiplier > 1 ? ` x ${multiplier}x` : ""})`,
-        amount: Math.round(itemsSubtotal * 100) / 100,
-      },
-      { label: "Service Fee (8%)", amount: serviceFee },
-    ],
-  };
-}
+// Audit F09: the old client-side fallback priced only the FIRST item's
+// category and quantity, then let the customer pay that number. There is no
+// client-side price any more — if the server can't quote, the step blocks
+// and offers a retry. The server is the only source of a payable price.
 
 function formatDate(dateStr: string): string {
   if (!dateStr) return "";
@@ -90,19 +65,18 @@ export function Step5Estimate() {
     scheduledDate,
     scheduledTimeSlot,
     setEstimatedPrice,
+    setPriceVersion,
     aiAnalysis,
   } = useBookingStore();
 
   const [breakdown, setBreakdown] = useState<PriceBreakdown[]>([]);
   const [total, setTotal] = useState(0);
+  const [surgeReasons, setSurgeReasons] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
-  const [usedFallback, setUsedFallback] = useState(false);
+  const [quoteFailed, setQuoteFailed] = useState(false);
+  const [quoteError, setQuoteError] = useState("");
   const [accepted, setAccepted] = useState(false);
   const [error, setError] = useState("");
-
-  const item = items[0];
-  const category = item?.category || "general";
-  const quantity = item?.quantity || 1;
 
   // Aggregate totals from all items
   const totalCuFt = items.reduce((sum, i) => sum + (i.estimatedCuFt || 0), 0);
@@ -112,35 +86,70 @@ export function Step5Estimate() {
 
   const fetchEstimate = useCallback(async () => {
     setLoading(true);
-    setUsedFallback(false);
+    setQuoteFailed(false);
+    setQuoteError("");
+    setAccepted(false);
 
-    // A binding vision quote (from step 2) is locked — the backend charges
-    // that price, so show it instead of letting a re-estimate overwrite it.
-    const { quoteId, quoteBinding, estimatedPrice: lockedPrice } =
+    // Every input that moves the price goes to the server: ALL items, the
+    // coordinates, and the date + time slot — so same-day / next-day /
+    // weekend surcharges are visible here instead of appearing on the card
+    // (audit F09). A binding photo quote is honoured server-side; the server
+    // re-checks its scope and tells us if it no longer applies.
+    const { quoteId, quoteToken, promoCode, promoApplied } =
       useBookingStore.getState();
-    if (quoteId && quoteBinding && lockedPrice > 0) {
-      setBreakdown([{ label: "Binding photo quote", amount: lockedPrice }]);
-      setTotal(lockedPrice);
-      setLoading(false);
-      return;
-    }
 
     try {
-      const response = await bookingApi.estimate(items, address);
+      const response = await bookingApi.estimate({
+        items,
+        address,
+        scheduledDate,
+        scheduledTimeSlot,
+        quoteId,
+        quoteToken,
+        promoCode: promoApplied ? promoCode : undefined,
+      });
       setBreakdown(response.breakdown || []);
       setTotal(response.estimatedPrice || 0);
+      setSurgeReasons(response.surgeReasons || []);
       setEstimatedPrice(response.estimatedPrice || 0);
-    } catch {
-      // Fallback pricing
-      const fallback = calculateFallbackPrice(category, quantity);
-      setBreakdown(fallback.breakdown);
-      setTotal(fallback.total);
-      setEstimatedPrice(fallback.total);
-      setUsedFallback(true);
+      // The version is what makes this price payable — POST /api/booking
+      // echoes it and the server refuses (409) if the price has moved.
+      setPriceVersion(response.bookable ? response.priceVersion : null);
+      setQuoteFailed(!response.bookable);
+      if (!response.bookable) {
+        setQuoteError(
+          "We couldn't confirm the pickup location. Go back and pick your address from the suggestions."
+        );
+      }
+    } catch (err) {
+      const conflict = asPriceConflict(err);
+      if (conflict) {
+        // A stale photo quote: drop it and re-price from the items.
+        useBookingStore.getState().clearQuote();
+        setQuoteError(conflict.error);
+      } else {
+        setQuoteError(
+          err instanceof Error
+            ? err.message
+            : "We couldn't calculate your price just now."
+        );
+      }
+      setBreakdown([]);
+      setTotal(0);
+      setEstimatedPrice(0);
+      setPriceVersion(null);
+      setQuoteFailed(true);
     } finally {
       setLoading(false);
     }
-  }, [items, address, category, quantity, setEstimatedPrice]);
+  }, [
+    items,
+    address,
+    scheduledDate,
+    scheduledTimeSlot,
+    setEstimatedPrice,
+    setPriceVersion,
+  ]);
 
   useEffect(() => {
     fetchEstimate();
@@ -148,6 +157,13 @@ export function Step5Estimate() {
 
   // Expose validation that also sets local error state
   Step5Estimate.validate = (): boolean => {
+    if (quoteFailed || !useBookingStore.getState().priceVersion) {
+      setError(
+        quoteError ||
+          "We need a confirmed price before you can continue. Please retry."
+      );
+      return false;
+    }
     if (!accepted) {
       setError("Please confirm your items and price to continue.");
       return false;
@@ -252,13 +268,19 @@ export function Step5Estimate() {
           </div>
         ) : (
           <>
-            {usedFallback && (
-              <div className="flex items-start gap-2 rounded-md bg-amber-50 border border-amber-200 p-3 dark:bg-amber-950/20 dark:border-amber-800">
+            {quoteFailed && (
+              <div
+                role="alert"
+                className="flex items-start gap-2 rounded-md bg-amber-50 border border-amber-200 p-3 dark:bg-amber-950/20 dark:border-amber-800"
+              >
                 <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
                 <div className="flex-1">
-                  <p className="text-xs text-amber-700 dark:text-amber-400">
-                    Estimate based on standard pricing. Final price may vary based
-                    on actual volume.
+                  <p className="text-xs font-semibold text-amber-800 dark:text-amber-300">
+                    We couldn&apos;t confirm your price
+                  </p>
+                  <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5">
+                    {quoteError} You can&apos;t book until we quote it — nothing has
+                    been charged.
                   </p>
                   <button
                     type="button"
@@ -299,14 +321,21 @@ export function Step5Estimate() {
                   ${total.toFixed(2)}
                 </span>
               </div>
-              {!usedFallback && (
+              {!quoteFailed && (
                 <div className="mt-3 flex items-center gap-2 rounded-md border border-primary/15 bg-primary/5 px-3 py-2">
                   <ShieldCheck className="h-4 w-4 shrink-0 text-primary" />
                   <p className="text-xs text-foreground">
                     <span className="font-semibold">Locked price.</span> This is
-                    what you pay for the items shown — no on-site upcharges.
+                    what you pay for the items and pickup time shown — no
+                    on-site upcharges.
                   </p>
                 </div>
+              )}
+              {!quoteFailed && surgeReasons.length > 0 && (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Includes {surgeReasons.join(", ")} for the pickup time you
+                  chose. Picking a later date can lower this.
+                </p>
               )}
             </div>
           </>
@@ -314,7 +343,7 @@ export function Step5Estimate() {
       </div>
 
       {/* Accept Checkbox */}
-      {!loading && (
+      {!loading && !quoteFailed && (
         <div className="space-y-2">
           <label className="flex items-start gap-3 cursor-pointer group">
             <input

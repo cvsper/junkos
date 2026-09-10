@@ -606,6 +606,40 @@ def analytics(user_id, operator):
 @operator_bp.route("/jobs/<job_id>/volume", methods=["POST"])
 @require_operator
 def operator_propose_volume_adjustment(user_id, operator, job_id):
+    """Operator proposes volume adjustment on a fleet job after driver arrives.
+
+    Audit F12: delegates to change_orders (same rules as the driver route).
+    """
+    from change_orders import propose_volume_adjustment as _propose
+
+    job = db.session.get(Job, job_id)
+    if not job:
+        return jsonify({"error": "Job not found"}), 404
+
+    # Operator must own the job's fleet (either via operator_id link or via the
+    # assigned driver belonging to their fleet).
+    owns_job = job.operator_id == operator.id
+    owns_driver = False
+    if not owns_job and job.driver_id:
+        driver = db.session.get(Contractor, job.driver_id)
+        owns_driver = bool(driver and driver.operator_id == operator.id)
+    if not (owns_job or owns_driver):
+        return jsonify({"error": "Job does not belong to your fleet"}), 403
+
+    if job.status != "arrived":
+        return jsonify({"error": "Job must be in 'arrived' status to propose volume adjustment"}), 400
+
+    data = request.get_json() or {}
+    actual_volume = data.get("actual_volume")
+    if not actual_volume or isinstance(actual_volume, bool) or not isinstance(actual_volume, (int, float)):
+        return jsonify({"error": "actual_volume (number) is required"}), 400
+
+    photos = data.get("evidence_photos") or data.get("photos") or []
+    body, status = _propose(job, "operator", operator.id, float(actual_volume),
+                            evidence_photos=photos if isinstance(photos, list) else None,
+                            driver_room_id=job.driver_id)
+    return jsonify(body), status
+def operator_propose_volume_adjustment(user_id, operator, job_id):
     """Operator proposes volume adjustment on a fleet job after driver arrives."""
     from routes.booking import calculate_estimate
     from notifications import send_push_notification

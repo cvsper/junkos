@@ -591,10 +591,19 @@ def test_post_api_jobs_creates_job_and_full_ios_checkout_flow(client, auth_heade
     payload = {
         "service_type": "furniture", "address": "6319 Shadowtree Lane, Lake Worth, FL 33463",
         "lat": 26.61, "lng": -80.11, "photo_urls": [], "scheduled_date": "2026-09-20",
-        "scheduled_time": "10:00", "estimated_price": 120.0, "volume_tier": "medium",
+        "scheduled_time": "10:00", "volume_tier": "medium",
     }
     with mock.patch("routes.booking.is_in_service_area", return_value=True), \
          mock.patch("dispatcher.has_active_coverage", return_value=True):
+        # The app quotes first and echoes the server's price_version (audit F09),
+        # so the charge can never differ from the number the customer approved.
+        est = client.post("/api/booking/estimate", json={
+            "items": [{"category": "furniture", "quantity": 1, "size": "medium"}],
+            "address": payload["address"], "lat": payload["lat"], "lng": payload["lng"],
+            "scheduledDate": payload["scheduled_date"], "scheduledTimeSlot": payload["scheduled_time"],
+        }).get_json()["estimate"]
+        payload["price_version"] = est["price_version"]
+        payload["estimated_price"] = est["total"]
         r = client.post("/api/jobs", json=payload, headers={"Authorization": auth_headers["Authorization"]})
     assert r.status_code == 201, r.get_json()
     body = r.get_json()
@@ -606,7 +615,7 @@ def test_post_api_jobs_creates_job_and_full_ios_checkout_flow(client, auth_heade
     # the app then pays with the token it was handed (no JWT needed on the payment routes)
     r = client.post("/api/payments/create-intent-simple",
                     json={"bookingId": job.id, "submission_key": generate_uuid(),
-                          "checkout_token": body["checkout_token"], "amount": 120.0})
+                          "checkout_token": body["checkout_token"], "amount": est["total"]})
     assert r.status_code == 201, r.get_json()
     pi = r.get_json()["paymentIntentId"]
     r = client.post("/api/payments/confirm-simple", json={"paymentIntentId": pi, "bookingId": job.id})

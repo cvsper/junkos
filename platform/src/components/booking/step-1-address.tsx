@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { MapPin, Clock, DollarSign, Leaf } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { useBookingStore } from "@/stores/booking-store";
+import { bookingApi, type MarketBounds } from "@/lib/api";
 
 const ADDRESS_PLACEHOLDERS = [
   "123 Main St, Boca Raton, FL",
@@ -29,6 +30,17 @@ interface MapboxFeature {
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
+/**
+ * Last-resort geocoder hints, used only until GET /api/booking/market-bounds
+ * answers. The server owns the market geometry (audit F10) so opening a new
+ * metro never needs a frontend change — do NOT hard-code a wider box here.
+ */
+const FALLBACK_MARKET: Pick<MarketBounds, "mapbox_bbox" | "proximity" | "country"> = {
+  mapbox_bbox: "-80.85,25.30,-79.85,26.97",
+  proximity: "-80.35,26.12",
+  country: "us",
+};
+
 export function Step1Address() {
   const { address, setAddress } = useBookingStore();
   const [streetValue, setStreetValue] = useState(address.street || "");
@@ -37,9 +49,26 @@ export function Step1Address() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [activeSuggestion, setActiveSuggestion] = useState(-1);
   const [currentPlaceholder, setCurrentPlaceholder] = useState(0);
+  const [market, setMarket] = useState<MarketBounds | null>(null);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
   const placeholderIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
+
+  // Server-owned market bounds (geocoder bbox + proximity + coverage copy).
+  useEffect(() => {
+    let cancelled = false;
+    bookingApi
+      .getMarketBounds()
+      .then((m) => {
+        if (!cancelled) setMarket(m);
+      })
+      .catch(() => {
+        // Keep the fallback hints — the server still validates the address.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Cycle through placeholder text
   useEffect(() => {
@@ -78,31 +107,48 @@ export function Step1Address() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const fetchSuggestions = useCallback(async (query: string) => {
-    if (!MAPBOX_TOKEN || query.trim().length < 3) {
-      setSuggestions([]);
-      return;
-    }
+  const fetchSuggestions = useCallback(
+    async (query: string) => {
+      if (!MAPBOX_TOKEN || query.trim().length < 3) {
+        setSuggestions([]);
+        return;
+      }
 
-    try {
-      const encoded = encodeURIComponent(query.trim());
-      const res = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encoded}.json?access_token=${MAPBOX_TOKEN}&country=us&types=address&limit=5&proximity=-80.1373,26.1224&bbox=-80.6,25.8,-79.8,27.0`
-      );
-      if (!res.ok) return;
-      const data = await res.json();
-      setSuggestions(data.features || []);
-      setShowSuggestions(true);
-      setActiveSuggestion(-1);
-    } catch {
-      // Silently fail — user can still type manually
-    }
-  }, []);
+      const { mapbox_bbox, proximity, country } = market || FALLBACK_MARKET;
+      try {
+        const encoded = encodeURIComponent(query.trim());
+        const res = await fetch(
+          `https://api.mapbox.com/geocoding/v5/mapbox.places/${encoded}.json?access_token=${MAPBOX_TOKEN}` +
+            `&country=${encodeURIComponent(country)}&types=address&limit=5` +
+            `&proximity=${encodeURIComponent(proximity)}&bbox=${encodeURIComponent(mapbox_bbox)}`
+        );
+        if (!res.ok) return;
+        const data = await res.json();
+        setSuggestions(data.features || []);
+        setShowSuggestions(true);
+        setActiveSuggestion(-1);
+      } catch {
+        // Silently fail — user can still type, but must pick a suggestion
+      }
+    },
+    [market]
+  );
 
   const handleChange = (value: string) => {
     setStreetValue(value);
     if (error) setError("");
-    setAddress({ street: value });
+    // Audit F10: editing the text invalidates the selected place. Without
+    // this the old lat/lng survived, so the customer read one address while
+    // dispatch and surge pricing used another. The store also drops the
+    // price version and any binding photo quote when the location changes.
+    setAddress({
+      street: value,
+      lat: undefined,
+      lng: undefined,
+      city: undefined,
+      state: undefined,
+      zip: undefined,
+    });
 
     // Debounce API calls
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -175,8 +221,18 @@ export function Step1Address() {
       setError("Please enter a valid address (at least 10 characters).");
       return false;
     }
+    // A bookable quote needs real coordinates: the server prices, geofences
+    // and dispatches on them and rejects a booking without them (422).
+    const { address: current } = useBookingStore.getState();
+    if (
+      typeof current.lat !== "number" ||
+      typeof current.lng !== "number" ||
+      current.street?.trim() !== trimmed
+    ) {
+      setError("Please pick your address from the suggestions so we can price and dispatch it.");
+      return false;
+    }
     setError("");
-    setAddress({ street: trimmed });
     return true;
   };
 
@@ -278,7 +334,9 @@ export function Step1Address() {
             Licensed &amp; insured local haulers
           </p>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Serving Palm Beach &amp; Broward County
+            {market?.counties?.length
+              ? `Serving ${market.counties.join(", ")}`
+              : "Serving Palm Beach & Broward County"}
           </p>
         </div>
       </div>
@@ -330,5 +388,9 @@ function TrustIndicator({
 // Default static validation (overwritten when component renders)
 Step1Address.validate = (): boolean => {
   const { address } = useBookingStore.getState();
-  return (address.street?.trim() || "").length >= 10;
+  return (
+    (address.street?.trim() || "").length >= 10 &&
+    typeof address.lat === "number" &&
+    typeof address.lng === "number"
+  );
 };

@@ -147,6 +147,10 @@ export interface BookingFormData {
   promo_code?: string;
   lead_source?: string;
   quote_id?: string | null;
+  /** Claim token for an anonymous photo quote (issued once at creation). */
+  quote_token?: string | null;
+  /** Server-issued price version from /api/booking/estimate (audit F09). */
+  price_version?: string | null;
   disposition_preference?: DispositionPreference;
   customerName?: string;
   customerEmail?: string;
