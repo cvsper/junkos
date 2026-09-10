@@ -85,16 +85,46 @@ struct BookingReviewView: View {
             if showSuccessOverlay {
                 successOverlay
             }
+
+            // "Payment received — confirming…" — shown while the charge is
+            // being reconciled with the backend. Blocking on purpose: the
+            // customer must not be able to pay again mid-confirmation.
+            if let status = viewModel.statusMessage {
+                confirmingOverlay(status)
+            }
         }
         .background(Color.umuveBackground.ignoresSafeArea())
-        .alert("Booking Error", isPresented: .constant(viewModel.errorMessage != nil)) {
-            Button("OK") {
-                viewModel.errorMessage = nil
+        // Title and actions differ for a PAID-but-unconfirmed booking: that is
+        // not an error the customer caused, and it must never read as one
+        // (audit F05).
+        .alert(
+            viewModel.supportReference == nil ? "Booking Error" : "Payment received",
+            isPresented: .constant(viewModel.errorMessage != nil)
+        ) {
+            if let reference = viewModel.supportReference {
+                Button("Contact support") {
+                    openSupport(reference: reference)
+                    viewModel.errorMessage = nil
+                    viewModel.supportReference = nil
+                }
+                Button("Not now", role: .cancel) {
+                    viewModel.errorMessage = nil
+                    viewModel.supportReference = nil
+                }
+            } else {
+                Button("OK") {
+                    viewModel.errorMessage = nil
+                }
             }
         } message: {
             if let error = viewModel.errorMessage {
                 Text(error)
             }
+        }
+        // Pick up a checkout that was interrupted (app killed, network lost)
+        // instead of asking for payment a second time.
+        .task {
+            await viewModel.resumePendingBookingIfNeeded(bookingData: bookingData)
         }
         .onChange(of: viewModel.showSuccess) { success in
             if success {
@@ -645,6 +675,51 @@ struct BookingReviewView: View {
             .shadow(color: Color.umuvePrimary.opacity(canSubmit ? 0.3 : 0), radius: 10, x: 0, y: 6)
         }
         .disabled(!canSubmit)
+    }
+
+    // MARK: - Confirming Overlay
+
+    private func confirmingOverlay(_ message: String) -> some View {
+        ZStack {
+            Color.black.opacity(0.4)
+                .ignoresSafeArea()
+
+            VStack(spacing: UmuveSpacing.normal) {
+                ProgressView()
+                    .progressViewStyle(CircularProgressViewStyle(tint: .umuvePrimary))
+                    .scaleEffect(1.4)
+
+                Text("Finishing your booking\u{2026}")
+                    .font(UmuveTypography.h3Font)
+                    .foregroundColor(.umuveText)
+
+                Text(message)
+                    .font(UmuveTypography.bodySmallFont)
+                    .foregroundColor(.umuveTextMuted)
+                    .multilineTextAlignment(.center)
+            }
+            .padding(UmuveSpacing.xlarge)
+            .background(Color.umuveWhite)
+            .clipShape(RoundedRectangle(cornerRadius: UmuveRadius.lg))
+            .shadow(color: .black.opacity(0.2), radius: 20, x: 0, y: 10)
+            .padding(.horizontal, UmuveSpacing.xlarge)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Finishing your booking. \(message)")
+    }
+
+    /// Hand the customer a way out with the reference in hand.
+    private func openSupport(reference: String) {
+        let subject = "Umuve booking \(reference)"
+        let body = "My payment went through but my booking isn't confirmed. Reference: \(reference)"
+        var components = URLComponents(string: "mailto:support@goumuve.com")
+        components?.queryItems = [
+            URLQueryItem(name: "subject", value: subject),
+            URLQueryItem(name: "body", value: body),
+        ]
+        if let url = components?.url {
+            UIApplication.shared.open(url)
+        }
     }
 
     // MARK: - Success Overlay

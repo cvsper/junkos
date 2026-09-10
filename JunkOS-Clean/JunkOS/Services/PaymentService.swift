@@ -2,8 +2,10 @@
 //  PaymentService.swift
 //  Umuve
 //
-//  Payment service for creating payment intents and confirming payments
-//  via the backend Stripe API. Includes Stripe Payment Sheet support.
+//  Stripe SDK glue: publishable-key configuration, Apple Pay availability,
+//  and building a PaymentSheet from a client secret the backend issued.
+//
+//  Deliberately does NO networking — see the note below (audit F05).
 //
 
 import Foundation
@@ -12,35 +14,13 @@ import StripePaymentSheet
 
 // MARK: - Payment Models
 
-/// Response from POST /api/payments/create-intent-simple
-/// The backend returns camelCase keys: clientSecret, paymentIntentId
-struct PaymentIntentResponse: Codable {
-    let clientSecret: String
-    let paymentIntentId: String
-
-    // The simple endpoint returns camelCase keys directly,
-    // so no custom CodingKeys mapping needed.
-}
-
-/// Response from POST /api/payments/confirm-simple
-struct PaymentConfirmResponse: Codable {
-    let success: Bool
-    let message: String?
-}
-
-/// Request body for creating a payment intent.
-/// The backend expects: amount (float, in dollars), bookingId (string).
-private struct CreateIntentRequest: Codable {
-    let amount: Double       // Amount in dollars (e.g. 149.00)
-    let bookingId: String?
-    let customerEmail: String?
-}
-
-/// Request body for confirming a payment
-private struct ConfirmPaymentRequest: Codable {
-    let paymentIntentId: String
-    let paymentMethodType: String
-}
+// NOTE (audit F05): the PaymentIntent / confirm request models and their
+// networking used to live here, and `preparePaymentSheet` created an intent
+// with `bookingId: nil` — a charge against no booking, which /confirm could
+// then never match. Both calls now live in APIClient's BookingCheckoutAPI
+// conformance and always carry a job id plus a submission key. This service
+// is Stripe-SDK-only: configuration, Apple Pay availability, and turning a
+// client secret the server already issued into a PaymentSheet.
 
 // MARK: - Payment Error
 
@@ -87,9 +67,6 @@ class PaymentService: ObservableObject {
     private let session: URLSession
     private let config = Config.shared
 
-    /// Track current PaymentIntent ID for confirmation
-    var paymentIntentId: String?
-
     private init() {
         let configuration = URLSessionConfiguration.default
         configuration.timeoutIntervalForRequest = 30
@@ -135,33 +112,19 @@ class PaymentService: ObservableObject {
         [.visa, .masterCard, .amex, .discover]
     }
 
-    // MARK: - Payment Sheet Preparation
+    // MARK: - Payment Sheet
 
-    /// Prepares a Stripe Payment Sheet for customer payment.
-    /// Creates a PaymentIntent via backend and returns a configured PaymentSheet.
-    /// - Parameters:
-    ///   - amountInDollars: The total amount to charge in dollars
-    ///   - bookingDescription: Optional description for the payment
-    /// - Returns: Configured PaymentSheet ready for presentation
+    /// Build a Payment Sheet for a client secret the SERVER already issued
+    /// against a real booking (see `APIClient.createPaymentIntent`).
+    ///
+    /// This does no networking on purpose. The old
+    /// `preparePaymentSheet(amountInDollars:)` created its own intent with no
+    /// booking id, which is exactly how a card could be charged with no job
+    /// to attach the payment to (audit F05).
     @MainActor
-    func preparePaymentSheet(
-        amountInDollars: Double,
-        bookingDescription: String = "Umuve Booking"
-    ) async throws -> PaymentSheet {
-        // Ensure Stripe is configured
+    func makePaymentSheet(clientSecret: String) -> PaymentSheet {
         PaymentService.configureStripe()
 
-        // Create PaymentIntent via backend
-        let response = try await createPaymentIntent(
-            amountInDollars: amountInDollars,
-            bookingId: nil,
-            customerEmail: nil
-        )
-
-        // Store the intent ID for later confirmation
-        self.paymentIntentId = response.paymentIntentId
-
-        // Configure Payment Sheet
         var configuration = PaymentSheet.Configuration()
         configuration.merchantDisplayName = "Umuve"
         configuration.applePay = .init(
@@ -171,172 +134,10 @@ class PaymentService: ObservableObject {
         configuration.returnURL = "umuve://payment-return"
         configuration.allowsDelayedPaymentMethods = false
 
-        // Create and return Payment Sheet
         return PaymentSheet(
-            paymentIntentClientSecret: response.clientSecret,
+            paymentIntentClientSecret: clientSecret,
             configuration: configuration
         )
-    }
-
-    // MARK: - Create Payment Intent
-
-    /// Creates a PaymentIntent on the backend and returns the client secret.
-    /// Uses the `/api/payments/create-intent-simple` endpoint.
-    /// - Parameters:
-    ///   - amountInDollars: The total amount to charge in dollars (e.g., 149.00)
-    ///   - bookingId: Optional booking ID to associate with the payment
-    ///   - customerEmail: Optional customer email for the receipt
-    /// - Returns: PaymentIntentResponse containing clientSecret and paymentIntentId
-    @MainActor
-    func createPaymentIntent(
-        amountInDollars: Double,
-        bookingId: String? = nil,
-        customerEmail: String? = nil
-    ) async throws -> PaymentIntentResponse {
-        isProcessing = true
-        lastError = nil
-
-        defer { isProcessing = false }
-
-        let requestBody = CreateIntentRequest(
-            amount: amountInDollars,
-            bookingId: bookingId,
-            customerEmail: customerEmail
-        )
-
-        let body = try JSONEncoder().encode(requestBody)
-
-        guard let url = URL(string: config.baseURL + "/api/payments/create-intent-simple") else {
-            let error = PaymentError.invalidURL
-            lastError = error
-            throw error
-        }
-
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue(config.apiKey, forHTTPHeaderField: "X-API-Key")
-        if let authToken = KeychainHelper.loadString(forKey: "authToken") {
-            request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
-        }
-        request.httpBody = body
-
-        do {
-            let (data, response) = try await session.data(for: request)
-
-            guard let httpResponse = response as? HTTPURLResponse else {
-                let error = PaymentError.invalidResponse
-                lastError = error
-                throw error
-            }
-
-            guard (200...299).contains(httpResponse.statusCode) else {
-                let message: String
-                if let apiError = try? JSONDecoder().decode(APIError.self, from: data) {
-                    message = apiError.error
-                } else {
-                    message = "Server error: \(httpResponse.statusCode)"
-                }
-                let error = PaymentError.serverError(message)
-                lastError = error
-                throw error
-            }
-
-            let decoder = JSONDecoder()
-            do {
-                return try decoder.decode(PaymentIntentResponse.self, from: data)
-            } catch {
-                let paymentError = PaymentError.decodingError(error)
-                lastError = paymentError
-                throw paymentError
-            }
-
-        } catch let error as PaymentError {
-            throw error
-        } catch {
-            let paymentError = PaymentError.networkError(error)
-            lastError = paymentError
-            throw paymentError
-        }
-    }
-
-    // MARK: - Confirm Payment
-
-    /// Confirms a payment on the backend after client-side authorization.
-    /// Uses the `/api/payments/confirm-simple` endpoint (requires JWT auth).
-    /// - Parameters:
-    ///   - paymentIntentId: The ID of the PaymentIntent to confirm
-    ///   - paymentMethodType: The method used (e.g., "apple_pay" or "card")
-    /// - Returns: PaymentConfirmResponse indicating success
-    @MainActor
-    func confirmPayment(
-        paymentIntentId: String,
-        paymentMethodType: String = "card"
-    ) async throws -> PaymentConfirmResponse {
-        isProcessing = true
-        lastError = nil
-
-        defer { isProcessing = false }
-
-        let requestBody = ConfirmPaymentRequest(
-            paymentIntentId: paymentIntentId,
-            paymentMethodType: paymentMethodType
-        )
-
-        let body = try JSONEncoder().encode(requestBody)
-
-        guard let url = URL(string: config.baseURL + "/api/payments/confirm-simple") else {
-            let error = PaymentError.invalidURL
-            lastError = error
-            throw error
-        }
-
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue(config.apiKey, forHTTPHeaderField: "X-API-Key")
-        if let authToken = KeychainHelper.loadString(forKey: "authToken") {
-            request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
-        }
-        request.httpBody = body
-
-        do {
-            let (data, response) = try await session.data(for: request)
-
-            guard let httpResponse = response as? HTTPURLResponse else {
-                let error = PaymentError.invalidResponse
-                lastError = error
-                throw error
-            }
-
-            guard (200...299).contains(httpResponse.statusCode) else {
-                let message: String
-                if let apiError = try? JSONDecoder().decode(APIError.self, from: data) {
-                    message = apiError.error
-                } else {
-                    message = "Payment confirmation failed: \(httpResponse.statusCode)"
-                }
-                let error = PaymentError.serverError(message)
-                lastError = error
-                throw error
-            }
-
-            let decoder = JSONDecoder()
-            do {
-                return try decoder.decode(PaymentConfirmResponse.self, from: data)
-            } catch {
-                let paymentError = PaymentError.decodingError(error)
-                lastError = paymentError
-                throw paymentError
-            }
-
-        } catch let error as PaymentError {
-            throw error
-        } catch {
-            let paymentError = PaymentError.networkError(error)
-            lastError = paymentError
-            throw paymentError
-        }
     }
 
     // MARK: - Apple Pay Payment Request

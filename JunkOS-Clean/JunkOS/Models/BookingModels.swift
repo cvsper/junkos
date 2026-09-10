@@ -49,6 +49,11 @@ struct PricingEstimate: Codable {
     let estimatedDuration: Int?
     let truckSize: String?
     let totalQuantity: Int?
+    /// Version stamp for the quote, once the pricing engine emits one. Decoded
+    /// from `price_version`; forwarded on booking + create-intent so the
+    /// server can reject a stale price (audit F09-F12). Nil today — the
+    /// backend does not return it yet.
+    let priceVersion: String?
 
     // Convenience accessors used by views — fall back gracefully when the
     // backend omits an optional field.
