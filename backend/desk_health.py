@@ -122,12 +122,15 @@ def check_desk_health(alert=False):
     try:
         from ops_sentinel import stranded_summary
         st = stranded_summary()
-        n, old_d = st["total"], st["oldest_days"]
-        state = "ok" if n == 0 else ("fail" if st["buckets"]["over_30d"] or st["buckets"]["7d_30d"] else "warn")
-        reason = ("no jobs stranded" if n == 0 else
-                  "{} open job(s) with no movement, oldest {} days — customers waiting or haulers unpaid".format(n, old_d))
-        put("stranded_jobs", state, reason, total=n, buckets=st["buckets"],
-            by_status=st["by_status"], jobs=st["jobs"])
+        n, recent = st["total"], st["recent_total"]
+        # Only the recent slice is actionable; months-old rows are seed residue.
+        state = "ok" if recent == 0 else ("fail" if st["recent_with_driver"] else "warn")
+        reason = ("no live jobs stranded ({} old/seed rows ignored)".format(n) if recent == 0 else
+                  "{} live job(s) stranded, {} with a hauler assigned — customers waiting or haulers "
+                  "unpaid ({} old/seed rows ignored)".format(recent, st["recent_with_driver"], n - recent))
+        put("stranded_jobs", state, reason, total=n, recent_total=recent,
+            recent_with_driver=st["recent_with_driver"], buckets=st["buckets"],
+            by_status=st["by_status"], recent=st["recent"])
     except Exception as e:
         put("stranded_jobs", "warn", "stranded check failed: " + type(e).__name__)
 

@@ -241,8 +241,17 @@ OPEN_STUCK_STATUSES = ("confirmed", "assigned", "accepted", "en_route", "arrived
                        "started", "in_progress")
 
 
-def stranded_summary(min_hours=12, limit=25):
-    """Open jobs with no forward movement, bucketed by age. No customer PII."""
+# Jobs older than this are demo/seed residue, not live operations: the first
+# census surfaced 259 rows clustered ~200 days back. Counting them alongside a
+# real 18-day-old haul buries the one that matters.
+RECENT_STRANDED_DAYS = 60
+
+
+def stranded_summary(min_hours=12, limit=25, recent_days=RECENT_STRANDED_DAYS):
+    """Open jobs with no forward movement, bucketed by age. No customer PII.
+
+    ``recent`` is the actionable slice: not seed data, not months-old residue.
+    """
     from models import Job
 
     now = _utcnow()
@@ -269,10 +278,15 @@ def stranded_summary(min_hours=12, limit=25):
             "status": job.status,
             "age_days": round(age_h / 24.0, 1),
             "has_driver": bool(job.driver_id),
+            "synthetic": (job.notes or "").upper().startswith("SYNTHETIC"),
         })
     jobs.sort(key=lambda j: j["age_days"], reverse=True)
+    recent = [j for j in jobs if j["age_days"] <= recent_days and not j["synthetic"]]
     return {
         "total": len(jobs), "buckets": buckets, "by_status": by_status,
         "oldest_days": jobs[0]["age_days"] if jobs else 0,
+        "recent_total": len(recent),
+        "recent_with_driver": sum(1 for j in recent if j["has_driver"]),
+        "recent": recent[:limit],
         "jobs": jobs[:limit],
     }

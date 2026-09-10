@@ -74,3 +74,17 @@ def test_public_health_reports_the_count_but_no_customer_pii(client):
     blob = repr(chk)
     for leak in ("Strand Cx", "5615550777", "South University", "307.8", "cx@strand.test"):
         assert leak not in blob, "public health check leaked {}".format(leak)
+
+
+def test_recent_slice_separates_live_work_from_seed_residue():
+    """The first live census returned 260 rows, 259 of them ~200 days old seed
+    data. Counting those alongside a real 18-day-old haul buries the one that
+    actually needs a phone call."""
+    _job("assigned", 18, "STRNDREC", driver=None)
+    for i in range(3):
+        _job("confirmed", 199 + i, "STRNDOLD{}".format(i))
+    s = ops_sentinel.stranded_summary()
+    codes = {j["code"] for j in s["recent"]}
+    assert "STRNDREC" in codes
+    assert not any(c.startswith("STRNDOLD") for c in codes)
+    assert s["total"] > s["recent_total"]
