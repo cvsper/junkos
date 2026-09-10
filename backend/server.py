@@ -1616,10 +1616,28 @@ def get_quote():
         return jsonify({"error": str(e)}), 500
 
 
+def _legacy_bookings_enabled():
+    """Audit F30: the legacy_db integer-ID booking path creates records that
+    never become dispatchable, paid marketplace jobs. Off unless explicitly
+    enabled with LEGACY_BOOKINGS_ENABLED=true."""
+    return (os.environ.get("LEGACY_BOOKINGS_ENABLED") or "").strip().lower() in ("1", "true", "yes", "on")
+
+
+_LEGACY_BOOKINGS_GONE = {
+    "error": "This booking API has been retired. Please update the app to book — "
+             "new bookings use POST /api/booking/estimate then POST /api/booking.",
+    "code": "legacy_bookings_disabled",
+    "upgrade": {"estimate": "/api/booking/estimate", "book": "/api/booking",
+                "status": "/api/booking/<job_id>"},
+}
+
+
 @app.route("/api/bookings", methods=["POST"])
 @require_api_key
 def create_booking():
-    """Create new booking"""
+    """Create new booking (LEGACY integer-ID store; disabled by default)."""
+    if not _legacy_bookings_enabled():
+        return jsonify(_LEGACY_BOOKINGS_GONE), 410
     try:
         data = request.get_json()
 
@@ -1660,7 +1678,7 @@ def create_booking():
             "success": True,
             "booking_id": booking_id,
             "estimated_price": estimated_price,
-            "confirmation": "Booking #{} confirmed".format(booking_id),
+            "confirmation": "Booking #{} received — awaiting payment".format(booking_id),
             "scheduled_datetime": data["scheduled_datetime"],
             "services": services
         }), 201
@@ -1672,7 +1690,9 @@ def create_booking():
 @app.route("/api/bookings/<int:booking_id>", methods=["GET"])
 @require_api_key
 def get_booking(booking_id):
-    """Get booking details"""
+    """Get booking details (LEGACY integer-ID store; disabled by default)."""
+    if not _legacy_bookings_enabled():
+        return jsonify(_LEGACY_BOOKINGS_GONE), 410
     try:
         booking = legacy_db.get_booking(booking_id)
 
@@ -1846,62 +1866,43 @@ def get_portal_available_slots():
 def portal_create_booking():
     """Create a booking from the customer portal (no auth required).
 
-    Accepts the portal's form shape and creates a User + Job + Payment.
+    Compatibility adapter (audit F30): translates the portal's form shape
+    into the canonical payload and delegates to routes.booking.create_booking,
+    so validation, pricing, price-version consent, promo ownership and the
+    no-notify-before-payment rule are identical to POST /api/booking. Promos
+    are NOT consumed here (they count on payment success) and nothing is sent
+    to haulers or the customer until the job is paid.
     """
-    from werkzeug.security import generate_password_hash
-    from models import Job, Payment, User, Notification, generate_uuid, utcnow
-    from routes.booking import calculate_estimate, _notify_nearby_contractors
+    from routes.booking import create_booking as _create_booking, BookingError
 
-    data = request.get_json() or {}
+    data = request.get_json(silent=True) or {}
 
     address = data.get("address")
     if not address:
         return jsonify({"error": "address is required"}), 400
 
     customer_info = data.get("customerInfo") or {}
-    email = customer_info.get("email")
-    name = customer_info.get("name", "")
-    phone = customer_info.get("phone", "")
-
+    email = (customer_info.get("email") or data.get("customerEmail") or "").strip()
     if not email:
         return jsonify({"error": "customerInfo.email is required"}), 400
 
-    # Find or create user
-    user = User.query.filter_by(email=email).first()
-    if not user:
-        user = User(email=email, name=name, phone=phone, role="customer",
-                     password_hash=generate_password_hash(generate_uuid()))
-        sqlalchemy_db.session.add(user)
-        sqlalchemy_db.session.flush()
+    # --- Items: legacy single category/quantity/size or a full items list ---
+    items = data.get("items")
+    if not isinstance(items, list) or not items:
+        category = data.get("itemCategory") or data.get("category") or "general"
+        items = [{"category": category, "quantity": data.get("quantity", 1)}]
+        if data.get("size"):
+            items[0]["size"] = data.get("size")
 
-    category = data.get("itemCategory") or data.get("category") or "general"
-    quantity = int(data.get("quantity", 1))
-    size = data.get("size")
-
-    # Parse location from addressDetails if available
+    # --- Coordinates from addressDetails.location (or top-level lat/lng) ---
     addr_details = data.get("addressDetails") or {}
     location = addr_details.get("location") or {}
-    lat = location.get("lat")
-    lng = location.get("lng")
+    lat = location.get("lat", data.get("lat"))
+    lng = location.get("lng", data.get("lng"))
 
-    # --- Service area geofence check ---
-    if lat is not None and lng is not None:
-        from geofencing import is_in_service_area
-        try:
-            if not is_in_service_area(float(lat), float(lng)):
-                return jsonify({
-                    "error": "Address is outside our service area. "
-                             "We currently serve Miami-Dade, Broward, and Palm Beach counties."
-                }), 400
-        except (TypeError, ValueError):
-            pass  # Invalid coords -- skip check, let downstream handle it
-
-    # Parse scheduled datetime
-    scheduled_at = None
-    selected_date = data.get("selectedDate")
-    selected_time = data.get("selectedTime", "09:00")
-
-    # Normalize time: convert "8:00 AM - 10:00 AM" or "2:00 PM" to "HH:MM"
+    # --- Schedule: normalize "8:00 AM - 10:00 AM" / "2:00 PM" to HH:MM ---
+    selected_date = data.get("selectedDate") or data.get("scheduledDate")
+    selected_time = data.get("selectedTime") or data.get("scheduledTime") or "09:00"
     if selected_time and isinstance(selected_time, str):
         import re
         am_pm_match = re.match(r"(\d{1,2}):(\d{2})\s*(AM|PM)", selected_time, re.IGNORECASE)
@@ -1914,138 +1915,38 @@ def portal_create_booking():
             if period == "AM" and hour == 12:
                 hour = 0
             selected_time = "{:02d}:{}".format(hour, minute)
-
-    if selected_date:
+    if selected_date and not isinstance(selected_date, str):
         try:
-            date_str = selected_date[:10] if isinstance(selected_date, str) else selected_date.strftime("%Y-%m-%d")
-            from timeutils import parse_local
-            scheduled_at = parse_local(date_str, selected_time)
+            selected_date = selected_date.strftime("%Y-%m-%d")
         except Exception:
-            pass
+            selected_date = None
 
-    items = [{"category": category, "quantity": quantity}]
-    if size:
-        items[0]["size"] = size
-    photos = data.get("photoUrls") or data.get("photos") or []
+    payload = {
+        "address": {"street": address, "lat": lat, "lng": lng,
+                    "zip": addr_details.get("zip") or addr_details.get("postal_code")},
+        "items": items,
+        "photos": data.get("photoUrls") or data.get("photos") or [],
+        "scheduled_date": selected_date[:10] if isinstance(selected_date, str) else None,
+        "scheduled_time": selected_time,
+        "notes": data.get("itemDescription") or data.get("description", ""),
+        "promo_code": (data.get("promoCode") or data.get("promo_code") or "").strip(),
+        "lead_source": data.get("leadSource") or data.get("lead_source") or None,
+        "price_version": data.get("price_version") or data.get("priceVersion"),
+        "estimated_price": data.get("totalAmount") or data.get("estimated_price"),
+        "quote_id": data.get("quote_id") or data.get("quoteId"),
+        "quote_token": data.get("quote_token") or data.get("quoteToken"),
+        "customerName": customer_info.get("name", "") or data.get("customerName", ""),
+        "customerEmail": email,
+        "customerPhone": customer_info.get("phone", "") or data.get("customerPhone", ""),
+    }
 
-    # Use the v2 pricing engine for accurate server-side calculation
-    scheduled_date_for_pricing = selected_date[:10] if selected_date and isinstance(selected_date, str) else None
-    est = calculate_estimate(
-        items,
-        scheduled_date=scheduled_date_for_pricing,
-        lat=float(lat) if lat else None,
-        lng=float(lng) if lng else None,
-    )
-
-    # SECURITY: Always use server-calculated price — never trust client totalAmount
-    total_amount = est["total"]
-
-    # --- Apply promo code if provided ---
-    promo_code_str = data.get("promoCode", "").strip() or data.get("promo_code", "").strip()
-    promo_code_id = None
-    discount_amount = 0.0
-
-    if promo_code_str:
-        from routes.promos import validate_promo_code
-        from models import PromoCode as _PC
-        promo, discount, promo_error = validate_promo_code(promo_code_str, total_amount)
-        if promo_error:
-            return jsonify({"error": promo_error}), 400
-        promo_code_id = promo.id
-        discount_amount = discount
-        total_amount = round(total_amount - discount, 2)
-        promo.use_count = (promo.use_count or 0) + 1
-
-    job = Job(
-        id=generate_uuid(),
-        customer_id=user.id,
-        status="pending",
-        address=address,
-        lat=float(lat) if lat else None,
-        lng=float(lng) if lng else None,
-        items=items,
-        photos=photos,
-        scheduled_at=scheduled_at,
-        base_price=est["base_price"],
-        item_total=est["items_subtotal"],
-        service_fee=est["service_fee"],
-        surge_multiplier=est["surge_multiplier"],
-        total_price=total_amount,
-        promo_code_id=promo_code_id,
-        discount_amount=discount_amount,
-        notes=data.get("itemDescription") or data.get("description", ""),
-    )
-    sqlalchemy_db.session.add(job)
-
-    payment = Payment(
-        id=generate_uuid(),
-        job_id=job.id,
-        amount=total_amount,
-        service_fee=est["service_fee"],
-        payment_status="pending",
-    )
-    sqlalchemy_db.session.add(payment)
-
-    _notify_nearby_contractors(job)
-    sqlalchemy_db.session.commit()
-
-    # Send confirmation email and SMS
-    from notifications import send_booking_confirmation_email, send_booking_sms
-    date_str = selected_date[:10] if selected_date and isinstance(selected_date, str) else "TBD"
-    if email:
-        send_booking_confirmation_email(
-            to_email=email,
-            customer_name=name,
-            booking_id=job.id,
-            address=address,
-            scheduled_date=date_str,
-            scheduled_time=selected_time,
-            total_amount=total_amount,
-        )
-    if phone:
-        send_booking_sms(phone, job.id, date_str, address)
-
-    # --- Mark abandoned booking as converted ---
     try:
-        from models import AbandonedBooking
-        if email:
-            abandoned = AbandonedBooking.query.filter_by(
-                email=email.strip().lower(), converted=False
-            ).first()
-            if abandoned:
-                abandoned.converted = True
-                sqlalchemy_db.session.commit()
-    except Exception:
-        pass
+        body, status = _create_booking(payload, None)
+    except BookingError as exc:
+        return jsonify(exc.to_dict()), exc.status
 
-    # --- SMS operator about new booking ---
-    try:
-        from sms_service import send_sms_async
-        operator_phone = os.environ.get("OPERATOR_PHONE", "")
-        if operator_phone:
-            items_count = sum(i.get("quantity", 1) for i in items if isinstance(i, dict))
-            lead_source = data.get("leadSource") or data.get("lead_source") or "direct"
-            msg = (
-                "NEW BOOKING!\n"
-                "{} - {} item{}\n"
-                "${:.0f} | {}\n"
-                "Scheduled: {}"
-            ).format(
-                address or "No address",
-                items_count, "s" if items_count != 1 else "",
-                total_amount,
-                lead_source,
-                date_str,
-            )
-            send_sms_async(operator_phone, msg)
-    except Exception:
-        pass
-
-    return jsonify({
-        "success": True,
-        "bookingId": job.id,
-        "job": job.to_dict(),
-    }), 201
+    body["bookingId"] = body["job"]["id"]
+    return jsonify(body), status
 
 
 # Serve uploaded files

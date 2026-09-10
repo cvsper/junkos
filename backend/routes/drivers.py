@@ -928,6 +928,40 @@ def submit_job_proof(user_id, job_id):
 @drivers_bp.route("/jobs/<job_id>/volume", methods=["POST"])
 @require_auth
 def propose_volume_adjustment(user_id, job_id):
+    """Driver proposes a volume adjustment after arriving on-site.
+
+    Audit F12: routed through change_orders — a versioned proposal the
+    customer accepts/declines; settlement is a separate charge or refund.
+    Response shape is unchanged for the Umuve Pro app (additive fields only).
+    """
+    from change_orders import propose_volume_adjustment as _propose
+
+    contractor = Contractor.query.filter_by(user_id=user_id).first()
+    if not contractor:
+        return jsonify({"error": "Contractor not found"}), 404
+
+    job = db.session.get(Job, job_id)
+    if not job:
+        return jsonify({"error": "Job not found"}), 404
+
+    if job.status != "arrived":
+        return jsonify({"error": "Job must be in 'arrived' status to propose volume adjustment"}), 400
+
+    if job.driver_id != contractor.id:
+        return jsonify({"error": "Only the assigned driver can propose volume adjustment"}), 403
+
+    data = request.get_json() or {}
+    actual_volume = data.get("actual_volume")
+
+    if not actual_volume or isinstance(actual_volume, bool) or not isinstance(actual_volume, (int, float)):
+        return jsonify({"error": "actual_volume (number) is required"}), 400
+
+    photos = data.get("evidence_photos") or data.get("photos") or []
+    body, status = _propose(job, "driver", contractor.id, float(actual_volume),
+                            evidence_photos=photos if isinstance(photos, list) else None,
+                            driver_room_id=contractor.id)
+    return jsonify(body), status
+def propose_volume_adjustment(user_id, job_id):
     """Driver proposes a volume adjustment after arriving on-site."""
     from routes.booking import calculate_estimate
     from notifications import send_push_notification

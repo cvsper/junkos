@@ -691,9 +691,9 @@ def create_simple_payment_intent():
     job_obj = db.session.get(Job, booking_id) if booking_id else None
     if job_obj and job_obj.total_price:
         base = float(job_obj.total_price)
-        discount = float(job_obj.discount_amount or 0)
+        discount = 0.0  # audit F09: booking already netted discount_amount into total_price
         # Apply a promo passed now only if one wasn't already applied at booking.
-        if promo_code and discount <= 0:
+        if promo_code and not job_obj.promo_code_id:
             from routes.promos import validate_promo_code
             promo, disc, err = validate_promo_code(promo_code, base)
             if err:

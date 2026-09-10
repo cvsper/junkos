@@ -21,8 +21,13 @@ from models import (
 )
 from auth_routes import require_auth, optional_auth
 from extensions import limiter
-from geofencing import is_in_service_area
-from timeutils import parse_local, fmt_local, local_date_str
+from geofencing import is_in_service_area, get_service_area_info, _point_in_polygon
+from timeutils import parse_local, fmt_local, local_date_str, local_now, BUSINESS_TZ_NAME
+from price_version import (
+    ItemValidationError, validate_items, validate_coordinates, compute_price_version,
+    quote_scope_hash, verify_quote_claim_token, zip_from_address, normalize_schedule,
+    _coerce_quantity,
+)
 
 booking_bp = Blueprint("booking", __name__, url_prefix="/api/booking")
 
@@ -354,26 +359,85 @@ def _volume_discount_label(total_quantity):
 # ============================================================================
 # Helpers -- zone-based surge (existing behaviour)
 # ============================================================================
-def _active_surge_multiplier(lat=None, lng=None):
-    """Return the highest active surge multiplier that applies right now."""
-    now = datetime.now(timezone.utc)
+def _zone_contains(boundary, lat, lng):
+    """True if the zone geometry contains (lat, lng).
+
+    Accepted ``boundary`` shapes (admin-entered JSON):
+      - polygon: ``[{"lat":..,"lng":..}, ...]`` or ``[[lat, lng], ...]`` (>= 3 pts)
+      - circle:  ``{"lat":..,"lng":..,"radius_km":..}`` (or ``radius_miles``)
+      - bbox:    ``{"north":..,"south":..,"east":..,"west":..}``
+    A zone with no usable geometry applies nowhere (audit F10: a zone must
+    never change the price of an address it doesn't cover).
+    """
+    if lat is None or lng is None or not boundary:
+        return False
+    try:
+        if isinstance(boundary, list):
+            pts = []
+            for p in boundary:
+                if isinstance(p, dict):
+                    pts.append((float(p["lat"]), float(p["lng"])))
+                elif isinstance(p, (list, tuple)) and len(p) >= 2:
+                    pts.append((float(p[0]), float(p[1])))
+            if len(pts) < 3:
+                return False
+            return _point_in_polygon(float(lat), float(lng), pts)
+        if isinstance(boundary, dict):
+            if "polygon" in boundary:
+                return _zone_contains(boundary["polygon"], lat, lng)
+            if all(k in boundary for k in ("north", "south", "east", "west")):
+                return (float(boundary["south"]) <= float(lat) <= float(boundary["north"])
+                        and float(boundary["west"]) <= float(lng) <= float(boundary["east"]))
+            center = boundary.get("center") if isinstance(boundary.get("center"), dict) else boundary
+            if "lat" in center and "lng" in center:
+                radius_km = boundary.get("radius_km")
+                if radius_km is None and boundary.get("radius_miles") is not None:
+                    radius_km = float(boundary["radius_miles"]) * 1.609344
+                if radius_km is None:
+                    return False
+                return _haversine(float(lat), float(lng), float(center["lat"]), float(center["lng"])) <= float(radius_km)
+    except (TypeError, ValueError, KeyError):
+        return False
+    return False
+
+
+def _active_surge(lat=None, lng=None, when=None):
+    """Return ``(multiplier, zone_name)`` for the strongest active surge zone
+    whose geometry contains the point. Day/time windows are evaluated in the
+    market timezone (America/New_York), not UTC.
+    """
+    if lat is None or lng is None:
+        return 1.0, None
+    now = when or local_now()
     current_day = now.weekday()
     current_time = now.strftime("%H:%M")
 
-    zones = SurgeZone.query.filter_by(is_active=True).all()
+    try:
+        zones = SurgeZone.query.filter_by(is_active=True).all()
+    except Exception:
+        return 1.0, None
     max_surge = 1.0
+    zone_name = None
 
     for zone in zones:
+        if not _zone_contains(zone.boundary, lat, lng):
+            continue
         if zone.days_of_week and current_day not in zone.days_of_week:
             continue
         if zone.start_time and current_time < zone.start_time:
             continue
         if zone.end_time and current_time > zone.end_time:
             continue
-        if zone.surge_multiplier > max_surge:
-            max_surge = zone.surge_multiplier
+        if (zone.surge_multiplier or 1.0) > max_surge:
+            max_surge = float(zone.surge_multiplier)
+            zone_name = zone.name
 
-    return max_surge
+    return max_surge, zone_name
+
+
+def _active_surge_multiplier(lat=None, lng=None):
+    """Back-compat wrapper: highest applicable zone multiplier for the point."""
+    return _active_surge(lat, lng)[0]
 
 
 # ============================================================================
@@ -470,12 +534,37 @@ def calculate_estimate(items, scheduled_date=None, lat=None, lng=None, addons=No
     total_quantity = 0
     item_breakdown = []
 
+    # Audit F11: quantities are normalized ONCE, before any arithmetic, and
+    # every loop below iterates the same normalized list. The bug was that the
+    # item loop skipped a negative quantity while the recycling-fee loop
+    # multiplied by it, so "-10 mattresses" subtracted $200 of disposal fees
+    # from a valid cart. An unusable quantity now drops the line entirely, in
+    # both loops, so a malformed cart can never come out cheaper than the
+    # valid one it was built from.
+    #
+    # This is defence in depth, not the gate: every payable entry point
+    # (POST /estimate, create_booking, the portal compatibility route) runs
+    # price_version.validate_items first and rejects with 400. Internal
+    # callers that price model-generated carts (Maya's phone tools, the SMS
+    # photo quote, the call kit) reach this function directly, so it degrades
+    # to a correct quote rather than raising into a live phone call.
+    if not isinstance(items, (list, tuple)):
+        raise ItemValidationError("items array is required")
+    normalized = []
+    for entry in items:
+        if not isinstance(entry, dict):
+            continue
+        try:
+            quantity = _coerce_quantity(entry.get("quantity", 1))
+        except ItemValidationError:
+            continue
+        normalized.append({**entry, "quantity": quantity})
+    items = normalized
+
     for entry in items:
         category = entry.get("category") or "other"
-        quantity = int(entry.get("quantity", 1))
+        quantity = entry["quantity"]
         size = entry.get("size")  # optional
-        if quantity <= 0:
-            continue
 
         unit_price = _get_item_price(category, size)
         total_quantity += quantity
@@ -520,7 +609,7 @@ def calculate_estimate(items, scheduled_date=None, lat=None, lng=None, addons=No
     recycling_breakdown = []
     for entry in items:
         category = (entry.get("category") or "other").lower()
-        quantity = int(entry.get("quantity", 1))
+        quantity = entry["quantity"]
         fee_key = RECYCLING_FEE_TRIGGERS.get(category)
         if fee_key and fee_key in RECYCLING_FEES:
             fee = RECYCLING_FEES[fee_key]
@@ -549,8 +638,8 @@ def calculate_estimate(items, scheduled_date=None, lat=None, lng=None, addons=No
 
     items_subtotal = round(item_total - volume_discount, 2)
 
-    # --- Zone-based surge multiplier ---
-    zone_surge = _active_surge_multiplier(lat, lng)
+    # --- Zone-based surge multiplier (only zones covering the point) ---
+    zone_surge, zone_name = _active_surge(lat, lng)
 
     # --- Time-based surge ---
     time_surge_pct, surge_reasons = _time_based_surge(scheduled_date)
@@ -562,7 +651,8 @@ def calculate_estimate(items, scheduled_date=None, lat=None, lng=None, addons=No
     surge_amount = round(surged_subtotal - items_subtotal, 2)
 
     if zone_surge > 1.0:
-        surge_reasons.insert(0, "High-demand zone (x{})".format(round(zone_surge, 2)))
+        surge_reasons.insert(0, "High-demand zone{} (x{})".format(
+            " — {}".format(zone_name) if zone_name else "", round(zone_surge, 2)))
 
     # --- Service fee (admin-overridable) ---
     fee_rate = _get_service_fee_rate()
@@ -612,6 +702,10 @@ def calculate_estimate(items, scheduled_date=None, lat=None, lng=None, addons=No
         "surge_multiplier": round(combined_multiplier, 4),
         "surge_amount": surge_amount,
         "surge_reasons": surge_reasons,
+        "surge_zone": zone_name,
+        "zone_surge_multiplier": round(zone_surge, 4),
+        "time_surge_pct": round(time_surge_pct, 4),
+        "market_timezone": BUSINESS_TZ_NAME,
         "base_price": round(items_subtotal, 2),
         "service_fee": service_fee,
         "recycling_fees": round(recycling_total, 2),
@@ -627,6 +721,19 @@ def calculate_estimate(items, scheduled_date=None, lat=None, lng=None, addons=No
         "truck_size": truck_size,
         "total_quantity": total_quantity,
     }
+
+
+def _current_user_id():
+    """Authenticated user id from the bearer token, or None (never from the body)."""
+    try:
+        from auth_routes import verify_token
+        token = request.headers.get("Authorization", "").replace("Bearer ", "")
+        uid = verify_token(token) if token else None
+        if uid and not db.session.get(User, uid):
+            return None
+        return uid
+    except Exception:
+        return None
 
 
 def _haversine(lat1, lng1, lat2, lng2):
@@ -649,33 +756,138 @@ def estimate():
 
     Body JSON:
         items: [ { category: str, quantity: int, size?: str }, ... ]
-        address: { lat: float, lng: float }
-        scheduledDate: str (ISO date for time-based surge)
-        scheduled_date: str (alias)
+        address: { street?: str, lat: float, lng: float }
+        scheduledDate / scheduled_date: str (ISO date for time-based surge)
+        scheduledTimeSlot / scheduled_time: str (slot "8-10" or "HH:MM")
+        promo_code / promoCode: str (optional — discount is priced server-side)
+        addons: { disassembly_items?: int, stair_flights?: int }
+
+    Returns the full breakdown plus ``price_version`` — the token POST
+    /api/booking must echo back. Estimates without coordinates are returned
+    for display but flagged ``bookable: false``.
     """
-    data = request.get_json()
+    data = request.get_json(silent=True)
     if not data:
         return jsonify({"error": "Request body is required"}), 400
 
-    items = data.get("items")
-    if not items or not isinstance(items, list):
-        return jsonify({"error": "items array is required"}), 400
+    try:
+        items = validate_items(data.get("items"))
+    except ItemValidationError as exc:
+        return jsonify({"error": str(exc), "code": "invalid_items"}), 400
 
     address = data.get("address") or {}
-    lat = address.get("lat")
-    lng = address.get("lng")
+    if not isinstance(address, dict):
+        address = {"street": str(address)}
+    lat = address.get("lat", data.get("lat"))
+    lng = address.get("lng", data.get("lng"))
+    address_text = address.get("street") or address.get("formatted") or ""
+
+    bookable = True
+    if lat is None and lng is None:
+        bookable = False
+    else:
+        try:
+            lat, lng = validate_coordinates(lat, lng)
+        except ValueError as exc:
+            return jsonify({"error": str(exc), "code": "invalid_coordinates"}), 422
+        if not is_in_service_area(lat, lng):
+            return jsonify({
+                "error": "Address is outside our service area. "
+                         "We currently serve Miami-Dade, Broward, and Palm Beach counties.",
+                "code": "outside_market",
+            }), 422
 
     scheduled_date = data.get("scheduledDate") or data.get("scheduled_date")
+    scheduled_time = data.get("scheduledTimeSlot") or data.get("scheduled_time") or data.get("scheduledTime")
     addons = data.get("addons") if isinstance(data.get("addons"), dict) else None
 
-    result = calculate_estimate(items, scheduled_date=scheduled_date, lat=lat, lng=lng, addons=addons)
+    try:
+        result = calculate_estimate(items, scheduled_date=scheduled_date, lat=lat, lng=lng, addons=addons)
+    except ItemValidationError as exc:
+        return jsonify({"error": str(exc), "code": "invalid_items"}), 400
 
-    if result["total_quantity"] == 0:
-        return jsonify({"error": "At least one item with a valid category is required"}), 400
+    # --- Binding photo quote: same scope/ownership rules as booking, not consumed ---
+    honored_quote_id = None
+    quote_id = (data.get("quote_id") or data.get("quoteId") or "").strip()
+    if quote_id:
+        try:
+            q, honored = _resolve_quote(
+                quote_id, items, lat, lng, scheduled_date, result, _current_user_id(),
+                data.get("customerEmail") or data.get("customer_email"),
+                data.get("quote_token") or data.get("quoteToken"),
+            )
+        except BookingError as exc:
+            return jsonify(exc.to_dict()), exc.status
+        if honored is not None:
+            result["total"] = honored
+            result["quote_locked"] = True
+            honored_quote_id = q.id
+
+    # --- Promo (priced here so the version covers the discounted total) ---
+    promo_code = (data.get("promo_code") or data.get("promoCode") or "").strip()
+    discount = 0.0
+    promo_error = None
+    if promo_code:
+        from routes.promos import validate_promo_code
+        promo, disc, promo_error = validate_promo_code(promo_code, result["total"])
+        if promo_error:
+            promo_code = ""
+        else:
+            discount = round(float(disc), 2)
+
+    total_before_discount = result["total"]
+    total = round(max(0.0, total_before_discount - discount), 2)
+    date_part, slot = normalize_schedule(scheduled_date, scheduled_time)
+    version = compute_price_version(
+        items, lat, lng, address_text, date_part, slot, addons,
+        promo_code, discount, result["service_fee"], total, quote_id=honored_quote_id,
+    )
+
+    result.update({
+        "quote_id": honored_quote_id,
+        "total_before_discount": total_before_discount,
+        "discount_amount": discount,
+        "promo_code": promo_code or None,
+        "promo_error": promo_error,
+        "total": total,
+        "price_version": version,
+        "bookable": bookable,
+        "scheduled_date": date_part or None,
+        "scheduled_time": slot or None,
+    })
 
     return jsonify({
         "success": True,
         "estimate": result,
+        "price_version": version,
+    }), 200
+
+
+# ---------------------------------------------------------------------------
+# GET /api/booking/market-bounds  (public -- market geometry for the UI)
+# ---------------------------------------------------------------------------
+@booking_bp.route("/market-bounds", methods=["GET"])
+def market_bounds():
+    """Server-owned market bounds so expansion never needs a frontend change.
+
+    ``mapbox_bbox`` is "west,south,east,north" for the geocoder; ``proximity``
+    is "lng,lat".
+    """
+    info = get_service_area_info()
+    b = info["bounds"]
+    c = info["center"]
+    return jsonify({
+        "success": True,
+        "market": {
+            "bounds": b,
+            "center": c,
+            "counties": info["counties"],
+            "polygon": info["polygon"],
+            "timezone": BUSINESS_TZ_NAME,
+            "mapbox_bbox": "{},{},{},{}".format(b["west"], b["south"], b["east"], b["north"]),
+            "proximity": "{},{}".format(c["lng"], c["lat"]),
+            "country": "us",
+        },
     }), 200
 
 
@@ -783,310 +995,418 @@ def get_pricing_info():
 
 
 # ---------------------------------------------------------------------------
-# POST /api/booking  (auth required)
+# Booking service  (audit F09 / F10 / F11 / F30)
 # ---------------------------------------------------------------------------
-@booking_bp.route("", methods=["POST"])
-@limiter.limit("10 per minute")
-@optional_auth
-def create_booking(user_id):
-    """
-    Create a new job / booking.
+class BookingError(Exception):
+    """A booking request that must not create a job. Carries the HTTP status
+    and a machine-readable ``code`` so every entry point (canonical route,
+    compatibility route, phone flows) answers identically."""
 
-    Body JSON:
-        address: str
-        lat: float
-        lng: float
-        items: list  [{ category, quantity, size? }]
-        photos: list (optional, URLs from upload endpoint)
-        scheduled_date: str (ISO date)
-        scheduled_time: str (HH:MM)
-        notes: str (optional)
-        estimated_price: float
-    """
-    data = request.get_json()
-    if not data:
-        return jsonify({"error": "Request body is required"}), 400
+    def __init__(self, message, status=400, code=None, **extra):
+        super().__init__(message)
+        self.message = message
+        self.status = status
+        self.code = code
+        self.extra = extra
 
-    # --- Validate required fields (accept both camelCase and snake_case) ---
-    address = data.get("address")
+    def to_dict(self):
+        body = {"error": self.message}
+        if self.code:
+            body["code"] = self.code
+        body.update(self.extra)
+        return body
+
+
+QUOTE_OPEN_STATUSES = ("draft", "pending_review", "binding", "buffered", "accepted")
+
+
+def _estimate_payload(est, discount, promo_code, total, version, date_part, slot):
+    """Estimate dict as returned by POST /estimate — used in 409 bodies so the
+    UI can re-confirm without a second round-trip."""
+    payload = dict(est)
+    payload.update({
+        "total_before_discount": est["total"],
+        "discount_amount": round(discount, 2),
+        "promo_code": promo_code or None,
+        "total": total,
+        "price_version": version,
+        "scheduled_date": date_part or None,
+        "scheduled_time": slot or None,
+    })
+    return payload
+
+
+def _resolve_quote(quote_id, items, lat, lng, scheduled_date, est, user_id,
+                   customer_email, claim_token):
+    """Load + authorize + scope-check a binding quote for conversion.
+
+    Returns ``(quote, honored_total | None)``. Raises BookingError(409) when
+    the quote is expired, already used, not owned by the caller, or its
+    scope (items + ZIP + schedule surcharge) no longer matches — the caller
+    must re-quote; there is no silent fallback to a recomputed price.
+    """
+    from models import Quote
+
+    q = db.session.get(Quote, quote_id)
+    if not q:
+        raise BookingError("Quote not found — please get a new quote.", 409, "quote_not_found")
+
+    # --- Ownership: authenticated user, the quote's email challenge, or the
+    # claim token issued at creation. Never a body-supplied user_id.
+    q_email = (q.guest_email or "").strip().lower()
+    req_email = (customer_email or "").strip().lower()
+    owns = False
+    if q.user_id:
+        owns = bool(user_id) and q.user_id == user_id
+    elif q_email:
+        owns = bool(req_email) and q_email == req_email
+    else:
+        owns = verify_quote_claim_token(q.id, claim_token)
+    if not owns:
+        raise BookingError("This quote belongs to a different customer.", 409, "quote_not_owned")
+
+    if q.status not in QUOTE_OPEN_STATUSES or q.booking_id:
+        raise BookingError("This quote has already been used — please get a new quote.",
+                           409, "quote_already_used")
+
+    exp = q.expires_at
+    if exp is not None and exp.tzinfo is None:
+        exp = exp.replace(tzinfo=timezone.utc)
+    if exp is not None and exp <= datetime.now(timezone.utc):
+        raise BookingError("This quote has expired — please get a new quote.", 409, "quote_expired")
+
+    if not (q.binding and q.price_cents):
+        return q, None  # non-binding: linked for attribution, price recomputed
+
+    # --- Scope: items + ZIP must match exactly; a schedule/zone surcharge the
+    # quote never priced means the scope changed.
+    zip_code = q.zip_code if q.zip_code and q.zip_code != "00000" else ""
+    candidates = {
+        quote_scope_hash(items, zip_code, ""),
+        quote_scope_hash(items, zip_code, scheduled_date),
+    }
+    if q.scope_hash and q.scope_hash not in candidates:
+        raise BookingError(
+            "The items or address changed since this quote was issued — please re-quote.",
+            409, "quote_scope_mismatch",
+        )
+    if q.scope_hash != quote_scope_hash(items, zip_code, scheduled_date):
+        # Quote was priced without this date; honor it only if the date adds nothing.
+        if (est.get("time_surge_pct") or 0) > 0 or (est.get("zone_surge_multiplier") or 1.0) > 1.0:
+            raise BookingError(
+                "A scheduling surcharge applies to the date you picked that this quote "
+                "didn't include — please confirm the updated price.",
+                409, "quote_scope_mismatch",
+            )
+    return q, round(q.price_cents / 100.0, 2)
+
+
+def _consume_quote(quote, job_id):
+    """Single-use conversion: conditional UPDATE inside the booking transaction."""
+    from models import Quote
+    updated = (
+        Quote.query
+        .filter(Quote.id == quote.id, Quote.status.in_(QUOTE_OPEN_STATUSES), Quote.booking_id.is_(None))
+        .update({"status": "booked", "booking_id": job_id, "booked_at": utcnow()},
+                synchronize_session=False)
+    )
+    return updated == 1
+
+
+def _parse_address(payload):
+    address = payload.get("address")
     if isinstance(address, dict):
-        # Frontend sends address as object — flatten to string
-        lat = address.get("lat") or data.get("lat")
-        lng = address.get("lng") or data.get("lng")
-        address = address.get("street") or address.get("formatted") or ", ".join(
+        lat = address.get("lat") if address.get("lat") is not None else payload.get("lat")
+        lng = address.get("lng") if address.get("lng") is not None else payload.get("lng")
+        text = address.get("street") or address.get("formatted") or ", ".join(
             v for v in [address.get("street"), address.get("city"),
                         address.get("state"), address.get("zip")] if v
         )
+        zip_code = zip_from_address(address)
     else:
-        lat = data.get("lat")
-        lng = data.get("lng")
+        lat = payload.get("lat")
+        lng = payload.get("lng")
+        text = address
+        zip_code = zip_from_address(address)
+    if isinstance(text, str):
+        text = text.strip()
+    return text, lat, lng, zip_code
 
-    if not address:
-        return jsonify({"error": "address is required"}), 400
 
-    # --- Service area geofence check ---
-    if lat is not None and lng is not None:
+def _capture_no_coverage_lead(payload, user_id, address, lat, lng):
+    """Never charge for an address we can't fulfil: capture the lead, alert
+    admin, and answer with the waitlist message (unchanged behaviour)."""
+    from dispatcher import _notify_admin_no_coverage_lead
+
+    customer_email = customer_phone = customer_name = ""
+    try:
+        if user_id:
+            user_obj = db.session.get(User, user_id)
+            if user_obj:
+                customer_email = (user_obj.email or "").strip().lower()
+                customer_phone = user_obj.phone or ""
+                customer_name = user_obj.name or ""
+        if not customer_email:
+            customer_email = (
+                payload.get("email") or payload.get("guest_email")
+                or payload.get("customerEmail") or ""
+            ).strip().lower()
+        if not customer_phone:
+            customer_phone = (payload.get("phone") or payload.get("customerPhone") or "").strip()
+        if not customer_name:
+            customer_name = (payload.get("name") or payload.get("customerName") or "").strip()
+    except Exception:
+        pass
+
+    if customer_email:
         try:
-            if not is_in_service_area(float(lat), float(lng)):
-                return jsonify({
-                    "error": "Address is outside our service area. "
-                             "We currently serve Miami-Dade, Broward, and Palm Beach counties."
-                }), 400
-        except (TypeError, ValueError):
-            pass  # Invalid coords -- skip check, let downstream handle it
-
-    # --- Coverage check: do we actually have a hauler near this address? ---
-    # The geofence above only confirms the county is in scope. This second gate
-    # confirms an approved contractor's last-known location is within range. If
-    # not, NEVER charge — capture the lead, alert admin, and tell the customer
-    # we'll text a confirmed time. This is what kept us from missing booking
-    # #1f96fc1a in Weston and refunding $116.64.
-    if lat is not None and lng is not None:
-        try:
-            from dispatcher import has_active_coverage, _notify_admin_no_coverage_lead
-
-            if not has_active_coverage(float(lat), float(lng)):
-                # Resolve customer contact (authed user or guest fields in body)
-                customer_email = ""
-                customer_phone = ""
-                customer_name = ""
-                try:
-                    if user_id:
-                        user_obj = db.session.get(User, user_id)
-                        if user_obj:
-                            customer_email = (user_obj.email or "").strip().lower()
-                            customer_phone = user_obj.phone or ""
-                            customer_name = user_obj.name or ""
-                    if not customer_email:
-                        customer_email = (
-                            data.get("email") or data.get("guest_email") or ""
-                        ).strip().lower()
-                    if not customer_phone:
-                        customer_phone = (data.get("phone") or "").strip()
-                    if not customer_name:
-                        customer_name = (data.get("name") or "").strip()
-                except Exception:
-                    pass
-
-                # Capture as a waitlist lead if we have an email (for drip / follow-up)
-                if customer_email:
-                    try:
-                        existing = AbandonedBooking.query.filter_by(
-                            email=customer_email, converted=False
-                        ).first()
-                        if existing:
-                            existing.address = address or existing.address
-                            existing.phone = customer_phone or existing.phone
-                            existing.name = customer_name or existing.name
-                            existing.items = data.get("items") or existing.items
-                            existing.estimated_price = (
-                                data.get("estimated_price") or existing.estimated_price
-                            )
-                            existing.lead_source = "no_coverage_waitlist"
-                            existing.step = 99
-                            try:
-                                existing.waitlist_lat = float(lat)
-                                existing.waitlist_lng = float(lng)
-                            except (TypeError, ValueError):
-                                pass
-                        else:
-                            wl_lat = wl_lng = None
-                            try:
-                                wl_lat, wl_lng = float(lat), float(lng)
-                            except (TypeError, ValueError):
-                                pass
-                            db.session.add(AbandonedBooking(
-                                email=customer_email,
-                                phone=customer_phone or None,
-                                name=customer_name or None,
-                                address=address,
-                                items=data.get("items"),
-                                estimated_price=data.get("estimated_price"),
-                                lead_source="no_coverage_waitlist",
-                                step=99,
-                                waitlist_lat=wl_lat,
-                                waitlist_lng=wl_lng,
-                            ))
-                        db.session.commit()
-
-                        # Immediate branded "you're on the list" email so a guest
-                        # who closes the tab is still captured.
-                        try:
-                            from waitlist import send_holding_email
-                            send_holding_email(customer_email, customer_name, address)
-                        except Exception:
-                            pass
-                    except Exception:
-                        db.session.rollback()
-                        import logging
-                        logging.getLogger(__name__).exception(
-                            "Failed to capture no-coverage waitlist lead for %s",
-                            customer_email,
-                        )
-
-                # Fire the admin alert immediately (never blocks the response)
-                try:
-                    _notify_admin_no_coverage_lead(
-                        address=address, lat=lat, lng=lng,
-                        customer_email=customer_email,
-                        customer_phone=customer_phone,
-                        customer_name=customer_name,
-                        items=data.get("items"),
-                        estimated_price=data.get("estimated_price"),
-                    )
-                except Exception:
-                    import logging
-                    logging.getLogger(__name__).exception(
-                        "Failed to alert admin about no-coverage lead at %s",
-                        address,
-                    )
-
-                return jsonify({
-                    "error": (
-                        "We don't have a hauler available at this address yet, "
-                        "but your area is in our service zone. We've saved your "
-                        "request and our team will text you a confirmed time "
-                        "within 2 hours. No charge has been made."
-                    ),
-                    "status": "waitlist",
-                }), 400
+            existing = AbandonedBooking.query.filter_by(email=customer_email, converted=False).first()
+            if existing:
+                existing.address = address or existing.address
+                existing.phone = customer_phone or existing.phone
+                existing.name = customer_name or existing.name
+                existing.items = payload.get("items") or existing.items
+                existing.estimated_price = payload.get("estimated_price") or existing.estimated_price
+                existing.lead_source = "no_coverage_waitlist"
+                existing.step = 99
+                existing.waitlist_lat = lat
+                existing.waitlist_lng = lng
+            else:
+                db.session.add(AbandonedBooking(
+                    email=customer_email,
+                    phone=customer_phone or None,
+                    name=customer_name or None,
+                    address=address,
+                    items=payload.get("items"),
+                    estimated_price=payload.get("estimated_price"),
+                    lead_source="no_coverage_waitlist",
+                    step=99,
+                    waitlist_lat=lat,
+                    waitlist_lng=lng,
+                ))
+            db.session.commit()
+            try:
+                from waitlist import send_holding_email
+                send_holding_email(customer_email, customer_name, address)
+            except Exception:
+                pass
         except Exception:
-            # Coverage check itself failed — fail open, let booking proceed
+            db.session.rollback()
             import logging
             logging.getLogger(__name__).exception(
-                "Coverage check failed unexpectedly — allowing booking to proceed",
-            )
-
-    items = data.get("items")
-    if not items or not isinstance(items, list):
-        return jsonify({"error": "items array is required"}), 400
-
-    estimated_price = data.get("estimated_price") or data.get("estimatedPrice")
-    if estimated_price is None:
-        return jsonify({"error": "estimated_price is required"}), 400
+                "Failed to capture no-coverage waitlist lead for %s", customer_email)
 
     try:
-        estimated_price = float(estimated_price)
-    except (TypeError, ValueError):
-        return jsonify({"error": "estimated_price must be a number"}), 400
+        _notify_admin_no_coverage_lead(
+            address=address, lat=lat, lng=lng,
+            customer_email=customer_email, customer_phone=customer_phone,
+            customer_name=customer_name, items=payload.get("items"),
+            estimated_price=payload.get("estimated_price"),
+        )
+    except Exception:
+        import logging
+        logging.getLogger(__name__).exception(
+            "Failed to alert admin about no-coverage lead at %s", address)
 
-    # Parse scheduled datetime (accept camelCase from web frontend).
-    # The customer picked a Florida wall-clock slot; parse_local stores UTC.
+    raise BookingError(
+        "We don't have a hauler available at this address yet, but your area is in "
+        "our service zone. We've saved your request and our team will text you a "
+        "confirmed time within 2 hours. No charge has been made.",
+        400, "no_coverage", status="waitlist",
+    )
+
+
+def create_booking(payload, user, notify_operator=True):
+    """Canonical booking service used by POST /api/booking and every
+    compatibility adapter.
+
+    ``payload`` is the request body (camelCase or snake_case accepted);
+    ``user`` is the authenticated user id or ``None`` for a guest.
+
+    Returns ``(body, 201)``. Raises :class:`BookingError` — including a 409
+    ``price_changed`` (with the fresh estimate + ``price_version``) whenever
+    the total the customer confirmed no longer matches the server's price.
+
+    Contract changes (audit):
+      * coordinates are REQUIRED and validated (422 ``invalid_coordinates`` /
+        ``outside_market``) — no geofence bypass for missing/garbage coords;
+      * items are strictly validated (400 ``invalid_items``);
+      * ``price_version`` from /estimate is required. Clients that predate it
+        may echo ``estimated_price`` instead; it must equal the server total;
+      * binding quotes are scope-checked and consumed atomically (409
+        ``quote_*``), never silently re-priced;
+      * the job's ``total_price`` is the FINAL charge (promo already netted)
+        — payments must not subtract ``discount_amount`` again;
+      * nothing is sent to haulers and no "confirmed" message goes to the
+        customer here — those fire on payment success.
+    """
+    user_id = user
+    if not isinstance(payload, dict) or not payload:
+        raise BookingError("Request body is required")
+
+    # --- Address + coordinates (required, validated, inside the market) ---
+    address, lat, lng, zip_code = _parse_address(payload)
+    if not address:
+        raise BookingError("address is required")
+    try:
+        lat, lng = validate_coordinates(lat, lng)
+    except ValueError as exc:
+        raise BookingError(str(exc), 422, "invalid_coordinates")
+    if not is_in_service_area(lat, lng):
+        raise BookingError(
+            "Address is outside our service area. We currently serve Miami-Dade, "
+            "Broward, and Palm Beach counties.",
+            422, "outside_market",
+        )
+
+    # --- Coverage: is there actually a hauler in range? (never charge otherwise)
+    try:
+        from dispatcher import has_active_coverage
+        covered = has_active_coverage(lat, lng)
+    except Exception:
+        import logging
+        logging.getLogger(__name__).exception(
+            "Coverage check failed unexpectedly — allowing booking to proceed")
+        covered = True
+    if not covered:
+        _capture_no_coverage_lead(payload, user_id, address, lat, lng)
+
+    # --- Items (strict) ---
+    try:
+        items = validate_items(payload.get("items"))
+    except ItemValidationError as exc:
+        raise BookingError(str(exc), 400, "invalid_items")
+
+    # --- Price consent inputs ---
+    client_version = (payload.get("price_version") or payload.get("priceVersion") or "").strip()
+    estimated_price = payload.get("estimated_price", payload.get("estimatedPrice"))
+    if estimated_price is not None:
+        try:
+            estimated_price = float(estimated_price)
+        except (TypeError, ValueError):
+            raise BookingError("estimated_price must be a number")
+    if not client_version and estimated_price is None:
+        raise BookingError("price_version is required (from POST /api/booking/estimate)",
+                           400, "price_version_required")
+
+    # --- Schedule (Florida wall-clock -> UTC) ---
     scheduled_at = None
-    scheduled_date = data.get("scheduled_date") or data.get("scheduledDate")
-    scheduled_time = data.get("scheduled_time") or data.get("scheduledTimeSlot") or "09:00"
+    scheduled_date = payload.get("scheduled_date") or payload.get("scheduledDate")
+    scheduled_time = (payload.get("scheduled_time") or payload.get("scheduledTimeSlot")
+                      or payload.get("scheduledTime") or "09:00")
     if scheduled_date:
         try:
             scheduled_at = parse_local(scheduled_date, scheduled_time)
         except (ValueError, TypeError):
-            return jsonify({"error": "Invalid scheduled_date or scheduled_time format"}), 400
+            raise BookingError("Invalid scheduled_date or scheduled_time format")
+    date_part, slot = normalize_schedule(scheduled_date, scheduled_time if scheduled_date else None)
 
-    photos = data.get("photos", [])
-    notes = data.get("notes", "")
-    lead_source = data.get("lead_source") or data.get("leadSource") or None
+    photos = payload.get("photos") or payload.get("photoUrls") or payload.get("photo_urls") or []
+    if not isinstance(photos, list):
+        photos = []
+    notes = payload.get("notes", "") or ""
+    lead_source = payload.get("lead_source") or payload.get("leadSource") or None
 
-    # Rescue Engine v1: customer's disposition preference (defaults to "best").
     from impact import normalize_preference
     disposition_preference = normalize_preference(
-        data.get("disposition_preference") or data.get("dispositionPreference")
+        payload.get("disposition_preference") or payload.get("dispositionPreference")
     )
 
-    # --- Re-calculate pricing with the v2 engine ---
-    est = calculate_estimate(items, scheduled_date=scheduled_date, lat=lat, lng=lng)
+    addons = payload.get("addons") if isinstance(payload.get("addons"), dict) else None
+
+    # --- Server price ---
+    try:
+        est = calculate_estimate(items, scheduled_date=scheduled_date, lat=lat, lng=lng, addons=addons)
+    except ItemValidationError as exc:
+        raise BookingError(str(exc), 400, "invalid_items")
 
     total = est["total"]
     service_fee = est["service_fee"]
     surge_multiplier = est["surge_multiplier"]
     item_total = est["items_subtotal"]
 
-    # --- Honor a binding vision quote if this booking came from one ---
-    # Additive + defensive: a customer who got an instant photo quote should
-    # pay the LOCKED price they were shown, not a recomputed one. Any problem
-    # here falls back to the recomputed price and never blocks the booking.
-    quote_to_convert = None
-    quote_id = (data.get("quote_id") or data.get("quoteId") or "").strip()
-    if quote_id:
-        try:
-            from models import Quote
-            q = db.session.get(Quote, quote_id)
-            if q and q.status not in ("booked", "voided"):
-                q_email = (q.guest_email or "").strip().lower()
-                req_email = (data.get("customerEmail") or "").strip().lower()
-                owns = (
-                    (user_id and q.user_id == user_id)
-                    or (q.user_id is None and (not q_email or q_email == req_email))
-                )
-                exp = q.expires_at
-                if exp is not None and exp.tzinfo is None:
-                    exp = exp.replace(tzinfo=timezone.utc)
-                not_expired = exp is None or exp > datetime.now(timezone.utc)
-                if owns:
-                    quote_to_convert = q
-                    if q.binding and not_expired and q.price_cents:
-                        total = round(q.price_cents / 100.0, 2)
-                        item_total = total
-        except Exception:
-            import logging
-            logging.getLogger(__name__).exception(
-                "quote->booking: failed to apply quote %s", quote_id
-            )
-            quote_to_convert = None
+    guest_email = (payload.get("customerEmail") or payload.get("customer_email")
+                   or payload.get("email") or "").strip().lower()
 
-    # --- Apply promo code if provided ---
-    promo_code_str = data.get("promo_code", "").strip()
+    # --- Binding quote (scope-checked; consumed atomically below) ---
+    quote_to_convert = None
+    honored_quote_id = None
+    quote_id = (payload.get("quote_id") or payload.get("quoteId") or "").strip()
+    if quote_id:
+        quote_to_convert, honored = _resolve_quote(
+            quote_id, items, lat, lng, scheduled_date, est, user_id, guest_email,
+            payload.get("quote_token") or payload.get("quoteToken"),
+        )
+        if honored is not None:
+            total = honored
+            item_total = honored
+            honored_quote_id = quote_to_convert.id
+
+    # --- Promo (booking is the single owner of the discount) ---
+    promo_code_str = (payload.get("promo_code") or payload.get("promoCode") or "").strip()
     promo_code_id = None
     discount_amount = 0.0
-
     if promo_code_str:
         from routes.promos import validate_promo_code
         promo, discount, promo_error = validate_promo_code(promo_code_str, total)
         if promo_error:
-            return jsonify({"error": promo_error}), 400
+            raise BookingError(promo_error, 400, "invalid_promo")
         promo_code_id = promo.id
-        discount_amount = discount
-        total = round(total - discount, 2)
-        # NOTE: use_count is incremented on PAYMENT SUCCESS (webhook/confirm),
-        # not here — counting at booking creation double-counted every paid
-        # booking and exhausted max-use codes at half their budget.
+        discount_amount = round(float(discount), 2)
+        total = round(max(0.0, total - discount_amount), 2)
+        # use_count is incremented on PAYMENT SUCCESS, never here.
+
+    # --- One server-issued price version; the client must have seen THIS price ---
+    address_text = address if isinstance(address, str) else ""
+    version = compute_price_version(
+        items, lat, lng, address_text, date_part, slot, addons,
+        promo_code_str, discount_amount, service_fee, total,
+        quote_id=honored_quote_id,
+    )
+    if client_version:
+        consented = client_version == version
+    else:
+        consented = abs(float(estimated_price) - total) <= 0.01
+    if not consented:
+        raise BookingError(
+            "The price has changed since you last saw it — please review and confirm "
+            "the updated total.",
+            409, "price_changed",
+            estimate=_estimate_payload(est, discount_amount, promo_code_str, total, version, date_part, slot),
+            price_version=version,
+            total=total,
+        )
 
     # --- Resolve customer (auth user or guest) ---
     if not user_id:
-        guest_email = (data.get("customerEmail") or "").strip().lower()
-        guest_name = (data.get("customerName") or "").strip()
-        guest_phone = (data.get("customerPhone") or "").strip()
-
+        guest_name = (payload.get("customerName") or payload.get("name") or "").strip()
+        guest_phone = (payload.get("customerPhone") or payload.get("phone") or "").strip()
         if not guest_email:
-            return jsonify({"error": "Email is required for guest checkout"}), 400
-
-        # Find existing user by email, or create a guest record
+            raise BookingError("Email is required for guest checkout")
         existing = User.query.filter_by(email=guest_email).first()
         if existing:
             user_id = existing.id
-            # Update name/phone if not already set
             if guest_name and not existing.name:
                 existing.name = guest_name
             if guest_phone and not existing.phone:
                 existing.phone = guest_phone
         else:
             guest_user = User(
-                id=generate_uuid(),
-                email=guest_email,
-                name=guest_name or None,
-                phone=guest_phone or None,
-                role="customer",
+                id=generate_uuid(), email=guest_email, name=guest_name or None,
+                phone=guest_phone or None, role="customer",
             )
             db.session.add(guest_user)
             db.session.flush()
             user_id = guest_user.id
 
-    # --- Create Job ---
+    # --- Create Job + Payment ---
     job = Job(
         id=generate_uuid(),
         customer_id=user_id,
         status="pending",
         address=address,
-        lat=float(lat) if lat is not None else None,
-        lng=float(lng) if lng is not None else None,
+        lat=lat,
+        lng=lng,
         items=items,
         photos=photos,
         scheduled_at=scheduled_at,
@@ -1097,19 +1417,20 @@ def create_booking(user_id):
         total_price=total,
         promo_code_id=promo_code_id,
         discount_amount=discount_amount,
+        price_version=version,
         notes=notes,
         lead_source=lead_source,
         disposition_preference=disposition_preference,
         confirmation_code=generate_referral_code(),
     )
     db.session.add(job)
+    db.session.flush()
 
-    # Link the converted quote to this booking (binding price already honored).
-    if quote_to_convert is not None:
-        quote_to_convert.booking_id = job.id
-        quote_to_convert.status = "booked"
+    if quote_to_convert is not None and not _consume_quote(quote_to_convert, job.id):
+        db.session.rollback()
+        raise BookingError("This quote has already been used — please get a new quote.",
+                           409, "quote_already_used")
 
-    # --- Create Payment record ---
     payment = Payment(
         id=generate_uuid(),
         job_id=job.id,
@@ -1118,139 +1439,113 @@ def create_booking(user_id):
         payment_status="pending",
     )
     db.session.add(payment)
-
-    # --- Notify nearby online contractors ---
-    _notify_nearby_contractors(job)
-
     db.session.commit()
 
-    # --- Send booking confirmation email ---
-    try:
-        customer = db.session.get(User, user_id)
-        if customer and customer.email:
-            from email_service import email_booking_confirmed
-            email_booking_confirmed(
-                to_email=customer.email,
-                name=customer.name or "",
-                job_id=job.id,
-                date=local_date_str(job.scheduled_at),
-                time=fmt_local(job.scheduled_at, "%I:%M %p"),
-                address=job.address or "",
-            )
-    except Exception:
-        pass  # Notifications must never block the main flow
+    # NOTE (audit F30): no hauler broadcast, no "Booking Confirmed" email/SMS
+    # here — the job is unpaid. Payment success (routes/payments.py) sends the
+    # confirmation and triggers dispatch.
 
     # --- Mark abandoned booking as converted ---
     try:
         customer = db.session.get(User, user_id)
         if customer and customer.email:
-            abandoned = AbandonedBooking.query.filter_by(
-                email=customer.email, converted=False
-            ).first()
+            abandoned = AbandonedBooking.query.filter_by(email=customer.email, converted=False).first()
             if abandoned:
                 abandoned.converted = True
                 db.session.commit()
     except Exception:
         pass
 
-    # --- SMS confirmation to customer ---
-    try:
-        customer = db.session.get(User, user_id)
-        if customer and customer.phone:
-            from sms_service import send_sms_async
-            sched_str = fmt_local(scheduled_at, "%b %d at %I:%M %p", "ASAP")
-            sms_body = (
-                "Umuve Booking Confirmed!\n"
-                "#{} — ${:.0f}\n"
-                "{}\n"
-                "Scheduled: {}\n\n"
-                "We'll text you when your hauler is on the way. "
-                "Reply to this text with any questions!"
-            ).format(
-                job.confirmation_code or str(job.id)[:8],
-                total,
-                address or "",
-                sched_str,
-            )
-            send_sms_async(customer.phone, sms_body)
-    except Exception:
-        pass
-
-    # --- Schedule abandoned booking recovery SMS (30 min) ---
+    # --- Schedule abandoned booking recovery SMS (30 min) — unpaid-job safety net ---
     try:
         customer = db.session.get(User, user_id)
         if customer and customer.phone:
             from flask import current_app
             from sms_service import schedule_abandoned_booking_sms
             schedule_abandoned_booking_sms(
-                to_phone=customer.phone,
-                customer_name=customer.name or "",
-                job_id=job.id,
-                app=current_app._get_current_object(),
-                delay_seconds=1800,
+                to_phone=customer.phone, customer_name=customer.name or "",
+                job_id=job.id, app=current_app._get_current_object(), delay_seconds=1800,
             )
-    except Exception:
-        pass  # Recovery SMS must never block the main flow
-
-    # --- SMS operator about new booking ---
-    try:
-        from sms_service import send_sms_async
-        operator_phone = os.environ.get("OPERATOR_PHONE", "")
-        if operator_phone:
-            items_count = sum(i.get("quantity", 1) for i in items if isinstance(i, dict))
-            msg = (
-                "NEW BOOKING!\n"
-                "{} - {} item{}\n"
-                "${:.0f} | {}\n"
-                "Scheduled: {}"
-            ).format(
-                address or "No address",
-                items_count, "s" if items_count != 1 else "",
-                total,
-                lead_source or "direct",
-                local_date_str(scheduled_at, "ASAP"),
-            )
-            send_sms_async(operator_phone, msg)
     except Exception:
         pass
 
-    # --- Trigger n8n booking confirmation + review request webhooks ---
+    # --- Internal heads-up to the operator line (clearly labelled unpaid) ---
+    if notify_operator:
+        try:
+            from sms_service import send_sms_async
+            operator_phone = os.environ.get("OPERATOR_PHONE", "")
+            if operator_phone:
+                items_count = sum(i.get("quantity", 1) for i in items)
+                send_sms_async(operator_phone, (
+                    "NEW BOOKING (awaiting payment)\n{} - {} item{}\n${:.0f} | {}\nScheduled: {}"
+                ).format(
+                    address or "No address", items_count, "s" if items_count != 1 else "",
+                    total, lead_source or "direct", local_date_str(scheduled_at, "ASAP"),
+                ))
+        except Exception:
+            pass
+
+    # --- n8n webhooks (existing automation; unchanged) ---
     try:
         import urllib.request
         import json as _json
         n8n_base = os.environ.get("N8N_WEBHOOK_URL", "")
         if n8n_base:
             customer = db.session.get(User, user_id)
-            sched_str = fmt_local(scheduled_at, "%B %d, %Y", "ASAP")
-            payload = _json.dumps({
+            body = _json.dumps({
                 "booking_id": job.confirmation_code or str(job.id)[:8],
                 "customer_name": customer.name if customer else "Customer",
                 "customer_email": customer.email if customer else "",
-                "scheduled_date": sched_str,
+                "scheduled_date": fmt_local(scheduled_at, "%B %d, %Y", "ASAP"),
                 "estimated_cost": "{:.2f}".format(total),
                 "address": address or "",
             }).encode()
             headers = {"Content-Type": "application/json"}
-            # Booking confirmation
-            req = urllib.request.Request(
-                n8n_base + "/webhook/vnFFMeYDQOB8QIXa/webhook/booking-notification",
-                data=payload, headers=headers, method="POST",
-            )
-            urllib.request.urlopen(req, timeout=5)
-            # Review request (n8n waits 24h before sending)
-            req2 = urllib.request.Request(
-                n8n_base + "/webhook/uaxzeHYyyF2twCvH/webhook/review-request",
-                data=payload, headers=headers, method="POST",
-            )
-            urllib.request.urlopen(req2, timeout=5)
+            for path in ("/webhook/vnFFMeYDQOB8QIXa/webhook/booking-notification",
+                         "/webhook/uaxzeHYyyF2twCvH/webhook/review-request"):
+                req = urllib.request.Request(n8n_base + path, data=body, headers=headers, method="POST")
+                urllib.request.urlopen(req, timeout=5)
     except Exception:
-        pass  # n8n webhooks must never block the booking flow
+        pass
 
-    return jsonify({
+    from cancellation import make_manage_token
+    customer = db.session.get(User, user_id)
+    manage_token = make_manage_token(job.id, customer.email if customer else "")
+
+    return {
         "success": True,
         "job": job.to_dict(),
         "payment": payment.to_dict(),
-    }), 201
+        "price_version": version,
+        "manage_token": manage_token,
+    }, 201
+
+
+# ---------------------------------------------------------------------------
+# POST /api/booking  (guest or auth)
+# ---------------------------------------------------------------------------
+@booking_bp.route("", methods=["POST"])
+@limiter.limit("10 per minute")
+@optional_auth
+def create_booking_endpoint(user_id):
+    """Create a new job / booking. See :func:`create_booking` for the contract.
+
+    Body JSON:
+        address: { street, lat, lng, ... } | str (+ lat, lng)
+        items: [{ category, quantity, size? }]
+        scheduled_date / scheduledDate, scheduled_time / scheduledTimeSlot
+        price_version: str (from /estimate)  -- required
+        promo_code, quote_id, quote_token, photos, notes, lead_source,
+        customerName / customerEmail / customerPhone (guest checkout)
+    """
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({"error": "Request body is required"}), 400
+    try:
+        body, status = create_booking(data, user_id)
+    except BookingError as exc:
+        return jsonify(exc.to_dict()), exc.status
+    return jsonify(body), status
 
 
 # ---------------------------------------------------------------------------

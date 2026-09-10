@@ -346,6 +346,10 @@ class Job(db.Model):
 
     promo_code_id = Column(String(36), ForeignKey("promo_codes.id", ondelete="SET NULL"), nullable=True)
     discount_amount = Column(Float, default=0.0)
+    # Audit F09: server-issued price version the customer confirmed. total_price
+    # is the FINAL charge (discount_amount already netted out) — payments must
+    # charge total_price as-is and never subtract discount_amount again.
+    price_version = Column(String(64), nullable=True)
 
     notes = Column(Text, nullable=True)
     lead_source = Column(String(50), nullable=True, default=None)  # google_ads, craigslist, facebook, nextdoor, referral, organic, direct, google_business, etc.
@@ -436,6 +440,7 @@ class Job(db.Model):
             "total_price": self.total_price,
             "promo_code_id": self.promo_code_id,
             "discount_amount": self.discount_amount or 0.0,
+            "price_version": self.price_version,
             "notes": self.notes,
             "lead_source": self.lead_source,
             "confirmation_code": self.confirmation_code,
@@ -946,6 +951,81 @@ class Refund(db.Model):
             "status": self.status,
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }
+
+
+# ---------------------------------------------------------------------------
+# ChangeOrder (audit F12) — versioned on-site scope/price change
+# ---------------------------------------------------------------------------
+class ChangeOrder(db.Model):
+    """A proposed change to a job's scope and price after booking.
+
+    Settlement never touches the already-captured PaymentIntent: an increase
+    is a SEPARATE PaymentIntent for the delta, a decrease is a partial refund.
+    """
+
+    __tablename__ = "change_orders"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    job_id = Column(String(36), ForeignKey("jobs.id", ondelete="CASCADE"), nullable=False, index=True)
+    version = Column(Integer, nullable=False, default=1)
+    # proposed -> accepted | declined | expired ; accepted -> settled | settlement_failed | requires_action
+    status = Column(String(24), nullable=False, default="proposed", index=True)
+    reason = Column(String(40), nullable=False, default="volume_adjustment")  # volume_adjustment | reschedule
+    proposed_by_type = Column(String(20), nullable=True)   # driver | operator | customer | system
+    proposed_by_id = Column(String(36), nullable=True)
+    scope = Column(JSON, nullable=True)                    # {actual_volume, items, ...}
+    evidence_photos = Column(JSON, nullable=True)          # optional list[str]
+    old_price = Column(Float, nullable=False, default=0.0)
+    new_price = Column(Float, nullable=False, default=0.0)
+    delta = Column(Float, nullable=False, default=0.0)
+    expires_at = Column(DateTime, nullable=True)
+    decided_at = Column(DateTime, nullable=True)
+    settlement_status = Column(String(24), nullable=True)  # none | charged | refunded | requires_action | failed
+    settlement_intent_id = Column(String(255), nullable=True)
+    settlement_refund_id = Column(String(255), nullable=True)
+    settlement_error = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=utcnow)
+    updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
+
+    job = relationship("Job", backref="change_orders", foreign_keys=[job_id])
+
+    __table_args__ = (
+        Index("ix_change_orders_job_status", "job_id", "status"),
+    )
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "job_id": self.job_id,
+            "version": self.version,
+            "status": self.status,
+            "reason": self.reason,
+            "proposed_by_type": self.proposed_by_type,
+            "scope": self.scope or {},
+            "evidence_photos": self.evidence_photos or [],
+            "old_price": self.old_price,
+            "new_price": self.new_price,
+            "delta": self.delta,
+            "expires_at": self.expires_at.isoformat() if self.expires_at else None,
+            "decided_at": self.decided_at.isoformat() if self.decided_at else None,
+            "settlement_status": self.settlement_status,
+            "settlement_intent_id": self.settlement_intent_id,
+            "settlement_refund_id": self.settlement_refund_id,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
+
+
+# ---------------------------------------------------------------------------
+# PromoRedemption (audit F09) — one redemption per paid order, DB-enforced
+# ---------------------------------------------------------------------------
+class PromoRedemption(db.Model):
+    __tablename__ = "promo_redemptions"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    promo_code_id = Column(String(36), ForeignKey("promo_codes.id", ondelete="CASCADE"), nullable=False, index=True)
+    job_id = Column(String(36), ForeignKey("jobs.id", ondelete="CASCADE"), nullable=False, unique=True)
+    discount_amount = Column(Float, default=0.0)
+    created_at = Column(DateTime, default=utcnow)
 
 
 # ---------------------------------------------------------------------------
@@ -1472,6 +1552,9 @@ class Quote(db.Model):
     booking_id = Column(String(36), ForeignKey("jobs.id"), nullable=True)
     photo_urls = Column(JSON, nullable=False)                     # list[str] of R2 URLs
     raw_inference_id = Column(String(36), ForeignKey("vision_inference_logs.id", use_alter=True, name="fk_quotes_raw_inference"))
+    # Audit F11: immutable canonical scope (items + ZIP + date) the binding
+    # price was computed for. Conversion requires an exact match.
+    scope_hash = Column(String(64), nullable=True, index=True)
 
     items = relationship("QuoteItem", back_populates="quote", cascade="all, delete-orphan")
     feedback = relationship("QuoteFeedback", back_populates="quote", uselist=False)

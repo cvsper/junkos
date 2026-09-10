@@ -255,18 +255,36 @@ export const jobsApi = {
 // Booking API
 // ---------------------------------------------------------------------------
 
-interface EstimateRequest {
+export interface EstimateParams {
   items: JobItem[];
   address: Partial<Address>;
+  scheduledDate?: string;
+  scheduledTimeSlot?: string;
+  promoCode?: string;
+  quoteId?: string | null;
+  quoteToken?: string | null;
+  customerEmail?: string;
 }
 
-interface EstimateResponse {
+export interface EstimateResponse {
+  /** Total the customer will be charged (after any promo). */
   estimatedPrice: number;
+  totalBeforeDiscount: number;
+  discount: number;
   breakdown: { label: string; amount: number }[];
+  /** Server-issued version — POST /api/booking must echo it back. */
+  priceVersion: string;
+  surgeReasons: string[];
+  surgeZone: string | null;
+  /** false when the estimate was computed without coordinates. */
+  bookable: boolean;
+  quoteLocked: boolean;
+  promoError: string | null;
 }
 
 interface RawEstimateResponse {
   success: boolean;
+  price_version: string;
   estimate: {
     items_subtotal: number;
     items: { category: string; quantity: number; unit_price: number; line_total: number }[];
@@ -274,39 +292,121 @@ interface RawEstimateResponse {
     volume_discount_label: string;
     surge_amount: number;
     surge_reasons: string[];
+    surge_zone: string | null;
     base_price: number;
     service_fee: number;
+    recycling_fees?: number;
+    addons_total?: number;
     total: number;
+    total_before_discount: number;
+    discount_amount: number;
+    promo_error: string | null;
     minimum_applied: boolean;
     minimum_job_price: number;
+    price_version: string;
+    bookable: boolean;
+    quote_locked?: boolean;
   };
 }
 
+export interface MarketBounds {
+  bounds: { north: number; south: number; east: number; west: number };
+  center: { lat: number; lng: number };
+  counties: string[];
+  timezone: string;
+  /** "west,south,east,north" for the Mapbox geocoder. */
+  mapbox_bbox: string;
+  /** "lng,lat" */
+  proximity: string;
+  country: string;
+}
+
+/** Shape of a 409 from /api/booking or /api/booking/estimate (price / quote drift). */
+export interface PriceConflict {
+  code: "price_changed" | "quote_scope_mismatch" | "quote_expired" | "quote_already_used" | "quote_not_owned" | "quote_not_found";
+  error: string;
+  price_version?: string;
+  total?: number;
+  estimate?: RawEstimateResponse["estimate"];
+}
+
+export function asPriceConflict(err: unknown): PriceConflict | null {
+  if (err instanceof ApiError && err.status === 409 && err.data && typeof err.data === "object") {
+    const d = err.data as Partial<PriceConflict>;
+    if (d.code) return d as PriceConflict;
+  }
+  return null;
+}
+
 export const bookingApi = {
-  estimate: async (items: JobItem[], address: Partial<Address>): Promise<EstimateResponse> => {
+  /**
+   * POST /api/booking/estimate — the ONE server price. Sends every input that
+   * moves the price (all items, coordinates, date + time slot, promo, quote)
+   * so same-day / weekend surcharges show before payment, and returns the
+   * price_version the booking must echo.
+   */
+  estimate: async (params: EstimateParams): Promise<EstimateResponse> => {
     const raw = await apiFetch<RawEstimateResponse>("/api/booking/estimate", {
       method: "POST",
-      body: JSON.stringify({ items, address } satisfies EstimateRequest),
+      body: JSON.stringify({
+        items: params.items.map((i) => ({ category: i.category, quantity: i.quantity, size: i.size })),
+        address: params.address,
+        scheduledDate: params.scheduledDate || undefined,
+        scheduledTimeSlot: params.scheduledTimeSlot || undefined,
+        promo_code: params.promoCode || undefined,
+        quote_id: params.quoteId || undefined,
+        quote_token: params.quoteToken || undefined,
+        customerEmail: params.customerEmail || undefined,
+      }),
     });
     const est = raw.estimate;
-    const breakdown: { label: string; amount: number }[] = [
-      { label: "Items Subtotal", amount: est.items_subtotal },
-    ];
-    if (est.volume_discount > 0) {
-      breakdown.push({ label: est.volume_discount_label || "Volume Discount", amount: -est.volume_discount });
-    }
-    if (est.surge_amount > 0) {
-      breakdown.push({ label: `Surge (${est.surge_reasons.join(", ")})`, amount: est.surge_amount });
-    }
-    breakdown.push({ label: "Service Fee", amount: est.service_fee });
-    if (est.minimum_applied) {
-      const diff = est.total - (est.base_price + est.service_fee + est.surge_amount);
-      if (diff > 0) {
-        breakdown.push({ label: "Minimum Adjustment", amount: diff });
+    const breakdown: { label: string; amount: number }[] = [];
+    if (est.quote_locked) {
+      breakdown.push({ label: "Binding photo quote", amount: est.total_before_discount });
+    } else {
+      breakdown.push({ label: "Items Subtotal", amount: est.items_subtotal });
+      if (est.volume_discount > 0) {
+        breakdown.push({ label: est.volume_discount_label || "Volume Discount", amount: -est.volume_discount });
+      }
+      if (est.surge_amount > 0) {
+        breakdown.push({ label: `Surcharge (${est.surge_reasons.join(", ")})`, amount: est.surge_amount });
+      }
+      if ((est.recycling_fees || 0) > 0) {
+        breakdown.push({ label: "Disposal / Recycling Fees", amount: est.recycling_fees || 0 });
+      }
+      if ((est.addons_total || 0) > 0) {
+        breakdown.push({ label: "Add-ons", amount: est.addons_total || 0 });
+      }
+      breakdown.push({ label: "Service Fee", amount: est.service_fee });
+      if (est.minimum_applied) {
+        const diff =
+          est.total_before_discount -
+          (est.base_price + est.service_fee + est.surge_amount + (est.recycling_fees || 0) + (est.addons_total || 0));
+        if (diff > 0) {
+          breakdown.push({ label: "Minimum Adjustment", amount: diff });
+        }
       }
     }
-    return { estimatedPrice: est.total, breakdown };
+    if (est.discount_amount > 0) {
+      breakdown.push({ label: "Promo Discount", amount: -est.discount_amount });
+    }
+    return {
+      estimatedPrice: est.total,
+      totalBeforeDiscount: est.total_before_discount,
+      discount: est.discount_amount || 0,
+      breakdown,
+      priceVersion: est.price_version || raw.price_version,
+      surgeReasons: est.surge_reasons || [],
+      surgeZone: est.surge_zone ?? null,
+      bookable: est.bookable !== false,
+      quoteLocked: !!est.quote_locked,
+      promoError: est.promo_error ?? null,
+    };
   },
+
+  /** GET /api/booking/market-bounds — server-owned market geometry. */
+  getMarketBounds: () =>
+    apiFetch<{ success: boolean; market: MarketBounds }>("/api/booking/market-bounds").then((r) => r.market),
 
   submit: (bookingData: BookingFormData) =>
     apiFetch<Job>("/api/booking", {
@@ -389,6 +489,9 @@ export interface VisionQuote {
   hazmat: boolean;
   model_version: string;
   expires_at: string | null;
+  /** Claim token for anonymous quotes — required to convert the quote. */
+  quote_token?: string;
+  scope_hash?: string | null;
   items: QuoteItem[];
   pricing_breakdown: {
     items_subtotal?: number;

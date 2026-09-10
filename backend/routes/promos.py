@@ -101,6 +101,35 @@ def validate_promo_code(code, order_amount):
     return promo, discount, None
 
 
+def redeem_promo_for_job(job):
+    """Record ONE redemption for a paid order (audit F09).
+
+    Idempotent: ``promo_redemptions.job_id`` is UNIQUE, so a webhook replay or
+    a confirm/webhook race can never count the same order twice. Increments
+    ``use_count`` only when a new redemption row is created. Does not commit.
+    Returns True if a redemption was recorded now.
+    """
+    from models import PromoRedemption
+    if not job or not job.promo_code_id:
+        return False
+    if PromoRedemption.query.filter_by(job_id=job.id).first():
+        return False
+    promo = db.session.get(PromoCode, job.promo_code_id)
+    if not promo:
+        return False
+    db.session.add(PromoRedemption(
+        id=generate_uuid(), promo_code_id=promo.id, job_id=job.id,
+        discount_amount=float(job.discount_amount or 0.0),
+    ))
+    try:
+        db.session.flush()
+    except Exception:
+        db.session.rollback()
+        return False
+    promo.use_count = (promo.use_count or 0) + 1
+    return True
+
+
 # ============================================================================
 # PUBLIC: Validate promo code
 # ============================================================================

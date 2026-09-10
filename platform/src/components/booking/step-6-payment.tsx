@@ -30,7 +30,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useBookingStore, clearAbandonedBooking } from "@/stores/booking-store";
-import { bookingApi, paymentsApi, promosApi } from "@/lib/api";
+import { bookingApi, paymentsApi, asPriceConflict } from "@/lib/api";
 import { ReferralPrompt } from "@/components/referral-prompt";
 
 // ---------------------------------------------------------------------------
@@ -131,6 +131,10 @@ function PaymentFormInner() {
     clearPromo,
     leadSource,
     quoteId,
+    quoteToken,
+    priceVersion,
+    setEstimatedPrice,
+    setPriceVersion,
   } = useBookingStore();
 
   // Contact info
@@ -153,10 +157,15 @@ function PaymentFormInner() {
   const [promoLoading, setPromoLoading] = useState(false);
   const [promoError, setPromoError] = useState<string | undefined>();
 
-  // Compute final price after discount
-  const finalPrice = promoApplied
-    ? Math.max(0, estimatedPrice - promoDiscount)
-    : estimatedPrice;
+  // Audit F09: when the server re-prices between the estimate and the charge
+  // (a surcharge the customer never saw, an expired promo, a stale quote) the
+  // booking is refused with 409 and we require an explicit re-confirmation of
+  // the NEW amount before any payment attempt.
+  const [repriced, setRepriced] = useState<{ from: number; to: number } | null>(null);
+
+  // estimatedPrice is the server total for the current price version and
+  // already nets out any promo the server applied — never subtract again.
+  const finalPrice = estimatedPrice;
 
   // Apple Pay / Google Pay
   const [paymentRequest, setPaymentRequest] = useState<PaymentRequest | null>(null);
@@ -226,6 +235,78 @@ function PaymentFormInner() {
   }, []);
 
   // ---------------------------------------------------------------------------
+  // Booking submit — one place, shared by card and Apple Pay / Google Pay.
+  //
+  // Audit F09: the request carries the server-issued price_version from the
+  // estimate. If the server's price no longer matches it, the booking is
+  // refused with 409 and NO payment is attempted — we surface the new total
+  // and make the customer confirm it before they can pay.
+  // ---------------------------------------------------------------------------
+  const submitBooking = useCallback(
+    async (contact: { name: string; email: string; phone: string }): Promise<string> => {
+      const existing = createdBookingIdRef.current;
+      if (existing) return existing;
+
+      const state = useBookingStore.getState();
+      try {
+        const bookingResult = await bookingApi.submit({
+          step: 6,
+          address: state.address,
+          photoUrls: [],
+          items: state.items,
+          scheduledDate: state.scheduledDate,
+          scheduledTimeSlot: state.scheduledTimeSlot,
+          notes: state.notes,
+          disposition_preference: state.dispositionPreference,
+          estimatedPrice: state.estimatedPrice,
+          price_version: state.priceVersion,
+          ...(state.promoApplied ? { promo_code: state.promoCode } : {}),
+          ...(state.leadSource ? { lead_source: state.leadSource } : {}),
+          ...(state.quoteId ? { quote_id: state.quoteId } : {}),
+          ...(state.quoteToken ? { quote_token: state.quoteToken } : {}),
+          customerName: contact.name,
+          customerEmail: contact.email,
+          customerPhone: contact.phone,
+        });
+
+        const rawResult = bookingResult as unknown as Record<string, Record<string, unknown>>;
+        const newBookingId = (rawResult.job?.id as string) || bookingResult.id;
+        if (!newBookingId) {
+          throw new Error(
+            "Something went wrong creating your booking — please try again."
+          );
+        }
+        createdBookingIdRef.current = newBookingId;
+        const jobData = (bookingResult as unknown as Record<string, unknown>).job as
+          | Record<string, unknown>
+          | undefined;
+        setConfirmationCode((jobData?.confirmation_code as string) || "");
+        setRepriced(null);
+        return newBookingId;
+      } catch (err) {
+        const conflict = asPriceConflict(err);
+        if (!conflict) throw err;
+
+        if (conflict.code === "price_changed" && typeof conflict.total === "number") {
+          const previous = useBookingStore.getState().estimatedPrice;
+          setEstimatedPrice(conflict.total);
+          setPriceVersion(conflict.price_version ?? null);
+          setRepriced({ from: previous, to: conflict.total });
+          throw new Error(
+            `Your price changed to $${conflict.total.toFixed(2)} — review it below and tap Pay again to confirm. You have not been charged.`
+          );
+        }
+
+        // A stale or already-used photo quote: drop it and re-quote.
+        useBookingStore.getState().clearQuote();
+        setPriceVersion(null);
+        throw new Error(`${conflict.error} Please go back a step to refresh your price.`);
+      }
+    },
+    [setEstimatedPrice, setPriceVersion]
+  );
+
+  // ---------------------------------------------------------------------------
   // Apple Pay / Google Pay setup
   // ---------------------------------------------------------------------------
   useEffect(() => {
@@ -260,38 +341,11 @@ function PaymentFormInner() {
 
         // 1. Submit booking to backend (reuse a booking created on a prior
         // attempt instead of creating a duplicate Job)
-        let newBookingId = createdBookingIdRef.current;
-        if (!newBookingId) {
-          const bookingResult = await bookingApi.submit({
-            step: 6,
-            address,
-            photoUrls: [],
-            items,
-            scheduledDate,
-            scheduledTimeSlot,
-            notes,
-            disposition_preference: dispositionPreference,
-            estimatedPrice: finalPrice,
-            ...(promoApplied ? { promo_code: appliedPromoCode } : {}),
-            ...(leadSource ? { lead_source: leadSource } : {}),
-            ...(quoteId ? { quote_id: quoteId } : {}),
-            customerName: payerName,
-            customerEmail: payerEmail,
-            customerPhone: payerPhone,
-          });
-
-          const rawResult = bookingResult as unknown as Record<string, Record<string, unknown>>;
-          newBookingId = (rawResult.job?.id as string) || bookingResult.id;
-          if (!newBookingId) {
-            throw new Error(
-              "Something went wrong creating your booking — please try again."
-            );
-          }
-          createdBookingIdRef.current = newBookingId;
-          // Extract confirmation code from nested job response
-          const jobData = (bookingResult as unknown as Record<string, unknown>).job as Record<string, unknown> | undefined;
-          setConfirmationCode((jobData?.confirmation_code as string) || "");
-        }
+        const newBookingId = await submitBooking({
+          name: payerName,
+          email: payerEmail,
+          phone: payerPhone,
+        });
 
         // 2. Create payment intent
         const piResult = await paymentsApi.createIntent(
@@ -352,7 +406,7 @@ function PaymentFormInner() {
     return () => {
       paymentRequestRef.current = null;
     };
-  }, [stripe, finalPrice, estimatedPrice, address, items, scheduledDate, scheduledTimeSlot, notes, dispositionPreference, promoApplied, appliedPromoCode, leadSource]);
+  }, [stripe, finalPrice, submitBooking]);
 
   // ---------------------------------------------------------------------------
   // Card change handler
@@ -376,6 +430,24 @@ function PaymentFormInner() {
   // ---------------------------------------------------------------------------
   // Promo code handler
   // ---------------------------------------------------------------------------
+  /** Re-price on the server for the current cart, optionally with a promo. */
+  const reprice = useCallback(
+    async (code?: string) => {
+      const state = useBookingStore.getState();
+      return bookingApi.estimate({
+        items: state.items,
+        address: state.address,
+        scheduledDate: state.scheduledDate,
+        scheduledTimeSlot: state.scheduledTimeSlot,
+        promoCode: code,
+        quoteId: state.quoteId,
+        quoteToken: state.quoteToken,
+        customerEmail: email.trim() || undefined,
+      });
+    },
+    [email]
+  );
+
   const handleApplyPromo = async () => {
     const code = promoInput.trim();
     if (!code) {
@@ -387,12 +459,16 @@ function PaymentFormInner() {
     setPromoError(undefined);
 
     try {
-      const result = await promosApi.validate(code, estimatedPrice);
-      if (result.valid && result.discount_amount !== undefined) {
-        applyPromo(code, result.discount_amount);
-        setPromoInput("");
+      // The server prices the discount and issues the version covering the
+      // discounted total, so the amount shown is exactly what is charged.
+      const result = await reprice(code);
+      if (result.promoError || result.discount <= 0) {
+        setPromoError(result.promoError || "Invalid promo code.");
       } else {
-        setPromoError(result.error || "Invalid promo code.");
+        applyPromo(code, result.discount, result.priceVersion);
+        setEstimatedPrice(result.estimatedPrice);
+        setPromoInput("");
+        setRepriced(null);
       }
     } catch (err) {
       const message =
@@ -403,9 +479,16 @@ function PaymentFormInner() {
     }
   };
 
-  const handleRemovePromo = () => {
+  const handleRemovePromo = async () => {
     clearPromo();
     setPromoError(undefined);
+    try {
+      const result = await reprice();
+      setEstimatedPrice(result.estimatedPrice);
+      setPriceVersion(result.priceVersion);
+    } catch {
+      // Leave the version cleared — submit will re-confirm before charging.
+    }
   };
 
   // ---------------------------------------------------------------------------
@@ -445,6 +528,13 @@ function PaymentFormInner() {
       setErrors({ general: "Payment system is still loading. Please wait." });
       return;
     }
+    if (!priceVersion && !createdBookingIdRef.current) {
+      setErrors({
+        general:
+          "Your price needs to be refreshed before payment. Please go back a step and confirm it.",
+      });
+      return;
+    }
 
     setIsSubmitting(true);
     setErrors({});
@@ -452,38 +542,11 @@ function PaymentFormInner() {
     try {
       // 1. Submit the booking to the backend (reuse a booking created on a
       // prior attempt — e.g. a declined card — instead of creating a duplicate)
-      let newBookingId = createdBookingIdRef.current;
-      if (!newBookingId) {
-        const bookingResult = await bookingApi.submit({
-          step: 6,
-          address,
-          photoUrls: [],
-          items,
-          scheduledDate,
-          scheduledTimeSlot,
-          notes,
-          disposition_preference: dispositionPreference,
-          estimatedPrice: finalPrice,
-          ...(promoApplied ? { promo_code: appliedPromoCode } : {}),
-          ...(leadSource ? { lead_source: leadSource } : {}),
-          ...(quoteId ? { quote_id: quoteId } : {}),
-          customerName: name.trim(),
-          customerEmail: email.trim(),
-          customerPhone: phone.trim(),
-        });
-
-        const rawResult = bookingResult as unknown as Record<string, Record<string, unknown>>;
-        newBookingId = (rawResult.job?.id as string) || bookingResult.id;
-        if (!newBookingId) {
-          throw new Error(
-            "Something went wrong creating your booking — please try again."
-          );
-        }
-        createdBookingIdRef.current = newBookingId;
-        // Extract confirmation code from nested job response
-        const jobData = (bookingResult as unknown as Record<string, unknown>).job as Record<string, unknown> | undefined;
-        setConfirmationCode((jobData?.confirmation_code as string) || "");
-      }
+      const newBookingId = await submitBooking({
+        name: name.trim(),
+        email: email.trim(),
+        phone: phone.trim(),
+      });
 
       // 2. Create payment intent on the server
       const paymentIntentResult = await paymentsApi.createIntent(
@@ -941,11 +1004,29 @@ function PaymentFormInner() {
 
       {/* Total and Submit */}
       <div className="rounded-lg border border-border bg-card p-5">
+        {repriced && (
+          <div
+            role="alert"
+            className="mb-4 flex items-start gap-2 rounded-lg border border-amber-300 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-950/20"
+          >
+            <AlertCircle className="h-4 w-4 shrink-0 text-amber-600 mt-0.5" aria-hidden="true" />
+            <div className="text-xs text-amber-800 dark:text-amber-300">
+              <p className="font-semibold">
+                Your price changed from ${repriced.from.toFixed(2)} to $
+                {repriced.to.toFixed(2)}
+              </p>
+              <p className="mt-0.5">
+                Nothing has been charged. Review the new total and tap Pay to
+                confirm it.
+              </p>
+            </div>
+          </div>
+        )}
         <div className="space-y-2 mb-4">
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">Subtotal</span>
             <span className="text-sm text-foreground">
-              ${estimatedPrice.toFixed(2)}
+              ${(finalPrice + (promoApplied ? promoDiscount : 0)).toFixed(2)}
             </span>
           </div>
           {promoApplied && (
