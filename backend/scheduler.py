@@ -70,6 +70,15 @@ def _sameday_standby_ask(app):
         logger.exception("standby ask job failed")
 
 
+def _owed_alert(app):
+    """5pm Florida: haulers still unpaid for jobs completed today (sameday_pay.py)."""
+    try:
+        from sameday_pay import owed_alert
+        owed_alert(app)
+    except Exception:
+        logger.exception("owed alert failed")
+
+
 def _check_desk_health(app):
     """Desk line dependencies (Twilio balance/webhooks/browser-calling env). See desk_health.py."""
     try:
@@ -631,6 +640,16 @@ def init_scheduler(app):
             args=[app],
             id="sameday_standby_ask",
             name="Same-day standby roster text",
+        )
+
+        # Haulers owed for today — 17:00 Florida time
+        scheduler.add_job(
+            _owed_alert,
+            "cron",
+            hour=17, minute=0, timezone="America/New_York",
+            args=[app],
+            id="owed_alert",
+            name="Haulers owed today alert",
         )
 
         # Call Desk line health — every 30 min, alerts on state change

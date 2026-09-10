@@ -109,7 +109,8 @@ def build_rate_card_pdf(prospect, va_name=None, prices=None, desk_number=None):
     pdf.set_font("Helvetica", "", 11)
     if supply:
         intro = ("Umuve sends booked, paid junk-removal jobs to local hauling companies. "
-                 "These are the prices customers pay per item; you keep the majority of every job.")
+                 "These are the prices customers pay per item; you keep the majority of every job, "
+                 "paid to your debit card the same day the job is marked complete.")
     else:
         intro = ("One number for every cleanout. You get the exact price up front, "
                  "pickup same or next day, and one invoice a month for standing accounts.")

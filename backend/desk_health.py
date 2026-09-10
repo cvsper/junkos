@@ -110,6 +110,13 @@ def check_desk_health(alert=False):
     except Exception:
         put("transcription", "ok", "no errors")
 
+    try:
+        from sameday_pay import balance_check
+        b = balance_check()
+        put("stripe_balance", b["state"], b["reason"], available=b.get("available"), expected=b.get("expected"))
+    except Exception as e:
+        put("stripe_balance", "warn", "balance check failed: " + type(e).__name__)
+
     put("sentry", "ok" if _env("SENTRY_DSN") else "warn",
         "configured" if _env("SENTRY_DSN") else "SENTRY_DSN not set — backend errors go unreported")
 

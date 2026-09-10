@@ -570,6 +570,11 @@ class Payment(db.Model):
     payout_status = Column(String(30), default="pending")
     payment_status = Column(String(30), default="pending")
     tip_amount = Column(Float, default=0.0)
+    # same-day pay (sameday_pay.py): how the hauler was paid and when it lands
+    payout_method = Column(String(20), nullable=True)        # instant | standard | manual
+    instant_payout_id = Column(String(64), nullable=True)
+    payout_arrival_at = Column(DateTime, nullable=True)
+    payout_fee_cover = Column(Float, default=0.0)            # instant fee Umuve absorbed
 
     created_at = Column(DateTime, default=utcnow)
     updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)

@@ -399,8 +399,16 @@ def attempt_payout(job_id):
         db.session.commit()
         logger.info("Payout of $%.2f sent for job %s -> contractor %s",
                     amount, job_id, contractor.id)
+        # Same-day pay: push it from the connected account to the hauler's
+        # debit card right now (falls back to standard + a text). Never raises.
+        try:
+            from sameday_pay import instant_after_transfer
+            instant = instant_after_transfer(payment, contractor, amount)
+        except Exception:
+            logger.exception("instant payout step crashed for job %s", job_id)
+            instant = {"method": "standard", "reason": "instant step crashed"}
         return {"ok": True, "status": "paid",
-                "message": "Payout sent", "amount": amount}
+                "message": "Payout sent", "amount": amount, "instant": instant}
     except Exception:
         logger.exception("attempt_payout crashed for job %s", job_id)
         try:

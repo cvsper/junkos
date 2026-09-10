@@ -236,8 +236,8 @@ _SUPPLY_OBJECTIONS = [
      "You don't need one to start. Text JOBS to our number and we send job offers by text; "
      "you reply to grab one. The app comes later if you want it."),
     ("When do I get paid?",
-     "Standard payouts are free and hit your bank; instant cash-out to a debit card the same "
-     "day for a small fee. Payouts run through Stripe."),
+     "The same day. When the job is marked complete, your share goes to your debit card that "
+     "day — we cover the instant fee. No invoices, no waiting on the customer."),
     ("Do I need insurance?",
      "You need to be a legit business with a truck. We ask for your license and insurance "
      "when you set up — we review within 24 hours."),
@@ -251,7 +251,7 @@ _SUPPLY_OBJECTIONS = [
 
 _SUPPLY_ANSWERS = [
     ("What they keep", "The majority of every job. Example on the site: $200 job → $150 to the hauler."),
-    ("Getting paid", "Stripe payouts. Standard is free; instant cash-out same day for a small fee."),
+    ("Getting paid", "Paid to their debit card the same day the job is marked complete. Umuve covers the instant fee. Phone-only haulers: Zelle the same day."),
     ("No app needed", "Text JOBS to the Umuve number → job offers by text, reply to accept. App optional."),
     ("Setup", "goumuve.com/operators — about two minutes. We review within 24 hours."),
     ("What they need", "A truck, a legit business, license and insurance on file."),

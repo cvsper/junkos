@@ -28,6 +28,7 @@ FLAGS = {
     "maya_fallback":  {"default": True,  "desc": "Send unanswered / after-hours inbound calls to Maya instead of voicemail"},
     "sameday_wave":   {"default": True,  "desc": "Desk can text booked same-day jobs to the nearest haulers with one-tap accept"},
     "sameday_wave_maya": {"default": True, "desc": "Maya's same-day bookings run the same hauler offer wave automatically"},
+    "auto_instant_payout": {"default": True, "desc": "Push every completed job's payout to the hauler's debit card the same day (Umuve covers the instant fee; standard payout + text if no card)"},
 }
 
 

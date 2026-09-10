@@ -56,6 +56,11 @@ COLUMN_MIGRATIONS = [
     # Contractor table
     ("contractors", "is_operator", "BOOLEAN", "BOOLEAN", "FALSE"),
     ("contractors", "last_heartbeat_at", "DATETIME", "TIMESTAMP", "NULL"),
+    # same-day hauler pay (sameday_pay.py)
+    ("payments", "payout_method", "VARCHAR(20)", "VARCHAR(20)", "NULL"),
+    ("payments", "instant_payout_id", "VARCHAR(64)", "VARCHAR(64)", "NULL"),
+    ("payments", "payout_arrival_at", "DATETIME", "TIMESTAMP", "NULL"),
+    ("payments", "payout_fee_cover", "REAL", "DOUBLE PRECISION", "0"),
     ("call_prospects", "side", "VARCHAR(8)", "VARCHAR(8)", "NULL"),
     ("contractors", "operator_id", "VARCHAR(36)", "VARCHAR(36)", "NULL"),
     ("contractors", "operator_commission_rate", "FLOAT", "FLOAT", "0.15"),

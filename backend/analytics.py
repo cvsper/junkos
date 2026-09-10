@@ -581,6 +581,11 @@ MANAGER_HTML = r"""<!doctype html>
         <div class="mg-tablewrap"><table class="mg-table" id="t-lists"></table></div>
       </section>
 
+      <section class="mg-sec" id="pay-sec">
+        <div class="mg-sec-h"><h2>Haulers owed today</h2><span class="mg-note" id="pay-note">Every completed job pays out the same day. This is what's still waiting on you.</span></div>
+        <div id="pay"></div>
+      </section>
+
       <section class="mg-sec" id="review-sec">
         <div class="mg-sec-h"><h2>Calls to review</h2><span class="mg-note" id="rq-note">Lowest score first</span></div>
         <div id="rq"></div>
@@ -594,6 +599,7 @@ MANAGER_HTML = r"""<!doctype html>
   </section>
 </div>
 <script src="/static/manager.js?v=1"></script>
+<script src="/static/manager-pay.js?v=1"></script>
 </body>
 </html>
 """

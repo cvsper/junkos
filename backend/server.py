@@ -313,6 +313,8 @@ try:
     import models_sameday  # noqa: F401  (tables for create_all)
     from sameday import sameday_bp
     app.register_blueprint(sameday_bp)
+    from sameday_pay import pay_bp
+    app.register_blueprint(pay_bp)
 except Exception as _sd_exc:  # pragma: no cover
     import logging as _logging
     _logging.getLogger(__name__).warning("sameday_bp not registered: %s", _sd_exc)
@@ -968,7 +970,7 @@ def get_available_time_slots(requested_date=None):
 @limiter.exempt
 def health_check():
     """Health check endpoint (exempt from rate limiting)"""
-    return jsonify({"status": "healthy", "service": "Umuve API", "version": "2.2.16-card-prep"}), 200
+    return jsonify({"status": "healthy", "service": "Umuve API", "version": "2.2.17-sameday-pay"}), 200
 
 
 def _check_admin_seed_secret(path_secret=None):
