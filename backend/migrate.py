@@ -214,6 +214,13 @@ COLUMN_MIGRATIONS = [
     # when no vision key is configured.  Added so the feature degrades gracefully
     # on deployments where the quotes table already exists without this column.
     ("quotes", "origin", "VARCHAR(16)", "VARCHAR(16)", "'vision'"),
+
+    # Audit F24 — retryable invoice delivery + base-fee idempotency
+    ("portal_invoices", "delivery_attempts", "INTEGER", "INTEGER", "0"),
+    ("portal_invoices", "delivery_error", "TEXT", "TEXT", "NULL"),
+    ("portal_invoices", "last_delivery_attempt_at", "DATETIME", "TIMESTAMP", "NULL"),
+    ("portal_invoice_line_items", "kind", "VARCHAR(16)", "VARCHAR(16)", "NULL"),
+    ("portal_invoice_line_items", "stripe_invoice_item_id", "VARCHAR(64)", "VARCHAR(64)", "NULL"),
 ]
 
 
@@ -1108,6 +1115,64 @@ NEW_TABLES_SQLITE.extend(_PORTAL_V1_SQLITE)
 NEW_TABLES_SQLITE.extend(_OPS_V1_SQLITE)
 NEW_TABLES_SQLITE.extend(_PORTAL_SSO_SQLITE)
 
+# Audit F23/F24 — provider webhook dedup + recurring occurrence key
+_AUDIT_SQLITE = [
+    dedent("""\
+    CREATE TABLE IF NOT EXISTS provider_events (
+        id VARCHAR(36) PRIMARY KEY,
+        provider VARCHAR(32) NOT NULL,
+        event_id VARCHAR(128) NOT NULL,
+        event_type VARCHAR(64),
+        detail TEXT,
+        created_at DATETIME,
+        CONSTRAINT uq_provider_event UNIQUE (provider, event_id)
+    )"""),
+    dedent("""\
+    CREATE TABLE IF NOT EXISTS recurring_occurrences (
+        id VARCHAR(36) PRIMARY KEY,
+        kind VARCHAR(16) NOT NULL DEFAULT 'residential',
+        schedule_id VARCHAR(36) NOT NULL,
+        occurrence_at DATETIME NOT NULL,
+        job_id VARCHAR(36) REFERENCES jobs(id) ON DELETE SET NULL,
+        status VARCHAR(24) NOT NULL DEFAULT 'created',
+        detail TEXT,
+        created_at DATETIME,
+        CONSTRAINT uq_recurring_occurrence UNIQUE (schedule_id, occurrence_at)
+    )"""),
+]
+_AUDIT_PG = [
+    dedent("""\
+    CREATE TABLE IF NOT EXISTS provider_events (
+        id VARCHAR(36) PRIMARY KEY,
+        provider VARCHAR(32) NOT NULL,
+        event_id VARCHAR(128) NOT NULL,
+        event_type VARCHAR(64),
+        detail TEXT,
+        created_at TIMESTAMP,
+        CONSTRAINT uq_provider_event UNIQUE (provider, event_id)
+    )"""),
+    dedent("""\
+    CREATE TABLE IF NOT EXISTS recurring_occurrences (
+        id VARCHAR(36) PRIMARY KEY,
+        kind VARCHAR(16) NOT NULL DEFAULT 'residential',
+        schedule_id VARCHAR(36) NOT NULL,
+        occurrence_at TIMESTAMP NOT NULL,
+        job_id VARCHAR(36) REFERENCES jobs(id) ON DELETE SET NULL,
+        status VARCHAR(24) NOT NULL DEFAULT 'created',
+        detail TEXT,
+        created_at TIMESTAMP,
+        CONSTRAINT uq_recurring_occurrence UNIQUE (schedule_id, occurrence_at)
+    )"""),
+]
+_AUDIT_NAMES = ["provider_events", "recurring_occurrences"]
+_AUDIT_INDEXES_SQLITE = [
+    "CREATE INDEX IF NOT EXISTS ix_provider_events_provider ON provider_events (provider)",
+    "CREATE INDEX IF NOT EXISTS ix_recurring_occurrences_schedule_id ON recurring_occurrences (schedule_id)",
+    "CREATE INDEX IF NOT EXISTS ix_recurring_occurrences_job_id ON recurring_occurrences (job_id)",
+]
+_AUDIT_INDEXES_PG = list(_AUDIT_INDEXES_SQLITE)
+NEW_TABLES_SQLITE.extend(_AUDIT_SQLITE)
+
 NEW_TABLES_PG = [
     # referrals
     dedent("""\
@@ -1942,6 +2007,7 @@ NEW_TABLES_PG.extend(_OPS_PG)
 NEW_TABLES_PG.extend(_PORTAL_V1_PG)
 NEW_TABLES_PG.extend(_OPS_V1_PG)
 NEW_TABLES_PG.extend(_PORTAL_SSO_PG)
+NEW_TABLES_PG.extend(_AUDIT_PG)
 
 # audit F06 / F13 — payment_attempts, payouts (models_payments.py)
 _PAYMENTS_LEDGER_SQLITE = [
@@ -2052,6 +2118,7 @@ NEW_TABLE_NAMES.extend(_PORTAL_V1_NAMES)
 NEW_TABLE_NAMES.extend(_OPS_V1_NAMES)
 NEW_TABLE_NAMES.extend(_PORTAL_SSO_NAMES)
 NEW_TABLE_NAMES.extend(["payment_attempts", "payouts"])
+NEW_TABLE_NAMES.extend(_AUDIT_NAMES)
 
 # ---------------------------------------------------------------------------
 # job_offers — marketplace broadcast / first-to-accept (Growth-1)
@@ -2349,6 +2416,8 @@ def run_migrations(database_url=None):
             cursor.execute(ddl)
         for ddl in _OPS_V1_INDEXES_SQLITE:
             cursor.execute(ddl)
+        for ddl in _AUDIT_INDEXES_SQLITE:
+            cursor.execute(ddl)
 
         _apply_unique_indexes(cursor, _table_exists_sqlite, actions)
 
@@ -2389,6 +2458,8 @@ def run_migrations(database_url=None):
         for ddl in _OPS_INDEXES_PG:
             cursor.execute(ddl)
         for ddl in _OPS_V1_INDEXES_PG:
+            cursor.execute(ddl)
+        for ddl in _AUDIT_INDEXES_PG:
             cursor.execute(ddl)
 
         _apply_unique_indexes(cursor, _table_exists_pg, actions)

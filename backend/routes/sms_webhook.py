@@ -20,6 +20,10 @@ from datetime import datetime, timezone
 
 from flask import Blueprint, request, Response
 
+# Module-level so the provider_events table is registered before
+# db.create_all() runs (webhook_guard imports models_webhooks).
+import webhook_guard  # noqa: F401
+
 logger = logging.getLogger(__name__)
 
 sms_webhook_bp = Blueprint("sms_webhook", __name__, url_prefix="/api/sms")
@@ -28,26 +32,38 @@ sms_webhook_bp = Blueprint("sms_webhook", __name__, url_prefix="/api/sms")
 def _validate_twilio_signature():
     """Validate the X-Twilio-Signature header on the inbound webhook.
 
-    Fail-safe by design (this is live SMS — a misconfig must not brick it):
-      - Only enforced when TWILIO_AUTH_TOKEN is set AND
-        SMS_WEBHOOK_VALIDATE (default "on") is not "off". Setting
-        SMS_WEBHOOK_VALIDATE=off is the escape hatch if the reconstructed
-        URL ever mismatches what Twilio signed in prod.
-      - Any unexpected error in the validator itself allows the request
-        through (logged) rather than dropping customer texts.
+    Policy (audit F23, shared with desk_line.py which reuses this helper):
+      - Production (``app_config.is_production()``): a missing
+        TWILIO_AUTH_TOKEN REJECTS every request (403, logged once), and an
+        exception inside the validator also rejects. ``SMS_WEBHOOK_VALIDATE=off``
+        is NOT honoured in production — a URL-reconstruction mismatch is an
+        incident to fix, not a reason to accept unsigned texts.
+      - Development / tests: the historical fail-safe stays — no token or
+        ``SMS_WEBHOOK_VALIDATE=off`` skips validation, and a validator error
+        allows the request through (logged).
 
     Returns True when the request may proceed, False to reject with 403.
     """
+    from webhook_guard import (
+        allow_when_secret_missing, allow_on_validator_error, is_production,
+    )
+
     auth_token = os.environ.get("TWILIO_AUTH_TOKEN", "")
     validate_flag = os.environ.get("SMS_WEBHOOK_VALIDATE", "on").strip().lower()
 
-    if not auth_token or validate_flag == "off":
-        logger.warning(
-            "Twilio signature validation SKIPPED (auth_token_set=%s, "
-            "SMS_WEBHOOK_VALIDATE=%s)",
-            bool(auth_token), validate_flag,
+    if not auth_token:
+        return allow_when_secret_missing(
+            "twilio", "Inbound SMS/MMS and the desk line cannot be verified.",
         )
-        return True
+    if validate_flag == "off":
+        if is_production():
+            logger.warning(
+                "SMS_WEBHOOK_VALIDATE=off is ignored in production — "
+                "Twilio signatures are still enforced"
+            )
+        else:
+            logger.warning("Twilio signature validation SKIPPED (SMS_WEBHOOK_VALIDATE=off)")
+            return True
 
     try:
         from twilio.request_validator import RequestValidator
@@ -64,11 +80,16 @@ def _validate_twilio_signature():
 
         signature = request.headers.get("X-Twilio-Signature", "")
         validator = RequestValidator(auth_token)
-        return validator.validate(url, request.form, signature)
-    except Exception:
-        # Never let a validator bug take down inbound SMS — allow and log.
-        logger.exception("Twilio signature validation errored; allowing request")
-        return True
+        return bool(validator.validate(url, request.form, signature))
+    except Exception as exc:
+        return allow_on_validator_error("twilio", exc)
+
+
+def _empty_twiml():
+    return Response(
+        '<?xml version="1.0" encoding="UTF-8"?><Response></Response>',
+        mimetype="text/xml",
+    )
 
 
 @sms_webhook_bp.route("/inbound", methods=["POST"])
@@ -85,6 +106,16 @@ def inbound_sms():
             request.remote_addr,
         )
         return Response("Forbidden", status=403)
+
+    # Twilio retries on timeout/5xx; MessageSid is stable across retries.
+    # Persisting it makes a redelivered text a no-op instead of a second
+    # quote / second signup / duplicate desk thread. 200 so Twilio stops.
+    _sid = request.form.get("MessageSid", "")
+    if _sid:
+        from webhook_guard import record_provider_event
+        if not record_provider_event("twilio", _sid, event_type="inbound_sms"):
+            logger.info("Duplicate Twilio MessageSid %s ignored", _sid)
+            return _empty_twiml()
 
     from_phone = request.form.get("From", "")
     body = request.form.get("Body", "").strip()

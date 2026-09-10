@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from models import (
-    db, User, Job, Payment, RecurringBooking,
+    db, User, Job, Payment, RecurringBooking, RecurringOccurrence,
     generate_uuid, utcnow,
 )
 from auth_routes import require_auth
@@ -348,6 +348,336 @@ def delete_recurring(user_id, recurring_id):
 
 
 # ---------------------------------------------------------------------------
+# Recurring job materialisation engine
+# ---------------------------------------------------------------------------
+# Shared by POST /api/recurring/generate-next and scheduler._generate_recurring_jobs
+# so there is exactly ONE implementation of "turn a due recurring booking into
+# a real, priced, payable, dispatched job" (audit F24).
+#
+# What a due occurrence produces:
+#   1. A ``recurring_occurrences`` claim on (schedule_id, occurrence_at) — the
+#      uniqueness key. Running the sweep twice creates one job, not two.
+#   2. A real price from routes.booking.calculate_estimate — the same function
+#      the live booking funnel uses. Never $0.
+#   3. A Payment for that real amount. If the customer has a saved card we
+#      charge it off-session and the job goes straight to ``confirmed`` +
+#      dispatch. If they don't, the job is ``awaiting_payment`` and they get a
+#      pay link — instead of a $0 "pending" Payment row that looks settled.
+#   4. Dispatch (dispatcher.auto_assign_job_async) for jobs that are paid for.
+# ---------------------------------------------------------------------------
+
+
+def _claim_occurrence(recurring, occurrence_at):
+    """Claim (booking id, occurrence_at). None when another run owns it."""
+    from sqlalchemy.exc import IntegrityError
+
+    occ = RecurringOccurrence(
+        kind="residential", schedule_id=recurring.id,
+        occurrence_at=occurrence_at, status="created",
+    )
+    try:
+        with db.session.begin_nested():
+            db.session.add(occ)
+            db.session.flush()
+        return occ
+    except IntegrityError:
+        logger.info(
+            "recurring: occurrence already claimed booking=%s at=%s — skipping",
+            recurring.id, occurrence_at,
+        )
+        return None
+
+
+def _price_occurrence(recurring):
+    """Price this pickup with the live estimator. Returns the estimate dict.
+
+    Imports routes.booking lazily: booking.py owns the pricing rules and we
+    must never fork them (a second copy is how recurring drifted to $0).
+    """
+    from routes.booking import calculate_estimate
+
+    return calculate_estimate(
+        recurring.items or [],
+        scheduled_date=recurring.next_scheduled_at,
+        lat=recurring.lat,
+        lng=recurring.lng,
+    )
+
+
+def _saved_payment_method(customer):
+    """Return (stripe_module, customer_id, payment_method_id) when the customer
+    has a card we may charge off-session, else (None, None, None)."""
+    if not customer or not getattr(customer, "stripe_customer_id", None):
+        return None, None, None
+    key = os.environ.get("STRIPE_SECRET_KEY", "")
+    if not key:
+        return None, None, None
+    try:
+        import stripe
+        stripe.api_key = key
+        methods = stripe.PaymentMethod.list(
+            customer=customer.stripe_customer_id, type="card", limit=1,
+        )
+        items = getattr(methods, "data", None) or []
+        if not items:
+            return None, None, None
+        pm_id = items[0].id if hasattr(items[0], "id") else items[0].get("id")
+        return stripe, customer.stripe_customer_id, pm_id
+    except Exception:
+        logger.exception("recurring: could not look up saved card for %s",
+                         getattr(customer, "id", "?"))
+        return None, None, None
+
+
+def _charge_off_session(customer, job, amount):
+    """Charge the customer's saved card for a recurring pickup.
+
+    Returns the PaymentIntent id on success, None otherwise (no card, no
+    Stripe key, declined, or authentication required). Never raises.
+    """
+    stripe, customer_id, pm_id = _saved_payment_method(customer)
+    if not stripe:
+        return None
+    try:
+        intent = stripe.PaymentIntent.create(
+            amount=int(round(float(amount) * 100)),
+            currency="usd",
+            customer=customer_id,
+            payment_method=pm_id,
+            off_session=True,
+            confirm=True,
+            description="Umuve recurring pickup",
+            metadata={"job_id": job.id, "booking_id": job.id, "source": "recurring"},
+            idempotency_key="recurring-{}".format(job.id),
+        )
+        if getattr(intent, "status", None) == "succeeded":
+            return intent.id
+        logger.warning("recurring: off-session charge for job %s ended in status %s",
+                       job.id, getattr(intent, "status", "?"))
+        return None
+    except Exception:
+        # CardError / authentication_required / anything else: fall back to a
+        # pay link rather than silently booking unpaid work.
+        logger.exception("recurring: off-session charge failed for job %s", job.id)
+        return None
+
+
+def _send_pay_link(customer, job, amount):
+    """Text/email the customer a Stripe Checkout link for this pickup.
+
+    Reuses the same checkout-link builder Maya's phone bookings use, so the
+    payment reconciles through the existing webhook path. Never raises.
+    """
+    if not customer:
+        return False
+    try:
+        from routes.vapi import _build_checkout_url
+        url = _build_checkout_url(job.id, amount)
+    except Exception:
+        logger.exception("recurring: could not build pay link for job %s", job.id)
+        return False
+
+    when = ""
+    try:
+        when = " on {}".format(to_local(job.scheduled_at).strftime("%a %b %-d"))
+    except Exception:
+        pass
+    message = (
+        "Umuve: your recurring pickup{} is scheduled. Total ${:.2f}. "
+        "Pay here to lock it in: {}".format(when, float(amount), url)
+    )
+    sent = False
+    if getattr(customer, "phone", None):
+        try:
+            from sms_service import send_sms_async
+            send_sms_async(customer.phone, message)
+            sent = True
+        except Exception:
+            logger.exception("recurring: pay-link SMS failed for job %s", job.id)
+    if getattr(customer, "email", None):
+        try:
+            from notifications import send_email
+            send_email(
+                customer.email,
+                "Your Umuve recurring pickup — payment needed",
+                "<p>Your recurring pickup{} is scheduled at {}.</p>"
+                "<p><strong>Total: ${:.2f}</strong></p>"
+                '<p><a href="{}">Pay now to confirm</a></p>'.format(
+                    when, job.address, float(amount), url),
+            )
+            sent = True
+        except Exception:
+            logger.exception("recurring: pay-link email failed for job %s", job.id)
+    return sent
+
+
+def sweep_paid_awaiting_payment_jobs():
+    """Confirm + dispatch recurring jobs whose pay link has since been paid.
+
+    ``_handle_payment_succeeded`` marks the Payment succeeded but only moves a
+    job out of ``pending``, so an ``awaiting_payment`` recurring job would
+    otherwise stay parked after the customer pays. Returns the job ids
+    confirmed. Never raises.
+    """
+    confirmed = []
+    try:
+        rows = (
+            db.session.query(Job)
+            .join(Payment, Payment.job_id == Job.id)
+            .filter(Job.status == "awaiting_payment",
+                    Payment.payment_status == "succeeded")
+            .limit(200)
+            .all()
+        )
+        for job in rows:
+            job.status = "confirmed"
+            job.updated_at = utcnow()
+            confirmed.append(job.id)
+        if confirmed:
+            db.session.commit()
+            _dispatch_jobs(confirmed)
+    except Exception:
+        logger.exception("recurring: awaiting-payment sweep failed")
+        db.session.rollback()
+    return confirmed
+
+
+def _dispatch_jobs(job_ids):
+    """Hand paid jobs to the dispatcher (respects DISPATCH_MODE). Never raises."""
+    if not job_ids:
+        return
+    try:
+        from flask import current_app
+        from dispatcher import auto_assign_job_async
+        app_obj = current_app._get_current_object()
+    except Exception:
+        logger.exception("Could not import dispatcher for recurring jobs")
+        return
+    for job_id in job_ids:
+        try:
+            auto_assign_job_async(job_id, app_obj)
+        except Exception:
+            logger.exception("Recurring dispatch failed for job %s", job_id)
+
+
+def generate_due_recurring_jobs(now=None):
+    """Materialise every due residential recurring booking.
+
+    Returns ``{"created": [job_id, ...], "dispatched": [job_id, ...],
+    "awaiting_payment": [job_id, ...]}``.
+
+    Each occurrence runs in its own savepoint, so one booking that blows up
+    (bad address, pricing error) cannot discard the jobs already built in the
+    same sweep.
+    """
+    now = now or datetime.now(timezone.utc)
+
+    # Anything paid via a link since the last sweep gets confirmed + dispatched.
+    sweep_paid_awaiting_payment_jobs()
+
+    due_bookings = RecurringBooking.query.filter(
+        RecurringBooking.is_active == True,  # noqa: E712
+        RecurringBooking.next_scheduled_at <= now,
+    ).all()
+
+    created, to_dispatch, awaiting = [], [], []
+
+    for recurring in due_bookings:
+        occurrence_at = recurring.next_scheduled_at
+        occ = _claim_occurrence(recurring, occurrence_at)
+        if occ is None:
+            continue
+
+        job_id = None
+        charged_intent = None
+        amount = 0.0
+        try:
+            with db.session.begin_nested():
+                estimate = _price_occurrence(recurring)
+                amount = float(estimate.get("total") or 0.0)
+
+                job = Job(
+                    id=generate_uuid(),
+                    customer_id=recurring.customer_id,
+                    status="pending",
+                    address=recurring.address,
+                    lat=recurring.lat,
+                    lng=recurring.lng,
+                    items=recurring.items,
+                    scheduled_at=occurrence_at,
+                    notes="[Recurring] {}".format(recurring.notes or ""),
+                    base_price=float(estimate.get("base_price") or 0.0),
+                    item_total=float(estimate.get("items_subtotal") or 0.0),
+                    service_fee=float(estimate.get("service_fee") or 0.0),
+                    surge_multiplier=float(estimate.get("surge_multiplier") or 1.0),
+                    total_price=amount,
+                )
+                db.session.add(job)
+                db.session.flush()
+
+                customer = db.session.get(User, recurring.customer_id)
+                charged_intent = _charge_off_session(customer, job, amount)
+
+                payment = Payment(
+                    id=generate_uuid(),
+                    job_id=job.id,
+                    amount=amount,
+                    service_fee=float(estimate.get("service_fee") or 0.0),
+                    stripe_payment_intent_id=charged_intent,
+                    payment_status="succeeded" if charged_intent else "pending",
+                )
+                db.session.add(payment)
+
+                if charged_intent:
+                    job.status = "confirmed"
+                    occ.status = "created"
+                else:
+                    # Honest state: the work is scheduled but unpaid. Never a
+                    # $0 "pending" payment masquerading as settled.
+                    job.status = "awaiting_payment"
+                    occ.status = "awaiting_payment"
+
+                occ.job_id = job.id
+                occ.detail = "total={:.2f}".format(amount)
+                recurring.total_bookings_created = (recurring.total_bookings_created or 0) + 1
+                _advance_next_scheduled(recurring)
+                job_id = job.id
+        except Exception as exc:
+            logger.exception("recurring: failed booking=%s: %s", recurring.id, exc)
+            try:
+                occ.status = "failed"
+                occ.detail = str(exc)[:500]
+                _advance_next_scheduled(recurring)
+            except Exception:  # pragma: no cover
+                logger.exception("recurring: could not mark occurrence failed")
+            continue
+
+        created.append(job_id)
+        if charged_intent:
+            to_dispatch.append(job_id)
+        else:
+            awaiting.append((job_id, recurring.customer_id, amount))
+
+    db.session.commit()
+
+    # Post-commit side effects: pay links for unpaid jobs, dispatch for paid.
+    awaiting_ids = []
+    for job_id, customer_id, amount in awaiting:
+        awaiting_ids.append(job_id)
+        try:
+            job = db.session.get(Job, job_id)
+            customer = db.session.get(User, customer_id)
+            _send_pay_link(customer, job, amount)
+        except Exception:
+            logger.exception("recurring: pay-link delivery failed for job %s", job_id)
+
+    _dispatch_jobs(to_dispatch)
+
+    return {"created": created, "dispatched": to_dispatch,
+            "awaiting_payment": awaiting_ids}
+
+
+# ---------------------------------------------------------------------------
 # POST /api/recurring/generate-next  -- Admin/cron: generate jobs
 # ---------------------------------------------------------------------------
 @recurring_bp.route("/generate-next", methods=["POST"])
@@ -355,71 +685,22 @@ def delete_recurring(user_id, recurring_id):
 def generate_next_jobs(user_id):
     """Generate Job records from all active recurring bookings that are due.
 
-    Intended to be called by a cron job or scheduler.  For each active
-    recurring booking whose ``next_scheduled_at <= now``, a new Job is created
-    using the booking's stored details, and the schedule is advanced.
+    Intended to be called by a cron job or scheduler.  Delegates to
+    ``generate_due_recurring_jobs`` so this endpoint and the in-process
+    scheduler share one implementation (pricing, payment, dispatch included).
     """
-    now = datetime.now(timezone.utc)
+    result = generate_due_recurring_jobs()
 
-    due_bookings = RecurringBooking.query.filter(
-        RecurringBooking.is_active == True,
-        RecurringBooking.next_scheduled_at <= now,
-    ).all()
-
-    created_jobs = []
-
-    for recurring in due_bookings:
-        # Create a new Job mirroring the recurring booking's details
-        job = Job(
-            id=generate_uuid(),
-            customer_id=recurring.customer_id,
-            status="pending",
-            address=recurring.address,
-            lat=recurring.lat,
-            lng=recurring.lng,
-            items=recurring.items,
-            scheduled_at=recurring.next_scheduled_at,
-            notes="[Recurring] {}".format(recurring.notes or ""),
-        )
-        db.session.add(job)
-
-        # Create a corresponding Payment record
-        payment = Payment(
-            id=generate_uuid(),
-            job_id=job.id,
-            amount=0.0,  # Will be calculated when job is accepted/priced
-            payment_status="pending",
-        )
-        db.session.add(payment)
-
-        # Advance schedule and increment counter
-        recurring.total_bookings_created += 1
-        _advance_next_scheduled(recurring)
-
-        created_jobs.append(job)
-
-    db.session.commit()
-
-    # Dispatch each materialized job to haulers (respects DISPATCH_MODE).
-    # Done after commit so the rows exist when the dispatcher loads them.
-    # Never let a dispatch failure abort the response — the Jobs are persisted.
-    from flask import current_app
-    dispatched = []
-    try:
-        from dispatcher import auto_assign_job_async
-        app_obj = current_app._get_current_object()
-        for job in created_jobs:
-            try:
-                auto_assign_job_async(job.id, app_obj)
-            except Exception:
-                logger.exception("Recurring dispatch failed for job %s", job.id)
-            dispatched.append(job.to_dict())
-    except Exception:
-        logger.exception("Could not import dispatcher for recurring jobs")
-        dispatched = [j.to_dict() for j in created_jobs]
+    jobs = []
+    for job_id in result["created"]:
+        job = db.session.get(Job, job_id)
+        if job is not None:
+            jobs.append(job.to_dict())
 
     return jsonify({
         "success": True,
-        "jobs_created": len(dispatched),
-        "jobs": dispatched,
+        "jobs_created": len(jobs),
+        "jobs_dispatched": len(result["dispatched"]),
+        "jobs_awaiting_payment": len(result["awaiting_payment"]),
+        "jobs": jobs,
     }), 200
