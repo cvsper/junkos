@@ -1,9 +1,22 @@
 """
 Customer-facing tracking API routes for Umuve.
-Public endpoints for real-time job status and driver location tracking.
+
+Audit F21: these endpoints used to be reachable with just a job UUID or
+confirmation code and kept returning the hauler's live position forever.
+Now every request needs either
+
+  * ``?t=<token>`` — the purpose-scoped, expiring HMAC token that
+    ``Job.tracking_url()`` embeds in every texted/emailed link, or
+  * a JWT for a participant (the job's customer, the assigned hauler, or an
+    admin) in the ``Authorization`` header,
+
+and the driver's location is only returned while the job is in an active
+travel/work stage and within the scheduled window + 6h
+(``tracking_token.location_window_open``). Contractor details come from the
+public arrival serializer — never ``Contractor.to_dict``.
 """
 
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, request
 
 import sys
 import os
@@ -11,23 +24,73 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from models import db, Job, Contractor, User
 from timeutils import iso_utc
+from auth_routes import verify_token
+from serializers import contractor_public_arrival
+from tracking_token import verify_tracking_token, location_window_open
 
 tracking_bp = Blueprint("tracking", __name__, url_prefix="/api/tracking")
+
+
+# ---------------------------------------------------------------------------
+# Access control
+# ---------------------------------------------------------------------------
+def _bearer_user():
+    token = request.headers.get("Authorization", "")
+    if not token.startswith("Bearer "):
+        return None
+    user_id = verify_token(token[len("Bearer "):].strip())
+    if not user_id:
+        return None
+    user = db.session.get(User, user_id)
+    if not user or user.status not in (None, "active"):
+        return None
+    return user
+
+
+def _is_participant(user, job):
+    if user is None:
+        return False
+    if user.role == "admin" or job.customer_id == user.id:
+        return True
+    profile = user.contractor_profile
+    return bool(profile and profile.id in (job.driver_id, job.operator_id))
+
+
+def _authorize(job):
+    """Return None when the caller may view ``job``'s tracking, else a response."""
+    token = request.args.get("t") or request.args.get("token")
+    if token and verify_tracking_token(job.id, token):
+        return None
+    if _is_participant(_bearer_user(), job):
+        return None
+    if token:
+        return jsonify({"error": "This tracking link has expired. Check your latest text for a fresh one."}), 401
+    return jsonify({"error": "A tracking token is required"}), 401
+
+
+def _driver_location(job, contractor):
+    """lat/lng only during the active window; otherwise None."""
+    if contractor is None or not location_window_open(job):
+        return None, None
+    return contractor.current_lat, contractor.current_lng
 
 
 @tracking_bp.route("/<job_id>", methods=["GET"])
 def get_tracking_info(job_id):
     """
-    Public tracking endpoint for customers.
-    Returns job status, driver info (if assigned), and driver location.
+    Tracking endpoint for the customer's page.
+    Returns job status, the hauler's arrival profile (if assigned), and the
+    hauler's location while the job is active.
     """
     job = db.session.get(Job, job_id)
     if not job:
         return jsonify({"error": "Booking not found"}), 404
+    denied = _authorize(job)
+    if denied:
+        return denied
 
-    # Pricing/financial details deliberately excluded: this endpoint is public
-    # (the job UUID acts as the capability), so it returns only what the
-    # tracking page needs.
+    # Pricing/financial details deliberately excluded — this is the shared
+    # tracking view, not the receipt.
     result = {
         "job_id": job.id,
         "status": job.status,
@@ -35,31 +98,21 @@ def get_tracking_info(job_id):
         "scheduled_at": iso_utc(job.scheduled_at),
         "items": job.items or [],
         "created_at": job.created_at.isoformat() if job.created_at else None,
+        "location_live": location_window_open(job),
     }
 
-    # Include driver info if assigned
-    if job.driver_id:
-        contractor = db.session.get(Contractor, job.driver_id)
-        if contractor:
-            result["driver"] = {
-                "id": contractor.id,
-                "name": contractor.user.name if contractor.user else None,
-                "truck_type": contractor.truck_type,
-                "avg_rating": contractor.avg_rating,
-                "total_jobs": contractor.total_jobs,
-                "lat": contractor.current_lat,
-                "lng": contractor.current_lng,
-            }
-        else:
-            result["driver"] = None
+    contractor = db.session.get(Contractor, job.driver_id) if job.driver_id else None
+    if contractor:
+        driver = contractor_public_arrival(contractor)
+        # Backwards-compatible keys the web tracking page reads.
+        driver["name"] = driver["first_name"]
+        driver["truck_type"] = driver["vehicle"]
+        driver["lat"], driver["lng"] = _driver_location(job, contractor)
+        result["driver"] = driver
     else:
         result["driver"] = None
 
-    # Include payment status
-    if job.payment:
-        result["payment_status"] = job.payment.payment_status
-    else:
-        result["payment_status"] = None
+    result["payment_status"] = job.payment.payment_status if job.payment else None
 
     return jsonify({"success": True, "tracking": result}), 200
 
@@ -93,9 +146,9 @@ _STAGE_MAP = {
 
 @tracking_bp.route("/code/<code>", methods=["GET"])
 def get_tracking_by_code(code):
-    """Public tracking by confirmation code — no auth, customer-friendly fields only.
+    """Tracking by confirmation code — token-gated, customer-friendly fields only.
 
-    Returns a minimal, safe shape suitable for a public /track/<code> page on
+    Returns a minimal, safe shape suitable for the /track/code/<code> page on
     the frontend. Never leaks contractor phone, internal IDs, or pricing
     breakdowns; just the stage, scheduled time, address (short), and
     hauler's first name + truck info.
@@ -108,6 +161,9 @@ def get_tracking_by_code(code):
     job = Job.query.filter_by(confirmation_code=code_norm).first()
     if not job:
         return jsonify({"error": "No booking found for that code"}), 404
+    denied = _authorize(job)
+    if denied:
+        return denied
 
     stage, message = _STAGE_MAP.get(
         (job.status or "").lower(),
@@ -119,13 +175,15 @@ def get_tracking_by_code(code):
         contractor_id = job.driver_id or job.operator_id
         contractor = db.session.get(Contractor, contractor_id)
         if contractor:
-            full_name = contractor.user.name if contractor.user else ""
-            first_name = full_name.split()[0] if full_name else "your hauler"
+            arrival = contractor_public_arrival(contractor)
             hauler = {
-                "first_name": first_name,
-                "truck_type": contractor.truck_type,
-                "avg_rating": round(contractor.avg_rating, 1) if contractor.avg_rating else None,
-                "total_jobs": contractor.total_jobs or 0,  # social proof
+                "first_name": arrival["first_name"],
+                "truck_type": arrival["vehicle"],
+                "photo_url": arrival["photo_url"],
+                "vehicle_photo_url": arrival["vehicle_photo_url"],
+                "plate_last3": arrival["plate_last3"],
+                "avg_rating": arrival["avg_rating"],
+                "total_jobs": arrival["total_jobs"],  # social proof
             }
 
     # Before/after photos = the customer's own job proof. Surface them once the
@@ -177,26 +235,33 @@ def _summarize_items(items):
 @tracking_bp.route("/<job_id>/driver-location", methods=["GET"])
 def get_driver_location(job_id):
     """
-    Get the current driver location for a job.
-    Returns lat/lng if a driver is assigned and has a known location.
+    Current driver location for a job — token/participant gated and only
+    while the job is active (see location_window_open).
     """
     job = db.session.get(Job, job_id)
     if not job:
         return jsonify({"error": "Job not found"}), 404
+    denied = _authorize(job)
+    if denied:
+        return denied
 
     if not job.driver_id:
         return jsonify({"success": True, "location": None, "message": "No driver assigned yet"}), 200
 
     contractor = db.session.get(Contractor, job.driver_id)
+    if not location_window_open(job):
+        return jsonify({"success": True, "location": None,
+                        "message": "Live location is only shared while your pickup is underway"}), 200
     if not contractor or contractor.current_lat is None:
         return jsonify({"success": True, "location": None, "message": "Driver location unavailable"}), 200
 
+    arrival = contractor_public_arrival(contractor)
     return jsonify({
         "success": True,
         "location": {
             "lat": contractor.current_lat,
             "lng": contractor.current_lng,
-            "driver_name": contractor.user.name if contractor.user else None,
+            "driver_name": arrival["first_name"],
             "status": job.status,
         },
     }), 200

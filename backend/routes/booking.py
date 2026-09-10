@@ -1314,7 +1314,10 @@ def get_booking_status(job_id):
     if not job:
         return jsonify({"error": "Booking not found"}), 404
 
-    result = job.to_dict()
+    # Audit F21: customer serializer (no internal ops flags, hauler reduced to
+    # the arrival profile) and a rating without the rater's contact details.
+    from serializers import job_for_customer, rating_public
+    result = job_for_customer(job)
 
     if job.payment:
         result["payment"] = {
@@ -1325,10 +1328,7 @@ def get_booking_status(job_id):
     else:
         result["payment"] = None
 
-    if job.rating:
-        result["rating"] = job.rating.to_dict()
-    else:
-        result["rating"] = None
+    result["rating"] = rating_public(job.rating) if job.rating else None
 
     return jsonify({"success": True, "booking": result}), 200
 

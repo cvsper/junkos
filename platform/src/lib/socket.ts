@@ -1,5 +1,6 @@
 import { io, Socket } from "socket.io-client";
 import { useTrackingStore } from "@/stores/tracking-store";
+import { useAuthStore } from "@/stores/auth-store";
 import type { TrackingUpdate } from "@/types";
 
 // ---------------------------------------------------------------------------
@@ -12,7 +13,9 @@ let socket: Socket | null = null;
 
 function getSocket(): Socket {
   if (!socket) {
+    const token = useAuthStore.getState().token;
     socket = io(WS_URL, {
+      auth: token ? { token } : {},
       autoConnect: false,
       reconnection: true,
       reconnectionAttempts: 10,

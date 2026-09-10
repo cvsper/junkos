@@ -16,8 +16,14 @@ from auth_routes import require_auth
 chat_bp = Blueprint("chat", __name__, url_prefix="/api/jobs")
 
 
-def _get_sender_role(user_id, job):
-    """Determine whether the authenticated user is 'customer' or 'driver' for this job."""
+def get_sender_role(user_id, job):
+    """Chat membership predicate shared by REST and Socket.IO (audit F03).
+
+    Returns 'customer' | 'driver' | None for ``user_id`` on ``job``. This is
+    the ONLY place that decides who may read/send on a job's chat.
+    """
+    if job is None or not user_id:
+        return None
     if job.customer_id == user_id:
         return "customer"
     # Check if user is the assigned driver
@@ -25,6 +31,9 @@ def _get_sender_role(user_id, job):
     if user and user.contractor_profile and job.driver_id == user.contractor_profile.id:
         return "driver"
     return None
+
+
+_get_sender_role = get_sender_role  # backwards-compatible alias
 
 
 @chat_bp.route("/<job_id>/messages", methods=["GET"])

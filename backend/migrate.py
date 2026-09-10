@@ -2035,6 +2035,33 @@ RLS_ORG_TABLES.extend(_PORTAL_V1_RLS)
 # Migration engine
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# Additive unique indexes on EXISTING tables (audit F29). CREATE UNIQUE INDEX
+# fails if duplicate rows already exist, so each is attempted individually
+# and a failure is reported instead of aborting the run — the application
+# enforces the same rule in code until the duplicates are cleaned up.
+# ---------------------------------------------------------------------------
+UNIQUE_INDEXES = [
+    ("ratings", "uq_ratings_job_from_user", "job_id, from_user_id"),
+]
+
+
+def _apply_unique_indexes(cursor, table_exists, actions):
+    for table, name, cols in UNIQUE_INDEXES:
+        if not table_exists(cursor, table):
+            continue
+        try:
+            cursor.execute(
+                "CREATE UNIQUE INDEX IF NOT EXISTS {} ON {} ({})".format(name, table, cols)
+            )
+            actions.append("Ensured unique index {} on {}({})".format(name, table, cols))
+        except Exception as exc:
+            actions.append(
+                "Unique index {} on {} NOT created ({}) -- resolve duplicate rows, "
+                "the API enforces the rule in code meanwhile".format(name, table, exc)
+            )
+
+
 def _get_existing_columns_sqlite(cursor, table):
     """Return set of column names for a table in SQLite."""
     cursor.execute("PRAGMA table_info('{}')".format(table))
@@ -2123,6 +2150,8 @@ def run_migrations(database_url=None):
         for ddl in _OPS_V1_INDEXES_SQLITE:
             cursor.execute(ddl)
 
+        _apply_unique_indexes(cursor, _table_exists_sqlite, actions)
+
         conn.commit()
         conn.close()
 
@@ -2161,6 +2190,8 @@ def run_migrations(database_url=None):
             cursor.execute(ddl)
         for ddl in _OPS_V1_INDEXES_PG:
             cursor.execute(ddl)
+
+        _apply_unique_indexes(cursor, _table_exists_pg, actions)
 
         # ---- Apply Row-Level Security to org-scoped tables (spec 04 §3) ----
         # Idempotent: ENABLE RLS is a no-op if already enabled; we DROP the

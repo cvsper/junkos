@@ -107,20 +107,25 @@ def _load_image(url):
             s3_data = _load_from_s3(url)
             if s3_data is not None:
                 return s3_data, _guess_mime(url)
-            import urllib.request
-            req = urllib.request.Request(url, headers={"User-Agent": "umuve-doc-verify"})
-            with urllib.request.urlopen(req, timeout=30) as r:
-                data = r.read()
-                mime = r.headers.get("Content-Type") or _guess_mime(url)
-                return data, mime
-        # local path
-        name = url.split("/uploads/", 1)[-1].lstrip("/") if "/uploads/" in url else os.path.basename(url)
-        path = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), "uploads", name
-        )
-        if os.path.exists(path):
-            with open(path, "rb") as fh:
-                return fh.read(), _guess_mime(path)
+            # Any other host goes through the SSRF guard (audit F22): public
+            # http(s) only, private/link-local/metadata ranges rejected on
+            # every redirect hop, streamed with a byte cap.
+            from netsafe import safe_fetch, UnsafeURLError
+            try:
+                data, mime = safe_fetch(url, max_bytes=15 * 1024 * 1024, timeout=(5, 30),
+                                        headers={"User-Agent": "umuve-doc-verify"})
+            except UnsafeURLError as exc:
+                logger.warning("doc-verify: refused to fetch %s: %s", url[:120], exc)
+                return None, None
+            return data, (mime or _guess_mime(url))
+        # local path: private documents folder first, then legacy /uploads
+        from storage import LOCAL_PRIVATE_FOLDER, LOCAL_UPLOAD_FOLDER
+        name = os.path.basename(url)
+        for folder in (LOCAL_PRIVATE_FOLDER, LOCAL_UPLOAD_FOLDER):
+            path = os.path.join(folder, name)
+            if name and os.path.isfile(path):
+                with open(path, "rb") as fh:
+                    return fh.read(), _guess_mime(path)
     except Exception:
         logger.exception("doc-verify: failed to load image %s", url)
     return None, None
