@@ -250,7 +250,6 @@ def _call_gemini(api_key, model, images):
 
 def _image_to_inline(img):
     """Return (mime, base64_str) for a Gemini inline_data part, or (None, None)."""
-    import requests
     if img["kind"] == "data_uri":
         # data:<mime>;base64,<payload>
         try:
@@ -259,15 +258,24 @@ def _image_to_inline(img):
             return mime, payload
         except (ValueError, IndexError):
             return None, None
-    # url -> fetch bytes
+    # url -> fetch bytes through the SSRF guard (audit F22): public http(s)
+    # only, private/metadata ranges blocked on every redirect hop, 8 MB cap.
+    from netsafe import safe_fetch, UnsafeURLError
+    from storage import sniff_kind
     try:
-        resp = requests.get(img["value"], timeout=20)
-        resp.raise_for_status()
-        mime = resp.headers.get("Content-Type", "image/jpeg").split(";")[0]
-        return mime, base64.b64encode(resp.content).decode("utf-8")
+        data, mime = safe_fetch(img["value"], max_bytes=8 * 1024 * 1024, timeout=(5, 20))
+    except UnsafeURLError as exc:
+        logger.warning("Gemini image fetch refused for %s: %s", img["value"][:80], exc)
+        return None, None
     except Exception as exc:  # noqa: BLE001
         logger.warning("Gemini image fetch failed for %s: %s", img["value"][:80], exc)
         return None, None
+    if sniff_kind(data) != "image":
+        logger.warning("Gemini image fetch: %s is not an image", img["value"][:80])
+        return None, None
+    if not mime or not mime.startswith("image/"):
+        mime = "image/jpeg"
+    return mime, base64.b64encode(data).decode("utf-8")
 
 
 def _parse_vision_json(raw_text):

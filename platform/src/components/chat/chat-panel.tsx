@@ -33,12 +33,22 @@ const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
 
 let _socket: Socket | null = null;
+let _socketToken: string | null = null;
 
 function getSocket(): Socket {
+  // The backend authenticates the Socket.IO handshake with the same JWT the
+  // REST API uses (auth: { token }); events are authorised server-side.
+  const token = useAuthStore.getState().token;
+  if (_socket && _socketToken !== token) {
+    _socket.disconnect();
+    _socket = null;
+  }
   if (!_socket) {
+    _socketToken = token;
     _socket = io(API_BASE_URL, {
       transports: ["websocket", "polling"],
       autoConnect: false,
+      auth: token ? { token } : {},
     });
   }
   return _socket;

@@ -9,6 +9,13 @@ from unittest import mock
 
 from models import Contractor, Job, User, db, generate_uuid
 from routes.drivers import apply_job_status_transition
+from tracking_token import verify_tracking_token
+
+
+def _split(url):
+    """(page, token) — audit F21 appends an expiring ?t= token to every link."""
+    page, _, query = url.partition("?t=")
+    return page, query
 
 _seq = iter(range(1, 10000))
 
@@ -25,20 +32,24 @@ def _mk_user(role="customer", phone=True):
 def test_tracking_url_uses_public_code_page(client):
     job = Job(id=generate_uuid(), customer_id=_mk_user().id, status="pending",
               address="1 Main St", total_price=100.0, confirmation_code="ABC12345")
-    assert job.tracking_url() == "https://app.goumuve.com/track/code/ABC12345"
+    page, token = _split(job.tracking_url())
+    assert page == "https://app.goumuve.com/track/code/ABC12345"
+    assert verify_tracking_token(job.id, token)
 
 
 def test_tracking_url_honors_frontend_url_env(client):
     job = Job(id=generate_uuid(), customer_id=_mk_user().id, status="pending",
               address="1 Main St", total_price=100.0, confirmation_code="ABC12345")
     with mock.patch.dict(os.environ, {"FRONTEND_URL": "https://staging.goumuve.com/"}):
-        assert job.tracking_url() == "https://staging.goumuve.com/track/code/ABC12345"
+        assert _split(job.tracking_url())[0] == "https://staging.goumuve.com/track/code/ABC12345"
 
 
 def test_tracking_url_falls_back_to_uuid_page_without_code(client):
     job = Job(id="11111111-2222-3333-4444-555555555555", customer_id=_mk_user().id,
               status="pending", address="1 Main St", total_price=100.0, confirmation_code=None)
-    assert job.tracking_url() == "https://app.goumuve.com/track/11111111-2222-3333-4444-555555555555"
+    page, token = _split(job.tracking_url())
+    assert page == "https://app.goumuve.com/track/11111111-2222-3333-4444-555555555555"
+    assert verify_tracking_token(job.id, token)
 
 
 def test_hauler_confirmed_sms_links_public_page(client):

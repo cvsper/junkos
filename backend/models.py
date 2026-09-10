@@ -404,9 +404,13 @@ class Job(db.Model):
         API, so it dead-ends for phone customers — never text that one.
         """
         base = os.environ.get("FRONTEND_URL", "https://app.goumuve.com").rstrip("/")
+        # Audit F21: the link carries a purpose-scoped, expiring HMAC token
+        # (?t=...). The public tracking API refuses a bare code/UUID.
+        from tracking_token import tracking_token_for_job
+        token = tracking_token_for_job(self)
         if self.confirmation_code:
-            return "{}/track/code/{}".format(base, self.confirmation_code)
-        return "{}/track/{}".format(base, self.id)
+            return "{}/track/code/{}?t={}".format(base, self.confirmation_code, token)
+        return "{}/track/{}?t={}".format(base, self.id, token)
 
     def to_dict(self):
         return {
@@ -534,6 +538,10 @@ class Rating(db.Model):
 
     __table_args__ = (
         CheckConstraint("stars >= 1 AND stars <= 5", name="ck_rating_stars"),
+        # Audit F29: one rating per (job, rater). Enforced in code too
+        # (routes/ratings.py) because existing tables get the index via
+        # migrate.py, which can only add it once no duplicates remain.
+        db.UniqueConstraint("job_id", "from_user_id", name="uq_ratings_job_from_user"),
     )
 
     job = relationship("Job", back_populates="rating")

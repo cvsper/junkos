@@ -51,6 +51,9 @@ langgraph-checkpoint-sqlite>=1.0
 # Twilio SDK dep). Pinned explicitly so the monitors never break on a resolve.
 requests>=2.31
 
+# Audit F22 — uploads are opened/verified/re-encoded by content (EXIF stripped).
+Pillow>=10.3
+
 
 # Demand-records engine — Clerk Cart report ingest (Decedent 07 / Evictions 06 arrive as Excel).
 openpyxl>=3.1

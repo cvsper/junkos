@@ -196,16 +196,11 @@ def get_job(user_id, job_id):
     else:
         job_dict["rating"] = None
 
-    # Include contractor info
-    if job.driver_id:
-        contractor = db.session.get(Contractor, job.driver_id)
-        if contractor:
-            contractor_dict = contractor.to_dict()
-            job_dict["contractor"] = contractor_dict
-        else:
-            job_dict["contractor"] = None
-    else:
-        job_dict["contractor"] = None
+    # Include contractor info — the customer-safe arrival profile only
+    # (audit F21: Contractor.to_dict is the admin dossier).
+    from serializers import contractor_public_arrival
+    contractor = db.session.get(Contractor, job.driver_id) if job.driver_id else None
+    job_dict["contractor"] = contractor_public_arrival(contractor) if contractor else None
 
     return jsonify({"success": True, "job": job_dict}), 200
 

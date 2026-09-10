@@ -8,6 +8,9 @@ import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from sqlalchemy import func
+from sqlalchemy.exc import IntegrityError
+
 from models import db, Rating, Job, User, Contractor, Notification, generate_uuid
 from auth_routes import require_auth
 
@@ -44,17 +47,27 @@ def submit_rating(user_id):
     if job.status != "completed":
         return jsonify({"error": "Ratings can only be submitted for completed jobs"}), 409
 
+    # Audit F29: only the two participants may rate, each in one direction.
+    #   customer  -> assigned hauler's user
+    #   assigned hauler's user -> customer
+    # Anyone else is 403 — knowing a completed job's id is not a capability.
+    contractor = db.session.get(Contractor, job.driver_id) if job.driver_id else None
+    if user_id == job.customer_id:
+        if not contractor:
+            return jsonify({"error": "No driver assigned to this job"}), 400
+        to_user_id = contractor.user_id
+        rates_driver = True
+    elif contractor and contractor.user_id == user_id:
+        to_user_id = job.customer_id
+        rates_driver = False
+    else:
+        return jsonify({"error": "Only the customer or the assigned hauler can rate this job"}), 403
+
+    # Pre-check inside the same transaction; the (job_id, from_user_id) unique
+    # index is the backstop for a concurrent double-submit.
     existing = Rating.query.filter_by(job_id=job_id, from_user_id=user_id).first()
     if existing:
         return jsonify({"error": "You have already rated this job"}), 409
-
-    # Determine the recipient
-    if user_id == job.customer_id:
-        if not job.driver_id:
-            return jsonify({"error": "No driver assigned to this job"}), 400
-        to_user_id = db.session.get(Contractor, job.driver_id).user_id
-    else:
-        to_user_id = job.customer_id
 
     rating = Rating(
         id=generate_uuid(),
@@ -65,20 +78,22 @@ def submit_rating(user_id):
         comment=comment,
     )
     db.session.add(rating)
+    try:
+        db.session.flush()
+    except IntegrityError:
+        db.session.rollback()
+        return jsonify({"error": "You have already rated this job"}), 409
 
-    # Update contractor avg_rating when a customer rates a driver
-    if user_id == job.customer_id and job.driver_id:
-        contractor = db.session.get(Contractor, job.driver_id)
-        if contractor:
-            all_ratings = (
-                Rating.query
-                .join(Job, Rating.job_id == Job.id)
-                .filter(Job.driver_id == contractor.id, Rating.from_user_id == Job.customer_id)
-                .all()
-            )
-            total_stars = sum(r.stars for r in all_ratings) + stars
-            count = len(all_ratings) + 1
-            contractor.avg_rating = round(total_stars / count, 2)
+    # Update contractor avg_rating when a customer rates a driver. Computed
+    # from persisted rows AFTER the flush so the new rating counts exactly once.
+    if rates_driver and contractor:
+        avg = (
+            db.session.query(func.avg(Rating.stars))
+            .join(Job, Rating.job_id == Job.id)
+            .filter(Job.driver_id == contractor.id, Rating.from_user_id == Job.customer_id)
+            .scalar()
+        )
+        contractor.avg_rating = round(float(avg), 2) if avg is not None else 0.0
 
     notification = Notification(
         id=generate_uuid(),
@@ -90,7 +105,11 @@ def submit_rating(user_id):
     )
     db.session.add(notification)
 
-    db.session.commit()
+    try:
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        return jsonify({"error": "You have already rated this job"}), 409
     return jsonify({"success": True, "rating": rating.to_dict()}), 201
 
 

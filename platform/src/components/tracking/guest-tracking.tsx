@@ -102,11 +102,22 @@ export default function GuestTracking({ code }: { code: string }) {
     async (initial = false) => {
       if (!initial) setRefreshing(true);
       try {
+        // The texted link carries an expiring tracking token (?t=...); the
+        // API refuses a bare code.
+        const t =
+          typeof window !== "undefined"
+            ? new URLSearchParams(window.location.search).get("t")
+            : null;
         const res = await fetch(
-          `${API_BASE_URL}/api/tracking/code/${encodeURIComponent(code)}`,
+          `${API_BASE_URL}/api/tracking/code/${encodeURIComponent(code)}${
+            t ? `?t=${encodeURIComponent(t)}` : ""
+          }`,
           { headers: { "Content-Type": "application/json" } }
         );
-        if (res.status === 404) {
+        if (res.status === 401) {
+          setError("This tracking link has expired. Check your latest text from Umuve for a fresh one.");
+          setTracking(null);
+        } else if (res.status === 404) {
           setError("We couldn't find a booking for that code. Double-check the link in your confirmation text.");
           setTracking(null);
         } else if (!res.ok) {
