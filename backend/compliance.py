@@ -302,9 +302,7 @@ def policy():
         "recording_notice": notice,
         "two_party_states": states,
         "notice_text": RECORDING_NOTICE_TEXT,
-        "desk_note": ("Copilot records the call. Before you're connected the other party hears "
-                      "“{}” — Florida is an all-party-consent state, so the notice stays on."
-                      .format(RECORDING_NOTICE_TEXT)),
+        "desk_note": "Copilot: the other side hears a short recording notice before you connect (Florida is all-party consent).",
         "call_hours": os.environ.get("DESK_CALL_HOURS", DEFAULT_CALL_HOURS),
         "call_days": os.environ.get("DESK_CALL_DAYS", DEFAULT_CALL_DAYS),
         "tz": BUSINESS_TZ_NAME,

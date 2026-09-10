@@ -215,7 +215,7 @@ def test_policy_endpoint(client):
     b = r.get_json()
     assert b["recording_notice"] is True and "FL" in b["two_party_states"]
     assert b["notice_text"] == "This call may be recorded for quality."
-    assert "records the call" in b["desk_note"] and b["notice_text"] in b["desk_note"]
+    assert "recording notice" in b["desk_note"] and "all-party" in b["desk_note"]
     with mock.patch.dict(os.environ, {"DESK_TWO_PARTY_STATES": "fl, ca"}):
         assert _va(client, "/api/va/compliance/policy").get_json()["two_party_states"] == ["FL", "CA"]
 
