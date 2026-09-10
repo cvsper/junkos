@@ -12,6 +12,20 @@ if not os.path.exists(_DB_NAME) and os.path.exists('junkos.db'):
 
 _MUST_SET_IN_PRODUCTION = {"JWT_SECRET", "SECRET_KEY"}
 
+_DEV_ENVS = ("development", "dev", "testing", "test")
+
+
+def is_production():
+    """True unless FLASK_ENV explicitly says development/testing.
+
+    Mirrors server.py's rule that an UNSET FLASK_ENV means production-safe.
+    Fail-closed guards use this: in production a missing webhook secret,
+    Stripe key or signing token must reject the request / refuse to fake
+    success instead of silently passing.  Tests set FLASK_ENV=development.
+    """
+    return (os.environ.get("FLASK_ENV") or "").strip().lower() not in _DEV_ENVS
+
+
 
 def _require_in_production(var_name, default):
     """Return env var value. In production, refuse to start for critical vars."""
