@@ -212,15 +212,14 @@ def dispatch_assign():
 
     va_name = (data.get("va_name") or "").strip()[:80]
 
-    # Row-lock the job so two dispatchers (or the desk + the admin dashboard)
-    # racing on the same job can't both pass the guard — the second one blocks
-    # on the lock and then sees the assignment. No-op on SQLite (tests).
-    job = (Job.query.filter(Job.id == (data.get("job_id") or ""))
-           .with_for_update().first())
+    # The board's own pre-check stays (it gives the VA a friendlier message),
+    # but the real guard is assignment.assign_job: row lock + conditional
+    # UPDATE on (status, version, driver_id IS NULL) + truck reservation, so
+    # two dispatchers racing on the same job can't both win (audit F15).
+    job = db.session.get(Job, data.get("job_id") or "")
     if not job:
         return jsonify({"error": "Job not found."}), 404
     if job.status not in ASSIGNABLE_STATUSES or job.driver_id or job.operator_id:
-        db.session.rollback()
         return jsonify({"error": "This job was already assigned or has moved on — refresh the board."}), 409
 
     contractor = db.session.get(Contractor, data.get("contractor_id") or "")
@@ -230,9 +229,11 @@ def dispatch_assign():
     try:
         job_dict = assign_contractor_to_job(
             job, contractor,
-            assigned_by="{} (dispatch desk)".format(va_name or "The dispatch desk"))
+            assigned_by="{} (dispatch desk)".format(va_name or "The dispatch desk"),
+            actor={"role": "va", "name": va_name or "dispatch desk"}, source="va_desk",
+            force=bool(data.get("force")))
     except AssignmentError as e:
-        return jsonify({"error": str(e)}), e.status_code
+        return jsonify({"error": str(e), "code": e.code, "reasons": e.reasons}), e.status_code
 
     db.session.add(VaDispatchAction(
         job_id=job.id, contractor_id=contractor.id, action="assign", va_name=va_name or None))

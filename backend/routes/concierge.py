@@ -371,6 +371,21 @@ RAIL = [
 ]
 _STATUS_ORDER = ["assigned", "accepted", "en_route", "arrived", "started", "completed"]
 
+# Hauler-readable copy for the transition refusals in assignment.transition_job.
+_ERRORS = {
+    "proof_required": "We need proof before this job can close: text your after photo to this "
+                      "number, or enter the customer's 4-digit PIN.",
+    "pin_invalid": "That PIN doesn't match. Check the customer's confirmation text.",
+    "pin_required": "The customer's 4-digit PIN is required to close this job.",
+    "change_order_open": "There's a price change still waiting on the customer. Call your umuve "
+                         "contact before you close this out.",
+    "payment_not_settled": "The customer's payment hasn't settled yet — call your umuve contact.",
+    "arrival_required": "Tap \u201cI've arrived\u201d before you start the job.",
+    "conflict": "This job just changed. Take another look.",
+    "stale_version": "This job just changed. Take another look.",
+    "not_assigned": "This job isn't assigned to you any more.",
+}
+
 
 def _shell(title, inner, accent="#0f9d58"):
     """Same visual world as the /o/<token> accept page — screen two of one flow."""
@@ -515,6 +530,15 @@ def concierge_console(token):
     header = ('<div class="brand">umuve<span class="jobtag">JOB {}</span></div>'
               .format(html.escape(str(job.id)[:8].upper())))
 
+    # A refused transition (audit F17: missing proof, open change order,
+    # unsettled payment, stale status) comes back as ?err= and is shown here
+    # instead of silently bouncing the hauler back to the same button.
+    err = _ERRORS.get((request.args.get("err") or "").strip())
+    if err:
+        header += ('<p class="note" style="background:#fdecea;border:1px solid #f5c6cb;'
+                   'color:#7a1b1b;padding:10px 12px;border-radius:8px">{}</p>'
+                   .format(html.escape(err)))
+
     if job.status == "completed":
         paid = job.payment and job.payment.payout_status in ("paid", "paid_manual")
         settle = ("Paid — thanks for the haul." if paid else
@@ -538,8 +562,18 @@ def concierge_console(token):
         # Two-step confirm for the money step — server-side, no JS, CSP-proof.
         act = ('<a class="btn" href="/w/{}?arm=1">{}</a>'.format(token, label))
     elif next_status == "completed":
+        # Proof of handoff (audit F17): an after-photo (texted in, auto-attached)
+        # OR the customer's 4-digit PIN from their confirmation text. Optional
+        # while the completion_pin_required flag is off — the server decides.
         act = ('<form method="POST" action="/w/{}/advance">'
                '<input type="hidden" name="to" value="completed">'
+               '<label style="display:block;margin:14px 0 6px;font-size:14px">'
+               'Customer\'s 4-digit PIN (from their text)</label>'
+               '<input name="handoff_pin" inputmode="numeric" maxlength="4" '
+               'placeholder="1234" style="width:100%;padding:12px;font-size:20px;'
+               'letter-spacing:4px;border:1px solid #ccc;border-radius:8px">'
+               '<p class="note" style="margin:8px 0 14px">No PIN? Text your '
+               'after photo to this number first — that counts as proof too.</p>'
                '<button type="submit" class="danger" '
                'style="background:#d9534f;color:#fff">Yes — everything\'s loaded, '
                'finish job</button></form>'
@@ -576,9 +610,23 @@ def concierge_advance(token):
         # Stale double-submit (status already moved on) — just re-render.
         return redirect("/w/" + token)
 
+    # The hauler's form carries the customer's handoff PIN on the completion
+    # step; everything else the transition needs (proof, change order, payment)
+    # is checked server-side in assignment.transition_job.
+    data = {}
+    pin = (request.form.get("handoff_pin") or "").strip()
+    if pin:
+        data["handoff_pin"] = pin
+
     from routes.drivers import apply_job_status_transition
-    ok, payload, code = apply_job_status_transition(job, contractor, target, {})
+    ok, payload, code = apply_job_status_transition(
+        job, contractor, target, data,
+        actor={"user_id": getattr(contractor, "user_id", None), "role": "driver",
+               "name": contractor.user.name if getattr(contractor, "user", None) else None},
+    )
     if not ok:
         logger.warning("Concierge advance rejected for job %s: %s",
                        job.id, payload.get("error"))
+        arm = "&arm=1" if target == "completed" else ""
+        return redirect("/w/{}?err={}{}".format(token, payload.get("code") or "conflict", arm))
     return redirect("/w/" + token)
