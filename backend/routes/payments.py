@@ -485,6 +485,16 @@ def _after_settle(job, settle):
             refund_job(job, reason="paid_after_cancellation", actor="system")
         except Exception:
             logger.exception("automatic refund for cancelled job %s failed", job.id)
+        return
+    # Money is captured: real work is now owed to somebody. Announce it, so a
+    # paid job can never sit unnoticed the way AFB22IMO did for 18 days.
+    if job is not None and settle.get("transitioned"):
+        try:
+            from booking_alerts import notify_booking
+            payment = Payment.query.filter_by(job_id=job.id).first()
+            notify_booking(job, "paid", payment)
+        except Exception:
+            logger.exception("paid-booking announcement failed for job %s", job.id)
 
 
 # ---------------------------------------------------------------------------

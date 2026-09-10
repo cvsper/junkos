@@ -1469,21 +1469,13 @@ def create_booking(payload, user, notify_operator=True):
     except Exception:
         pass
 
-    # --- Internal heads-up to the operator line (clearly labelled unpaid) ---
+    # --- Announce the booking on every configured channel ---
+    # Was a single SMS to an optional env var inside `except: pass`, so an
+    # unset variable or a Twilio hiccup made a booking silent. booking_alerts
+    # fans out and logs loudly when nothing is configured.
     if notify_operator:
-        try:
-            from sms_service import send_sms_async
-            operator_phone = os.environ.get("OPERATOR_PHONE", "")
-            if operator_phone:
-                items_count = sum(i.get("quantity", 1) for i in items)
-                send_sms_async(operator_phone, (
-                    "NEW BOOKING (awaiting payment)\n{} - {} item{}\n${:.0f} | {}\nScheduled: {}"
-                ).format(
-                    address or "No address", items_count, "s" if items_count != 1 else "",
-                    total, lead_source or "direct", local_date_str(scheduled_at, "ASAP"),
-                ))
-        except Exception:
-            pass
+        from booking_alerts import notify_booking
+        notify_booking(job, "booked", payment)
 
     # --- n8n webhooks (existing automation; unchanged) ---
     try:
