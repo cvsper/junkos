@@ -7,7 +7,7 @@ import os
 # Get database URL from environment (same as Flask app uses)
 DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
-    DATABASE_URL = "postgresql://junkos_db_user:9VcwYdvLAMkxB0wH4FvmG6i3dCJZS28V@dpg-d02lk7btq21c738mhe00-a.oregon-postgres.render.com/junkos_db"
+    raise SystemExit("Set DATABASE_URL env var (never hardcode credentials — public repo)")
 
 # Connect to database with SSL
 conn = psycopg2.connect(DATABASE_URL, sslmode='require')
