@@ -219,7 +219,8 @@ def test_balance_guard_states_and_health_check(client):
     db.session.add(Payment(id=generate_uuid(), job_id=j.id, amount=300.0, driver_payout_amount=225.0,
                            payment_status="succeeded", payout_status="pending"))
     db.session.commit()
-    assert sameday_pay.expected_payouts() == 225.0
+    due = sameday_pay.expected_payouts()
+    assert due["total"] == 225.0 and due["count"] == 1 and due["jobs"][0]["amount"] == 225.0
     with mock.patch("routes.payments._get_stripe", return_value=_fake_stripe(platform_available_cents=10000)):
         b = sameday_pay.balance_check()
     assert b["state"] == "fail" and b["available"] == 100.0 and "transfers will fail" in b["reason"]
@@ -252,3 +253,48 @@ def test_copy_promises_same_day_everywhere(client):
     assert "same day the job is marked complete" in html and "small fee" not in html
     page = client.get("/va/manager").get_data(as_text=True)
     assert "Haulers owed today" in page and "manager-pay.js" in page
+
+
+def test_expected_payouts_ignores_unpaid_unconfirmed_and_stale_jobs():
+    """The balance guard cried wolf: it summed every Payment still on the
+    default payout_status, including bookings the customer never paid for and
+    placeholder rows scheduled years ago."""
+    c = _hauler("Edge Cases", "+15615550399", connect="acct_real9")
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+
+    def _pending(price, status, when, paid="succeeded", code=None):
+        j = Job(customer_id=_customer().id, driver_id=c.id,
+                address="e2e-pay 5 Edge Rd, Lake Worth FL", status=status,
+                scheduled_at=when, total_price=price / 0.75)
+        if code:
+            j.confirmation_code = code
+        db.session.add(j); db.session.flush()
+        db.session.add(Payment(id=generate_uuid(), job_id=j.id, amount=price / 0.75,
+                               driver_payout_amount=price, payment_status=paid,
+                               payout_status="pending"))
+        db.session.commit()
+        return j
+
+    real = _pending(100.0, "confirmed", now + timedelta(hours=5), code="DUEREAL1")
+    _pending(500.0, "pending", now + timedelta(hours=5), paid="pending", code="NEVERPAID")   # never paid
+    _pending(400.0, "confirmed", datetime(2024, 12, 28), code="STALEROW1")                   # the date-bug row
+    _pending(300.0, "confirmed", now + timedelta(days=9), code="FARFUTURE")                   # beyond the window
+
+    due = sameday_pay.expected_payouts()
+    assert due["total"] == 100.0 and due["count"] == 1
+    assert due["jobs"][0]["job_id"] == real.id
+
+
+def test_balance_check_reports_settling_money():
+    """Card revenue sits in Stripe `pending` for ~2 days; reporting only
+    `available` made a funded account look empty."""
+    s = _fake_stripe(platform_available_cents=10000)
+    s.Balance.retrieve.side_effect = None
+    s.Balance.retrieve.return_value = mock.MagicMock(
+        available=[mock.MagicMock(amount=10000, currency="usd")],
+        pending=[mock.MagicMock(amount=250000, currency="usd")],
+    )
+    with mock.patch("routes.payments._get_stripe", return_value=s):
+        b = sameday_pay.balance_check()
+    assert b["available"] == 100.0 and b["pending"] == 2500.0
+    assert "settling" in b["reason"]

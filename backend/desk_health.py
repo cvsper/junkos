@@ -113,7 +113,9 @@ def check_desk_health(alert=False):
     try:
         from sameday_pay import balance_check
         b = balance_check()
-        put("stripe_balance", b["state"], b["reason"], available=b.get("available"), expected=b.get("expected"))
+        put("stripe_balance", b["state"], b["reason"], available=b.get("available"),
+            pending=b.get("pending"), expected=b.get("expected"),
+            due_count=b.get("due_count"), due_jobs=b.get("due_jobs"))
     except Exception as e:
         put("stripe_balance", "warn", "balance check failed: " + type(e).__name__)
 

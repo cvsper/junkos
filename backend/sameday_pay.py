@@ -313,12 +313,43 @@ def send_onboarding_text(contractor):
 # ---------------------------------------------------------------------------
 # 4. balance guard
 # ---------------------------------------------------------------------------
-def expected_payouts(hours=36):
-    until = (_now() + timedelta(hours=hours)).replace(tzinfo=None)
+# A payout is only a real obligation when the customer's money actually
+# landed and the job is live. Counting every Payment row whose payout_status
+# is still the default "pending" swept in unconfirmed bookings and years-old
+# placeholder rows, which made the balance guard cry wolf.
+LIVE_JOB_STATUSES = ("confirmed", "accepted", "en_route", "arrived", "in_progress", "completed")
+STALE_JOB_DAYS = 3
+
+
+def expected_payouts(hours=36, stale_days=STALE_JOB_DAYS):
+    """Hauler payouts genuinely coming due, with the rows that make them up.
+
+    Counts a job only when the customer's payment succeeded, the job is in a
+    live status, and it is scheduled inside [now - stale_days, now + hours].
+    Anything older is abandoned or test data, not an obligation.
+    """
+    now = _now().replace(tzinfo=None)
+    until = now + timedelta(hours=hours)
+    since = now - timedelta(days=stale_days)
     q = (db.session.query(Payment, Job).join(Job, Job.id == Payment.job_id)
-         .filter(Payment.payout_status == "pending", Job.status.notin_(("cancelled", "canceled")),
-                 (Job.scheduled_at.is_(None)) | (Job.scheduled_at <= until)))
-    return round(sum((p.driver_payout_amount or 0.0) for p, j in q.all()), 2)
+         .filter(Payment.payout_status == "pending",
+                 Payment.payment_status == "succeeded",
+                 Job.status.in_(LIVE_JOB_STATUSES),
+                 Job.scheduled_at.isnot(None),
+                 Job.scheduled_at >= since, Job.scheduled_at <= until))
+    rows = []
+    for payment, job in q.all():
+        amount = round(payment.driver_payout_amount or 0.0, 2)
+        if amount <= 0:
+            continue
+        rows.append({
+            "job_id": job.id,
+            "job_code": getattr(job, "confirmation_code", None) or job.id[:8],
+            "amount": amount, "status": job.status,
+            "scheduled_at": job.scheduled_at.isoformat() + "Z" if job.scheduled_at else None,
+        })
+    rows.sort(key=lambda r: r["scheduled_at"] or "")
+    return {"total": round(sum(r["amount"] for r in rows), 2), "count": len(rows), "jobs": rows}
 
 
 def balance_check():
@@ -328,17 +359,25 @@ def balance_check():
     try:
         bal = _stripe().Balance.retrieve()
         available = round(next((b.amount for b in bal.available if b.currency == "usd"), 0) / 100.0, 2)
+        # Card money sits in `pending` for ~2 business days before it can be
+        # transferred. Reporting only `available` made a healthy account with
+        # settling revenue look empty.
+        pending = round(next((b.amount for b in getattr(bal, "pending", []) if b.currency == "usd"), 0) / 100.0, 2)
     except Exception as e:
         return {"state": "warn", "reason": "Stripe balance unavailable: " + type(e).__name__}
-    expected = expected_payouts()
+    due = expected_payouts()
+    expected, jobs = due["total"], due["jobs"]
     floor = max(MIN_BALANCE, expected)
+    soon = "${:.2f} available (+${:.2f} settling) vs ${:.2f} due across {} job{}".format(
+        available, pending, expected, due["count"], "" if due["count"] == 1 else "s")
     if available < expected:
-        state, reason = "fail", "${:.2f} available but ${:.2f} in hauler payouts due — transfers will fail".format(available, expected)
+        state, reason = "fail", soon + " — transfers will fail until it settles"
     elif available < floor:
-        state, reason = "warn", "${:.2f} available, below the ${:.0f} floor (${:.2f} due)".format(available, floor, expected)
+        state, reason = "warn", soon + ", below the ${:.0f} operating floor".format(floor)
     else:
-        state, reason = "ok", "${:.2f} available, ${:.2f} due".format(available, expected)
-    return {"state": state, "reason": reason, "available": available, "expected": expected, "floor": floor}
+        state, reason = "ok", soon
+    return {"state": state, "reason": reason, "available": available, "pending": pending,
+            "expected": expected, "floor": floor, "due_count": due["count"], "due_jobs": jobs[:10]}
 
 
 # ---------------------------------------------------------------------------
