@@ -2433,19 +2433,23 @@ def _handle_charge_refunded(charge):
                     data={"job_id": job.id, "amount": newly_refunded,
                           "partial": payment.payment_status == "partially_refunded"},
                 ))
-        # If the job still has a hauler moving on it, the refund means the
-        # trip may be dead — tell the admin so nobody drives to a refunded job.
-        if newly_refunded > 0 and job.status in ("assigned", "accepted", "en_route", "arrived", "started"):
+        # A FULL refund on unfinished work is a cancellation: close the job,
+        # release the hauler, drop it from the work queue. Money and status
+        # must not disagree (job AFB22IMO sat "assigned" after its refund).
+        auto_cancelled = False
+        if payment.payment_status == "refunded":
+            from cancellation import cancel_if_fully_refunded
+            auto_cancelled = cancel_if_fully_refunded(job, payment, reason="refunded_in_full")
+        # A PARTIAL refund while a hauler is moving is a judgement call — tell
+        # a person, through the private alert line, never a hardcoded number.
+        if newly_refunded > 0 and not auto_cancelled and job.status in (
+                "assigned", "accepted", "en_route", "arrived", "started"):
             try:
-                admin_phone = os.environ.get("OPERATOR_PHONE") or os.environ.get("ADMIN_PHONE", "")
-                if admin_phone:
-                    from notifications import send_sms as _admin_sms
-                    _admin_sms(admin_phone,
-                               "⚠️ REFUND ${:.2f} on job {} while status={}. "
-                               "Hauler may still be en route — cancel/redirect them.".format(
-                                   newly_refunded,
-                                   job.confirmation_code or str(job.id)[:8],
-                                   job.status))
+                from ops_contacts import alert_sms
+                alert_sms("REFUND ${:.2f} on job {} while status={}. Hauler may still be "
+                          "en route — cancel or redirect them.".format(
+                              newly_refunded, job.confirmation_code or str(job.id)[:8], job.status),
+                          why="partial refund on a moving job")
             except Exception:
                 logger.exception("refund admin SMS failed")
 

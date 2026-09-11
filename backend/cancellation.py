@@ -336,3 +336,80 @@ def customer_may_act(job, user_id, token):
     if user_id and job.customer_id == user_id:
         return True
     return verify_manage_token(job, token)
+
+
+# ---------------------------------------------------------------------------
+# A full refund on unfinished work IS a cancellation
+# ---------------------------------------------------------------------------
+# Job AFB22IMO: the owner refunded the customer from the Stripe dashboard after
+# the haul never happened. Stripe told us (charge.refunded), the payment row
+# flipped to "refunded" — and the job stayed "assigned" to a hauler, at the top
+# of the work queue as a customer still waiting. Money and status disagreed,
+# and only a human with admin access could reconcile them.
+#
+# Rule: when the customer has been refunded in full and the job has not been
+# completed, the job is cancelled. No second refund can happen —
+# execute_cancellation only refunds a payment still in "succeeded", and
+# _paid_amount is zero for a refunded one.
+OPEN_FOR_REFUND_CANCEL = ("pending", "confirmed", "assigned", "accepted",
+                          "en_route", "arrived", "started", "in_progress")
+
+
+def cancel_if_fully_refunded(job, payment=None, reason="refunded_in_full"):
+    """Cancel ``job`` if its payment was refunded in full and work never finished.
+
+    Returns True when a cancellation was applied. Never raises; does not commit.
+    """
+    try:
+        payment = payment or getattr(job, "payment", None)
+        if not job or not payment:
+            return False
+        if (payment.payment_status or "") != "refunded":
+            return False
+        if job.status not in OPEN_FOR_REFUND_CANCEL:
+            return False
+        had_driver = job.driver_id
+        outcome, result = execute_cancellation(job, "admin", reason=reason)
+        if not result.get("applied"):
+            return False
+        # execute_cancellation voids offers and change orders; the dispatch
+        # reservation is the assignment module's to release.
+        if had_driver:
+            try:
+                from assignment import release_reservation
+                release_reservation(job.id, had_driver)
+            except Exception:
+                logger.exception("reservation release failed for refunded job %s", job.id)
+        logger.info("job %s cancelled: payment refunded in full while status was open",
+                    job.confirmation_code or job.id)
+        return True
+    except Exception:
+        logger.exception("cancel_if_fully_refunded failed for job %s", getattr(job, "id", "?"))
+        return False
+
+
+def reconcile_refunded_jobs(limit=200):
+    """Sweep: every open job whose payment is already fully refunded gets
+    cancelled. Idempotent. Catches refunds that landed before this rule
+    existed, or whose webhook never reached us. Commits per job so one bad
+    row cannot roll back the rest. Returns the codes it closed."""
+    from models import Job, Payment
+    closed = []
+    rows = (db.session.query(Job, Payment)
+            .join(Payment, Payment.job_id == Job.id)
+            .filter(Payment.payment_status == "refunded",
+                    Job.status.in_(OPEN_FOR_REFUND_CANCEL))
+            .limit(limit).all())
+    for job, payment in rows:
+        if cancel_if_fully_refunded(job, payment, reason="refunded_in_full_reconcile"):
+            try:
+                db.session.commit()
+                closed.append(job.confirmation_code or str(job.id)[:8])
+                try:
+                    notify_customer_cancelled(job)
+                except Exception:
+                    logger.exception("customer cancel notice failed for %s", job.id)
+            except Exception:
+                logger.exception("commit failed cancelling refunded job %s", job.id)
+                db.session.rollback()
+    return closed

@@ -187,6 +187,18 @@ def _sameday_standby_ask(app):
         logger.exception("standby ask job failed")
 
 
+def _reconcile_refunded_jobs(app):
+    """Open jobs whose payment was refunded in full get cancelled (cancellation.py)."""
+    with app.app_context():
+        try:
+            from cancellation import reconcile_refunded_jobs
+            closed = reconcile_refunded_jobs()
+            if closed:
+                logger.warning("refund reconcile cancelled %d open job(s): %s", len(closed), ", ".join(closed))
+        except Exception:
+            logger.exception("refund reconcile failed")
+
+
 def _owed_alert(app):
     """5pm Florida: haulers still unpaid for jobs completed today (sameday_pay.py)."""
     try:
@@ -731,6 +743,17 @@ def init_scheduler(app):
             args=[app],
             id="sameday_standby_ask",
             name="Same-day standby roster text",
+        )
+
+        # Refunded-but-open jobs — 90s after boot, then hourly
+        scheduler.add_job(
+            _reconcile_refunded_jobs,
+            "interval",
+            hours=1,
+            next_run_time=_dt.now() + _td(seconds=90),
+            args=[app],
+            id="reconcile_refunded_jobs",
+            name="Cancel jobs refunded in full",
         )
 
         # Haulers owed for today — 17:00 Florida time
