@@ -1423,7 +1423,7 @@ CALLS_HTML = r"""<!doctype html>
 <script src="/static/desk-sameday.js?v=1"></script>
 <script src="/static/desk-enrich.js?v=1"></script>
 <script src="/static/desk-dialpad.js?v=2"></script>
-<script src="/static/desk-work.js?v=1"></script>
+<script src="/static/desk-work.js?v=2"></script>
 <script src="/va/calls.js?v=31"></script>
 </body>
 </html>

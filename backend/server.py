@@ -1032,7 +1032,7 @@ def get_available_time_slots(requested_date=None):
 # ---------------------------------------------------------------------------
 # Legacy API Routes (kept for backward compatibility)
 # ---------------------------------------------------------------------------
-APP_VERSION = "2.2.39-confirm-before-the-job"
+APP_VERSION = "2.2.40-confirm-before-the-job"
 
 
 # ---------------------------------------------------------------------------
