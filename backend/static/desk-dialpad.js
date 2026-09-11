@@ -210,9 +210,10 @@
       mode.textContent = "";
       mode.appendChild(el("b", null, "Connected. "));
       mode.appendChild(document.createTextNode(
-        "Tap the extension the gatekeeper gave you and it goes down the line — no need to hang up."));
+        "Tap through the menu — \u201cpress 2 for sales\u201d, an extension, whatever it asks for. " +
+        "Every key goes down the line. No need to hang up."));
       display.textContent = sentDigits || "";
-      hint.textContent = sentDigits ? "sent to the call" : "press digits to send them through";
+      hint.textContent = sentDigits ? "sent to the call" : "each key goes down the line";
       callBtn.textContent = "Done";
       callBtn.className = "dp-btn alt";
       callBtn.disabled = false;
@@ -223,7 +224,8 @@
       return;
     }
     title.textContent = "Dialpad";
-    mode.textContent = "Dial any number — a direct line, an extension, anyone a gatekeeper hands you.";
+    mode.textContent = "Dial any number. Once you're connected, these keys work the menu — " +
+      "press 2 for sales, an extension, anything the system asks for.";
     display.textContent = pretty(raw) || "";
     hint.textContent = raw ? "" : "type or paste a number";
     callBtn.textContent = "Call";
@@ -258,6 +260,12 @@
   function shut(){ wrap.hidden = true; say(""); }
 
   tab.addEventListener("click", open);
+
+  // The call strip is what she's looking at while a call is connected, and an
+  // IVR ("press 2 for sales") gives you a couple of seconds. Opening the
+  // keypad from there beats hunting for a corner tab.
+  var stripKey = document.getElementById("cs-keypad");
+  if(stripKey) stripKey.addEventListener("click", function(e){ e.preventDefault(); open(); });
   close.addEventListener("click", shut);
   wrap.addEventListener("click", function(e){ if(e.target === wrap) shut(); });
   backBtn.addEventListener("click", function(){

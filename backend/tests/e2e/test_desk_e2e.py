@@ -243,6 +243,14 @@ def test_dialpad_dials_a_number_and_sends_an_extension_mid_call(desk):
     assert "(561) 555-0142" in desk.text_content(".dp-num")
     assert not desk.is_disabled(".dp-row .dp-btn:not(.alt)")
 
+    # the keypad is reachable from the call strip, which is what she is looking
+    # at mid-call — an IVR gives you about two seconds
+    desk.evaluate("document.getElementById('callstrip').hidden = false")
+    assert desk.is_visible("#cs-keypad")
+    desk.click(".dp-x")
+    desk.click("#cs-keypad")
+    desk.wait_for_selector(".dp-grid", timeout=5000)
+
     # once connected, the same keys send tones down the live call instead
     desk.evaluate("""() => {
         window.__sentDigits = '';

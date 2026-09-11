@@ -1131,7 +1131,7 @@ CALLS_HTML = r"""<!doctype html>
 <meta name="theme-color" content="#0B0E12" />
 <title>Umuve — Call Desk</title>
 <link rel="stylesheet" href="/va/app.css?v=4" />
-<link rel="stylesheet" href="/va/calls.css?v=24" />
+<link rel="stylesheet" href="/va/calls.css?v=25" />
 <link rel="manifest" href="/static/desk-manifest.json" />
 </head>
 <body>
@@ -1176,6 +1176,7 @@ CALLS_HTML = r"""<!doctype html>
       <div class="cs-dot"></div>
       <div class="cs-txt"><div class="cs-who" id="cs-who">—</div><div class="cs-state" id="cs-state">Calling…</div></div>
       <div class="cs-time" id="cs-time"></div>
+      <button class="cs-btn" id="cs-keypad" type="button" title="Press 2 for sales, dial an extension">Keypad</button>
       <button class="cs-btn" id="cs-mute" type="button">Mute</button>
       <button class="cs-btn cs-hang" id="cs-hang" type="button">Hang up</button>
     </div>
@@ -1420,9 +1421,9 @@ CALLS_HTML = r"""<!doctype html>
 <script src="/static/desk-inbound.js?v=1"></script>
 <script src="/static/desk-sameday.js?v=1"></script>
 <script src="/static/desk-enrich.js?v=1"></script>
-<script src="/static/desk-dialpad.js?v=1"></script>
+<script src="/static/desk-dialpad.js?v=2"></script>
 <script src="/static/desk-work.js?v=1"></script>
-<script src="/va/calls.js?v=28"></script>
+<script src="/va/calls.js?v=29"></script>
 </body>
 </html>
 """
@@ -1660,6 +1661,12 @@ CALLS_CSS = r"""/* Call Desk — layers over /va/app.css tokens */
 .cs-btn{padding:8px 12px;font-family:var(--display);font-weight:700;font-size:12.5px;color:var(--ink);
   background:var(--raise);border:1px solid var(--line);border-radius:10px;cursor:pointer}
 .cs-hang{color:#FF7A5C;border-color:rgba(255,122,92,.45)}
+/* three buttons on a phone squeezed the company name down to "Palm ..." —
+   tighten the buttons rather than lose who you are talking to */
+@media(max-width:430px){
+  .cs-btn{padding:8px 9px;font-size:12px}
+  #cs-keypad{padding:8px 8px}
+}
 .callstrip.failed .cs-dot{background:#FF7A5C}
 .callstrip.failed .cs-state{color:#FF7A5C;font-weight:600}
 .incoming{position:fixed;inset:0;display:flex;align-items:flex-end;justify-content:center;
