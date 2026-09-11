@@ -339,10 +339,19 @@ def speed_to_lead_sweep():
     name. Not a second one; the follow-up is a person calling."""
     sent = []
     try:
-        from inbound import in_human_hours
-        in_hours = in_human_hours()
+        from flags import flag
+        if not flag("lead_auto_text"):
+            return sent                              # kill switch
     except Exception:
-        in_hours = True
+        pass
+    # "Calling you in a minute" is only true if someone is clocked in. The
+    # posted hours are unset in production and read as always-open, which is
+    # how four people got that promise at 6pm with nobody on shift.
+    try:
+        from inbound import humans_online
+        in_hours = bool(humans_online())
+    except Exception:
+        in_hours = False
     for l in untouched(min_age_seconds=SPEED_TO_LEAD_SECONDS):
         if not l["phone_digits"] or l.get("auto_text_at"):
             continue

@@ -226,3 +226,29 @@ def test_the_auto_text_has_an_age_cap():
     assert sms.call_count == 0
     # it still shows in the list and the queue for a person
     assert any(l["phone_digits"] == "9545550191" for l in leads.collect()[0])
+
+
+
+def test_the_promise_matches_whether_anyone_is_actually_on_shift():
+    """'Calling you in a minute' was sent at 6pm to four people with nobody
+    clocked in, because the posted hours were unset and read as always-open.
+    The wording keys off a clocked-in human, not the clock."""
+    _call("9545550195", source="google", minutes_ago=3)
+    with mock.patch("inbound.humans_online", return_value=[]), \
+         mock.patch("desk_line.send_desk_text") as sms:
+        assert leads.speed_to_lead_sweep() == ["9545550195"]
+    assert "first thing" in sms.call_args[0][1] and "in a minute" not in sms.call_args[0][1]
+
+    _call("9545550196", source="google", minutes_ago=3)
+    with mock.patch("inbound.humans_online", return_value=["Tracy"]), \
+         mock.patch("desk_line.send_desk_text") as sms:
+        assert leads.speed_to_lead_sweep() == ["9545550196"]
+    assert "in a minute" in sms.call_args[0][1]
+
+
+def test_the_auto_text_has_a_kill_switch():
+    _call("9545550197", source="google", minutes_ago=3)
+    with mock.patch.dict(os.environ, {"FEATURE_LEAD_AUTO_TEXT": "false"}), \
+         mock.patch("desk_line.send_desk_text") as sms:
+        assert leads.speed_to_lead_sweep() == []
+    assert sms.call_count == 0
