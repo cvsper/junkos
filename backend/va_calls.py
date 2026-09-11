@@ -1131,7 +1131,7 @@ CALLS_HTML = r"""<!doctype html>
 <meta name="theme-color" content="#0B0E12" />
 <title>Umuve — Call Desk</title>
 <link rel="stylesheet" href="/va/app.css?v=4" />
-<link rel="stylesheet" href="/va/calls.css?v=25" />
+<link rel="stylesheet" href="/va/calls.css?v=27" />
 <link rel="manifest" href="/static/desk-manifest.json" />
 </head>
 <body>
@@ -1198,6 +1198,7 @@ CALLS_HTML = r"""<!doctype html>
             <input id="pw-new" type="password" autocomplete="new-password" placeholder="New password (8+ characters)" required minlength="8" />
             <button class="si-btn" type="submit">Change password</button>
           </form>
+          <p class="qb-sub" id="ac-note" hidden></p>
           <p class="qb-status" id="ac-status" hidden></p>
           <button type="button" class="tb-btn out" id="sign-out">Sign out</button>
         </div>
@@ -1423,7 +1424,7 @@ CALLS_HTML = r"""<!doctype html>
 <script src="/static/desk-enrich.js?v=1"></script>
 <script src="/static/desk-dialpad.js?v=2"></script>
 <script src="/static/desk-work.js?v=1"></script>
-<script src="/va/calls.js?v=29"></script>
+<script src="/va/calls.js?v=31"></script>
 </body>
 </html>
 """
@@ -1545,7 +1546,14 @@ CALLS_CSS = r"""/* Call Desk — layers over /va/app.css tokens */
   .brand-mark{width:26px;height:26px}
   .bar-sub{display:none}
   .statsbar{display:block}
-  .who{display:none}
+  /* was display:none — which made the account panel (change password, sign
+     out) completely unreachable on a phone. Keep the button, drop the name. */
+  /* .who's base rule is declared AFTER this block, so it wins at equal
+     specificity — qualify with .bar or the name renders next to the initial */
+  .bar .who{display:inline-flex;align-items:center;justify-content:center;
+    width:34px;height:34px;padding:0;margin-right:0;font-size:0;
+    border-color:var(--line);border-radius:999px}
+  .bar .who::before{content:attr(data-initial);font-size:13px;font-weight:800;color:var(--muted)}
   .clock{padding:0 9px;margin-right:0}
   .bar .back{width:34px;height:34px;font-size:15px}
   .dial-num{font-size:clamp(26px,8.2vw,36px)}
@@ -1910,8 +1918,14 @@ CALLS_JS = r"""(function(){
   function showTool(){
     gate.hidden = true; tool.hidden = false;
     var who = document.getElementById("who"); var m = me();
-    if(m && m.name){ who.textContent = m.name + (m.is_manager ? " · manager" : ""); who.hidden = false; }
-    else if(vaName()){ who.textContent = vaName(); who.hidden = false; } else { who.hidden = true; }
+    var whoName = (m && m.name) ? m.name : vaName();
+    if(whoName){
+      who.textContent = whoName + (m && m.is_manager ? " · manager" : "");
+      // Phones hide the name for space; the button survives as an initial so
+      // "Your account" (change password, sign out) stays reachable there.
+      who.setAttribute("data-initial", whoName.trim().charAt(0).toUpperCase());
+      who.hidden = false;
+    } else { who.hidden = true; }
     syncRoleUI();
     deskBoot();
   }
@@ -2374,7 +2388,16 @@ CALLS_JS = r"""(function(){
     hideQueue(); hideTime(); searchbox.hidden = true;
     var m = me();
     document.getElementById("ac-sub").textContent = m ? (m.full_name || m.name) + " · " + (m.email || "") + (m.is_manager ? " · manager" : "") : (vaName() || "") + " · signed in with the access code";
-    document.getElementById("pw-form").hidden = !jwt();
+    // A shared access code has no password to change, so the form is hidden.
+    // Say why, instead of showing a panel whose only button is Sign out.
+    var hasAccount = !!jwt();
+    document.getElementById("pw-form").hidden = !hasAccount;
+    var pwNote = document.getElementById("ac-note");
+    if(pwNote){
+      pwNote.hidden = hasAccount;
+      pwNote.textContent = "The access code is shared, so there's no password here to change. " +
+        "Ask Shamar for your own sign-in (your email and a password) and this is where you'd change it.";
+    }
     document.getElementById("ac-status").hidden = true;
     acctbox.hidden = false; deck.classList.add("acct-open"); window.scrollTo(0, 0);
   }

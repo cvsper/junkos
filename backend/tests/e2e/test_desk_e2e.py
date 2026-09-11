@@ -326,3 +326,34 @@ def test_work_queue_shows_what_needs_a_person_and_who_has_it(desk, server):
         return hits;
     }""")
     assert clash == [], "a floating tab is covering {}".format(clash)
+
+
+def test_a_va_can_reach_their_account_and_change_their_password_on_a_phone(desk):
+    """Tracy asked for a change-password button. The form existed, but it
+    opened by tapping your own name in the header — and the header hid that
+    name below 640px, so on a phone the account panel (change password, sign
+    out) could not be reached at all."""
+    sign_in(desk)
+    desk.set_viewport_size({"width": 390, "height": 844})
+    desk.wait_for_timeout(400)
+
+    who = desk.query_selector("#who")
+    assert who is not None and who.is_visible(), "the account button is gone on a phone"
+    assert desk.get_attribute("#who", "data-initial"), "no initial to show once the name is hidden"
+
+    desk.click("#who")
+    desk.wait_for_selector("#acctbox:not([hidden])", timeout=5000)
+    assert desk.is_visible("#pw-cur") and desk.is_visible("#pw-new")
+    assert desk.is_visible("#sign-out")
+
+    # the form rejects a wrong current password rather than silently doing nothing
+    desk.fill("#pw-cur", "definitely-not-it")
+    desk.fill("#pw-new", "a-new-password-123")
+    desk.click("#pw-form button[type=submit]")
+    desk.wait_for_selector("#ac-status:not([hidden])", timeout=8000)
+    assert desk.text_content("#ac-status").strip()
+
+    # and it still works on a laptop, where the name is shown in full
+    desk.set_viewport_size({"width": 1440, "height": 900})
+    desk.wait_for_timeout(300)
+    assert "Tracy" in desk.text_content("#who")
