@@ -219,6 +219,7 @@
     if(a.key === "confirm"){ path = "/api/va/confirm/mark"; body.confirmed = true; }
     else if(a.key === "cant_make_it"){ path = "/api/va/confirm/mark"; body.confirmed = false; }
     else if(a.key === "redispatch"){ path = "/api/va/confirm/redispatch"; }
+    else if(a.key === "lead_touch"){ path = "/api/va/leads/touch"; body = {kind: a.lead_kind, ref_id: a.lead_ref, phone: a.phone}; }
     else return;
     busy = true; btn.disabled = true;
     post(path, body).then(function(r){

@@ -562,6 +562,13 @@ def _handle_transfer_with_context(args):
     from ops_contacts import alert_phone
     operator_phone = alert_phone()
     send_sms_async(operator_phone, msg)
+    # Also put it on the desk: the VA who picks up the transfer sees Maya's
+    # summary keyed by the caller's number instead of answering cold.
+    try:
+        from leads import remember_maya_handoff
+        remember_maya_handoff(args.get("customer_phone") or args.get("phone") or "", msg)
+    except Exception:
+        logger.exception("maya handoff context not saved")
 
     logger.info("Transfer context SMS sent to operator for customer: %s", customer_name)
 
@@ -2137,6 +2144,13 @@ def _process_meta_lead(app, leadgen_id):
                 ).format(first_name or "there", frontend_url)
                 send_sms_async(phone, sms_msg)
 
+            # Persist the lead so it reaches the desk (leads.py) — before this a Meta
+            # form only triggered Maya and was never a row anywhere.
+            try:
+                from leads import record_form_lead
+                record_form_lead(phone, first_name, source="meta")
+            except Exception:
+                logger.exception("meta lead not persisted")
             # Notify operator
             try:
                 from sms_service import send_sms_async

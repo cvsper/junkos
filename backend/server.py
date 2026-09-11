@@ -342,7 +342,8 @@ except Exception as _en_exc:  # pragma: no cover
 # Same-day dispatch from the desk (capacity, offer wave, standby roster)
 try:
     import models_sameday  # noqa: F401  (tables for create_all)
-    import models_work  # noqa: F401  — work_item_state (work queue ownership)
+    import models_work  # noqa: F401
+    import models_leads  # noqa: F401  — lead_touch / quote_followups  — work_item_state (work queue ownership)
     from sameday import sameday_bp
     app.register_blueprint(sameday_bp)
     from sameday_pay import pay_bp
@@ -353,6 +354,8 @@ try:
     app.register_blueprint(confirm_bp)
     from maya_report import maya_bp
     app.register_blueprint(maya_bp)
+    from leads import leads_bp
+    app.register_blueprint(leads_bp)
 except Exception as _sd_exc:  # pragma: no cover
     import logging as _logging
     _logging.getLogger(__name__).warning("sameday_bp not registered: %s", _sd_exc)
@@ -1032,7 +1035,7 @@ def get_available_time_slots(requested_date=None):
 # ---------------------------------------------------------------------------
 # Legacy API Routes (kept for backward compatibility)
 # ---------------------------------------------------------------------------
-APP_VERSION = "2.2.40-confirm-before-the-job"
+APP_VERSION = "2.2.41-leads"
 
 
 # ---------------------------------------------------------------------------

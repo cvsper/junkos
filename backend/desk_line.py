@@ -617,14 +617,19 @@ def twilio_voice_inbound():
     # Phase 6: customers (LSA) ring the humans first, Maya second.
     kind = "prospect" if prospect else inbound.classify_caller(from_digits)[0]
     in_hours = inbound.in_human_hours()
+    # Which number they dialled tells us the channel (leads.py): a call on the
+    # Google-ads number is a paid lead and is treated as one from the first ring.
+    from leads import source_for_number
+    source = source_for_number(request.form.get("To", ""))
     try:
         inbound.record_call(call_sid, from_digits, kind, in_hours=1 if in_hours else 0,
-                            disposition="ringing")
+                            disposition="ringing", source=source)
     except Exception:
         logger.exception("inbound_calls insert failed for %s", call_sid)
         db.session.rollback()
     resp.say("Thanks for calling Umuve.", voice="Polly.Joanna")
-    if in_hours:
+    if in_hours or (source in inbound.PAID_SOURCES and inbound.humans_online()):
+        # a paid lead rings a clocked-in human even outside the posted hours
         dial = resp.dial(timeout=inbound.RING_SECONDS,
                          action=_base_url() + "/api/desk/twilio/voice/after-in",
                          **_record_attr())

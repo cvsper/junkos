@@ -157,6 +157,11 @@ def inbound_sms():
 
             if lower.split()[0].strip(".!,") in ("stop", "unsubscribe", "cancel", "quit"):
                 _opt_out_concierge(from_phone)
+                try:
+                    from leads import stop_followups
+                    stop_followups(from_phone, "stop")
+                except Exception:
+                    logger.exception("quote follow-up stop failed")
                 # Twilio's own STOP handling also fires; this just flips our flag.
 
             elif is_signup_keyword(body):

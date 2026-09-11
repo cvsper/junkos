@@ -66,6 +66,7 @@ _ratelimit = (
 DEFAULT_MAYA = "+15619441636"
 DEFAULT_HOURS = "08:00-20:00"
 RING_SECONDS = 20
+PAID_SOURCES = ("google", "meta")   # a lead somebody paid for never dies in voicemail
 MAYA_RING_SECONDS = 30
 LEGACY_IDENTITY = "desk"
 RECENT_DAYS = 7
@@ -500,7 +501,10 @@ def inbound_whois():
           .order_by(CallbackRequest.created_at.desc()).first())
     prior = (InboundCall.query.filter(InboundCall.phone_digits == digits)
              .order_by(InboundCall.created_at.desc()).limit(5).all())
+    from leads import whois_extras
+    _ex = whois_extras(digits)
     return jsonify({
+        "source": _ex.get("source"), "banner": _ex.get("banner"), "maya_context": _ex.get("maya_context"),
         "kind": kind,
         "phone": _pretty(digits),
         "phone_digits": digits,
@@ -561,6 +565,12 @@ def inbound_quote_text():
         record_call(None, digits, kind, disposition="answered_by_human", outcome="quoted",
                     quote_total=q["total"], va_name=va_name, answered_by=va_name, notes=note)
     _mark_activity(digits, call.call_sid if call else None, note)
+    try:
+        from leads import schedule_followup, touch_phone as _touch
+        schedule_followup(digits, name, q.get("total"), items=items, va_name=va_name)
+        _touch(digits, va_name, outcome="quoted")
+    except Exception:
+        logger.exception("quote follow-up not scheduled")
     audit("inbound_quote_text", "phone", digits[-4:],
           {"total": q["total"], "items": q["items_text"], "texted": bool(sid)})
     return jsonify({"ok": True, "texted": bool(sid), "sid": sid, "total": q["total"],
@@ -632,6 +642,20 @@ def inbound_book():
         return jsonify({"error": body.get("error") or "Couldn't create the job."}), status
 
     job = db.session.get(Job, (body.get("job") or {}).get("id") or "")
+    # Where the lead came from (leads.py): the number they dialled was recorded on
+    # the inbound call; carry it onto the booking so paid channels are measurable.
+    try:
+        from models_inbound import InboundCall as _IC
+        from leads import touch_phone as _touch, stop_followups as _stop
+        _last = (_IC.query.filter(_IC.phone_digits == digits, _IC.source.isnot(None))
+                 .order_by(_IC.created_at.desc()).first())
+        if job is not None and _last and _last.source and not getattr(job, "lead_source", None):
+            job.lead_source = "phone_" + _last.source
+            db.session.commit()
+        _touch(digits, va_name, outcome="booked")
+        _stop(digits, "booked")
+    except Exception:
+        logger.exception("lead source stamp failed")
     if job is not None:
         # Structured pricing on the job: the engine breakdown, not just a
         # hand-typed total, so dispatch and payouts see the real shape.
@@ -746,6 +770,11 @@ def inbound_outcome():
         return jsonify({"error": "Unknown outcome."}), 400
     va_name = desk_va_name(data)
     note = (data.get("note") or "").strip()[:500]
+    try:
+        from leads import touch_phone as _touch
+        _touch(digits, va_name, note=note)
+    except Exception:
+        logger.exception("lead touch on outcome failed")
     label = {"not_fit": "Not a fit", "spam": "Spam", "done": "Handled"}[outcome]
     line = label + ((": " + note) if note else "")
     if outcome == "done":

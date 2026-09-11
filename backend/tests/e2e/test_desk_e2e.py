@@ -311,12 +311,12 @@ def test_work_queue_shows_what_needs_a_person_and_who_has_it(desk, server):
 
     # neither floating tab may cover a real control
     clash = desk.evaluate("""() => {
-        const tabs = [...document.querySelectorAll('.wq-tab, .dp-tab')];
+        const tabs = [...document.querySelectorAll('.wq-tab, .dp-tab, .ld-tab')];
         const hits = [];
         tabs.forEach(t => {
             const a = t.getBoundingClientRect();
             document.querySelectorAll('button, a').forEach(e => {
-                if (e === t || e.classList.contains('wq-tab') || e.classList.contains('dp-tab')) return;
+                if (e === t || e.classList.contains('wq-tab') || e.classList.contains('dp-tab') || e.classList.contains('ld-tab')) return;
                 const r = e.getBoundingClientRect();
                 if (r.width && r.height &&
                     !(r.right < a.left || r.left > a.right || r.bottom < a.top || r.top > a.bottom))

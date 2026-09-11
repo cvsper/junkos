@@ -39,6 +39,11 @@ class InboundCall(db.Model):
     va_name = Column(String(80), nullable=True)
     notes = Column(Text, nullable=True)
     in_hours = Column(Integer, nullable=True)                         # 1 inside human hours, 0 outside
+    # Lead handling (leads.py): which number they dialled tells us the channel;
+    # the outcome is what lets a junk Google lead be disputed for a refund.
+    source = Column(String(20), nullable=True, index=True)            # desk | google | meta | maya
+    lead_outcome = Column(String(20), nullable=True)                  # booked | not_a_fit | spam | no_answer | quoted
+    outcome_note = Column(String(300), nullable=True)
     created_at = Column(DateTime, default=_utcnow, index=True)
     updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
 

@@ -48,13 +48,14 @@ CLAIM_HOURS = 4
 RECENT_DAYS = 60
 MAX_SNOOZE_MINUTES = 60 * 24
 
-KINDS = ("hauler_not_moving", "unassigned_paid", "hauler_unconfirmed", "stranded_job",
+KINDS = ("hauler_not_moving", "unassigned_paid", "new_lead", "hauler_unconfirmed", "stranded_job",
          "hauler_owed", "missed_call", "callback_due")
 
 # Base weight per kind; age adds to it so nothing rots quietly at the bottom.
 _WEIGHT = {
     "hauler_not_moving": 1100,     # slot is 30 min away and nobody is driving
     "unassigned_paid": 1000,
+    "new_lead": 950,               # a lead nobody has touched — every minute costs it
     "hauler_unconfirmed": 800,     # the preventable one: ask before the day, not after
     "stranded_job": 700,
     "hauler_owed": 600,
@@ -110,6 +111,26 @@ def _customer_contact(job):
             phone = val
     return name, _pretty_phone(phone) if phone else None
 
+
+
+def _untouched_leads():
+    """Leads older than the speed-to-lead window that no person has touched.
+    The lead list (leads.py) is where Tracy works them; this is the escalation."""
+    from leads import untouched, SPEED_TO_LEAD_SECONDS
+    out = []
+    for l in untouched(min_age_seconds=SPEED_TO_LEAD_SECONDS):
+        out.append({
+            "kind": "new_lead", "ref_id": "{}:{}".format(l["kind"], l["ref_id"]),
+            "title": "{} lead waiting {}".format(l["source_label"], l["age_label"]),
+            "detail": "{} \u00b7 {}".format(l["name"] or l["phone"] or "unknown", (l["what"] or "")[:60]),
+            "why": "Nobody has called them back. Every minute they are dialling the next company.",
+            "age_hours": round(l["age_seconds"] / 3600.0, 2),
+            "phone": l["phone"], "customer": l["name"], "link": None,
+            "actions": [{"key": "lead_touch", "label": "I\u2019m on it", "lead_kind": l["kind"],
+                         "lead_ref": l["ref_id"], "phone": l["phone_digits"]}],
+            "tier": l["source"],
+        })
+    return out
 
 
 def _haulers_to_confirm():
@@ -319,7 +340,7 @@ def _callbacks_due():
 # Held by NAME, not by reference: a tuple of functions binds whatever existed
 # at import, which makes the set impossible to substitute and reports the
 # original name even when a source has been replaced.
-_SOURCES = ("_haulers_to_confirm", "_unassigned_paid", "_stranded_jobs", "_haulers_owed",
+_SOURCES = ("_untouched_leads", "_haulers_to_confirm", "_unassigned_paid", "_stranded_jobs", "_haulers_owed",
             "_missed_calls", "_callbacks_due")
 
 

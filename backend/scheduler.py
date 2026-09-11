@@ -187,6 +187,17 @@ def _sameday_standby_ask(app):
         logger.exception("standby ask job failed")
 
 
+def _leads_sweep(app):
+    """Speed-to-lead auto-text + quote follow-ups (leads.py)."""
+    with app.app_context():
+        try:
+            from leads import speed_to_lead_sweep, followup_sweep
+            speed_to_lead_sweep()
+            followup_sweep()
+        except Exception:
+            logger.exception("leads sweep failed")
+
+
 def _preslot_check(app):
     """T-30: an assigned hauler with no movement is re-dispatched (unconfirmed)
     or a person is paged (confirmed). hauler_confirm.py."""
@@ -754,6 +765,16 @@ def init_scheduler(app):
             args=[app],
             id="sameday_standby_ask",
             name="Same-day standby roster text",
+        )
+
+        # Speed-to-lead auto-text + quote follow-ups — every minute
+        scheduler.add_job(
+            _leads_sweep,
+            "interval",
+            minutes=1,
+            args=[app],
+            id="leads_sweep",
+            name="Speed-to-lead + quote follow-ups",
         )
 
         # Assigned hauler, 30 min out, no movement — every 5 min

@@ -93,6 +93,10 @@ COLUMN_MIGRATIONS = [
     ("jobs", "noshow_contractor_id", "VARCHAR(36)", "VARCHAR(36)", "NULL"),
     ("jobs", "noshow_reason", "VARCHAR(80)", "VARCHAR(80)", "NULL"),
     ("jobs", "noshow_redispatched_at", "DATETIME", "TIMESTAMP", "NULL"),
+    # inbound lead source + outcome (leads.py)
+    ("inbound_calls", "source", "VARCHAR(20)", "VARCHAR(20)", "NULL"),
+    ("inbound_calls", "lead_outcome", "VARCHAR(20)", "VARCHAR(20)", "NULL"),
+    ("inbound_calls", "outcome_note", "VARCHAR(300)", "VARCHAR(300)", "NULL"),
     ("call_prospects", "side", "VARCHAR(8)", "VARCHAR(8)", "NULL"),
 
     # Push: which of the two iOS apps a token belongs to, and which APNs
@@ -2368,6 +2372,50 @@ _WORK_ITEM_PG = _WORK_ITEM_SQLITE.replace("DATETIME", "TIMESTAMP")
 NEW_TABLES_SQLITE.append(_WORK_ITEM_SQLITE)
 NEW_TABLES_PG.append(_WORK_ITEM_PG)
 NEW_TABLE_NAMES.append("work_item_state")
+
+# ---------------------------------------------------------------------------
+# lead_touch + quote_followups — leads.py
+# ---------------------------------------------------------------------------
+_LEAD_TOUCH_SQLITE = dedent("""\
+    CREATE TABLE IF NOT EXISTS lead_touch (
+        id VARCHAR(36) PRIMARY KEY,
+        kind VARCHAR(24) NOT NULL,
+        ref_id VARCHAR(64) NOT NULL,
+        phone_digits VARCHAR(10),
+        source VARCHAR(20),
+        auto_text_at DATETIME,
+        touched_at DATETIME,
+        touched_by VARCHAR(80),
+        outcome VARCHAR(20),
+        note VARCHAR(300),
+        created_at DATETIME,
+        updated_at DATETIME,
+        CONSTRAINT uq_lead_touch_kind_ref UNIQUE (kind, ref_id)
+    )""")
+_QUOTE_FOLLOWUP_SQLITE = dedent("""\
+    CREATE TABLE IF NOT EXISTS quote_followups (
+        id VARCHAR(36) PRIMARY KEY,
+        phone_digits VARCHAR(10) NOT NULL,
+        name VARCHAR(120),
+        quote_total REAL,
+        items TEXT,
+        va_name VARCHAR(80),
+        step INTEGER NOT NULL DEFAULT 0,
+        next_at DATETIME,
+        last_sent_at DATETIME,
+        stopped_at DATETIME,
+        stop_reason VARCHAR(40),
+        created_at DATETIME
+    )""")
+NEW_TABLES_SQLITE.extend([_LEAD_TOUCH_SQLITE, _QUOTE_FOLLOWUP_SQLITE])
+NEW_TABLES_PG.extend([_LEAD_TOUCH_SQLITE.replace("DATETIME", "TIMESTAMP"),
+                      _QUOTE_FOLLOWUP_SQLITE.replace("DATETIME", "TIMESTAMP").replace("quote_total REAL", "quote_total DOUBLE PRECISION")])
+NEW_TABLE_NAMES.extend(["lead_touch", "quote_followups"])
+_OPS_INDEXES_SQLITE.extend(["CREATE INDEX IF NOT EXISTS ix_lead_touch_phone ON lead_touch (phone_digits)",
+                            "CREATE INDEX IF NOT EXISTS ix_quote_followups_next ON quote_followups (next_at)"])
+_OPS_INDEXES_PG.extend(["CREATE INDEX IF NOT EXISTS ix_lead_touch_phone ON lead_touch (phone_digits)",
+                        "CREATE INDEX IF NOT EXISTS ix_quote_followups_next ON quote_followups (next_at)"])
+
 
 _WORK_ITEM_INDEXES = [
     "CREATE INDEX IF NOT EXISTS ix_work_item_open ON work_item_state (done_at, snoozed_until)",
