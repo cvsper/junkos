@@ -203,3 +203,57 @@ def test_passcode_fallback_still_opens_the_desk(desk):
     desk.click("#gate-code-form button[type=submit]")
     desk.wait_for_selector("#card:not([hidden]), #empty:not([hidden])", timeout=15000)
     assert "Trixie" in desk.text_content("#who")
+
+
+def test_dialpad_dials_a_number_and_sends_an_extension_mid_call(desk):
+    """Tracy's request: reach the decision maker.
+
+    A gatekeeper reads out an extension or a direct line. Before this, the desk
+    could only dial the number printed on the card, so the rest went on paper.
+    """
+    sign_in(desk)
+    desk.wait_for_selector(".dp-tab", timeout=10000)
+
+    # the tab must not sit on top of the line panel's own buttons
+    clash = desk.evaluate("""() => {
+        const t = document.querySelector('.dp-tab').getBoundingClientRect();
+        const hits = [];
+        document.querySelectorAll('button, a').forEach(e => {
+            if (e.classList.contains('dp-tab')) return;
+            const r = e.getBoundingClientRect();
+            if (r.width && r.height &&
+                !(r.right < t.left || r.left > t.right || r.bottom < t.top || r.top > t.bottom))
+                hits.push((e.id ? '#' + e.id : '') + '.' + String(e.className).split(' ')[0]);
+        });
+        return hits;
+    }""")
+    assert clash == [], "the dialpad tab is covering {}".format(clash)
+
+    desk.click(".dp-tab")
+    desk.wait_for_selector(".dp-grid", timeout=5000)
+
+    # typing a number arms the call button
+    assert desk.is_disabled(".dp-row .dp-btn:not(.alt)")
+    for digit in "5615550142":
+        desk.click(".dp-grid .dp-k:has-text('{}')".format(digit))
+    assert "(561) 555-0142" in desk.text_content(".dp-num")
+    assert not desk.is_disabled(".dp-row .dp-btn:not(.alt)")
+
+    # once connected, the same keys send tones down the live call instead
+    desk.evaluate("""() => {
+        window.__sentDigits = '';
+        window.__deskActiveCall = { sendDigits: d => { window.__sentDigits += d; } };
+        window.dispatchEvent(new CustomEvent('desk:call', { detail: { live: true } }));
+    }""")
+    desk.wait_for_selector(".dp-mode b", timeout=5000)
+    for digit in "214":
+        desk.click(".dp-grid .dp-k:has-text('{}')".format(digit))
+    assert desk.evaluate("window.__sentDigits") == "214"
+    assert "sent to the call" in desk.text_content(".dp-hint")
+
+    # and the decision maker can be saved onto the open card
+    desk.fill(".dp-save input[type=text]", "Marcus Bell")
+    desk.fill(".dp-save input[type=tel]", "(561) 555-0199")
+    desk.click(".dp-save .dp-btn")
+    desk.wait_for_selector(".dp-msg.ok", timeout=8000)
+    assert "Saved to the card" in desk.text_content(".dp-msg")

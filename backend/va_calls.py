@@ -1420,7 +1420,8 @@ CALLS_HTML = r"""<!doctype html>
 <script src="/static/desk-inbound.js?v=1"></script>
 <script src="/static/desk-sameday.js?v=1"></script>
 <script src="/static/desk-enrich.js?v=1"></script>
-<script src="/va/calls.js?v=26"></script>
+<script src="/static/desk-dialpad.js?v=1"></script>
+<script src="/va/calls.js?v=27"></script>
 </body>
 </html>
 """
@@ -2013,6 +2014,7 @@ CALLS_JS = r"""(function(){
         emptyLoad.hidden = true;
       }
       current = null;
+      window.__deskProspectId = null;
       loadThread(null);
       document.getElementById("callback").hidden = true;
       deskCallBtn.hidden = true;
@@ -2022,6 +2024,7 @@ CALLS_JS = r"""(function(){
     }
     var c = resp.card;
     current = c;
+    window.__deskProspectId = c.id;   // desk-dialpad.js saves contacts to this card
     empty.hidden = true;
     setLineWho(c.company);
     showThreadPane();
@@ -3109,6 +3112,9 @@ CALLS_JS = r"""(function(){
   function tick(){ stripTime.textContent = fmtDur((Date.now() - callStart) / 1000); }
   function bindCall(call, who){
     activeCall = call;
+    // desk-dialpad.js needs the live call to send extension digits (DTMF)
+    window.__deskActiveCall = call;
+    try { window.dispatchEvent(new CustomEvent("desk:call", {detail: {live: true}})); } catch(e){}
     stripWho.textContent = who;
     stripState.textContent = "Calling…"; stripTime.textContent = "";
     strip.hidden = false; strip.classList.remove("live");
@@ -3120,6 +3126,8 @@ CALLS_JS = r"""(function(){
     function done(){
       clearInterval(callTimer); strip.hidden = true; strip.classList.remove("live", "failed");
       activeCall = null;
+      window.__deskActiveCall = null;
+      try { window.dispatchEvent(new CustomEvent("desk:call", {detail: {live: false}})); } catch(e){}
       cpStop();
       if(current && !recordingVm) cpSummarize();
       if(current) setTimeout(function(){ loadThread(current); if(!recordingVm) pdAfterCall(); }, 1800);
