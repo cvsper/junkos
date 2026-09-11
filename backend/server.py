@@ -1025,7 +1025,7 @@ def get_available_time_slots(requested_date=None):
 # ---------------------------------------------------------------------------
 # Legacy API Routes (kept for backward compatibility)
 # ---------------------------------------------------------------------------
-APP_VERSION = "2.2.24-booking-alerts"
+APP_VERSION = "2.2.25-va-pay"
 
 
 # ---------------------------------------------------------------------------

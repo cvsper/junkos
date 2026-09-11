@@ -38,6 +38,51 @@ _ratelimit = (limiter.limit("240 per hour; 30 per minute") if limiter is not Non
 MAX_SHIFT_HOURS = 12          # forgot to clock out → auto-close at this length
 PERIOD_DAYS = 14
 
+# Hourly pay. Stored per VA in DeskSetting ("va_rate:<name>"), falling back to
+# "va_rate:default" then VA_DEFAULT_HOURLY_RATE. Hours were already tracked;
+# without a rate the owner was doing the arithmetic by hand every period.
+DEFAULT_HOURLY_RATE = float(os.environ.get("VA_DEFAULT_HOURLY_RATE", "0") or 0)
+
+
+def _rate_key(va_name):
+    return "va_rate:" + (va_name or "").strip().lower()
+
+
+def hourly_rate(va_name):
+    """Dollars per hour for this VA. 0 means 'not set' — never guess a wage."""
+    from models import DeskSetting
+    for key in (_rate_key(va_name), "va_rate:default"):
+        try:
+            raw = DeskSetting.get(key)
+        except Exception:
+            raw = None
+        if raw:
+            try:
+                return round(float(raw), 4)
+            except (TypeError, ValueError):
+                logger.warning("ignoring unparseable %s=%r", key, raw)
+    return DEFAULT_HOURLY_RATE
+
+
+def set_hourly_rate(va_name, rate):
+    from models import DeskSetting
+    rate = round(float(rate), 4)
+    if rate < 0:
+        raise ValueError("rate cannot be negative")
+    DeskSetting.put(_rate_key(va_name), "{:.4f}".format(rate))
+    return rate
+
+
+def _with_pay(totals, va_name):
+    """Add pay figures beside the second counts. Money is derived, never stored."""
+    rate = hourly_rate(va_name)
+    totals["hourly_rate"] = rate
+    for span in ("today", "week", "period"):
+        hours = (totals.get(span + "_seconds") or 0) / 3600.0
+        totals[span + "_hours"] = round(hours, 2)
+        totals[span + "_pay"] = round(hours * rate, 2) if rate else None
+    return totals
+
 
 def _passcode_ok(supplied):
     expected = os.environ.get("TRIXIE_ASSISTANT_PASSCODE", "")
@@ -124,9 +169,10 @@ def totals_for(va_name):
     today = sum(_overlap_seconds(s, day_start, now) for s in shifts)
     week = sum(_overlap_seconds(s, week_start, now) for s in shifts)
     period = sum(_overlap_seconds(s, p_start, min(p_end, now)) for s in shifts)
-    return {"today_seconds": today, "week_seconds": week, "period_seconds": period,
-            "period_label": p_label,
-            "period_start": p_start.isoformat(), "period_end": p_end.isoformat()}
+    return _with_pay({"today_seconds": today, "week_seconds": week, "period_seconds": period,
+                      "period_label": p_label,
+                      "period_start": p_start.isoformat(), "period_end": p_end.isoformat()},
+                     va_name)
 
 
 def _calls_during(shift):
@@ -216,6 +262,9 @@ def hours_report(va_name=None, days=30):
         d["day"] = _local(sh.started_at).strftime("%a %b %-d")
         d["start_local"] = _local(sh.started_at).strftime("%-I:%M %p")
         d["end_local"] = _local(sh.ended_at).strftime("%-I:%M %p") if sh.ended_at else None
+        rate = hourly_rate(sh.va_name)
+        d["hours"] = round((d.get("seconds") or 0) / 3600.0, 2)
+        d["pay"] = round(d["hours"] * rate, 2) if rate else None
         rows.append(d)
     names = sorted({sh.va_name for sh in shifts})
     return {"shifts": rows, "vas": names,
@@ -262,3 +311,27 @@ def admin_hours():
         return jsonify(hours_report(request.args.get("va") or None,
                                     request.args.get("days") or 30)), 200
     return _inner()
+
+
+@vatime_bp.route("/api/va/time/rate", methods=["POST"])
+@_ratelimit
+def rate():
+    """Read or set a VA's hourly rate. Reading is open to the desk so a VA can
+    see their own pay; setting is manager-only and audited."""
+    data = request.get_json(silent=True) or {}
+    ident = desk_identity(data)
+    if not ident:
+        return jsonify({"error": "Sign in to the desk first."}), 401
+    who = (data.get("va") or _va_name(data) or "").strip()
+    if not who:
+        return jsonify({"error": "Which VA?"}), 400
+    if "rate" in data and data.get("rate") is not None:
+        if not is_manager(ident):
+            return jsonify({"error": "Only a manager can change pay."}), 403
+        try:
+            new_rate = set_hourly_rate(who, data["rate"])
+        except (TypeError, ValueError) as exc:
+            return jsonify({"error": "Rate must be a positive number of dollars per hour."}), 400
+        audit("va_rate_set", "va", who, {"rate": new_rate})
+        return jsonify({"va": who, "hourly_rate": new_rate, "saved": True}), 200
+    return jsonify({"va": who, "hourly_rate": hourly_rate(who)}), 200

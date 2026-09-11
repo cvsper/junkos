@@ -1420,7 +1420,7 @@ CALLS_HTML = r"""<!doctype html>
 <script src="/static/desk-inbound.js?v=1"></script>
 <script src="/static/desk-sameday.js?v=1"></script>
 <script src="/static/desk-enrich.js?v=1"></script>
-<script src="/va/calls.js?v=25"></script>
+<script src="/va/calls.js?v=26"></script>
 </body>
 </html>
 """
@@ -2397,6 +2397,7 @@ CALLS_JS = r"""(function(){
     var start = new Date(clockState.shift.started_at + (clockState.shift.started_at.slice(-1) === "Z" ? "" : "Z"));
     return Math.max(0, (Date.now() - start.getTime()) / 1000);
   }
+  function money(v){ return (v == null) ? "" : "$" + Number(v).toFixed(2); }
   function renderClock(){
     var on = !!(clockState && clockState.on_clock);
     clockChip.classList.toggle("on", on);
@@ -2407,8 +2408,11 @@ CALLS_JS = r"""(function(){
       var extra = on ? (Date.now() / 1000 - (clockState._at || Date.now() / 1000)) : 0;
       document.getElementById("tb-today").textContent = hm((clockState.today_seconds || 0) + extra);
       document.getElementById("tb-week").textContent = hm((clockState.week_seconds || 0) + extra);
-      document.getElementById("tb-period").textContent = hm((clockState.period_seconds || 0) + extra);
-      document.getElementById("tb-period-k").textContent = "Pay period · " + (clockState.period_label || "");
+      var pSecs = (clockState.period_seconds || 0) + extra;
+      var pPay = clockState.hourly_rate ? (pSecs / 3600) * clockState.hourly_rate : null;
+      document.getElementById("tb-period").textContent = hm(pSecs) + (pPay != null ? " · " + money(pPay) : "");
+      document.getElementById("tb-period-k").textContent = "Pay period · " + (clockState.period_label || "") +
+        (clockState.hourly_rate ? " · " + money(clockState.hourly_rate) + "/hr" : "");
       document.getElementById("tb-sub").textContent = (vaName() ? vaName() + " · " : "") +
         (on ? "on the clock since " + new Date(clockState.shift.started_at + "Z").toLocaleTimeString([], {hour:"numeric", minute:"2-digit"}) : "off the clock");
     }
@@ -2432,7 +2436,7 @@ CALLS_JS = r"""(function(){
       row.appendChild(el("span", "d", s.day));
       row.appendChild(el("span", "t", s.start_local + " – " + (s.end_local || "now") + (s.auto_closed ? " · auto-closed at 12h" : "") + (s.note ? " · " + s.note : "")));
       row.appendChild(el("span", "c", s.calls + (s.calls === 1 ? " call" : " calls")));
-      row.appendChild(el("span", "h", hm(s.seconds)));
+      row.appendChild(el("span", "h", hm(s.seconds) + (s.pay != null ? " · " + money(s.pay) : "")));
       tbList.appendChild(row);
     });
   }
@@ -2453,7 +2457,8 @@ CALLS_JS = r"""(function(){
           row.appendChild(el("b", null, n));
           row.appendChild(el("span", null, "today " + hm(t.today_seconds)));
           row.appendChild(el("span", null, "week " + hm(t.week_seconds)));
-          row.appendChild(el("span", null, (t.period_label || "pay period") + " " + hm(t.period_seconds)));
+          row.appendChild(el("span", null, (t.period_label || "pay period") + " " + hm(t.period_seconds) +
+            (t.period_pay != null ? " · " + money(t.period_pay) : "")));
           tbTeamTotals.appendChild(row);
         });
         renderShifts(r.body.shifts, true);
