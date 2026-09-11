@@ -1025,7 +1025,7 @@ def get_available_time_slots(requested_date=None):
 # ---------------------------------------------------------------------------
 # Legacy API Routes (kept for backward compatibility)
 # ---------------------------------------------------------------------------
-APP_VERSION = "2.2.26-va-pay-reconstruct"
+APP_VERSION = "2.2.27-no-personal-number"
 
 
 # ---------------------------------------------------------------------------

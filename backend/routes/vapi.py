@@ -559,7 +559,8 @@ def _handle_transfer_with_context(args):
     if notes:
         msg += "\nNotes: {}".format(notes)
 
-    operator_phone = os.environ.get("OPERATOR_PHONE", "+15618883427")
+    from ops_contacts import alert_phone
+    operator_phone = alert_phone()
     send_sms_async(operator_phone, msg)
 
     logger.info("Transfer context SMS sent to operator for customer: %s", customer_name)
@@ -745,7 +746,8 @@ def _handle_operator_signup_text(args, vapi_data):
     send_sms_async(phone, msg)
 
     # Notify operator about the job inquiry
-    operator_phone = os.environ.get("OPERATOR_PHONE", "+15618883427")
+    from ops_contacts import alert_phone
+    operator_phone = alert_phone()
     notify_msg = (
         "JOB INQUIRY via Maya:\n"
         "Name: {}\n"
@@ -2138,7 +2140,8 @@ def _process_meta_lead(app, leadgen_id):
             # Notify operator
             try:
                 from sms_service import send_sms_async
-                operator_phone = os.environ.get("OPERATOR_PHONE", "+15618883427")
+                from ops_contacts import alert_phone
+                operator_phone = alert_phone()
                 notify = (
                     "META LEAD!\n"
                     "Name: {}\n"

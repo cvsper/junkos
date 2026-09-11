@@ -143,8 +143,8 @@ When the caller wants to book:
 - NEVER make up prices for items not on your list — use $25 (general item price) as default
 - If asked about something unusual (hazardous waste, concrete, dirt), say you'll need to check and offer to have someone call back
 - Transfer protocol:
-  1. **For COMPLAINTS / URGENT issues**: call `schedule_callback` FIRST with `urgency="high"` so the message is captured even if the transfer fails. Then use `transfer_with_context` + transferCall to +15618883427.
-  2. **For routine transfers** (booking questions, general help): use `transfer_with_context` first, then transferCall to +15618883427.
+  1. **For COMPLAINTS / URGENT issues**: call `schedule_callback` FIRST with `urgency="high"` so the message is captured even if the transfer fails. Then use `transfer_with_context` + transferCall to the desk line {{DESK_LINE}} so a person picks up. Never transfer to a personal mobile.
+  2. **For routine transfers** (booking questions, general help): use `transfer_with_context` first, then transferCall to the desk line {{DESK_LINE}}.
   3. **If a transfer attempt does not connect** (no answer, busy, error, or it returns control to you), DO NOT end the call. Call `schedule_callback` so the owner gets the message and the customer's number. Then politely close: "I've made sure our owner gets your details — he'll reach back out shortly."
 - If the caller wants to speak to a human, offer to transfer them directly
 - Always end with: "Is there anything else I can help you with?"
@@ -213,6 +213,30 @@ A: Yes, our minimum job charge is $119 (plus the 8% service fee). This covers a 
 A: There are three easy ways: 1) Call us and Maya (that's me!) can give you an instant estimate over the phone. 2) Use our app at app.goumuve.com to see prices and book online. 3) Just describe your items right now and I'll calculate a quote for you instantly."""
 
 
+def _system_prompt():
+    """Maya's prompt with the staffed line substituted in.
+
+    {{now}} is a Vapi-side variable; {{DESK_LINE}} is ours, so it has to be
+    resolved here. If no staffed line is configured the transfer instructions
+    are replaced with "take a message" — a caller must never be pushed at a
+    personal phone just because a variable was missing.
+    """
+    from ops_contacts import human_line
+    line = human_line()
+    prompt = SYSTEM_PROMPT
+    if line:
+        return prompt.replace("{{DESK_LINE}}", line)
+    return (prompt
+            .replace("transferCall to the desk line {{DESK_LINE}} so a person picks up. "
+                     "Never transfer to a personal mobile.",
+                     "take a detailed message with `schedule_callback` — there is no staffed "
+                     "line configured, so do NOT attempt a transfer.")
+            .replace("then transferCall to the desk line {{DESK_LINE}}.",
+                     "then take a message with `schedule_callback` instead of transferring."))
+
+
+
+
 assistant_config = {
     "name": "Umuve AI Receptionist",
     "model": {
@@ -221,7 +245,7 @@ assistant_config = {
         "messages": [
             {
                 "role": "system",
-                "content": SYSTEM_PROMPT,
+                "content": _system_prompt(),
             }
         ],
         "tools": [
@@ -568,6 +592,7 @@ assistant_config = {
         "idleMessageMaxSpokenCount": 2,
     },
 }
+
 
 
 def create_assistant():

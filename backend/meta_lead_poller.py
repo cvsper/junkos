@@ -40,7 +40,10 @@ VAPI_API_KEY = os.environ.get("VAPI_API_KEY", "")
 VAPI_ASSISTANT_ID = "91198234-25c8-450a-9075-854509e9e59d"
 VAPI_PHONE_NUMBER_ID = "8efe5578-e752-4154-98d0-b1dc3eba3938"
 BACKEND_URL = os.environ.get("BACKEND_URL", "https://junkos-backend.onrender.com")
-OPERATOR_PHONE = os.environ.get("OPERATOR_PHONE", "+15618883427")
+# Never fall back to a personal mobile — see ops_contacts.
+def OPERATOR_PHONE():
+    from ops_contacts import alert_phone
+    return alert_phone()
 POLL_INTERVAL = int(os.environ.get("POLL_INTERVAL", "120"))
 
 # Track processed leads to avoid duplicates
@@ -213,7 +216,7 @@ def notify_operator(name, phone, items):
             "Items: {}\n"
             "Maya is calling them now."
         ).format(name or "Unknown", phone, items or "Not specified")
-        send_sms(OPERATOR_PHONE, msg)
+        send_sms(OPERATOR_PHONE(), msg)
     except ImportError:
         logger.info("Operator notification (no sms_service): %s %s", name, phone)
 
