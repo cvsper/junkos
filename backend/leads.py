@@ -47,6 +47,35 @@ FOLLOWUP_STEPS_HOURS = (2, 24)          # texts; then a queue item on day 3
 FOLLOWUP_QUEUE_DAY = 3
 GOOGLE_DISPUTE_DAYS = 30
 
+# Texts that are not a customer reaching out: our own lines talking to
+# themselves, and a business autoresponder answering Tracy's outreach. Both
+# showed up as "leads" on the first live run — and the speed-to-lead sweep
+# would have texted them back.
+AUTOREPLY_HINTS = ("thanks for contacting", "thank you for contacting", "auto-reply", "auto reply",
+                   "automatic reply", "out of office", "we have received your", "we've received your",
+                   "we'll get back to you", "will get back to you", "this is an automated")
+SPEED_TO_LEAD_MAX_SECONDS = int(os.environ.get("SPEED_TO_LEAD_MAX_SECONDS", str(6 * 3600)) or 6 * 3600)
+
+
+def own_numbers():
+    """Digits of every number Umuve itself sends from. A text FROM one of these
+    is a test or an echo, never a lead."""
+    out = set()
+    for var in ("DESK_TWILIO_NUMBER", "TWILIO_FROM_NUMBER", "PUBLIC_PHONE_NUMBER", "VAPI_PHONE_NUMBER",
+                "GOOGLE_LSA_NUMBER", "META_ADS_NUMBER"):
+        d = _digits(os.environ.get(var, ""))
+        if d:
+            out.add(d)
+    out.update(source_numbers().keys())
+    out.update({"5619441636", "8444356005"})       # Maya's line and the toll-free, known
+    return out
+
+
+def looks_like_autoreply(body):
+    b = (body or "").strip().lower()
+    return any(h in b for h in AUTOREPLY_HINTS)
+
+
 SOURCE_LABELS = {"google": "Google", "meta": "Meta", "desk": "Desk", "web": "Web",
                  "maya": "Maya", "text": "Text", "unknown": "New"}
 
@@ -185,10 +214,13 @@ def _calls(since):
             name = u.name if u else None
         except Exception:
             pass
+        if r.phone_digits in own_numbers():
+            continue
+        answered = bool(r.answered_by) or (r.disposition or "") == "answered_by_human"
         out.append(_lead("call", r.call_sid or r.id, phone=r.phone_digits, name=name, what=what,
                          source=r.source or ("maya" if r.disposition == "to_maya" else "desk"),
                          created_at=r.created_at,
-                         extra={"disposition": r.disposition, "answered": bool(r.answered_by)}))
+                         extra={"disposition": r.disposition, "answered": answered}))
     return out
 
 
@@ -236,6 +268,8 @@ def _texts(since):
         seen.add(r.phone_digits)
         body = (r.body or "").strip()
         if body.split(" ")[0].strip(".!,").lower() in ("stop", "unsubscribe", "jobs", "y", "n", "yes", "no"):
+            continue
+        if r.phone_digits in own_numbers() or looks_like_autoreply(body):
             continue
         out.append(_lead("text", r.id, phone=r.phone_digits, name=None,
                          what=("texted: " + body[:70]) if body else "sent a photo",
@@ -314,6 +348,10 @@ def speed_to_lead_sweep():
             continue
         if l["kind"] == "call" and l.get("answered"):
             continue                                  # they already spoke to a person
+        if l["age_seconds"] > SPEED_TO_LEAD_MAX_SECONDS:
+            continue                                  # stale — a person decides, not a bot
+        if l["phone_digits"] in own_numbers():
+            continue
         row = _touch_row(l["kind"], l["ref_id"], phone=l["phone_digits"], source=l["source"])
         if row is None or row.auto_text_at:
             continue

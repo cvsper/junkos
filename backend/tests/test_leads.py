@@ -192,3 +192,37 @@ def test_a_meta_form_becomes_a_lead_the_desk_can_see():
     out, _ = leads.collect()
     l = next(x for x in out if x["phone_digits"] == "9545550170")
     assert l["source"] == "meta" and l["name"] == "Form Fiona" and "TV" in l["what"]
+
+
+def test_our_own_numbers_and_autoresponders_are_not_leads():
+    """First live run listed the toll-free line's own test text and a business
+    autoresponder ('Thanks for contacting - ...') as leads — and the sweep
+    would have texted them back."""
+    for digits, body in (("8444356005", "Desk line test from the Umuve number"),
+                         ("9545550180", "Thanks for contacting - The Outdoor Solutions. We'll get back to you."),
+                         ("9545550181", "how much for a couch pickup?")):
+        db.session.add(DeskActivity(id=generate_uuid(), prospect_id=None, phone_digits=digits, kind="sms",
+                                    direction="in", body=body, created_at=_now() - timedelta(minutes=5)))
+    db.session.commit()
+    phones = {l["phone_digits"] for l in leads.collect()[0]}
+    assert "9545550181" in phones
+    assert "8444356005" not in phones and "9545550180" not in phones
+
+
+def test_a_call_the_desk_answered_is_touched_even_without_a_name_on_it():
+    _call("9545550190", source="desk", disposition="answered_by_human", minutes_ago=120, answered=None)
+    l = next(x for x in leads.collect()[0] if x["phone_digits"] == "9545550190")
+    assert l["touched_at"], "spoke to the desk two hours ago — not an untouched lead"
+    with mock.patch("desk_line.send_desk_text") as sms:
+        assert leads.speed_to_lead_sweep() == []
+    assert sms.call_count == 0
+
+
+def test_the_auto_text_has_an_age_cap():
+    """Speed-to-lead is a two-minute reflex, not 'text a two-day-old thread at 9pm'."""
+    _call("9545550191", source="desk", minutes_ago=60 * 30)           # 30 hours old
+    with mock.patch("desk_line.send_desk_text") as sms:
+        assert leads.speed_to_lead_sweep() == []
+    assert sms.call_count == 0
+    # it still shows in the list and the queue for a person
+    assert any(l["phone_digits"] == "9545550191" for l in leads.collect()[0])
