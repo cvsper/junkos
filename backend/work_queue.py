@@ -43,6 +43,9 @@ _ratelimit = (limiter.limit("240 per hour; 60 per minute") if limiter is not Non
 # How long a claim holds before the item returns to the pool. A VA who claims
 # something and goes to lunch must not hide it forever.
 CLAIM_HOURS = 4
+# Anything older than this is abandoned or seed data, not work waiting on a
+# person. Matches the stranded-job census so the two agree.
+RECENT_DAYS = 60
 MAX_SNOOZE_MINUTES = 60 * 24
 
 KINDS = ("unassigned_paid", "stranded_job", "hauler_owed", "missed_call", "callback_due")
@@ -87,6 +90,10 @@ def _unassigned_paid():
     from models import Job, Payment
 
     out = []
+    # Bounded on BOTH sides. Without a floor the first live run put a February
+    # seed row ("fvsdfvsdfvsdfvsdfv", $89) at the top of the queue — and a
+    # queue whose worst item is junk is a queue people learn to ignore.
+    floor = _now() - timedelta(days=RECENT_DAYS)
     rows = (db.session.query(Job, Payment).join(Payment, Payment.job_id == Job.id)
             .filter(Job.driver_id.is_(None),
                     Job.status.in_(("confirmed", "pending")),
@@ -96,6 +103,10 @@ def _unassigned_paid():
         anchor = _aware(job.scheduled_at) or _aware(job.created_at)
         if anchor and anchor > _now() + timedelta(days=14):
             continue                                    # far future, not urgent yet
+        if anchor and anchor < floor:
+            continue                                    # abandoned or seed data
+        if (job.notes or "").upper().startswith("SYNTHETIC"):
+            continue
         out.append({
             "kind": "unassigned_paid",
             "ref_id": job.id,

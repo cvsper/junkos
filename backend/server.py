@@ -1028,7 +1028,7 @@ def get_available_time_slots(requested_date=None):
 # ---------------------------------------------------------------------------
 # Legacy API Routes (kept for backward compatibility)
 # ---------------------------------------------------------------------------
-APP_VERSION = "2.2.29-work-queue"
+APP_VERSION = "2.2.30-work-queue"
 
 
 # ---------------------------------------------------------------------------

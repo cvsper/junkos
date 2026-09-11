@@ -151,3 +151,21 @@ def test_one_broken_source_does_not_empty_the_queue():
 def test_the_queue_needs_a_signed_in_desk(client):
     assert client.post("/api/va/work/list", json={}).status_code == 401
     assert client.post("/api/va/work/claim", json={"kind": "stranded_job", "ref_id": "x"}).status_code == 401
+
+
+def test_ancient_and_synthetic_jobs_stay_out_of_the_queue():
+    """The first live run put a February seed row at the very top. A queue
+    whose worst item is junk is a queue people learn to ignore."""
+    from models import Job, Payment
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+
+    live = _paid_job("WORKREAL")
+    old = _paid_job("WORKOLD", hours_ahead=-24 * 200)      # scheduled ~200 days ago
+    synth = _paid_job("WORKSYN")
+    synth.notes = "SYNTHETIC load-test row"
+    db.session.commit()
+
+    codes = {i["ref_id"] for i in work_queue.build()["items"]}
+    assert live.id in codes
+    assert old.id not in codes, "a 200-day-old row is abandoned, not work waiting"
+    assert synth.id not in codes, "synthetic rows must never reach the queue"
