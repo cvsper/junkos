@@ -371,8 +371,16 @@ def balance_check():
     floor = max(MIN_BALANCE, expected)
     soon = "${:.2f} available (+${:.2f} settling) vs ${:.2f} due across {} job{}".format(
         available, pending, expected, due["count"], "" if due["count"] == 1 else "s")
-    if available < expected:
+    if expected > 0 and available < expected:
         state, reason = "fail", soon + " — transfers will fail until it settles"
+    elif available < 0:
+        # A dashboard refund outran the balance. Nothing is owed to a hauler,
+        # so nothing is "failing" — Stripe simply recovers the shortfall from
+        # the bank or the next incoming payments. Say that, not "transfers
+        # will fail".
+        state, reason = "warn", (
+            "${:.2f} in the red after a refund — Stripe recovers it from your bank or the "
+            "next incoming payments; nothing is due to haulers right now".format(-available))
     elif expected > 0 and available < floor:
         state, reason = "warn", soon + ", below the ${:.0f} operating floor".format(floor)
     elif expected <= 0 and available < ONE_PAYOUT:

@@ -319,3 +319,23 @@ def test_balance_floor_does_not_nag_when_nothing_is_due():
     with mock.patch("routes.payments._get_stripe", return_value=s):
         b = sameday_pay.balance_check()
     assert b["state"] == "warn" and "one typical payout" in b["reason"]
+
+
+def test_a_negative_balance_with_nothing_due_is_a_recovery_note_not_a_failure():
+    """After the AFB22IMO refund the balance read -\$307.80 with \$0 due, and the
+    guard said 'transfers will fail'. Nothing was failing — Stripe just recovers
+    the shortfall from the bank. Only a real obligation makes it a failure."""
+    s = _fake_stripe(platform_available_cents=-30780)
+    s.Balance.retrieve.side_effect = None
+    s.Balance.retrieve.return_value = mock.MagicMock(
+        available=[mock.MagicMock(amount=-30780, currency="usd")], pending=[])
+    with mock.patch("routes.payments._get_stripe", return_value=s), \
+         mock.patch("sameday_pay.expected_payouts", return_value={"total": 0.0, "count": 0, "jobs": []}):
+        b = sameday_pay.balance_check()
+    assert b["state"] == "warn"
+    assert "recovers it from your bank" in b["reason"] and "307.80" in b["reason"]
+    assert "transfers will fail" not in b["reason"]
+    # but a real payout due against a negative balance IS a failure
+    with mock.patch("routes.payments._get_stripe", return_value=s), \
+         mock.patch("sameday_pay.expected_payouts", return_value={"total": 150.0, "count": 1, "jobs": []}):
+        assert sameday_pay.balance_check()["state"] == "fail"
