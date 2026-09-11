@@ -169,3 +169,12 @@ def test_ancient_and_synthetic_jobs_stay_out_of_the_queue():
     assert live.id in codes
     assert old.id not in codes, "a 200-day-old row is abandoned, not work waiting"
     assert synth.id not in codes, "synthetic rows must never reach the queue"
+
+
+def test_job_items_carry_the_customer_so_the_queue_is_actionable():
+    """'Call the customer' is the whole action for a stranded job. An item you
+    cannot act on is just a notification."""
+    job = _paid_job("WORKCALL")
+    item = next(i for i in work_queue.build()["items"] if i["ref_id"] == job.id)
+    assert item["customer"] == "Work Cx"
+    assert item["phone"] == "(561) 555-0700"

@@ -85,6 +85,29 @@ def _pretty_phone(digits):
 # ---------------------------------------------------------------------------
 # Sources
 # ---------------------------------------------------------------------------
+def _customer_contact(job):
+    """Name and number for the person waiting. The queue is desk-authenticated,
+    and 'call the customer' is the whole action for a stranded job — an item
+    you cannot act on is just a notification."""
+    from models import User
+
+    name, phone = None, None
+    try:
+        user = db.session.get(User, job.customer_id) if job.customer_id else None
+        if user:
+            name = user.name
+            phone = user.phone
+    except Exception:
+        logger.exception("customer lookup failed for job %s", getattr(job, "id", "?"))
+    for attr in ("customer_name", "customer_phone"):
+        val = getattr(job, attr, None)
+        if val and attr == "customer_name" and not name:
+            name = val
+        if val and attr == "customer_phone" and not phone:
+            phone = val
+    return name, _pretty_phone(phone) if phone else None
+
+
 def _unassigned_paid():
     """Customer paid and no hauler is assigned. Nobody is coming."""
     from models import Job, Payment
@@ -107,10 +130,13 @@ def _unassigned_paid():
             continue                                    # abandoned or seed data
         if (job.notes or "").upper().startswith("SYNTHETIC"):
             continue
+        cust_name, cust_phone = _customer_contact(job)
         out.append({
             "kind": "unassigned_paid",
             "ref_id": job.id,
             "title": "Paid job with no hauler",
+            "customer": cust_name,
+            "phone": cust_phone,
             "detail": "{} · ${:.2f} · {}".format(
                 job.confirmation_code or job.id[:8], job.total_price or 0.0,
                 (job.address or "").split(",")[0][:40]),
@@ -125,13 +151,20 @@ def _stranded_jobs():
     """Open jobs with no forward movement (ops_sentinel keeps the definition)."""
     from ops_sentinel import stranded_summary
 
+    from models import Job
+
     rep = stranded_summary()
     out = []
     for row in rep.get("recent", []):
+        job = (Job.query.filter_by(confirmation_code=row["code"]).first()
+               or db.session.get(Job, row["code"]))
+        cust_name, cust_phone = _customer_contact(job) if job else (None, None)
         out.append({
             "kind": "stranded_job",
             "ref_id": row["code"],
             "title": "Job stuck in {}".format(row["status"]),
+            "customer": cust_name,
+            "phone": cust_phone,
             "detail": "{} · {} days with no movement{}".format(
                 row["code"], row["age_days"], " · hauler assigned" if row.get("has_driver") else ""),
             "why": ("A hauler is assigned but nothing has happened — the customer is waiting "
