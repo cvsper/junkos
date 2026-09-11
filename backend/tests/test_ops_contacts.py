@@ -88,3 +88,21 @@ def test_with_no_staffed_line_maya_takes_a_message_instead_of_transferring():
     assert "{{DESK_LINE}}" not in prompt, "an unresolved placeholder would be read aloud"
     assert PERSONAL not in prompt
     assert "schedule_callback" in prompt
+
+
+def test_health_flags_the_owners_cell_in_the_ring_group():
+    """DESK_FORWARD_NUMBER rings alongside the browser. If it is the private
+    alert number, every customer call rings the owner's cell."""
+    from unittest import mock
+    import desk_health
+
+    with mock.patch.dict(os.environ, {"DESK_FORWARD_NUMBER": "+15618883427",
+                                      "ALERT_PHONE": "+15618883427"}):
+        rep = desk_health.check_desk_health()
+    chk = rep["checks"]["inbound_forward"]
+    assert chk["state"] == "fail" and "3427" in chk["reason"]
+    assert "5618883427" not in chk["reason"], "the full number must not be published"
+
+    with mock.patch.dict(os.environ, {"DESK_FORWARD_NUMBER": "", "ALERT_PHONE": "+15618883427"}):
+        rep = desk_health.check_desk_health()
+    assert rep["checks"]["inbound_forward"]["state"] == "ok"

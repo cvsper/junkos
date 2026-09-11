@@ -134,6 +134,26 @@ def check_desk_health(alert=False):
     except Exception as e:
         put("stranded_jobs", "warn", "stranded check failed: " + type(e).__name__)
 
+    # Who a live inbound call actually reaches. DESK_FORWARD_NUMBER rings
+    # alongside the browser, so if it is the owner's private mobile then every
+    # customer call rings his cell — the thing he asked to stop. Only the last
+    # four digits are reported; this endpoint is unauthenticated.
+    try:
+        from ops_contacts import alert_phone
+        fwd = (_env("DESK_FORWARD_NUMBER") or "").strip()
+        private = (alert_phone() or "").strip()
+        tail = fwd[-4:] if fwd else ""
+        if not fwd:
+            put("inbound_forward", "ok", "browser only — inbound rings the desk, no cell in the loop")
+        elif private and fwd[-10:] == private[-10:]:
+            put("inbound_forward", "fail",
+                "every inbound call also rings the private alert number (…{}) — "
+                "point DESK_FORWARD_NUMBER at the VA's cell or clear it".format(tail))
+        else:
+            put("inbound_forward", "ok", "inbound also rings …{}".format(tail))
+    except Exception as e:
+        put("inbound_forward", "warn", "forward check failed: " + type(e).__name__)
+
     put("sentry", "ok" if _env("SENTRY_DSN") else "warn",
         "configured" if _env("SENTRY_DSN") else "SENTRY_DSN not set — backend errors go unreported")
 

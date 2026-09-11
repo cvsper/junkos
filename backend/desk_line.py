@@ -566,6 +566,31 @@ def twilio_voice_after_out():
     return _twiml(resp)
 
 
+def _maya_loop_risk(from_digits, minutes=10):
+    """True when this caller was already handed to Maya very recently.
+
+    Maya transfers anything she can't handle to the desk line. If nobody
+    answers, the desk's own fallback hands it straight back to Maya, who
+    transfers again — the caller ping-pongs and never reaches a person. One
+    hand-off per caller per window; after that, take a message.
+    """
+    if not from_digits:
+        return False
+    try:
+        from models_inbound import InboundCall
+        from datetime import timedelta as _td
+        since = _now().replace(tzinfo=None) - _td(minutes=minutes)
+        return db.session.query(
+            InboundCall.query
+            .filter(InboundCall.phone_digits == from_digits,
+                    InboundCall.disposition == "to_maya",
+                    InboundCall.created_at >= since)
+            .exists()).scalar()
+    except Exception:
+        logger.exception("maya loop check failed for %s", from_digits)
+        return False
+
+
 @deskline_bp.route("/api/desk/twilio/voice/inbound", methods=["POST"])
 def twilio_voice_inbound():
     """Someone called the desk line: ring the browser and the VA's cell together."""
@@ -609,7 +634,7 @@ def twilio_voice_inbound():
             dial.number(fwd)
         return _twiml(resp)
     # Outside human hours: straight to Maya (or voicemail when she's off).
-    if inbound.maya_fallback_enabled():
+    if inbound.maya_fallback_enabled() and not _maya_loop_risk(from_digits):
         act.status = "to_maya"
         db.session.commit()
         inbound.touch_call(call_sid, disposition="to_maya")
@@ -647,7 +672,7 @@ def twilio_voice_after_in():
                 db.session.rollback()
         resp.hangup()
         return _twiml(resp)
-    if phase6 and inbound.maya_fallback_enabled():
+    if phase6 and inbound.maya_fallback_enabled() and not _maya_loop_risk(_digits(request.form.get("From", ""))):
         # Nobody picked up — hand the caller to Maya rather than a mailbox.
         if act:
             act.status = "to_maya"
