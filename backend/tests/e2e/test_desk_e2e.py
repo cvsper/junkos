@@ -167,7 +167,11 @@ def test_queue_panel_loads_csv_and_adds_business(desk, tmp_path):
                    "Tier 1 — PBC,Sunrise Estate Sales,(561) 555-0177,Boca Raton,estate sales,Dana,3 sales a month,\n")
     desk.set_input_files("#qb-file", str(csv))
     desk.wait_for_function("document.getElementById('qb-status').textContent.includes('1 added')", timeout=10000)
-    assert "Sunrise Estate Sales" in desk.text_content("#qb-list")
+    # the status line lands a tick before the list repaints — wait for the row
+    # itself rather than reading whatever is there at that instant
+    desk.wait_for_function(
+        "document.getElementById('qb-list').textContent.includes('Sunrise Estate Sales')",
+        timeout=10000)
     desk.click("#qb-add-toggle")
     desk.fill("#qa-company", "Walk-in Movers")
     desk.fill("#qa-phone", "561-555-0199")
@@ -257,3 +261,60 @@ def test_dialpad_dials_a_number_and_sends_an_extension_mid_call(desk):
     desk.click(".dp-save .dp-btn")
     desk.wait_for_selector(".dp-msg.ok", timeout=8000)
     assert "Saved to the card" in desk.text_content(".dp-msg")
+
+
+def test_work_queue_shows_what_needs_a_person_and_who_has_it(desk, server):
+    """A paid job with no hauler is the worst state the desk can be in, so it
+    is what the queue shows first. Claiming puts a name on it; closing it asks
+    what happened."""
+    import json
+    import urllib.request
+
+    sign_in(desk)
+    desk.wait_for_selector(".wq-tab", timeout=10000)
+
+    # seed a paid job with nobody assigned, through the desk's own intake
+    created = desk.evaluate("""async () => {
+        const r = await fetch('/api/va/work/list', {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({code: 'e2e-code', va_name: 'Tracy'})
+        });
+        return r.status;
+    }""")
+    assert created in (200, 401)
+
+    desk.click(".wq-tab")
+    desk.wait_for_selector(".wq", timeout=5000)
+    # the panel always renders — either items or an explicit all-clear
+    desk.wait_for_selector(".wq-i, .wq-empty", timeout=8000)
+
+    if desk.query_selector(".wq-i"):
+        # claiming an item puts the VA's name on it for everyone else
+        desk.click(".wq-i .wq-b:has-text(\"I'll take it\")")
+        desk.wait_for_selector(".wq-i.mine", timeout=8000)
+        assert "Yours" in desk.text_content(".wq-i.mine .wq-who")
+
+        # closing requires saying what happened
+        desk.click(".wq-i.mine .wq-b:has-text('Done')")
+        desk.click(".wq-i.mine .wq-b:has-text('Close it')")
+        assert "what you did" in desk.text_content(".wq-msg")
+    else:
+        assert "Nothing waiting" in desk.text_content(".wq-empty")
+
+    # neither floating tab may cover a real control
+    clash = desk.evaluate("""() => {
+        const tabs = [...document.querySelectorAll('.wq-tab, .dp-tab')];
+        const hits = [];
+        tabs.forEach(t => {
+            const a = t.getBoundingClientRect();
+            document.querySelectorAll('button, a').forEach(e => {
+                if (e === t || e.classList.contains('wq-tab') || e.classList.contains('dp-tab')) return;
+                const r = e.getBoundingClientRect();
+                if (r.width && r.height &&
+                    !(r.right < a.left || r.left > a.right || r.bottom < a.top || r.top > a.bottom))
+                    hits.push((e.id ? '#' + e.id : '') + '.' + String(e.className).split(' ')[0]);
+            });
+        });
+        return hits;
+    }""")
+    assert clash == [], "a floating tab is covering {}".format(clash)

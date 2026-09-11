@@ -342,10 +342,13 @@ except Exception as _en_exc:  # pragma: no cover
 # Same-day dispatch from the desk (capacity, offer wave, standby roster)
 try:
     import models_sameday  # noqa: F401  (tables for create_all)
+    import models_work  # noqa: F401  — work_item_state (work queue ownership)
     from sameday import sameday_bp
     app.register_blueprint(sameday_bp)
     from sameday_pay import pay_bp
     app.register_blueprint(pay_bp)
+    from work_queue import work_bp
+    app.register_blueprint(work_bp)
 except Exception as _sd_exc:  # pragma: no cover
     import logging as _logging
     _logging.getLogger(__name__).warning("sameday_bp not registered: %s", _sd_exc)
@@ -1025,7 +1028,7 @@ def get_available_time_slots(requested_date=None):
 # ---------------------------------------------------------------------------
 # Legacy API Routes (kept for backward compatibility)
 # ---------------------------------------------------------------------------
-APP_VERSION = "2.2.28-dialpad"
+APP_VERSION = "2.2.29-work-queue"
 
 
 # ---------------------------------------------------------------------------

@@ -2338,6 +2338,37 @@ NEW_TABLES_SQLITE.append(_NOTIFICATION_DELIVERIES_SQLITE)
 NEW_TABLES_PG.append(_NOTIFICATION_DELIVERIES_PG)
 NEW_TABLE_NAMES.append("notification_deliveries")
 
+# ---------------------------------------------------------------------------
+# work_item_state — who owns each item in the work queue (work_queue.py)
+# ---------------------------------------------------------------------------
+_WORK_ITEM_SQLITE = dedent("""\
+    CREATE TABLE IF NOT EXISTS work_item_state (
+        id VARCHAR(36) PRIMARY KEY,
+        kind VARCHAR(32) NOT NULL,
+        ref_id VARCHAR(64) NOT NULL,
+        claimed_by VARCHAR(80),
+        claimed_at DATETIME,
+        snoozed_until DATETIME,
+        done_at DATETIME,
+        done_by VARCHAR(80),
+        note TEXT,
+        created_at DATETIME,
+        updated_at DATETIME,
+        CONSTRAINT uq_work_item_kind_ref UNIQUE (kind, ref_id)
+    )""")
+_WORK_ITEM_PG = _WORK_ITEM_SQLITE.replace("DATETIME", "TIMESTAMP")
+NEW_TABLES_SQLITE.append(_WORK_ITEM_SQLITE)
+NEW_TABLES_PG.append(_WORK_ITEM_PG)
+NEW_TABLE_NAMES.append("work_item_state")
+
+_WORK_ITEM_INDEXES = [
+    "CREATE INDEX IF NOT EXISTS ix_work_item_open ON work_item_state (done_at, snoozed_until)",
+    "CREATE INDEX IF NOT EXISTS ix_work_item_kind ON work_item_state (kind)",
+]
+_OPS_INDEXES_SQLITE.extend(_WORK_ITEM_INDEXES)
+_OPS_INDEXES_PG.extend(_WORK_ITEM_INDEXES)
+
+
 _NOTIFICATION_DELIVERY_INDEXES = [
     "CREATE INDEX IF NOT EXISTS ix_notif_deliveries_status "
     "ON notification_deliveries (status)",
