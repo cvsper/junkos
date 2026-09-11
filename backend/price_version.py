@@ -92,7 +92,25 @@ def validate_items(items, strict_categories=True):
             raise ItemValidationError("unknown item category '{}'".format(category))
         quantity = _coerce_quantity(entry.get("quantity", 1))
 
+        # The picker sends a generic bucket as `category` and the real item as
+        # `name`. Validation used to rebuild the line without the name, so the
+        # engine downstream could only ever price the bucket — a refrigerator
+        # was charged as a generic appliance and never triggered its freon fee.
+        # Canonicalise here so the resolved category is what gets priced, what
+        # the price_version hash covers, and what the job record stores.
+        try:
+            from routes.booking import resolve_item_category
+            from routes.booking import CATEGORY_PRICES as _PRICES
+            resolved = resolve_item_category(dict(entry, category=category))
+            if resolved and resolved in _PRICES:
+                category = resolved
+        except Exception:
+            pass                                  # pricing falls back to the bucket
+
         line = {"category": category, "quantity": quantity}
+        label = entry.get("name") or entry.get("label")
+        if isinstance(label, str) and label.strip():
+            line["name"] = label.strip()[:80]     # kept for the job record and the hauler
         size = entry.get("size")
         if size is not None:
             if not isinstance(size, str):

@@ -76,3 +76,29 @@ def test_quantities_still_multiply_correctly():
     two = calculate_estimate([{"category": "appliances", "quantity": 2, "name": "Refrigerator"}])
     assert two["total"] > one["total"]
     assert two["recycling_fees"] == 2 * RECYCLING_FEES["appliance_freon"]
+
+
+def test_validation_keeps_the_name_and_canonicalises_the_category():
+    """Validation rebuilt the line without the name, so the engine downstream
+    could only ever price the bucket. The canonical line must carry the real
+    category — that is what gets priced, hashed and stored on the job."""
+    from price_version import validate_items
+
+    clean = validate_items([
+        {"category": "appliances", "quantity": 1, "name": "Refrigerator"},
+        {"category": "furniture", "quantity": 2, "name": "Couch / Sofa"},
+        {"category": "general", "quantity": 1, "name": "Bags of Junk"},
+    ])
+    assert clean[0]["category"] == "refrigerator" and clean[0]["name"] == "Refrigerator"
+    assert clean[1]["category"] == "sofa" and clean[1]["quantity"] == 2
+    assert clean[2]["category"] == "general", "no specific price — stays on its bucket"
+
+
+def test_the_end_to_end_estimate_charges_the_fridge_fee():
+    """The route validates before pricing, so the fix has to survive that."""
+    from price_version import validate_items
+    from routes.booking import calculate_estimate, RECYCLING_FEES
+
+    raw = [{"category": "appliances", "quantity": 1, "name": "Refrigerator"}]
+    est = calculate_estimate(validate_items(raw))
+    assert est["recycling_fees"] == RECYCLING_FEES["appliance_freon"]
