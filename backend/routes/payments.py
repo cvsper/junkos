@@ -208,6 +208,7 @@ def _checkout_actor(job, data):
 
 _SUBMISSION_KEY_RE = re.compile(r"^[A-Za-z0-9_-]{8,64}$")
 IN_FLIGHT_SECONDS = 30
+RECONCILE_AFTER_SECONDS = 23 * 3600   # Stripe idempotency keys can expire at 24h
 
 
 def _valid_submission_key(key):
@@ -311,6 +312,20 @@ def create_attempt_for_job(job_id, submission_key, amount, *, actor, user_id=Non
                 return None, (jsonify({"error": "A payment attempt for this submission is in progress",
                                        "code": "attempt_in_progress", "retry_after": IN_FLIGHT_SECONDS,
                                        "attempt_id": existing.id}), 409)
+            # Stripe may drop an idempotency key after 24 hours. Re-running an
+            # unresolved attempt older than that with the same key could mint a
+            # SECOND intent — a fresh charge dressed as a retry. Stop and hand it
+            # to a person to reconcile against Stripe first.
+            if age > RECONCILE_AFTER_SECONDS:
+                existing.status = "needs_reconciliation"
+                existing.last_error = "unresolved for {:.0f}h — reconcile against Stripe before retrying".format(age / 3600)
+                db.session.commit()
+                _alert("Payment attempt needs reconciliation",
+                       "Job {} attempt {} has been unresolved for {:.0f}h. Look it up in Stripe by "
+                       "idempotency key pi_{} before anyone retries.".format(job.id, existing.id, age / 3600, existing.id))
+                return None, (jsonify({"error": "This payment attempt is too old to retry safely; "
+                                                "support is reconciling it",
+                                       "code": "attempt_needs_reconciliation", "attempt_id": existing.id}), 409)
             # The earlier request died mid-Stripe. Re-running with the same
             # idempotency key is safe: Stripe returns the same intent if it exists.
             attempt = existing
@@ -991,7 +1006,14 @@ def attempt_payout(job_id):
                 job_id, payment.driver_payout_amount or 0.0, payment.operator_payout_amount or 0.0,
             )
 
-        amount = payment.driver_payout_amount or 0.0
+        # A tip is the customer's money for the hauler, 100% pass-through. It
+        # moves as its OWN transfer with its own retry: a tip that arrives after
+        # the base payout, or fails while the base succeeds, must never block or
+        # be blocked by the base leg. driver_payout_amount still includes it
+        # (the earnings ledger and the owed list read that), so the base leg
+        # carries everything except the tip.
+        tip_amount = round(float(payment.tip_amount or 0.0), 2)
+        amount = max(0.0, round((payment.driver_payout_amount or 0.0) - tip_amount, 2))
         op_amount = payment.operator_payout_amount or 0.0
 
         # Fail closed: production without a Stripe key must never mark paid.
@@ -1040,6 +1062,17 @@ def attempt_payout(job_id):
                     "amount": amount, "operator": op_status}
 
         status, message = _transfer_leg(driver_row, contractor.stripe_connect_id, job_id)
+
+        # --- Tip leg (independent; never changes the base outcome) ---
+        tip_status = None
+        if tip_amount > 0:
+            tip_row = _upsert_payout(job, payment, "tip", tip_amount, contractor_id=contractor.id,
+                                     idempotency_key="tip_{}".format(job_id))
+            tip_status, _tip_msg = _transfer_leg(tip_row, contractor.stripe_connect_id, job_id)
+            if tip_status == "failed":
+                _alert("Tip transfer failed (base payout unaffected)",
+                       "Job {} tip ${:.2f} to contractor {}: {}. The payout sweep retries it."
+                       .format(job_id, tip_amount, contractor.id, tip_row.last_error))
         if status == "failed":
             payment.payout_status = "failed"
             payment.updated_at = utcnow()

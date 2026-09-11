@@ -356,6 +356,8 @@ try:
     app.register_blueprint(maya_bp)
     from leads import leads_bp
     app.register_blueprint(leads_bp)
+    from availability import availability_bp
+    app.register_blueprint(availability_bp)
 except Exception as _sd_exc:  # pragma: no cover
     import logging as _logging
     _logging.getLogger(__name__).warning("sameday_bp not registered: %s", _sd_exc)
@@ -1035,7 +1037,7 @@ def get_available_time_slots(requested_date=None):
 # ---------------------------------------------------------------------------
 # Legacy API Routes (kept for backward compatibility)
 # ---------------------------------------------------------------------------
-APP_VERSION = "2.2.45-source-check"
+APP_VERSION = "2.2.46-ported"
 
 
 # ---------------------------------------------------------------------------

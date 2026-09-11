@@ -97,12 +97,15 @@ struct UmuveProApp: App {
                 // `.inactive` fires during transient UI interruptions and caused
                 // unintended socket disconnects ("Namespace leave").
                 if newPhase == .background {
-                    // NEVER auto-offline mid-job: opening Apple Maps for
-                    // navigation backgrounds the app, and forcing offline here
-                    // killed live tracking + the socket during active jobs.
-                    if appState.isOnline && appState.activeJob == nil {
-                        print("📱 App backgrounding while idle - going offline")
-                        Task { await appState.toggleOnline() }
+                    // A hauler who says "online" and then locks their phone is
+                    // still available. This used to flip them offline the moment
+                    // the app backgrounded while idle, so the roster the desk
+                    // dispatches from emptied out every time someone pocketed
+                    // their phone — one reason 52 standby asks got no takers.
+                    // The server ages an online flag off by itself when the
+                    // heartbeat goes stale; the app does not need to guess here.
+                    if appState.isOnline {
+                        print("📱 App backgrounding - staying online; server heartbeat ages it")
                     }
                 }
             }

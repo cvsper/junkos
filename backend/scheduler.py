@@ -270,6 +270,20 @@ def _sweep_pending_payouts(app):
     get paid automatically, instead of the payout being lost.
     """
     with app.app_context():
+        # Tip legs retry on their own: a failed tip transfer must not wait on,
+        # or be hidden by, the base payout's status.
+        try:
+            from models import db as _db, Contractor as _C
+            from models_payments import Payout as _P
+            from routes.payments import _transfer_leg as _leg
+            for tip in _P.query.filter(_P.recipient_type == "tip", _P.status == "failed").limit(50).all():
+                c = _db.session.get(_C, tip.contractor_id) if tip.contractor_id else None
+                if c and c.stripe_connect_id:
+                    st, _ = _leg(tip, c.stripe_connect_id, tip.job_id)
+                    _db.session.commit()
+                    logger.info("tip retry job %s -> %s", tip.job_id, st)
+        except Exception:
+            logger.exception("tip payout retry failed")
         from models import db, Payment
         from routes.payments import attempt_payout
 
