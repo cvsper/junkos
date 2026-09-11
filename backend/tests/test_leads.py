@@ -253,3 +253,14 @@ def test_the_auto_text_has_a_kill_switch():
          mock.patch("desk_line.send_desk_text") as sms:
         assert leads.speed_to_lead_sweep() == []
     assert sms.call_count == 0
+
+
+def test_health_says_whether_the_paid_numbers_are_mapped():
+    from desk_health import check_desk_health
+    with mock.patch.dict(os.environ, {"GOOGLE_LSA_NUMBER": "+15617815686", "META_ADS_NUMBER": "+15618316777"}):
+        c = check_desk_health()["checks"]["inbound_sources"]
+    assert c["state"] == "ok" and "5686" in c["reason"] and "6777" in c["reason"]
+    assert "15617815686" not in c["reason"], "the public health page shows last-4 only"
+    with mock.patch.dict(os.environ, {"GOOGLE_LSA_NUMBER": "", "META_ADS_NUMBER": "", "INBOUND_SOURCE_NUMBERS": ""}):
+        c = check_desk_health()["checks"]["inbound_sources"]
+    assert c["state"] == "warn" and "tags as desk" in c["reason"]

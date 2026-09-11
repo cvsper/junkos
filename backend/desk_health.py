@@ -154,6 +154,23 @@ def check_desk_health(alert=False):
     except Exception as e:
         put("inbound_forward", "warn", "forward check failed: " + type(e).__name__)
 
+    # Paid-lead numbers: a number whose webhooks point at us but has no source
+    # mapping tags every call "desk" — the ads are on and nothing is measurable.
+    try:
+        from leads import source_numbers
+        mapped = source_numbers()
+        google = _env("GOOGLE_LSA_NUMBER"); meta = _env("META_ADS_NUMBER")
+        detail = {"google": ("…" + google[-4:]) if google else None, "meta": ("…" + meta[-4:]) if meta else None,
+                  "mapped": len(mapped)}
+        if google and meta:
+            put("inbound_sources", "ok", "Google …{} and Meta …{} tag their calls".format(google[-4:], meta[-4:]), **detail)
+        elif mapped:
+            put("inbound_sources", "warn", "only {} paid number(s) mapped — set GOOGLE_LSA_NUMBER and META_ADS_NUMBER".format(len(mapped)), **detail)
+        else:
+            put("inbound_sources", "warn", "no paid numbers mapped — every call tags as desk; set GOOGLE_LSA_NUMBER / META_ADS_NUMBER on Render", **detail)
+    except Exception as e:
+        put("inbound_sources", "warn", "source check failed: " + type(e).__name__)
+
     put("sentry", "ok" if _env("SENTRY_DSN") else "warn",
         "configured" if _env("SENTRY_DSN") else "SENTRY_DSN not set — backend errors go unreported")
 
