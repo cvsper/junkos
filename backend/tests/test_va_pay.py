@@ -94,3 +94,63 @@ def test_hours_endpoint_carries_pay_for_the_period(client):
     body = _va(client, "/api/va/time/hours", {}).get_json()
     assert body["period_hours"] == 7.2 and body["period_pay"] == 9.0
     assert body["hourly_rate"] == 1.25
+
+
+# ---------------------------------------------------------------------------
+# Reconstructing pre-clock periods
+# ---------------------------------------------------------------------------
+def _attempt(va, when, outcome="no_answer"):
+    from models import CallAttempt, CallProspect, generate_uuid
+    p = CallProspect.query.first()
+    if not p:
+        p = CallProspect(tier=1, category="property management", company="Recon Co",
+                         phone="(561) 555-0909", phone_digits="5615550909", city="WPB")
+        db.session.add(p); db.session.commit()
+    db.session.add(CallAttempt(id=generate_uuid(), prospect_id=p.id, outcome=outcome,
+                               va_name=va, created_at=when))
+    db.session.commit()
+
+
+def test_period_bounds_can_walk_backwards():
+    cur = va_time.period_bounds()
+    prev = va_time.period_bounds(periods_back=1)
+    assert prev[1] == cur[0], "the previous period must end exactly where the current one starts"
+    assert (cur[0] - prev[0]).days == 14
+
+
+def test_reconstructs_a_day_from_first_and_last_call():
+    from timeutils import local_naive_to_utc
+    day = datetime(2026, 8, 21, 9, 30)
+    for minute in (0, 45, 120, 200):                      # 9:30 -> 12:50 local
+        _attempt("Tracy", va_time._naive(local_naive_to_utc(day + timedelta(minutes=minute))))
+    start = va_time._naive(local_naive_to_utc(datetime(2026, 8, 20)))
+    end = va_time._naive(local_naive_to_utc(datetime(2026, 8, 22)))
+    days = va_time.reconstruct_days("Tracy", start, end)
+    assert len(days) == 1
+    d = days[0]
+    assert d["calls"] == 4 and d["blocks"] == 1
+    # 3h20m of calling + the 5-minute tail
+    assert d["hours"] == pytest.approx(3.42, abs=0.02)
+
+
+def test_a_long_gap_is_not_billed_as_worked_time():
+    """Morning block, four-hour gap, evening block — billing the gap would
+    overstate the day by half a shift."""
+    from timeutils import local_naive_to_utc
+    base = datetime(2026, 8, 24, 9, 0)
+    for minute in (0, 30, 60, 360, 390):                  # 9-10am, then 3-3:30pm
+        _attempt("Tracy", va_time._naive(local_naive_to_utc(base + timedelta(minutes=minute))))
+    start = va_time._naive(local_naive_to_utc(datetime(2026, 8, 24)))
+    end = va_time._naive(local_naive_to_utc(datetime(2026, 8, 25)))
+    d = va_time.reconstruct_days("Tracy", start, end)[0]
+    assert d["blocks"] == 2
+    assert d["hours"] < 2.0, "the four-hour gap must not be counted as worked"
+
+
+def test_reconstructed_period_is_labelled_an_estimate(client):
+    va_time.set_hourly_rate("Tracy", 1.25)
+    rep = va_time.reconstructed_period("Tracy", periods_back=1)
+    assert rep["estimated"] is True and rep["basis"]
+    assert rep["hourly_rate"] == 1.25
+    r = _va(client, "/api/va/time/reconstruct", {"periods_back": 1})
+    assert r.status_code == 200 and r.get_json()["estimated"] is True

@@ -118,14 +118,17 @@ def _anchor_date():
         return datetime(2026, 8, 6).date()
 
 
-def period_bounds(now_utc=None):
-    """(start_utc_naive, end_utc_naive, label) of the current two-week pay period."""
+def period_bounds(now_utc=None, periods_back=0):
+    """(start_utc_naive, end_utc_naive, label) of a two-week pay period.
+
+    ``periods_back=1`` is the period before the current one, and so on.
+    """
     from timeutils import local_naive_to_utc
     now_local = _local(_naive(now_utc or _now_utc()))
     today = now_local.date()
     anchor = _anchor_date()
     offset = (today - anchor).days % PERIOD_DAYS
-    start_d = today - timedelta(days=offset)
+    start_d = today - timedelta(days=offset + PERIOD_DAYS * max(0, int(periods_back or 0)))
     end_d = start_d + timedelta(days=PERIOD_DAYS)
     start = _naive(local_naive_to_utc(datetime.combine(start_d, datetime.min.time())))
     end = _naive(local_naive_to_utc(datetime.combine(end_d, datetime.min.time())))
@@ -335,3 +338,99 @@ def rate():
         audit("va_rate_set", "va", who, {"rate": new_rate})
         return jsonify({"va": who, "hourly_rate": new_rate, "saved": True}), 200
     return jsonify({"va": who, "hourly_rate": hourly_rate(who)}), 200
+
+
+# ---------------------------------------------------------------------------
+# Reconstructing hours from call activity (pre-clock periods)
+# ---------------------------------------------------------------------------
+# The time clock launched 2026-09-09, but the VA had been calling since
+# August. Those pay periods have no shifts — only call logs. Rather than
+# guess a wage from dials-per-hour, rebuild each worked day from the first and
+# last logged call, which is evidence the desk already holds.
+#
+# This is an ESTIMATE and is labelled as one: the span between first and last
+# call can overstate a split day (a morning and an evening block with a long
+# gap read as one long shift) and understates the wrap-up after the final
+# call. GAP_SPLIT_MINUTES breaks a day at any gap longer than the threshold so
+# a lunch break or a split shift is not billed.
+GAP_SPLIT_MINUTES = 90
+TAIL_MINUTES = 5          # a call still takes time after the last one is logged
+
+
+def reconstruct_days(va_name, start_utc, end_utc, gap_minutes=GAP_SPLIT_MINUTES):
+    """Worked blocks rebuilt from CallAttempt timestamps. Returns per-day rows."""
+    q = (CallAttempt.query
+         .filter(CallAttempt.created_at >= start_utc, CallAttempt.created_at < end_utc,
+                 CallAttempt.outcome != "skip")
+         .order_by(CallAttempt.created_at.asc()))
+    if va_name:
+        q = q.filter(db.or_(CallAttempt.va_name == va_name, CallAttempt.va_name.is_(None)))
+    by_day = {}
+    for row in q.all():
+        by_day.setdefault(_local(row.created_at).strftime("%Y-%m-%d"), []).append(row.created_at)
+
+    days, gap = [], timedelta(minutes=gap_minutes)
+    for day in sorted(by_day):
+        stamps = by_day[day]
+        blocks, start, prev = [], stamps[0], stamps[0]
+        for ts in stamps[1:]:
+            if ts - prev > gap:
+                blocks.append((start, prev))
+                start = ts
+            prev = ts
+        blocks.append((start, prev))
+        seconds = sum((b - a).total_seconds() + TAIL_MINUTES * 60 for a, b in blocks)
+        days.append({
+            "day": day,
+            "day_label": _local(stamps[0]).strftime("%a %b %-d"),
+            "calls": len(stamps),
+            "first_local": _local(stamps[0]).strftime("%-I:%M %p"),
+            "last_local": _local(stamps[-1]).strftime("%-I:%M %p"),
+            "blocks": len(blocks),
+            "seconds": int(seconds),
+            "hours": round(seconds / 3600.0, 2),
+        })
+    return days
+
+
+def reconstructed_period(va_name, periods_back=1):
+    """Estimated hours + pay for a pay period that predates the time clock."""
+    p_start, p_end, label = period_bounds(periods_back=periods_back)
+    days = reconstruct_days(va_name, p_start, p_end)
+    seconds = sum(d["seconds"] for d in days)
+    hours = round(seconds / 3600.0, 2)
+    rate = hourly_rate(va_name)
+    logged = sum(_overlap_seconds(sh, p_start, p_end)
+                 for sh in VaShift.query.filter(VaShift.va_name == va_name).all())
+    return {
+        "va_name": va_name, "period_label": label,
+        "period_start": p_start.isoformat(), "period_end": p_end.isoformat(),
+        "estimated": True,
+        "days": days, "days_worked": len(days),
+        "calls": sum(d["calls"] for d in days),
+        "seconds": seconds, "hours": hours,
+        "hourly_rate": rate, "pay": round(hours * rate, 2) if rate else None,
+        "clocked_seconds": int(logged),
+        "clocked_hours": round(logged / 3600.0, 2),
+        "basis": ("first to last logged call each day, split at gaps over "
+                  "{} minutes, plus {} minutes after the last call"
+                  .format(GAP_SPLIT_MINUTES, TAIL_MINUTES)),
+    }
+
+
+@vatime_bp.route("/api/va/time/reconstruct", methods=["POST"])
+@_ratelimit
+def reconstruct():
+    """Estimated hours for a pay period with no clock records (pre-2026-09-09)."""
+    data = request.get_json(silent=True) or {}
+    ident = desk_identity(data)
+    if not ident:
+        return jsonify({"error": "Sign in to the desk first."}), 401
+    who = (data.get("va") or _va_name(data) or "").strip()
+    if not who:
+        return jsonify({"error": "Which VA?"}), 400
+    try:
+        back = max(0, min(int(data.get("periods_back", 1)), 12))
+    except (TypeError, ValueError):
+        back = 1
+    return jsonify(reconstructed_period(who, back)), 200
