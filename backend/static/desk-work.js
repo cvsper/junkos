@@ -157,6 +157,12 @@
     }
 
     var act = el("div", "wq-act");
+    // kind-specific actions the server attached (confirm / can't make it / re-dispatch)
+    (it.actions || []).forEach(function(a){
+      var b = el("button", "wq-b" + (a.key === "confirm" ? " go" : ""), a.label); b.type = "button";
+      b.addEventListener("click", function(){ serverAction(a, it, b); });
+      act.appendChild(b);
+    });
     if(it.phone){
       var callBtn = el("button", "wq-b go", "Call " + it.phone); callBtn.type = "button";
       callBtn.addEventListener("click", function(){ dial(it.phone); });
@@ -205,6 +211,24 @@
     }
     var a = document.createElement("a"); a.href = "tel:+1" + digits; a.style.display = "none";
     document.body.appendChild(a); a.click(); a.remove();
+  }
+
+  function serverAction(a, it, btn){
+    if(busy) return;
+    var path, body = {job_id: a.job_id};
+    if(a.key === "confirm"){ path = "/api/va/confirm/mark"; body.confirmed = true; }
+    else if(a.key === "cant_make_it"){ path = "/api/va/confirm/mark"; body.confirmed = false; }
+    else if(a.key === "redispatch"){ path = "/api/va/confirm/redispatch"; }
+    else return;
+    busy = true; btn.disabled = true;
+    post(path, body).then(function(r){
+      busy = false; btn.disabled = false;
+      if(r.status !== 200){ say((r.body && r.body.error) || "That didn't work.", "err"); return; }
+      var rd = r.body.redispatch;
+      say(a.key === "confirm" ? "Confirmed \u2014 thank you." :
+          rd ? ("Released and offered to " + (rd.waved || 0) + " nearby hauler" + (rd.waved === 1 ? "" : "s") + ".") : "Done.", "ok");
+      load();
+    }).catch(function(){ busy = false; btn.disabled = false; say("No connection \u2014 try again.", "err"); });
   }
 
   function act2(path, it, extra, btn){

@@ -404,6 +404,16 @@ class Job(db.Model):
 
     # No-show watchdog flags — set when each alert fires so we don't double-fire
     noshow_t30_alerted = Column(Boolean, default=False)
+    # Confirm-before-the-job (hauler_confirm.py). A hauler said "yes, I'm
+    # coming" to a person, or didn't. Job AFB22IMO had a hauler assigned for
+    # 19 days and nobody ever asked.
+    hauler_confirmed_at = Column(DateTime, nullable=True)
+    hauler_confirmed_by = Column(String(80), nullable=True)
+    hauler_confirm_note = Column(Text, nullable=True)
+    preslot_alerted_at = Column(DateTime, nullable=True)      # T-30 with no movement, someone was paged
+    noshow_contractor_id = Column(String(36), nullable=True, index=True)   # who failed to show
+    noshow_reason = Column(String(80), nullable=True)
+    noshow_redispatched_at = Column(DateTime, nullable=True)
     noshow_late_alerted = Column(Boolean, default=False)
 
     volume_adjustment_proposed = Column(Boolean, default=False)

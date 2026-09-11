@@ -85,6 +85,14 @@ COLUMN_MIGRATIONS = [
     ("payments", "instant_payout_id", "VARCHAR(64)", "VARCHAR(64)", "NULL"),
     ("payments", "payout_arrival_at", "DATETIME", "TIMESTAMP", "NULL"),
     ("payments", "payout_fee_cover", "REAL", "DOUBLE PRECISION", "0"),
+    # confirm-before-the-job + no-show accounting (hauler_confirm.py / hauler_reliability.py)
+    ("jobs", "hauler_confirmed_at", "DATETIME", "TIMESTAMP", "NULL"),
+    ("jobs", "hauler_confirmed_by", "VARCHAR(80)", "VARCHAR(80)", "NULL"),
+    ("jobs", "hauler_confirm_note", "TEXT", "TEXT", "NULL"),
+    ("jobs", "preslot_alerted_at", "DATETIME", "TIMESTAMP", "NULL"),
+    ("jobs", "noshow_contractor_id", "VARCHAR(36)", "VARCHAR(36)", "NULL"),
+    ("jobs", "noshow_reason", "VARCHAR(80)", "VARCHAR(80)", "NULL"),
+    ("jobs", "noshow_redispatched_at", "DATETIME", "TIMESTAMP", "NULL"),
     ("call_prospects", "side", "VARCHAR(8)", "VARCHAR(8)", "NULL"),
 
     # Push: which of the two iOS apps a token belongs to, and which APNs

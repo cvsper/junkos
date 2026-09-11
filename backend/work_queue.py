@@ -48,11 +48,14 @@ CLAIM_HOURS = 4
 RECENT_DAYS = 60
 MAX_SNOOZE_MINUTES = 60 * 24
 
-KINDS = ("unassigned_paid", "stranded_job", "hauler_owed", "missed_call", "callback_due")
+KINDS = ("hauler_not_moving", "unassigned_paid", "hauler_unconfirmed", "stranded_job",
+         "hauler_owed", "missed_call", "callback_due")
 
 # Base weight per kind; age adds to it so nothing rots quietly at the bottom.
 _WEIGHT = {
+    "hauler_not_moving": 1100,     # slot is 30 min away and nobody is driving
     "unassigned_paid": 1000,
+    "hauler_unconfirmed": 800,     # the preventable one: ask before the day, not after
     "stranded_job": 700,
     "hauler_owed": 600,
     "missed_call": 500,
@@ -106,6 +109,53 @@ def _customer_contact(job):
         if val and attr == "customer_phone" and not phone:
             phone = val
     return name, _pretty_phone(phone) if phone else None
+
+
+
+def _haulers_to_confirm():
+    """Every job with a hauler on it that a person has not yet confirmed, and
+    every confirmed hauler who was paged at T-30 for not moving.
+
+    This is the item that would have saved AFB22IMO: it exists the evening
+    before, it carries the hauler's number, and it does not go away until
+    someone has heard "yes, I'm coming"."""
+    from hauler_confirm import upcoming, MOVING_STATUSES
+
+    out = []
+    for r in upcoming():
+        if r["status"] in MOVING_STATUSES:
+            continue
+        actions = []
+        if r.get("paged_at") and r["confirmed"]:
+            kind, title = "hauler_not_moving", "Hauler not moving, slot in {}".format(
+                "under an hour" if r["hours_out"] < 1 else "{}h".format(round(r["hours_out"])))
+            why = ("{} confirmed but has not started moving. Call them; if they are not "
+                   "coming, re-dispatch now.").format(r["hauler"])
+            actions = [{"key": "redispatch", "label": "Re-dispatch now", "job_id": r["job_id"]}]
+        elif not r["confirmed"]:
+            kind, title = "hauler_unconfirmed", "Confirm the hauler for {}".format(r["when"])
+            first = r["tier"] == "new"
+            why = ("{}{} is on this job. Call and hear \u201cyes, I\u2019m coming\u201d before the day, "
+                   "then press Confirmed.").format(
+                r["hauler"], " has never completed a job and" if first else "")
+            if r["tier"] == "flagged":
+                why = "{} has no-showed before. Do not leave this one to chance.".format(r["hauler"])
+            actions = [{"key": "confirm", "label": "Confirmed \u2713", "job_id": r["job_id"]},
+                       {"key": "cant_make_it", "label": "Can\u2019t make it \u2192 re-dispatch",
+                        "job_id": r["job_id"]}]
+        else:
+            continue
+        out.append({
+            "kind": kind, "ref_id": r["job_id"], "title": title,
+            "detail": "{} \u00b7 ${:.2f} \u00b7 {} \u00b7 {} ({})".format(
+                r["code"], r["total"], r["address"], r["hauler"], r["tier_label"]),
+            "why": why,
+            "age_hours": round(max(0.0, 36.0 - r["hours_out"]), 1),   # closer to the slot = more urgent
+            "phone": r["hauler_phone"], "customer": r["customer"],
+            "link": "/api/jobs/lookup/" + r["job_id"],
+            "actions": actions, "tier": r["tier"],
+        })
+    return out
 
 
 def _unassigned_paid():
@@ -269,7 +319,7 @@ def _callbacks_due():
 # Held by NAME, not by reference: a tuple of functions binds whatever existed
 # at import, which makes the set impossible to substitute and reports the
 # original name even when a source has been replaced.
-_SOURCES = ("_unassigned_paid", "_stranded_jobs", "_haulers_owed",
+_SOURCES = ("_haulers_to_confirm", "_unassigned_paid", "_stranded_jobs", "_haulers_owed",
             "_missed_calls", "_callbacks_due")
 
 
@@ -324,6 +374,7 @@ def build(include_done=False, va_name=None):
             else:
                 claim_stale = True          # held too long — back in the pool
         row = dict(item)
+        row.setdefault("actions", [])
         row["urgency"] = urgency(item)
         row["claimed_by"] = claimed_by
         row["claim_stale"] = claim_stale

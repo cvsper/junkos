@@ -37,7 +37,11 @@ def _now():
 
 
 def _hauler(name, lat=26.63, lng=-80.05, online=True, approved="approved",
-            capacity=600.0, concierge=False, operator_id=None):
+            capacity=600.0, concierge=False, operator_id=None, proven=True):
+    """``proven=True`` gives the hauler one completed job. These tests predate
+    the reliability rule (hauler_reliability): a hauler with nothing completed
+    is no longer handed work by a silent auto-assignment, so the haulers here
+    carry a record unless a test is specifically about a first-timer."""
     u = User(id=generate_uuid(), email=name.lower().replace(" ", "") + "@audit.test",
              name=name, phone="+1561555%04d" % (abs(hash(name)) % 10000), role="driver")
     db.session.add(u)
@@ -49,6 +53,14 @@ def _hauler(name, lat=26.63, lng=-80.05, online=True, approved="approved",
                    last_heartbeat_at=_now() if online else None)
     db.session.add(c)
     db.session.commit()
+    if proven and approved == "approved":
+        done = Job(id=generate_uuid(), customer_id=_customer().id, driver_id=c.id,
+                   status="completed", total_price=150.0, address="e2e-audit done job",
+                   completed_at=_now() - timedelta(days=7),
+                   scheduled_at=_now() - timedelta(days=7, hours=2),
+                   lat=lat, lng=lng, confirmation_code="P{:07d}".format(abs(hash(name)) % 10_000_000))
+        db.session.add(done)
+        db.session.commit()
     return c
 
 
@@ -632,3 +644,20 @@ def test_concierge_console_completes_with_the_customer_pin(client):
 
     db.session.refresh(job)
     assert job.status == "completed" and job.completion_pin_verified_at is not None
+
+
+def test_a_first_timer_is_offered_work_but_never_silently_auto_assigned():
+    """The reliability rule, stated once: coverage and offer waves reach a
+    hauler with no completed jobs (flagged), but a silent auto-assignment does
+    not — a person confirms them first. AFB22IMO was a first-timer handed a
+    Sunday job with nobody asking."""
+    from assignment import eligibility, assignable_contractors
+    job = _job()
+    rookie = _hauler("Rookie Ray", lat=26.625, proven=False)
+    now = _now()
+    auto = eligibility(job, rookie, now, mode="auto")
+    assert not auto.ok and "first_job_needs_call" in auto.reasons
+    offer = eligibility(job, rookie, now, mode="offer")
+    assert offer.ok and "first_job_needs_call" in offer.warnings
+    assert rookie.id in {e["contractor"].id for e in assignable_contractors(job, now, mode="offer")}
+    assert rookie.id not in {e["contractor"].id for e in assignable_contractors(job, now, mode="auto")}

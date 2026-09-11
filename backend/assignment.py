@@ -554,7 +554,20 @@ def eligibility(job, contractor, at=None, mode="auto", on_standby=None, radius_m
     # per-job decline exclusion
     if declined_recently(job_id, c.id, now):
         (reasons if strict else warnings).append("declined_recently")
-
+    # reliability (hauler_reliability): a hauler with no completed job is not
+    # handed work by a SILENT auto-assignment — a person confirms them first.
+    # Offer waves and manual assignment still reach them, flagged, because an
+    # all-new pool would otherwise get no work at all. A no-show history blocks
+    # in strict modes and warns elsewhere.
+    try:
+        from hauler_reliability import tier as _tier, TIER_NEW, TIER_FLAGGED
+        t = _tier(c.id)
+        if t == TIER_FLAGGED:
+            (reasons if strict else warnings).append("no_show_history")
+        elif t == TIER_NEW:
+            (reasons if mode == "auto" else warnings).append("first_job_needs_call")
+    except Exception:
+        pass
     return Eligibility(not reasons, reasons, warnings, dist)
 
 

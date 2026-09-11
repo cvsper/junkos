@@ -349,6 +349,10 @@ try:
     app.register_blueprint(pay_bp)
     from work_queue import work_bp
     app.register_blueprint(work_bp)
+    from hauler_confirm import confirm_bp
+    app.register_blueprint(confirm_bp)
+    from maya_report import maya_bp
+    app.register_blueprint(maya_bp)
 except Exception as _sd_exc:  # pragma: no cover
     import logging as _logging
     _logging.getLogger(__name__).warning("sameday_bp not registered: %s", _sd_exc)
@@ -1028,7 +1032,7 @@ def get_available_time_slots(requested_date=None):
 # ---------------------------------------------------------------------------
 # Legacy API Routes (kept for backward compatibility)
 # ---------------------------------------------------------------------------
-APP_VERSION = "2.2.38-balance-wording"
+APP_VERSION = "2.2.39-confirm-before-the-job"
 
 
 # ---------------------------------------------------------------------------

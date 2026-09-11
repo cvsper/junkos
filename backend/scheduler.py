@@ -187,6 +187,17 @@ def _sameday_standby_ask(app):
         logger.exception("standby ask job failed")
 
 
+def _preslot_check(app):
+    """T-30: an assigned hauler with no movement is re-dispatched (unconfirmed)
+    or a person is paged (confirmed). hauler_confirm.py."""
+    with app.app_context():
+        try:
+            from hauler_confirm import preslot_check
+            preslot_check()
+        except Exception:
+            logger.exception("preslot check failed")
+
+
 def _reconcile_refunded_jobs(app):
     """Open jobs whose payment was refunded in full get cancelled (cancellation.py)."""
     with app.app_context():
@@ -743,6 +754,16 @@ def init_scheduler(app):
             args=[app],
             id="sameday_standby_ask",
             name="Same-day standby roster text",
+        )
+
+        # Assigned hauler, 30 min out, no movement — every 5 min
+        scheduler.add_job(
+            _preslot_check,
+            "interval",
+            minutes=5,
+            args=[app],
+            id="preslot_check",
+            name="Pre-slot hauler movement check",
         )
 
         # Refunded-but-open jobs — 90s after boot, then hourly
