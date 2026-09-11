@@ -87,7 +87,8 @@ def test_a_lead_nobody_touched_gets_one_text_in_the_vas_name_then_a_person():
     _call("9545550110", source="google", minutes_ago=3)          # older than the window
     _call("9545550111", source="google", minutes_ago=0)          # too fresh
     _call("9545550112", source="desk", minutes_ago=5, disposition="answered_by_human", answered="Tracy")
-    with mock.patch("desk_line.send_desk_text") as sms:
+    with mock.patch("inbound.humans_online", return_value=["Tracy"]), \
+         mock.patch("desk_line.send_desk_text") as sms:
         sent = leads.speed_to_lead_sweep()
     assert sent == ["9545550110"], "only the untouched, old-enough, unanswered one"
     body = sms.call_args[0][1]
