@@ -181,6 +181,96 @@ RECYCLING_FEE_TRIGGERS = {
 }
 
 # ---------------------------------------------------------------------------
+# Naming an item is not the same as pricing it (audit follow-up)
+# ---------------------------------------------------------------------------
+# The item picker sends a generic bucket as ``category`` and keeps the real
+# item in ``name`` — {"category": "appliances", "name": "Refrigerator"}. The
+# engine priced the bucket, so a refrigerator was charged as a generic
+# appliance and, worse, RECYCLING_FEE_TRIGGERS never fired, because those are
+# keyed to "refrigerator" and "tv_console". Job AFB22IMO went out at $307.80
+# for a sofa, fridge, flat-screen and bags: no freon recovery, no e-waste fee,
+# and every line priced from the cheap bucket.
+#
+# The picker already has an optional specific ``category`` for exactly this;
+# most presets simply never set it. Resolving here rather than in the client
+# fixes every caller at once — web, iOS, Maya's phone tools and the SMS flow —
+# and repairs carts that were stored generic.
+GENERIC_CATEGORIES = {"furniture", "appliances", "electronics", "general",
+                      "construction", "yard_waste", "other"}
+
+# Display label (normalised) -> pricing category. Only mappings with a real
+# specific price; anything else deliberately stays on its generic bucket.
+ITEM_NAME_CATEGORIES = {
+    # furniture
+    "couch": "sofa", "couch sofa": "sofa", "sofa": "sofa", "loveseat": "sofa",
+    "sleeper sofa": "sofa_sleeper", "sofa bed": "sofa_sleeper",
+    "sectional": "sofa_sectional",
+    "recliner": "chair_recliner", "recliner armchair": "chair_recliner",
+    "armchair": "chair_recliner", "office chair": "chair_office",
+    "mattress": "mattress", "mattress any size": "mattress",
+    "box spring": "box_spring", "bed frame": "bed_frame",
+    "dresser": "dresser", "dresser chest": "dresser",
+    "bookshelf": "bookcase", "bookcase": "bookcase",
+    "desk": "desk_small", "dining table": "table_dining",
+    "dining chairs set of 4": "table_dining_chairs", "dining chairs": "table_dining_chairs",
+    "coffee table": "table_coffee", "end table": "table_end",
+    "futon": "futon", "filing cabinet": "filing_cabinet",
+    # appliances
+    "refrigerator": "refrigerator", "fridge": "refrigerator",
+    "mini fridge": "refrigerator_bar", "bar fridge": "refrigerator_bar",
+    "washer": "washer", "dryer": "dryer", "washer dryer set": "washer_dryer_set",
+    "dishwasher": "dishwasher", "oven stove": "stove", "stove": "stove", "oven": "stove",
+    "microwave": "microwave", "chest freezer": "freezer_chest",
+    "upright freezer": "freezer_upright", "freezer": "freezer_upright",
+    # electronics
+    "tv flat screen": "tv_flatscreen", "flat screen tv": "tv_flatscreen", "tv": "tv_flatscreen",
+    "tv crt tube": "tv_console", "tube tv": "tv_console", "crt tv": "tv_console",
+    "computer desktop": "computer", "computer": "computer", "desktop": "computer",
+    "printer scanner": "printer", "printer": "printer",
+    "tv stand": "tv_stand", "entertainment center": "entertainment_center",
+    # specialty
+    "treadmill": "treadmill", "elliptical": "elliptical",
+    "exercise bike": "bike_stationary", "stationary bike": "bike_stationary",
+    "bbq grill": "bbq_grill", "grill": "bbq_grill",
+    "hot tub": "hot_tub", "pool table": "pool_table", "piano": "piano",
+    "bike": "bike", "bicycle": "bike",
+    "push mower": "lawn_mower_push", "lawn mower": "lawn_mower_push",
+    "riding mower": "lawn_mower_riding",
+}
+
+
+def _normalise_label(text):
+    import re as _re
+    return _re.sub(r"[^a-z0-9]+", " ", (text or "").lower()).strip()
+
+
+def resolve_item_category(entry):
+    """The most specific pricing category this item can be matched to.
+
+    An already-specific category always wins — this only rescues items whose
+    category is a generic bucket but whose name identifies a real item.
+    """
+    if not isinstance(entry, dict):
+        return "other"
+    category = (entry.get("category") or "other").strip().lower()
+    if category in CATEGORY_PRICES and category not in GENERIC_CATEGORIES:
+        return category                      # already specific, leave it alone
+
+    for field in ("name", "label", "item", "description"):
+        label = _normalise_label(entry.get(field))
+        if not label:
+            continue
+        if label in ITEM_NAME_CATEGORIES:
+            return ITEM_NAME_CATEGORIES[label]
+        if label in CATEGORY_PRICES and label not in GENERIC_CATEGORIES:
+            return label
+        squashed = label.replace(" ", "_")
+        if squashed in CATEGORY_PRICES and squashed not in GENERIC_CATEGORIES:
+            return squashed
+    return category
+
+
+# ---------------------------------------------------------------------------
 # Labor fee -- competitor charges $75/hr/person, we charge $55
 # Applied only for jobs requiring extra labor (stairs, long carry, etc.)
 # ---------------------------------------------------------------------------
@@ -562,7 +652,7 @@ def calculate_estimate(items, scheduled_date=None, lat=None, lng=None, addons=No
     items = normalized
 
     for entry in items:
-        category = entry.get("category") or "other"
+        category = resolve_item_category(entry)
         quantity = entry["quantity"]
         size = entry.get("size")  # optional
 
@@ -608,7 +698,9 @@ def calculate_estimate(items, scheduled_date=None, lat=None, lng=None, addons=No
     recycling_total = 0.0
     recycling_breakdown = []
     for entry in items:
-        category = (entry.get("category") or "other").lower()
+        # same resolution as the price loop — a fridge named in a generic
+        # bucket must still trigger freon recovery
+        category = resolve_item_category(entry)
         quantity = entry["quantity"]
         fee_key = RECYCLING_FEE_TRIGGERS.get(category)
         if fee_key and fee_key in RECYCLING_FEES:
