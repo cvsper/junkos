@@ -93,6 +93,9 @@ COLUMN_MIGRATIONS = [
     ("jobs", "noshow_contractor_id", "VARCHAR(36)", "VARCHAR(36)", "NULL"),
     ("jobs", "noshow_reason", "VARCHAR(80)", "VARCHAR(80)", "NULL"),
     ("jobs", "noshow_redispatched_at", "DATETIME", "TIMESTAMP", "NULL"),
+    # dump suggest (2026-09-11): who can tip at a facility + county-of-origin rules
+    ("landfill_facilities", "access", "VARCHAR(16)", "VARCHAR(16)", "'walk_in'"),
+    ("landfill_facilities", "origin_county", "VARCHAR(32)", "VARCHAR(32)", "NULL"),
     # inbound lead source + outcome (leads.py)
     ("inbound_calls", "source", "VARCHAR(20)", "VARCHAR(20)", "NULL"),
     ("inbound_calls", "lead_outcome", "VARCHAR(20)", "VARCHAR(20)", "NULL"),

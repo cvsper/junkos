@@ -3282,6 +3282,11 @@ class LandfillFacility(db.Model):
     avg_turnaround_min = Column(Integer, nullable=False, default=25)
     notes = Column(Text, nullable=True)
 
+    # access values: walk_in | account | permit | residents  (who can tip here)
+    access = Column(String(16), nullable=False, default="walk_in")
+    # Some sites only take loads that originated in their county (Broward LF).
+    origin_county = Column(String(32), nullable=True)
+
     # Fee-accuracy gate: False on seed (publicly-published estimate);
     # flipped True after weigh-ticket OCR reconciliation confirms fee data.
     fee_accuracy_validated = Column(Boolean, default=False, nullable=False)
@@ -3320,6 +3325,8 @@ class LandfillFacility(db.Model):
             "scale_method": self.scale_method,
             "avg_turnaround_min": self.avg_turnaround_min,
             "fee_accuracy_validated": self.fee_accuracy_validated,
+            "access": self.access,
+            "origin_county": self.origin_county,
             "notes": self.notes,
         }
 
