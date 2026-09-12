@@ -1168,6 +1168,7 @@ CALLS_HTML = r"""<!doctype html>
       <div class="bar-sub" id="daybar">—</div>
       <button class="who who-btn" id="who" type="button" hidden title="Account"></button>
       <button class="clock" id="clock-chip" type="button" aria-label="Time clock"><span class="ck-dot"></span><span id="clock-label">Clock in</span></button>
+      <a class="back" href="/va/analytics" aria-label="Analytics" title="Analytics">▤</a>
       <button class="back" id="queue-toggle" type="button" aria-label="Your queue">☰</button>
       <button class="back" id="search-toggle" type="button" aria-label="Find a business">⌕</button>
     </header>

@@ -362,6 +362,14 @@ VA_HUB_HTML = r"""<!doctype html>
         </div>
         <div class="situ-go">→</div>
       </a>
+      <a class="situ rv" href="/va/analytics">
+        <div class="situ-key ok-key">STATS</div>
+        <div class="situ-txt">
+          <div class="situ-t">How the desk is doing</div>
+          <div class="situ-d"><b>Analytics</b> — calls by source, speed to lead, bookings and money, haulers, Maya, hours — for today, this week, or any window.</div>
+        </div>
+        <div class="situ-go">→</div>
+      </a>
       <a class="situ rv" href="/va/dispatch">
         <div class="situ-key ok-key">JOBS</div>
         <div class="situ-txt">
