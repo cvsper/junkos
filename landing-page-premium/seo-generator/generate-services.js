@@ -117,7 +117,7 @@ function generateServicePage(service) {
             "name": "Umuve",
             "url": "https://goumuve.com",
             "logo": "https://goumuve.com/logo-full.png",
-            "telephone": "+15619441636"
+            "telephone": "+18444356005"
         },
         "areaServed": {
             "@type": "State",
@@ -173,7 +173,7 @@ function generateServicePage(service) {
                     <img src="/logo-nav.png" alt="Umuve — Hauling Made Simple" style="height: 36px;">
                 </a>
                 <div style="display: flex; gap: 0.75rem; align-items: center;">
-                    <a href="tel:+15619441636" style="color: #1a1a1a; text-decoration: none; font-weight: 600; font-size: 0.9rem;">(561) 944-1636</a>
+                    <a href="tel:+18444356005" style="color: #1a1a1a; text-decoration: none; font-weight: 600; font-size: 0.9rem;">(844) 435-6005</a>
                     <a href="https://app.goumuve.com/book" class="btn btn-primary" style="padding: 0.6rem 1.25rem; font-size: 0.9rem;">Book Now</a>
                 </div>
             </div>
@@ -206,7 +206,7 @@ function generateServicePage(service) {
                 </p>
                 <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
                     <a href="https://app.goumuve.com/book" class="btn btn-primary btn-xl" style="font-size: 1.1rem; padding: 1rem 2rem;">Get Free Quote</a>
-                    <a href="tel:+15619441636" class="btn btn-secondary btn-xl" style="font-size: 1.1rem; padding: 1rem 2rem;">Call (561) 944-1636</a>
+                    <a href="tel:+18444356005" class="btn btn-secondary btn-xl" style="font-size: 1.1rem; padding: 1rem 2rem;">Call (844) 435-6005</a>
                 </div>
             </div>
         </div>
@@ -387,7 +387,7 @@ function generateServicePage(service) {
             </p>
             <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
                 <a href="https://app.goumuve.com/book" style="background: white; color: #DC2626; padding: 1rem 2.5rem; font-weight: 700; border-radius: 0.5rem; text-decoration: none; font-size: 1.1rem;">Book Online Now</a>
-                <a href="tel:+15619441636" style="background: rgba(255,255,255,0.15); color: white; padding: 1rem 2.5rem; font-weight: 700; border-radius: 0.5rem; text-decoration: none; font-size: 1.1rem; border: 2px solid rgba(255,255,255,0.3);">Call (561) 944-1636</a>
+                <a href="tel:+18444356005" style="background: rgba(255,255,255,0.15); color: white; padding: 1rem 2.5rem; font-weight: 700; border-radius: 0.5rem; text-decoration: none; font-size: 1.1rem; border: 2px solid rgba(255,255,255,0.3);">Call (844) 435-6005</a>
             </div>
         </div>
     </section>
@@ -415,7 +415,7 @@ function generateServicePage(service) {
                 <div>
                     <h4 style="font-weight: 700; margin-bottom: 0.75rem; font-size: 0.9rem;">Contact</h4>
                     <div style="display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.85rem;">
-                        <a href="tel:+15619441636" style="color: #8a8a8a; text-decoration: none;">(561) 944-1636</a>
+                        <a href="tel:+18444356005" style="color: #8a8a8a; text-decoration: none;">(844) 435-6005</a>
                         <a href="mailto:support@goumuve.com" style="color: #8a8a8a; text-decoration: none;">support@goumuve.com</a>
                         <a href="/privacy" style="color: #8a8a8a; text-decoration: none;">Privacy Policy</a>
                         <a href="/terms" style="color: #8a8a8a; text-decoration: none;">Terms of Service</a>
@@ -431,7 +431,7 @@ function generateServicePage(service) {
     <!-- Sticky CTA -->
     <div class="sticky-cta">
         <a href="https://app.goumuve.com/book" class="book-btn">Book Online — From $${service.minCost}</a>
-        <a href="tel:+15619441636" class="call-btn">Call Now</a>
+        <a href="tel:+18444356005" class="call-btn">Call Now</a>
     </div>
 
     <script src="/script.js"></script>

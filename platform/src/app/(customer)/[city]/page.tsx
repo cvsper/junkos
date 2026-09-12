@@ -200,7 +200,7 @@ export default async function CityPage({
     name: `Umuve Junk Removal - ${cityName}, FL`,
     description: `Professional junk removal services in ${cityName}, Florida. Furniture, appliances, yard waste, construction debris and more.`,
     url: `https://app.goumuve.com/${citySlug}`,
-    telephone: "+1-561-944-1636",
+    telephone: "+1-844-435-6005",
     address: {
       "@type": "PostalAddress",
       addressLocality: cityName,

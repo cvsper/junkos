@@ -44,7 +44,7 @@ const NAV = () => `<nav class="navbar" style="position:sticky;top:0;background:r
 <div class="container"><div style="display:flex;justify-content:space-between;align-items:center;padding:1rem 0">
 <a href="/"><img src="/logo-nav.png" alt="Umuve — Same-Day Junk Removal in South Florida" width="120" height="36" loading="eager"></a>
 <div style="display:flex;gap:1rem;align-items:center">
-<a href="tel:5619441636" style="color:#374151;font-weight:600;text-decoration:none;font-size:0.9rem">(561) 944-1636</a>
+<a href="tel:8444356005" style="color:#374151;font-weight:600;text-decoration:none;font-size:0.9rem">(844) 435-6005</a>
 <a href="https://app.goumuve.com/book" class="btn btn-primary">Get a Quote</a>
 </div>
 </div></div></nav>`;
@@ -80,7 +80,7 @@ const FOOTER = () => `<footer style="background:#111827;color:#9ca3af;padding:3r
 </div>
 <div>
 <p style="font-weight:600;color:#fff;margin-bottom:0.75rem">Contact</p>
-<p style="font-size:0.875rem;margin-bottom:0.5rem"><a href="tel:5619441636" style="color:#9ca3af;text-decoration:none">(561) 944-1636</a></p>
+<p style="font-size:0.875rem;margin-bottom:0.5rem"><a href="tel:8444356005" style="color:#9ca3af;text-decoration:none">(844) 435-6005</a></p>
 <p style="font-size:0.875rem;margin-bottom:0.5rem">Palm Beach, Broward &amp; Miami-Dade</p>
 <a href="https://app.goumuve.com/book" style="background:#DC2626;color:#fff;padding:0.75rem 1.5rem;border-radius:0.5rem;text-decoration:none;font-weight:600;font-size:0.875rem;display:inline-block;margin-top:0.5rem">Book Online</a>
 </div>
@@ -231,7 +231,7 @@ const COMMERCIAL_SERVICES = [
       { q: 'How fast can you turn over a unit?', a: 'Most one-bedroom apartments can be cleared in 1-2 hours. We offer same-day service for property managers and can often accommodate morning requests the same day.' },
       { q: 'Do you offer monthly billing for multiple properties?', a: 'Yes. Property management companies with regular volume can set up monthly billing accounts with discounted rates. Contact us to discuss your portfolio size.' },
       { q: 'What documentation do you provide for abandoned property?', a: 'We provide photo documentation before removal, an itemized list of removed items, and a completion certificate. This supports tenant dispute resolution and legal compliance.' },
-      { q: 'Can you handle emergency same-day cleanouts?', a: 'Yes. Property managers with urgent turnover needs can call (561) 944-1636 for priority dispatch. We keep same-day slots reserved for commercial accounts.' }
+      { q: 'Can you handle emergency same-day cleanouts?', a: 'Yes. Property managers with urgent turnover needs can call (844) 435-6005 for priority dispatch. We keep same-day slots reserved for commercial accounts.' }
     ]
   },
   {
@@ -266,7 +266,7 @@ function buildFAQSchema(faqs) {
 
 function buildServiceSchema(service) {
   return `<script type="application/ld+json">
-{"@context":"https://schema.org","@type":"Service","serviceType":"${service.name}","provider":{"@type":"Organization","name":"Umuve","url":"https://goumuve.com","logo":"https://goumuve.com/logo-full.png","telephone":"+15619441636"},"areaServed":{"@type":"State","name":"Florida"},"offers":{"@type":"AggregateOffer","lowPrice":"${service.pricing.min}","highPrice":"${service.pricing.max}","priceCurrency":"USD"},"description":"${service.desc.replace(/"/g,'&quot;')}"}
+{"@context":"https://schema.org","@type":"Service","serviceType":"${service.name}","provider":{"@type":"Organization","name":"Umuve","url":"https://goumuve.com","logo":"https://goumuve.com/logo-full.png","telephone":"+18444356005"},"areaServed":{"@type":"State","name":"Florida"},"offers":{"@type":"AggregateOffer","lowPrice":"${service.pricing.min}","highPrice":"${service.pricing.max}","priceCurrency":"USD"},"description":"${service.desc.replace(/"/g,'&quot;')}"}
 </script>`;
 }
 
@@ -291,7 +291,7 @@ ${NAV()}
 <p style="font-size:1.1rem;opacity:0.92;margin-bottom:2rem;line-height:1.7">${service.desc}</p>
 <div style="display:flex;flex-wrap:wrap;gap:1rem;align-items:center">
 <a href="https://app.goumuve.com/book" style="background:#DC2626;color:#fff;padding:1rem 2rem;font-weight:700;border-radius:0.5rem;text-decoration:none;font-size:1.05rem">Get a Commercial Quote</a>
-<a href="tel:5619441636" style="background:rgba(255,255,255,0.15);color:#fff;padding:1rem 2rem;font-weight:600;border-radius:0.5rem;text-decoration:none">(561) 944-1636</a>
+<a href="tel:8444356005" style="background:rgba(255,255,255,0.15);color:#fff;padding:1rem 2rem;font-weight:600;border-radius:0.5rem;text-decoration:none">(844) 435-6005</a>
 </div>
 </div></div></section>
 
@@ -392,7 +392,7 @@ ${service.faqs.map(f => `<div style="background:#fff;border:1px solid rgba(0,0,0
 <p style="font-size:1.125rem;margin-bottom:2rem;opacity:0.92">We respond within 30 minutes. After-hours and weekend jobs available.</p>
 <div style="display:flex;flex-wrap:wrap;gap:1rem;justify-content:center">
 <a href="https://app.goumuve.com/book" style="background:#DC2626;color:#fff;padding:1rem 2.5rem;font-weight:700;border-radius:0.5rem;text-decoration:none;font-size:1.05rem">Get a Quote Online</a>
-<a href="tel:5619441636" style="background:rgba(255,255,255,0.15);color:#fff;padding:1rem 2.5rem;font-weight:600;border-radius:0.5rem;text-decoration:none">Call (561) 944-1636</a>
+<a href="tel:8444356005" style="background:rgba(255,255,255,0.15);color:#fff;padding:1rem 2.5rem;font-weight:600;border-radius:0.5rem;text-decoration:none">Call (844) 435-6005</a>
 </div>
 </div></section>
 
@@ -443,7 +443,7 @@ ${NAV()}
 <p style="font-size:1.1rem;opacity:0.92;margin-bottom:2rem;line-height:1.7">Professional, insured commercial cleanout services across Palm Beach, Broward, and Miami-Dade. Office cleanouts, retail, restaurants, warehouses, property management, and HOA services. After-hours available.</p>
 <div style="display:flex;flex-wrap:wrap;gap:1rem;align-items:center">
 <a href="https://app.goumuve.com/book" style="background:#DC2626;color:#fff;padding:1rem 2rem;font-weight:700;border-radius:0.5rem;text-decoration:none;font-size:1.05rem">Get a Commercial Quote</a>
-<a href="tel:5619441636" style="background:rgba(255,255,255,0.15);color:#fff;padding:1rem 2rem;font-weight:600;border-radius:0.5rem;text-decoration:none">(561) 944-1636</a>
+<a href="tel:8444356005" style="background:rgba(255,255,255,0.15);color:#fff;padding:1rem 2rem;font-weight:600;border-radius:0.5rem;text-decoration:none">(844) 435-6005</a>
 </div>
 </div></div></section>
 
@@ -533,7 +533,7 @@ ${[
 <p style="font-size:1.125rem;margin-bottom:2rem;opacity:0.92">We respond within 30 minutes. After-hours and weekend jobs available across all of South Florida.</p>
 <div style="display:flex;flex-wrap:wrap;gap:1rem;justify-content:center">
 <a href="https://app.goumuve.com/book" style="background:#DC2626;color:#fff;padding:1rem 2.5rem;font-weight:700;border-radius:0.5rem;text-decoration:none;font-size:1.05rem">Request a Quote</a>
-<a href="tel:5619441636" style="background:rgba(255,255,255,0.15);color:#fff;padding:1rem 2.5rem;font-weight:600;border-radius:0.5rem;text-decoration:none">Call (561) 944-1636</a>
+<a href="tel:8444356005" style="background:rgba(255,255,255,0.15);color:#fff;padding:1rem 2.5rem;font-weight:600;border-radius:0.5rem;text-decoration:none">Call (844) 435-6005</a>
 </div>
 </div></section>
 

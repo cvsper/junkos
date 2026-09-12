@@ -8,7 +8,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const PHONE = '(561) 944-1636';
+const PHONE = '(844) 435-6005';
 const SMS = '(844) 435-6005';
 const BOOK_URL = 'https://app.goumuve.com/book';
 const SITE = 'https://goumuve.com';
@@ -1596,7 +1596,7 @@ function nav() {
                     <img src="/logo-nav.png" alt="Umuve — Same-Day Junk Removal in South Florida" width="120" height="36" loading="eager">
                 </a>
                 <div style="display: flex; gap: 0.75rem; align-items: center;">
-                    <a href="tel:+15619441636" style="color: #1a1a1a; text-decoration: none; font-weight: 600; font-size: 0.9rem;">${PHONE}</a>
+                    <a href="tel:+18444356005" style="color: #1a1a1a; text-decoration: none; font-weight: 600; font-size: 0.9rem;">${PHONE}</a>
                     <a href="${BOOK_URL}" class="btn btn-primary" style="padding: 0.6rem 1.25rem; font-size: 0.9rem;">Book Now</a>
                 </div>
             </div>
@@ -1639,7 +1639,7 @@ function hero(g) {
                 </div>
                 <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
                     <a href="${BOOK_URL}" class="btn btn-primary">Book Free Pickup</a>
-                    <a href="tel:+15619441636" class="btn btn-secondary">Call ${PHONE}</a>
+                    <a href="tel:+18444356005" class="btn btn-secondary">Call ${PHONE}</a>
                 </div>
             </div>
         </div>
@@ -1679,7 +1679,7 @@ function optionProfessional(g) {
                     </ul>
                     <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
                         <a href="${BOOK_URL}" class="btn btn-primary">Book Same-Day Pickup</a>
-                        <a href="tel:+15619441636" style="color: #DC2626; font-weight: 600; text-decoration: none; align-self: center;">Call ${PHONE}</a>
+                        <a href="tel:+18444356005" style="color: #DC2626; font-weight: 600; text-decoration: none; align-self: center;">Call ${PHONE}</a>
                     </div>
                 </div>
                 <p style="font-size: 0.85rem; color: #8a8a8a;">
@@ -1854,7 +1854,7 @@ function ctaSection() {
                     <a href="${BOOK_URL}" style="background: white; color: #DC2626; font-weight: 700; padding: 0.9rem 2rem; border-radius: 0.5rem; text-decoration: none; font-size: 1rem;">
                         Book Free Pickup
                     </a>
-                    <a href="tel:+15619441636" style="background: rgba(255,255,255,0.15); color: white; font-weight: 700; padding: 0.9rem 2rem; border-radius: 0.5rem; text-decoration: none; font-size: 1rem; border: 2px solid rgba(255,255,255,0.4);">
+                    <a href="tel:+18444356005" style="background: rgba(255,255,255,0.15); color: white; font-weight: 700; padding: 0.9rem 2rem; border-radius: 0.5rem; text-decoration: none; font-size: 1rem; border: 2px solid rgba(255,255,255,0.4);">
                         Call ${PHONE}
                     </a>
                 </div>
@@ -1897,7 +1897,7 @@ function footer() {
                     <div>
                         <h4 style="color: white; font-size: 0.9rem; font-weight: 700; margin-bottom: 0.75rem;">Contact</h4>
                         <ul style="list-style: none; padding: 0; font-size: 0.85rem;">
-                            <li style="margin-bottom: 0.4rem;"><a href="tel:+15619441636" style="color: #8a8a8a; text-decoration: none;">${PHONE}</a></li>
+                            <li style="margin-bottom: 0.4rem;"><a href="tel:+18444356005" style="color: #8a8a8a; text-decoration: none;">${PHONE}</a></li>
                             <li style="margin-bottom: 0.4rem;"><a href="${BOOK_URL}" style="color: #8a8a8a; text-decoration: none;">Book Online</a></li>
                             <li style="margin-bottom: 0.4rem;"><a href="/privacy" style="color: #8a8a8a; text-decoration: none;">Privacy Policy</a></li>
                         </ul>
@@ -1914,7 +1914,7 @@ function footer() {
     <div class="sticky-cta" style="display: none;" id="stickyCta">
         <span style="font-size: 0.9rem;">Same-day pickup from $119</span>
         <a href="${BOOK_URL}" style="background: white; color: #DC2626; font-weight: 700; padding: 0.5rem 1.25rem; border-radius: 0.4rem; font-size: 0.9rem;">Book Now</a>
-        <a href="tel:+15619441636" style="font-size: 0.9rem; opacity: 0.85;">${PHONE}</a>
+        <a href="tel:+18444356005" style="font-size: 0.9rem; opacity: 0.85;">${PHONE}</a>
         <button onclick="document.getElementById('stickyCta').style.display='none'" style="background: none; border: none; color: white; font-size: 1.2rem; cursor: pointer; padding: 0 0.25rem;">&times;</button>
     </div>
     <script>
@@ -2020,7 +2020,7 @@ ${hero(g)}
                 </p>
                 <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
                     <a href="${BOOK_URL}" class="btn btn-primary">Book Same-Day Service</a>
-                    <a href="tel:+15619441636" style="color: #DC2626; font-weight: 600; text-decoration: none; align-self: center;">Call ${PHONE}</a>
+                    <a href="tel:+18444356005" style="color: #DC2626; font-weight: 600; text-decoration: none; align-self: center;">Call ${PHONE}</a>
                 </div>
                 <p style="margin-top: 1rem; font-size: 0.9rem; color: #8a8a8a;">
                     Service available in <a href="/junk-removal/${g.cityLinks[0].city}/${g.serviceSlug}" style="color: #DC2626; text-decoration: none;">${g.cityLinks[0].name}</a>,
@@ -2091,7 +2091,7 @@ ${hero(g)}
                 </p>
                 <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem;">
                     <a href="${BOOK_URL}" class="btn btn-primary">Book Same-Day Pickup</a>
-                    <a href="tel:+15619441636" style="color: #DC2626; font-weight: 600; text-decoration: none; align-self: center;">Call ${PHONE}</a>
+                    <a href="tel:+18444356005" style="color: #DC2626; font-weight: 600; text-decoration: none; align-self: center;">Call ${PHONE}</a>
                 </div>
                 <p style="font-size: 0.9rem; color: #8a8a8a;">
                     Serving <a href="/junk-removal/${g.cityLinks[0].city}" style="color: #DC2626; text-decoration: none;">${g.cityLinks[0].name}</a>,

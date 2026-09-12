@@ -41,7 +41,7 @@ Licensed and insured. 4.9 star rating.
 
 Text us photos for an instant AI quote: (844) 435-6005
 Book online: goumuve.com
-Call: (561) 944-1636
+Call: (844) 435-6005
 
 ---
 
@@ -75,7 +75,7 @@ Perfect for:
 Licensed and insured. 4.9 stars. Serving all of South Florida.
 
 Text us a photo of your junk for an instant quote: (844) 435-6005
-Book: goumuve.com | Call: (561) 944-1636
+Book: goumuve.com | Call: (844) 435-6005
 
 ---
 
@@ -106,7 +106,7 @@ No minimum order. No hidden fees. We do the heavy lifting.
 UMUVE — South Florida's junk removal service.
 Text a photo: (844) 435-6005
 Book online: goumuve.com
-Call: (561) 944-1636
+Call: (844) 435-6005
 
 ---
 
@@ -147,7 +147,7 @@ Saw a few people asking about junk removal lately so wanted to share — I used 
 
 They serve Palm Beach and Broward counties. Starting at $119. Licensed and insured.
 
-goumuve.com or call (561) 944-1636. Text (844) 435-6005 with a photo for an instant quote.
+goumuve.com or call (844) 435-6005. Text (844) 435-6005 with a photo for an instant quote.
 
 Just passing it along for anyone who needs it!
 
@@ -192,7 +192,7 @@ Serving Palm Beach County, Broward County, and Miami-Dade.
 
 Text us a photo for an instant AI quote: (844) 435-6005
 Book online: goumuve.com
-Call: (561) 944-1636
+Call: (844) 435-6005
 
 ---
 

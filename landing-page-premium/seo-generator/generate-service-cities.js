@@ -592,7 +592,7 @@ function generateMetaDescription(service, city, cityIndex) {
         `Need ${service.name.toLowerCase()} in ${city.name}? Serving ${city.neighborhoods[0]}, ${city.neighborhoods[1]} & more. From $${service.minCost}, same-day. ${city.reviewCount} five-star reviews.`,
         `${city.name} ${service.name.toLowerCase()} starting at $${service.minCost}. We serve all of ${city.county} County — ${city.jobsCompleted.toLocaleString()}+ jobs done. Book in 3 minutes.`,
         `Same-day ${service.name.toLowerCase()} in ${city.name}, FL. ${city.operators} operators, $${service.minCost} starting price. Licensed & insured. ${city.rating} stars from ${city.reviewCount} reviews. Book now.`,
-        `${service.name} in ${city.name}, FL — avg job $${city.avgJobCost}. Serving ${city.neighborhoods.slice(0, 2).join(', ')} & all of ${city.county} County. Upfront pricing, same-day service. (561) 944-1636.`
+        `${service.name} in ${city.name}, FL — avg job $${city.avgJobCost}. Serving ${city.neighborhoods.slice(0, 2).join(', ')} & all of ${city.county} County. Upfront pricing, same-day service. (844) 435-6005.`
     ];
     const hash = (cityIndex * 7 + service.slug.length * 13) % templates.length;
     return templates[hash];
@@ -711,7 +711,7 @@ function generateServiceCityPage(service, city, allServices, allCities) {
             `https://goumuve.com/images/seo/cities/${city.slug}/${service.slug}-hero.webp`
         ],
         "url": pageUrl,
-        "telephone": "+15619441636",
+        "telephone": "+18444356005",
         "priceRange": "$$",
         "address": {
             "@type": "PostalAddress",
@@ -763,7 +763,7 @@ function generateServiceCityPage(service, city, allServices, allCities) {
             "name": "Umuve",
             "url": "https://goumuve.com",
             "logo": "https://goumuve.com/logo-full.png",
-            "telephone": "+15619441636"
+            "telephone": "+18444356005"
         },
         "areaServed": {
             "@type": "City",
@@ -836,7 +836,7 @@ function generateServiceCityPage(service, city, allServices, allCities) {
                     <img src="/logo-nav.png" alt="Umuve — Same-Day Junk Removal in South Florida" width="120" height="36" loading="eager">
                 </a>
                 <div style="display: flex; gap: 0.75rem; align-items: center;">
-                    <a href="tel:+15619441636" style="color: #1a1a1a; text-decoration: none; font-weight: 600; font-size: 0.9rem;">(561) 944-1636</a>
+                    <a href="tel:+18444356005" style="color: #1a1a1a; text-decoration: none; font-weight: 600; font-size: 0.9rem;">(844) 435-6005</a>
                     <a href="https://app.goumuve.com/book" class="btn btn-primary" style="padding: 0.6rem 1.25rem; font-size: 0.9rem;">Book Now</a>
                 </div>
             </div>
@@ -871,7 +871,7 @@ function generateServiceCityPage(service, city, allServices, allCities) {
                 </p>
                 <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
                     <a href="https://app.goumuve.com/book" class="btn btn-primary btn-xl">Get Free Quote</a>
-                    <a href="tel:+15619441636" class="btn btn-secondary btn-xl">Call (561) 944-1636</a>
+                    <a href="tel:+18444356005" class="btn btn-secondary btn-xl">Call (844) 435-6005</a>
                 </div>
                 <p style="margin-top: 1rem; font-size: 0.85rem; color: #8a8a8a;">
                     ${city.rating}&#9733; from ${city.reviewCount} reviews &bull; Licensed & Insured &bull; ${service.ecoFriendly}
@@ -1219,7 +1219,7 @@ function generateServiceCityPage(service, city, allServices, allCities) {
             </p>
             <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
                 <a href="https://app.goumuve.com/book" style="background: white; color: #DC2626; padding: 1rem 2.5rem; font-weight: 700; border-radius: 0.5rem; text-decoration: none; display: inline-block; font-size: 1.1rem;">Book Online Now</a>
-                <a href="tel:+15619441636" style="background: rgba(255,255,255,0.15); color: white; padding: 1rem 2.5rem; font-weight: 700; border-radius: 0.5rem; text-decoration: none; display: inline-block; font-size: 1.1rem; border: 2px solid rgba(255,255,255,0.3);">Call (561) 944-1636</a>
+                <a href="tel:+18444356005" style="background: rgba(255,255,255,0.15); color: white; padding: 1rem 2.5rem; font-weight: 700; border-radius: 0.5rem; text-decoration: none; display: inline-block; font-size: 1.1rem; border: 2px solid rgba(255,255,255,0.3);">Call (844) 435-6005</a>
             </div>
         </div>
     </section>
@@ -1275,7 +1275,7 @@ function generateServiceCityPage(service, city, allServices, allCities) {
                 <div>
                     <h4 style="font-weight: 700; margin-bottom: 0.75rem; font-size: 0.9rem;">Contact</h4>
                     <div style="display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.85rem;">
-                        <a href="tel:+15619441636" style="color: #8a8a8a; text-decoration: none;">(561) 944-1636</a>
+                        <a href="tel:+18444356005" style="color: #8a8a8a; text-decoration: none;">(844) 435-6005</a>
                         <a href="sms:+18444356005" style="color: #8a8a8a; text-decoration: none;">Text (844) 435-6005</a>
                         <a href="mailto:support@goumuve.com" style="color: #8a8a8a; text-decoration: none;">support@goumuve.com</a>
                         <a href="/privacy" style="color: #8a8a8a; text-decoration: none;">Privacy Policy</a>

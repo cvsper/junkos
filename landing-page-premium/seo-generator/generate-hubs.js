@@ -43,7 +43,7 @@ const NAV = () => `<nav class="navbar" style="position:sticky;top:0;background:r
 <div class="container"><div style="display:flex;justify-content:space-between;align-items:center;padding:1rem 0">
 <a href="/"><img src="/logo-nav.png" alt="Umuve — Same-Day Junk Removal in South Florida" width="120" height="36" loading="eager"></a>
 <div style="display:flex;gap:1rem;align-items:center">
-<a href="tel:5619441636" style="color:#374151;font-weight:600;text-decoration:none;font-size:0.9rem;display:none" id="navPhone">(561) 944-1636</a>
+<a href="tel:8444356005" style="color:#374151;font-weight:600;text-decoration:none;font-size:0.9rem;display:none" id="navPhone">(844) 435-6005</a>
 <a href="https://app.goumuve.com/book" class="btn btn-primary">Book Now</a>
 </div>
 </div></div></nav>`;
@@ -505,7 +505,7 @@ function generatePricingPage() {
 {"@type":"Question","name":"How does Umuve pricing compare to 1-800-GOT-JUNK?","acceptedAnswer":{"@type":"Answer","text":"Umuve is typically 25-35% lower than 1-800-GOT-JUNK. GOT-JUNK starts at $150+ with a $298 minimum for most jobs. Umuve starts at $119 with transparent online estimates."}}
 ]}</script>`;
 
-  const serviceSchema = `<script type="application/ld+json">{"@context":"https://schema.org","@type":"Service","serviceType":"Junk Removal","provider":{"@type":"Organization","name":"Umuve","url":"https://goumuve.com","telephone":"+15619441636"},"areaServed":{"@type":"State","name":"Florida"},"offers":{"@type":"AggregateOffer","lowPrice":"119","priceCurrency":"USD"}}</script>`;
+  const serviceSchema = `<script type="application/ld+json">{"@context":"https://schema.org","@type":"Service","serviceType":"Junk Removal","provider":{"@type":"Organization","name":"Umuve","url":"https://goumuve.com","telephone":"+18444356005"},"areaServed":{"@type":"State","name":"Florida"},"offers":{"@type":"AggregateOffer","lowPrice":"119","priceCurrency":"USD"}}</script>`;
 
   return `${HEAD(title, desc, canonical, faqSchema + '\n' + serviceSchema)}
 <body>
@@ -521,7 +521,7 @@ ${NAV()}
 <p style="font-size:1.1rem;color:#5c5c5c;margin-bottom:1.5rem;line-height:1.7">Most junk removal companies make you wait for an on-site estimate. We show you real pricing upfront. Get an instant estimate online before you commit to a single thing.</p>
 <div style="display:flex;flex-wrap:wrap;gap:1rem">
 <a href="https://app.goumuve.com/book" style="background:#DC2626;color:#fff;padding:1rem 2rem;font-weight:700;border-radius:0.5rem;text-decoration:none">Get Your Instant Estimate</a>
-<a href="tel:5619441636" style="background:#fff;color:#374151;padding:1rem 2rem;font-weight:600;border-radius:0.5rem;text-decoration:none;border:1px solid rgba(0,0,0,0.12)">(561) 944-1636</a>
+<a href="tel:8444356005" style="background:#fff;color:#374151;padding:1rem 2rem;font-weight:600;border-radius:0.5rem;text-decoration:none;border:1px solid rgba(0,0,0,0.12)">(844) 435-6005</a>
 </div>
 </div></div></section>
 
@@ -678,7 +678,7 @@ ${[
 <p style="font-size:1.125rem;margin-bottom:2rem;opacity:0.95">No commitment. No on-site visit required. Just an instant, honest estimate.</p>
 <div style="display:flex;flex-wrap:wrap;gap:1rem;justify-content:center">
 <a href="https://app.goumuve.com/book" style="background:#fff;color:#DC2626;padding:1rem 2.5rem;font-weight:700;border-radius:0.5rem;text-decoration:none;font-size:1.05rem">Get My Price Now</a>
-<a href="tel:5619441636" style="background:rgba(255,255,255,0.15);color:#fff;padding:1rem 2rem;font-weight:600;border-radius:0.5rem;text-decoration:none">(561) 944-1636</a>
+<a href="tel:8444356005" style="background:rgba(255,255,255,0.15);color:#fff;padding:1rem 2rem;font-weight:600;border-radius:0.5rem;text-decoration:none">(844) 435-6005</a>
 </div>
 </div></section>
 
