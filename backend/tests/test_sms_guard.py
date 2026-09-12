@@ -106,3 +106,10 @@ def test_followup_text_goes_out_from_the_desk_line(client, prospect):
     assert kw["from_"] == "+15617824350" and kw["to"] == "+15615558857"
     assert DeskActivity.query.filter_by(twilio_sid="SMdesk1").one().direction == "out"
     assert prospect.last_texted_at is not None
+
+
+def test_vapi_201_twiml_is_relayed_to_twilio(client):
+    class _R: status_code = 201; text = "<Response><Message>Yeah, we take couches!</Message></Response>"
+    with mock.patch("requests.post", return_value=_R()):
+        r = _text(client, "+13055550300", "do you take couches", "SMvapi201")
+    assert "we take couches" in r.get_data(as_text=True)

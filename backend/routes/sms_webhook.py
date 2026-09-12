@@ -270,7 +270,8 @@ def inbound_sms():
             headers={"Content-Type": "application/x-www-form-urlencoded"},
             timeout=10,
         )
-        if vapi_resp.status_code == 200 and vapi_resp.text.strip():
+        # Vapi answers 201 Created with the TwiML (probed 9/12) — accept any 2xx.
+        if 200 <= vapi_resp.status_code < 300 and vapi_resp.text.strip():
             return Response(vapi_resp.text, mimetype="text/xml")
         logger.warning("Vapi SMS forward returned %d", vapi_resp.status_code)
     except Exception:
