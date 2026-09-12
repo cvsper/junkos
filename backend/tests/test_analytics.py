@@ -114,12 +114,13 @@ def test_funnel_totals_reach_rate_and_groupings():
 
 def test_funnel_for_one_va_and_texts():
     pm, hoa, haul = _seed_funnel()
+    at = _now() - timedelta(minutes=5)   # inside the frozen window, whatever the wall clock says
     db.session.add_all([
-        DeskActivity(prospect_id=pm.id, phone_digits=pm.phone_digits, kind="sms", direction="out", va_name="Tracy", body="hi"),
-        DeskActivity(prospect_id=pm.id, phone_digits=pm.phone_digits, kind="sms", direction="in", body="who is this"),
-        DeskActivity(prospect_id=hoa.id, phone_digits=hoa.phone_digits, kind="sms", direction="out", va_name="Trixie", body="hi"),
-        DeskActivity(prospect_id=haul.id, phone_digits=haul.phone_digits, kind="sms", direction="in", body="stop"),
-        DeskActivity(prospect_id=pm.id, phone_digits=pm.phone_digits, kind="call", direction="out", va_name="Tracy", status="completed"),
+        DeskActivity(prospect_id=pm.id, phone_digits=pm.phone_digits, kind="sms", direction="out", va_name="Tracy", body="hi", created_at=at),
+        DeskActivity(prospect_id=pm.id, phone_digits=pm.phone_digits, kind="sms", direction="in", body="who is this", created_at=at),
+        DeskActivity(prospect_id=hoa.id, phone_digits=hoa.phone_digits, kind="sms", direction="out", va_name="Trixie", body="hi", created_at=at),
+        DeskActivity(prospect_id=haul.id, phone_digits=haul.phone_digits, kind="sms", direction="in", body="stop", created_at=at),
+        DeskActivity(prospect_id=pm.id, phone_digits=pm.phone_digits, kind="call", direction="out", va_name="Tracy", status="completed", created_at=at),
     ])
     db.session.commit()
     start, end, _, _ = window({"days": 7})

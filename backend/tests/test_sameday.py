@@ -41,10 +41,19 @@ def _customer():
     return u
 
 
+def _later_today():
+    """Three hours out, but never past local midnight — these are same-day jobs."""
+    when = (datetime.now(timezone.utc) + timedelta(hours=3)).replace(tzinfo=None)
+    if sameday._local_date_of(when) != sameday._local_today():
+        from timeutils import local_naive_to_utc
+        when = local_naive_to_utc(datetime.combine(sameday._local_today(), datetime.min.time())
+                                  .replace(hour=23, minute=45)).replace(tzinfo=None)
+    return when
+
+
 def _job(lat=26.62, lng=-80.05, when=None, status="confirmed"):
     j = Job(customer_id=_customer().id, address="e2e-sd 123 Lake Ave, Lake Worth FL", lat=lat, lng=lng, status=status,
-            scheduled_at=when or (datetime.now(timezone.utc) + timedelta(hours=3)).replace(tzinfo=None),
-            total_price=189.0)
+            scheduled_at=when or _later_today(), total_price=189.0)
     for k, v in {"customer_name": "Test Cx", "customer_phone": "5615550100", "customer_email": "cx@sd.test"}.items():
         if hasattr(Job, k):
             setattr(j, k, v)

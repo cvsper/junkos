@@ -563,8 +563,9 @@ class TestF18Cancellation:
         job.noshow_t30_alerted = True
         job.reminder_sent = True
         db.session.commit()
-        today = local_now().date().isoformat()
-        slot = (local_now() + timedelta(hours=3)).strftime("%H:%M")
+        soon = local_now() + timedelta(hours=3)          # may roll past midnight late in the day
+        today = soon.date().isoformat()
+        slot = soon.strftime("%H:%M")
         resp = client.put("/api/jobs/{}/reschedule".format(job.id), headers=_token(job.customer_id),
                           json={"scheduled_date": today, "scheduled_time": slot})
         assert resp.status_code == 409, resp.get_json()
