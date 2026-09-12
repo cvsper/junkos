@@ -24,6 +24,7 @@
 
   var gate = $("gate"), tool = $("tool"), err = $("err");
   var days = 30, va = "";
+  window.__drillScope = function(){ return {days: days, va: va}; };
   if(!jwt() && !code()){ gate.hidden = false; return; }
   tool.hidden = false;
   var m = me();

@@ -536,12 +536,12 @@ MANAGER_HTML = r"""<!doctype html>
       <p class="mg-err" id="err" hidden></p>
 
       <div class="mg-kpis" id="kpis">
-        <div class="mg-kpi"><b id="k-dials">–</b><span>Dials</span></div>
-        <div class="mg-kpi"><b id="k-reach">–</b><span>Reached</span></div>
-        <div class="mg-kpi"><b id="k-int">–</b><span>Interested</span></div>
-        <div class="mg-kpi"><b id="k-wins">–</b><span>Wins</span></div>
+        <div class="mg-kpi" data-metric="dials"><b id="k-dials">–</b><span>Dials</span></div>
+        <div class="mg-kpi" data-metric="connects"><b id="k-reach">–</b><span>Reached</span></div>
+        <div class="mg-kpi" data-metric="interested"><b id="k-int">–</b><span>Interested</span></div>
+        <div class="mg-kpi" data-metric="wins"><b id="k-wins">–</b><span>Wins</span></div>
         <div class="mg-kpi"><b id="k-cpw">–</b><span>Cost per win</span></div>
-        <div class="mg-kpi"><b id="k-hours">–</b><span>Hours on the clock</span></div>
+        <div class="mg-kpi" data-metric="shifts"><b id="k-hours">–</b><span>Hours on the clock</span></div>
       </div>
 
       <section class="mg-sec">
@@ -599,8 +599,9 @@ MANAGER_HTML = r"""<!doctype html>
     </div>
   </section>
 </div>
-<script src="/static/manager.js?v=1"></script>
+<script src="/static/manager.js?v=2"></script>
 <script src="/static/manager-pay.js?v=2"></script>
+<script src="/static/desk-drill.js?v=1"></script>
 </body>
 </html>
 """

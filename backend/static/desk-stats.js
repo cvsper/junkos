@@ -29,6 +29,7 @@
 
   var gate = $("gate"), tool = $("tool"), err = $("err");
   var period = {days: 30}, va = "";
+  window.__drillScope = function(){ var s = {va: va}; if(period.period) s.period = period.period; else s.days = period.days; return s; };
   function say(msg){ err.textContent = msg; err.hidden = !msg; }
 
   function tableRows(table, head, rows, opts){
@@ -38,6 +39,7 @@
     var th = el("tr"); head.forEach(function(h){ th.appendChild(el("th", null, h)); }); table.appendChild(th);
     rows.forEach(function(r){
       var tr = el("tr", r.tot ? "tot" : null);
+      if(r.m) tr.setAttribute("data-metric", r.m);
       r.cells.forEach(function(c, i){
         var td = el("td", c.cls || null);
         if(c.bar != null){ var b = el("i", "bar"); b.style.width = Math.max(2, Math.round(60 * c.bar)) + "px"; td.appendChild(b); }
@@ -50,7 +52,7 @@
   }
   function facts(box, items){
     box.textContent = "";
-    items.forEach(function(it){ var f = el("div", "mg-fact"); var b = el("b", it.cls || null, it.v); f.appendChild(b); f.appendChild(el("span", null, it.l)); box.appendChild(f); });
+    items.forEach(function(it){ var f = el("div", "mg-fact"); if(it.m) f.setAttribute("data-metric", it.m); var b = el("b", it.cls || null, it.v); f.appendChild(b); f.appendChild(el("span", null, it.l)); box.appendChild(f); });
   }
 
   // ---- chart: calls (blue), answered by a person (accent), bookings (green) --
@@ -109,22 +111,22 @@
 
     var maxS = Math.max.apply(null, [1].concat(ib.by_source.map(function(x){ return x.calls; })));
     tableRows($("t-source"), ["Number dialled", "Calls", "Share"], ib.by_source.map(function(x){
-      return {cells: [{v: LABEL[x.source] || x.source}, {v: x.calls, bar: x.calls / maxS}, {v: pct(ib.calls ? Math.round(1000 * x.calls / ib.calls) / 10 : null), cls: "dim"}]};
+      return {m: "source:" + x.source, cells: [{v: LABEL[x.source] || x.source}, {v: x.calls, bar: x.calls / maxS}, {v: pct(ib.calls ? Math.round(1000 * x.calls / ib.calls) / 10 : null), cls: "dim"}]};
     }));
     $("disp-note").textContent = ib.in_hours + " in hours · " + ib.after_hours + " after hours";
     var disp = Object.keys(ib.by_disposition).filter(function(k){ return ib.by_disposition[k]; }).map(function(k){
-      return {cells: [{v: LABEL[k] || k}, {v: ib.by_disposition[k]}, {v: pct(ib.calls ? Math.round(1000 * ib.by_disposition[k] / ib.calls) / 10 : null), cls: "dim"}]};
+      return {m: "disposition:" + k, cells: [{v: LABEL[k] || k}, {v: ib.by_disposition[k]}, {v: pct(ib.calls ? Math.round(1000 * ib.by_disposition[k] / ib.calls) / 10 : null), cls: "dim"}]};
     });
     var outs = Object.keys(ib.by_outcome).filter(function(k){ return ib.by_outcome[k] && k !== "none"; }).map(function(k){
-      return {cells: [{v: "→ " + (LABEL[k] || k), cls: "dim"}, {v: ib.by_outcome[k], cls: k === "booked" ? "hot" : null}, {v: "", cls: "dim"}]};
+      return {m: "outcome:" + k, cells: [{v: "→ " + (LABEL[k] || k), cls: "dim"}, {v: ib.by_outcome[k], cls: k === "booked" ? "hot" : null}, {v: "", cls: "dim"}]};
     });
     tableRows($("t-disp"), ["Disposition", "Calls", "Share"], disp.concat(outs));
 
     facts($("speed"), [
-      {v: secs(sp.median_seconds), l: "Median time to a person", cls: sp.median_seconds != null && sp.median_seconds <= sp.target_seconds ? "ok" : (sp.median_seconds != null ? "warn" : null)},
-      {v: secs(sp.p90_seconds), l: "Slowest 10% took"},
-      {v: pct(sp.within_target_pct), l: "Inside 2 minutes"},
-      {v: num(sp.untouched), l: "Never touched", cls: sp.untouched > 0 ? "warn" : null}
+      {m: "leads_touched", v: secs(sp.median_seconds), l: "Median time to a person", cls: sp.median_seconds != null && sp.median_seconds <= sp.target_seconds ? "ok" : (sp.median_seconds != null ? "warn" : null)},
+      {m: "leads_touched", v: secs(sp.p90_seconds), l: "Slowest 10% took"},
+      {m: "leads_touched", v: pct(sp.within_target_pct), l: "Inside 2 minutes"},
+      {m: "leads_untouched", v: num(sp.untouched), l: "Never touched", cls: sp.untouched > 0 ? "warn" : null}
     ]);
 
     var maxV = Math.max.apply(null, [1].concat(ib.by_va.map(function(x){ return x.answered; })));
@@ -136,22 +138,22 @@
       var b = r.bookings;
       $("book-note").textContent = b.jobs + " booked · " + b.paid + " paid" + (b.pay_rate != null ? " (" + b.pay_rate + "%)" : "");
       facts($("money"), [
-        {v: money(b.revenue), l: "Paid revenue", cls: b.revenue ? "ok" : null},
-        {v: b.avg_ticket == null ? "–" : money(b.avg_ticket), l: "Average ticket"},
-        {v: money(b.dump_fees), l: "Dump fees passed to haulers"},
-        {v: b.refunded ? money(b.refunded) : "$0", l: "Refunded", cls: b.refunded ? "warn" : null}
+        {m: "revenue", v: money(b.revenue), l: "Paid revenue", cls: b.revenue ? "ok" : null},
+        {m: "paid", v: b.avg_ticket == null ? "–" : money(b.avg_ticket), l: "Average ticket"},
+        {m: "dump_fees", v: money(b.dump_fees), l: "Dump fees passed to haulers"},
+        {m: "refunded", v: b.refunded ? money(b.refunded) : "$0", l: "Refunded", cls: b.refunded ? "warn" : null}
       ]);
       tableRows($("t-channel"), ["Channel", "Booked", "Paid", "Revenue"], b.by_channel.map(function(x){
-        return {cells: [{v: LABEL[x.channel === "maya" ? "maya_ch" : x.channel] || x.channel}, {v: x.jobs}, {v: x.paid}, {v: money(x.revenue)}]};
+        return {m: "channel:" + x.channel, cells: [{v: LABEL[x.channel === "maya" ? "maya_ch" : x.channel] || x.channel}, {v: x.jobs}, {v: x.paid}, {v: money(x.revenue)}]};
       }));
     }
     if(mgr && r.haulers){
       var h = r.haulers;
       $("haul-note").textContent = h.assigned + " jobs with a hauler on the calendar";
       facts($("haulers"), [
-        {v: pct(h.confirm_rate), l: "Confirmed before the job", cls: h.confirm_rate != null && h.confirm_rate < 80 ? "warn" : null},
-        {v: num(h.no_shows), l: "No-shows", cls: h.no_shows ? "warn" : null},
-        {v: num(h.completed), l: "Completed"},
+        {m: "confirmed", v: pct(h.confirm_rate), l: "Confirmed before the job", cls: h.confirm_rate != null && h.confirm_rate < 80 ? "warn" : null},
+        {m: "no_shows", v: num(h.no_shows), l: "No-shows", cls: h.no_shows ? "warn" : null},
+        {m: "hauler_completed", v: num(h.completed), l: "Completed"},
         {v: h.owed_today ? money(h.owed_today.total) : "–", l: h.owed_today ? "Owed today (" + h.owed_today.count + ")" : "Owed today", cls: h.owed_today && h.owed_today.count ? "warn" : null}
       ]);
       tableRows($("t-hauler"), ["Hauler", "Jobs", "Confirmed", "Completed"], h.by_hauler.map(function(x){
@@ -163,31 +165,31 @@
       if(m){
         $("maya-note").textContent = m.calls + " calls · avg " + secs(m.avg_seconds) + (m.under_20s ? " · " + m.under_20s + " hung up under 20s" : "");
         facts($("maya"), [
-          {v: num(m.calls), l: "Calls Maya took"},
-          {v: pct(m.quote_rate), l: "Got a price"},
-          {v: num(m.booked), l: "Booked by Maya", cls: m.booked ? "ok" : null},
-          {v: num(m.lost_after_quote), l: "Priced, didn't book", cls: m.lost_after_quote ? "warn" : null}
+          {m: "maya_calls", v: num(m.calls), l: "Calls Maya took"},
+          {m: "maya_quoted", v: pct(m.quote_rate), l: "Got a price"},
+          {m: "maya_booked", v: num(m.booked), l: "Booked by Maya", cls: m.booked ? "ok" : null},
+          {m: "maya_lost", v: num(m.lost_after_quote), l: "Priced, didn't book", cls: m.lost_after_quote ? "warn" : null}
         ]);
       } else { $("maya").textContent = ""; $("maya").appendChild(el("div", "mg-empty", "Maya's call log isn't available.")); }
       var cls = r.classes || [];
       var STATUS = {assigned: "Not done", completed: "Done", waived: "Waived"};
       tableRows($("t-classes"), ["Person", "Week", "Calls", "Avg / 25", "Focus", "Status", "Quiz", "Her one line"], cls.map(function(x){
         var late = x.status === "assigned" && x.due_at && new Date(x.due_at) < new Date();
-        return {cells: [{v: x.va}, {v: x.week, cls: "dim"}, {v: x.calls}, {v: x.avg_total == null ? "–" : x.avg_total},
+        return {m: "classes", cells: [{v: x.va}, {v: x.week, cls: "dim"}, {v: x.calls}, {v: x.avg_total == null ? "–" : x.avg_total},
                         {v: x.weakest || "–", cls: "dim"}, {v: late ? "Overdue" : (STATUS[x.status] || x.status), cls: late ? "hot" : (x.status === "completed" ? null : "dim")},
                         {v: x.quiz == null ? "–" : x.quiz + "/" + x.quiz_total}, {v: x.reflection || "", cls: "dim"}]};
       }), {empty: "No classes yet — the first one builds Friday at 5pm from this week's scored calls."});
       var hr = r.hours;
       if(hr){
         $("hours-note").textContent = hr.hours + " h · " + money(hr.cost) + " at $" + hr.rate.toFixed(2) + "/h";
-        tableRows($("t-hours"), ["Person", "Hours", "Cost"], hr.by_va.map(function(x){ return {cells: [{v: x.va}, {v: x.hours}, {v: money(x.hours * hr.rate)}]}; }), {empty: "Nobody clocked in during this period."});
+        tableRows($("t-hours"), ["Person", "Hours", "Cost"], hr.by_va.map(function(x){ return {m: "shifts", cells: [{v: x.va}, {v: x.hours}, {v: money(x.hours * hr.rate)}]}; }), {empty: "Nobody clocked in during this period."});
       }
     }
     var o = r.outbound;
     if(o){
       facts($("outbound"), [
-        {v: num(o.dials), l: "Dials"}, {v: num(o.connects), l: "Reached"},
-        {v: num(o.interested), l: "Interested"}, {v: num(o.wins), l: "Wins", cls: o.wins ? "ok" : null}
+        {m: "dials", v: num(o.dials), l: "Dials"}, {m: "connects", v: num(o.connects), l: "Reached"},
+        {m: "interested", v: num(o.interested), l: "Interested"}, {m: "wins", v: num(o.wins), l: "Wins", cls: o.wins ? "ok" : null}
       ]);
     } else { $("outbound").textContent = ""; $("outbound").appendChild(el("div", "mg-empty", "No outbound data.")); }
   }

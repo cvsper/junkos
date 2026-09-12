@@ -385,12 +385,12 @@ PAGE_HTML = r"""<!doctype html>
       <p class="mg-err" id="err" hidden></p>
 
       <div class="mg-kpis ds-kpis" id="kpis">
-        <div class="mg-kpi"><b id="k-calls">–</b><span>Calls in</span></div>
-        <div class="mg-kpi"><b id="k-human">–</b><span>Answered by a person</span></div>
-        <div class="mg-kpi"><b id="k-speed">–</b><span>Median speed to lead</span></div>
-        <div class="mg-kpi"><b id="k-booked">–</b><span>Booked from calls</span></div>
-        <div class="mg-kpi" data-mgr><b id="k-rev">–</b><span>Paid revenue</span></div>
-        <div class="mg-kpi" data-mgr><b id="k-noshow">–</b><span>Hauler no-shows</span></div>
+        <div class="mg-kpi" data-metric="calls"><b id="k-calls">–</b><span>Calls in</span></div>
+        <div class="mg-kpi" data-metric="human"><b id="k-human">–</b><span>Answered by a person</span></div>
+        <div class="mg-kpi" data-metric="leads_touched"><b id="k-speed">–</b><span>Median speed to lead</span></div>
+        <div class="mg-kpi" data-metric="booked_calls"><b id="k-booked">–</b><span>Booked from calls</span></div>
+        <div class="mg-kpi" data-mgr data-metric="revenue"><b id="k-rev">–</b><span>Paid revenue</span></div>
+        <div class="mg-kpi" data-mgr data-metric="no_shows"><b id="k-noshow">–</b><span>Hauler no-shows</span></div>
       </div>
 
       <section class="mg-sec">
@@ -446,7 +446,7 @@ PAGE_HTML = r"""<!doctype html>
       </div>
 
       <section class="mg-sec" data-mgr>
-        <div class="mg-sec-h"><h2>Weekly classes</h2><span class="mg-note">Built from her scored calls every Friday at 5pm; the desk holds it until it's done</span></div>
+        <div class="mg-sec-h"><h2>Weekly classes</h2><span class="mg-note">Built from her scored calls every Friday at 5pm; the desk holds it until it's done · tap a number to see the records behind it</span></div>
         <div class="mg-tablewrap"><table class="mg-table" id="t-classes"></table></div>
       </section>
 
@@ -457,7 +457,8 @@ PAGE_HTML = r"""<!doctype html>
     </div>
   </section>
 </div>
-<script src="/static/desk-stats.js?v=2"></script>
+<script src="/static/desk-stats.js?v=3"></script>
+<script src="/static/desk-drill.js?v=1"></script>
 </body>
 </html>
 """

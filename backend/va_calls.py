@@ -1429,7 +1429,7 @@ CALLS_HTML = r"""<!doctype html>
 <script src="/static/desk-work.js?v=5"></script>
 <script src="/static/desk-leads.js?v=3"></script>
 <script src="/static/desk-class.js?v=1"></script>
-<script src="/va/calls.js?v=31"></script>
+<script src="/va/calls.js?v=32"></script>
 </body>
 </html>
 """
@@ -3208,5 +3208,30 @@ CALLS_JS = r"""(function(){
   // boot: a saved login goes straight to the desk; the first API call re-verifies it
   if(signedIn()){ showTool(); fetchNext(); } else { showGate(); }
   reveal(document);
+
+  // Deep links from the analytics drill-down: /va/calls?prospect=<id> opens
+  // that card; /va/calls?q=<number> finds it (or drops the number in search).
+  try {
+    var _qs = new URLSearchParams(location.search);
+    var _pid = _qs.get("prospect"), _q = _qs.get("q");
+    if(_pid || _q){
+      history.replaceState(null, "", location.pathname);
+      setTimeout(function(){
+        if(_pid){
+          post("/api/va/calls/get", {prospect_id: _pid}).then(function(rr){ if(rr.status === 200) render(rr.body); }).catch(function(){});
+          return;
+        }
+        post("/api/va/calls/search", {q: _q}).then(function(r){
+          if(r.status === 200 && r.body.results && r.body.results.length){
+            post("/api/va/calls/get", {prospect_id: r.body.results[0].id}).then(function(rr){ if(rr.status === 200) render(rr.body); });
+          } else {
+            var st = document.getElementById("search-toggle"), sq = document.getElementById("search-q");
+            if(st) st.click();
+            if(sq){ sq.value = _q; sq.dispatchEvent(new Event("input", {bubbles: true})); sq.focus(); }
+          }
+        }).catch(function(){});
+      }, 1200);
+    }
+  } catch(e){}
 })();
 """
