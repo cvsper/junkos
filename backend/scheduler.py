@@ -93,6 +93,40 @@ def _stamp_job_event(event):
         logger.exception("scheduler event listener failed")
 
 
+_LAST_RESTART_AT = None
+_RESTART_MIN_GAP = timedelta(minutes=5)
+_RESTARTS = 0
+
+
+def restart_if_dead(app):
+    """Called from readiness: if the scheduler thread has died, build a new
+    scheduler. Rate-limited so a loop that dies on every pass can't spin.
+    Returns True when a restart was attempted."""
+    global _LAST_RESTART_AT, _RESTARTS, _SCHEDULER
+    try:
+        if os.environ.get("ENABLE_SCHEDULER", "").lower() != "true" or _SCHEDULER is None:
+            return False
+        th = getattr(_SCHEDULER, "_thread", None)
+        if th is not None and th.is_alive():
+            return False
+        now = datetime.now(timezone.utc)
+        if _LAST_RESTART_AT and now - _LAST_RESTART_AT < _RESTART_MIN_GAP:
+            return False
+        _LAST_RESTART_AT = now
+        _RESTARTS += 1
+        _LOG_RING.append("{} W scheduler thread dead — restarting (#{})".format(now.strftime("%H:%M:%S"), _RESTARTS))
+        try:
+            _SCHEDULER.shutdown(wait=False)
+        except Exception:
+            pass
+        _SCHEDULER = None
+        init_scheduler(app)
+        return True
+    except Exception:
+        logger.exception("scheduler restart failed")
+        return False
+
+
 def scheduler_status():
     """Readiness snapshot of the background scheduler.
 
@@ -148,6 +182,7 @@ def scheduler_status():
         try:
             diag = {"thread_alive": bool(_SCHEDULER is not None and getattr(_SCHEDULER, "_thread", None) is not None
                                          and _SCHEDULER._thread.is_alive())}
+            diag["restarts"] = _RESTARTS
             diag["in_flight"] = {j: round((now - t).total_seconds()) for j, t in _IN_FLIGHT.items()}
             diag["events"] = list(_EVENTS[-20:])
             diag["log"] = list(_LOG_RING[-30:])
@@ -798,6 +833,25 @@ def init_scheduler(app):
         from apscheduler.events import EVENT_JOB_EXECUTED, EVENT_JOB_ERROR
 
         scheduler = BackgroundScheduler(daemon=True)
+        # The loop runs in a (green) thread; an exception there kills it
+        # silently as far as the app can tell. Record it where /api/ready
+        # shows it, then let it propagate.
+        _orig_loop = scheduler._main_loop
+
+        def _guarded_loop():
+            try:
+                _orig_loop()
+            except BaseException as exc:
+                import traceback as _tb
+                tb = _tb.format_exc()
+                _LOG_RING.append("{} E scheduler main loop died: {}: {}".format(
+                    datetime.now(timezone.utc).strftime("%H:%M:%S"), type(exc).__name__, str(exc)[:200]))
+                for line in tb.strip().splitlines()[-12:]:
+                    _LOG_RING.append("    " + line[:220])
+                del _LOG_RING[:-60]
+                logger.exception("scheduler main loop died")
+                raise
+        scheduler._main_loop = _guarded_loop
 
         # Liveness plumbing for GET /api/ready (F26). Additive: it records what
         # the existing jobs do, and adds one no-op heartbeat.

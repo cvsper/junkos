@@ -1043,7 +1043,7 @@ def get_available_time_slots(requested_date=None):
 # ---------------------------------------------------------------------------
 # Legacy API Routes (kept for backward compatibility)
 # ---------------------------------------------------------------------------
-APP_VERSION = "2.2.56"
+APP_VERSION = "2.2.57"
 
 
 # ---------------------------------------------------------------------------
@@ -1151,7 +1151,11 @@ def _check_storage():
 def _check_scheduler():
     """Background scheduler liveness (heartbeat + last-run stamps)."""
     try:
-        from scheduler import scheduler_status
+        from scheduler import scheduler_status, restart_if_dead
+        try:
+            restart_if_dead(app)
+        except Exception:
+            app.logger.exception("scheduler restart check failed")
         status = scheduler_status()
         status["ok"] = bool(status.get("healthy"))
         return status
