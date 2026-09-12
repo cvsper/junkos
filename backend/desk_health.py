@@ -89,6 +89,27 @@ def check_desk_health(alert=False):
             put("desk_number", "fail", "DESK_TWILIO_NUMBER not set — texts fall back to the main number")
 
     missing = [k for k in ("TWILIO_API_KEY_SID", "TWILIO_API_KEY_SECRET", "TWILIO_TWIML_APP_SID", "DESK_TWILIO_NUMBER") if not _env(k)]
+    # background scheduler — a stalled one silently stops leads, follow-ups,
+    # hauler confirmations and same-day waves; readiness no longer restarts
+    # the instance over it, so this is where it has to show
+    try:
+        from scheduler import scheduler_status
+        st = scheduler_status()
+        if not st.get("enabled"):
+            put("scheduler", "warn", "ENABLE_SCHEDULER is off on this instance — no sweeps, follow-ups or alerts run here")
+        elif not st.get("running"):
+            put("scheduler", "fail", "scheduler thread is not running")
+        elif not st.get("healthy"):
+            age = st.get("heartbeat_age_seconds")
+            put("scheduler", "fail", "no job has run for {} min — sweeps, follow-ups and hauler checks are stalled".format(
+                int((age or 0) // 60)), heartbeat_age_seconds=age, jobs=st.get("jobs"),
+                last_runs=len(st.get("last_job_runs") or {}))
+        else:
+            put("scheduler", "ok", "{} jobs, last beat {}s ago".format(st.get("jobs"), int(st.get("heartbeat_age_seconds") or 0)),
+                failing_jobs=st.get("failing_jobs") or [])
+    except Exception as e:
+        put("scheduler", "warn", "scheduler check failed: " + type(e).__name__)
+
     put("browser_calling", "ok" if not missing else "fail",
         "configured" if not missing else "missing " + ", ".join(missing))
 

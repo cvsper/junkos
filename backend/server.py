@@ -1043,7 +1043,7 @@ def get_available_time_slots(requested_date=None):
 # ---------------------------------------------------------------------------
 # Legacy API Routes (kept for backward compatibility)
 # ---------------------------------------------------------------------------
-APP_VERSION = "2.2.54"
+APP_VERSION = "2.2.55"
 
 
 # ---------------------------------------------------------------------------
@@ -1175,7 +1175,12 @@ def _readiness_report():
         blocking.append("database")
     if production and not payments["ok"]:
         blocking.append("payments")
-    if scheduler_check.get("enabled") and not scheduler_check.get("ok"):
+    # The scheduler only blocks readiness when the thread never started — a
+    # misconfigured instance. A stalled heartbeat is reported here and paged
+    # through /api/health/desk instead: Render restarts any instance whose
+    # readiness fails, and a stale heartbeat that returned 503 put the whole
+    # API into a ~15-minute restart loop (2026-09-12) over a background job.
+    if scheduler_check.get("enabled") and not scheduler_check.get("running"):
         blocking.append("scheduler")
 
     report = {
