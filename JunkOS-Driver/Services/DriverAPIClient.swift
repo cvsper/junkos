@@ -269,6 +269,16 @@ actor DriverAPIClient {
         try await request("/api/drivers/jobs/current")
     }
 
+    /// Where to tip the current load. Pass the hauler's live position when we
+    /// have it; the backend falls back to the job address, infers the load
+    /// category from the job's items, and applies county-of-origin rules.
+    func getDumpSuggestion(jobId: String?, lat: Double?, lng: Double?) async throws -> DumpSuggestResponse {
+        var parts: [String] = []
+        if let jobId, !jobId.isEmpty { parts.append("job_id=\(jobId)") }
+        if let lat, let lng { parts.append("lat=\(lat)&lng=\(lng)") }
+        return try await request("/api/driver/dump/suggest?" + parts.joined(separator: "&"))
+    }
+
     func acceptJob(jobId: String) async throws -> JobActionResponse {
         try await request("/api/drivers/jobs/\(jobId)/accept", method: "POST")
     }

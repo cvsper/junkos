@@ -56,7 +56,10 @@ struct JobCompletionView: View {
             .opacity(isVisible ? 1 : 0)
             .offset(y: isVisible ? 0 : 20)
 
-            Spacer()
+            // The load is on the truck — where it goes next.
+            ScrollView(showsIndicators: false) {
+                DumpSuggestionView(job: job, appState: appState)
+            }
 
             // Done button
             Button {

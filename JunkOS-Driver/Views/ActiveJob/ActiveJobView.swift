@@ -49,7 +49,12 @@ struct ActiveJobView: View {
                                 .padding(.horizontal, DriverSpacing.xl)
                             }
                         case .started:
-                            AfterPhotosView(viewModel: viewModel)
+                            VStack(spacing: DriverSpacing.md) {
+                                // Load is on the truck — tell them where it's going before the after-photos.
+                                DumpSuggestionView(job: job, appState: appState)
+                                    .padding(.top, DriverSpacing.md)
+                                AfterPhotosView(viewModel: viewModel)
+                            }
                         case .completed:
                             JobCompletionView(job: job, appState: appState)
                         default:

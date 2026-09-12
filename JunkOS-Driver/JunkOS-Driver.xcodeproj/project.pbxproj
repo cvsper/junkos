@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		07D3D958F6EC6B2561F6FEAA /* DistanceBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = F412C09E80A444B74B8D3414 /* DistanceBadge.swift */; };
 		07FA90FCA1373A44089255FA /* ActiveJobView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3CEB980FB0B2AE4E5E91426 /* ActiveJobView.swift */; };
+		0D681D7EC90C8CE06B989302 /* DumpSuggestionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 967701428DC4177342484AB3 /* DumpSuggestionView.swift */; };
 		10EA98CF33FB08CD7BD0F885 /* ExportOptions.plist in Resources */ = {isa = PBXBuildFile; fileRef = 48870C02A80F4EF1D4CDD4DF /* ExportOptions.plist */; };
 		13117D1F797E808B70E4CD84 /* JobAcceptHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = E23EB63D12655125E9C07F48 /* JobAcceptHandler.swift */; };
 		14790A1C6E4BF7984B5FF3E4 /* DriverAnnotationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17D1EDD45EA760AA572801D2 /* DriverAnnotationView.swift */; };
@@ -47,6 +48,7 @@
 		473C9CDB3A4B180A6F89BECC /* JobAlertOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 490C03AEE834921413337ABA /* JobAlertOverlay.swift */; };
 		4960C1A39CDFAFCC28BF11F5 /* OnlineToggleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C356D07B138BA8E0CE40F5 /* OnlineToggleView.swift */; };
 		4AA8544E326C39F151857289 /* InviteCodeStepView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18E9B0CBCF60C1EB2DF0B2BA /* InviteCodeStepView.swift */; };
+		4CC57E111FFF0719357817E9 /* DumpModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 228DA4E96BBA4603BB5B2810 /* DumpModels.swift */; };
 		4E8639A2456E077412D7C2B2 /* JobFeedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54CB44E65469A3687838FB24 /* JobFeedView.swift */; };
 		4F219CCBF09D2A91F8C8A08F /* DriverDesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 803F2EDEBF20C6218ADFA2CB /* DriverDesignSystem.swift */; };
 		51871BDB30F8368F3F8EC867 /* MapboxNavigationUIKit in Frameworks */ = {isa = PBXBuildFile; productRef = 99F9BA012822441FBAC1A4F8 /* MapboxNavigationUIKit */; };
@@ -128,6 +130,7 @@
 		1D3A12FA1C9524EEC52BAF42 /* RatingViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RatingViewModel.swift; sourceTree = "<group>"; };
 		1FBC43CAFF78869678C21C3F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		1FCB1498666015B9BBBC1DF1 /* HapticManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticManager.swift; sourceTree = "<group>"; };
+		228DA4E96BBA4603BB5B2810 /* DumpModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DumpModels.swift; sourceTree = "<group>"; };
 		228E7D7E7644F745D1DAAFED /* SplashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplashView.swift; sourceTree = "<group>"; };
 		24F8F8ADE1A72C73B582B02B /* PayoutSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PayoutSettingsView.swift; sourceTree = "<group>"; };
 		2F3471B07A44B406BF687ECA /* LiveMapViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveMapViewModelTests.swift; sourceTree = "<group>"; };
@@ -168,6 +171,7 @@
 		9204A9DB1C56DBF056E2E5EC /* ConnectionStatusBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionStatusBanner.swift; sourceTree = "<group>"; };
 		928C74E7765B48CE6A718911 /* DriverOnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriverOnboardingView.swift; sourceTree = "<group>"; };
 		94CEA3D9996C5038C6FCF4FA /* KeychainHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainHelper.swift; sourceTree = "<group>"; };
+		967701428DC4177342484AB3 /* DumpSuggestionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DumpSuggestionView.swift; sourceTree = "<group>"; };
 		9708A071501064F0B43DB279 /* JobCompletionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobCompletionView.swift; sourceTree = "<group>"; };
 		9AC42610087364CBEADF1B33 /* DriverAPIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriverAPIClient.swift; sourceTree = "<group>"; };
 		9C2B61C0905865AE47D4013A /* DriverNavigationContainerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriverNavigationContainerView.swift; sourceTree = "<group>"; };
@@ -246,6 +250,7 @@
 				F3CEB980FB0B2AE4E5E91426 /* ActiveJobView.swift */,
 				0AA0B3DB0C558CAF78DD76C4 /* AfterPhotosView.swift */,
 				E12E32582549A882906AADC2 /* BeforePhotosView.swift */,
+				967701428DC4177342484AB3 /* DumpSuggestionView.swift */,
 				9708A071501064F0B43DB279 /* JobCompletionView.swift */,
 				54200844DD474F229259E177 /* JobStatusStepperView.swift */,
 				E269A5BD9F9CDD622483E10C /* NavigateToJobView.swift */,
@@ -260,6 +265,7 @@
 			children = (
 				3AC9DCA75B3DE3D624F8A427 /* AuthModels.swift */,
 				F2E6817B24EDDB263AFA85CF /* ContractorModels.swift */,
+				228DA4E96BBA4603BB5B2810 /* DumpModels.swift */,
 				B6B51D6BBCBBEA9C72F356FB /* EarningsModels.swift */,
 				51AC27DA7E685BE7675B0FB1 /* JobModels.swift */,
 				85A0A71BDD21C61E69BCC766 /* OfferModels.swift */,
@@ -683,6 +689,8 @@
 				6FB34622D4038AB51AAE5B3D /* DriverNavigationViewController.swift in Sources */,
 				8BBCE11D4D582E7D746F2E4F /* DriverOnboardingView.swift in Sources */,
 				E2802E3778DC622FD2129867 /* DriverTabView.swift in Sources */,
+				4CC57E111FFF0719357817E9 /* DumpModels.swift in Sources */,
+				0D681D7EC90C8CE06B989302 /* DumpSuggestionView.swift in Sources */,
 				3D564E63BD08DA8886FDA8AF /* EarningsModels.swift in Sources */,
 				9A935658ADCF82A0A67E6CC0 /* EarningsView.swift in Sources */,
 				8A8AA35036E08AF0A2BC5E83 /* EarningsViewModel.swift in Sources */,
