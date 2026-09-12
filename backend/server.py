@@ -841,10 +841,14 @@ else:
 # ---------------------------------------------------------------------------
 # Background scheduler (recurring jobs, pickup reminders)
 # ---------------------------------------------------------------------------
-from scheduler import init_scheduler
+from scheduler import init_scheduler, start_on_first_request
 # Never start background jobs on import under test: they would run real
 # outreach/payout work against the test database (F25).
-_scheduler = None if _skip_startup else init_scheduler(app)
+# Started from the first request, not at import: on Render's eventlet
+# worker an import-time scheduler sleeps forever (2026-09-12).
+_scheduler = None
+if not _skip_startup:
+    start_on_first_request(app)
 
 
 # ---------------------------------------------------------------------------
@@ -1045,7 +1049,7 @@ def get_available_time_slots(requested_date=None):
 # ---------------------------------------------------------------------------
 # Legacy API Routes (kept for backward compatibility)
 # ---------------------------------------------------------------------------
-APP_VERSION = "2.2.61"
+APP_VERSION = "2.2.62"
 
 
 # ---------------------------------------------------------------------------

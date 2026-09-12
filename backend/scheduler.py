@@ -153,37 +153,92 @@ def _install_fork_hooks():
     _FORK_HOOKS = True
 
 
+WEDGE_GRACE = timedelta(seconds=150)
+
+
+def _wedged():
+    """The loop is "alive" but never fires: a job has been due for over a
+    minute and nothing was ever submitted. Seen on Render's eventlet worker
+    for a scheduler started at import time — its wait timer never fires."""
+    try:
+        if _SCHEDULER is None or _SCHEDULER_STARTED_AT is None or _EVENTS or _LAST_JOB_RUN:
+            return False
+        now = datetime.now(timezone.utc)
+        if now - _SCHEDULER_STARTED_AT < WEDGE_GRACE:
+            return False
+        for j in _SCHEDULER.get_jobs():
+            if j.next_run_time is not None and (now - j.next_run_time).total_seconds() > 60:
+                return True
+    except Exception:
+        return False
+    return False
+
+
 def restart_if_dead(app):
-    """Called from readiness: if the scheduler thread has died, build a new
-    scheduler. Rate-limited so a loop that dies on every pass can't spin.
-    Returns True when a restart was attempted."""
+    """Called from readiness: if the scheduler thread has died, or is alive
+    but wedged (never fires), build a new scheduler. Never joins the old
+    thread — a wedged one never returns and would hang the request (that is
+    what timed every deploy out on 2026-09-12). Rate-limited."""
     global _LAST_RESTART_AT, _RESTARTS, _SCHEDULER
     try:
-        if os.environ.get("ENABLE_SCHEDULER", "").lower() != "true" or _SCHEDULER is None:
+        if os.environ.get("ENABLE_SCHEDULER", "").lower() != "true":
             return False
+        if _SCHEDULER is None:
+            init_scheduler(app)
+            return True
         foreign = not _owned_here()
         th = getattr(_SCHEDULER, "_thread", None)
-        if not foreign and th is not None and th.is_alive():
+        wedged = (not foreign) and _wedged()
+        if not foreign and not wedged and th is not None and th.is_alive():
             return False
         now = datetime.now(timezone.utc)
         if _LAST_RESTART_AT and now - _LAST_RESTART_AT < _RESTART_MIN_GAP:
             return False
         _LAST_RESTART_AT = now
         _RESTARTS += 1
-        _LOG_RING.append("{} W scheduler {} — restarting (#{})".format(
-            now.strftime("%H:%M:%S"), "belongs to pid {} (inherited copy)".format(_SCHEDULER_PID) if foreign else "thread dead", _RESTARTS))
+        why = ("belongs to pid {} (inherited copy)".format(_SCHEDULER_PID) if foreign
+               else ("wedged — alive but never fired" if wedged else "thread dead"))
+        _LOG_RING.append("{} W scheduler {} — restarting (#{})".format(now.strftime("%H:%M:%S"), why, _RESTARTS))
         if not foreign:
-            # never shut down an inherited copy: its locks belong to the parent
+            # Abandon, don't join: BackgroundScheduler.shutdown() joins the thread
+            # and a wedged thread never returns. Strip its jobs so it can't fire
+            # duplicates if it ever wakes, and let the object be collected.
             try:
-                _SCHEDULER.shutdown(wait=False)
+                _SCHEDULER.remove_all_jobs()
+            except Exception:
+                pass
+            try:
+                _SCHEDULER._stopped = True
             except Exception:
                 pass
         _SCHEDULER = None
+        _LAST_JOB_RUN.clear(); _IN_FLIGHT.clear(); del _EVENTS[:]
         init_scheduler(app)
         return True
     except Exception:
         logger.exception("scheduler restart failed")
         return False
+
+
+def start_on_first_request(app):
+    """Start the scheduler from the first HTTP request instead of at import.
+    On Render's eventlet worker a scheduler started during import never
+    fires (its wait timer belongs to a hub that isn't the one the worker
+    ends up running); one started once the worker is serving does."""
+    _install_fork_hooks()
+    global _APP
+    _APP = app
+    if os.environ.get("ENABLE_SCHEDULER", "").lower() != "true":
+        logger.info("Scheduler disabled (set ENABLE_SCHEDULER=true to enable)")
+        return
+
+    @app.before_request
+    def _start_scheduler_once():
+        if _SCHEDULER is None or not _owned_here():
+            try:
+                init_scheduler(app)
+            except Exception:
+                logger.exception("deferred scheduler start failed")
 
 
 def scheduler_status():
