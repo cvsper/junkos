@@ -169,6 +169,14 @@
           {v: num(m.lost_after_quote), l: "Priced, didn't book", cls: m.lost_after_quote ? "warn" : null}
         ]);
       } else { $("maya").textContent = ""; $("maya").appendChild(el("div", "mg-empty", "Maya's call log isn't available.")); }
+      var cls = r.classes || [];
+      var STATUS = {assigned: "Not done", completed: "Done", waived: "Waived"};
+      tableRows($("t-classes"), ["Person", "Week", "Calls", "Avg / 25", "Focus", "Status", "Quiz", "Her one line"], cls.map(function(x){
+        var late = x.status === "assigned" && x.due_at && new Date(x.due_at) < new Date();
+        return {cells: [{v: x.va}, {v: x.week, cls: "dim"}, {v: x.calls}, {v: x.avg_total == null ? "–" : x.avg_total},
+                        {v: x.weakest || "–", cls: "dim"}, {v: late ? "Overdue" : (STATUS[x.status] || x.status), cls: late ? "hot" : (x.status === "completed" ? null : "dim")},
+                        {v: x.quiz == null ? "–" : x.quiz + "/" + x.quiz_total}, {v: x.reflection || "", cls: "dim"}]};
+      }), {empty: "No classes yet — the first one builds Friday at 5pm from this week's scored calls."});
       var hr = r.hours;
       if(hr){
         $("hours-note").textContent = hr.hours + " h · " + money(hr.cost) + " at $" + hr.rate.toFixed(2) + "/h";

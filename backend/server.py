@@ -362,6 +362,8 @@ try:
     app.register_blueprint(dump_bp)
     from desk_analytics import deskstats_bp
     app.register_blueprint(deskstats_bp)
+    from coaching_class import class_bp
+    app.register_blueprint(class_bp)
 except Exception as _sd_exc:  # pragma: no cover
     import logging as _logging
     _logging.getLogger(__name__).warning("sameday_bp not registered: %s", _sd_exc)
@@ -1041,7 +1043,7 @@ def get_available_time_slots(requested_date=None):
 # ---------------------------------------------------------------------------
 # Legacy API Routes (kept for backward compatibility)
 # ---------------------------------------------------------------------------
-APP_VERSION = "2.2.50"
+APP_VERSION = "2.2.51"
 
 
 # ---------------------------------------------------------------------------

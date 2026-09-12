@@ -209,6 +209,18 @@ def _preslot_check(app):
             logger.exception("preslot check failed")
 
 
+def _assign_weekly_classes(app):
+    """Friday 5pm: build each VA's weekly improvement class (coaching_class.py)."""
+    with app.app_context():
+        try:
+            from coaching_class import assign_week
+            built = assign_week()
+            if built:
+                logger.info("weekly classes assigned: %s", ", ".join(r.va_name for r in built))
+        except Exception:
+            logger.exception("weekly class assignment failed")
+
+
 def _reconcile_refunded_jobs(app):
     """Open jobs whose payment was refunded in full get cancelled (cancellation.py)."""
     with app.app_context():
@@ -789,6 +801,16 @@ def init_scheduler(app):
             args=[app],
             id="leads_sweep",
             name="Speed-to-lead + quote follow-ups",
+        )
+
+        # Weekly improvement class — Friday 5pm ET (idempotent; Sunday 6pm retry)
+        scheduler.add_job(
+            _assign_weekly_classes,
+            "cron",
+            day_of_week="fri,sun", hour=17, minute=0, timezone="America/New_York",
+            args=[app],
+            id="weekly_classes",
+            name="Assign weekly coaching classes",
         )
 
         # Assigned hauler, 30 min out, no movement — every 5 min

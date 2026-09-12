@@ -273,6 +273,19 @@ def series_block(start, end, va=None):
     return [dict(v, revenue=round(v["revenue"], 2)) for v in days.values()]
 
 
+def classes_block(weeks=6, va=None):
+    from models_analytics import CoachingClass
+    q = CoachingClass.query.order_by(CoachingClass.week_start.desc(), CoachingClass.va_name.asc())
+    if va:
+        q = q.filter(CoachingClass.va_name == va)
+    rows = q.limit(weeks * 6).all()
+    return [{"id": r.id, "va": r.va_name, "week": r.week_start, "status": r.status, "calls": r.calls,
+             "avg_total": (r.avg_total or 0) / 10.0 if r.avg_total is not None else None, "weakest": r.weakest,
+             "quiz": r.quiz_score, "quiz_total": len((r.lesson or {}).get("quiz", [])),
+             "reflection": r.reflection, "completed_at": r.completed_at.isoformat() + "Z" if r.completed_at else None,
+             "due_at": r.due_at.isoformat() + "Z" if r.due_at else None} for r in rows]
+
+
 def desk_report(start, end, label, days, va=None, everyone=True):
     out = {
         "label": label, "days": days, "start": start.isoformat(), "end": end.isoformat(),
@@ -292,6 +305,11 @@ def desk_report(start, end, label, days, va=None, everyone=True):
         out["bookings"] = bookings_block(start, end)
         out["haulers"] = haulers_block(start, end)
         out["maya"] = maya_block(days)
+        try:
+            out["classes"] = classes_block(va=va)
+        except Exception:
+            logger.debug("classes block unavailable", exc_info=True)
+            out["classes"] = []
         secs = _hours(start, end, va)
         rate = hourly_rate()
         hours = round(sum(secs.values()) / 3600.0, 2)
@@ -428,13 +446,18 @@ PAGE_HTML = r"""<!doctype html>
       </div>
 
       <section class="mg-sec" data-mgr>
+        <div class="mg-sec-h"><h2>Weekly classes</h2><span class="mg-note">Built from her scored calls every Friday at 5pm; the desk holds it until it's done</span></div>
+        <div class="mg-tablewrap"><table class="mg-table" id="t-classes"></table></div>
+      </section>
+
+      <section class="mg-sec" data-mgr>
         <div class="mg-sec-h"><h2>Hours on the clock</h2><span class="mg-note" id="hours-note"></span></div>
         <div class="mg-tablewrap"><table class="mg-table" id="t-hours"></table></div>
       </section>
     </div>
   </section>
 </div>
-<script src="/static/desk-stats.js?v=1"></script>
+<script src="/static/desk-stats.js?v=2"></script>
 </body>
 </html>
 """

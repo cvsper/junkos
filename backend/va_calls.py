@@ -1132,6 +1132,7 @@ CALLS_HTML = r"""<!doctype html>
 <title>Umuve — Call Desk</title>
 <link rel="stylesheet" href="/va/app.css?v=4" />
 <link rel="stylesheet" href="/va/calls.css?v=27" />
+<link rel="stylesheet" href="/static/desk-class.css?v=1" />
 <link rel="manifest" href="/static/desk-manifest.json" />
 </head>
 <body>
@@ -1426,6 +1427,7 @@ CALLS_HTML = r"""<!doctype html>
 <script src="/static/desk-dialpad.js?v=2"></script>
 <script src="/static/desk-work.js?v=3"></script>
 <script src="/static/desk-leads.js?v=1"></script>
+<script src="/static/desk-class.js?v=1"></script>
 <script src="/va/calls.js?v=31"></script>
 </body>
 </html>

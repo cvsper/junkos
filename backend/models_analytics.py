@@ -63,3 +63,43 @@ class CallScore(db.Model):
             "reviewed_at": self.reviewed_at.isoformat() if self.reviewed_at else None,
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }
+
+
+class CoachingClass(db.Model):
+    """One VA's weekly improvement class: a lesson built from her scored
+    calls that week, a short quiz, and a reflection. Assigned at the end of
+    the week; the desk holds her to it until it's completed."""
+    __tablename__ = "coaching_classes"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    va_name = Column(String(80), nullable=False, index=True)
+    week_start = Column(String(10), nullable=False, index=True)      # ISO Monday, business time
+    status = Column(String(12), nullable=False, default="assigned")  # assigned | completed | waived
+    calls = Column(Integer, nullable=False, default=0)
+    avg_total = Column(Integer, nullable=True)                        # x10 (e.g. 173 == 17.3 / 25)
+    dims = Column(JSON, nullable=True)                                # {dim: avg}
+    weakest = Column(String(16), nullable=True)
+    lesson = Column(JSON, nullable=True)                              # title, summary, went_well, fix, drill, quiz
+    source = Column(String(12), nullable=True)                        # claude | heuristic
+    answers = Column(JSON, nullable=True)
+    quiz_score = Column(Integer, nullable=True)                       # correct answers
+    reflection = Column(Text, nullable=True)
+    manager_note = Column(Text, nullable=True)
+    due_at = Column(DateTime, nullable=True)
+    completed_at = Column(DateTime, nullable=True, index=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+
+    def to_dict(self, with_answers=False):
+        lesson = dict(self.lesson or {})
+        if not with_answers:
+            lesson["quiz"] = [{k: v for k, v in q.items() if k not in ("answer", "why")} for q in lesson.get("quiz", [])]
+        return {
+            "id": self.id, "va_name": self.va_name, "week_start": self.week_start, "status": self.status,
+            "calls": self.calls, "avg_total": (self.avg_total or 0) / 10.0 if self.avg_total is not None else None,
+            "dims": self.dims or {}, "weakest": self.weakest, "lesson": lesson, "source": self.source,
+            "quiz_score": self.quiz_score, "quiz_total": len((self.lesson or {}).get("quiz", [])),
+            "reflection": self.reflection, "manager_note": self.manager_note,
+            "due_at": self.due_at.isoformat() + "Z" if self.due_at else None,
+            "completed_at": self.completed_at.isoformat() + "Z" if self.completed_at else None,
+            "created_at": self.created_at.isoformat() + "Z" if self.created_at else None,
+        }
