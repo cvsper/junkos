@@ -42,45 +42,95 @@
   }
 
   var st = document.createElement("style"); document.head.appendChild(st);
-  [".dp-tab{position:fixed;right:14px;bottom:14px;z-index:60;font-family:var(--display);font-weight:800;font-size:13px;",
-   "  color:#0B0E12;background:var(--ok);border:0;border-radius:999px;padding:12px 18px;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.35)}",
-   ".dp-tab.live{background:#FF6A2C;color:#fff}",
-   ".dp-wrap{position:fixed;inset:0;z-index:61;background:rgba(5,7,10,.72);display:flex;align-items:flex-end;justify-content:center}",
+  [
+   /* floating tab — a phone pill, green when idle, orange while connected */
+   ".dp-tab{position:fixed;right:14px;bottom:14px;z-index:60;display:inline-flex;align-items:center;gap:8px;",
+   "  font-family:var(--display);font-weight:800;font-size:13px;letter-spacing:.01em;color:#0B0E12;background:var(--ok);",
+   "  border:0;border-radius:999px;padding:11px 16px 11px 13px;cursor:pointer;box-shadow:0 10px 28px rgba(0,0,0,.45),0 0 0 1px rgba(255,255,255,.06) inset;",
+   "  transition:transform .12s ease,box-shadow .12s ease}",
+   ".dp-tab:hover{transform:translateY(-1px);box-shadow:0 14px 32px rgba(0,0,0,.5)}",
+   ".dp-tab:active{transform:translateY(0)}",
+   ".dp-tab svg{width:16px;height:16px;fill:currentColor;flex:none}",
+   ".dp-tab.live{background:var(--accent);color:#fff}",
+   ".dp-tab.live svg{animation:dp-ring 1.4s ease-in-out infinite}",
+   "@keyframes dp-ring{0%,100%{transform:rotate(0)}20%{transform:rotate(-12deg)}40%{transform:rotate(10deg)}60%{transform:rotate(-6deg)}80%{transform:rotate(4deg)}}",
+   /* sheet */
+   ".dp-wrap{position:fixed;inset:0;z-index:61;background:rgba(5,7,10,.66);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);",
+   "  display:flex;align-items:flex-end;justify-content:center}",
    ".dp-wrap[hidden]{display:none}",
-   ".dp{width:100%;max-width:380px;background:var(--bg,#0F1319);border:1px solid var(--line);border-radius:18px 18px 0 0;",
-   "  padding:16px 16px 20px;max-height:92vh;overflow:auto}",
-   "@media(min-width:700px){.dp-wrap{align-items:center}.dp{border-radius:18px}}",
-   ".dp-h{display:flex;justify-content:space-between;align-items:center;margin:0 0 10px}",
-   ".dp-h h3{margin:0;font-family:var(--display);font-weight:800;font-size:16px;color:var(--ink)}",
-   ".dp-x{background:transparent;border:0;color:var(--muted);font-size:22px;line-height:1;cursor:pointer;padding:0 4px}",
-   ".dp-mode{font-size:12px;color:var(--faint);margin:0 0 10px;line-height:1.45}",
-   ".dp-mode b{color:#FF6A2C;font-family:var(--display)}",
-   ".dp-num{width:100%;font-family:var(--display);font-weight:800;font-size:26px;letter-spacing:.5px;text-align:center;",
-   "  color:var(--ink);background:var(--raise);border:1px solid var(--line);border-radius:12px;padding:12px 10px;margin:0 0 4px}",
-   ".dp-hint{font-size:11.5px;color:var(--faint);text-align:center;min-height:15px;margin:0 0 10px}",
-   ".dp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0 0 12px}",
-   ".dp-k{background:var(--raise);border:1px solid var(--line);border-radius:12px;padding:13px 0;cursor:pointer;color:var(--ink);",
-   "  font-family:var(--display);font-weight:800;font-size:20px;line-height:1}",
-   ".dp-k:active{background:var(--ok);color:#0B0E12}",
-   ".dp-k small{display:block;font-size:9px;letter-spacing:1.5px;color:var(--faint);font-weight:600;margin-top:3px}",
+   ".dp{position:relative;width:100%;max-width:400px;background:linear-gradient(180deg,#171C25 0%,var(--surface,#141922) 100%);",
+   "  border:1px solid rgba(244,246,248,.12);border-bottom:0;border-radius:26px 26px 0 0;padding:14px 20px calc(22px + env(safe-area-inset-bottom));",
+   "  max-height:94vh;overflow:auto;box-shadow:0 -20px 60px rgba(0,0,0,.5);animation:dp-up .22s cubic-bezier(.2,.8,.2,1)}",
+   "@keyframes dp-up{from{transform:translateY(24px);opacity:0}to{transform:none;opacity:1}}",
+   ".dp::before{content:'';display:block;width:38px;height:4px;border-radius:2px;background:rgba(244,246,248,.18);margin:0 auto 12px}",
+   "@media(min-width:700px){.dp-wrap{align-items:center}.dp{border-radius:26px;border-bottom:1px solid rgba(244,246,248,.12);padding-top:18px;",
+   "  box-shadow:0 30px 80px rgba(0,0,0,.6);animation:dp-in .2s ease-out}.dp::before{display:none}",
+   "  @keyframes dp-in{from{transform:scale(.96);opacity:0}to{transform:none;opacity:1}}}",
+   "@media(prefers-reduced-motion:reduce){.dp,.dp-tab.live svg{animation:none}}",
+   /* header */
+   ".dp-h{display:flex;justify-content:space-between;align-items:center;margin:0 0 6px}",
+   ".dp-h h3{margin:0;font-family:var(--display);font-weight:800;font-size:17px;letter-spacing:-.01em;color:var(--ink)}",
+   ".dp-x{width:32px;height:32px;display:grid;place-items:center;background:var(--raise);border:1px solid var(--line);border-radius:50%;",
+   "  color:var(--muted);font-size:18px;line-height:1;cursor:pointer;padding:0}",
+   ".dp-x:hover{color:var(--ink);border-color:rgba(244,246,248,.25)}",
+   ".dp-mode{font-size:12.5px;color:var(--muted);margin:0 0 12px;line-height:1.5}",
+   ".dp-mode b{display:inline-flex;align-items:center;gap:6px;color:var(--ok);font-family:var(--display);font-weight:800}",
+   ".dp-mode b::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 0 rgba(61,214,140,.5);animation:dp-pulse 1.6s ease-out infinite}",
+   "@keyframes dp-pulse{0%{box-shadow:0 0 0 0 rgba(61,214,140,.5)}100%{box-shadow:0 0 0 8px rgba(61,214,140,0)}}",
+   /* number display */
+   ".dp-num{width:100%;box-sizing:border-box;min-height:58px;display:flex;align-items:center;justify-content:center;",
+   "  font-family:var(--display);font-weight:700;font-size:30px;letter-spacing:.02em;font-variant-numeric:tabular-nums;text-align:center;",
+   "  color:var(--ink);background:transparent;border:0;padding:6px 8px 2px;margin:0}",
+   ".dp-num:empty::before{content:attr(data-placeholder);color:rgba(244,246,248,.22);font-weight:600;font-size:22px;letter-spacing:0}",
+   ".dp-num.tones{font-size:26px;letter-spacing:.18em;color:var(--ok)}",
+   ".dp-hint{font-size:11.5px;color:var(--faint);text-align:center;min-height:15px;margin:0 0 14px;letter-spacing:.02em}",
+   /* keypad */
+   ".dp-grid{display:grid;grid-template-columns:repeat(3,70px);justify-content:center;column-gap:22px;row-gap:12px;margin:0 0 16px}",
+   ".dp-k{width:70px;height:70px;border-radius:50%;background:var(--raise);border:1px solid rgba(244,246,248,.08);cursor:pointer;color:var(--ink);",
+   "  display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0;",
+   "  font-family:var(--display);font-weight:600;font-size:27px;line-height:1;-webkit-tap-highlight-color:transparent;user-select:none;",
+   "  transition:background .1s ease,transform .06s ease}",
+   ".dp-k:hover{background:#242B37}",
+   ".dp-k:active{background:var(--ok);color:#0B0E12;transform:scale(.96)}",
+   ".dp-k:focus-visible{outline:2px solid var(--accent);outline-offset:2px}",
+   ".dp-k small{display:block;font-size:9.5px;letter-spacing:2px;color:var(--faint);font-weight:700;margin-top:3px;text-indent:2px}",
    ".dp-k:active small{color:#0B0E12}",
-   ".dp-row{display:flex;gap:8px}",
-   ".dp-btn{flex:1;font-family:var(--display);font-weight:800;font-size:14px;color:#0B0E12;background:var(--ok);border:0;",
-   "  border-radius:12px;padding:13px 10px;cursor:pointer}",
-   ".dp-btn:disabled{opacity:.45;cursor:default}",
+   /* action row: [ ] [call] [delete] like a phone */
+   ".dp-row{display:grid;grid-template-columns:repeat(3,70px);justify-content:center;column-gap:22px;align-items:center;margin:0 0 4px}",
+   ".dp-btn{font-family:var(--display);font-weight:800;font-size:14px;color:#0B0E12;background:var(--ok);border:0;border-radius:999px;",
+   "  padding:13px 10px;cursor:pointer;transition:transform .06s ease,filter .1s ease}",
+   ".dp-btn:hover{filter:brightness(1.06)}",
+   ".dp-btn:active{transform:scale(.97)}",
+   ".dp-btn:disabled{opacity:.35;cursor:default;filter:none;transform:none}",
+   ".dp-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}",
    ".dp-btn.alt{background:var(--raise);color:var(--ink);border:1px solid var(--line)}",
    ".dp-btn.end{background:#FF5A4E;color:#fff}",
-   ".dp-note{font-size:12px;color:var(--muted);margin:12px 0 0;line-height:1.5}",
-   ".dp-save{margin:12px 0 0;padding:12px;border:1px solid rgba(61,214,140,.45);background:rgba(61,214,140,.06);border-radius:12px}",
-   ".dp-save h4{margin:0 0 8px;font-family:var(--display);font-weight:800;font-size:13px;color:var(--ink)}",
-   ".dp-save input{width:100%;font:inherit;font-size:14px;color:var(--ink);background:var(--raise);border:1px solid var(--line);",
-   "  border-radius:10px;padding:9px 10px;margin:0 0 8px}",
-   ".dp-save .dp-btn{width:100%;flex:none}",
-   ".dp-recent{margin:12px 0 0;border-top:1px solid var(--line);padding-top:10px}",
-   ".dp-recent h4{margin:0 0 6px;font-family:var(--display);font-weight:700;font-size:11px;letter-spacing:1px;color:var(--faint);text-transform:uppercase}",
-   ".dp-r{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--line);font-size:13.5px;color:var(--ink);cursor:pointer}",
-   ".dp-r span{color:var(--faint);font-size:12px}",
-   ".dp-msg{font-size:12.5px;margin:8px 0 0;min-height:16px}",
+   ".dp-call{grid-column:2;width:70px;height:70px;border-radius:50%;padding:0;display:grid;place-items:center;",
+   "  box-shadow:0 8px 22px rgba(61,214,140,.35)}",
+   ".dp-call svg{width:28px;height:28px;fill:#0B0E12}",
+   ".dp-call:disabled{box-shadow:none}",
+   ".dp-call.alt{box-shadow:none;font-size:14px}",
+   ".dp-del{grid-column:3;width:70px;height:70px;border-radius:50%;padding:0;display:grid;place-items:center;background:transparent;border:0;",
+   "  color:var(--muted);font-size:26px;line-height:1;cursor:pointer;-webkit-tap-highlight-color:transparent}",
+   ".dp-del:hover{color:var(--ink)}",
+   ".dp-del:active{color:var(--ok)}",
+   ".dp-del[hidden]{display:none}",
+   /* copy + blocks */
+   ".dp-note{font-size:12px;color:var(--faint);margin:10px 0 0;line-height:1.5;text-align:center}",
+   ".dp-save{margin:14px 0 0;padding:14px;border:1px solid rgba(61,214,140,.35);background:rgba(61,214,140,.06);border-radius:16px}",
+   ".dp-save h4{margin:0 0 10px;font-family:var(--display);font-weight:800;font-size:13px;color:var(--ink)}",
+   ".dp-save input{width:100%;box-sizing:border-box;font:inherit;font-size:14.5px;color:var(--ink);background:var(--raise);border:1px solid var(--line);",
+   "  border-radius:12px;padding:11px 12px;margin:0 0 8px}",
+   ".dp-save input:focus{outline:2px solid var(--ok);outline-offset:1px;border-color:transparent}",
+   ".dp-save .dp-btn{width:100%;display:block}",
+   ".dp-recent{margin:14px 0 0;border-top:1px solid var(--line);padding-top:12px}",
+   ".dp-recent h4{margin:0 0 8px;font-family:var(--display);font-weight:700;font-size:10.5px;letter-spacing:1.4px;color:var(--faint);text-transform:uppercase}",
+   ".dp-recent > div{display:flex;flex-wrap:wrap;gap:8px}",
+   ".dp-r{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid var(--line);border-radius:999px;background:var(--raise);",
+   "  font-size:13.5px;font-variant-numeric:tabular-nums;color:var(--ink);cursor:pointer;transition:border-color .1s ease}",
+   ".dp-r:hover{border-color:var(--ok)}",
+   ".dp-r span{color:var(--faint);font-size:11px;text-transform:uppercase;letter-spacing:.6px}",
+   ".dp-msg{font-size:12.5px;margin:8px 0 0;min-height:16px;text-align:center}",
    ".dp-msg.err{color:#FF7A5C}.dp-msg.ok{color:var(--ok)}"
   ].forEach(function(r){ try { st.sheet.insertRule(r, st.sheet.cssRules.length); } catch(e){} });
 
@@ -109,7 +159,10 @@
   }
 
   // ---- build the panel
-  var tab = el("button", "dp-tab", "Dialpad"); tab.type = "button";
+  var PHONE_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25c1.1.37 2.3.57 3.6.57a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1L6.6 10.8z"/></svg>';
+  var tab = el("button", "dp-tab"); tab.type = "button";
+  tab.innerHTML = PHONE_SVG;
+  var tabLabel = el("span", null, "Dial"); tab.appendChild(tabLabel);
   tab.title = "Dial any number, or send an extension while you're connected";
   document.body.appendChild(tab);
 
@@ -149,7 +202,7 @@
   var close = el("button", "dp-x", "×"); close.type = "button"; close.setAttribute("aria-label", "Close");
   head.appendChild(title); head.appendChild(close);
   var mode = el("p", "dp-mode");
-  var display = el("div", "dp-num", "");
+  var display = el("div", "dp-num", ""); display.setAttribute("data-placeholder", "Enter a number");
   var hint = el("p", "dp-hint", "");
   var grid = el("div", "dp-grid");
   var letters = {"2": "ABC", "3": "DEF", "4": "GHI", "5": "JKL", "6": "MNO", "7": "PQRS", "8": "TUV", "9": "WXYZ"};
@@ -161,9 +214,11 @@
     grid.appendChild(b);
   });
   var row = el("div", "dp-row");
-  var callBtn = el("button", "dp-btn", "Call"); callBtn.type = "button";
-  var backBtn = el("button", "dp-btn alt", "Delete"); backBtn.type = "button";
-  row.appendChild(backBtn); row.appendChild(callBtn);
+  var callBtn = el("button", "dp-btn dp-call"); callBtn.type = "button"; callBtn.setAttribute("aria-label", "Call");
+  callBtn.innerHTML = PHONE_SVG;
+  var backBtn = el("button", "dp-del", "\u232B"); backBtn.type = "button"; backBtn.setAttribute("aria-label", "Delete");
+  backBtn.title = "Delete";
+  row.appendChild(callBtn); row.appendChild(backBtn);
   var msg = el("p", "dp-msg");
   var note = el("p", "dp-note");
 
@@ -213,9 +268,10 @@
         "Tap through the menu — \u201cpress 2 for sales\u201d, an extension, whatever it asks for. " +
         "Every key goes down the line. No need to hang up."));
       display.textContent = sentDigits || "";
+      display.className = "dp-num tones"; display.setAttribute("data-placeholder", "Tap the menu");
       hint.textContent = sentDigits ? "sent to the call" : "each key goes down the line";
-      callBtn.textContent = "Done";
-      callBtn.className = "dp-btn alt";
+      callBtn.textContent = "Done"; callBtn.setAttribute("aria-label", "Done");
+      callBtn.className = "dp-btn dp-call alt";
       callBtn.disabled = false;
       backBtn.hidden = true;
       note.textContent = "";
@@ -227,9 +283,10 @@
     mode.textContent = "Dial any number. Once you're connected, these keys work the menu — " +
       "press 2 for sales, an extension, anything the system asks for.";
     display.textContent = pretty(raw) || "";
-    hint.textContent = raw ? "" : "type or paste a number";
-    callBtn.textContent = "Call";
-    callBtn.className = "dp-btn";
+    display.className = "dp-num"; display.setAttribute("data-placeholder", "Enter a number");
+    hint.textContent = raw ? "" : "type, paste, or tap the keys";
+    callBtn.innerHTML = PHONE_SVG; callBtn.setAttribute("aria-label", "Call");
+    callBtn.className = "dp-btn dp-call";
     callBtn.disabled = digitsOf(raw).length < 10;
     backBtn.hidden = false;
     note.textContent = "Calls go out on the desk line, so they show in your history like any other call.";
@@ -332,8 +389,8 @@
   window.addEventListener("desk:call", function(e){
     var wasLive = live;
     live = !!(e.detail && e.detail.live);
-    if(live && !wasLive){ sentDigits = ""; tab.classList.add("live"); tab.textContent = "Keypad"; }
-    if(!live && wasLive){ tab.classList.remove("live"); tab.textContent = "Dialpad"; }
+    if(live && !wasLive){ sentDigits = ""; tab.classList.add("live"); tabLabel.textContent = "Keypad"; }
+    if(!live && wasLive){ tab.classList.remove("live"); tabLabel.textContent = "Dial"; }
     if(!wrap.hidden) render();
   });
 
