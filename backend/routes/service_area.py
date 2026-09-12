@@ -95,7 +95,8 @@ def check_service_area():
     else:
         message = (
             "Address is outside our service area. "
-            "We currently serve Miami-Dade, Broward, and Palm Beach counties."
+            "We currently serve Florida's Atlantic coast from Miami-Dade up through "
+            "Broward, Palm Beach, Martin, St. Lucie, Indian River and Brevard counties."
         )
 
     return jsonify({

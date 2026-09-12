@@ -36,8 +36,8 @@ const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
  * metro never needs a frontend change — do NOT hard-code a wider box here.
  */
 const FALLBACK_MARKET: Pick<MarketBounds, "mapbox_bbox" | "proximity" | "country"> = {
-  mapbox_bbox: "-80.85,25.30,-79.85,26.97",
-  proximity: "-80.35,26.12",
+  mapbox_bbox: "-81.00,25.30,-79.85,28.80",
+  proximity: "-80.20,26.65",
   country: "us",
 };
 

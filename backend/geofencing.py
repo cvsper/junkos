@@ -1,34 +1,37 @@
 """
 Geofencing utilities for Umuve.
 
-Defines the South Florida service area (Miami-Dade, Broward, Palm Beach counties)
-and provides functions to check whether coordinates fall within it.
+Defines the service area — the Atlantic coast from Miami-Dade up through
+Broward, Palm Beach, Martin, St. Lucie, Indian River and Brevard (Cocoa
+Beach / Titusville) — and provides functions to check whether coordinates
+fall within it.
 """
 
 from math import radians, cos, sin, asin, sqrt
 
 # ---------------------------------------------------------------------------
-# Service area definition -- South Florida tri-county area
+# Service area definition -- seven coastal counties, Homestead to Titusville
 # ---------------------------------------------------------------------------
 
 # Quick bounding box for fast rejection before the more expensive polygon check.
 SERVICE_AREA_BOUNDS = {
-    "north": 26.97,   # northern Palm Beach County
+    "north": 28.80,   # Brevard / Volusia line (north of Titusville)
     "south": 25.30,   # southern Miami-Dade (Homestead / Florida City)
     "east": -79.85,   # Atlantic coastline
-    "west": -80.85,   # western Everglades boundary
+    "west": -81.00,   # western Brevard / Everglades boundary (stays east of Orlando)
 }
 
-# Center of the service area (useful for frontend map default center).
+# Center of the service area (geocoder proximity + default map center).
+# Biased to the home market rather than the geometric middle.
 SERVICE_AREA_CENTER = {
-    "lat": 26.12,
-    "lng": -80.35,
+    "lat": 26.65,
+    "lng": -80.20,
 }
 
-# Simplified polygon (12 vertices) tracing the approximate boundary of the
-# Miami-Dade + Broward + Palm Beach tri-county service area.  The polygon
-# follows the coastline on the east and the Everglades / western county
-# borders on the west.  Vertices are listed counter-clockwise.
+# Simplified polygon tracing the approximate boundary of the seven-county
+# service area.  The polygon follows the coastline on the east and the
+# county / Everglades borders on the west.  Vertices are listed
+# counter-clockwise, south to north up the coast, then back down the west.
 #
 # Format: list of (lat, lng) tuples.
 SERVICE_AREA_POLYGON = [
@@ -41,13 +44,29 @@ SERVICE_AREA_POLYGON = [
     (26.55, -80.03),   # 6  -- Boca Raton coast
     (26.72, -80.03),   # 7  -- Boynton / Lake Worth coast
     (26.90, -80.04),   # 8  -- West Palm Beach coast
-    (26.97, -80.10),   # 9  -- NE corner: northern Palm Beach coast
-    (26.97, -80.55),   # 10 -- NW corner: western Palm Beach County
-    (26.50, -80.65),   # 11 -- western Broward County (Everglades edge)
-    (25.80, -80.70),   # 12 -- western Miami-Dade (Everglades edge)
-    (25.30, -80.60),   # 13 -- SW: western Homestead / Florida City
+    (27.00, -80.08),   # 9  -- Jupiter / Tequesta coast
+    (27.20, -80.15),   # 10 -- Stuart / Hutchinson Island
+    (27.45, -80.25),   # 11 -- Fort Pierce coast
+    (27.65, -80.32),   # 12 -- Vero Beach coast
+    (27.86, -80.42),   # 13 -- Sebastian Inlet
+    (28.10, -80.52),   # 14 -- Melbourne / Satellite Beach
+    (28.45, -80.50),   # 15 -- Cocoa Beach / Cape Canaveral
+    (28.62, -80.58),   # 16 -- Titusville / Merritt Island coast
+    (28.80, -80.75),   # 17 -- NE corner: Brevard / Volusia line
+    (28.80, -81.00),   # 18 -- NW corner: western Brevard (St. Johns marsh)
+    (28.30, -81.00),   # 19 -- western Brevard / Osceola line
+    (27.86, -80.88),   # 20 -- western Indian River County
+    (27.56, -80.68),   # 21 -- western St. Lucie County
+    (27.21, -80.62),   # 22 -- western Martin County (east shore of Lake Okeechobee; Okeechobee city stays out)
+    (26.97, -80.62),   # 23 -- northwestern Palm Beach County (Port Mayaca)
+    (26.78, -80.88),   # 24 -- western Palm Beach County (Belle Glade / Pahokee in; Clewiston out)
+    (26.50, -80.65),   # 25 -- western Broward County (Everglades edge)
+    (25.80, -80.70),   # 26 -- western Miami-Dade (Everglades edge)
+    (25.30, -80.60),   # 27 -- SW: western Homestead / Florida City
     # polygon closes back to vertex 0
 ]
+
+SERVICE_COUNTIES = ["Miami-Dade", "Broward", "Palm Beach", "Martin", "St. Lucie", "Indian River", "Brevard"]
 
 EARTH_RADIUS_KM = 6371.0
 
@@ -111,8 +130,8 @@ def get_service_area_info():
         "polygon": [{"lat": p[0], "lng": p[1]} for p in SERVICE_AREA_POLYGON],
         "bounds": SERVICE_AREA_BOUNDS,
         "center": SERVICE_AREA_CENTER,
-        "counties": ["Miami-Dade", "Broward", "Palm Beach"],
-        "description": "South Florida tri-county area",
+        "counties": list(SERVICE_COUNTIES),
+        "description": "Florida's Atlantic coast, Homestead to Titusville (seven counties)",
     }
 
 
@@ -184,7 +203,7 @@ def _point_to_segment_distance(px, py, ax, ay, bx, by):
 # ---------------------------------------------------------------------------
 # Dynamic coverage — Tier 3-G of the airtight stack
 # ---------------------------------------------------------------------------
-# The static polygon above says "we serve these 3 counties in principle."
+# The static polygon above says "we serve these 7 counties in principle."
 # The dynamic coverage below says "right now, here is where we actually have
 # a hauler in range." Both matter — static gates the booking funnel at the
 # county level (so out-of-region traffic is rejected outright), dynamic

@@ -101,7 +101,7 @@ When a caller has a COMPLAINT, MISSED APPOINTMENT, REFUND REQUEST, or is FRUSTRA
 - Same day +25%, next day +10%, weekends +15% — these add together (a same-day weekend pickup is +40%)
 
 ## Service Area
-Miami-Dade, Broward, and Palm Beach counties ONLY. If someone is outside this area, politely let them know you don't service their area yet.
+Florida's Atlantic coast from Miami-Dade north through Broward, Palm Beach, Martin, St. Lucie, Indian River and Brevard counties (Homestead up to Titusville / Cocoa Beach) ONLY. Orlando, Okeechobee, the Keys and anything north of Titusville are outside it — politely let them know you don't service their area yet.
 
 ## Scheduling
 - Available 7 days a week
@@ -180,7 +180,7 @@ A: We take almost everything! Furniture, appliances, electronics, mattresses, ya
 A: We price by item. Each item has a set price (for example, a sofa is $119, a mattress is $99 plus a $20 recycling fee, a refrigerator is $129 plus a $10 refrigerant fee). Whole-room cleanouts are priced by truck load, from $179 for an eighth of a truck to $579 for a full truck. There's an 8% service fee on top. Volume discounts apply: 10% off for 4-7 items, 15% off for 8-15 items, 20% off for 16+ items. Surge pricing may apply: same-day is +25%, next-day is +10%, weekends are +15%. Minimum job is $119.
 
 **Q: What areas do you serve?**
-A: We serve Miami-Dade County, Broward County, and Palm Beach County — all of South Florida's tri-county area. This includes Miami, Fort Lauderdale, West Palm Beach, Boca Raton, Hollywood, Coral Springs, Pembroke Pines, Hialeah, Homestead, and all surrounding cities.
+A: We serve Florida's Atlantic coast from Miami-Dade all the way up to Brevard County — Miami-Dade, Broward, Palm Beach, Martin, St. Lucie, Indian River and Brevard. That includes Miami, Fort Lauderdale, West Palm Beach, Boca Raton, Jupiter, Stuart, Port St. Lucie, Fort Pierce, Vero Beach, Melbourne, Cocoa Beach, Titusville and all surrounding cities.
 
 **Q: How do I pay?**
 A: I'll text you a secure payment link right now — just tap it and pay from your phone. (Then call send_checkout_text.) We accept all major credit and debit cards through Stripe, as well as Apple Pay. No cash needed. Do NOT tell the caller to go find a website; send the link.

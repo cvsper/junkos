@@ -41,10 +41,10 @@ KNOWLEDGE_BASE = {
     "service_area": {
         "question": "What areas do you serve?",
         "answer": (
-            "We serve Miami-Dade County, Broward County, and Palm Beach County — "
-            "all of South Florida's tri-county area. This includes Miami, Fort Lauderdale, "
-            "West Palm Beach, Boca Raton, Hollywood, Coral Springs, Pembroke Pines, "
-            "Hialeah, Homestead, and all surrounding cities."
+            "We serve Florida's Atlantic coast from Miami-Dade up to Brevard County — "
+            "Miami-Dade, Broward, Palm Beach, Martin, St. Lucie, Indian River and Brevard. "
+            "That includes Miami, Fort Lauderdale, West Palm Beach, Boca Raton, Jupiter, Stuart, "
+            "Port St. Lucie, Fort Pierce, Vero Beach, Melbourne, Cocoa Beach, Titusville and all surrounding cities."
         ),
     },
     "payment": {
