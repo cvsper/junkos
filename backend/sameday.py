@@ -484,6 +484,12 @@ def ask_standby(app=None):
 
 
 def run_standby_ask(app):
+    """Scheduled 8:45am ask. Off by default (flag sameday_standby_text) — the
+    morning text to every hauler was more noise than roster. Sunday off."""
+    from flags import flag
+    if not flag("sameday_standby_text"):
+        logger.info("standby ask skipped: sameday_standby_text is off")
+        return
     from timeutils import to_local
     local = to_local(_now_utc())
     if local.weekday() == 6:          # Sunday off

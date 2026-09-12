@@ -27,6 +27,7 @@ FLAGS = {
     "inbound_customers": {"default": True, "desc": "Inbound calls ring clocked-in VAs first with customer intake on the desk (off = legacy browser + cell ring, then voicemail)"},
     "maya_fallback":  {"default": True,  "desc": "Send unanswered / after-hours inbound calls to Maya instead of voicemail"},
     "sameday_wave":   {"default": True,  "desc": "Desk can text booked same-day jobs to the nearest haulers with one-tap accept"},
+    "sameday_standby_text": {"default": False, "desc": "8:45am text to every approved hauler asking if they're available today (off since 9/12 — sevs; the roster can still be asked from the desk)"},
     "sameday_wave_maya": {"default": True, "desc": "Maya's same-day bookings run the same hauler offer wave automatically"},
     "lead_auto_text":  {"default": True,  "desc": "Text an untouched lead once, in the VA's name, after 2 minutes (kill switch for the speed-to-lead sweep)"},
     "auto_instant_payout": {"default": True, "desc": "Push every completed job's payout to the hauler's debit card the same day (Umuve covers the instant fee; standard payout + text if no card)"},

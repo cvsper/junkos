@@ -259,3 +259,13 @@ def test_driver_endpoints_stamp_heartbeat(client):
     assert r.status_code in (200, 201), r.get_json()
     db.session.refresh(c)
     assert c.last_heartbeat_at is not None and c.is_online is True
+
+
+def test_morning_standby_text_is_off_unless_the_flag_is_on(app):
+    _hauler("Off Ollie", "+15615550399", 26.63, -80.05)
+    with mock.patch("sameday.ask_standby") as ask:
+        sameday.run_standby_ask(app)
+        assert ask.call_count == 0                       # default: no 8:45 text
+        with mock.patch.dict(os.environ, {"FEATURE_SAMEDAY_STANDBY_TEXT": "true"}):
+            sameday.run_standby_ask(app)
+        assert ask.call_count == (0 if sameday._local_today().weekday() == 6 else 1)
