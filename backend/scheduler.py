@@ -245,6 +245,11 @@ def scheduler_status():
             diag["restarts"] = _RESTARTS
             diag["pid"] = os.getpid(); diag["ppid"] = os.getppid(); diag["scheduler_pid"] = _SCHEDULER_PID
             diag["owned_here"] = _owned_here()
+            import sys as _sys
+            diag["argv"] = " ".join(_sys.argv[:6])[:160]
+            diag["server_software"] = os.environ.get("SERVER_SOFTWARE") or None
+            diag["monkey_patched"] = bool(getattr(__import__("eventlet.patcher", fromlist=["is_monkey_patched"]), "is_monkey_patched")("thread")) if "eventlet" in _sys.modules else False
+            diag["thread_type"] = type(getattr(_SCHEDULER, "_thread", None)).__module__ if _SCHEDULER is not None else None
             diag["in_flight"] = {j: round((now - t).total_seconds()) for j, t in _IN_FLIGHT.items()}
             diag["events"] = list(_EVENTS[-20:])
             diag["log"] = list(_LOG_RING[-30:])
@@ -891,6 +896,14 @@ def init_scheduler(app):
         logger.info("Scheduler disabled (set ENABLE_SCHEDULER=true to enable)")
         return None
     _install_fork_hooks()
+    if _owned_here():
+        th = getattr(_SCHEDULER, "_thread", None)
+        if th is not None and th.is_alive():
+            # server.py imported a second time in this process (python server.py
+            # + a "from server import app" somewhere): keep the one that runs.
+            _LOG_RING.append("{} W init_scheduler called again in pid {} — keeping the running scheduler".format(
+                datetime.now(timezone.utc).strftime("%H:%M:%S"), os.getpid()))
+            return _SCHEDULER
 
     try:
         from apscheduler.schedulers.background import BackgroundScheduler
