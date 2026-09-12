@@ -96,6 +96,61 @@ def _stamp_job_event(event):
 _LAST_RESTART_AT = None
 _RESTART_MIN_GAP = timedelta(minutes=5)
 _RESTARTS = 0
+_SCHEDULER_PID = None       # process that owns the running scheduler
+_APP = None                 # Flask app the scheduler was built for (re-init after fork)
+_FORK_HOOKS = False
+
+
+def _owned_here():
+    """True when the scheduler object in this process is the one this process
+    started. After a fork (gunicorn --preload) the child inherits a copy whose
+    thread and locks belong to the parent: it never runs jobs here, and
+    shutting it down from the child deadlocks on the parent's locks."""
+    return _SCHEDULER is not None and _SCHEDULER_PID == os.getpid()
+
+
+def _before_fork():
+    """Parent is about to fork a worker: stop running jobs here so the child
+    can own the scheduler. Under --preload the master imports the app, which
+    starts the scheduler in the master; the worker must be the one that runs
+    it, or readiness in the worker sees a dead thread forever."""
+    global _SCHEDULER
+    try:
+        if _owned_here():
+            _LOG_RING.append("{} W scheduler stopped in pid {} before fork".format(
+                datetime.now(timezone.utc).strftime("%H:%M:%S"), os.getpid()))
+            try:
+                _SCHEDULER.shutdown(wait=False)
+            except Exception:
+                pass
+            _SCHEDULER = None
+    except Exception:
+        pass
+
+
+def _after_fork_child():
+    """Fresh process: forget the parent's scheduler and start our own."""
+    global _SCHEDULER, _SCHEDULER_STARTED_AT
+    try:
+        _SCHEDULER = None
+        _SCHEDULER_STARTED_AT = None
+        _LAST_JOB_RUN.clear()
+        _IN_FLIGHT.clear()
+        del _EVENTS[:]
+        _LOG_RING.append("{} W forked: pid {} starting its own scheduler".format(
+            datetime.now(timezone.utc).strftime("%H:%M:%S"), os.getpid()))
+        if _APP is not None and os.environ.get("ENABLE_SCHEDULER", "").lower() == "true":
+            init_scheduler(_APP)
+    except Exception:
+        logger.exception("scheduler re-init after fork failed")
+
+
+def _install_fork_hooks():
+    global _FORK_HOOKS
+    if _FORK_HOOKS or not hasattr(os, "register_at_fork"):
+        return
+    os.register_at_fork(before=_before_fork, after_in_child=_after_fork_child)
+    _FORK_HOOKS = True
 
 
 def restart_if_dead(app):
@@ -106,19 +161,23 @@ def restart_if_dead(app):
     try:
         if os.environ.get("ENABLE_SCHEDULER", "").lower() != "true" or _SCHEDULER is None:
             return False
+        foreign = not _owned_here()
         th = getattr(_SCHEDULER, "_thread", None)
-        if th is not None and th.is_alive():
+        if not foreign and th is not None and th.is_alive():
             return False
         now = datetime.now(timezone.utc)
         if _LAST_RESTART_AT and now - _LAST_RESTART_AT < _RESTART_MIN_GAP:
             return False
         _LAST_RESTART_AT = now
         _RESTARTS += 1
-        _LOG_RING.append("{} W scheduler thread dead — restarting (#{})".format(now.strftime("%H:%M:%S"), _RESTARTS))
-        try:
-            _SCHEDULER.shutdown(wait=False)
-        except Exception:
-            pass
+        _LOG_RING.append("{} W scheduler {} — restarting (#{})".format(
+            now.strftime("%H:%M:%S"), "belongs to pid {} (inherited copy)".format(_SCHEDULER_PID) if foreign else "thread dead", _RESTARTS))
+        if not foreign:
+            # never shut down an inherited copy: its locks belong to the parent
+            try:
+                _SCHEDULER.shutdown(wait=False)
+            except Exception:
+                pass
         _SCHEDULER = None
         init_scheduler(app)
         return True
@@ -149,7 +208,8 @@ def scheduler_status():
     try:
         if _SCHEDULER_STARTED_AT is not None:
             status["started_at"] = _SCHEDULER_STARTED_AT.isoformat()
-        status["running"] = bool(_SCHEDULER is not None and _SCHEDULER.running)
+        status["running"] = bool(_SCHEDULER is not None and _SCHEDULER.running and _owned_here())
+        status["foreign"] = bool(_SCHEDULER is not None and not _owned_here())
         if _SCHEDULER is not None:
             try:
                 status["jobs"] = len(_SCHEDULER.get_jobs())
@@ -183,6 +243,8 @@ def scheduler_status():
             diag = {"thread_alive": bool(_SCHEDULER is not None and getattr(_SCHEDULER, "_thread", None) is not None
                                          and _SCHEDULER._thread.is_alive())}
             diag["restarts"] = _RESTARTS
+            diag["pid"] = os.getpid(); diag["ppid"] = os.getppid(); diag["scheduler_pid"] = _SCHEDULER_PID
+            diag["owned_here"] = _owned_here()
             diag["in_flight"] = {j: round((now - t).total_seconds()) for j, t in _IN_FLIGHT.items()}
             diag["events"] = list(_EVENTS[-20:])
             diag["log"] = list(_LOG_RING[-30:])
@@ -822,11 +884,13 @@ def init_scheduler(app):
 
     Only runs if ENABLE_SCHEDULER=true env var is set.
     """
-    global _SCHEDULER, _SCHEDULER_STARTED_AT
+    global _SCHEDULER, _SCHEDULER_STARTED_AT, _SCHEDULER_PID, _APP
+    _APP = app
 
     if os.environ.get("ENABLE_SCHEDULER", "").lower() != "true":
         logger.info("Scheduler disabled (set ENABLE_SCHEDULER=true to enable)")
         return None
+    _install_fork_hooks()
 
     try:
         from apscheduler.schedulers.background import BackgroundScheduler
@@ -1292,6 +1356,7 @@ def init_scheduler(app):
 
         scheduler.start()
         _SCHEDULER = scheduler
+        _SCHEDULER_PID = os.getpid()
         _SCHEDULER_STARTED_AT = datetime.now(timezone.utc)
         logger.info("Background scheduler started with %d jobs", len(scheduler.get_jobs()))
         return scheduler
