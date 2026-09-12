@@ -145,13 +145,14 @@ def check_booking_rejects_out_of_area():
         "phone": "+15555550100",
     }
     r = requests.post(BACKEND_URL + "/api/booking", json=body, timeout=TIMEOUT_S)
-    # Expected: 400 with the "outside our service area" message
-    if r.status_code != 400:
-        return False, "expected 400 for NYC booking, got {}".format(r.status_code)
+    # Expected: a client-error rejection (the route answers 422 "outside_market";
+    # older builds said 400) carrying the "outside our service area" message.
+    if r.status_code not in (400, 422):
+        return False, "expected 400/422 for NYC booking, got {}".format(r.status_code)
     err = (r.json() or {}).get("error", "")
     if "service area" not in err.lower():
-        return False, "400 but unexpected error message: {!r}".format(err[:80])
-    return True, "geofence still rejects NYC bookings (good)"
+        return False, "{} but unexpected error message: {!r}".format(r.status_code, err[:80])
+    return True, "geofence still rejects NYC bookings ({})".format(r.status_code)
 
 
 CHECKS = [
@@ -216,7 +217,9 @@ def alert_admin(failures: List[Tuple[str, str]]):
             logger.exception("Failed to email mystery-shop alert")
 
 
-def main():
+def run() -> List[Tuple[str, str]]:
+    """Run every check, alert on failures, and return the failure list.
+    Never exits the interpreter — the scheduler calls this in-process."""
     logger.info("=" * 60)
     logger.info("Mystery shop starting against %s", BACKEND_URL)
     logger.info("=" * 60)
@@ -230,9 +233,15 @@ def main():
     if failures:
         logger.warning("Mystery shop: %d/%d checks failed", len(failures), len(CHECKS))
         alert_admin(failures)
-        sys.exit(2)
+    else:
+        logger.info("Mystery shop: all %d checks passed ✨", len(CHECKS))
+    return failures
 
-    logger.info("Mystery shop: all %d checks passed ✨", len(CHECKS))
+
+def main():
+    """CLI entry: exit 2 when any check fails (cron-friendly)."""
+    if run():
+        sys.exit(2)
 
 
 if __name__ == "__main__":

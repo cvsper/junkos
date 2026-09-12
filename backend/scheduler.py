@@ -901,10 +901,16 @@ def _run_mystery_shop(app):
         return
     try:
         with app.app_context():
-            from mystery_shop import main as mystery_main
-            mystery_main()
+            from mystery_shop import run as mystery_run
+            failures = mystery_run()
     except Exception:
         logger.exception("mystery shop job crashed")
+        return
+    if failures:
+        # Surface WHICH checks failed in /api/ready's last_job_runs (the old
+        # sys.exit(2) showed up there as a bare "2").
+        raise RuntimeError("mystery shop failed: " + "; ".join(
+            "{} ({})".format(name, detail[:60]) for name, detail in failures)[:180])
 
 
 def _run_vapi_health(app):
