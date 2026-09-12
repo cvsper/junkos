@@ -18,7 +18,7 @@ import va_calls
 
 @pytest.fixture(autouse=True)
 def passcode_env():
-    with mock.patch.dict(os.environ, {"TRIXIE_ASSISTANT_PASSCODE": "test-code"}):
+    with mock.patch.dict(os.environ, {"TRIXIE_ASSISTANT_PASSCODE": "test-code", "DESK_TWILIO_NUMBER": "+15617824350"}):
         yield
 
 
@@ -82,7 +82,7 @@ def test_vendor_listed_followup_text_has_rates_and_booking_number(prospect):
     assert "Tracy" in body
     assert "vendor list" in body
     assert "goumuve.com/partners" in body
-    assert "(561) 944-1636" in body
+    assert "(561) 782-4350" in body and "944-1636" not in body
     assert "STOP" in body
     assert len(body) <= 320  # two SMS segments max
 
@@ -94,4 +94,4 @@ def test_vendor_listed_sends_text_when_asked(client, prospect):
     assert r.get_json()["texted"] is True
     sent_to, body = send.call_args[0]
     assert "".join(ch for ch in sent_to if ch.isdigit())[-10:] == prospect.phone_digits
-    assert "(561) 944-1636" in body
+    assert "(561) 782-4350" in body and "944-1636" not in body

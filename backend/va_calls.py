@@ -164,6 +164,18 @@ def _first_name(contact):
     return parts[0] if parts else ""
 
 
+def desk_display_number():
+    """The desk line as people dial it, e.g. "(561) 782-4350". Falls back to
+    the main Umuve line when no desk number is provisioned — the same
+    fallback send_desk_text uses, so the number in the text is the number
+    that texted them."""
+    import os
+    raw = "".join(ch for ch in (os.environ.get("DESK_TWILIO_NUMBER") or "") if ch.isdigit())[-10:]
+    if len(raw) != 10:
+        return "(844) 435-6005"
+    return "({}) {}-{}".format(raw[:3], raw[3:6], raw[6:])
+
+
 def followup_text_for(outcome, prospect, va_name):
     name = _first_name(prospect.contact_name)
     greet = "Hi {},".format(name) if name else "Hi there,"
@@ -180,9 +192,9 @@ def followup_text_for(outcome, prospect, va_name):
         return (
             "{greet} it's {va} with Umuve — thanks for adding us to your "
             "vendor list. Rates + volume plans: goumuve.com/partners. When a "
-            "cleanout comes up, call or text (561) 944-1636 any time, day or "
+            "cleanout comes up, call or text {desk} any time, day or "
             "night — upfront price, same-day available. Reply STOP to opt out."
-        ).format(greet=greet, va=va)
+        ).format(greet=greet, va=va, desk=desk_display_number())
     # no_answer gets no text (sevs, 9/12): a text after every unanswered dial
     # was 75 texts a session, and office lines answered with auto-responders.
     if outcome == "voicemail":

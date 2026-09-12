@@ -113,3 +113,18 @@ def test_vapi_201_twiml_is_relayed_to_twilio(client):
     with mock.patch("requests.post", return_value=_R()):
         r = _text(client, "+13055550300", "do you take couches", "SMvapi201")
     assert "we take couches" in r.get_data(as_text=True)
+
+
+def test_maya_markdown_is_flattened_for_phones(client):
+    from routes.sms_webhook import _plain_sms
+    twiml = ("<Response><Message>Absolutely! A standard sofa is **$119**, a sleeper sofa is **$139**.\n\n"
+             "## Next\n- Same day +25%\n- *Weekends* +15%</Message></Response>")
+    out = _plain_sms(twiml)
+    assert "**" not in out and "##" not in out and "*Weekends*" not in out
+    assert "$119" in out and "$139" in out and "- Same day +25%" in out and "Weekends +15%" in out
+    assert out.startswith("<Response><Message>") and out.endswith("</Message></Response>")
+    assert _plain_sms("<Response></Response>") == "<Response></Response>"
+    class _R: status_code = 201; text = twiml
+    with mock.patch("requests.post", return_value=_R()):
+        r = _text(client, "+13055550400", "how much for a sofa", "SMmd1")
+    assert "**" not in r.get_data(as_text=True) and "$119" in r.get_data(as_text=True)

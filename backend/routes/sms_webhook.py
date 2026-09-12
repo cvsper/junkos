@@ -12,6 +12,7 @@ Configure in Twilio console:
 """
 
 import os
+import re
 import json
 import base64
 import logging
@@ -83,6 +84,26 @@ def _validate_twilio_signature():
         return bool(validator.validate(url, request.form, signature))
     except Exception as exc:
         return allow_on_validator_error("twilio", exc)
+
+
+_MD_BOLD = re.compile(r"\*\*(.+?)\*\*|__(.+?)__", re.S)
+_MD_ITALIC = re.compile(r"(?<![\w*])\*(?!\s)(.+?)(?<!\s)\*(?![\w*])|(?<!\w)_(?!\s)(.+?)(?<!\s)_(?!\w)", re.S)
+_MD_HEADER = re.compile(r"^\s{0,3}#{1,6}\s+", re.M)
+_MD_BULLET = re.compile(r"^\s*[-*•]\s+", re.M)
+
+
+def _plain_sms(twiml):
+    """Maya's LLM answers texts in markdown (**$119**, - bullets, ## headers);
+    phones show the asterisks literally. Flatten every <Message> body to
+    plain text and leave the surrounding TwiML alone."""
+    def flatten(m):
+        body = m.group(2)
+        body = _MD_BOLD.sub(lambda x: x.group(1) or x.group(2), body)
+        body = _MD_ITALIC.sub(lambda x: x.group(1) or x.group(2), body)
+        body = _MD_HEADER.sub("", body)
+        body = _MD_BULLET.sub("- ", body)
+        return m.group(1) + body + m.group(3)
+    return re.sub(r"(<Message[^>]*>)(.*?)(</Message>)", flatten, twiml, flags=re.S)
 
 
 def _empty_twiml():
@@ -272,7 +293,7 @@ def inbound_sms():
         )
         # Vapi answers 201 Created with the TwiML (probed 9/12) — accept any 2xx.
         if 200 <= vapi_resp.status_code < 300 and vapi_resp.text.strip():
-            return Response(vapi_resp.text, mimetype="text/xml")
+            return Response(_plain_sms(vapi_resp.text), mimetype="text/xml")
         logger.warning("Vapi SMS forward returned %d", vapi_resp.status_code)
     except Exception:
         logger.exception("Failed to forward SMS to Vapi")
