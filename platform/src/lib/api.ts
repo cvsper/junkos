@@ -158,6 +158,7 @@ interface CustomerJobResponse {
   base_price: number;
   item_total: number;
   service_fee: number;
+  disposal_fee?: number;
   surge_multiplier: number;
   notes: string | null;
   created_at: string;
@@ -296,6 +297,7 @@ interface RawEstimateResponse {
     base_price: number;
     service_fee: number;
     recycling_fees?: number;
+    disposal_fee?: number;
     addons_total?: number;
     total: number;
     total_before_discount: number;
@@ -372,7 +374,10 @@ export const bookingApi = {
         breakdown.push({ label: `Surcharge (${est.surge_reasons.join(", ")})`, amount: est.surge_amount });
       }
       if ((est.recycling_fees || 0) > 0) {
-        breakdown.push({ label: "Disposal / Recycling Fees", amount: est.recycling_fees || 0 });
+        breakdown.push({ label: "Recycling Fees", amount: est.recycling_fees || 0 });
+      }
+      if ((est.disposal_fee || 0) > 0) {
+        breakdown.push({ label: "Dump Fees (paid to the landfill)", amount: est.disposal_fee || 0 });
       }
       if ((est.addons_total || 0) > 0) {
         breakdown.push({ label: "Add-ons", amount: est.addons_total || 0 });
@@ -381,7 +386,7 @@ export const bookingApi = {
       if (est.minimum_applied) {
         const diff =
           est.total_before_discount -
-          (est.base_price + est.service_fee + est.surge_amount + (est.recycling_fees || 0) + (est.addons_total || 0));
+          (est.base_price + est.service_fee + est.surge_amount + (est.recycling_fees || 0) + (est.disposal_fee || 0) + (est.addons_total || 0));
         if (diff > 0) {
           breakdown.push({ label: "Minimum Adjustment", amount: diff });
         }

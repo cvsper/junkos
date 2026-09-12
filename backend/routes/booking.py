@@ -775,9 +775,17 @@ def calculate_estimate(items, scheduled_date=None, lat=None, lng=None, addons=No
             })
     addons_total = round(addons_total, 2)
 
+    # --- Dump fees: what the scale house will charge for this cart at this
+    # address (weight x the county's per-ton rate, same data as the hauler's
+    # "Where to dump" card). Its own line, not surged, not discounted, and
+    # passed through to the hauler in full at payout.
+    from disposal import disposal_estimate
+    disposal = disposal_estimate(items, lat=lat, lng=lng)
+    disposal_fee = float(disposal.get("disposal_fee") or 0.0)
+
     # --- Total (with minimum floor, admin-overridable) ---
     min_price = _get_minimum_job_price()
-    raw_total = round(surged_subtotal + service_fee + recycling_total + labor_fee + addons_total, 2)
+    raw_total = round(surged_subtotal + service_fee + recycling_total + labor_fee + addons_total + disposal_fee, 2)
     total = max(raw_total, min_price)
     minimum_applied = total > raw_total
 
@@ -806,6 +814,8 @@ def calculate_estimate(items, scheduled_date=None, lat=None, lng=None, addons=No
         "labor_fee_rate": LABOR_FEE_PER_HOUR,
         "addons_total": addons_total,
         "addons": addons_breakdown,
+        "disposal_fee": round(disposal_fee, 2),
+        "disposal": disposal,
         "total": total,
         "minimum_applied": minimum_applied,
         "minimum_job_price": min_price,
@@ -1505,6 +1515,7 @@ def create_booking(payload, user, notify_operator=True):
         base_price=est["base_price"],
         item_total=round(item_total, 2),
         service_fee=service_fee,
+        disposal_fee=float(est.get("disposal_fee") or 0.0),
         surge_multiplier=surge_multiplier,
         total_price=total,
         promo_code_id=promo_code_id,
@@ -1528,6 +1539,7 @@ def create_booking(payload, user, notify_operator=True):
         job_id=job.id,
         amount=total,
         service_fee=service_fee,
+        disposal_fee=float(est.get("disposal_fee") or 0.0),
         payment_status="pending",
     )
     db.session.add(payment)

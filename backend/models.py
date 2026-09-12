@@ -378,6 +378,7 @@ class Job(db.Model):
     item_total = Column(Float, default=0.0)
     volume_price = Column(Float, default=0.0)
     service_fee = Column(Float, default=0.0)
+    disposal_fee = Column(Float, default=0.0)      # expected dump fee, passed through to the hauler
     surge_multiplier = Column(Float, default=1.0)
     total_price = Column(Float, default=0.0)
 
@@ -503,6 +504,7 @@ class Job(db.Model):
             "item_total": self.item_total,
             "volume_price": self.volume_price,
             "service_fee": self.service_fee,
+            "disposal_fee": self.disposal_fee,
             "surge_multiplier": self.surge_multiplier,
             "total_price": self.total_price,
             "promo_code_id": self.promo_code_id,
@@ -727,6 +729,7 @@ class Payment(db.Model):
     stripe_payment_intent_id = Column(String(255), nullable=True, unique=True)
     amount = Column(Float, nullable=False, default=0.0)
     service_fee = Column(Float, default=0.0)
+    disposal_fee = Column(Float, default=0.0)      # excluded from the split; hauler gets it in full
     commission = Column(Float, default=0.0)
     driver_payout_amount = Column(Float, default=0.0)
     operator_payout_amount = Column(Float, default=0.0)
@@ -756,6 +759,7 @@ class Payment(db.Model):
             "stripe_payment_intent_id": self.stripe_payment_intent_id,
             "amount": self.amount,
             "service_fee": self.service_fee,
+            "disposal_fee": self.disposal_fee,
             "commission": self.commission,
             "driver_payout_amount": self.driver_payout_amount,
             "operator_payout_amount": self.operator_payout_amount or 0.0,

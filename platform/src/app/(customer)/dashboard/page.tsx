@@ -33,6 +33,7 @@ interface CustomerJob {
   base_price: number;
   item_total: number;
   service_fee: number;
+  disposal_fee?: number;
   surge_multiplier: number;
   scheduled_at: string | null;
   created_at: string;
@@ -849,6 +850,12 @@ function AuthenticatedDashboard() {
                                   <span className="text-muted-foreground">Service Fee</span>
                                   <span>{formatPrice(job.service_fee)}</span>
                                 </div>
+                                {(job.disposal_fee || 0) > 0 && (
+                                  <div className="flex justify-between">
+                                    <span className="text-muted-foreground">Dump Fees</span>
+                                    <span>{formatPrice(job.disposal_fee || 0)}</span>
+                                  </div>
+                                )}
                                 {job.surge_multiplier > 1.0 && (
                                   <div className="flex justify-between text-orange-600">
                                     <span>Surge ({job.surge_multiplier}x)</span>

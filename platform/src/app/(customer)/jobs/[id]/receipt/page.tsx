@@ -41,6 +41,7 @@ interface JobDetail {
   base_price: number;
   item_total: number;
   service_fee: number;
+  disposal_fee?: number;
   surge_multiplier: number;
   notes: string | null;
   scheduled_at: string | null;
@@ -436,6 +437,14 @@ export default function ReceiptPage() {
                   </span>
                   <span>{formatPrice(job.service_fee)}</span>
                 </div>
+                {(job.disposal_fee || 0) > 0 && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground print-subtle">
+                      Dump Fees (paid to the landfill)
+                    </span>
+                    <span>{formatPrice(job.disposal_fee || 0)}</span>
+                  </div>
+                )}
                 {hasSurge && (
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground print-subtle">

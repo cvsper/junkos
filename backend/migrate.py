@@ -96,6 +96,9 @@ COLUMN_MIGRATIONS = [
     # dump suggest (2026-09-11): who can tip at a facility + county-of-origin rules
     ("landfill_facilities", "access", "VARCHAR(16)", "VARCHAR(16)", "'walk_in'"),
     ("landfill_facilities", "origin_county", "VARCHAR(32)", "VARCHAR(32)", "NULL"),
+    # dump fees in the price (2026-09-11): pass-through line on job + payment
+    ("jobs", "disposal_fee", "FLOAT", "DOUBLE PRECISION", "0"),
+    ("payments", "disposal_fee", "FLOAT", "DOUBLE PRECISION", "0"),
     # inbound lead source + outcome (leads.py)
     ("inbound_calls", "source", "VARCHAR(20)", "VARCHAR(20)", "NULL"),
     ("inbound_calls", "lead_outcome", "VARCHAR(20)", "VARCHAR(20)", "NULL"),

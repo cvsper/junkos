@@ -78,10 +78,13 @@ def recompute_payment_split(payment, job):
     """
     amount = payment.amount or 0.0
     tip = payment.tip_amount or 0.0
-    split_base = max(0.0, round(amount - tip, 2))
+    # Dump fees are the hauler's out-of-pocket cost at the scale: like tips
+    # they sit outside the split and pass through 100%.
+    disposal = min(max(0.0, payment.disposal_fee or 0.0), max(0.0, amount - tip))
+    split_base = max(0.0, round(amount - tip - disposal, 2))
     platform_commission = round(split_base * PLATFORM_COMMISSION, 2)
     service_fee = payment.service_fee or 0.0
-    driver_gross = round(split_base - platform_commission - service_fee, 2)
+    driver_gross = round(split_base - platform_commission - service_fee + disposal, 2)
 
     operator_payout = 0.0
     operator_id = getattr(job, "operator_id", None) if job is not None else None
@@ -719,17 +722,19 @@ def create_payment_intent(user_id):
 
     discounted_base = max(0.0, round(job.total_price - discount, 2))
     amount = round(discounted_base + tip_amount, 2)
-    # Platform take applies to the job amount only — tips pass through to the
-    # driver 100%. (Previously the split was computed on amount incl. tip, so
-    # the platform skimmed 28% of every tip.)
-    commission = round(discounted_base * PLATFORM_COMMISSION, 2)
-    service_fee = round(discounted_base * SERVICE_FEE_RATE, 2)
+    # Platform take applies to the job amount only — tips and dump fees pass
+    # through to the driver 100%. (Previously the split was computed on
+    # amount incl. tip, so the platform skimmed 28% of every tip.)
+    disposal_fee = min(max(0.0, float(getattr(job, "disposal_fee", 0.0) or 0.0)), discounted_base)
+    split_base = round(discounted_base - disposal_fee, 2)
+    commission = round(split_base * PLATFORM_COMMISSION, 2)
+    service_fee = round(split_base * SERVICE_FEE_RATE, 2)
     driver_payout = max(0, round(amount - commission - service_fee, 2))
 
     result, err = create_attempt_for_job(
         job_id, submission_key, amount, actor="owner", user_id=user_id,
         metadata={"user_id": user_id},
-        payment_fields={"service_fee": service_fee, "commission": commission,
+        payment_fields={"service_fee": service_fee, "commission": commission, "disposal_fee": disposal_fee,
                         "driver_payout_amount": driver_payout, "tip_amount": tip_amount},
     )
     if err:
