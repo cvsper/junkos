@@ -41,3 +41,5 @@
 .ld-msg{font-size:12.5px;margin:8px 0 0;min-height:16px}
 .ld-msg.err{color:#FF7A5C}.ld-msg.ok{color:var(--ok)}
 .ld-sec{font-family:var(--display);font-weight:700;font-size:11px;letter-spacing:1px;color:var(--faint);text-transform:uppercase;margin:14px 0 4px}
+
+@media (max-width:520px){.ld-tab{padding:9px 12px;font-size:12.5px}.ld-tab .n{font-size:11px;padding:1px 6px}}

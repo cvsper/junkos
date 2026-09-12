@@ -1130,7 +1130,7 @@ CALLS_HTML = r"""<!doctype html>
 <meta name="robots" content="noindex, nofollow" />
 <meta name="theme-color" content="#0B0E12" />
 <title>Umuve — Call Desk</title>
-<link rel="stylesheet" href="/va/app.css?v=4" />
+<link rel="stylesheet" href="/va/app.css?v=5" />
 <link rel="stylesheet" href="/va/calls.css?v=27" />
 <link rel="stylesheet" href="/static/desk-class.css?v=1" />
 <link rel="manifest" href="/static/desk-manifest.json" />

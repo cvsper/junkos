@@ -34,7 +34,7 @@
     var e = document.createElement(tag); if(cls) e.className = cls; if(text != null) e.textContent = text; return e;
   }
 
-    (function(){ if(document.querySelector('link[href^="/static/desk-leads.css"]')) return; var l = document.createElement("link"); l.rel = "stylesheet"; l.href = "/static/desk-leads.css?v=1"; document.head.appendChild(l); })();
+    (function(){ if(document.querySelector('link[href^="/static/desk-leads.css"]')) return; var l = document.createElement("link"); l.rel = "stylesheet"; l.href = "/static/desk-leads.css?v=2"; document.head.appendChild(l); })();
 
   var tab = el("button", "ld-tab"); tab.type = "button";
   tab.appendChild(el("span", null, "Leads"));

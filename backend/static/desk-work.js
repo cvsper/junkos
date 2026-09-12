@@ -43,7 +43,7 @@
     return Math.round(h / 24) + " days";
   }
 
-    (function(){ if(document.querySelector('link[href^="/static/desk-work.css"]')) return; var l = document.createElement("link"); l.rel = "stylesheet"; l.href = "/static/desk-work.css?v=1"; document.head.appendChild(l); })();
+    (function(){ if(document.querySelector('link[href^="/static/desk-work.css"]')) return; var l = document.createElement("link"); l.rel = "stylesheet"; l.href = "/static/desk-work.css?v=2"; document.head.appendChild(l); })();
 
   var tab = el("button", "wq-tab"); tab.type = "button";
   tab.appendChild(el("span", null, "Work"));

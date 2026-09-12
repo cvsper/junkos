@@ -120,3 +120,20 @@ body.mgr #app{max-width:none;overflow:visible;display:block}
 @media (prefers-reduced-motion:no-preference){
   .mg-kpi b{transition:color .2s}
 }
+
+/* header links + phone layout */
+.mg-bar .mg-title{white-space:nowrap}
+.mg-bar .ds-link{margin-left:6px;color:var(--muted);font-size:12.5px;text-decoration:none;border-bottom:1px solid var(--line);white-space:nowrap}
+.mg-bar .ds-link:hover{color:var(--ink);border-color:var(--ink)}
+.mg-bar .bar-sub{margin-left:auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:40%}
+.mg-seg{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.mg-seg button{white-space:nowrap}
+@media (max-width:640px){
+  .mg-bar{gap:10px;padding:12px 14px}
+  .mg-bar .ds-link{display:none}
+  .mg-bar .bar-sub{font-size:12px}
+  .mg-controls{gap:10px 12px}
+  .mg-legend{margin-left:0;flex-wrap:wrap}
+  .mg-sec-h{flex-wrap:wrap;gap:6px 12px}
+  .mg-kpi b{font-size:30px}
+}

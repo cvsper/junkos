@@ -41,7 +41,7 @@
     return e;
   }
 
-    (function(){ if(document.querySelector('link[href^="/static/desk-dialpad.css"]')) return; var l = document.createElement("link"); l.rel = "stylesheet"; l.href = "/static/desk-dialpad.css?v=1"; document.head.appendChild(l); })();
+    (function(){ if(document.querySelector('link[href^="/static/desk-dialpad.css"]')) return; var l = document.createElement("link"); l.rel = "stylesheet"; l.href = "/static/desk-dialpad.css?v=2"; document.head.appendChild(l); })();
 
   // ---- state
   var raw = "";                 // digits typed for a new call

@@ -320,7 +320,7 @@ VA_HUB_HTML = r"""<!doctype html>
 <meta name="robots" content="noindex, nofollow" />
 <meta name="theme-color" content="#0B0E12" />
 <title>Umuve — VA Tools</title>
-<link rel="stylesheet" href="/va/app.css?v=4" />
+<link rel="stylesheet" href="/va/app.css?v=5" />
 </head>
 <body>
 <div id="app">
@@ -427,7 +427,7 @@ VA_TEXT_HTML = r"""<!doctype html>
 <meta name="robots" content="noindex, nofollow" />
 <meta name="theme-color" content="#0B0E12" />
 <title>Umuve — Send a Text</title>
-<link rel="stylesheet" href="/va/app.css?v=4" />
+<link rel="stylesheet" href="/va/app.css?v=5" />
 </head>
 <body>
 <div id="app">
@@ -498,6 +498,7 @@ VA_CSS = r""":root{
   --body:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
 }
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 html,body{height:100%}
 body{margin:0;background:var(--canvas);color:var(--ink);font-family:var(--body);-webkit-font-smoothing:antialiased;line-height:1.45}
 #app{max-width:560px;margin:0 auto;min-height:100dvh;display:flex;flex-direction:column;overflow:hidden}
@@ -843,7 +844,7 @@ VA_EMAIL_HTML = r"""<!doctype html>
 <meta name="robots" content="noindex, nofollow" />
 <meta name="theme-color" content="#0B0E12" />
 <title>Umuve — Send an Email</title>
-<link rel="stylesheet" href="/va/app.css?v=4" />
+<link rel="stylesheet" href="/va/app.css?v=5" />
 </head>
 <body>
 <div id="app">

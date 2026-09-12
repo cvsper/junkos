@@ -36,3 +36,5 @@
 .wq-msg{font-size:12.5px;margin:8px 0 0;min-height:16px}
 .wq-msg.err{color:#FF7A5C}.wq-msg.ok{color:var(--ok)}
 .wq-warn{font-size:11.5px;color:#F5B301;margin:6px 0 0}
+
+@media (max-width:520px){.wq-tab{padding:9px 12px;font-size:12.5px}.wq-tab .n{font-size:11px;padding:1px 6px}}

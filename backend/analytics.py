@@ -501,8 +501,8 @@ MANAGER_HTML = r"""<!doctype html>
 <meta name="robots" content="noindex, nofollow" />
 <meta name="theme-color" content="#0B0E12" />
 <title>Umuve — Desk manager</title>
-<link rel="stylesheet" href="/va/app.css?v=4" />
-<link rel="stylesheet" href="/static/manager.css?v=1" />
+<link rel="stylesheet" href="/va/app.css?v=5" />
+<link rel="stylesheet" href="/static/manager.css?v=2" />
 </head>
 <body class="mgr">
 <div id="app">
@@ -519,7 +519,7 @@ MANAGER_HTML = r"""<!doctype html>
       <a class="back" href="/va/calls" aria-label="Back to the Call Desk">‹</a>
       <span class="wordmark">UMUVE<span class="dot"></span></span>
       <span class="mg-title">Desk manager</span>
-      <a class="ds-link" href="/va/analytics" style="margin-left:6px;color:var(--muted);font-size:12.5px;text-decoration:none;border-bottom:1px solid var(--line)">Desk analytics →</a>
+      <a class="ds-link" href="/va/analytics">Desk analytics →</a>
       <span class="bar-sub" id="who"></span>
     </header>
     <div class="mg-wrap">
