@@ -28,6 +28,25 @@ logger = logging.getLogger(__name__)
 _SCHEDULER = None
 _SCHEDULER_STARTED_AT = None
 _LAST_JOB_RUN = {}          # job_id -> {"at": datetime, "ok": bool, "error": str|None}
+_IN_FLIGHT = {}             # job_id -> datetime submitted; cleared when it finishes (hung jobs show here)
+_EVENTS = []                # last scheduler events (submitted / missed / max-instances), newest last
+_LOG_RING = []              # last apscheduler + scheduler log lines, newest last
+
+
+class _RingHandler(logging.Handler):
+    """Keeps the last N log records in memory so /api/ready can show what the
+    scheduler said on a host where nobody can read the process log."""
+    def __init__(self, ring, n=40):
+        super().__init__(level=logging.INFO)
+        self.ring, self.n = ring, n
+
+    def emit(self, record):
+        try:
+            self.ring.append("{} {} {}".format(
+                datetime.now(timezone.utc).strftime("%H:%M:%S"), record.levelname[:1], self.format(record)[:220]))
+            del self.ring[:-self.n]
+        except Exception:
+            pass
 _HEARTBEAT_JOB_ID = "readiness_heartbeat"
 # Heartbeat runs every 5 minutes; readiness allows 3 missed beats before it
 # calls the scheduler dead, so a single slow pass is not an outage.
@@ -40,9 +59,27 @@ def _readiness_heartbeat():
     logger.debug("scheduler heartbeat")
 
 
+def _note_event(event):
+    """APScheduler listener for the non-completion events: submitted, missed,
+    max-instances. A job that is submitted and never completes is a hung job."""
+    try:
+        code = getattr(event, "code", None)
+        now = datetime.now(timezone.utc)
+        from apscheduler.events import EVENT_JOB_SUBMITTED, EVENT_JOB_MISSED, EVENT_JOB_MAX_INSTANCES
+        kind = {EVENT_JOB_SUBMITTED: "submitted", EVENT_JOB_MISSED: "missed",
+                EVENT_JOB_MAX_INSTANCES: "max_instances"}.get(code, str(code))
+        if kind == "submitted":
+            _IN_FLIGHT[event.job_id] = now
+        _EVENTS.append({"at": now.strftime("%H:%M:%S"), "job": event.job_id, "event": kind})
+        del _EVENTS[:-30]
+    except Exception:
+        pass
+
+
 def _stamp_job_event(event):
     """APScheduler listener: record the outcome of every job execution."""
     try:
+        _IN_FLIGHT.pop(event.job_id, None)
         _LAST_JOB_RUN[event.job_id] = {
             "at": datetime.now(timezone.utc),
             "ok": getattr(event, "exception", None) is None,
@@ -107,6 +144,28 @@ def scheduler_status():
         status["failing_jobs"] = sorted(
             job_id for job_id, info in _LAST_JOB_RUN.items() if not info["ok"]
         )
+        # Diagnostics: what is the scheduler actually doing right now.
+        try:
+            diag = {"thread_alive": bool(_SCHEDULER is not None and getattr(_SCHEDULER, "_thread", None) is not None
+                                         and _SCHEDULER._thread.is_alive())}
+            diag["in_flight"] = {j: round((now - t).total_seconds()) for j, t in _IN_FLIGHT.items()}
+            diag["events"] = list(_EVENTS[-20:])
+            diag["log"] = list(_LOG_RING[-30:])
+            if _SCHEDULER is not None:
+                jobs = sorted(_SCHEDULER.get_jobs(), key=lambda j: (j.next_run_time is None, j.next_run_time))
+                diag["next_runs"] = [{"job": j.id, "at": j.next_run_time.isoformat() if j.next_run_time else None}
+                                     for j in jobs[:8]]
+                try:
+                    ex = _SCHEDULER._lookup_executor("default")
+                    pool = getattr(ex, "_pool", None)
+                    diag["pool"] = {"threads": len(getattr(pool, "_threads", []) or []),
+                                    "queued": pool._work_queue.qsize() if pool is not None else None,
+                                    "instances": {k: v for k, v in getattr(ex, "_instances", {}).items() if v}}
+                except Exception as exc:
+                    diag["pool"] = {"error": str(exc)[:120]}
+            status["diag"] = diag
+        except Exception as exc:
+            status["diag"] = {"error": str(exc)[:200]}
 
         if enabled:
             fresh = (
@@ -743,6 +802,18 @@ def init_scheduler(app):
         # Liveness plumbing for GET /api/ready (F26). Additive: it records what
         # the existing jobs do, and adds one no-op heartbeat.
         scheduler.add_listener(_stamp_job_event, EVENT_JOB_EXECUTED | EVENT_JOB_ERROR)
+        try:
+            from apscheduler.events import EVENT_JOB_SUBMITTED, EVENT_JOB_MISSED, EVENT_JOB_MAX_INSTANCES
+            scheduler.add_listener(_note_event, EVENT_JOB_SUBMITTED | EVENT_JOB_MISSED | EVENT_JOB_MAX_INSTANCES)
+            ring = _RingHandler(_LOG_RING)
+            ring.setFormatter(logging.Formatter("%(name)s: %(message)s"))
+            for name in ("apscheduler", "apscheduler.executors.default", "apscheduler.scheduler", __name__):
+                lg = logging.getLogger(name)
+                lg.addHandler(ring)
+                if lg.level == logging.NOTSET or lg.level > logging.INFO:
+                    lg.setLevel(logging.INFO)
+        except Exception:
+            logger.debug("scheduler diagnostics not attached", exc_info=True)
         scheduler.add_job(
             _readiness_heartbeat,
             "interval",
