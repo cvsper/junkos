@@ -12,13 +12,7 @@
       .then(function(r){ return r.json().then(function(j){ return {status: r.status, body: j}; }); });
   }
   function el(tag, cls, text){ var e = document.createElement(tag); if(cls) e.className = cls; if(text != null) e.textContent = text; return e; }
-  var st = document.createElement("style"); document.head.appendChild(st);
-  [".en-line{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;margin:-8px 0 12px;font-size:12.5px;color:var(--muted)}",
-   ".en-line b{font-family:var(--display);font-weight:700;color:var(--ink)}",
-   ".en-line .star{color:#F5B301}.en-line .open{color:var(--ok);font-family:var(--display);font-weight:700}.en-line .closed{color:#FF7A5C;font-family:var(--display);font-weight:700}",
-   ".en-line a{color:#7FB8FF;text-decoration:none}.en-line a:hover{text-decoration:underline}",
-   ".en-line.dim{color:var(--faint)}"
-  ].forEach(function(r){ try { st.sheet.insertRule(r, st.sheet.cssRules.length); } catch(e){} });
+    (function(){ if(document.querySelector('link[href^="/static/desk-enrich.css"]')) return; var l = document.createElement("link"); l.rel = "stylesheet"; l.href = "/static/desk-enrich.css?v=1"; document.head.appendChild(l); })();
 
   var line = null, lastKey = "";
   function ensure(){
@@ -39,7 +33,7 @@
     if(d.hours_today) l.appendChild(el("span", null, d.hours_today.replace(/^[A-Za-z]+: /, "Today ")));
     if(d.status && d.status !== "OPERATIONAL") l.appendChild(el("span", "closed", d.status.replace(/_/g, " ").toLowerCase()));
     if(d.type) l.appendChild(el("span", null, d.type));
-    if(d.website){ var a = el("a", null, d.website.replace(/^https?:\/\//, "").replace(/\/$/, "")); a.href = d.website; a.target = "_blank"; a.rel = "noopener"; l.appendChild(a); }
+    if(d.website){ var host = d.website.replace(/^https?:\/\//, "").replace(/^www\./, "").split(/[\/?#]/)[0]; var a = el("a", null, host || "Website"); a.href = d.website; a.title = d.website; a.target = "_blank"; a.rel = "noopener"; l.appendChild(a); }
     if(d.maps){ var m = el("a", null, "Maps"); m.href = d.maps; m.target = "_blank"; m.rel = "noopener"; l.appendChild(m); }
     l.hidden = false;
   }

@@ -600,7 +600,7 @@ MANAGER_HTML = r"""<!doctype html>
   </section>
 </div>
 <script src="/static/manager.js?v=1"></script>
-<script src="/static/manager-pay.js?v=1"></script>
+<script src="/static/manager-pay.js?v=2"></script>
 </body>
 </html>
 """

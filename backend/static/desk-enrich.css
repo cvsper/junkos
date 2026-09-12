@@ -1,0 +1,9 @@
+/* desk-enrich — moved out of the script: the desk's CSP is style-src 'self', so a script-made <style> never applied. */
+.en-line{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;margin:-8px 0 12px;font-size:12.5px;color:var(--muted)}
+.en-line b{font-family:var(--display);font-weight:700;color:var(--ink)}
+.en-line .star{color:#F5B301}.en-line .open{color:var(--ok);font-family:var(--display);font-weight:700}.en-line .closed{color:#FF7A5C;font-family:var(--display);font-weight:700}
+.en-line a{color:#7FB8FF;text-decoration:none}.en-line a:hover{text-decoration:underline}
+.en-line.dim{color:var(--faint)}
+.en-line{min-width:0;overflow-wrap:anywhere}
+.en-line > *{white-space:nowrap}
+.en-line a{max-width:100%;overflow:hidden;text-overflow:ellipsis}

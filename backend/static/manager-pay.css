@@ -1,0 +1,24 @@
+/* manager-pay — moved out of the script: the desk's CSP is style-src 'self', so a script-made <style> never applied. */
+.pay-sum{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:baseline;margin:0 0 12px;font-size:13px;color:var(--muted)}
+.pay-sum b{font-family:var(--display);font-weight:800;font-size:22px;color:var(--ink)}
+.pay-sum .ok{color:var(--ok);font-family:var(--display);font-weight:700}.pay-sum .bad{color:#FF7A5C;font-family:var(--display);font-weight:700}
+.pay-h{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px 14px;padding:12px 0 8px;border-top:1px solid var(--line)}
+.pay-h:first-of-type{border-top:0}
+.pay-h .who{font-family:var(--display);font-weight:800;font-size:15px;color:var(--ink)}
+.pay-h .who small{font-weight:600;font-size:12px;color:var(--faint);margin-left:8px}
+.pay-h .amt{font-family:var(--display);font-weight:800;font-size:18px;color:var(--ink)}
+.pay-h .amt small{font-size:11px;color:var(--faint);font-weight:600;margin-left:6px}
+.pay-job{display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center;padding:7px 0 7px 12px;border-left:2px solid var(--line);margin:0 0 6px;font-size:13px;color:var(--muted)}
+.pay-job .l b{color:var(--ink);font-family:var(--display);font-weight:700}
+.pay-job .l .memo{display:block;font-size:12px;color:var(--faint);margin-top:2px;word-break:break-word}
+.pay-job .l .memo code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;color:var(--muted);background:var(--raise);padding:1px 5px;border-radius:5px}
+.pay-job.today .l b:after{content:' · today';color:var(--ok);font-size:11px}
+.pay-act{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.pay-btn{font-family:var(--display);font-weight:800;font-size:12.5px;color:#0B0E12;background:var(--ok);border:0;border-radius:9px;padding:8px 12px;cursor:pointer;white-space:nowrap}
+.pay-btn:disabled{opacity:.5;cursor:default}
+.pay-btn.alt{background:var(--raise);color:var(--ink);border:1px solid var(--line)}
+.pay-btn.copy{background:transparent;color:var(--muted);border:1px solid var(--line);font-weight:700}
+.pay-sel{font:inherit;font-size:12.5px;color:var(--ink);background:var(--raise);border:1px solid var(--line);border-radius:9px;padding:7px 8px}
+.pay-empty{padding:14px 0;font-size:13.5px;color:var(--muted)}.pay-empty b{color:var(--ok);font-family:var(--display)}
+.pay-msg{font-size:12px;color:var(--faint);margin:6px 0 0}
+@media(max-width:640px){.pay-job{grid-template-columns:1fr}.pay-act{justify-content:flex-start}}

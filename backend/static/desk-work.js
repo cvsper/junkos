@@ -43,45 +43,7 @@
     return Math.round(h / 24) + " days";
   }
 
-  var st = document.createElement("style"); document.head.appendChild(st);
-  [".wq-tab{position:fixed;left:14px;bottom:14px;z-index:60;font-family:var(--display);font-weight:800;font-size:13px;",
-   "  color:var(--ink);background:var(--raise);border:1px solid var(--line);border-radius:999px;padding:11px 16px;",
-   "  cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.35);display:flex;align-items:center;gap:8px}",
-   ".wq-tab.hot{background:#FF6A2C;color:#fff;border-color:#FF6A2C}",
-   ".wq-tab .n{font-size:12px;background:rgba(0,0,0,.28);border-radius:999px;padding:2px 7px}",
-   ".wq-wrap{position:fixed;inset:0;z-index:61;background:rgba(5,7,10,.72);display:flex;align-items:flex-end;justify-content:center}",
-   ".wq-wrap[hidden]{display:none}",
-   ".wq{width:100%;max-width:520px;background:var(--bg,#0F1319);border:1px solid var(--line);",
-   "  border-radius:18px 18px 0 0;padding:16px 16px 20px;max-height:92vh;overflow:auto}",
-   "@media(min-width:700px){.wq-wrap{align-items:center}.wq{border-radius:18px}}",
-   ".wq-h{display:flex;justify-content:space-between;align-items:center;margin:0 0 4px}",
-   ".wq-h h3{margin:0;font-family:var(--display);font-weight:800;font-size:17px;color:var(--ink)}",
-   ".wq-x{background:transparent;border:0;color:var(--muted);font-size:22px;line-height:1;cursor:pointer;padding:0 4px}",
-   ".wq-sub{font-size:12px;color:var(--faint);margin:0 0 12px}",
-   ".wq-i{border-top:1px solid var(--line);padding:12px 0}",
-   ".wq-i:first-of-type{border-top:0}",
-   ".wq-i.mine{background:rgba(61,214,140,.05);margin:0 -8px;padding-left:8px;padding-right:8px;border-radius:10px}",
-   ".wq-top{display:flex;justify-content:space-between;gap:10px;align-items:baseline}",
-   ".wq-t{font-family:var(--display);font-weight:800;font-size:14.5px;color:var(--ink)}",
-   ".wq-age{font-size:11.5px;color:var(--faint);white-space:nowrap}",
-   ".wq-age.old{color:#FF7A5C}",
-   ".wq-d{font-size:13px;color:var(--muted);margin:3px 0 0}",
-   ".wq-why{font-size:12px;color:var(--faint);margin:4px 0 0;line-height:1.45}",
-   ".wq-who{font-size:11.5px;color:var(--ok);font-family:var(--display);font-weight:700;margin:5px 0 0}",
-   ".wq-who.stale{color:#F5B301}",
-   ".wq-act{display:flex;gap:6px;flex-wrap:wrap;margin:9px 0 0}",
-   ".wq-b{font-family:var(--display);font-weight:800;font-size:12.5px;border-radius:9px;padding:8px 12px;cursor:pointer;",
-   "  background:var(--raise);color:var(--ink);border:1px solid var(--line);white-space:nowrap}",
-   ".wq-b.go{background:var(--ok);color:#0B0E12;border-color:var(--ok)}",
-   ".wq-b:disabled{opacity:.45;cursor:default}",
-   ".wq-note{width:100%;font:inherit;font-size:13px;color:var(--ink);background:var(--raise);border:1px solid var(--line);",
-   "  border-radius:9px;padding:8px 10px;margin:8px 0 0}",
-   ".wq-empty{padding:22px 4px;text-align:center;font-size:14px;color:var(--muted)}",
-   ".wq-empty b{display:block;font-family:var(--display);font-size:16px;color:var(--ok);margin:0 0 4px}",
-   ".wq-msg{font-size:12.5px;margin:8px 0 0;min-height:16px}",
-   ".wq-msg.err{color:#FF7A5C}.wq-msg.ok{color:var(--ok)}",
-   ".wq-warn{font-size:11.5px;color:#F5B301;margin:6px 0 0}"
-  ].forEach(function(r){ try { st.sheet.insertRule(r, st.sheet.cssRules.length); } catch(e){} });
+    (function(){ if(document.querySelector('link[href^="/static/desk-work.css"]')) return; var l = document.createElement("link"); l.rel = "stylesheet"; l.href = "/static/desk-work.css?v=1"; document.head.appendChild(l); })();
 
   var tab = el("button", "wq-tab"); tab.type = "button";
   tab.appendChild(el("span", null, "Work"));
@@ -112,7 +74,7 @@
     if(line && !line.hidden){
       var r = line.getBoundingClientRect();
       var isBottomBar = r.bottom >= window.innerHeight - 2 && r.height > 0 &&
-                        r.height < window.innerHeight * 0.4 && r.width > window.innerWidth * 0.6;
+                        r.height < window.innerHeight * 0.65 && r.width > window.innerWidth * 0.6;
       if(isBottomBar) h = r.height;
     }
     tab.style.bottom = (h + 14) + "px";
