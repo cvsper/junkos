@@ -49,7 +49,13 @@
   tab.appendChild(el("span", null, "Work"));
   var badge = el("span", "n", "0"); tab.appendChild(badge);
   tab.title = "Everything waiting on a person right now";
-  document.body.appendChild(tab);
+  var dock = window.__deskDock;
+  if(dock){
+    dock.add({id: "work", label: "Work", title: tab.title, onClick: function(){ open(); },
+              icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5zm2 0v9h3.5a1 1 0 0 1 .9.55A3 3 0 0 0 12 16a3 3 0 0 0 2.6-1.45.99.99 0 0 1 .9-.55H19V5H5z"/></svg>'});
+  } else {
+    document.body.appendChild(tab);
+  }
 
   var wrap = el("div", "wq-wrap"); wrap.hidden = true;
   var panel = el("div", "wq");
@@ -83,6 +89,7 @@
   function paint(){
     badge.textContent = queue ? String(queue.total) : "0";
     tab.classList.toggle("hot", !!(queue && queue.unclaimed > 0));
+    if(window.__deskDock) window.__deskDock.setBadge("work", queue ? queue.total : 0, !!(queue && queue.unclaimed > 0));
     if(wrap.hidden) return;
     list.textContent = "";
     if(!queue){ sub.textContent = "Loading…"; return; }

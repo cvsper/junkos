@@ -1,0 +1,51 @@
+/* Desk dock — the expand-menu that holds Work, Leads and Dial. */
+.dk{position:fixed;right:14px;bottom:14px;z-index:60;width:44px;height:44px}
+.dk-pill{position:absolute;bottom:0;right:0;display:inline-flex;flex-direction:column;align-items:stretch;gap:0;padding:0;
+  background:var(--raise,#1A2029);color:var(--ink,#F4F6F8);border:1px solid rgba(244,246,248,.14);border-radius:999px;
+  box-shadow:0 10px 28px rgba(0,0,0,.45),0 0 0 1px rgba(255,255,255,.04) inset;overflow:hidden;
+  transition:border-radius .28s cubic-bezier(.2,.8,.2,1),padding .28s cubic-bezier(.2,.8,.2,1),gap .28s cubic-bezier(.2,.8,.2,1),background .2s}
+.dk.is-open .dk-pill{border-radius:22px;padding:6px;gap:4px;background:var(--surface,#141922)}
+.dk-trigger{position:relative;width:44px;height:44px;flex:none;align-self:flex-end;display:grid;place-items:center;border:0;border-radius:999px;
+  background:var(--ok,#3DD68C);color:#0B0E12;cursor:pointer;padding:0;-webkit-tap-highlight-color:transparent;
+  transition:background .2s,transform .12s}
+.dk-trigger:active{transform:scale(.95)}
+.dk-trigger:focus-visible{outline:2px solid var(--accent,#FF6A2C);outline-offset:2px}
+.dk.is-open .dk-trigger{width:36px;height:36px;margin:2px 2px 2px auto;background:transparent;color:var(--ink,#F4F6F8)}
+.dk.is-open .dk-trigger:hover{background:rgba(244,246,248,.08)}
+.dk-tspan{display:flex;align-items:center;justify-content:center;transition:transform .32s cubic-bezier(.2,.8,.2,1)}
+.dk-tspan svg{width:20px;height:20px;fill:currentColor}
+.dk.is-open .dk-tspan{transform:rotate(45deg)}
+.dk.has-hot .dk-trigger{background:var(--accent,#FF6A2C);color:#fff}
+.dk.is-live .dk-trigger{background:var(--accent,#FF6A2C);color:#fff}
+.dk.is-live .dk-tspan svg{animation:dk-ring 1.4s ease-in-out infinite}
+@keyframes dk-ring{0%,100%{transform:rotate(0)}20%{transform:rotate(-12deg)}40%{transform:rotate(10deg)}60%{transform:rotate(-6deg)}80%{transform:rotate(4deg)}}
+.dk.is-open.is-live .dk-tspan svg{animation:none}
+.dk-tbadge{position:absolute;top:-6px;right:-6px;z-index:2;min-width:20px;height:20px;padding:0 6px;border-radius:999px;
+  background:#0B0E12;color:var(--ink,#F4F6F8);font:800 11.5px/20px var(--display,system-ui);text-align:center;
+  border:2px solid var(--raise,#1A2029);box-sizing:border-box}
+.dk.has-hot .dk-tbadge{background:var(--accent,#FF6A2C);color:#fff;border-color:var(--raise,#1A2029)}
+.dk.is-open .dk-tbadge{display:none}
+.dk-tbadge[hidden]{display:none}
+
+/* items expand upward from the trigger; stagger set inline per item */
+.dk-items{display:flex;flex-direction:column;gap:4px}
+.dk:not(.is-open) .dk-items{width:0;height:0;overflow:hidden}
+.dk-item{display:flex;align-items:center;gap:10px;padding:9px 12px 9px 10px;border:0;border-radius:14px;background:transparent;
+  color:var(--muted,rgba(244,246,248,.62));font:800 13.5px/1 var(--display,system-ui);cursor:pointer;white-space:nowrap;text-align:left;
+  -webkit-tap-highlight-color:transparent;opacity:0;transform:scale(.7);pointer-events:none;
+  transition:opacity .22s cubic-bezier(.2,.8,.2,1),transform .28s cubic-bezier(.2,.8,.2,1),background .15s,color .15s;
+  height:0;padding-top:0;padding-bottom:0;overflow:hidden}
+.dk.is-open .dk-item{opacity:1;transform:none;pointer-events:auto;height:auto;padding-top:9px;padding-bottom:9px;overflow:visible}
+.dk-item:hover,.dk-item:active{background:rgba(244,246,248,.08);color:var(--ink,#F4F6F8)}
+.dk-item:focus-visible{outline:2px solid var(--accent,#FF6A2C);outline-offset:-2px}
+.dk-ic{width:20px;height:20px;display:grid;place-items:center;flex:none}
+.dk-ic svg{width:18px;height:18px;fill:currentColor}
+.dk-lbl{flex:1}
+.dk-n{min-width:22px;padding:2px 7px;border-radius:999px;background:rgba(244,246,248,.1);color:var(--ink,#F4F6F8);font-size:11.5px;text-align:center}
+.dk-n[hidden]{display:none}
+.dk-item.hot{color:var(--ink,#F4F6F8)}
+.dk-item.hot .dk-n{background:var(--accent,#FF6A2C);color:#fff}
+.dk-item.live{color:var(--ink,#F4F6F8)}
+.dk-item.live .dk-ic{color:var(--ok,#3DD68C)}
+.dk-item[data-id="dial"] .dk-ic{color:var(--ok,#3DD68C)}
+@media (prefers-reduced-motion:reduce){.dk-pill,.dk-item,.dk-tspan{transition:none}.dk.is-live .dk-tspan svg{animation:none}}

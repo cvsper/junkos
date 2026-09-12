@@ -73,7 +73,12 @@
   tab.innerHTML = PHONE_SVG;
   var tabLabel = el("span", null, "Dial"); tab.appendChild(tabLabel);
   tab.title = "Dial any number, or send an extension while you're connected";
-  document.body.appendChild(tab);
+  var dock = window.__deskDock;
+  if(dock){
+    dock.add({id: "dial", label: "Dial", title: tab.title, icon: PHONE_SVG, onClick: function(){ open(); }});
+  } else {
+    document.body.appendChild(tab);
+  }
 
   // The line panel is pinned to the bottom and holds real buttons (Replies,
   // the collapse chevron). A fixed tab at bottom:14px sat on top of them, so
@@ -300,6 +305,7 @@
     live = !!(e.detail && e.detail.live);
     if(live && !wasLive){ sentDigits = ""; tab.classList.add("live"); tabLabel.textContent = "Keypad"; }
     if(!live && wasLive){ tab.classList.remove("live"); tabLabel.textContent = "Dial"; }
+    if(window.__deskDock){ window.__deskDock.setLive("dial", live); window.__deskDock.setLabel("dial", live ? "Keypad" : "Dial"); }
     if(!wrap.hidden) render();
   });
 

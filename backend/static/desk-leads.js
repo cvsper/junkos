@@ -40,7 +40,13 @@
   tab.appendChild(el("span", null, "Leads"));
   var badge = el("span", "n", "0"); tab.appendChild(badge);
   tab.title = "Every incoming customer lead, every channel";
-  document.body.appendChild(tab);
+  var dock = window.__deskDock;
+  if(dock){
+    dock.add({id: "leads", label: "Leads", title: tab.title, onClick: function(){ open(); },
+              icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l2.4 5.6L20 9l-4.3 4 1.2 6L12 16l-4.9 3 1.2-6L4 9l5.6-1.4L12 2z"/></svg>'});
+  } else {
+    document.body.appendChild(tab);
+  }
 
   var wrap = el("div", "ld-wrap"); wrap.hidden = true;
   var panel = el("div", "ld");
@@ -154,6 +160,7 @@
   function paint(){
     badge.textContent = data ? String(data.untouched) : "0";
     tab.classList.toggle("hot", !!(data && data.untouched > 0));
+    if(window.__deskDock) window.__deskDock.setBadge("leads", data ? data.untouched : 0, !!(data && data.untouched > 0));
     if(wrap.hidden) return;
     list.textContent = "";
     if(!data){ sub.textContent = "Loading…"; return; }
