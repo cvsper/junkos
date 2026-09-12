@@ -126,6 +126,7 @@ def inbound_sms():
     # Call Desk thread: if this sender is a known prospect (Tracy's B2B list),
     # mirror the text into the desk inbox. Observe-only — routing below is
     # unchanged, and customer texts never match a prospect.
+    _p = None
     try:
         from desk_line import match_prospect, record_inbound_text, _digits as _dl_digits
         _p = match_prospect(_dl_digits(from_phone))
@@ -135,6 +136,19 @@ def inbound_sms():
                                 sid=request.form.get("MessageSid"), prospect=_p)
     except Exception:
         logger.exception("desk-thread mirror failed; continuing")
+
+    # --- Loop guard (9/11 incident: Maya's bot traded ~1,100 texts with
+    # apartment-office auto-responders). Auto-responder text gets silence, and
+    # a known desk prospect is Tracy's conversation — the text is already in
+    # the desk thread above; the bot never answers it. STOP from a prospect is
+    # registered by record_inbound_text and Twilio's own opt-out handling. ---
+    from sms_guard import looks_automated, reply_allowed, note_reply
+    if num_media == 0 and looks_automated(body):
+        logger.info("Inbound SMS from ...%s looks automated — no reply: %r", from_phone[-4:], body[:80])
+        return _empty_twiml()
+    if _p is not None and num_media == 0:
+        logger.info("Inbound SMS from prospect ...%s left to the desk — no bot reply", from_phone[-4:])
+        return _empty_twiml()
 
     # --- Hauler self-signup + opt-out (Tier 1-A): runs before everything so a
     # "JOBS" text becomes supply instead of getting auto-quoted, and a "STOP"
@@ -241,7 +255,12 @@ def inbound_sms():
                 "you'll get a quote in about 30 seconds."
             )
 
-    # No photo — forward to Vapi for conversational SMS handling
+    # No photo — forward to Vapi for conversational SMS handling.
+    # Rate-capped per sender and overall so an unrecognised loop dies fast.
+    _sender_digits = "".join(ch for ch in from_phone if ch.isdigit())[-10:]
+    if not reply_allowed(_sender_digits):
+        return _empty_twiml()
+    note_reply(_sender_digits)
     vapi_url = os.environ.get("VAPI_SMS_WEBHOOK", "https://api.vapi.ai/twilio/sms")
     try:
         import requests as http_requests

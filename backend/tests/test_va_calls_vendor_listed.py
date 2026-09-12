@@ -93,5 +93,5 @@ def test_vendor_listed_sends_text_when_asked(client, prospect):
     assert r.status_code == 200
     assert r.get_json()["texted"] is True
     sent_to, body = send.call_args[0]
-    assert sent_to == prospect.phone
+    assert "".join(ch for ch in sent_to if ch.isdigit())[-10:] == prospect.phone_digits
     assert "(561) 944-1636" in body

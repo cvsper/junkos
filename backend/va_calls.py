@@ -183,7 +183,9 @@ def followup_text_for(outcome, prospect, va_name):
             "cleanout comes up, call or text (561) 944-1636 any time, day or "
             "night — upfront price, same-day available. Reply STOP to opt out."
         ).format(greet=greet, va=va)
-    if outcome in ("voicemail", "no_answer"):
+    # no_answer gets no text (sevs, 9/12): a text after every unanswered dial
+    # was 75 texts a session, and office lines answered with auto-responders.
+    if outcome == "voicemail":
         return (
             "{greet} it's {va} with Umuve (just tried you). We do same-day "
             "junk & cleanout pickups for Palm Beach County businesses at "
@@ -232,8 +234,11 @@ def maybe_send_followup_text(prospect, outcome, va_name):
     if prospect.last_texted_at and \
             now_naive - prospect.last_texted_at < timedelta(hours=TEXT_DEDUPE_HOURS):
         return False, "already texted in the last day"
-    import sms_service
-    sid = _run(lambda: sms_service.send_sms(prospect.phone, body))
+    # From the DESK line, not the main toll-free number: replies land in
+    # Tracy's desk thread instead of Maya's SMS bot (the 9/11 auto-responder
+    # loop). send_desk_text logs the thread row and stamps last_texted_at.
+    from desk_line import send_desk_text
+    sid = send_desk_text(prospect.phone, body, prospect=prospect, va_name=va_name)
     if not sid:
         return False, "text didn't go through"
     prospect.last_texted_at = now_naive
