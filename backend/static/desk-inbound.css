@@ -59,7 +59,7 @@
 .in-quote{border:1px solid rgba(var(--ok-rgb),.3);border-radius:var(--r-md);padding:12px 14px;background:rgba(var(--ok-rgb),.08)}
 .in-qt{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
 .in-ql{font-family:var(--body);font-weight:500;font-size:12.5px;letter-spacing:0;text-transform:none;color:var(--ok)}
-.in-total{font-family:var(--display);font-weight:400;font-size:clamp(30px,7vw,38px);letter-spacing:-.01em;color:var(--ink);font-variant-numeric:tabular-nums}
+.in-total{font-family:var(--display);font-weight:700;font-size:clamp(30px,7vw,38px);letter-spacing:-.02em;color:var(--ink);font-variant-numeric:tabular-nums}
 .in-qb{margin-top:6px;font-size:13px;color:var(--muted);display:flex;flex-direction:column;gap:3px}
 .in-ql2{display:flex;justify-content:space-between;gap:10px;text-transform:capitalize}
 .in-qx{font-size:12px;color:var(--muted);text-transform:none}

@@ -5,17 +5,17 @@ body.cl-locked{overflow:hidden}
 .cl-card{width:100%;max-width:680px;margin:auto;background:var(--glass-strong);border:1px solid var(--glass-border);border-radius:var(--r-xl);box-shadow:var(--shadow-panel);-webkit-backdrop-filter:blur(var(--blur)) saturate(1.2);backdrop-filter:blur(var(--blur)) saturate(1.2);padding:26px 24px 28px}
 .cl-head{margin-bottom:14px}
 .cl-eyebrow{font-family:var(--body);font-weight:500;font-size:13px;letter-spacing:0;text-transform:none;color:var(--accent);margin-bottom:6px}
-.cl-title{font-family:var(--display);font-weight:400;font-size:30px;line-height:1.08;letter-spacing:-.01em;margin:0 0 8px;color:var(--ink)}
+.cl-title{font-family:var(--display);font-weight:700;font-size:30px;line-height:1.08;letter-spacing:-.02em;margin:0 0 8px;color:var(--ink)}
 .cl-meta{color:var(--muted);font-size:13px}
 .cl-summary{color:var(--ink);font-size:15px;line-height:1.5;margin:12px 0 0}
 .cl-dims{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:14px 0 6px}
 .cl-dim{background:var(--raise);border:1px solid var(--glass-border);border-radius:var(--r-md);padding:10px 6px;text-align:center}
-.cl-dim b{display:block;font-family:var(--display);font-weight:400;font-size:22px;letter-spacing:-.01em;color:var(--ink);font-variant-numeric:tabular-nums}
+.cl-dim b{display:block;font-family:var(--display);font-weight:700;font-size:22px;letter-spacing:-.02em;color:var(--ink);font-variant-numeric:tabular-nums}
 .cl-dim span{display:block;font-family:var(--body);font-weight:500;font-size:11px;color:var(--muted);text-transform:none;letter-spacing:0;margin-top:3px}
 .cl-dim.is-weak{border-color:var(--accent)}
 .cl-dim.is-weak b{color:var(--accent)}
 .cl-sec{margin-top:20px;padding-top:16px;border-top:1px solid var(--line)}
-.cl-sec h3{font-family:var(--display);font-weight:400;font-size:19px;letter-spacing:-.01em;margin:0 0 10px;color:var(--ink)}
+.cl-sec h3{font-family:var(--display);font-weight:700;font-size:19px;letter-spacing:-.02em;margin:0 0 10px;color:var(--ink)}
 .cl-item{margin:0 0 14px;padding-left:12px;border-left:3px solid var(--line)}
 .cl-item.ok{border-left-color:var(--ok)}
 .cl-item.fix{border-left-color:var(--accent)}

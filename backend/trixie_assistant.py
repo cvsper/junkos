@@ -249,7 +249,7 @@ COACH_HTML = r"""<!doctype html>
 <meta name="robots" content="noindex, nofollow" />
 <title>Ask Umuve — Call Coach</title>
 <meta name="theme-color" content="#E4E5E9" />
-<link rel="stylesheet" href="/va/app.css?v=6" />
+<link rel="stylesheet" href="/va/app.css?v=7" />
 <link rel="stylesheet" href="/static/desk-shell.css?v=5" />
 <script src="/static/desk-shell.js?v=2" defer></script>
 <link rel="stylesheet" href="/static/desk-gate.css?v=2" />
@@ -313,7 +313,7 @@ COACH_CSS = r"""/* Chat-specific layer — tokens, base, gate, bar come from /va
 .gate{justify-content:flex-start}
 .bar{align-items:center}
 .bar-id{flex:1;min-width:0}
-.bar-title{font-family:var(--display);font-weight:400;font-size:19px;letter-spacing:-.01em;color:var(--ink)}
+.bar-title{font-family:var(--display);font-weight:700;font-size:19px;letter-spacing:-.02em;color:var(--ink)}
 .bar-sub{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:12.5px;margin-top:1px;margin-left:0;text-align:left}
 .dot{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px rgba(var(--ok-rgb),.16)}
 .bar-btn{font-family:var(--body);font-weight:600;font-size:13.5px;letter-spacing:0;color:var(--ink);background:var(--raise);border:1px solid var(--glass-border);border-radius:var(--r-pill);padding:8px 14px;cursor:pointer;box-shadow:var(--shadow-soft);transition:background .15s,border-color .15s,color .15s}

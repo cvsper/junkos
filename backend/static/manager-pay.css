@@ -1,13 +1,13 @@
 /* manager-pay — moved out of the script: the desk's CSP is style-src 'self', so a script-made <style> never applied.
    Lives inside a .mg-sec glass panel; rows are ruled, buttons are pills. */
 .pay-sum{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:baseline;margin:0 0 12px;font-size:13px;color:var(--muted)}
-.pay-sum b{font-family:var(--display);font-weight:400;font-size:24px;letter-spacing:-.01em;color:var(--ink);font-variant-numeric:tabular-nums}
+.pay-sum b{font-family:var(--display);font-weight:700;font-size:24px;letter-spacing:-.02em;color:var(--ink);font-variant-numeric:tabular-nums}
 .pay-sum .ok{color:var(--ok);font-family:var(--body);font-weight:600}.pay-sum .bad{color:var(--danger);font-family:var(--body);font-weight:600}
 .pay-h{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px 14px;padding:12px 0 8px;border-top:1px solid var(--line)}
 .pay-h:first-of-type{border-top:0}
-.pay-h .who{font-family:var(--display);font-weight:400;font-size:18px;letter-spacing:-.01em;color:var(--ink)}
+.pay-h .who{font-family:var(--display);font-weight:700;font-size:18px;letter-spacing:-.02em;color:var(--ink)}
 .pay-h .who small{font-family:var(--body);font-weight:500;font-size:12px;letter-spacing:0;color:var(--muted);margin-left:8px}
-.pay-h .amt{font-family:var(--display);font-weight:400;font-size:20px;letter-spacing:-.01em;color:var(--ink);font-variant-numeric:tabular-nums}
+.pay-h .amt{font-family:var(--display);font-weight:700;font-size:20px;letter-spacing:-.02em;color:var(--ink);font-variant-numeric:tabular-nums}
 .pay-h .amt small{font-family:var(--body);font-size:11.5px;color:var(--muted);font-weight:500;margin-left:6px}
 .pay-job{display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center;padding:7px 0 7px 12px;border-left:2px solid var(--line);margin:0 0 6px;font-size:13px;color:var(--muted)}
 .pay-job .l b{color:var(--ink);font-family:var(--body);font-weight:600}

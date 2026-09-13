@@ -421,7 +421,7 @@ DISPATCH_HTML = r"""<!doctype html>
 <meta name="robots" content="noindex, nofollow" />
 <meta name="theme-color" content="#E4E5E9" />
 <title>Umuve — Dispatch Desk</title>
-<link rel="stylesheet" href="/va/app.css?v=6" />
+<link rel="stylesheet" href="/va/app.css?v=7" />
 <link rel="stylesheet" href="/static/desk-shell.css?v=5" />
 <script src="/static/desk-shell.js?v=2" defer></script>
 <link rel="stylesheet" href="/static/desk-gate.css?v=2" />
@@ -544,12 +544,12 @@ DISPATCH_CSS = r"""/* Dispatch Desk — layers over /va/app.css tokens (frosted 
   box-shadow:var(--shadow-panel);-webkit-backdrop-filter:blur(var(--blur)) saturate(1.2);
   backdrop-filter:blur(var(--blur)) saturate(1.2);padding:16px 16px 14px;margin-bottom:12px}
 .jobtop{display:flex;align-items:baseline;gap:10px;margin-bottom:6px}
-.jobprice{font-family:var(--display);font-weight:400;font-size:clamp(26px,7.5vw,34px);
-  letter-spacing:-.01em;font-variant-numeric:tabular-nums;color:var(--ink)}
+.jobprice{font-family:var(--display);font-weight:700;font-size:clamp(26px,7.5vw,34px);
+  letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:var(--ink)}
 .jobcode{font-family:var(--body);font-weight:500;font-size:12px;letter-spacing:0;
   text-transform:none;color:var(--muted);margin-left:auto;font-variant-numeric:tabular-nums}
-.jobaddr{font-family:var(--display);font-weight:400;font-size:clamp(18px,5vw,22px);
-  letter-spacing:-.01em;line-height:1.15;margin:0 0 10px;color:var(--ink)}
+.jobaddr{font-family:var(--display);font-weight:700;font-size:clamp(18px,5vw,22px);
+  letter-spacing:-.02em;line-height:1.15;margin:0 0 10px;color:var(--ink)}
 .jobchips{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:10px}
 .jchip{font-family:var(--body);font-weight:600;font-size:12px;letter-spacing:0;
   text-transform:none;color:var(--muted);background:var(--raise);
@@ -603,7 +603,7 @@ DISPATCH_CSS = r"""/* Dispatch Desk — layers over /va/app.css tokens (frosted 
   -webkit-backdrop-filter:blur(var(--blur)) saturate(1.2);backdrop-filter:blur(var(--blur)) saturate(1.2);
   padding:14px;margin-bottom:10px}
 .haulmain{min-width:0;flex:1}
-.haulname{font-family:var(--display);font-weight:400;font-size:19px;letter-spacing:-.01em;
+.haulname{font-family:var(--display);font-weight:700;font-size:19px;letter-spacing:-.02em;
   margin-bottom:3px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;color:var(--ink)}
 .hchip{font-family:var(--body);font-weight:600;font-size:11px;letter-spacing:0;
   text-transform:none;border-radius:var(--r-pill);padding:3px 8px;background:var(--raise);

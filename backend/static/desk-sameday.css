@@ -3,7 +3,7 @@
 .sd-cap.green{border-color:rgba(var(--ok-rgb),.5);color:var(--ink)}.sd-cap.amber{border-color:rgba(var(--warn-rgb),.5);color:var(--ink)}.sd-cap.red{border-color:rgba(var(--danger-rgb),.5);background:rgba(var(--danger-rgb),.06);color:var(--danger)}
 .sd-cap b{font-family:var(--body);font-weight:600}
 .sd-wave{margin:10px 0;padding:12px;border-radius:var(--r-md);border:1px solid rgba(var(--ok-rgb),.4);background:rgba(var(--ok-rgb),.08)}
-.sd-wave h4{margin:0 0 6px;font-family:var(--display);font-weight:400;font-size:18px;letter-spacing:-.01em;color:var(--ink)}
+.sd-wave h4{margin:0 0 6px;font-family:var(--display);font-weight:700;font-size:18px;letter-spacing:-.02em;color:var(--ink)}
 .sd-btn{font-family:var(--body);font-weight:600;font-size:14px;color:var(--on-dark);background:var(--dark);border:0;border-radius:var(--r-pill);padding:12px 16px;cursor:pointer;width:100%;box-shadow:var(--shadow-soft);transition:background .15s}
 .sd-btn:hover{background:var(--dark-press)}
 .sd-btn:focus-visible{outline:2px solid var(--ink);outline-offset:2px}

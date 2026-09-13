@@ -320,7 +320,7 @@ VA_HUB_HTML = r"""<!doctype html>
 <meta name="robots" content="noindex, nofollow" />
 <meta name="theme-color" content="#E4E5E9" />
 <title>Umuve — VA Tools</title>
-<link rel="stylesheet" href="/va/app.css?v=6" />
+<link rel="stylesheet" href="/va/app.css?v=7" />
 <link rel="stylesheet" href="/static/desk-shell.css?v=5" />
 <script src="/static/desk-shell.js?v=2" defer></script>
 <link rel="stylesheet" href="/static/desk-gate.css?v=2" />
@@ -431,7 +431,7 @@ VA_TEXT_HTML = r"""<!doctype html>
 <meta name="robots" content="noindex, nofollow" />
 <meta name="theme-color" content="#E4E5E9" />
 <title>Umuve — Send a Text</title>
-<link rel="stylesheet" href="/va/app.css?v=6" />
+<link rel="stylesheet" href="/va/app.css?v=7" />
 <link rel="stylesheet" href="/static/desk-shell.css?v=5" />
 <script src="/static/desk-shell.js?v=2" defer></script>
 <link rel="stylesheet" href="/static/desk-gate.css?v=2" />
@@ -497,10 +497,9 @@ VA_TEXT_HTML = r"""<!doctype html>
 """
 
 
-VA_CSS = r"""@font-face{font-family:"Instrument Serif";font-style:normal;font-weight:400;font-display:swap;src:url(/static/fonts/instrument-serif-normal-400.woff2) format("woff2")}
-@font-face{font-family:"Instrument Serif";font-style:italic;font-weight:400;font-display:swap;src:url(/static/fonts/instrument-serif-italic-400.woff2) format("woff2")}
-@font-face{font-family:"Instrument Sans";font-style:normal;font-weight:400 700;font-display:swap;src:url(/static/fonts/instrument-sans-normal-400-700.woff2) format("woff2")}
-@font-face{font-family:"Instrument Sans";font-style:italic;font-weight:400 700;font-display:swap;src:url(/static/fonts/instrument-sans-italic-400-700.woff2) format("woff2")}
+VA_CSS = r"""@font-face{font-family:"Outfit";font-style:normal;font-weight:400 800;font-display:swap;src:url(/static/fonts/outfit-normal-400-800.woff2) format("woff2")}
+@font-face{font-family:"DM Sans";font-style:normal;font-weight:400 700;font-display:swap;src:url(/static/fonts/dm-sans-normal-400-700.woff2) format("woff2")}
+@font-face{font-family:"DM Sans";font-style:italic;font-weight:400 700;font-display:swap;src:url(/static/fonts/dm-sans-italic-400-700.woff2) format("woff2")}
 
 /* ==========================================================================
    Desk theme — frosted glass on satin grey (Sep 2026).
@@ -523,8 +522,8 @@ VA_CSS = r"""@font-face{font-family:"Instrument Serif";font-style:normal;font-we
   --r-xl:28px; --r-lg:20px; --r-md:14px; --r-pill:999px;
   --shadow-panel:0 34px 70px -44px rgba(24,26,34,.42),0 1px 0 0 rgba(255,255,255,.85) inset;
   --shadow-soft:0 12px 30px -20px rgba(24,26,34,.38);
-  --display:"Instrument Serif",Georgia,"Times New Roman",serif;
-  --body:"Instrument Sans",system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --display:"Outfit","DM Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --body:"DM Sans",system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
 }
 *{box-sizing:border-box}
 [hidden]{display:none!important}
@@ -540,11 +539,11 @@ body{margin:0;background:var(--canvas);color:var(--ink);font-family:var(--body);
 .glass-strong{background:var(--glass-strong)}
 
 /* ---------- display type: a quiet serif, sentence case ---------- */
-.display{font-family:var(--display);font-weight:400;text-transform:none;
-  font-size:clamp(46px,12vw,76px);line-height:1.02;letter-spacing:-.015em;
+.display{font-family:var(--display);font-weight:700;text-transform:none;
+  font-size:clamp(36px,9.5vw,58px);line-height:1.04;letter-spacing:-.03em;
   margin:6px 0 16px;color:var(--ink);text-wrap:balance}
 .display .ch{display:inline-block}
-.display-sm{font-size:clamp(32px,8.5vw,48px);margin:2px 0 12px}
+.display-sm{font-size:clamp(26px,7vw,38px);margin:2px 0 12px}
 .eyebrow{font-family:var(--body);font-weight:500;font-size:13px;letter-spacing:0;
   text-transform:none;color:var(--muted);margin-bottom:12px}
 
@@ -574,7 +573,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--ink);box-shadow:var(-
 .tool{flex:1;display:flex;flex-direction:column}
 .bar{display:flex;align-items:baseline;gap:12px;padding:16px 20px;
   padding-top:max(16px,env(safe-area-inset-top));border-bottom:1px solid var(--line)}
-.wordmark{font-family:var(--display);font-weight:400;font-size:22px;letter-spacing:-.01em;line-height:1}
+.wordmark{font-family:var(--display);font-weight:700;font-size:19px;letter-spacing:-.02em;line-height:1}
 .wordmark::after{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;
   background:var(--accent);margin-left:6px;vertical-align:middle;position:relative;top:-2px}
 .bar-sub{color:var(--faint);font-size:12.5px;margin-left:auto;text-align:right}
@@ -593,7 +592,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--ink);box-shadow:var(-
   background:var(--raise);color:var(--muted);border:1px solid var(--glass-border)}
 .situ:hover .situ-key{color:var(--ink)}
 .ok-key{color:var(--ink);background:var(--glass-strong)}
-.situ-t{font-family:var(--display);font-weight:400;font-size:21px;letter-spacing:-.01em;line-height:1.15}
+.situ-t{font-family:var(--display);font-weight:600;font-size:17.5px;letter-spacing:-.015em;line-height:1.2}
 .situ-d{color:var(--muted);font-size:13.5px;margin-top:3px;line-height:1.45}
 .situ-go{margin-left:auto;color:var(--faint);font-size:20px;flex:none;transition:color .15s,transform .15s}
 .situ:hover .situ-go{color:var(--ink);transform:translateX(2px)}
@@ -890,7 +889,7 @@ VA_EMAIL_HTML = r"""<!doctype html>
 <meta name="robots" content="noindex, nofollow" />
 <meta name="theme-color" content="#E4E5E9" />
 <title>Umuve — Send an Email</title>
-<link rel="stylesheet" href="/va/app.css?v=6" />
+<link rel="stylesheet" href="/va/app.css?v=7" />
 <link rel="stylesheet" href="/static/desk-shell.css?v=5" />
 <script src="/static/desk-shell.js?v=2" defer></script>
 <link rel="stylesheet" href="/static/desk-gate.css?v=2" />

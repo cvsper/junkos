@@ -1147,7 +1147,7 @@ CALLS_HTML = r"""<!doctype html>
 <meta name="robots" content="noindex, nofollow" />
 <meta name="theme-color" content="#E4E5E9" />
 <title>Umuve — Call Desk</title>
-<link rel="stylesheet" href="/va/app.css?v=6" />
+<link rel="stylesheet" href="/va/app.css?v=7" />
 <link rel="stylesheet" href="/static/desk-shell.css?v=5" />
 <script src="/static/desk-shell.js?v=2" defer></script>
 <link rel="stylesheet" href="/static/desk-gate.css?v=2" />
@@ -1470,16 +1470,16 @@ CALLS_CSS = r"""/* Call Desk — layers over /va/app.css tokens (frosted glass o
 .q-chip{display:inline-block;font-family:var(--body);font-weight:600;font-size:12px;
   letter-spacing:0;color:var(--ok);background:rgba(var(--ok-rgb),.08);border:1px solid rgba(var(--ok-rgb),.24);
   border-radius:var(--r-pill);padding:5px 11px;margin-bottom:10px}
-.co{font-family:var(--display);font-weight:400;font-size:clamp(22px,6vw,30px);
-  letter-spacing:-.01em;line-height:1.08;margin:0 0 4px;color:var(--ink)}
+.co{font-family:var(--display);font-weight:700;font-size:clamp(22px,6vw,30px);
+  letter-spacing:-.02em;line-height:1.08;margin:0 0 4px;color:var(--ink)}
 .meta{color:var(--muted);font-size:13px;margin-bottom:14px}
 .dial{display:flex;flex-direction:column;align-items:center;gap:2px;text-decoration:none;
   background:var(--raise);border:1px solid var(--glass-border);border-radius:var(--r-md);
   box-shadow:var(--shadow-soft);padding:16px 12px;margin:0 0 14px;transition:transform .06s,background .15s}
 .dial:hover{background:#fff}
 .dial:active{transform:scale(.985)}
-.dial-num{font-family:var(--display);font-weight:400;color:var(--ink);
-  font-size:clamp(28px,8.5vw,40px);letter-spacing:-.01em;font-variant-numeric:tabular-nums;line-height:1.05}
+.dial-num{font-family:var(--display);font-weight:700;color:var(--ink);
+  font-size:clamp(28px,8.5vw,40px);letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.05}
 .dial-hint{font-family:var(--body);font-weight:500;font-size:12.5px;letter-spacing:0;
   text-transform:none;color:var(--ok)}
 .factrow{display:flex;gap:12px;padding:10px 0;border-top:1px solid var(--line)}
@@ -1498,8 +1498,8 @@ CALLS_CSS = r"""/* Call Desk — layers over /va/app.css tokens (frosted glass o
 .sendinfo{border-top:1px solid var(--line);padding:12px 0 4px;margin-top:2px}
 .dial-direct{border-style:dashed;border-color:rgba(var(--info-rgb),.45);box-shadow:none;padding:10px 12px;margin-top:-6px}
 .dial-direct .dial-hint{color:var(--info)}
-.dial-num-sm{font-family:var(--display);font-weight:400;color:var(--ink);
-  font-size:clamp(19px,5.5vw,24px);letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+.dial-num-sm{font-family:var(--display);font-weight:700;color:var(--ink);
+  font-size:clamp(19px,5.5vw,24px);letter-spacing:-.02em;font-variant-numeric:tabular-nums}
 .si-status{color:var(--ok);font-size:12px;line-height:1.5;margin:2px 0 4px}
 .si-head{font-family:var(--body);font-weight:500;font-size:12.5px;letter-spacing:0;
   text-transform:none;color:var(--muted)}
@@ -1636,7 +1636,7 @@ CALLS_CSS = r"""/* Call Desk — layers over /va/app.css tokens (frosted glass o
 .ln-tools .ln-btn{flex:1 1 auto;text-align:center}
 .ln-tools .ln-call{flex:2 1 auto}
 .ln-title{min-width:0;flex:1}
-.ln-who{font-family:var(--display);font-weight:400;font-size:18px;letter-spacing:-.01em;
+.ln-who{font-family:var(--display);font-weight:700;font-size:18px;letter-spacing:-.02em;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink)}
 .ln-num{color:var(--muted);font-size:11.5px;white-space:nowrap}
 .ln-btn{position:relative;flex:none;padding:8px 14px;font-family:var(--body);font-weight:600;
@@ -1665,7 +1665,7 @@ CALLS_CSS = r"""/* Call Desk — layers over /va/app.css tokens (frosted glass o
 .msg-m{font-size:10.5px;color:var(--muted);padding:0 4px}
 .msg-rec{display:inline-block;margin-top:4px;color:var(--info);font-size:12.5px}
 .th-empty{padding:18px 6px;text-align:center}
-.th-empty-t{font-family:var(--display);font-weight:400;font-size:18px;letter-spacing:-.01em;margin-bottom:4px}
+.th-empty-t{font-family:var(--display);font-weight:700;font-size:18px;letter-spacing:-.02em;margin-bottom:4px}
 .th-empty p{color:var(--muted);font-size:12.5px;line-height:1.5;margin:0}
 .ib-head{display:flex;align-items:center;justify-content:space-between;gap:8px;
   font-family:var(--body);font-weight:500;font-size:12.5px;letter-spacing:0;
@@ -1702,7 +1702,7 @@ CALLS_CSS = r"""/* Call Desk — layers over /va/app.css tokens (frosted glass o
 .callstrip.live .cs-dot{background:var(--ok);animation:cs-pulse 1.6s ease-in-out infinite}
 @keyframes cs-pulse{0%,100%{box-shadow:0 0 0 0 rgba(var(--ok-rgb),.45)}50%{box-shadow:0 0 0 7px rgba(var(--ok-rgb),0)}}
 .cs-txt{min-width:0;flex:1}
-.cs-who{font-family:var(--display);font-weight:400;font-size:17px;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;
+.cs-who{font-family:var(--display);font-weight:700;font-size:17px;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;
   text-overflow:ellipsis;color:var(--ink)}
 .cs-state{font-size:11.5px;color:var(--muted)}
 .cs-time{font-family:var(--body);font-weight:600;font-size:13px;color:var(--muted);
@@ -1729,7 +1729,7 @@ CALLS_CSS = r"""/* Call Desk — layers over /va/app.css tokens (frosted glass o
   padding:20px 20px 18px}
 .inc-l{font-family:var(--body);font-weight:500;font-size:12.5px;letter-spacing:0;
   text-transform:none;color:var(--muted)}
-.inc-who{font-family:var(--display);font-weight:400;font-size:clamp(26px,8vw,36px);letter-spacing:-.01em;
+.inc-who{font-family:var(--display);font-weight:700;font-size:clamp(26px,8vw,36px);letter-spacing:-.02em;
   margin:6px 0 14px;font-variant-numeric:tabular-nums;color:var(--ink)}
 .inc-row{display:flex;gap:10px}
 .inc-btn{flex:1;padding:15px;font-family:var(--body);font-weight:600;font-size:15px;border-radius:var(--r-pill);
@@ -1834,7 +1834,7 @@ CALLS_CSS = r"""/* Call Desk — layers over /va/app.css tokens (frosted glass o
 .tb-tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
 .tb-tile{background:var(--raise);border:1px solid var(--glass-border);border-radius:var(--r-md);padding:10px 12px}
 .tb-k{font-family:var(--body);font-weight:500;font-size:12.5px;letter-spacing:0;text-transform:none;color:var(--muted)}
-.tb-v{font-family:var(--display);font-weight:400;font-size:clamp(20px,5vw,26px);letter-spacing:-.01em;
+.tb-v{font-family:var(--display);font-weight:700;font-size:clamp(20px,5vw,26px);letter-spacing:-.02em;
   font-variant-numeric:tabular-nums;margin-top:2px;color:var(--ink)}
 .tb-btn{width:100%;padding:14px;font-family:var(--body);font-weight:600;font-size:15px;border-radius:var(--r-pill);
   cursor:pointer;border:0;background:var(--dark);color:var(--on-dark);box-shadow:var(--shadow-soft);margin-bottom:10px;
@@ -1853,12 +1853,12 @@ CALLS_CSS = r"""/* Call Desk — layers over /va/app.css tokens (frosted glass o
   border-radius:var(--r-pill);padding:4px}
 .tb-who{font-family:var(--body);font-weight:500;font-size:12.5px;letter-spacing:0;text-transform:none;color:var(--muted);min-width:56px}
 .tb-tot{display:flex;gap:14px;align-items:baseline;padding:8px 2px;border-bottom:1px solid var(--line);font-size:13px}
-.tb-tot b{font-family:var(--display);font-weight:400;font-size:17px;letter-spacing:-.01em}
+.tb-tot b{font-family:var(--display);font-weight:700;font-size:17px;letter-spacing:-.02em}
 .tb-tot span{color:var(--muted)}
 @media (max-width:480px){.clock #clock-label{display:none}.clock{padding:0 10px}}
 /* queue panel */
 .qb-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:12px}
-.qb-t{font-family:var(--display);font-weight:400;font-size:24px;letter-spacing:-.01em;line-height:1.1}
+.qb-t{font-family:var(--display);font-weight:700;font-size:24px;letter-spacing:-.02em;line-height:1.1}
 .qb-sub{color:var(--muted);font-size:12.5px;margin-top:2px}
 .qb-tools{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
 .qb-load{display:inline-flex;align-items:center;font-family:var(--body);font-weight:600;font-size:13px;

@@ -294,13 +294,13 @@ COACH_PAGE = r"""<!doctype html>
 <meta name="robots" content="noindex, nofollow" />
 <title>Coach — Umuve desk</title>
 <meta name="theme-color" content="#E4E5E9" />
-<link rel="stylesheet" href="/va/app.css?v=6" />
+<link rel="stylesheet" href="/va/app.css?v=7" />
 <link rel="stylesheet" href="/static/desk-shell.css?v=5" />
 <script src="/static/desk-shell.js?v=2" defer></script>
 <link rel="stylesheet" href="/static/desk-gate.css?v=2" />
 <script src="/static/desk-gate.js?v=2" defer></script>
 <link rel="stylesheet" href="/static/desk-class.css?v=3" />
-<link rel="stylesheet" href="/static/coach.css?v=2" />
+<link rel="stylesheet" href="/static/coach.css?v=3" />
 </head>
 <body>
 <div id="app">
