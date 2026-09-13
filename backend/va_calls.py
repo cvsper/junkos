@@ -1149,8 +1149,8 @@ CALLS_HTML = r"""<!doctype html>
 <title>Umuve — Call Desk</title>
 <link rel="stylesheet" href="/va/app.css?v=7" />
 <link rel="stylesheet" href="/static/desk-shell.css?v=5" />
-<script src="/static/desk-shell.js?v=2" defer></script>
-<link rel="stylesheet" href="/static/desk-gate.css?v=2" />
+<script src="/static/desk-shell.js?v=3" defer></script>
+<link rel="stylesheet" href="/static/desk-gate.css?v=3" />
 <script src="/static/desk-gate.js?v=2" defer></script>
 <link rel="stylesheet" href="/va/calls.css?v=29" />
 <link rel="stylesheet" href="/static/desk-class.css?v=3" />
@@ -1160,7 +1160,7 @@ CALLS_HTML = r"""<!doctype html>
 <div id="app">
   <section id="gate" class="gate">
     <div class="gatewrap">
-      <img class="brand-hero rv" src="/static/brand-logo.png" alt="Umuve" /><div class="eyebrow rv">Internal · VA suite</div>
+      <img class="brand-hero rv" src="/static/brand-logo.png?v=2" alt="Umuve" /><div class="eyebrow rv">Internal · VA suite</div>
       <h1 class="display" id="display-gate" aria-label="Call Desk">Call&nbsp;Desk</h1>
       <p class="sub rv">One card at a time. Tap the number, make the call, tap what happened.</p>
       <form id="gate-form" autocomplete="on" class="rv">
@@ -1186,7 +1186,7 @@ CALLS_HTML = r"""<!doctype html>
   <section id="tool" class="tool" hidden>
     <header class="bar">
       <a class="back" href="/va" aria-label="Back to VA tools">←</a>
-      <div class="brand"><img class="brand-mark" src="/static/brand-logo.png" alt="" /><div class="wordmark">Call&nbsp;Desk</div></div>
+      <div class="brand"><img class="brand-mark" src="/static/brand-logo.png?v=2" alt="" /><div class="wordmark">Call&nbsp;Desk</div></div>
       <div class="bar-sub" id="daybar">—</div>
       <button class="who who-btn" id="who" type="button" hidden title="Account"></button>
       <button class="clock" id="clock-chip" type="button" aria-label="Time clock"><span class="ck-dot"></span><span id="clock-label">Clock in</span></button>

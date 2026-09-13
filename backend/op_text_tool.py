@@ -153,8 +153,8 @@ OPTEXT_HTML = r"""<!doctype html>
 <title>Umuve — Setup Link</title>
 <link rel="stylesheet" href="/va/app.css?v=7" />
 <link rel="stylesheet" href="/static/desk-shell.css?v=5" />
-<script src="/static/desk-shell.js?v=2" defer></script>
-<link rel="stylesheet" href="/static/desk-gate.css?v=2" />
+<script src="/static/desk-shell.js?v=3" defer></script>
+<link rel="stylesheet" href="/static/desk-gate.css?v=3" />
 <script src="/static/desk-gate.js?v=2" defer></script>
 <link rel="stylesheet" href="/optext/app.css" />
 </head>
@@ -162,7 +162,7 @@ OPTEXT_HTML = r"""<!doctype html>
 <div id="app">
   <section id="gate" class="gate">
     <div class="gatewrap">
-      <img class="brand-lg rv" src="/va/logo.png" alt="Umuve" />
+      <img class="brand-lg rv" src="/va/logo.png?v=2" alt="Umuve" />
       <div class="eyebrow rv">Internal · VA suite</div>
       <h1 class="display" aria-label="Setup link">Setup link</h1>
       <p class="sub rv">They said YES — this text signs them up to get jobs.</p>
@@ -179,7 +179,7 @@ OPTEXT_HTML = r"""<!doctype html>
   <section id="tool" class="tool" hidden>
     <header class="bar">
       <a class="back" href="/va" aria-label="Back to VA tools">←</a>
-      <img class="brand" src="/va/logo.png" alt="Umuve" />
+      <img class="brand" src="/va/logo.png?v=2" alt="Umuve" />
       <div class="bar-sub">Texts send from the Umuve number</div>
     </header>
 

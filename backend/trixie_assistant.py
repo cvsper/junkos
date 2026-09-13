@@ -251,8 +251,8 @@ COACH_HTML = r"""<!doctype html>
 <meta name="theme-color" content="#E4E5E9" />
 <link rel="stylesheet" href="/va/app.css?v=7" />
 <link rel="stylesheet" href="/static/desk-shell.css?v=5" />
-<script src="/static/desk-shell.js?v=2" defer></script>
-<link rel="stylesheet" href="/static/desk-gate.css?v=2" />
+<script src="/static/desk-shell.js?v=3" defer></script>
+<link rel="stylesheet" href="/static/desk-gate.css?v=3" />
 <script src="/static/desk-gate.js?v=2" defer></script>
 <link rel="stylesheet" href="/coach/app.css" />
 </head>
@@ -260,7 +260,7 @@ COACH_HTML = r"""<!doctype html>
 <div id="app">
   <section id="gate" class="gate">
     <div class="gatewrap">
-      <img class="brand-lg" src="/va/logo.png" alt="Umuve" />
+      <img class="brand-lg" src="/va/logo.png?v=2" alt="Umuve" />
       <div class="eyebrow">Internal · VA suite</div>
       <h1 class="display" aria-label="Ask Umuve">Ask Umuve</h1>
       <p class="sub">Your call coach. Ask anything mid-call — fast, plain answers you can say out loud.</p>
@@ -281,7 +281,7 @@ COACH_HTML = r"""<!doctype html>
         <div class="bar-title">Ask Umuve</div>
         <div class="bar-sub"><span class="dot"></span> Coach &middot; ready</div>
       </div>
-      <img class="brand" src="/va/logo.png" alt="Umuve" />
+      <img class="brand" src="/va/logo.png?v=2" alt="Umuve" />
       <button id="reset" class="bar-btn" type="button">Clear</button>
     </header>
     <div id="thread" class="thread" aria-live="polite"></div>

@@ -92,7 +92,7 @@
     var side = el("aside", "sh-side");
     side.appendChild(el("div", "sh-handle"));
     var brand = el("a", "sh-brand"); brand.href = "/va";
-    var img = document.createElement("img"); img.src = "/static/brand-logo.png"; img.alt = "Umuve";
+    var img = document.createElement("img"); img.src = "/static/brand-logo.png?v=2"; img.alt = "Umuve";
     brand.appendChild(img); brand.appendChild(text("b", null, "muve"));
     side.appendChild(brand);
     var tiles = el("div", "sh-tiles");

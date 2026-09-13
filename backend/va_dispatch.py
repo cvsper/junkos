@@ -423,8 +423,8 @@ DISPATCH_HTML = r"""<!doctype html>
 <title>Umuve — Dispatch Desk</title>
 <link rel="stylesheet" href="/va/app.css?v=7" />
 <link rel="stylesheet" href="/static/desk-shell.css?v=5" />
-<script src="/static/desk-shell.js?v=2" defer></script>
-<link rel="stylesheet" href="/static/desk-gate.css?v=2" />
+<script src="/static/desk-shell.js?v=3" defer></script>
+<link rel="stylesheet" href="/static/desk-gate.css?v=3" />
 <script src="/static/desk-gate.js?v=2" defer></script>
 <link rel="stylesheet" href="/va/dispatch.css?v=3" />
 </head>
@@ -432,7 +432,7 @@ DISPATCH_HTML = r"""<!doctype html>
 <div id="app">
   <section id="gate" class="gate">
     <div class="gatewrap">
-      <img class="brand-lg rv" src="/va/logo.png" alt="Umuve" /><div class="eyebrow rv">Internal · VA suite</div>
+      <img class="brand-lg rv" src="/va/logo.png?v=2" alt="Umuve" /><div class="eyebrow rv">Internal · VA suite</div>
       <h1 class="display" id="display-gate" aria-label="Dispatch">Dispatch</h1>
       <p class="sub rv">Open jobs on the left of the phone, a hauler on the other end. Put them together.</p>
       <form id="gate-form" class="rv">

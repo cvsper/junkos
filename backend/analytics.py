@@ -503,8 +503,8 @@ MANAGER_HTML = r"""<!doctype html>
 <title>Umuve — Desk manager</title>
 <link rel="stylesheet" href="/va/app.css?v=7" />
 <link rel="stylesheet" href="/static/desk-shell.css?v=5" />
-<script src="/static/desk-shell.js?v=2" defer></script>
-<link rel="stylesheet" href="/static/desk-gate.css?v=2" />
+<script src="/static/desk-shell.js?v=3" defer></script>
+<link rel="stylesheet" href="/static/desk-gate.css?v=3" />
 <script src="/static/desk-gate.js?v=2" defer></script>
 <link rel="stylesheet" href="/static/manager.css?v=4" />
 </head>
@@ -512,7 +512,7 @@ MANAGER_HTML = r"""<!doctype html>
 <div id="app">
   <section id="gate" class="mg-gate" hidden>
     <div class="mg-gatewrap">
-      <img class="brand-lg" src="/va/logo.png" alt="Umuve" />
+      <img class="brand-lg" src="/va/logo.png?v=2" alt="Umuve" />
       <h1 class="display">MANAGER</h1>
       <p class="sub">This page reads your desk sign-in. Sign in on the Call Desk, then come back.</p>
       <a class="btn mg-btn-link" href="/va/calls">Open the Call Desk</a>

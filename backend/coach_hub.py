@@ -296,8 +296,8 @@ COACH_PAGE = r"""<!doctype html>
 <meta name="theme-color" content="#E4E5E9" />
 <link rel="stylesheet" href="/va/app.css?v=7" />
 <link rel="stylesheet" href="/static/desk-shell.css?v=5" />
-<script src="/static/desk-shell.js?v=2" defer></script>
-<link rel="stylesheet" href="/static/desk-gate.css?v=2" />
+<script src="/static/desk-shell.js?v=3" defer></script>
+<link rel="stylesheet" href="/static/desk-gate.css?v=3" />
 <script src="/static/desk-gate.js?v=2" defer></script>
 <link rel="stylesheet" href="/static/desk-class.css?v=3" />
 <link rel="stylesheet" href="/static/coach.css?v=3" />
@@ -306,7 +306,7 @@ COACH_PAGE = r"""<!doctype html>
 <div id="app">
   <section id="gate" class="gate">
     <div class="gatewrap">
-      <img class="brand-lg rv" src="/static/brand-logo.png" alt="Umuve" /><div class="eyebrow rv">Internal · VA suite</div>
+      <img class="brand-lg rv" src="/static/brand-logo.png?v=2" alt="Umuve" /><div class="eyebrow rv">Internal · VA suite</div>
       <h1 class="display" aria-label="Coach">Coach</h1>
       <p class="sub rv">Your week, your class, your calls, and a coach who has read all of it.</p>
       <form id="gate-form" autocomplete="off" class="rv">
