@@ -1150,6 +1150,8 @@ CALLS_HTML = r"""<!doctype html>
 <link rel="stylesheet" href="/va/app.css?v=6" />
 <link rel="stylesheet" href="/static/desk-shell.css?v=1" />
 <script src="/static/desk-shell.js?v=1" defer></script>
+<link rel="stylesheet" href="/static/desk-gate.css?v=1" />
+<script src="/static/desk-gate.js?v=1" defer></script>
 <link rel="stylesheet" href="/va/calls.css?v=28" />
 <link rel="stylesheet" href="/static/desk-class.css?v=2" />
 <link rel="manifest" href="/static/desk-manifest.json" />
@@ -1159,7 +1161,7 @@ CALLS_HTML = r"""<!doctype html>
   <section id="gate" class="gate">
     <div class="gatewrap">
       <img class="brand-hero rv" src="/static/brand-logo.png" alt="Umuve" /><div class="eyebrow rv">Internal · VA suite</div>
-      <h1 class="display" id="display-gate" aria-label="Call Desk">CALL&nbsp;DESK</h1>
+      <h1 class="display" id="display-gate" aria-label="Call Desk">Call&nbsp;Desk</h1>
       <p class="sub rv">One card at a time. Tap the number, make the call, tap what happened.</p>
       <form id="gate-form" autocomplete="on" class="rv">
         <label class="lbl" for="g-email">Email</label>
