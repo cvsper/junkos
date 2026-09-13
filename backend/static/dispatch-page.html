@@ -12,7 +12,7 @@
 <link rel="stylesheet" href="/static/desk-gate.css?v=3" />
 <script src="/static/desk-gate.js?v=2" defer></script>
 <link rel="stylesheet" href="/static/vendor/leaflet.css" />
-<link rel="stylesheet" href="/static/dispatch.css?v=10" />
+<link rel="stylesheet" href="/static/dispatch.css?v=11" />
 </head>
 <body>
 <div id="app">
@@ -51,6 +51,7 @@
             <button type="button" class="dm-tab on" data-p="map"><i data-ico="map"></i><span>Map</span></button>
             <button type="button" class="dm-tab" data-p="board"><i data-ico="board"></i><span>Board</span><em class="dm-badge" id="dm-b-board" hidden></em></button>
             <button type="button" class="dm-tab" data-p="haulers"><i data-ico="truck"></i><span>Haulers</span><em class="dm-badge" id="dm-b-haulers" hidden></em></button>
+            <button type="button" class="dm-tab" data-p="dumps"><i data-ico="dump"></i><span>Dumps</span></button>
             <button type="button" class="dm-tab" data-p="activity"><i data-ico="activity"></i><span>Activity</span></button>
             <button type="button" class="dm-tab dm-tab-new" id="dp-new" data-p="book"><i data-ico="plus"></i><span>New booking</span></button>
           </nav>
@@ -73,6 +74,7 @@
               <span><i class="lg-open"></i>Needs a hauler</span>
               <span><i class="lg-sched"></i>Scheduled</span>
               <span><i class="lg-active"></i>In progress</span>
+              <span><i class="lg-dump"></i>Dump site</span>
             </div>
           </div>
         </div>
@@ -120,6 +122,26 @@
         </div>
         <div class="dm-panel-body">
           <div class="dp-roster-rows" id="dp-roster"></div>
+        </div>
+      </section>
+
+      <section class="dm-panel" id="dm-p-dumps" hidden aria-label="Dump sites">
+        <div class="dp-h">
+          <h2>Dump sites</h2>
+          <span class="dp-note" id="dp-dumps-note"></span>
+          <button type="button" class="dp-x" data-close aria-label="Close">×</button>
+        </div>
+        <div class="dp-search">
+          <input id="dp-dumps-q" type="search" placeholder="Search a site, county, material" />
+          <div class="dp-tabs" id="dp-dumps-filter">
+            <button type="button" data-f="all" class="on">All</button>
+            <button type="button" data-f="open">Open now</button>
+            <button type="button" data-f="walkin">Walk-in</button>
+          </div>
+        </div>
+        <label class="dp-switch"><input type="checkbox" id="dp-dumps-map" checked /> Show dump sites on the map</label>
+        <div class="dm-panel-body">
+          <div class="dp-roster-rows" id="dp-dumps"></div>
         </div>
       </section>
 
@@ -225,6 +247,6 @@
   <div class="dk-toast" id="dp-toast" role="status" aria-live="polite" hidden></div>
 </div>
 <script src="/static/vendor/leaflet.js"></script>
-<script src="/static/dispatch.js?v=5" defer></script>
+<script src="/static/dispatch.js?v=6" defer></script>
 </body>
 </html>

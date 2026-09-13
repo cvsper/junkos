@@ -202,3 +202,26 @@ def test_placeholder_position_is_not_a_position(client):
     by = {r["name"]: r for r in rows}
     assert by["Phone Only"]["lat"] is None and by["Phone Only"]["location"] == "unknown" and by["Phone Only"]["county"] is None
     assert by["GPS Hauler"]["lat"] == 26.62 and by["GPS Hauler"]["location"] == "known"
+
+
+def test_dump_sites_on_overview_and_ranked_for_a_job(client):
+    from models import LandfillFacility, TipFee
+    from seed_landfills import seed_landfill_facilities
+    seed_landfill_facilities(db.session, LandfillFacility, TipFee, generate_uuid); db.session.commit()
+    try:
+        j = _job()
+        d = _post(client, "overview").get_json()
+        assert len(d["dumps"]) >= 40
+        site = next(x for x in d["dumps"] if x["name"] == "SWA North County Landfill")
+        assert site["lat"] and site["lng"] and site["county_label"] == "Palm Beach" and site["walk_in"]
+        assert site["type_label"] == "Landfill" and len(site["hours"]) == 7 and site["hours"][0]["day"] == "Mon"
+        assert site["fees"] and site["fees"][0]["amount"] is not None and "label" in site["accepts"][0]
+        r = _post(client, "dumps", job_id=j.id); assert r.status_code == 200
+        rk = r.get_json()
+        assert rk["for"]["job_code"] == j.confirmation_code and rk["for"]["category"] == "bulky"
+        assert rk["ranked"] and rk["ranked"][0]["eligible"] and rk["ranked"][0]["miles"] < 30
+        assert all("id" in x and "blockers" in x for x in rk["ranked"])
+        assert _post(client, "dumps", lat=26.7, lng=-80.1).status_code == 200
+        assert _post(client, "dumps").status_code == 400
+    finally:
+        TipFee.query.delete(); LandfillFacility.query.delete(); db.session.commit()

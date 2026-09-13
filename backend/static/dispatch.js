@@ -81,7 +81,8 @@
     activity: '<path d="M3 12h4l3-7 4 14 3-7h4"/>',
     plus: '<path d="M12 5v14M5 12h14"/>',
     refresh: '<path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v5h-5"/>',
-    target: '<circle cx="12" cy="12" r="6"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/>'
+    target: '<circle cx="12" cy="12" r="6"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/>',
+    dump: '<path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/><path d="M10 11v6M14 11v6"/>'
   };
   function svgIcon(name, cls){ var s = el("span", "dm-ico" + (cls ? " " + cls : "")); s.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' + (ICON[name] || "") + "</svg>"; return s; }
   Array.prototype.forEach.call(document.querySelectorAll("i[data-ico]"), function(i){ i.parentNode.replaceChild(svgIcon(i.dataset.ico), i); });
@@ -122,6 +123,8 @@
 
   var gate = $("gate"), tool = $("tool");
   var DATA = null, CATALOG = null, BOARD_TAB = "open", ROSTER_FILTER = "live", SEL_HAULER = null, SEL_JOB = null, refreshTimer = null, loadedOnce = false;
+  var SEL_DUMP = null, DUMP_FILTER = "all", DUMP_RANK = {}, DUMPS_ON = true;
+  try { DUMPS_ON = localStorage.getItem("umuve_dispatch_dumps") !== "0"; } catch(e){}
 
   // ---------------------------------------------------------------- gate
   function showGate(msg){ tool.hidden = true; gate.hidden = false; var e = $("gate-err"); if(msg){ e.textContent = msg; e.hidden = false; } else { e.hidden = true; } }
@@ -142,7 +145,8 @@
       if(!loadedOnce){ showTool(); loadedOnce = true; }
       $("bar-sub").textContent = (DATA.va || vaName() || "") + " · updated " + new Date().toLocaleTimeString([], {hour: "numeric", minute: "2-digit"});
       if(SEL_JOB != null && !findJob(SEL_JOB)) SEL_JOB = null;
-      renderTop(); renderMap(); renderDock(false); renderFloatCard(); renderRoster(); renderBoard(); renderRecent(); refreshHaulerSelect();
+      if(SEL_DUMP != null && !findDump(SEL_DUMP)) SEL_DUMP = null;
+      renderTop(); renderMap(); renderDock(false); renderFloatCard(); renderRoster(); renderBoard(); renderRecent(); renderDumps(); refreshHaulerSelect();
       schedule();
     }).catch(function(e){ if(e && e.status === 401){ clearTimeout(refreshTimer); return; } if(!loadedOnce) showGate(e.message); else fail(e); schedule(); })
       .then(function(){ $("dm-refresh").classList.remove("is-busy"); });
@@ -159,6 +163,7 @@
   }
   function findJob(id){ var hit = null; allJobs().forEach(function(x){ if(String(x.job.id) === String(id)) hit = x; }); return hit; }
   function findHauler(id){ var hit = null; (DATA.haulers || []).forEach(function(h){ if(String(h.id) === String(id)) hit = h; }); return hit; }
+  function findDump(id){ var hit = null; (DATA.dumps || []).forEach(function(f){ if(String(f.id) === String(id)) hit = f; }); return hit; }
   function groupOf(status){
     if(status === "cancelled") return "cancelled"; if(status === "completed") return "done";
     if(status === "en_route" || status === "arrived" || status === "started") return "active";
@@ -206,7 +211,7 @@
   }
 
   // ---------------------------------------------------------------- map (Leaflet, tiles from our backend)
-  var MAP = null, AREA_LAYER = null, MARK_LAYER = null, MARKS = {haulers: {}, jobs: {}}, FITTED = false;
+  var MAP = null, AREA_LAYER = null, MARK_LAYER = null, MARKS = {haulers: {}, jobs: {}, dumps: {}}, FITTED = false;
   function ensureMap(){
     if(MAP) return MAP;
     if(typeof L === "undefined"){ $("dp-map-note").textContent = "The map library didn't load."; return null; }
@@ -253,7 +258,7 @@
     if(poly.length > 2){
       AREA_LAYER = L.polygon(poly.map(function(q){ return [+q[0], +q[1]]; }), {color: "#26272C", weight: 1, opacity: .35, fillOpacity: .04, interactive: false}).addTo(map);
     }
-    MARK_LAYER.clearLayers(); MARKS = {haulers: {}, jobs: {}};
+    MARK_LAYER.clearLayers(); MARKS = {haulers: {}, jobs: {}, dumps: {}};
     jobs.forEach(function(x){
       var j = x.job, m = L.marker([+j.lat, +j.lng], {icon: jobIcon(x), keyboard: true, zIndexOffset: x.group === "open" ? 300 : 200});
       m.bindTooltip(tipEl([(j.code || "Job") + " · " + (j.status_label || j.status || ""), j.scheduled_human ? j.scheduled_human + (j.window ? " · " + j.window : "") : "", j.address || ""]), {direction: "top", offset: [0, -14], opacity: 1, className: "dm-tip"});
@@ -270,25 +275,34 @@
       m.on("click", function(){ selectHauler(h.id, true); });
       m.addTo(MARK_LAYER); MARKS.haulers[String(h.id)] = m;
     });
-    $("dp-map-note").textContent = haulers.length + (haulers.length === 1 ? " hauler" : " haulers") + " on the map · " + jobs.length + (jobs.length === 1 ? " job" : " jobs");
+    var dumps = DUMPS_ON ? (DATA.dumps || []).filter(function(f){ return num(f.lat) != null && num(f.lng) != null; }) : [];
+    var best = SEL_JOB != null && DUMP_RANK[String(SEL_JOB)] ? bestDump(DUMP_RANK[String(SEL_JOB)]) : null;
+    dumps.forEach(function(f){
+      var m = L.marker([+f.lat, +f.lng], {icon: dumpIcon(f, best && String(best.id) === String(f.id)), keyboard: true, zIndexOffset: 50});
+      m.bindTooltip(tipEl([f.name, dumpStatus(f), [f.type_label, f.county_label].filter(Boolean).join(" · ")]), {direction: "top", offset: [0, -12], opacity: 1, className: "dm-tip"});
+      m.on("click", function(){ selectDump(f.id, false); });
+      m.addTo(MARK_LAYER); MARKS.dumps[String(f.id)] = m;
+    });
+    $("dp-map-note").textContent = haulers.length + (haulers.length === 1 ? " hauler" : " haulers") + " on the map · " + jobs.length + (jobs.length === 1 ? " job" : " jobs") + (dumps.length ? " · " + dumps.length + " dump sites" : "");
     // the shell re-mounts the page right after first paint, so size and fit on the next tick
     setTimeout(function(){ map.invalidateSize({animate: false}); if(!FITTED){ FITTED = true; recenter(false); } }, 80);
   }
   function paintSelection(){
     function paint(set, sel){ Object.keys(set).forEach(function(k){ var m = set[k], e = m.getElement(), on = sel != null && k === String(sel); if(e) e.classList.toggle("is-sel", on); m.setZIndexOffset(on ? 1000 : (set === MARKS.haulers ? 100 : 200)); }); }
-    paint(MARKS.haulers, SEL_HAULER); paint(MARKS.jobs, SEL_JOB);
+    paint(MARKS.haulers, SEL_HAULER); paint(MARKS.jobs, SEL_JOB); paint(MARKS.dumps, SEL_DUMP);
   }
   function revealMarker(m){ if(!m || !MAP) return; var ll = m.getLatLng(); if(!MAP.getBounds().pad(-.15).contains(ll)) MAP.panTo(ll); }
   function selectJob(id, reveal){
     if(window.innerWidth < 960 && window.__dockUp) window.__dockUp(true);
-    SEL_JOB = id; SEL_HAULER = null;
+    SEL_JOB = id; SEL_HAULER = null; SEL_DUMP = null;
     paintSelection(); renderFloatCard(); renderDock(true);
     Array.prototype.forEach.call(document.querySelectorAll(".dp-hr"), function(r){ r.classList.remove("is-sel"); });
     if(reveal) revealMarker(MARKS.jobs[String(id)]);
+    rankDumpsFor(id); if(PANEL === "dumps") renderDumps();
   }
   function selectHauler(id, scroll){
     if(window.innerWidth < 960 && window.__dockUp) window.__dockUp(true);
-    SEL_HAULER = id; SEL_JOB = null;
+    SEL_HAULER = id; SEL_JOB = null; SEL_DUMP = null;
     paintSelection(); renderFloatCard(); renderDock(true);
     var row = null;
     Array.prototype.forEach.call(document.querySelectorAll(".dp-hr"), function(r){ var on = String(r.dataset.id) === String(id); r.classList.toggle("is-sel", on); if(on) row = r; });
@@ -301,7 +315,7 @@
     if(!scroll) revealMarker(MARKS.haulers[String(id)]);
   }
   function clearSelection(){
-    SEL_JOB = null; SEL_HAULER = null; paintSelection(); renderFloatCard(); renderDock(true);
+    SEL_JOB = null; SEL_HAULER = null; SEL_DUMP = null; paintSelection(); renderFloatCard(); renderDock(true);
     Array.prototype.forEach.call(document.querySelectorAll(".dp-hr"), function(r){ r.classList.remove("is-sel"); });
   }
   function setTab(wrapId, attr, val){ Array.prototype.forEach.call($(wrapId).querySelectorAll("button"), function(b){ b.classList.toggle("on", b.dataset[attr] === val); }); }
@@ -318,6 +332,7 @@
   }
   function renderFloatCard(){
     var box = $("dm-card"); clear(box);
+    if(SEL_DUMP != null){ var f = findDump(SEL_DUMP); if(f){ box.hidden = false; renderDumpCard(box, f); return; } }
     var hit = SEL_JOB != null ? findJob(SEL_JOB) : null;
     if(!hit){ box.hidden = true; return; }
     box.hidden = false;
@@ -354,6 +369,7 @@
       });
     }
     box.appendChild(nx);
+    var bd = bestDumpRow(j); if(bd) box.appendChild(bd);
     var foot = el("div", "dp-actions"); foot.appendChild(btn("pill dark", "Open", function(){ openJob(j.id); }));
     if(g === "open" || g === "scheduled") foot.appendChild(btn("pill", g === "open" ? "Find a hauler" : "Reassign", function(){ openJob(j.id, "candidates"); }));
     box.appendChild(foot);
@@ -369,7 +385,8 @@
     if(force || !sel.querySelector(".dp-inline")){
       clear(sel);
       var jh = SEL_JOB != null ? findJob(SEL_JOB) : null, hh = SEL_HAULER != null ? findHauler(SEL_HAULER) : null;
-      if(jh) dockJob(sel, jh.job, jh.group); else if(hh) dockHauler(sel, hh); else dockIdle(sel);
+      var dh = SEL_DUMP != null ? findDump(SEL_DUMP) : null;
+      if(dh) dockDump(sel, dh); else if(jh) dockJob(sel, jh.job, jh.group); else if(hh) dockHauler(sel, hh); else dockIdle(sel);
     }
     // capacity
     var cp = $("dm-cap"); clear(cp);
@@ -460,6 +477,22 @@
     host.appendChild(facts([["When", whenEl], ["Customer", cust], ["Items", itemsText(j)], ["Total", tot], ["Hauler", who], ["Address", (j.address || "No address") + (j.county ? " · " + j.county : "")], ["Confirmed", j.confirmed ? "yes" + (j.confirmed_at ? " · " + when(j.confirmed_at) : "") : (group === "scheduled" ? "not yet" : null)]]));
     if(group !== "done" && group !== "cancelled"){ var acts = actions(j, group, host); if(acts) host.appendChild(acts); }
   }
+  function dockDump(host, f){
+    var head = el("div", "dm-sel-h"); head.appendChild(el("span", "code", f.name || "Dump site")); if(f.type_label) head.appendChild(el("span", "dp-tag", f.type_label)); if(!f.walk_in) head.appendChild(el("span", "dp-tag warn", f.access_label || "restricted"));
+    var st = el("span", "dm-state " + (f.open_now ? "live" : "offline")); st.appendChild(el("i", "dp-dot " + (f.open_now ? "live" : "offline"))); st.appendChild(document.createTextNode(dumpStatus(f))); head.appendChild(st);
+    var hr = el("span", "dm-sel-r"); hr.appendChild(btn("dp-x sm", "×", clearSelection)); head.appendChild(hr); host.appendChild(head);
+    var jh = SEL_JOB != null ? findJob(SEL_JOB) : null, rank = SEL_JOB != null ? DUMP_RANK[String(SEL_JOB)] : null, mine = null;
+    if(rank && !rank.pending) (rank.ranked || []).forEach(function(r){ if(String(r.id) === String(f.id)) mine = r; });
+    var fee = (f.fees || []).slice(0, 4).map(function(x){ return x.label + " " + money(x.amount); }).join(" · ");
+    host.appendChild(facts([["Address", f.address], ["Phone", f.phone ? contactLinks(f.phone) : null], ["Hours", hoursText(f.hours)],
+      ["Per ton", fee || (f.accepts && f.accepts.length ? "quote at the scale" : null)],
+      ["This job", mine && jh ? (mine.eligible ? [num(mine.miles) != null ? Number(mine.miles).toFixed(1) + " mi" : null, num(mine.est_tip) != null ? "about " + money(mine.est_tip) + " tip" : null].filter(Boolean).join(" · ") : (mine.blockers || []).join(" · ")) : null]]));
+    if(f.notes) host.appendChild(el("p", "dm-note-small", f.notes));
+    var row = el("div", "dp-actions");
+    if(jh && jh.job.hauler && jh.job.hauler.id != null) row.appendChild(btn("pill dark", "Text to " + String(jh.job.hauler.name || "hauler").split(" ")[0], function(){ textDumpToHauler(this, jh, f); }));
+    row.appendChild(btn("pill", "Center map", function(){ var m = MARKS.dumps[String(f.id)]; if(m && MAP) MAP.setView(m.getLatLng(), Math.max(MAP.getZoom(), 12)); if(window.__dockUp) window.__dockUp(false); }));
+    host.appendChild(row);
+  }
   function dockHauler(host, h){
     var st = haulerState(h);
     var head = el("div", "dm-sel-h"); head.appendChild(el("span", "code", h.name || "Hauler")); if(h.tier_label) head.appendChild(el("span", "dp-tag", h.tier_label)); if(h.concierge) head.appendChild(el("span", "dp-tag info", "concierge"));
@@ -519,12 +552,148 @@
   $("dp-roster-q").addEventListener("input", renderRoster);
   $("dp-roster-filter").addEventListener("click", function(e){ var b = e.target.closest("button[data-f]"); if(!b) return; FILTER_TOUCHED = true; ROSTER_FILTER = b.dataset.f; setTab("dp-roster-filter", "f", ROSTER_FILTER); renderRoster(); });
 
+  // ---------------------------------------------------------------- dump sites
+  function dumpStatus(f){
+    if(f.open_now) return "Open" + (f.closes_at ? " · closes " + f.closes_at : "");
+    return "Closed" + (f.next_open ? " · opens " + f.next_open : "");
+  }
+  function dumpIcon(f, best){
+    var w = el("div", "dm-dump" + (f.open_now ? "" : " closed") + (f.walk_in ? "" : " gated") + (best ? " best" : "")); w.appendChild(svgIcon("dump"));
+    return L.divIcon({className: "dm-mkwrap" + (SEL_DUMP != null && String(f.id) === String(SEL_DUMP) ? " is-sel" : ""), html: w, iconSize: [26, 26], iconAnchor: [13, 13]});
+  }
+  function selectDump(id, scroll){
+    if(window.innerWidth < 960 && window.__dockUp) window.__dockUp(true);
+    SEL_DUMP = id; SEL_HAULER = null;
+    paintSelection(); renderFloatCard(); renderDock(true);
+    Array.prototype.forEach.call(document.querySelectorAll(".dp-hr"), function(r){ r.classList.toggle("is-sel", r.dataset.dump != null && String(r.dataset.dump) === String(id)); });
+    var m = MARKS.dumps[String(id)];
+    if(!m && !DUMPS_ON){ DUMPS_ON = true; $("dp-dumps-map").checked = true; try { localStorage.setItem("umuve_dispatch_dumps", "1"); } catch(e){} renderMap(); m = MARKS.dumps[String(id)]; }
+    revealMarker(m);
+    if(scroll && PANEL === "dumps"){ var row = document.querySelector('.dp-hr[data-dump="' + String(id).replace(/"/g, "") + '"]'); if(row) row.scrollIntoView({block: "nearest", behavior: "smooth"}); }
+  }
+  function hoursGroups(hours){
+    var out = [];
+    (hours || []).forEach(function(d){
+      var txt = d.open ? d.open + "–" + d.close : "closed", last = out[out.length - 1];
+      if(last && last.txt === txt){ last.to = d.day; } else out.push({from: d.day, to: d.day, txt: txt});
+    });
+    return out.map(function(g){ return {days: g.from === g.to ? g.from : g.from + "–" + g.to, txt: g.txt, off: g.txt === "closed"}; });
+  }
+  function hoursText(hours){ return hoursGroups(hours).map(function(g){ return g.days + " " + g.txt; }).join(" · ") || null; }
+  function textDumpToHauler(b, jh, f){
+    b.disabled = true;
+    var body = "Dump for " + (jh.job.code || "your job") + ": " + f.name + ", " + (f.address || "") + ". " + dumpStatus(f) + (f.phone ? ". " + fmtPhone(f.phone) : "") + ".";
+    api("job/text", {job_id: jh.job.id, to: "hauler", body: body}).then(function(){ toast("Sent to " + jh.job.hauler.name, "good"); b.disabled = false; }).catch(function(e){ fail(e); b.disabled = false; });
+  }
+  function bestDump(rank){ var hit = null; (rank.ranked || []).forEach(function(r){ if(!hit && r.eligible) hit = r; }); return hit; }
+  function rankDumpsFor(jobId){
+    var key = String(jobId); if(DUMP_RANK[key]) return;
+    var hit = findJob(jobId); if(!hit || num(hit.job.lat) == null) return;
+    DUMP_RANK[key] = {ranked: [], pending: true};
+    api("dumps", {job_id: jobId}).then(function(d){
+      DUMP_RANK[key] = d || {ranked: []};
+      if(String(SEL_JOB) === key){ renderFloatCard(); if(PANEL === "dumps") renderDumps(); if(DUMPS_ON) renderMap(); }
+    }).catch(function(){ delete DUMP_RANK[key]; });
+  }
+  function bestDumpRow(j){
+    var rank = DUMP_RANK[String(j.id)]; if(!rank || rank.pending) return null;
+    var b = bestDump(rank); if(!b) return null;
+    var r = btn("dm-best", null, function(){ selectDump(b.id, true); });
+    r.appendChild(svgIcon("dump")); var t = el("span"); t.appendChild(el("b", null, "Dump here: ")); t.appendChild(document.createTextNode(b.name)); r.appendChild(t);
+    r.appendChild(el("span", "m", [num(b.miles) != null ? Number(b.miles).toFixed(1) + " mi" : null, num(b.est_tip) != null ? "~" + money(b.est_tip) + " tip" : null].filter(Boolean).join(" · ")));
+    return r;
+  }
+  function renderDumpCard(box, f){
+    var head = el("div", "dm-card-h"); head.appendChild(el("span", "code", f.name || "Dump site"));
+    head.appendChild(btn("dp-x sm", "×", clearSelection)); box.appendChild(head);
+    var tags = el("div", "dm-card-h");
+    tags.appendChild(el("span", "dp-tag " + (f.open_now ? "ok" : ""), dumpStatus(f)));
+    if(f.type_label) tags.appendChild(el("span", "dp-tag", f.type_label));
+    tags.appendChild(el("span", "dp-tag " + (f.walk_in ? "" : "warn"), f.access_label || (f.walk_in ? "Walk-in" : "Restricted")));
+    box.appendChild(tags);
+    var fac = el("div", "dm-fac");
+    function row(k, v, cls){ if(v == null || v === "") return; var r = el("div", "row"); r.appendChild(el("span", "k", k)); var vv = el("span", "v " + (cls || "")); if(v instanceof Node) vv.appendChild(v); else vv.textContent = String(v); r.appendChild(vv); fac.appendChild(r); }
+    row("Address", f.address);
+    if(f.phone){ var a = el("a", null, fmtPhone(f.phone)); a.href = "tel:" + f.phone; row("Phone", a); }
+    row("Operator", f.operator, "faint");
+    if(f.origin_county_label) row("Takes", "Loads from " + f.origin_county_label + " County only", "warn");
+    var rank = SEL_JOB != null ? DUMP_RANK[String(SEL_JOB)] : null, mine = null;
+    if(rank && !rank.pending) (rank.ranked || []).forEach(function(r){ if(String(r.id) === String(f.id)) mine = r; });
+    var jh = SEL_JOB != null ? findJob(SEL_JOB) : null;
+    if(mine && jh){
+      var line = [num(mine.miles) != null ? Number(mine.miles).toFixed(1) + " mi from " + (jh.job.code || "the job") : null, num(mine.minutes) != null ? "~" + Math.round(mine.minutes) + " min" : null, num(mine.est_tip) != null ? "about " + money(mine.est_tip) + " tip" : null].filter(Boolean).join(" · ");
+      row("This job", line, mine.eligible ? "ok" : "warn");
+      if(!mine.eligible && mine.blockers.length) row("", mine.blockers.join(" · "), "warn");
+    }
+    box.appendChild(fac);
+    if(f.fees && f.fees.length){
+      var nx = el("div", "dm-next"); nx.appendChild(el("h5", null, "Gate fees per ton"));
+      var fl = el("div", "dm-fees"); f.fees.slice(0, 8).forEach(function(x){ var d = el("div"); d.appendChild(el("span", null, x.label)); d.appendChild(el("b", null, money(x.amount))); fl.appendChild(d); }); nx.appendChild(fl); box.appendChild(nx);
+    } else if(f.accepts && f.accepts.length){
+      box.appendChild(el("p", "dm-note-small", "No published rates — they quote at the scale. Takes " + f.accepts.map(function(a){ return a.label; }).join(", ") + "."));
+    }
+    if(f.hours && f.hours.length){
+      var hx = el("div", "dm-next"); hx.appendChild(el("h5", null, "Hours"));
+      var hg = el("div", "dm-hours");
+      hoursGroups(f.hours).forEach(function(g){ var c = el("div", g.off ? "off" : ""); c.appendChild(el("b", null, g.days)); c.appendChild(el("span", null, g.txt)); hg.appendChild(c); });
+      hx.appendChild(hg); box.appendChild(hx);
+    }
+    if(f.notes) box.appendChild(el("p", "dm-note-small", f.notes));
+    var foot = el("div", "dp-actions");
+    if(jh && jh.job.hauler && jh.job.hauler.id != null){
+      foot.appendChild(btn("pill dark", "Text to " + String(jh.job.hauler.name || "hauler").split(" ")[0], function(){ textDumpToHauler(this, jh, f); }));
+    }
+    foot.appendChild(btn("pill", "Center map", function(){ var m = MARKS.dumps[String(f.id)]; if(m && MAP) MAP.setView(m.getLatLng(), Math.max(MAP.getZoom(), 12)); }));
+    box.appendChild(foot);
+  }
+  function renderDumps(){
+    var box = $("dp-dumps"); if(!box || !DATA) return; clear(box);
+    var q = ($("dp-dumps-q").value || "").trim().toLowerCase(), all = DATA.dumps || [];
+    var rank = SEL_JOB != null ? DUMP_RANK[String(SEL_JOB)] : null, byId = {};
+    if(rank && !rank.pending) (rank.ranked || []).forEach(function(r, i){ byId[String(r.id)] = r; r._i = i; });
+    var jh = SEL_JOB != null ? findJob(SEL_JOB) : null;
+    var list = all.filter(function(f){
+      if(DUMP_FILTER === "open" && !f.open_now) return false;
+      if(DUMP_FILTER === "walkin" && !f.walk_in) return false;
+      if(q && [f.name, f.county_label, f.type_label, f.operator, f.address].concat((f.accepts || []).map(function(a){ return a.label; })).join(" ").toLowerCase().indexOf(q) < 0) return false;
+      return true;
+    });
+    if(rank && !rank.pending){
+      list.sort(function(a, b){ var ra = byId[String(a.id)], rb = byId[String(b.id)]; return (ra ? ra._i : 1e9) - (rb ? rb._i : 1e9); });
+    } else {
+      list.sort(function(a, b){ if(a.open_now !== b.open_now) return a.open_now ? -1 : 1; return String(a.county_label || "").localeCompare(String(b.county_label || "")) || String(a.name).localeCompare(String(b.name)); });
+    }
+    $("dp-dumps-note").textContent = (jh && rank && !rank.pending ? "ranked for " + (jh.job.code || "the job") + " · " + (rank["for"] && rank["for"].category_label ? rank["for"].category_label + " · " : "") : "") + list.length + " of " + all.length;
+    if(!list.length){ box.appendChild(el("p", "dp-empty", !all.length ? "No dump sites loaded yet." : DUMP_FILTER === "open" ? "Nothing is open right now. Try All." : q ? "No site matches that." : "Nothing here.")); return; }
+    list.forEach(function(f){
+      var row = btn("dp-hr" + (SEL_DUMP != null && String(f.id) === String(SEL_DUMP) ? " is-sel" : ""), null, function(){ selectDump(f.id, false); if(isPhone()) closePanel(); });
+      row.dataset.dump = f.id;
+      var n = el("div", "n", f.name || "Dump site"); if(f.type_label) n.appendChild(el("span", "dp-tag", f.type_label)); if(!f.walk_in) n.appendChild(el("span", "dp-tag warn", f.access_label || "restricted")); row.appendChild(n);
+      var s = el("div", "st " + (f.open_now ? "open" : "closed")); s.appendChild(el("i", "dp-dot " + (f.open_now ? "live" : "offline"))); s.appendChild(document.createTextNode(dumpStatus(f))); row.appendChild(s);
+      row.appendChild(el("div", "m", [f.county_label, f.address].filter(Boolean).join(" · ")));
+      var r = byId[String(f.id)];
+      if(r){
+        var rk = el("div", "rank" + (r.eligible ? "" : " no"));
+        rk.textContent = r.eligible ? [num(r.miles) != null ? Number(r.miles).toFixed(1) + " mi" : null, num(r.minutes) != null ? "~" + Math.round(r.minutes) + " min" : null, num(r.est_tip) != null ? "about " + money(r.est_tip) + " tip" : "quote at the gate"].filter(Boolean).join(" · ") : (r.blockers || []).join(" · ");
+        row.appendChild(rk);
+      } else if(f.fees && f.fees.length){
+        var fe = el("div", "fees"); f.fees.slice(0, 3).forEach(function(x){ var sp = el("span"); sp.appendChild(document.createTextNode(x.label + " ")); sp.appendChild(el("b", null, money(x.amount))); fe.appendChild(sp); }); row.appendChild(fe);
+      }
+      box.appendChild(row);
+    });
+  }
+  $("dp-dumps-q").addEventListener("input", renderDumps);
+  $("dp-dumps-filter").addEventListener("click", function(e){ var b = e.target.closest("button[data-f]"); if(!b) return; DUMP_FILTER = b.dataset.f; setTab("dp-dumps-filter", "f", DUMP_FILTER); renderDumps(); });
+  $("dp-dumps-map").checked = DUMPS_ON;
+  $("dp-dumps-map").addEventListener("change", function(){ DUMPS_ON = !!this.checked; try { localStorage.setItem("umuve_dispatch_dumps", DUMPS_ON ? "1" : "0"); } catch(e){} if(!DUMPS_ON && SEL_DUMP != null) clearSelection(); renderMap(); });
+
   // ---------------------------------------------------------------- slide-over panels
-  var PANEL = null, PANELS = {board: "dm-p-board", haulers: "dm-p-haulers", activity: "dm-p-activity", book: "dp-book"};
+  var PANEL = null, PANELS = {board: "dm-p-board", haulers: "dm-p-haulers", dumps: "dm-p-dumps", activity: "dm-p-activity", book: "dp-book"};
   function paintTabs(){ Array.prototype.forEach.call($("dm-tabs").querySelectorAll(".dm-tab"), function(b){ b.classList.toggle("on", b.dataset.p === (PANEL || "map")); }); }
   function openPanel(name){
     Object.keys(PANELS).forEach(function(k){ $(PANELS[k]).hidden = k !== name; });
     PANEL = name; paintTabs(); document.body.classList.add("dm-sheet");
+    if(name === "dumps"){ renderDumps(); if(SEL_JOB != null) rankDumpsFor(SEL_JOB); }
     if(name === "haulers" && SEL_HAULER != null){ var row = document.querySelector('.dp-hr[data-id="' + String(SEL_HAULER).replace(/"/g, "") + '"]'); if(row) row.scrollIntoView({block: "nearest"}); }
   }
   function closePanel(){

@@ -355,6 +355,65 @@ def capacity_block():
 
 
 # ---------------------------------------------------------------------------
+# dump sites (the hauler app's facility list, reused for the map + Dumps panel)
+# ---------------------------------------------------------------------------
+TYPE_LABEL = {"landfill": "Landfill", "transfer_station": "Transfer station", "c_and_d": "C&D recycler",
+              "mrf": "Recycling center", "wte": "Waste-to-energy"}
+ACCESS_LABEL = {"walk_in": "Walk-in", "account": "Account customers only", "permit": "Permit haulers only",
+                "residents": "Residents only"}
+_DAY = ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+
+
+def _hours_lines(hours_json):
+    """[{day, open, close}] Monday-first in 12-hour text; missing days are closed."""
+    def fmt(t):
+        try:
+            h, m = int(t[:2]), int(t[3:5])
+        except Exception:
+            return t
+        suffix = "am" if h < 12 else "pm"
+        h12 = h % 12 or 12
+        return "{}{}{}".format(h12, ":%02d" % m if m else "", suffix)
+    out = []
+    for i, name in enumerate(_DAY):
+        h = (hours_json or {}).get(str(i))
+        out.append({"day": name, "open": fmt(h["open"]) if h else None, "close": fmt(h["close"]) if h else None})
+    return out
+
+
+def _dump_row(f, fees, now=None):
+    from dump_suggest import open_state, CATEGORY_LABEL, COUNTY_LABEL
+    open_now, closes_at, next_open = open_state(f.hours_json, now)
+    fee_lines = []
+    for cat, row in sorted((fees or {}).items(), key=lambda kv: kv[1].fee_amount if kv[1].fee_amount is not None else 1e9):
+        fee_lines.append({"key": cat, "label": CATEGORY_LABEL.get(cat, cat), "amount": row.fee_amount})
+    access = (getattr(f, "access", None) or "walk_in")
+    return {"id": f.id, "name": f.name, "type": f.type, "type_label": TYPE_LABEL.get(f.type, (f.type or "").replace("_", " ").title()),
+            "operator": f.operator, "address": f.address, "lat": f.lat, "lng": f.lon,
+            "county": f.county, "county_label": COUNTY_LABEL.get(f.county, f.county),
+            "access": access, "access_label": ACCESS_LABEL.get(access, access), "walk_in": access == "walk_in",
+            "origin_county_label": COUNTY_LABEL.get(f.origin_county) if getattr(f, "origin_county", None) else None,
+            "accepts": [{"key": c, "label": CATEGORY_LABEL.get(c, c)} for c in (f.accepts_categories or [])],
+            "fees": fee_lines, "open_now": open_now, "closes_at": closes_at, "next_open": next_open,
+            "hours": _hours_lines(f.hours_json), "phone": f.phone, "notes": f.notes,
+            "turnaround_min": f.avg_turnaround_min}
+
+
+def dumps():
+    """Every facility the hauler app knows, shaped for the desk. Never raises."""
+    try:
+        from models import LandfillFacility
+        from dump_suggest import _current_fees
+        rows = LandfillFacility.query.order_by(LandfillFacility.county, LandfillFacility.name).all()
+        fees = _current_fees([f.id for f in rows]) if rows else {}
+        return [_dump_row(f, fees.get(f.id, {})) for f in rows]
+    except Exception:
+        logger.exception("dump list failed")
+        return []
+
+
+
+# ---------------------------------------------------------------------------
 # routes: read
 # ---------------------------------------------------------------------------
 @dispatchdesk_bp.route("/api/va/dispatch/overview", methods=["POST"])
@@ -370,7 +429,45 @@ def api_overview():
               "standby": sum(1 for h in haulers if h["standby"])}
     return jsonify({"va": ident.get("name"), "manager": _sees_everyone(ident), "now": iso_utc(_now()),
                     "counts": counts, "capacity": capacity_block(), "haulers": haulers, "jobs": jobs,
-                    "recent": recent(), "area": area()}), 200
+                    "recent": recent(), "area": area(), "dumps": dumps()}), 200
+
+
+@dispatchdesk_bp.route("/api/va/dispatch/dumps", methods=["POST"])
+def api_dumps():
+    """Facilities ranked for a job (or a point): what the hauler app would say
+    about this load, so the VA can tell the hauler where to tip."""
+    ident, data, err = _ident_or_401()
+    if err:
+        return err
+    from dump_suggest import rank, infer_category, county_for, CATEGORY_LABEL, CATEGORIES, DEFAULT_TONS
+    job = None
+    if data.get("job_id"):
+        job, err = _job_or_404(data)
+        if err:
+            return err
+    lat = data.get("lat") if data.get("lat") is not None else (job.lat if job else None)
+    lng = data.get("lng") if data.get("lng") is not None else (job.lng if job else None)
+    if lat is None or lng is None:
+        return jsonify({"error": "That job has no pin yet — geocode the address first."}), 400
+    category = (data.get("category") or "").strip() or (infer_category(job.items or []) if job else "bulky")
+    if category not in CATEGORIES:
+        category = "bulky"
+    try:
+        rows = rank(float(lat), float(lng), category=category, tons=DEFAULT_TONS, origin_county=county_for(float(lat)))
+    except Exception:
+        logger.exception("dump rank failed")
+        return jsonify({"error": "Couldn't rank the dump sites right now."}), 500
+    ranked = []
+    for r in rows:
+        f = r.get("facility") or {}
+        ranked.append({"id": f.get("id"), "name": f.get("name"), "miles": r.get("miles"), "minutes": r.get("minutes"),
+                       "open_now": r.get("open_now"), "rate_per_ton": r.get("rate_per_ton"), "rate_estimated": r.get("rate_estimated"),
+                       "est_tip": r.get("est_tip"), "est_total": r.get("est_total"), "eligible": r.get("eligible"),
+                       "blockers": r.get("blockers") or [], "reasons": r.get("reasons") or [], "caveats": r.get("caveats") or []})
+    return jsonify({"for": {"job_id": job.id if job else None, "job_code": job.confirmation_code if job else None,
+                            "lat": float(lat), "lng": float(lng), "category": category,
+                            "category_label": CATEGORY_LABEL.get(category, category)},
+                    "ranked": ranked}), 200
 
 
 def _job_or_404(data):

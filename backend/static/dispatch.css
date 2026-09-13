@@ -504,3 +504,50 @@ body.dp-locked{overflow:hidden}
 .bk-seg{flex-wrap:wrap;overflow:visible;gap:4px}
 .bk-seg button{flex:1 1 auto;white-space:nowrap}
 .bk-item .n{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere}
+
+/* ---------- dump sites (the hauler app's facility list, on the dispatcher map) ---------- */
+.dp-legend .lg-dump{border-radius:3px;background:var(--on-dark);border:2px solid var(--ink)}
+.dm-dump{position:relative;width:26px;height:26px;border-radius:7px;background:var(--on-dark);border:2px solid var(--ink);display:grid;place-items:center;color:var(--ink);cursor:pointer;box-sizing:border-box;box-shadow:var(--shadow-soft)}
+.dm-dump .dm-ico svg{width:14px;height:14px}
+.dm-dump.closed{opacity:.55;border-style:dashed}
+.dm-dump.gated{border-color:var(--warn);color:var(--warn)}
+.dm-dump.best{box-shadow:var(--shadow-soft),0 0 0 3px var(--ok)}
+.dm-dump:hover{opacity:1;background:var(--raise)}
+.dm-mkwrap.is-sel .dm-dump::after{content:"";position:absolute;inset:-7px;border-radius:12px;border:2px solid var(--ink);pointer-events:none;animation:dm-pulse 1.5s ease-out infinite}
+.dp-switch{display:flex;align-items:center;gap:8px;margin:0 0 10px;font-size:13px;color:var(--muted);cursor:pointer;flex:none}
+.dp-switch input{width:auto;margin:0;accent-color:var(--dark)}
+.dp-hr .st.open{color:var(--ok)}.dp-hr .st.closed{color:var(--faint)}
+.dp-hr .fees{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:4px 6px;font-size:12px;color:var(--muted)}
+.dp-hr .fees span{white-space:nowrap}
+.dp-hr .fees b{font-weight:600;color:var(--ink)}
+.dp-hr .rank{grid-column:1/-1;font-size:12.5px;color:var(--ok)}
+.dp-hr .rank.no{color:var(--danger)}
+.dm-fac{display:flex;flex-direction:column;gap:8px}
+.dm-fac .row{display:flex;gap:8px;align-items:baseline;font-size:13.5px;color:var(--ink);line-height:1.4}
+.dm-fac .row .k{flex:none;width:64px;font-size:12px;color:var(--faint)}
+.dm-fac .row .v{min-width:0;overflow-wrap:anywhere}
+.dm-fac .row .v.ok{color:var(--ok)}.dm-fac .row .v.warn{color:var(--warn)}.dm-fac .row .v.faint{color:var(--faint)}
+.dm-fac .row .v a{color:var(--ink)}
+.dm-fees{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:4px 10px;font-size:12.5px;color:var(--muted);margin:0}
+.dm-fees div{display:flex;justify-content:space-between;gap:6px;border-bottom:1px solid var(--line);padding:3px 0}
+.dm-fees b{font-weight:600;color:var(--ink);white-space:nowrap}
+.dm-hours{display:flex;flex-direction:column;gap:2px;font-size:13px;color:var(--ink);margin:0}
+.dm-hours div{display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid var(--line);padding:3px 0}
+.dm-hours div b{font-weight:600;color:var(--ink);white-space:nowrap}
+.dm-hours div span{color:var(--muted)}
+.dm-hours div.off span{color:var(--faint)}
+.dm-note-small{font-size:12.5px;color:var(--muted);line-height:1.4;margin:0}
+.dm-best{display:flex;align-items:center;gap:8px;width:100%;text-align:left;background:rgba(var(--ok-rgb),.08);border:1px solid rgba(var(--ok-rgb),.3);border-radius:var(--r-md);padding:8px 10px;font:500 12.5px var(--body);color:var(--ink);cursor:pointer}
+.dm-best:hover{background:rgba(var(--ok-rgb),.14)}
+.dm-best b{font-weight:600}
+.dm-best .m{margin-left:auto;flex:none;color:var(--muted)}
+@media (max-width:959px){
+  .dp-hr[data-dump] .st{grid-column:1/-1;grid-row:auto;text-align:left;white-space:normal}
+  .dp-hr[data-dump] .n{grid-column:1/-1}
+}
+@media (max-width:959px){
+  /* six tabs on a phone: counts ride the icon's corner so every tab stays icon-width */
+  .dm-tab{padding:9px 10px}
+  .dm-badge{position:absolute;top:1px;right:1px;min-width:16px;padding:2px 4px;font-size:9.5px;line-height:1;background:var(--accent);color:var(--on-accent)}
+  .dm-tab.on .dm-badge{background:var(--accent);color:var(--on-accent)}
+}
