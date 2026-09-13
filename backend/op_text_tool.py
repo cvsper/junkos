@@ -149,9 +149,9 @@ OPTEXT_HTML = r"""<!doctype html>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="robots" content="noindex, nofollow" />
-<meta name="theme-color" content="#0B0E12" />
+<meta name="theme-color" content="#E4E5E9" />
 <title>Umuve — Setup Link</title>
-<link rel="stylesheet" href="/va/app.css" />
+<link rel="stylesheet" href="/va/app.css?v=6" />
 <link rel="stylesheet" href="/optext/app.css" />
 </head>
 <body>

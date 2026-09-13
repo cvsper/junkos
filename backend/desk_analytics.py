@@ -346,11 +346,11 @@ PAGE_HTML = r"""<!doctype html>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="robots" content="noindex, nofollow" />
-<meta name="theme-color" content="#0B0E12" />
+<meta name="theme-color" content="#E4E5E9" />
 <title>Umuve — Desk analytics</title>
-<link rel="stylesheet" href="/va/app.css?v=5" />
-<link rel="stylesheet" href="/static/manager.css?v=2" />
-<link rel="stylesheet" href="/static/desk-stats.css?v=1" />
+<link rel="stylesheet" href="/va/app.css?v=6" />
+<link rel="stylesheet" href="/static/manager.css?v=3" />
+<link rel="stylesheet" href="/static/desk-stats.css?v=2" />
 </head>
 <body class="mgr">
 <div id="app">

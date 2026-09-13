@@ -318,16 +318,16 @@ VA_HUB_HTML = r"""<!doctype html>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="robots" content="noindex, nofollow" />
-<meta name="theme-color" content="#0B0E12" />
+<meta name="theme-color" content="#E4E5E9" />
 <title>Umuve — VA Tools</title>
-<link rel="stylesheet" href="/va/app.css?v=5" />
+<link rel="stylesheet" href="/va/app.css?v=6" />
 </head>
 <body>
 <div id="app">
   <section id="gate" class="gate">
     <div class="gatewrap">
       <img class="brand-lg rv" src="/va/logo.png" alt="Umuve" /><div class="eyebrow rv">Internal · VA suite</div>
-      <h1 class="display" id="display-gate" aria-label="VA Tools">VA&nbsp;TOOLS</h1>
+      <h1 class="display" id="display-gate" aria-label="VA Tools">VA tools</h1>
       <p class="sub rv">Every call ends one of five ways. This sends the right message for each.</p>
       <form id="gate-form" autocomplete="off" class="rv">
         <label class="lbl" for="code">Access code</label>
@@ -345,7 +345,7 @@ VA_HUB_HTML = r"""<!doctype html>
       <div class="bar-sub">VA tools · texts send from the Umuve number</div>
     </header>
     <div class="body">
-      <h2 class="display display-sm" id="display-hub" aria-label="After the call">AFTER THE&nbsp;CALL</h2>
+      <h2 class="display display-sm" id="display-hub" aria-label="After the call">After the call</h2>
       <a class="situ rv" href="/va/calls">
         <div class="situ-key ok-key">DESK</div>
         <div class="situ-txt">
@@ -425,16 +425,16 @@ VA_TEXT_HTML = r"""<!doctype html>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="robots" content="noindex, nofollow" />
-<meta name="theme-color" content="#0B0E12" />
+<meta name="theme-color" content="#E4E5E9" />
 <title>Umuve — Send a Text</title>
-<link rel="stylesheet" href="/va/app.css?v=5" />
+<link rel="stylesheet" href="/va/app.css?v=6" />
 </head>
 <body>
 <div id="app">
   <section id="gate" class="gate">
     <div class="gatewrap">
       <img class="brand-lg rv" src="/va/logo.png" alt="Umuve" /><div class="eyebrow rv">Internal · VA suite</div>
-      <h1 class="display" aria-label="Send a text">SEND A&nbsp;TEXT</h1>
+      <h1 class="display" aria-label="Send a text">Send a text</h1>
       <p class="sub rv">Same login as your other tools.</p>
       <form id="gate-form" autocomplete="off" class="rv">
         <label class="lbl" for="code">Access code</label>
@@ -453,7 +453,7 @@ VA_TEXT_HTML = r"""<!doctype html>
     </header>
 
     <div class="body">
-      <h2 class="display display-sm rv" id="bar-title">VOICEMAIL</h2>
+      <h2 class="display display-sm rv" id="bar-title">Voicemail</h2>
 
       <div class="seg rv" role="tablist" aria-label="Which text">
         <button class="seg-btn" id="tab-voicemail" role="tab" data-t="voicemail">VM follow-up</button>
@@ -489,13 +489,34 @@ VA_TEXT_HTML = r"""<!doctype html>
 """
 
 
-VA_CSS = r""":root{
-  --canvas:#0B0E12; --surface:#141922; --raise:#1A2029; --ink:#F4F6F8;
-  --muted:rgba(244,246,248,.62); --faint:rgba(244,246,248,.38);
-  --accent:#FF6A2C; --accent-press:#E85B1F; --line:rgba(244,246,248,.09);
-  --ok:#3DD68C; --glow:0 0 0 3px rgba(255,106,44,.22);
-  --display:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-  --body:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+VA_CSS = r"""@font-face{font-family:"Instrument Serif";font-style:normal;font-weight:400;font-display:swap;src:url(/static/fonts/instrument-serif-normal-400.woff2) format("woff2")}
+@font-face{font-family:"Instrument Serif";font-style:italic;font-weight:400;font-display:swap;src:url(/static/fonts/instrument-serif-italic-400.woff2) format("woff2")}
+@font-face{font-family:"Instrument Sans";font-style:normal;font-weight:400 700;font-display:swap;src:url(/static/fonts/instrument-sans-normal-400-700.woff2) format("woff2")}
+@font-face{font-family:"Instrument Sans";font-style:italic;font-weight:400 700;font-display:swap;src:url(/static/fonts/instrument-sans-italic-400-700.woff2) format("woff2")}
+
+/* ==========================================================================
+   Desk theme — frosted glass on satin grey (Sep 2026).
+   Every layer file (/static/desk-*.css, manager.css, calls.css, dispatch.css)
+   paints with these tokens only. Panels are .glass; controls are pills.
+   ========================================================================== */
+:root{
+  --canvas:#E4E5E9; --canvas-rgb:228,229,233;
+  --ink:#17181C; --ink-rgb:23,24,28;
+  --muted:rgba(23,24,28,.64); --faint:rgba(23,24,28,.42);
+  --surface:rgba(255,255,255,.58); --raise:rgba(255,255,255,.80);
+  --glass:rgba(255,255,255,.58); --glass-strong:rgba(255,255,255,.82);
+  --glass-border:rgba(255,255,255,.78); --line:rgba(23,24,28,.09); --line-strong:rgba(23,24,28,.16);
+  --accent:#C52222; --accent-rgb:197,34,34; --accent-press:#9E1B1B; --on-accent:#FFFFFF;
+  --dark:#26272C; --dark-press:#17181C; --on-dark:#FFFFFF;
+  --ok:#1F9D55; --ok-rgb:31,157,85; --info:#3B6FD9; --info-rgb:59,111,217;
+  --danger:#C83A3A; --danger-rgb:200,58,58; --warn:#B8780C; --warn-rgb:184,120,12;
+  --glow:0 0 0 3px rgba(23,24,28,.10);
+  --blur:22px;
+  --r-xl:28px; --r-lg:20px; --r-md:14px; --r-pill:999px;
+  --shadow-panel:0 34px 70px -44px rgba(24,26,34,.42),0 1px 0 0 rgba(255,255,255,.85) inset;
+  --shadow-soft:0 12px 30px -20px rgba(24,26,34,.38);
+  --display:"Instrument Serif",Georgia,"Times New Roman",serif;
+  --body:"Instrument Sans",system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
 }
 *{box-sizing:border-box}
 [hidden]{display:none!important}
@@ -503,128 +524,145 @@ html,body{height:100%}
 body{margin:0;background:var(--canvas);color:var(--ink);font-family:var(--body);-webkit-font-smoothing:antialiased;line-height:1.45}
 #app{max-width:560px;margin:0 auto;min-height:100dvh;display:flex;flex-direction:column;overflow:hidden}
 
-/* ---------- display type: massive, condensed, bleeds the edge ---------- */
-.display{font-family:var(--display);font-weight:900;text-transform:uppercase;
-  font-size:clamp(64px,21vw,118px);line-height:.88;letter-spacing:-.05em;
-  margin:6px 0 14px -3vw;width:106%;transform:scaleX(.93);transform-origin:left center;
-  color:var(--ink);white-space:nowrap}
+/* ---------- the material: one frosted panel rule, reused everywhere ---------- */
+.glass,.situ,.seg,#send-form,.preview,.sent-wrap{
+  background:var(--glass);border:1px solid var(--glass-border);border-radius:var(--r-lg);
+  box-shadow:var(--shadow-panel);
+  -webkit-backdrop-filter:blur(var(--blur)) saturate(1.2);backdrop-filter:blur(var(--blur)) saturate(1.2)}
+.glass-strong{background:var(--glass-strong)}
+
+/* ---------- display type: a quiet serif, sentence case ---------- */
+.display{font-family:var(--display);font-weight:400;text-transform:none;
+  font-size:clamp(46px,12vw,76px);line-height:1.02;letter-spacing:-.015em;
+  margin:6px 0 16px;color:var(--ink);text-wrap:balance}
 .display .ch{display:inline-block}
-.display-sm{font-size:clamp(34px,11vw,58px);margin:2px 0 10px -1vw;width:104%}
-.eyebrow{font-family:var(--display);font-weight:600;font-size:11.5px;letter-spacing:.32em;
-  text-transform:uppercase;color:var(--accent);margin-bottom:14px}
+.display-sm{font-size:clamp(32px,8.5vw,48px);margin:2px 0 12px}
+.eyebrow{font-family:var(--body);font-weight:500;font-size:13px;letter-spacing:0;
+  text-transform:none;color:var(--muted);margin-bottom:12px}
 
 /* ---------- gate ---------- */
 .gate{flex:1;display:flex;align-items:center;padding:24px}
 .gatewrap{width:100%}
 .sub{color:var(--muted);margin:0 0 26px;font-size:15.5px;max-width:34ch}
-.lbl{display:block;font-family:var(--display);font-weight:600;font-size:10.5px;
-  letter-spacing:.18em;text-transform:uppercase;color:var(--faint);margin:16px 0 7px}
-.lbl .opt{letter-spacing:0;text-transform:none;color:var(--faint);font-weight:500}
-input{width:100%;padding:15px 16px;font-size:16px;font-family:var(--body);color:var(--ink);
-  background:var(--surface);border:1.5px solid var(--line);border-radius:14px;outline:none;
+.lbl{display:block;font-family:var(--body);font-weight:500;font-size:13px;
+  letter-spacing:0;text-transform:none;color:var(--muted);margin:16px 0 7px}
+.lbl .opt{color:var(--faint);font-weight:400}
+input,select,textarea{width:100%;padding:14px 16px;font-size:16px;font-family:var(--body);color:var(--ink);
+  background:var(--raise);border:1px solid var(--line-strong);border-radius:var(--r-md);outline:none;
   transition:border-color .15s, box-shadow .15s}
-input::placeholder{color:var(--faint)}
-input:focus{border-color:var(--accent);box-shadow:var(--glow)}
-.btn{width:100%;margin-top:18px;padding:16px;font-size:16px;font-family:var(--display);
-  font-weight:700;letter-spacing:.02em;color:#0B0E12;background:var(--accent);border:none;
-  border-radius:14px;cursor:pointer;transition:background .15s,transform .05s}
-.btn:hover{background:var(--accent-press)}
+input::placeholder,textarea::placeholder{color:var(--faint)}
+input:focus,select:focus,textarea:focus{border-color:var(--ink);box-shadow:var(--glow)}
+.btn{width:100%;margin-top:18px;padding:15px 20px;font-size:15.5px;font-family:var(--body);
+  font-weight:600;letter-spacing:0;color:var(--on-dark);background:var(--dark);border:none;
+  border-radius:var(--r-pill);cursor:pointer;box-shadow:var(--shadow-soft);
+  transition:background .15s,transform .05s}
+.btn:hover{background:var(--dark-press)}
 .btn:active{transform:translateY(1px)}
-.btn:disabled{background:#3A414B;color:var(--faint);cursor:default}
+.btn:disabled{background:rgba(23,24,28,.14);color:var(--faint);cursor:default;box-shadow:none}
 .hint{color:var(--faint);font-size:12.5px;margin:18px 0 0}
-.err{color:#FF7A5C;font-size:13.5px;margin:12px 0 0}
+.err{color:var(--danger);font-size:13.5px;margin:12px 0 0}
 
 /* ---------- shell ---------- */
 .tool{flex:1;display:flex;flex-direction:column}
 .bar{display:flex;align-items:baseline;gap:12px;padding:16px 20px;
   padding-top:max(16px,env(safe-area-inset-top));border-bottom:1px solid var(--line)}
-.wordmark{font-family:var(--display);font-weight:900;font-size:15px;letter-spacing:.26em}
-.wordmark::after{content:"";display:inline-block;width:7px;height:7px;border-radius:2px;
-  background:var(--accent);margin-left:5px;vertical-align:baseline}
-.bar-sub{color:var(--faint);font-size:12px;margin-left:auto;text-align:right}
-.back{font-size:20px;text-decoration:none;color:var(--ink);width:36px;height:36px;
-  display:grid;place-items:center;border-radius:11px;background:var(--surface);
-  border:1px solid var(--line);align-self:center}
+.wordmark{font-family:var(--display);font-weight:400;font-size:22px;letter-spacing:-.01em;line-height:1}
+.wordmark::after{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;
+  background:var(--accent);margin-left:6px;vertical-align:middle;position:relative;top:-2px}
+.bar-sub{color:var(--faint);font-size:12.5px;margin-left:auto;text-align:right}
+.back{font-size:20px;text-decoration:none;color:var(--ink);width:38px;height:38px;
+  display:grid;place-items:center;border-radius:50%;background:var(--raise);
+  border:1px solid var(--glass-border);box-shadow:var(--shadow-soft);align-self:center}
 .body{padding:22px 20px max(24px,env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:14px}
 
 /* ---------- situation cards ---------- */
-.situ{display:flex;align-items:center;gap:16px;background:var(--surface);
-  border:1px solid var(--line);border-radius:18px;padding:18px;
-  text-decoration:none;color:var(--ink);transition:transform .06s,border-color .15s}
+.situ{display:flex;align-items:center;gap:16px;padding:18px;
+  text-decoration:none;color:var(--ink);transition:transform .06s,background .15s}
 .situ:active{transform:scale(.985)}
-.situ:hover{border-color:rgba(255,106,44,.45)}
-.situ-key{font-family:var(--display);font-weight:900;font-size:15px;letter-spacing:.04em;
-  width:56px;height:56px;display:grid;place-items:center;border-radius:14px;flex:none;
-  background:var(--raise);color:var(--muted);border:1px solid var(--line);
-  transform:scaleX(.93)}
-.situ:hover .situ-key{color:var(--accent)}
-.ok-key{color:var(--accent);border-color:rgba(255,106,44,.4)}
-.situ-t{font-family:var(--display);font-weight:700;font-size:17px;letter-spacing:-.01em}
+.situ:hover{background:var(--glass-strong)}
+.situ-key{font-family:var(--body);font-weight:600;font-size:12.5px;letter-spacing:.02em;
+  width:56px;height:56px;display:grid;place-items:center;border-radius:16px;flex:none;
+  background:var(--raise);color:var(--muted);border:1px solid var(--glass-border)}
+.situ:hover .situ-key{color:var(--ink)}
+.ok-key{color:var(--ink);background:var(--glass-strong)}
+.situ-t{font-family:var(--display);font-weight:400;font-size:21px;letter-spacing:-.01em;line-height:1.15}
 .situ-d{color:var(--muted);font-size:13.5px;margin-top:3px;line-height:1.45}
-.situ-go{margin-left:auto;color:var(--accent);font-size:20px;font-weight:700;flex:none}
+.situ-go{margin-left:auto;color:var(--faint);font-size:20px;flex:none;transition:color .15s,transform .15s}
+.situ:hover .situ-go{color:var(--ink);transform:translateX(2px)}
 
 /* ---------- sender ---------- */
-.seg{display:flex;gap:6px;background:var(--surface);border:1px solid var(--line);
-  border-radius:15px;padding:6px}
-.seg-btn{flex:1;padding:12px 8px;font-family:var(--display);font-weight:700;font-size:13.5px;
-  letter-spacing:.02em;color:var(--muted);background:transparent;border:none;
-  border-radius:11px;cursor:pointer;transition:background .15s,color .15s}
-.seg-btn.on{background:var(--accent);color:#0B0E12}
-#send-form{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:20px 18px}
+.seg{display:flex;gap:4px;border-radius:var(--r-pill);padding:5px}
+.seg-btn{flex:1;padding:11px 8px;font-family:var(--body);font-weight:600;font-size:13.5px;
+  letter-spacing:0;color:var(--muted);background:transparent;border:none;
+  border-radius:var(--r-pill);cursor:pointer;transition:background .15s,color .15s}
+.seg-btn.on{background:var(--dark);color:var(--on-dark);box-shadow:var(--shadow-soft)}
+#send-form{padding:20px 18px}
 #send-form input{background:var(--raise)}
 #send-form .lbl:first-of-type{margin-top:0}
-.result{margin:14px 0 0;padding:12px 14px;border-radius:12px;font-size:14.5px;display:none}
+.result{margin:14px 0 0;padding:12px 14px;border-radius:var(--r-md);font-size:14.5px;display:none}
 .result.show{display:block}
-.result.ok{background:rgba(61,214,140,.12);color:var(--ok);border:1px solid rgba(61,214,140,.35)}
-.result.bad{background:rgba(255,122,92,.1);color:#FF7A5C;border:1px solid rgba(255,122,92,.35)}
+.result.ok{background:rgba(var(--ok-rgb),.12);color:var(--ok);border:1px solid rgba(var(--ok-rgb),.3)}
+.result.bad{background:rgba(var(--danger-rgb),.10);color:var(--danger);border:1px solid rgba(var(--danger-rgb),.3)}
 
-.preview{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px 18px}
-.preview-h,.sent-h{font-family:var(--display);font-weight:600;font-size:10.5px;
-  letter-spacing:.18em;text-transform:uppercase;color:var(--faint);margin:0 0 10px}
-.bubble{background:var(--raise);border:1px solid var(--line);border-radius:14px;
-  border-bottom-left-radius:5px;padding:13px 15px;font-size:14px;color:var(--muted);
+.preview{padding:16px 18px}
+.preview-h,.sent-h{font-family:var(--body);font-weight:500;font-size:13px;
+  letter-spacing:0;text-transform:none;color:var(--muted);margin:0 0 10px}
+.bubble{background:var(--raise);border:1px solid var(--glass-border);border-radius:var(--r-md);
+  border-bottom-left-radius:5px;padding:13px 15px;font-size:14px;color:var(--ink);
   line-height:1.55;white-space:pre-wrap;transition:filter .2s,opacity .2s}
 .bubble.swap{filter:blur(6px);opacity:.4}
-.sent-wrap{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px 18px}
+.sent-wrap{padding:16px 18px}
 .sent{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
 .sent li{font-size:14px;color:var(--muted);display:flex;align-items:center;gap:8px}
 .sent li::before{content:"✓";color:var(--ok);font-weight:700}
 
-/* ---------- cinematic entrances (skill recipe #6, capped at ~.55s) ---------- */
-.rv{opacity:0;filter:blur(8px);transform:translateY(14px) scale(.975)}
+/* ---------- entrances (one orchestrated reveal, capped at ~.5s) ---------- */
+.rv{opacity:0;filter:blur(8px);transform:translateY(14px) scale(.985)}
 .rv.in{opacity:1;filter:blur(0);transform:none;
   transition:opacity .5s cubic-bezier(.2,.7,.2,1),filter .5s cubic-bezier(.2,.7,.2,1),
   transform .5s cubic-bezier(.2,.7,.2,1)}
-.display .ch{opacity:0;filter:blur(10px);transform:translateY(.35em) scaleY(1.15)}
+.display .ch{opacity:0;filter:blur(10px);transform:translateY(.25em)}
 .display .ch.in{opacity:1;filter:blur(0);transform:none;
   transition:opacity .45s cubic-bezier(.2,.7,.2,1),filter .45s cubic-bezier(.2,.7,.2,1),
   transform .45s cubic-bezier(.2,.7,.2,1)}
 
-/* ---------- round 2: ambient ember + brand + emphasis ---------- */
+/* ---------- the satin backdrop the glass sits on ---------- */
 body{position:relative}
-body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+body::before{content:"";position:fixed;inset:-10%;z-index:0;pointer-events:none;
   background:
-    radial-gradient(42vh 42vh at 12% -6%, rgba(255,106,44,.16), transparent 70%),
-    radial-gradient(50vh 50vh at 108% 34%, rgba(255,106,44,.07), transparent 70%),
-    radial-gradient(34vh 34vh at -8% 86%, rgba(255,106,44,.05), transparent 70%);
-  animation:ember 16s ease-in-out infinite alternate}
-@keyframes ember{from{opacity:.75;transform:translateY(0)}to{opacity:1;transform:translateY(-2.5vh)}}
+    radial-gradient(60vh 46vh at 18% 12%, rgba(255,255,255,.95), transparent 70%),
+    radial-gradient(70vh 52vh at 82% 26%, rgba(255,255,255,.75), transparent 70%),
+    radial-gradient(56vh 56vh at 70% 88%, rgba(255,255,255,.6), transparent 70%),
+    radial-gradient(48vh 40vh at 8% 78%, rgba(197,34,34,.07), transparent 70%),
+    radial-gradient(40vh 40vh at 92% 92%, rgba(59,111,217,.06), transparent 70%),
+    linear-gradient(160deg,#EEEFF2 0%,#E3E4E8 48%,#DCDDE2 100%);
+  animation:satin 28s ease-in-out infinite alternate}
+@keyframes satin{from{transform:translate3d(0,0,0)}to{transform:translate3d(-2%,-1.5%,0)}}
 #app{position:relative;z-index:1}
 .brand{height:30px;display:block}
 .brand-lg{height:64px;display:block;margin-bottom:18px}
 .display-sm{position:relative;padding-bottom:10px}
-.display-sm::after{content:"";position:absolute;left:1vw;bottom:0;width:58px;height:4px;
-  border-radius:2px;background:var(--accent);transform-origin:left;transform:scaleX(0)}
+.display-sm::after{content:"";position:absolute;left:0;bottom:0;width:44px;height:2px;
+  border-radius:1px;background:var(--accent);transform-origin:left;transform:scaleX(0)}
 .display-sm.uline::after{transform:scaleX(1);transition:transform .6s cubic-bezier(.2,.7,.2,1) .35s}
-.situ:hover .situ-key,.situ:active .situ-key{background:var(--accent);color:#0B0E12;border-color:transparent}
+.situ:hover .situ-key,.situ:active .situ-key{background:var(--dark);color:var(--on-dark);border-color:transparent}
 .situ-d b{color:var(--ink);font-weight:600}
 @media (prefers-reduced-motion:reduce){body::before{animation:none}.display-sm::after{transform:scaleX(1)}}
 
-:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+/* ---------- pills: the one control shape ---------- */
+.pill{display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:var(--r-pill);
+  background:var(--raise);border:1px solid var(--glass-border);color:var(--ink);font-family:var(--body);
+  font-weight:600;font-size:13.5px;box-shadow:var(--shadow-soft);cursor:pointer;text-decoration:none;
+  transition:background .15s,transform .05s}
+.pill:hover{background:#fff}
+.pill:active{transform:translateY(1px)}
+.pill.dark{background:var(--dark);color:var(--on-dark);border-color:transparent}
+.pill.dark:hover{background:var(--dark-press)}
+
+:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
 @media (prefers-reduced-motion:reduce){
   *{transition:none!important}
   .rv,.display .ch{opacity:1!important;filter:none!important;transform:none!important}
-  .display{transform:scaleX(.93)}
 }
 """
 
@@ -692,14 +730,14 @@ VA_JS = r"""(function(){
   var sendForm = document.getElementById("send-form");
   var TEMPLATES = {
     voicemail: {
-      title: "VOICEMAIL",
+      title: "Voicemail",
       btn: "Send the voicemail follow-up",
       build: function(name, va){
         return greet(name) + " " + fromLine(va) + " — just left you a voicemail. We send paying junk-removal jobs in Palm Beach County to local haulers: you keep ~72% plus 100% of tips, no fees, jobs come by text and you only take the ones you want. Worth a quick chat? Reply YES and I'll send your 2-min setup link. Reply STOP to opt out.";
       }
     },
     info: {
-      title: "INFO PACK",
+      title: "Info pack",
       btn: "Send the info pack",
       build: function(name, va){
         return greet(name) + " " + fromLine(va) + " — the info you asked for: we text you paid junk-removal jobs in Palm Beach County. You keep ~72% of the job price plus 100% of tips. No monthly fees, no minimums — accept only the jobs you want, get paid after each one. Ready? Reply YES and I'll send your 2-min setup link. Reply STOP to opt out.";
@@ -842,16 +880,16 @@ VA_EMAIL_HTML = r"""<!doctype html>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="robots" content="noindex, nofollow" />
-<meta name="theme-color" content="#0B0E12" />
+<meta name="theme-color" content="#E4E5E9" />
 <title>Umuve — Send an Email</title>
-<link rel="stylesheet" href="/va/app.css?v=5" />
+<link rel="stylesheet" href="/va/app.css?v=6" />
 </head>
 <body>
 <div id="app">
   <section id="gate" class="gate">
     <div class="gatewrap">
       <img class="brand-lg rv" src="/va/logo.png" alt="Umuve" /><div class="eyebrow rv">Internal · VA suite</div>
-      <h1 class="display" aria-label="Send an email">SEND AN&nbsp;EMAIL</h1>
+      <h1 class="display" aria-label="Send an email">Send an email</h1>
       <p class="sub rv">Same login as your other tools.</p>
       <form id="gate-form" autocomplete="off" class="rv">
         <label class="lbl" for="code">Access code</label>
@@ -929,12 +967,12 @@ VA_EMAIL_JS = r"""(function(){
 
   var COPY = {
     intro: {
-      title: "INTRO EMAIL",
+      title: "Intro email",
       sub: "For leads whose listing only shows an email — no manager phone. Their reply comes back to the Umuve inbox.",
       btn: "Send the intro email"
     },
     setup: {
-      title: "SETUP LINK",
+      title: "Setup link",
       sub: "For a signed-up YES whose phone can't receive texts (landline). Same steps as the setup text, by email.",
       btn: "Send the setup link"
     }

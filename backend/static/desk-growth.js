@@ -26,7 +26,7 @@
   function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
 
   // --- styles via CSSOM (allowed under style-src 'self') ---------------------
-  (function(){ if(document.querySelector('link[href^="/static/desk-growth.css"]')) return; var l = document.createElement("link"); l.rel = "stylesheet"; l.href = "/static/desk-growth.css?v=1"; document.head.appendChild(l); })();
+  (function(){ if(document.querySelector('link[href^="/static/desk-growth.css"]')) return; var l = document.createElement("link"); l.rel = "stylesheet"; l.href = "/static/desk-growth.css?v=2"; document.head.appendChild(l); })();
 
   var toastEl = null, toastTimer = null;
   function toast(msg) {

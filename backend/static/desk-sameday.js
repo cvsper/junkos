@@ -13,7 +13,7 @@
       .then(function(r){ return r.json().then(function(j){ return {status: r.status, body: j}; }); });
   }
   function el(tag, cls, text){ var e = document.createElement(tag); if(cls) e.className = cls; if(text != null) e.textContent = text; return e; }
-  function css(){ (function(){ if(document.querySelector('link[href^="/static/desk-sameday.css"]')) return; var l = document.createElement("link"); l.rel = "stylesheet"; l.href = "/static/desk-sameday.css?v=1"; document.head.appendChild(l); })(); }
+  function css(){ (function(){ if(document.querySelector('link[href^="/static/desk-sameday.css"]')) return; var l = document.createElement("link"); l.rel = "stylesheet"; l.href = "/static/desk-sameday.css?v=2"; document.head.appendChild(l); })(); }
   css();
 
   // ---- 1. capacity under the zip / address

@@ -1,7 +1,7 @@
 /* Umuve Call Desk — service worker.
    Served from /va/desk-sw.js (Service-Worker-Allowed: /va/) so it controls /va/calls.
    App shell: network-first with cache fallback. API: always network. Push → notification. */
-var VERSION = "desk-shell-v1";
+var VERSION = "desk-shell-v2";
 var SHELL = ["/va/calls", "/va/app.css", "/va/calls.css", "/va/calls.js", "/static/desk-growth.js"];
 
 function isShell(url) {

@@ -207,8 +207,8 @@ COACH_HTML = r"""<!doctype html>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="robots" content="noindex, nofollow" />
 <title>Ask Umuve — Call Coach</title>
-<meta name="theme-color" content="#0B0E12" />
-<link rel="stylesheet" href="/va/app.css" />
+<meta name="theme-color" content="#E4E5E9" />
+<link rel="stylesheet" href="/va/app.css?v=6" />
 <link rel="stylesheet" href="/coach/app.css" />
 </head>
 <body>
@@ -268,20 +268,21 @@ COACH_CSS = r"""/* Chat-specific layer — tokens, base, gate, bar come from /va
 .gate{justify-content:flex-start}
 .bar{align-items:center}
 .bar-id{flex:1;min-width:0}
-.bar-title{font-family:var(--display);font-weight:700;font-size:17px;letter-spacing:-.01em}
-.bar-sub{display:flex;align-items:center;gap:6px;color:var(--faint);font-size:12.5px;margin-top:1px;margin-left:0;text-align:left}
-.dot{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px rgba(61,214,140,.16)}
-.bar-btn{font-family:var(--display);font-weight:600;font-size:12.5px;color:var(--muted);background:transparent;border:1px solid var(--line);border-radius:9px;padding:7px 11px;cursor:pointer}
-.bar-btn:hover{color:var(--ink);border-color:var(--accent)}
+.bar-title{font-family:var(--display);font-weight:400;font-size:19px;letter-spacing:-.01em;color:var(--ink)}
+.bar-sub{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:12.5px;margin-top:1px;margin-left:0;text-align:left}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px rgba(var(--ok-rgb),.16)}
+.bar-btn{font-family:var(--body);font-weight:600;font-size:13.5px;letter-spacing:0;color:var(--ink);background:var(--raise);border:1px solid var(--glass-border);border-radius:var(--r-pill);padding:8px 14px;cursor:pointer;box-shadow:var(--shadow-soft);transition:background .15s,border-color .15s,color .15s}
+.bar-btn:hover{color:var(--ink);background:var(--glass-strong);border-color:var(--line-strong)}
+.bar-btn:focus-visible,.chip:focus-visible,.send:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
 
 .chat{flex:1;display:flex;flex-direction:column;min-height:0}
 .thread{flex:1;overflow-y:auto;padding:20px 16px 8px;display:flex;flex-direction:column;gap:12px;scroll-behavior:smooth}
 .row{display:flex;max-width:88%}
 .row.user{align-self:flex-end;justify-content:flex-end}
 .row.bot{align-self:flex-start}
-.bubble{padding:11px 14px;border-radius:18px;font-size:15.5px;word-wrap:break-word;animation:rise .22s ease both}
-.row.bot .bubble{background:var(--surface);border:1px solid var(--line);border-bottom-left-radius:6px;color:var(--ink)}
-.row.user .bubble{background:var(--accent);color:#0B0E12;border-bottom-right-radius:6px;font-weight:500}
+.bubble{padding:11px 14px;border-radius:var(--r-lg);font-size:15.5px;line-height:1.45;word-wrap:break-word;animation:rise .22s ease both}
+.row.bot .bubble{background:var(--raise);border:1px solid var(--glass-border);border-bottom-left-radius:6px;color:var(--ink);box-shadow:var(--shadow-soft)}
+.row.user .bubble{background:var(--dark);color:var(--on-dark);border:1px solid transparent;border-bottom-right-radius:6px;font-weight:500;box-shadow:var(--shadow-soft)}
 .bubble strong{font-weight:700}
 @keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 
@@ -291,18 +292,19 @@ COACH_CSS = r"""/* Chat-specific layer — tokens, base, gate, bar come from /va
 .typing span:nth-child(3){animation-delay:.4s}
 @keyframes blink{0%,60%,100%{opacity:.25;transform:translateY(0)}30%{opacity:.9;transform:translateY(-3px)}}
 
-.composer{background:var(--surface);border-top:1px solid var(--line);padding:10px 12px max(10px,env(safe-area-inset-bottom))}
+.composer{background:var(--glass);border-top:1px solid var(--glass-border);box-shadow:0 -1px 0 0 var(--line);-webkit-backdrop-filter:blur(var(--blur)) saturate(1.2);backdrop-filter:blur(var(--blur)) saturate(1.2);padding:10px 12px max(10px,env(safe-area-inset-bottom))}
 .chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:9px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 .chips::-webkit-scrollbar{display:none}
-.chip{flex:0 0 auto;font-family:var(--body);font-size:13px;color:var(--ink);background:var(--raise);border:1px solid var(--line);border-radius:999px;padding:8px 13px;cursor:pointer;white-space:nowrap;transition:border-color .12s,color .12s}
-.chip:hover{border-color:var(--accent);color:var(--accent)}
+.chip{flex:0 0 auto;font-family:var(--body);font-weight:600;font-size:12.5px;letter-spacing:0;color:var(--muted);background:var(--raise);border:1px solid var(--glass-border);border-radius:var(--r-pill);padding:8px 13px;cursor:pointer;white-space:nowrap;box-shadow:var(--shadow-soft);transition:border-color .12s,color .12s,background .12s}
+.chip:hover{border-color:var(--line-strong);color:var(--ink);background:var(--glass-strong)}
 .send-row{display:flex;align-items:flex-end;gap:9px}
-textarea#input{flex:1;resize:none;max-height:140px;font-family:var(--body);font-size:16px;color:var(--ink);background:var(--raise);border:1.5px solid var(--line);border-radius:16px;padding:12px 14px;outline:none;line-height:1.4}
-textarea#input:focus{border-color:var(--accent);box-shadow:var(--glow)}
-.send{flex:0 0 auto;width:46px;height:46px;border-radius:50%;border:none;background:var(--accent);color:#0B0E12;cursor:pointer;display:grid;place-items:center;transition:background .15s,transform .05s}
-.send:hover{background:var(--accent-press)}
+textarea#input{flex:1;resize:none;max-height:140px;font-family:var(--body);font-size:16px;color:var(--ink);background:var(--raise);border:1.5px solid var(--glass-border);border-radius:var(--r-lg);padding:12px 14px;outline:none;line-height:1.4;box-shadow:var(--shadow-soft);transition:border-color .15s,box-shadow .15s}
+textarea#input::placeholder{color:var(--faint)}
+textarea#input:focus{border-color:var(--ink);box-shadow:var(--glow)}
+.send{flex:0 0 auto;width:46px;height:46px;border-radius:50%;border:none;background:var(--dark);color:var(--on-dark);cursor:pointer;display:grid;place-items:center;box-shadow:var(--shadow-soft);transition:background .15s,transform .05s}
+.send:hover{background:var(--dark-press)}
 .send:active{transform:translateY(1px)}
-.send:disabled{background:#3A414B;color:var(--faint);cursor:default}
+.send:disabled{background:rgba(var(--ink-rgb),.14);color:var(--faint);cursor:default;box-shadow:none}
 .send svg{width:20px;height:20px;display:block}
 
 @media (prefers-reduced-motion:reduce){*{animation:none!important;scroll-behavior:auto!important}}

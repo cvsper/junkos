@@ -5,7 +5,7 @@
    drawer uses the same window the numbers did. */
 (function(){
   "use strict";
-  (function(){ if(document.querySelector('link[href^="/static/desk-drill.css"]')) return; var l = document.createElement("link"); l.rel = "stylesheet"; l.href = "/static/desk-drill.css?v=1"; document.head.appendChild(l); })();
+  (function(){ if(document.querySelector('link[href^="/static/desk-drill.css"]')) return; var l = document.createElement("link"); l.rel = "stylesheet"; l.href = "/static/desk-drill.css?v=2"; document.head.appendChild(l); })();
   var JWT_KEY = "umuve_desk_jwt", ME_KEY = "umuve_desk_me", KEY = "umuve_coach_code", VA_KEY = "umuve_va_name";
   function jwt(){ try { return localStorage.getItem(JWT_KEY) || ""; } catch(e){ return ""; } }
   function me(){ try { return JSON.parse(localStorage.getItem(ME_KEY) || "null"); } catch(e){ return null; } }

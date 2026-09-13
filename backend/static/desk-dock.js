@@ -11,7 +11,7 @@
    CSS lives in /static/desk-dock.css (the desk's CSP is style-src 'self'). */
 (function(){
   "use strict";
-  (function(){ if(document.querySelector('link[href^="/static/desk-dock.css"]')) return; var l = document.createElement("link"); l.rel = "stylesheet"; l.href = "/static/desk-dock.css?v=1"; document.head.appendChild(l); })();
+  (function(){ if(document.querySelector('link[href^="/static/desk-dock.css"]')) return; var l = document.createElement("link"); l.rel = "stylesheet"; l.href = "/static/desk-dock.css?v=2"; document.head.appendChild(l); })();
 
   function el(tag, cls, text){ var e = document.createElement(tag); if(cls) e.className = cls; if(text != null) e.textContent = text; return e; }
   var ICONS = {

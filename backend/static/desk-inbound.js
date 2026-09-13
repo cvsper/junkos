@@ -32,7 +32,7 @@
   function el(tag, cls, text){ var e = document.createElement(tag); if(cls) e.className = cls; if(text != null) e.textContent = text; return e; }
   function label(cat){ return String(cat || "").replace(/_/g, " "); }
 
-  var css = document.createElement("link"); css.rel = "stylesheet"; css.href = "/static/desk-inbound.css?v=1";
+  var css = document.createElement("link"); css.rel = "stylesheet"; css.href = "/static/desk-inbound.css?v=2";
   document.head.appendChild(css);
 
   var incoming = document.getElementById("incoming");

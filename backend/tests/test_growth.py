@@ -269,7 +269,7 @@ def test_manifest_icons_and_page_wiring(client):
     m = json.loads(r.get_data(as_text=True))
     assert m["name"] == "Umuve Call Desk" and m["short_name"] == "Call Desk"
     assert m["start_url"] == "/va/calls" and m["display"] == "standalone"
-    assert m["background_color"] == "#0B0E12" and m["theme_color"] == "#0B0E12"
+    assert m["background_color"] == "#E4E5E9" and m["theme_color"] == "#E4E5E9"
     assert {i["sizes"] for i in m["icons"]} == {"192x192", "512x512"}
     for icon in m["icons"]:
         assert client.get(icon["src"]).status_code == 200

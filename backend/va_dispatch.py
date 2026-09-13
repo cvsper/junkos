@@ -418,17 +418,17 @@ DISPATCH_HTML = r"""<!doctype html>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="robots" content="noindex, nofollow" />
-<meta name="theme-color" content="#0B0E12" />
+<meta name="theme-color" content="#E4E5E9" />
 <title>Umuve — Dispatch Desk</title>
-<link rel="stylesheet" href="/va/app.css?v=5" />
-<link rel="stylesheet" href="/va/dispatch.css?v=2" />
+<link rel="stylesheet" href="/va/app.css?v=6" />
+<link rel="stylesheet" href="/va/dispatch.css?v=3" />
 </head>
 <body>
 <div id="app">
   <section id="gate" class="gate">
     <div class="gatewrap">
       <img class="brand-lg rv" src="/va/logo.png" alt="Umuve" /><div class="eyebrow rv">Internal · VA suite</div>
-      <h1 class="display" id="display-gate" aria-label="Dispatch">DISPATCH</h1>
+      <h1 class="display" id="display-gate" aria-label="Dispatch">Dispatch</h1>
       <p class="sub rv">Open jobs on the left of the phone, a hauler on the other end. Put them together.</p>
       <form id="gate-form" class="rv">
         <label class="lbl" for="code">Passcode</label>
@@ -444,7 +444,7 @@ DISPATCH_HTML = r"""<!doctype html>
   <section id="tool" class="tool" hidden>
     <header class="bar">
       <a class="back" href="/va" aria-label="Back to VA tools">←</a>
-      <span class="wordmark">DISPATCH</span>
+      <span class="wordmark">Dispatch</span>
       <span class="bar-sub" id="bar-sub">—</span>
     </header>
 
@@ -511,95 +511,111 @@ DISPATCH_HTML = r"""<!doctype html>
 """
 
 
-DISPATCH_CSS = r"""/* Dispatch Desk — layers over /va/app.css tokens */
+DISPATCH_CSS = r"""/* Dispatch Desk — layers over /va/app.css tokens (frosted glass on satin grey) */
 [hidden]{display:none!important}
-.toast{margin:0;padding:11px 14px;border-radius:12px;font-size:13.5px;
-  background:rgba(61,214,140,.12);color:var(--ok);border:1px solid rgba(61,214,140,.35)}
+.toast{margin:0;padding:11px 14px;border-radius:var(--r-md);font-size:13.5px;
+  background:var(--glass);color:var(--ok);border:1px solid rgba(var(--ok-rgb),.32);
+  box-shadow:var(--shadow-panel);-webkit-backdrop-filter:blur(var(--blur)) saturate(1.2);
+  backdrop-filter:blur(var(--blur)) saturate(1.2)}
 
 /* board chrome */
 .boardhead{display:flex;align-items:center;justify-content:space-between;margin:4px 0 2px}
-.boardcount{font-family:var(--display);font-weight:600;font-size:10.5px;
-  letter-spacing:.22em;text-transform:uppercase;color:var(--faint)}
-.ghostbtn{font-family:var(--display);font-weight:700;font-size:12px;letter-spacing:.06em;
-  color:var(--muted);background:var(--surface);border:1px solid var(--line);
-  border-radius:11px;padding:9px 14px;cursor:pointer}
+.boardcount{font-family:var(--body);font-weight:500;font-size:12.5px;
+  letter-spacing:0;text-transform:none;color:var(--muted)}
+.ghostbtn{font-family:var(--body);font-weight:600;font-size:13px;letter-spacing:0;
+  color:var(--ink);background:var(--raise);border:1px solid var(--glass-border);
+  border-radius:var(--r-pill);padding:9px 14px;cursor:pointer;box-shadow:var(--shadow-soft);
+  transition:background .15s,transform .05s}
+.ghostbtn:hover{background:#fff}
 .ghostbtn:active{transform:translateY(1px)}
-.board-empty{background:var(--surface);border:1px dashed var(--line);border-radius:18px;
-  padding:26px 20px;text-align:center}
+.board-empty{background:var(--glass);border:1px dashed var(--line-strong);border-radius:var(--r-lg);
+  box-shadow:var(--shadow-panel);-webkit-backdrop-filter:blur(var(--blur)) saturate(1.2);
+  backdrop-filter:blur(var(--blur)) saturate(1.2);padding:26px 20px;text-align:center}
 .board-empty p{margin:0;font-size:15px}
-.be-sub{color:var(--faint);font-size:12.5px!important;margin-top:6px!important}
+.be-sub{color:var(--muted);font-size:12.5px!important;margin-top:6px!important}
 
 /* job manifest card */
-.jobcard{background:var(--surface);border:1px solid var(--line);border-radius:18px;
-  padding:16px 16px 14px;margin-bottom:12px}
+.jobcard{background:var(--glass);border:1px solid var(--glass-border);border-radius:var(--r-lg);
+  box-shadow:var(--shadow-panel);-webkit-backdrop-filter:blur(var(--blur)) saturate(1.2);
+  backdrop-filter:blur(var(--blur)) saturate(1.2);padding:16px 16px 14px;margin-bottom:12px}
 .jobtop{display:flex;align-items:baseline;gap:10px;margin-bottom:6px}
-.jobprice{font-family:var(--display);font-weight:900;font-size:clamp(26px,7.5vw,34px);
-  letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:var(--ink)}
-.jobcode{font-family:var(--display);font-weight:600;font-size:10px;letter-spacing:.2em;
-  text-transform:uppercase;color:var(--faint);margin-left:auto}
-.jobaddr{font-family:var(--display);font-weight:800;font-size:clamp(16px,4.6vw,20px);
-  letter-spacing:-.01em;line-height:1.15;margin:0 0 10px}
+.jobprice{font-family:var(--display);font-weight:400;font-size:clamp(26px,7.5vw,34px);
+  letter-spacing:-.01em;font-variant-numeric:tabular-nums;color:var(--ink)}
+.jobcode{font-family:var(--body);font-weight:500;font-size:12px;letter-spacing:0;
+  text-transform:none;color:var(--muted);margin-left:auto;font-variant-numeric:tabular-nums}
+.jobaddr{font-family:var(--display);font-weight:400;font-size:clamp(18px,5vw,22px);
+  letter-spacing:-.01em;line-height:1.15;margin:0 0 10px;color:var(--ink)}
 .jobchips{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:10px}
-.jchip{font-family:var(--display);font-weight:700;font-size:10.5px;letter-spacing:.12em;
-  text-transform:uppercase;color:var(--muted);background:var(--raise);
-  border:1px solid var(--line);border-radius:8px;padding:4px 8px}
-.jchip-when{color:#7FB8FF;border-color:rgba(127,184,255,.4)}
-.jchip-src{color:var(--accent);border-color:rgba(255,106,44,.4)}
+.jchip{font-family:var(--body);font-weight:600;font-size:12px;letter-spacing:0;
+  text-transform:none;color:var(--muted);background:var(--raise);
+  border:1px solid var(--glass-border);border-radius:var(--r-pill);padding:4px 10px}
+.jchip-when{color:var(--info);background:rgba(var(--info-rgb),.08);border-color:rgba(var(--info-rgb),.22)}
+.jchip-src{color:var(--accent);background:rgba(var(--accent-rgb),.08);border-color:rgba(var(--accent-rgb),.22)}
 .jobfacts{border-top:1px solid var(--line);padding-top:8px;margin-bottom:12px}
 .jf{display:flex;gap:12px;padding:5px 0}
-.jf-k{flex:none;width:64px;font-family:var(--display);font-weight:600;font-size:10px;
-  letter-spacing:.16em;text-transform:uppercase;color:var(--faint);padding-top:2px}
-.jf-v{color:var(--muted);font-size:13.5px;line-height:1.45;overflow-wrap:anywhere;white-space:pre-line}
-.jf-v a{color:var(--ink);text-decoration:none;border-bottom:1px solid rgba(255,106,44,.5)}
-.assignbtn{width:100%;padding:14px;font-size:15px;font-family:var(--display);font-weight:700;
-  color:#0B0E12;background:var(--accent);border:none;border-radius:13px;cursor:pointer}
+.jf-k{flex:none;width:72px;font-family:var(--body);font-weight:500;font-size:12.5px;
+  letter-spacing:0;text-transform:none;color:var(--muted);padding-top:1px}
+.jf-v{color:var(--ink);font-size:13.5px;line-height:1.45;overflow-wrap:anywhere;white-space:pre-line}
+.jf-v a{color:var(--ink);text-decoration:none;border-bottom:1px solid var(--line-strong)}
+.assignbtn{width:100%;padding:14px;font-size:15px;font-family:var(--body);font-weight:600;
+  color:var(--on-dark);background:var(--dark);border:none;border-radius:var(--r-pill);cursor:pointer;
+  box-shadow:var(--shadow-soft);transition:background .15s}
+.assignbtn:hover{background:var(--dark-press)}
 .assignbtn:active{transform:translateY(1px)}
 
 /* log a phone job */
-.logbox{background:var(--surface);border:1px solid var(--line);border-radius:18px;
-  padding:14px 16px;margin-bottom:14px}
-.logbox summary{font-family:var(--display);font-weight:600;font-size:10.5px;
-  letter-spacing:.16em;text-transform:uppercase;color:var(--accent);cursor:pointer;list-style:none}
-.logbox summary::before{content:"▸ "}
+.logbox{background:var(--glass);border:1px solid var(--glass-border);border-radius:var(--r-lg);
+  box-shadow:var(--shadow-panel);-webkit-backdrop-filter:blur(var(--blur)) saturate(1.2);
+  backdrop-filter:blur(var(--blur)) saturate(1.2);padding:14px 16px;margin-bottom:14px}
+.logbox summary{font-family:var(--body);font-weight:600;font-size:13.5px;
+  letter-spacing:0;text-transform:none;color:var(--ink);cursor:pointer;list-style:none}
+.logbox summary::before{content:"▸ ";color:var(--muted)}
 .logbox[open] summary::before{content:"▾ "}
-.log-sub{color:var(--faint);font-size:12.5px;line-height:1.5;margin:10px 0 2px}
+.log-sub{color:var(--muted);font-size:12.5px;line-height:1.5;margin:10px 0 2px}
 .chk{display:flex;align-items:center;gap:10px;margin:16px 0 0;color:var(--muted);
   font-size:13.5px;cursor:pointer}
-.chk input{width:18px;height:18px;accent-color:var(--accent);margin:0;flex:none}
-.jobaddr a{color:inherit;text-decoration:none;border-bottom:1.5px dashed rgba(255,106,44,.45)}
+.chk input{width:18px;height:18px;accent-color:var(--dark);margin:0;flex:none}
+.jobaddr a{color:inherit;text-decoration:none;border-bottom:1.5px dashed var(--line-strong)}
 .haulphone{margin-top:3px}
 .haulphone a{color:var(--muted);font-size:12.5px;text-decoration:none;
-  border-bottom:1px solid rgba(127,184,255,.4)}
+  border-bottom:1px solid rgba(var(--info-rgb),.4)}
 
 /* recent activity */
-.recent-head{font-family:var(--display);font-weight:600;font-size:10px;letter-spacing:.2em;
-  text-transform:uppercase;color:var(--faint);margin:18px 0 8px}
-.recent-row{color:var(--faint);font-size:12.5px;line-height:1.6;padding:4px 0;
+.recent-head{font-family:var(--body);font-weight:500;font-size:12.5px;letter-spacing:0;
+  text-transform:none;color:var(--muted);margin:18px 0 8px}
+.recent-row{color:var(--muted);font-size:12.5px;line-height:1.6;padding:4px 0;
   border-top:1px solid var(--line)}
-.recent-row b{color:var(--muted);font-weight:600}
+.recent-row b{color:var(--ink);font-weight:600}
 
 /* hauler picker */
-.picker-head{font-family:var(--display);font-weight:600;font-size:10.5px;
-  letter-spacing:.22em;text-transform:uppercase;color:var(--faint);margin:16px 0 8px}
-.deskcard{background:var(--surface);border:1px solid var(--line);border-radius:18px;
-  padding:16px;margin-top:12px}
-.haulrow{display:flex;align-items:center;gap:12px;background:var(--surface);
-  border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:10px}
+.picker-head{font-family:var(--body);font-weight:500;font-size:12.5px;
+  letter-spacing:0;text-transform:none;color:var(--muted);margin:16px 0 8px}
+.deskcard{background:var(--glass);border:1px solid var(--glass-border);border-radius:var(--r-lg);
+  box-shadow:var(--shadow-panel);-webkit-backdrop-filter:blur(var(--blur)) saturate(1.2);
+  backdrop-filter:blur(var(--blur)) saturate(1.2);padding:16px;margin-top:12px}
+.haulrow{display:flex;align-items:center;gap:12px;background:var(--glass);
+  border:1px solid var(--glass-border);border-radius:var(--r-lg);box-shadow:var(--shadow-panel);
+  -webkit-backdrop-filter:blur(var(--blur)) saturate(1.2);backdrop-filter:blur(var(--blur)) saturate(1.2);
+  padding:14px;margin-bottom:10px}
 .haulmain{min-width:0;flex:1}
-.haulname{font-family:var(--display);font-weight:800;font-size:16px;letter-spacing:-.01em;
-  margin-bottom:3px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.hchip{font-family:var(--display);font-weight:700;font-size:9.5px;letter-spacing:.12em;
-  text-transform:uppercase;border-radius:7px;padding:3px 7px;border:1px solid var(--line);color:var(--muted)}
-.hchip-online{color:var(--ok);border-color:rgba(61,214,140,.4)}
-.hchip-text{color:#7FB8FF;border-color:rgba(127,184,255,.4)}
-.hchip-operator{color:var(--accent);border-color:rgba(255,106,44,.4)}
-.haulmeta{color:var(--faint);font-size:12.5px}
-.haulbtn{flex:none;font-family:var(--display);font-weight:700;font-size:13px;
-  color:var(--ink);background:var(--raise);border:1.5px solid rgba(255,106,44,.45);
-  border-radius:12px;padding:11px 16px;cursor:pointer;transition:background .12s,color .12s}
-.haulbtn.confirm{background:var(--accent);color:#0B0E12;border-color:var(--accent)}
+.haulname{font-family:var(--display);font-weight:400;font-size:19px;letter-spacing:-.01em;
+  margin-bottom:3px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;color:var(--ink)}
+.hchip{font-family:var(--body);font-weight:600;font-size:11px;letter-spacing:0;
+  text-transform:none;border-radius:var(--r-pill);padding:3px 8px;background:var(--raise);
+  border:1px solid var(--glass-border);color:var(--muted)}
+.hchip-online{color:var(--ok);background:rgba(var(--ok-rgb),.08);border-color:rgba(var(--ok-rgb),.24)}
+.hchip-text{color:var(--info);background:rgba(var(--info-rgb),.08);border-color:rgba(var(--info-rgb),.22)}
+.hchip-operator{color:var(--accent);background:rgba(var(--accent-rgb),.08);border-color:rgba(var(--accent-rgb),.22)}
+.haulmeta{color:var(--muted);font-size:12.5px}
+.haulbtn{flex:none;font-family:var(--body);font-weight:600;font-size:13px;
+  color:var(--ink);background:var(--raise);border:1px solid var(--glass-border);
+  border-radius:var(--r-pill);padding:11px 16px;cursor:pointer;box-shadow:var(--shadow-soft);
+  transition:background .12s,color .12s}
+.haulbtn:hover{background:#fff}
+.haulbtn.confirm{background:var(--dark);color:var(--on-dark);border-color:transparent}
+.haulbtn.confirm:hover{background:var(--dark-press)}
 .haulbtn:disabled{opacity:.5;cursor:default}
-.sr-none{color:var(--faint);font-size:13px;padding:6px 2px}
+.sr-none{color:var(--muted);font-size:13px;padding:6px 2px}
 @media (min-width:700px){
   #jobs{display:grid;grid-template-columns:1fr 1fr;gap:12px}
   .jobcard{margin-bottom:0}

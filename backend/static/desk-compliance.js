@@ -54,7 +54,7 @@
   function loadCss(){
     if(document.querySelector('link[href^="/static/desk-compliance.css"]')) return;
     var l = document.createElement("link");
-    l.rel = "stylesheet"; l.href = "/static/desk-compliance.css?v=1";
+    l.rel = "stylesheet"; l.href = "/static/desk-compliance.css?v=2";
     document.head.appendChild(l);
   }
 

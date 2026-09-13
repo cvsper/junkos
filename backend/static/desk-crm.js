@@ -16,7 +16,7 @@
 
   // ---- stylesheet (CSP: style-src 'self', so link it rather than inline it)
   var link = document.createElement("link");
-  link.rel = "stylesheet"; link.href = "/static/desk-crm.css?v=1";
+  link.rel = "stylesheet"; link.href = "/static/desk-crm.css?v=2";
   document.head.appendChild(link);
 
   // ---- auth mirrors calls.js
