@@ -134,7 +134,8 @@ _ratelimit = (
 
 @coach_bp.route("/coach", methods=["GET"])
 def coach_page():
-    return Response(COACH_HTML, mimetype="text/html")
+    from coach_hub import coach_page as _page
+    return _page()
 
 
 @coach_bp.route("/coach/app.css", methods=["GET"])
@@ -157,10 +158,17 @@ def coach_chat():
         }), 503
 
     data = request.get_json(silent=True) or {}
-    if not _passcode_ok(data.get("passcode")):
+    from desk_auth import desk_identity
+    ident = desk_identity(data)
+    if not ident and not _passcode_ok(data.get("passcode") or data.get("code")):
         return jsonify({
             "error": "That access code didn't work — double-check with Shamar."
         }), 401
+    va = (ident or {}).get("name") or (data.get("va_name") or "").strip()
+    if ident and (data.get("va") or "").strip():
+        from coach_hub import _sees_everyone
+        if _sees_everyone(ident):
+            va = data["va"].strip()
 
     raw = data.get("messages") or []
     messages = []
@@ -186,7 +194,7 @@ def coach_chat():
         resp = _run(lambda: client.messages.create(
             model=model,
             max_tokens=MAX_TOKENS,
-            system=SYSTEM_PROMPT,
+            system=_system_for(va),
             messages=messages,
         ))
         reply = "".join(getattr(b, "text", "") for b in resp.content).strip()
@@ -198,6 +206,39 @@ def coach_chat():
         return jsonify({
             "error": "Couldn't reach the coach right now — give it a second and try again."
         }), 502
+
+
+DEMAND_PROMPT = (
+    "\n\nSHE ALSO CALLS THE CUSTOMER (DEMAND) SIDE: property managers, apartment "
+    "complexes, storage facilities, realtors, estate and probate attorneys, "
+    "contractors, senior communities, movers, thrift stores — to get Umuve on "
+    "their vendor list and a rate card on file. Coach both sides equally.\n"
+    "- Umuve serves seven coastal counties, Miami-Dade to Brevard (Miami to "
+    "Cocoa Beach). Same-day and next-day pickups. Upfront price before anyone "
+    "shows up; licensed and insured; crews do all the lifting.\n"
+    "- Customers book at goumuve.com or call (844) 435-6005 (Maya answers). "
+    "The desk line she calls and texts from is (561) 782-4350. Never give out "
+    "any other number.\n"
+    "- Minimum job $119. Prices below are all-in; if a price isn't listed, "
+    "say she'll text a photo quote in minutes rather than guessing.\n"
+    "- Florida is all-party consent: a recording notice plays before she "
+    "connects. Never coach her to skip it.\n"
+    "- When the live data below mentions a specific call, score, or focus, "
+    "use it. Never invent statistics."
+)
+
+
+def _system_for(va):
+    """The base prompt plus the demand side plus a live briefing on this VA."""
+    system = SYSTEM_PROMPT + DEMAND_PROMPT
+    try:
+        from coach_hub import coach_context
+        ctx = coach_context(va) if va else ""
+        if ctx:
+            system += "\n\n" + ctx
+    except Exception:
+        logger.exception("coach context failed; answering without it")
+    return system
 
 
 COACH_HTML = r"""<!doctype html>

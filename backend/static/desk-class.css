@@ -1,7 +1,7 @@
 /* Weekly class overlay — sits over the desk until the class is finished.
    Scrim + one centered glass panel. */
 body.cl-locked{overflow:hidden}
-.cl-overlay{position:fixed;inset:0;z-index:60;background:rgba(var(--ink-rgb),.28);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);overflow:auto;-webkit-overflow-scrolling:touch;padding:max(16px,env(safe-area-inset-top)) 12px 40px;display:flex}
+.cl-overlay{z-index:120;position:fixed;inset:0;z-index:60;background:rgba(var(--ink-rgb),.28);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);overflow:auto;-webkit-overflow-scrolling:touch;padding:max(16px,env(safe-area-inset-top)) 12px 40px;display:flex}
 .cl-card{width:100%;max-width:680px;margin:auto;background:var(--glass-strong);border:1px solid var(--glass-border);border-radius:var(--r-xl);box-shadow:var(--shadow-panel);-webkit-backdrop-filter:blur(var(--blur)) saturate(1.2);backdrop-filter:blur(var(--blur)) saturate(1.2);padding:26px 24px 28px}
 .cl-head{margin-bottom:14px}
 .cl-eyebrow{font-family:var(--body);font-weight:500;font-size:13px;letter-spacing:0;text-transform:none;color:var(--accent);margin-bottom:6px}

@@ -311,6 +311,8 @@ except Exception as _b_exc:
 try:
     from trixie_assistant import coach_bp
     app.register_blueprint(coach_bp)
+    from coach_hub import coachhub_bp
+    app.register_blueprint(coachhub_bp)
 except Exception as _c_exc:
     import logging as _logging
     _logging.getLogger(__name__).warning("coach_bp not registered: %s", _c_exc)
@@ -1049,7 +1051,7 @@ def get_available_time_slots(requested_date=None):
 # ---------------------------------------------------------------------------
 # Legacy API Routes (kept for backward compatibility)
 # ---------------------------------------------------------------------------
-APP_VERSION = "2.2.74"
+APP_VERSION = "2.2.75"
 
 
 # ---------------------------------------------------------------------------

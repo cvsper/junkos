@@ -73,6 +73,17 @@
       card.appendChild(drill);
     }
 
+    if(data.readOnly){
+      var done = el("section", "cl-sec");
+      if(c.quiz_score != null) done.appendChild(el("p", "cl-meta", "Quick check: " + c.quiz_score + "/" + c.quiz_total));
+      if(c.reflection){ done.appendChild(el("h3", null, "Your one line")); done.appendChild(quoteBlock(c.reflection, "ok")); }
+      if(c.manager_note){ done.appendChild(el("h3", null, "From your manager")); done.appendChild(quoteBlock(c.manager_note, "warn")); }
+      var rowd = el("div", "cl-btns"); var closeBtn = el("button", "si-btn cl-primary", "Close"); closeBtn.type = "button";
+      closeBtn.addEventListener("click", close); rowd.appendChild(closeBtn); done.appendChild(rowd);
+      card.appendChild(done); overlay.appendChild(card); document.body.appendChild(overlay); document.body.classList.add("cl-locked");
+      overlay.addEventListener("click", function(ev){ if(ev.target === overlay) close(); });
+      return;
+    }
     var form = el("form", "cl-sec cl-quiz"); form.appendChild(el("h3", null, "Quick check"));
     (lesson.quiz || []).forEach(function(q, qi){
       var box = el("fieldset", "cl-q"); box.appendChild(el("legend", null, (qi + 1) + ". " + q.q));
@@ -98,6 +109,7 @@
         submit.disabled = false;
         if(r.status !== 200){ errp.textContent = (r.body && r.body.error) || "Couldn't save. Try again."; errp.hidden = false; return; }
         showResults(r.body);
+        if(typeof data.onDone === "function") try { data.onDone(r.body); } catch(e){}
       }).catch(function(){ submit.disabled = false; errp.textContent = "Couldn't reach the desk."; errp.hidden = false; });
     });
     card.appendChild(form);
@@ -135,5 +147,7 @@
   }
 
   function init(){ try { check(); setInterval(check, 30 * 60 * 1000); } catch(e){ /* desk keeps working */ } }
+  // The Coach tab opens classes on demand: current (to take) or past (to reread).
+  window.__deskClass = {open: function(cls, opts){ opts = opts || {}; render({"class": cls, overdue: !!opts.overdue, blocking: false, readOnly: !!opts.readOnly, onDone: opts.onDone}); }, close: close};
   if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
 })();
