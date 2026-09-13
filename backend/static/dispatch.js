@@ -198,7 +198,7 @@
   function ensureMap(){
     if(MAP) return MAP;
     if(typeof L === "undefined"){ $("dp-map-note").textContent = "The map library didn't load."; return null; }
-    MAP = L.map("dp-map", {zoomControl: false, minZoom: 7, maxZoom: 17, attributionControl: true});
+    MAP = L.map("dp-map", {zoomControl: false, minZoom: 7, maxZoom: 17, attributionControl: true, zoomAnimation: false, fadeAnimation: false, markerZoomAnimation: false});
     L.tileLayer("/api/va/dispatch/tile/{z}/{x}/{y}.png", {minZoom: 7, maxZoom: 17, attribution: "© OpenStreetMap contributors"}).addTo(MAP);
     MAP.attributionControl.setPrefix(false);
     MARK_LAYER = L.layerGroup().addTo(MAP);

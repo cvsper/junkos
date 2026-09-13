@@ -144,14 +144,14 @@
 .dm-stage .leaflet-bottom.leaflet-right{bottom:262px;right:18px}
 .dm-stage .leaflet-bottom.leaflet-right .leaflet-control-attribution{border-radius:var(--r-pill)}
 .leaflet-tooltip.dm-tip{background:var(--glass-strong);border:1px solid var(--glass-border);border-radius:var(--r-md);box-shadow:var(--shadow-soft);color:var(--ink);
-  font:500 12.5px/1.35 var(--body);padding:8px 11px;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+  font:500 12.5px/1.35 var(--body);padding:8px 11px;}
 .leaflet-tooltip-top.dm-tip::before{border-top-color:rgba(255,255,255,.9)}
 .dm-tip-in b{display:block;font-weight:600}
 .dm-tip-in span{display:block;color:var(--muted);font-weight:400}
 .leaflet-marker-icon.dm-mkwrap{background:transparent;border:0;margin:0}
 .dm-mkwrap:focus-visible{outline:2px solid var(--ink);outline-offset:3px;border-radius:50%}
 .dm-mk{position:relative;width:28px;height:28px;border-radius:50%;background:var(--glass-strong);border:1px solid var(--glass-border);display:grid;place-items:center;color:var(--ink);cursor:pointer;
-  box-shadow:var(--shadow-soft),0 0 0 2.5px var(--ok);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-sizing:border-box;transition:background .15s}
+  box-shadow:var(--shadow-soft),0 0 0 2.5px var(--ok);;box-sizing:border-box;transition:background .15s}
 .dm-mk .dm-ico svg{width:15px;height:15px}
 .dm-mk.live{box-shadow:var(--shadow-soft),0 0 0 2.5px var(--ok)}
 .dm-mk.online{box-shadow:var(--shadow-soft),0 0 0 2.5px var(--warn)}
@@ -458,8 +458,8 @@ body.dp-locked{overflow:hidden}
 }
 
 /* on phones and touch devices, glass over a live map is a repaint storm: use solid panels there */
-@media (max-width:959px), (hover:none){
-  .dm-cell,.dm-panel,.dm-card,.dm-top .dm-glass,.dm-brand,.dm-tabs,.dm-round,.dm-legend{-webkit-backdrop-filter:none;backdrop-filter:none;background:rgba(255,255,255,.94)}
-  .dm-tab.on,.dm-tab-new{background:var(--dark)}
-}
+.dm-glass,.dm-cell,.dm-panel,.dm-card,.dm-brand,.dm-tabs,.dm-round,.dm-legend,.dp-dr-wrap .dp-dr,.dm-mk,.dm-pin,.leaflet-tooltip{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+.dm-glass,.dm-cell,.dm-panel,.dm-card,.dm-brand,.dm-tabs,.dm-round,.dm-legend{background:rgba(255,255,255,.94)}
+.dm-tab.on,.dm-tab-new{background:var(--dark)}
+.dp-dr-wrap{-webkit-backdrop-filter:none;backdrop-filter:none}
 .leaflet-pane,.leaflet-marker-icon{-webkit-transform-style:flat;transform-style:flat}
