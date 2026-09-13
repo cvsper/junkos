@@ -1152,7 +1152,7 @@ CALLS_HTML = r"""<!doctype html>
 <script src="/static/desk-shell.js?v=2" defer></script>
 <link rel="stylesheet" href="/static/desk-gate.css?v=2" />
 <script src="/static/desk-gate.js?v=2" defer></script>
-<link rel="stylesheet" href="/va/calls.css?v=28" />
+<link rel="stylesheet" href="/va/calls.css?v=29" />
 <link rel="stylesheet" href="/static/desk-class.css?v=3" />
 <link rel="manifest" href="/static/desk-manifest.json" />
 </head>
@@ -1902,6 +1902,10 @@ CALLS_CSS = r"""/* Call Desk — layers over /va/app.css tokens (frosted glass o
 .cb-pick input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
 /* phones: the line is a bottom sheet — header always visible, tap to open */
 @media (max-width:959px){
+  .deskcard,.body.desk{max-width:100%;overflow-x:hidden;min-width:0}
+  .kit-tabs{flex:1 1 0;min-width:0;max-width:100%}
+  .fact-v,.deskcard p,.deskcard div{overflow-wrap:anywhere}
+
   .body.desk{padding-bottom:96px}
   .line{position:fixed;left:0;right:0;bottom:0;z-index:40;border-radius:var(--r-lg) var(--r-lg) 0 0;
     border-bottom:0;max-height:78vh;background:var(--glass-strong);
