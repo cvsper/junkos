@@ -136,7 +136,10 @@
 /* ---------- leaflet skin ---------- */
 .leaflet-container{background:var(--canvas);font-family:var(--body)}
 .leaflet-container a{color:var(--muted)}
-.leaflet-tile-pane{filter:grayscale(.55) brightness(1.06) contrast(.92)}
+/* pale tiles without a CSS filter: filters on the tile pane make Safari repaint every frame while panning */
+.leaflet-tile-pane{opacity:.78}
+.leaflet-container{background:#EEF0F2}
+.leaflet-container .leaflet-tile{image-rendering:auto}
 .leaflet-container .leaflet-control-attribution{background:var(--raise);color:var(--faint);font:400 10.5px var(--body);padding:3px 9px;border-radius:var(--r-pill) 0 0 0;margin:0}
 .dm-stage .leaflet-bottom.leaflet-right{bottom:262px;right:18px}
 .dm-stage .leaflet-bottom.leaflet-right .leaflet-control-attribution{border-radius:var(--r-pill)}
@@ -453,3 +456,10 @@ body.dp-locked{overflow:hidden}
   .dp *,.dp-dr{transition:none!important;animation:none!important}
   .dm-mkwrap.is-sel .dm-mk::after,.dm-mkwrap.is-sel .dm-pin::after{animation:none;transform:none;opacity:.85;inset:-5px}
 }
+
+/* on phones and touch devices, glass over a live map is a repaint storm: use solid panels there */
+@media (max-width:959px), (hover:none){
+  .dm-cell,.dm-panel,.dm-card,.dm-top .dm-glass,.dm-brand,.dm-tabs,.dm-round,.dm-legend{-webkit-backdrop-filter:none;backdrop-filter:none;background:rgba(255,255,255,.94)}
+  .dm-tab.on,.dm-tab-new{background:var(--dark)}
+}
+.leaflet-pane,.leaflet-marker-icon{-webkit-transform-style:flat;transform-style:flat}
