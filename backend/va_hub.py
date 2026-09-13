@@ -321,6 +321,8 @@ VA_HUB_HTML = r"""<!doctype html>
 <meta name="theme-color" content="#E4E5E9" />
 <title>Umuve — VA Tools</title>
 <link rel="stylesheet" href="/va/app.css?v=6" />
+<link rel="stylesheet" href="/static/desk-shell.css?v=1" />
+<script src="/static/desk-shell.js?v=1" defer></script>
 </head>
 <body>
 <div id="app">
@@ -428,6 +430,8 @@ VA_TEXT_HTML = r"""<!doctype html>
 <meta name="theme-color" content="#E4E5E9" />
 <title>Umuve — Send a Text</title>
 <link rel="stylesheet" href="/va/app.css?v=6" />
+<link rel="stylesheet" href="/static/desk-shell.css?v=1" />
+<script src="/static/desk-shell.js?v=1" defer></script>
 </head>
 <body>
 <div id="app">
@@ -883,6 +887,8 @@ VA_EMAIL_HTML = r"""<!doctype html>
 <meta name="theme-color" content="#E4E5E9" />
 <title>Umuve — Send an Email</title>
 <link rel="stylesheet" href="/va/app.css?v=6" />
+<link rel="stylesheet" href="/static/desk-shell.css?v=1" />
+<script src="/static/desk-shell.js?v=1" defer></script>
 </head>
 <body>
 <div id="app">

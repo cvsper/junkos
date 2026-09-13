@@ -421,6 +421,8 @@ DISPATCH_HTML = r"""<!doctype html>
 <meta name="theme-color" content="#E4E5E9" />
 <title>Umuve — Dispatch Desk</title>
 <link rel="stylesheet" href="/va/app.css?v=6" />
+<link rel="stylesheet" href="/static/desk-shell.css?v=1" />
+<script src="/static/desk-shell.js?v=1" defer></script>
 <link rel="stylesheet" href="/va/dispatch.css?v=3" />
 </head>
 <body>

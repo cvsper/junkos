@@ -1148,6 +1148,8 @@ CALLS_HTML = r"""<!doctype html>
 <meta name="theme-color" content="#E4E5E9" />
 <title>Umuve — Call Desk</title>
 <link rel="stylesheet" href="/va/app.css?v=6" />
+<link rel="stylesheet" href="/static/desk-shell.css?v=1" />
+<script src="/static/desk-shell.js?v=1" defer></script>
 <link rel="stylesheet" href="/va/calls.css?v=28" />
 <link rel="stylesheet" href="/static/desk-class.css?v=2" />
 <link rel="manifest" href="/static/desk-manifest.json" />
