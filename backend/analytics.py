@@ -504,8 +504,8 @@ MANAGER_HTML = r"""<!doctype html>
 <link rel="stylesheet" href="/va/app.css?v=6" />
 <link rel="stylesheet" href="/static/desk-shell.css?v=1" />
 <script src="/static/desk-shell.js?v=1" defer></script>
-<link rel="stylesheet" href="/static/desk-gate.css?v=1" />
-<script src="/static/desk-gate.js?v=1" defer></script>
+<link rel="stylesheet" href="/static/desk-gate.css?v=2" />
+<script src="/static/desk-gate.js?v=2" defer></script>
 <link rel="stylesheet" href="/static/manager.css?v=3" />
 </head>
 <body class="mgr">

@@ -1,25 +1,22 @@
-/* Sign-in gate: an image corridor behind the form. Native port of the
-   21st.dev ImageStreamHero — two rails of cards ride from the vanishing
-   point toward the viewer; keyframes below are the sampled path (generated,
-   do not hand-edit). Every length is cqw so it scales with the gate. */
-.gate{position:relative;min-height:100dvh;overflow:hidden;container-type:inline-size;display:flex;align-items:center;justify-content:center;padding:24px}
-.gc{position:absolute;inset:0;pointer-events:none;perspective:30cqw;perspective-origin:50% 55%}
-.gc-stage{position:absolute;inset:0;transform-style:preserve-3d}
-.gc-rail{position:absolute;inset:0;transform-style:preserve-3d}
+/* Sign-in gate: aurora light behind the form. Native port of the
+   Aceternity AuroraBackground — two stacked repeating gradients (a white
+   stripe mask over a blue/violet band), blurred and inverted, with a second
+   copy drifting across in difference blend. Concentrated top-right by a
+   radial mask so the card sits in calm light. */
+.gate{position:relative;min-height:100dvh;overflow:hidden;display:flex;align-items:center;justify-content:center;padding:24px}
 #app:has(> .gate:not([hidden])){max-width:none;margin:0}
 body:has(#gate.gate:not([hidden])) #desk-dock{display:none}
-.gc-card{position:absolute;left:50%;top:55%;width:18cqw;height:25cqw;
-  margin-left:-9.0cqw;margin-top:-12.5cqw;border-radius:0.4cqw;overflow:hidden;
-  backface-visibility:hidden;animation:gc-r 18s linear infinite;box-shadow:0 1.2cqw 3cqw -1.4cqw rgba(24,26,34,.45)}
-.gc-l .gc-card{animation-name:gc-l}
-.gc-card img{width:100%;height:100%;object-fit:cover;display:block;-webkit-user-drag:none}
-.gc-card:nth-child(1){animation-delay:0.00s}.gc-card:nth-child(2){animation-delay:-2.00s}.gc-card:nth-child(3){animation-delay:-4.00s}.gc-card:nth-child(4){animation-delay:-6.00s}.gc-card:nth-child(5){animation-delay:-8.00s}.gc-card:nth-child(6){animation-delay:-10.00s}.gc-card:nth-child(7){animation-delay:-12.00s}.gc-card:nth-child(8){animation-delay:-14.00s}.gc-card:nth-child(9){animation-delay:-16.00s}
-@keyframes gc-r{0.00%{transform:translate3d(-11.00cqw,0,-258.46cqw) rotateY(-6.00deg)}4.17%{transform:translate3d(-3.79cqw,0,-225.92cqw) rotateY(-6.92deg)}8.33%{transform:translate3d(2.73cqw,0,-197.04cqw) rotateY(-7.83deg)}12.50%{transform:translate3d(8.60cqw,0,-171.43cqw) rotateY(-8.75deg)}16.67%{transform:translate3d(13.87cqw,0,-148.70cqw) rotateY(-9.67deg)}20.83%{transform:translate3d(18.56cqw,0,-128.54cqw) rotateY(-10.58deg)}25.00%{transform:translate3d(22.72cqw,0,-110.65cqw) rotateY(-11.50deg)}29.17%{transform:translate3d(26.37cqw,0,-94.78cqw) rotateY(-12.42deg)}33.33%{transform:translate3d(29.57cqw,0,-80.70cqw) rotateY(-13.33deg)}37.50%{transform:translate3d(32.34cqw,0,-68.21cqw) rotateY(-14.25deg)}41.67%{transform:translate3d(34.71cqw,0,-57.13cqw) rotateY(-15.17deg)}45.83%{transform:translate3d(36.73cqw,0,-47.30cqw) rotateY(-16.08deg)}50.00%{transform:translate3d(38.42cqw,0,-38.58cqw) rotateY(-17.00deg)}54.17%{transform:translate3d(39.81cqw,0,-30.84cqw) rotateY(-17.92deg)}58.33%{transform:translate3d(40.94cqw,0,-23.98cqw) rotateY(-18.83deg)}62.50%{transform:translate3d(41.84cqw,0,-17.89cqw) rotateY(-19.75deg)}66.67%{transform:translate3d(42.53cqw,0,-12.48cqw) rotateY(-20.67deg)}70.83%{transform:translate3d(43.06cqw,0,-7.69cqw) rotateY(-21.58deg)}75.00%{transform:translate3d(43.43cqw,0,-3.44cqw) rotateY(-22.50deg)}79.17%{transform:translate3d(43.69cqw,0,0.33cqw) rotateY(-23.42deg)}83.33%{transform:translate3d(43.85cqw,0,3.68cqw) rotateY(-24.33deg)}87.50%{transform:translate3d(43.94cqw,0,6.65cqw) rotateY(-25.25deg)}91.67%{transform:translate3d(43.98cqw,0,9.28cqw) rotateY(-26.17deg)}95.83%{transform:translate3d(44.00cqw,0,11.62cqw) rotateY(-27.08deg)}100.00%{transform:translate3d(44.00cqw,0,13.70cqw) rotateY(-28.00deg)}}
-@keyframes gc-l{0.00%{transform:translate3d(11.00cqw,0,-258.46cqw) rotateY(6.00deg)}4.17%{transform:translate3d(3.79cqw,0,-225.92cqw) rotateY(6.92deg)}8.33%{transform:translate3d(-2.73cqw,0,-197.04cqw) rotateY(7.83deg)}12.50%{transform:translate3d(-8.60cqw,0,-171.43cqw) rotateY(8.75deg)}16.67%{transform:translate3d(-13.87cqw,0,-148.70cqw) rotateY(9.67deg)}20.83%{transform:translate3d(-18.56cqw,0,-128.54cqw) rotateY(10.58deg)}25.00%{transform:translate3d(-22.72cqw,0,-110.65cqw) rotateY(11.50deg)}29.17%{transform:translate3d(-26.37cqw,0,-94.78cqw) rotateY(12.42deg)}33.33%{transform:translate3d(-29.57cqw,0,-80.70cqw) rotateY(13.33deg)}37.50%{transform:translate3d(-32.34cqw,0,-68.21cqw) rotateY(14.25deg)}41.67%{transform:translate3d(-34.71cqw,0,-57.13cqw) rotateY(15.17deg)}45.83%{transform:translate3d(-36.73cqw,0,-47.30cqw) rotateY(16.08deg)}50.00%{transform:translate3d(-38.42cqw,0,-38.58cqw) rotateY(17.00deg)}54.17%{transform:translate3d(-39.81cqw,0,-30.84cqw) rotateY(17.92deg)}58.33%{transform:translate3d(-40.94cqw,0,-23.98cqw) rotateY(18.83deg)}62.50%{transform:translate3d(-41.84cqw,0,-17.89cqw) rotateY(19.75deg)}66.67%{transform:translate3d(-42.53cqw,0,-12.48cqw) rotateY(20.67deg)}70.83%{transform:translate3d(-43.06cqw,0,-7.69cqw) rotateY(21.58deg)}75.00%{transform:translate3d(-43.43cqw,0,-3.44cqw) rotateY(22.50deg)}79.17%{transform:translate3d(-43.69cqw,0,0.33cqw) rotateY(23.42deg)}83.33%{transform:translate3d(-43.85cqw,0,3.68cqw) rotateY(24.33deg)}87.50%{transform:translate3d(-43.94cqw,0,6.65cqw) rotateY(25.25deg)}91.67%{transform:translate3d(-43.98cqw,0,9.28cqw) rotateY(26.17deg)}95.83%{transform:translate3d(-44.00cqw,0,11.62cqw) rotateY(27.08deg)}100.00%{transform:translate3d(-44.00cqw,0,13.70cqw) rotateY(28.00deg)}}
-/* a soft veil so the words and the form stay legible over the stream */
-.gc-veil{position:absolute;inset:0;background:
-  radial-gradient(58cqw 40cqw at 50% 50%, rgba(var(--canvas-rgb),.72), rgba(var(--canvas-rgb),.18) 60%, transparent 100%),
-  linear-gradient(to bottom, rgba(var(--canvas-rgb),.35), transparent 30%, transparent 70%, rgba(var(--canvas-rgb),.5))}
+.au-wrap{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.au{position:absolute;inset:-10px;opacity:.5;will-change:transform;
+  --white-gradient:repeating-linear-gradient(100deg,#fff 0%,#fff 7%,transparent 10%,transparent 12%,#fff 16%);
+  --aurora:repeating-linear-gradient(100deg,#3b82f6 10%,#a5b4fc 15%,#93c5fd 20%,#ddd6fe 25%,#60a5fa 30%);
+  background-image:var(--white-gradient),var(--aurora);background-size:300%,200%;background-position:50% 50%,50% 50%;
+  filter:blur(10px) invert(1);
+  -webkit-mask-image:radial-gradient(ellipse at 100% 0%,#000 10%,transparent 70%);
+  mask-image:radial-gradient(ellipse at 100% 0%,#000 10%,transparent 70%)}
+.au::after{content:"";position:absolute;inset:0;background-image:var(--white-gradient),var(--aurora);
+  background-size:200%,100%;background-attachment:fixed;mix-blend-mode:difference;animation:aurora 60s linear infinite}
+@keyframes aurora{from{background-position:50% 50%,50% 50%}to{background-position:350% 50%,350% 50%}}
 /* the sign-in card */
 .gate .gatewrap{position:relative;z-index:1;width:min(420px,100%);padding:30px 28px 24px;text-align:center;
   background:var(--glass-strong);border:1px solid var(--glass-border);border-radius:var(--r-xl);box-shadow:var(--shadow-panel);
@@ -31,5 +28,5 @@ body:has(#gate.gate:not([hidden])) #desk-dock{display:none}
 .gate .lbl{text-align:left}
 .gate .hint{margin-top:14px;font-size:12px}
 .gate .err{text-align:left}
-@media (prefers-reduced-motion:reduce){.gc-card{animation-play-state:paused}}
+@media (prefers-reduced-motion:reduce){.au::after{animation:none}}
 @media (max-width:640px){.gate{padding:16px 16px max(24px,env(safe-area-inset-bottom))}.gate .gatewrap{padding:24px 20px 20px}}
