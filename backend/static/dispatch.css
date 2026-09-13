@@ -12,8 +12,6 @@
   .dm-stage{position:absolute;inset:0}
   /* Desktop: the tabs carry the open/live counts and a pin opens the floating card,
      so the bottom dock (and the phone pull-up handle) stay off the map. */
-  .dm-dock,.dm-handle{display:none}
-  .dm-corner{bottom:18px}
   #dp-map{border-radius:0 var(--r-xl) var(--r-xl) 0}
 }
 
@@ -495,6 +493,8 @@ body.dp-locked{overflow:hidden}
    no dock under them any more, so panels run to the bottom edge and get wider;
    the booking form gets the whole stage so nothing in its three columns clips. */
 @media (min-width:960px){
+  .dm-dock,.dm-handle{display:none}
+  .dm-corner{bottom:18px}
   .dm-panel{bottom:18px;width:min(680px,calc(100% - 36px))}
   .dm-panel.wide{width:min(1200px,calc(100% - 36px))}
   .bk-grid{grid-template-columns:minmax(0,1fr) minmax(0,1.15fr) minmax(0,1fr);gap:26px}
