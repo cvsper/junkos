@@ -85,6 +85,18 @@
   };
   function svgIcon(name, cls){ var s = el("span", "dm-ico" + (cls ? " " + cls : "")); s.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' + (ICON[name] || "") + "</svg>"; return s; }
   Array.prototype.forEach.call(document.querySelectorAll("i[data-ico]"), function(i){ i.parentNode.replaceChild(svgIcon(i.dataset.ico), i); });
+  (function(){
+    var top = $("dm-top"); if(!top) return;
+    var m = el("button", "dm-menu"); m.type = "button"; m.setAttribute("aria-label", "Menu");
+    m.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>';
+    m.addEventListener("click", function(){ document.body.classList.add("sh-open"); });
+    top.insertBefore(m, top.firstChild);
+    var dock = $("dm-dock"); if(!dock) return;
+    var h = el("button", "dm-handle"); h.type = "button"; h.setAttribute("aria-label", "Expand");
+    h.addEventListener("click", function(){ dock.classList.toggle("is-up"); document.body.classList.toggle("dm-dock-up", dock.classList.contains("is-up")); });
+    dock.insertBefore(h, dock.firstChild);
+    window.__dockUp = function(v){ dock.classList.toggle("is-up", !!v); document.body.classList.toggle("dm-dock-up", !!v); };
+  })();
 
   // ---------------------------------------------------------------- toast
   var toastTimer = null;
@@ -268,12 +280,14 @@
   }
   function revealMarker(m){ if(!m || !MAP) return; var ll = m.getLatLng(); if(!MAP.getBounds().pad(-.15).contains(ll)) MAP.panTo(ll); }
   function selectJob(id, reveal){
+    if(window.innerWidth < 960 && window.__dockUp) window.__dockUp(true);
     SEL_JOB = id; SEL_HAULER = null;
     paintSelection(); renderFloatCard(); renderDock(true);
     Array.prototype.forEach.call(document.querySelectorAll(".dp-hr"), function(r){ r.classList.remove("is-sel"); });
     if(reveal) revealMarker(MARKS.jobs[String(id)]);
   }
   function selectHauler(id, scroll){
+    if(window.innerWidth < 960 && window.__dockUp) window.__dockUp(true);
     SEL_HAULER = id; SEL_JOB = null;
     paintSelection(); renderFloatCard(); renderDock(true);
     var row = null;
