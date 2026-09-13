@@ -490,3 +490,17 @@ body.dp-locked{overflow:hidden}
 .dm-tab.on,.dm-tab-new{background:var(--dark)}
 .dp-dr-wrap{-webkit-backdrop-filter:none;backdrop-filter:none}
 .leaflet-pane,.leaflet-marker-icon{-webkit-transform-style:flat;transform-style:flat}
+
+/* ---------- desktop panels (appended so they win over the base rules above):
+   no dock under them any more, so panels run to the bottom edge and get wider;
+   the booking form gets the whole stage so nothing in its three columns clips. */
+@media (min-width:960px){
+  .dm-panel{bottom:18px;width:min(680px,calc(100% - 36px))}
+  .dm-panel.wide{width:min(1200px,calc(100% - 36px))}
+  .bk-grid{grid-template-columns:minmax(0,1fr) minmax(0,1.15fr) minmax(0,1fr);gap:26px}
+  .bk-items{max-height:none}
+}
+.dp-hr .n{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere}
+.bk-seg{flex-wrap:wrap;overflow:visible;gap:4px}
+.bk-seg button{flex:1 1 auto;white-space:nowrap}
+.bk-item .n{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere}
