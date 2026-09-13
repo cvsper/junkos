@@ -1182,7 +1182,7 @@ CALLS_HTML = r"""<!doctype html>
   <section id="tool" class="tool" hidden>
     <header class="bar">
       <a class="back" href="/va" aria-label="Back to VA tools">←</a>
-      <div class="brand"><img class="brand-mark" src="/static/brand-logo.png" alt="" /><div class="wordmark">Call<div class="wordmark">CALL&nbsp;DESK</div>nbsp;Desk</div></div>
+      <div class="brand"><img class="brand-mark" src="/static/brand-logo.png" alt="" /><div class="wordmark">Call&nbsp;Desk</div></div>
       <div class="bar-sub" id="daybar">—</div>
       <button class="who who-btn" id="who" type="button" hidden title="Account"></button>
       <button class="clock" id="clock-chip" type="button" aria-label="Time clock"><span class="ck-dot"></span><span id="clock-label">Clock in</span></button>
@@ -1273,7 +1273,7 @@ CALLS_HTML = r"""<!doctype html>
           <div class="chiprow">
             <span class="chip tierchip" id="c-tier">T1</span>
             <span class="chip" id="c-cat">Category</span>
-            <span class="chip followchip" id="c-follow" hidden>FOLLOW-UP</span>
+            <span class="chip followchip" id="c-follow" hidden>Follow-up</span>
           </div>
           <h2 class="co" id="c-company">Company</h2>
           <div class="meta" id="c-meta">City</div>
