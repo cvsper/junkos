@@ -399,7 +399,8 @@ def _no_cache(resp):
 
 @vadispatch_bp.route("/va/dispatch", methods=["GET"])
 def dispatch_page():
-    return Response(DISPATCH_HTML, mimetype="text/html")
+    from dispatch_desk import dispatch_page as _page
+    return _page()
 
 
 @vadispatch_bp.route("/va/dispatch.css", methods=["GET"])

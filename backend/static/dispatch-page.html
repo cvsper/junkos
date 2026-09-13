@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="robots" content="noindex, nofollow" />
+<title>Dispatch — Umuve desk</title>
+<meta name="theme-color" content="#E4E5E9" />
+<link rel="stylesheet" href="/va/app.css?v=6" />
+<link rel="stylesheet" href="/static/desk-shell.css?v=3" />
+<script src="/static/desk-shell.js?v=2" defer></script>
+<link rel="stylesheet" href="/static/desk-gate.css?v=2" />
+<script src="/static/desk-gate.js?v=2" defer></script>
+<link rel="stylesheet" href="/static/dispatch.css?v=1" />
+</head>
+<body>
+<div id="app">
+  <section id="gate" class="gate">
+    <div class="gatewrap">
+      <img class="brand-lg rv" src="/static/brand-logo.png" alt="Umuve" /><div class="eyebrow rv">Internal · VA suite</div>
+      <h1 class="display" aria-label="Dispatch">Dispatch</h1>
+      <p class="sub rv">Every job, every hauler, and the map they're on.</p>
+      <form id="gate-form" autocomplete="off" class="rv">
+        <label class="lbl" for="va-name">Your first name</label>
+        <input id="va-name" type="text" autocomplete="given-name" placeholder="Tracy" />
+        <label class="lbl" for="code">Access code</label>
+        <input id="code" type="password" autocomplete="off" placeholder="Enter your code" />
+        <button class="btn" type="submit">Open dispatch</button>
+        <p id="gate-err" class="err" hidden></p>
+      </form>
+      <p class="hint rv">Same code as the Call Desk.</p>
+    </div>
+  </section>
+
+  <section id="tool" class="tool" hidden>
+    <header class="bar">
+      <a class="back" href="/va" aria-label="Back to VA tools">←</a>
+      <span class="wordmark">Dispatch</span>
+      <span class="bar-sub" id="bar-sub"></span>
+    </header>
+    <div class="body dp" id="dp">
+
+      <section class="dp-strip" id="dp-strip" aria-label="Right now">
+        <div class="dp-k" id="dp-k-open"><b class="dim">–</b><span>Needs a hauler</span></div>
+        <div class="dp-k" id="dp-k-scheduled"><b class="dim">–</b><span>Scheduled</span></div>
+        <div class="dp-k" id="dp-k-active"><b class="dim">–</b><span>In progress</span></div>
+        <div class="dp-k" id="dp-k-done"><b class="dim">–</b><span>Done today</span></div>
+        <div class="dp-k" id="dp-k-live"><b class="dim">–</b><span>Live haulers</span><small id="dp-k-live-sub"></small></div>
+        <div class="dp-k" id="dp-k-cap"><b class="dp-cap" id="dp-cap-pill">–</b><span>Capacity</span><small id="dp-cap-note"></small></div>
+        <div class="dp-k dp-k-act"><button type="button" class="pill dark" id="dp-new">New booking</button></div>
+      </section>
+
+      <section class="dp-panel dp-book" id="dp-book" hidden aria-label="New booking">
+        <div class="dp-h"><h2>New booking</h2><button type="button" class="dp-x" id="bk-close" aria-label="Close">×</button></div>
+        <form id="bk-form" autocomplete="off" novalidate>
+          <div class="bk-grid">
+
+            <div class="bk-col">
+              <h3>Customer</h3>
+              <label class="lbl" for="bk-phone">Phone</label>
+              <input id="bk-phone" type="tel" inputmode="numeric" placeholder="561 555 0100" maxlength="14" />
+              <div class="bk-matches" id="bk-matches" hidden></div>
+              <label class="lbl" for="bk-name">Name</label>
+              <input id="bk-name" type="text" placeholder="First and last" />
+              <label class="lbl" for="bk-email">Email <span class="opt">optional</span></label>
+              <input id="bk-email" type="email" placeholder="name@example.com" />
+
+              <h3>Address</h3>
+              <div class="bk-find">
+                <input id="bk-address" type="text" placeholder="Street, city" />
+                <button type="button" class="pill" id="bk-find">Find</button>
+              </div>
+              <p class="bk-geo" id="bk-geo" hidden></p>
+
+              <h3>When</h3>
+              <label class="lbl" for="bk-date">Date</label>
+              <input id="bk-date" type="date" />
+              <label class="lbl" for="bk-slot">Arrival window</label>
+              <select id="bk-slot"><option value="">Pick a date first</option></select>
+              <label class="lbl" for="bk-notes">Notes for the hauler <span class="opt">optional</span></label>
+              <textarea id="bk-notes" rows="2" placeholder="Gate code, where the items are, anything tricky"></textarea>
+            </div>
+
+            <div class="bk-col">
+              <h3>Items</h3>
+              <input id="bk-items-q" type="search" placeholder="Search items" />
+              <div class="bk-items" id="bk-items"></div>
+              <div class="bk-sub" id="bk-loads-wrap" hidden>
+                <div class="lbl">Or a truck load</div>
+                <div class="bk-loads" id="bk-loads"></div>
+              </div>
+              <div class="bk-sub" id="bk-addons-wrap" hidden>
+                <div class="lbl">Extras</div>
+                <div class="bk-addons" id="bk-addons"></div>
+              </div>
+            </div>
+
+            <div class="bk-col bk-side">
+              <h3>Estimate</h3>
+              <div class="bk-est" id="bk-est"><p class="dp-empty">Add items to see a price.</p></div>
+
+              <h3>Payment</h3>
+              <div class="dp-tabs bk-seg" id="bk-pay">
+                <button type="button" data-v="link" class="on">Text a pay link</button>
+                <button type="button" data-v="settled">Paid another way</button>
+              </div>
+              <label class="bk-check"><input id="bk-sendtext" type="checkbox" checked /> Text the confirmation</label>
+
+              <h3>Hauler</h3>
+              <div class="dp-tabs bk-seg" id="bk-hauler">
+                <button type="button" data-v="open" class="on">Leave open</button>
+                <button type="button" data-v="broadcast">Broadcast nearby</button>
+                <button type="button" data-v="assign">Assign now</button>
+              </div>
+              <select id="bk-hauler-sel" hidden></select>
+
+              <p class="err" id="bk-err" hidden></p>
+              <div class="dp-actions bk-actions">
+                <button type="submit" class="pill dark" id="bk-submit">Book it</button>
+                <button type="button" class="pill" id="bk-cancel">Discard</button>
+              </div>
+            </div>
+          </div>
+        </form>
+      </section>
+
+      <div class="dp-two">
+        <section class="dp-panel dp-map" id="dp-map-panel" aria-label="Service area map">
+          <div class="dp-h"><h2>On the map</h2><span class="dp-note" id="dp-map-note"></span></div>
+          <svg id="dp-map" viewBox="0 0 600 440" role="img" aria-label="Service area with haulers and jobs"></svg>
+          <div class="dp-legend" id="dp-legend">
+            <span><i class="lg-live"></i>Live hauler</span>
+            <span><i class="lg-online"></i>Online, unconfirmed</span>
+            <span><i class="lg-standby"></i>Standby</span>
+            <span><i class="lg-open"></i>Needs a hauler</span>
+            <span><i class="lg-sched"></i>Scheduled</span>
+            <span><i class="lg-active"></i>In progress</span>
+          </div>
+        </section>
+
+        <section class="dp-panel dp-roster" id="dp-roster-panel" aria-label="Who's on">
+          <div class="dp-h"><h2>Who's on</h2><span class="dp-note" id="dp-roster-note"></span></div>
+          <div class="dp-search">
+            <input id="dp-roster-q" type="search" placeholder="Search a name, county, truck" />
+            <div class="dp-tabs" id="dp-roster-filter">
+              <button type="button" data-f="live" class="on">Live</button>
+              <button type="button" data-f="online">Online</button>
+              <button type="button" data-f="all">All</button>
+            </div>
+          </div>
+          <div class="dp-roster-rows" id="dp-roster"></div>
+        </section>
+      </div>
+
+      <section class="dp-panel dp-board" id="dp-board-panel" aria-label="Board">
+        <div class="dp-h">
+          <h2>Board</h2>
+          <div class="dp-tabs" id="dp-board-tabs">
+            <button type="button" data-t="open" class="on">Needs a hauler<em id="dp-t-open"></em></button>
+            <button type="button" data-t="scheduled">Scheduled<em id="dp-t-scheduled"></em></button>
+            <button type="button" data-t="active">In progress<em id="dp-t-active"></em></button>
+            <button type="button" data-t="done">Done today<em id="dp-t-done"></em></button>
+            <button type="button" data-t="cancelled">Cancelled<em id="dp-t-cancelled"></em></button>
+          </div>
+        </div>
+        <div class="dp-cards" id="dp-board"></div>
+      </section>
+
+      <section class="dp-panel" id="dp-recent-panel" aria-label="Recent activity">
+        <div class="dp-h"><h2>Recent activity</h2><span class="dp-note">the last things anyone did on the desk</span></div>
+        <div class="dp-recent" id="dp-recent"></div>
+      </section>
+    </div>
+  </section>
+
+  <div class="dp-dr-wrap" id="dp-drawer" hidden>
+    <aside class="dp-dr" role="dialog" aria-modal="true" aria-labelledby="dp-dr-title">
+      <div class="dp-dr-h">
+        <div><h3 id="dp-dr-title"></h3><div class="dp-dr-sub" id="dp-dr-sub"></div></div>
+        <button type="button" class="dp-x" id="dp-dr-x" aria-label="Close">×</button>
+      </div>
+      <div class="dp-dr-body" id="dp-dr-body"></div>
+    </aside>
+  </div>
+
+  <div class="dk-toast" id="dp-toast" role="status" aria-live="polite" hidden></div>
+</div>
+<script src="/static/dispatch.js?v=1" defer></script>
+</body>
+</html>

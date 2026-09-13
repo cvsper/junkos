@@ -452,6 +452,8 @@ except Exception as _ib_exc:  # pragma: no cover
 try:
     from va_dispatch import vadispatch_bp
     app.register_blueprint(vadispatch_bp)
+    from dispatch_desk import dispatchdesk_bp
+    app.register_blueprint(dispatchdesk_bp)
 except Exception as _vd_exc:
     import logging as _logging
     _logging.getLogger(__name__).warning("vadispatch_bp not registered: %s", _vd_exc)
@@ -1051,7 +1053,7 @@ def get_available_time_slots(requested_date=None):
 # ---------------------------------------------------------------------------
 # Legacy API Routes (kept for backward compatibility)
 # ---------------------------------------------------------------------------
-APP_VERSION = "2.2.77"
+APP_VERSION = "2.2.78"
 
 
 # ---------------------------------------------------------------------------
