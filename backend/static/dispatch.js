@@ -183,9 +183,12 @@
       var t = svgEl("title"); t.textContent = (j.code || "Job") + " · " + (j.status_label || j.status || "") + (j.scheduled_human ? " · " + j.scheduled_human : "") + (j.address ? "\n" + j.address : ""); p.appendChild(t);
       p.addEventListener("click", function(){ openJob(j.id); }); svg.appendChild(p);
     });
+    var seen = {};
     haulers.forEach(function(h){
       var c = svgEl("circle"), st = haulerState(h); c.setAttribute("class", "dp-mh " + st + (SEL_HAULER != null && String(h.id) === String(SEL_HAULER) ? " is-sel" : ""));
-      c.setAttribute("cx", X(+h.lng).toFixed(1)); c.setAttribute("cy", Y(+h.lat).toFixed(1)); c.setAttribute("r", 6.5); c.dataset.id = h.id;
+      var key = (+h.lat).toFixed(3) + "," + (+h.lng).toFixed(3), n = (seen[key] = (seen[key] || 0) + 1) - 1;
+      var ring = n ? Math.ceil((Math.sqrt(n + 1) - 1)) : 0, ang = n * 2.399963, rad = n ? 9 + 7 * Math.floor(Math.sqrt(n)) : 0;   // sunflower spread
+      c.setAttribute("cx", (X(+h.lng) + rad * Math.cos(ang)).toFixed(1)); c.setAttribute("cy", (Y(+h.lat) + rad * Math.sin(ang)).toFixed(1)); c.setAttribute("r", 6.5); c.dataset.id = h.id;
       var t = svgEl("title"); t.textContent = (h.name || "Hauler") + " · " + stateText(h) + (h.tier_label ? " · " + h.tier_label : ""); c.appendChild(t);
       c.addEventListener("click", function(){ selectHauler(h.id, true); }); svg.appendChild(c);
     });
@@ -206,7 +209,15 @@
   function setTab(wrapId, attr, val){ Array.prototype.forEach.call($(wrapId).querySelectorAll("button"), function(b){ b.classList.toggle("on", b.dataset[attr] === val); }); }
 
   // ---------------------------------------------------------------- roster
+  var FILTER_TOUCHED = false;
+  function autoFilter(){
+    if(FILTER_TOUCHED || !DATA) return;
+    var states = DATA.haulers.map(haulerState);
+    var want = states.indexOf("live") >= 0 ? "live" : states.some(function(s){ return s !== "offline"; }) ? "online" : "all";
+    if(want !== ROSTER_FILTER){ ROSTER_FILTER = want; setTab("dp-roster-filter", "f", want); }
+  }
   function renderRoster(){
+    autoFilter();
     var box = $("dp-roster"); clear(box);
     var q = ($("dp-roster-q").value || "").trim().toLowerCase();
     var list = DATA.haulers.filter(function(h){
@@ -236,7 +247,7 @@
     });
   }
   $("dp-roster-q").addEventListener("input", renderRoster);
-  $("dp-roster-filter").addEventListener("click", function(e){ var b = e.target.closest("button[data-f]"); if(!b) return; ROSTER_FILTER = b.dataset.f; setTab("dp-roster-filter", "f", ROSTER_FILTER); renderRoster(); });
+  $("dp-roster-filter").addEventListener("click", function(e){ var b = e.target.closest("button[data-f]"); if(!b) return; FILTER_TOUCHED = true; ROSTER_FILTER = b.dataset.f; setTab("dp-roster-filter", "f", ROSTER_FILTER); renderRoster(); });
 
   // ---------------------------------------------------------------- drawer
   var DRAWER = {kind: null, id: null}, CAND_TOGGLE = null;
