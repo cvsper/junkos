@@ -10,6 +10,10 @@
 @media (min-width:960px){
   .body.dp{display:block;min-height:600px}
   .dm-stage{position:absolute;inset:0}
+  /* Desktop: the tabs carry the open/live counts and a pin opens the floating card,
+     so the bottom dock (and the phone pull-up handle) stay off the map. */
+  .dm-dock,.dm-handle{display:none}
+  .dm-corner{bottom:18px}
   #dp-map{border-radius:0 var(--r-xl) var(--r-xl) 0}
 }
 
