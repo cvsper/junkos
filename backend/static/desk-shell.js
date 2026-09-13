@@ -62,9 +62,30 @@
     try { return new Date().toLocaleDateString(undefined, {weekday: "long", day: "numeric", month: "long", year: "numeric"}); }
     catch(e){ return new Date().toDateString(); }
   }
+  var FADE_MS = 400;
+  function go(href){
+    document.body.classList.add("pg-out");
+    setTimeout(function(){ location.href = href; }, FADE_MS);
+  }
+  window.__deskGo = go;
+  // Any plain click on a same-site link fades the page out before it leaves.
+  document.addEventListener("click", function(e){
+    if(e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    var a = e.target.closest("a[href]"); if(!a) return;
+    if(a.target && a.target !== "_self") return;
+    if(a.hasAttribute("download") || a.getAttribute("href").charAt(0) === "#") return;
+    var url; try { url = new URL(a.href, location.href); } catch(err){ return; }
+    if(url.origin !== location.origin) return;
+    if(!/^(tel|mailto|sms):/.test(url.protocol) && url.pathname === location.pathname && url.search === location.search) return;
+    if(/^(tel|mailto|sms):/.test(a.href)) return;
+    e.preventDefault(); go(a.href);
+  }, true);
+  // Coming back via the back button restores the page from cache with the
+  // fade-out class still on; take it off so the page is visible.
+  window.addEventListener("pageshow", function(){ document.body.classList.remove("pg-out"); });
   function signOut(){
     try { [JWT_KEY, ME_KEY, KEY, VA_KEY].forEach(function(k){ localStorage.removeItem(k); }); } catch(e){}
-    location.href = "/va";
+    go("/va");
   }
 
   function buildSide(){

@@ -250,8 +250,8 @@ COACH_HTML = r"""<!doctype html>
 <title>Ask Umuve — Call Coach</title>
 <meta name="theme-color" content="#E4E5E9" />
 <link rel="stylesheet" href="/va/app.css?v=6" />
-<link rel="stylesheet" href="/static/desk-shell.css?v=2" />
-<script src="/static/desk-shell.js?v=1" defer></script>
+<link rel="stylesheet" href="/static/desk-shell.css?v=3" />
+<script src="/static/desk-shell.js?v=2" defer></script>
 <link rel="stylesheet" href="/static/desk-gate.css?v=2" />
 <script src="/static/desk-gate.js?v=2" defer></script>
 <link rel="stylesheet" href="/coach/app.css" />
