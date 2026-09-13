@@ -219,7 +219,7 @@ COACH_HTML = r"""<!doctype html>
     <div class="gatewrap">
       <img class="brand-lg" src="/va/logo.png" alt="Umuve" />
       <div class="eyebrow">Internal · VA suite</div>
-      <h1 class="display" aria-label="Ask Umuve">ASK&nbsp;UMUVE</h1>
+      <h1 class="display" aria-label="Ask Umuve">Ask Umuve</h1>
       <p class="sub">Your call coach. Ask anything mid-call — fast, plain answers you can say out loud.</p>
       <form id="gate-form" autocomplete="off">
         <label class="lbl" for="code">Access code</label>

@@ -162,7 +162,7 @@ OPTEXT_HTML = r"""<!doctype html>
     <div class="gatewrap">
       <img class="brand-lg rv" src="/va/logo.png" alt="Umuve" />
       <div class="eyebrow rv">Internal · VA suite</div>
-      <h1 class="display" aria-label="Setup link">SETUP&nbsp;LINK</h1>
+      <h1 class="display" aria-label="Setup link">Setup link</h1>
       <p class="sub rv">They said YES — this text signs them up to get jobs.</p>
       <form id="gate-form" autocomplete="off" class="rv">
         <label class="lbl" for="code">Access code</label>
@@ -182,7 +182,7 @@ OPTEXT_HTML = r"""<!doctype html>
     </header>
 
     <div class="body">
-      <h2 class="display display-sm" aria-label="They said yes">THEY SAID&nbsp;YES</h2>
+      <h2 class="display display-sm" aria-label="They said yes">They said yes</h2>
       <form id="send-form" autocomplete="off" class="rv">
         <label class="lbl" for="name">Hauler / company name <span class="opt">(optional)</span></label>
         <input id="name" type="text" placeholder="e.g. Mike at Palm Beach Haulers" />
