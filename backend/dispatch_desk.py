@@ -68,6 +68,18 @@ REASON_LABEL = {"offline": "Offline right now", "stale_heartbeat": "Hasn't check
 def _reason_text(code):
     return REASON_LABEL.get(code, _pretty(str(code)))
 REAL_JOBS_SINCE = datetime(2026, 6, 1)
+# server.py stamps this West Palm Beach point on haulers who never sent a real
+# location (approval + the no-coords branch of the location update). It is a
+# placeholder, not a position — the desk must not draw 40 trucks on one corner.
+PLACEHOLDER_POS = (26.7153, -80.0534)
+
+
+def _real_position(lat, lng):
+    if lat is None or lng is None:
+        return None, None
+    if abs(float(lat) - PLACEHOLDER_POS[0]) < 0.0005 and abs(float(lng) - PLACEHOLDER_POS[1]) < 0.0005:
+        return None, None
+    return lat, lng
 
 
 # ---------------------------------------------------------------------------
@@ -174,11 +186,12 @@ def _hauler_row(c, now=None, on_standby=None, jobs_today=None):
         live = bool(is_live(c, now, on_standby))
     except Exception:
         pass
+    rlat, rlng = _real_position(c.current_lat, c.current_lng)
     return {
         "id": c.id, "name": (u.name if u else None) or "Hauler", "phone": u.phone if u else None,
         "kind": _kind(c), "approved": c.approval_status == "approved",
         "live": live, "online": bool(c.is_online), "standby": c.id in (on_standby or set()), "seen_minutes": seen,
-        "lat": c.current_lat, "lng": c.current_lng, "county": _county(c.current_lat),
+        "lat": rlat, "lng": rlng, "county": _county(rlat), "location": "known" if rlat is not None else "unknown",
         "truck_type": c.truck_type, "rating": c.avg_rating, "total_jobs": c.total_jobs or 0,
         "tier": prof.get("tier"), "tier_label": prof.get("label"), "completed": prof.get("completed", 0),
         "no_shows": prof.get("no_shows", 0), "jobs_today": (jobs_today or {}).get(c.id, 0),

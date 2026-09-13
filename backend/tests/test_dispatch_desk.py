@@ -193,3 +193,12 @@ def test_tile_proxy_clamps_and_caches(client):
     assert len(calls) == 1 and "tile.openstreetmap.org/11/561/865.png" in calls[0]   # second hit served from cache
     assert client.get("/api/va/dispatch/tile/3/1/1.png").status_code == 404           # too far out
     assert client.get("/api/va/dispatch/tile/11/999999/1.png").status_code == 404     # off the grid
+
+
+def test_placeholder_position_is_not_a_position(client):
+    _hauler("Phone Only", lat=26.7153, lng=-80.0534, concierge=True)
+    real = _hauler("GPS Hauler", lat=26.62, lng=-80.07)
+    rows = _post(client, "overview").get_json()["haulers"]
+    by = {r["name"]: r for r in rows}
+    assert by["Phone Only"]["lat"] is None and by["Phone Only"]["location"] == "unknown" and by["Phone Only"]["county"] is None
+    assert by["GPS Hauler"]["lat"] == 26.62 and by["GPS Hauler"]["location"] == "known"
