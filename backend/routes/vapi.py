@@ -1006,6 +1006,36 @@ def _now():
     return datetime.now(timezone.utc)
 
 
+
+def _mirror_call_to_desk(call, call_id, phone_number, duration, booking_created, summary):
+    """Record an InboundCall for a customer call Maya took on the toll-free line.
+
+    Skips outbound calls and any call the desk already logged for this number
+    in the last ten minutes (desk-line calls forwarded to Maya after hours are
+    recorded by the desk under their Twilio CallSid)."""
+    if (call or {}).get("type", "").startswith("outbound") or (call or {}).get("direction") == "outbound":
+        return None
+    digits = "".join(ch for ch in (phone_number or "") if ch.isdigit())[-10:]
+    if len(digits) != 10:
+        return None
+    from datetime import timedelta as _td
+    from models_inbound import InboundCall
+    from inbound import classify_caller, record_call
+    recent = (InboundCall.query.filter(InboundCall.phone_digits == digits,
+                                       InboundCall.created_at >= datetime.utcnow() - _td(minutes=10))
+              .first())
+    if recent is not None:
+        return recent
+    kind, _cust, _prospect = classify_caller(digits)
+    if kind == "prospect":
+        return None
+    secs = int(duration) if duration else None
+    return record_call("vapi:" + call_id if call_id else None, digits, kind,
+                       disposition="to_maya", source="maya",
+                       outcome="booked" if booking_created else "none",
+                       lead_outcome="booked" if booking_created else None,
+                       duration=secs, notes=(summary or "")[:500] or None)
+
 def _handle_end_of_call_report(message):
     """Process end-of-call report: store CallLog, match customer, notify operator."""
     call = message.get("call", {})
@@ -1087,6 +1117,15 @@ def _handle_end_of_call_report(message):
             ended_at=datetime.now(timezone.utc),
         )
         db.session.add(call_log)
+
+    # The desk only learns about calls on Maya's toll-free line through this
+    # report (Twilio routes that number straight to Vapi), so mirror it onto
+    # the desk's inbound log: the analytics count it and the leads panel shows
+    # it as "spoke to Maya" for a callback. A 7-second hang-up is still a lead.
+    try:
+        _mirror_call_to_desk(call, call_id, phone_number, duration, booking_created, summary)
+    except Exception:
+        logger.exception("desk mirror for Vapi call %s failed", call_id)
 
     # -----------------------------------------------------------------------
     # Feature 1: Lead Qualification Scoring
@@ -1189,7 +1228,7 @@ def _handle_end_of_call_report(message):
                 warm_msg = (
                     "{}Thanks for calling Umuve! "
                     "Ready to book? {}/book?ref=phone "
-                    "-- or call us back at (561) 944-1636!"
+                    "-- or call us back at (844) 435-6005!"
                 ).format(greeting, frontend_url)
 
             send_sms_async(phone_number, warm_msg)
@@ -1214,7 +1253,7 @@ def _handle_end_of_call_report(message):
             followup_msg = (
                 "Hey! Thanks for calling Umuve. Need a pickup? "
                 "Book online anytime at {}/book?ref=phone "
-                "or call us back at (561) 944-1636. "
+                "or call us back at (844) 435-6005. "
                 "We're here 7 days a week!"
             ).format(frontend_url)
             send_sms_async(phone_number, followup_msg)
@@ -2140,7 +2179,7 @@ def _process_meta_lead(app, leadgen_id):
                 sms_msg = (
                     "Hey {}! Thanks for reaching out to Umuve. "
                     "Book your junk removal: {}/book?ref=meta "
-                    "Or call us: (561) 944-1636"
+                    "Or call us: (844) 435-6005"
                 ).format(first_name or "there", frontend_url)
                 send_sms_async(phone, sms_msg)
 
