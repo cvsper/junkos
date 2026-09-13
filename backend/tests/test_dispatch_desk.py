@@ -179,3 +179,17 @@ def test_hauler_detail_text_and_broadcast(client):
         r = _post(client, "job/broadcast", job_id=open_.id).get_json()
     assert bc.called and r["ok"] and r["offers"] == 0
     assert _post(client, "job/broadcast", job_id=j.id).status_code == 409
+
+
+def test_tile_proxy_clamps_and_caches(client):
+    import dispatch_desk as dd
+    dd._TILE_CACHE.clear()
+    calls = []
+    class _R:
+        status_code = 200; content = b"\x89PNG fake"
+    with mock.patch("requests.get", side_effect=lambda url, **k: calls.append(url) or _R()):
+        r1 = client.get("/api/va/dispatch/tile/11/561/865.png"); r2 = client.get("/api/va/dispatch/tile/11/561/865.png")
+    assert r1.status_code == 200 and r1.mimetype == "image/png" and r1.data.startswith(b"\x89PNG")
+    assert len(calls) == 1 and "tile.openstreetmap.org/11/561/865.png" in calls[0]   # second hit served from cache
+    assert client.get("/api/va/dispatch/tile/3/1/1.png").status_code == 404           # too far out
+    assert client.get("/api/va/dispatch/tile/11/999999/1.png").status_code == 404     # off the grid

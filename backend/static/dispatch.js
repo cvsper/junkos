@@ -1,6 +1,8 @@
-/* Dispatch desk. Renders /api/va/dispatch/overview into the strip, the map,
-   the roster, the board and the activity feed; opens a drawer for any job or
-   hauler; books new jobs. Every route is POST JSON under /api/va/dispatch/.
+/* Dispatch desk — map first. Renders /api/va/dispatch/overview onto a Leaflet
+   map (tiles from our own backend), a floating card for the selected job, a
+   bottom dock (selection + capacity + open + today) and slide-over panels for
+   the board, the roster, recent activity and a new booking. Opens a drawer for
+   any job or hauler. Every route is POST JSON under /api/va/dispatch/.
    Styles: /static/dispatch.css. No server string is ever inserted as HTML. */
 (function(){
   "use strict";
@@ -62,6 +64,27 @@
   function todayIso(){ var d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
   function debounce(fn, ms){ var t; return function(){ var a = arguments, s = this; clearTimeout(t); t = setTimeout(function(){ fn.apply(s, a); }, ms); }; }
   function copyText(s){ try { return navigator.clipboard.writeText(s); } catch(e){ return Promise.reject(e); } }
+  // great-circle miles between two points (client-side "nearest" hints only)
+  function haversine(lat1, lng1, lat2, lng2){
+    var r = Math.PI / 180, dLat = (lat2 - lat1) * r, dLng = (lng2 - lng1) * r;
+    var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(lat1 * r) * Math.cos(lat2 * r) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    return 3958.8 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  }
+  var PHONE_MQ = window.matchMedia("(max-width:959px)");
+  function isPhone(){ return PHONE_MQ.matches; }
+
+  // Authored glyphs only — never a server string. Stroke icons, 24-box.
+  var ICON = {
+    map: '<path d="M9 18l-6 3V6l6-3 6 3 6-3v15l-6 3-6-3z"/><path d="M9 3v15M15 6v15"/>',
+    board: '<rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16M15 4v16"/>',
+    truck: '<path d="M2 7h11v9H2zM13 10h4l3 3v3h-7z"/><circle cx="6" cy="17.5" r="1.8"/><circle cx="16.5" cy="17.5" r="1.8"/>',
+    activity: '<path d="M3 12h4l3-7 4 14 3-7h4"/>',
+    plus: '<path d="M12 5v14M5 12h14"/>',
+    refresh: '<path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v5h-5"/>',
+    target: '<circle cx="12" cy="12" r="6"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/>'
+  };
+  function svgIcon(name, cls){ var s = el("span", "dm-ico" + (cls ? " " + cls : "")); s.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' + (ICON[name] || "") + "</svg>"; return s; }
+  Array.prototype.forEach.call(document.querySelectorAll("i[data-ico]"), function(i){ i.parentNode.replaceChild(svgIcon(i.dataset.ico), i); });
 
   // ---------------------------------------------------------------- toast
   var toastTimer = null;
@@ -86,7 +109,7 @@
   }
 
   var gate = $("gate"), tool = $("tool");
-  var DATA = null, CATALOG = null, BOARD_TAB = "open", ROSTER_FILTER = "live", SEL_HAULER = null, refreshTimer = null, loadedOnce = false;
+  var DATA = null, CATALOG = null, BOARD_TAB = "open", ROSTER_FILTER = "live", SEL_HAULER = null, SEL_JOB = null, refreshTimer = null, loadedOnce = false;
 
   // ---------------------------------------------------------------- gate
   function showGate(msg){ tool.hidden = true; gate.hidden = false; var e = $("gate-err"); if(msg){ e.textContent = msg; e.hidden = false; } else { e.hidden = true; } }
@@ -101,16 +124,20 @@
 
   // ---------------------------------------------------------------- load + refresh
   function load(){
+    $("dm-refresh").classList.add("is-busy");
     return api("overview", {}).then(function(d){
       DATA = d || {}; DATA.counts = DATA.counts || {}; DATA.jobs = DATA.jobs || {}; DATA.haulers = DATA.haulers || [];
       if(!loadedOnce){ showTool(); loadedOnce = true; }
       $("bar-sub").textContent = (DATA.va || vaName() || "") + " · updated " + new Date().toLocaleTimeString([], {hour: "numeric", minute: "2-digit"});
-      renderStrip(); renderMap(); renderRoster(); renderBoard(); renderRecent(); refreshHaulerSelect();
+      if(SEL_JOB != null && !findJob(SEL_JOB)) SEL_JOB = null;
+      renderTop(); renderMap(); renderDock(false); renderFloatCard(); renderRoster(); renderBoard(); renderRecent(); refreshHaulerSelect();
       schedule();
-    }).catch(function(e){ if(e && e.status === 401){ clearTimeout(refreshTimer); return; } if(!loadedOnce) showGate(e.message); else fail(e); schedule(); });
+    }).catch(function(e){ if(e && e.status === 401){ clearTimeout(refreshTimer); return; } if(!loadedOnce) showGate(e.message); else fail(e); schedule(); })
+      .then(function(){ $("dm-refresh").classList.remove("is-busy"); });
   }
   function schedule(){ clearTimeout(refreshTimer); refreshTimer = setTimeout(function(){ if(!document.hidden) load(); else schedule(); }, REFRESH_MS); }
   document.addEventListener("visibilitychange", function(){ if(!document.hidden && loadedOnce) load(); });
+  $("dm-refresh").addEventListener("click", function(){ if(loadedOnce) load(); });
 
   // ---------------------------------------------------------------- helpers over the data
   function allJobs(){
@@ -119,12 +146,14 @@
     return out;
   }
   function findJob(id){ var hit = null; allJobs().forEach(function(x){ if(String(x.job.id) === String(id)) hit = x; }); return hit; }
+  function findHauler(id){ var hit = null; (DATA.haulers || []).forEach(function(h){ if(String(h.id) === String(id)) hit = h; }); return hit; }
   function groupOf(status){
     if(status === "cancelled") return "cancelled"; if(status === "completed") return "done";
     if(status === "en_route" || status === "arrived" || status === "started") return "active";
     if(status === "assigned" || status === "accepted" || status === "confirmed") return "scheduled";
     return "open";
   }
+  function groupTag(group){ return group === "open" ? "accent" : group === "active" ? "info" : group === "done" ? "ok" : group === "cancelled" ? "danger" : "dark"; }
   function haulerState(h){ if(!h) return "offline"; if(h.live) return "live"; if(h.online) return "online"; if(h.standby) return "standby"; return "offline"; }
   function stateText(h){
     var s = haulerState(h), seen = h.seen_minutes != null ? ago(h.seen_minutes) : "";
@@ -143,60 +172,110 @@
     if(p.status === "none") return {text: "No payment on file", cls: ""};
     return {text: "Unpaid", cls: "warn"};
   }
-
-  // ---------------------------------------------------------------- strip
-  function renderStrip(){
-    var c = DATA.counts || {}, cap = DATA.capacity;
-    function put(id, v){ var b = $(id).querySelector("b"); b.textContent = v == null ? "–" : String(v); b.classList.toggle("dim", v == null); }
-    put("dp-k-open", c.open); put("dp-k-scheduled", c.scheduled); put("dp-k-active", c.active); put("dp-k-done", c.done_today); put("dp-k-live", c.live);
-    $("dp-k-live-sub").textContent = (c.online != null ? c.online + " online" : "") + (c.standby != null ? (c.online != null ? ", " : "") + c.standby + " on standby" : "");
-    var pill = $("dp-cap-pill"), lvl = cap && String(cap.level || "").toLowerCase();
-    pill.className = "dp-cap" + (lvl === "green" || lvl === "ok" || lvl === "good" ? " green" : lvl === "amber" || lvl === "yellow" || lvl === "tight" ? " amber" : lvl === "red" || lvl === "bad" || lvl === "none" ? " red" : "");
-    pill.textContent = cap ? (cap.count != null ? cap.count + " " + (cap.count === 1 ? "truck" : "trucks") : (cap.level || "–")) : "–";
-    $("dp-cap-note").textContent = cap ? (cap.note || (cap.unconfirmed ? cap.unconfirmed + " unconfirmed" : "")) : "no capacity read yet";
+  // how far along a job is, for the ring on the floating card
+  function progressOf(status){ var m = {pending: 20, confirmed: 20, broadcasting: 20, assigned: 40, accepted: 40, en_route: 60, arrived: 80, started: 90, completed: 100, cancelled: 0}; return m[status] != null ? m[status] : 20; }
+  function itemsText(j){
+    var items = j.items || [], names = items.slice(0, 3).map(function(i){ return (i.qty > 1 ? i.qty + "× " : "") + (i.name || ""); });
+    return names.length ? names.join(", ") + (items.length > 3 ? " +" + (items.length - 3) : "") : (j.items_text || (j.item_count ? j.item_count + " items" : "No items listed"));
+  }
+  function upcoming(n){
+    var list = allJobs().filter(function(x){ return x.group === "open" || x.group === "scheduled" || x.group === "active"; });
+    list.sort(function(a, b){ var ha = num(a.job.hours_out), hb = num(b.job.hours_out); return (ha == null ? 1e9 : ha) - (hb == null ? 1e9 : hb); });
+    return n ? list.slice(0, n) : list;
   }
 
-  // ---------------------------------------------------------------- map
-  function renderMap(){
-    var svg = $("dp-map"); clear(svg);
-    var W = 460, H = 560, pad = 26, area = DATA.area || {}, poly = (area.polygon || []).filter(function(p){ return p && num(p[0]) != null && num(p[1]) != null; });
+  // ---------------------------------------------------------------- top row
+  function renderTop(){
+    var c = DATA.counts || {}, J = DATA.jobs || {};
+    var open = c.open != null ? c.open : (J.open || []).length, live = c.live != null ? c.live : DATA.haulers.filter(function(h){ return h.live; }).length;
+    var bb = $("dm-b-board"); bb.textContent = String(open); bb.hidden = !open;
+    var bh = $("dm-b-haulers"); bh.textContent = String(live); bh.hidden = !live;
+    $("dm-avatar").textContent = ((String(DATA.va || vaName() || "").trim().charAt(0)) || "U").toUpperCase();
+  }
+
+  // ---------------------------------------------------------------- map (Leaflet, tiles from our backend)
+  var MAP = null, AREA_LAYER = null, MARK_LAYER = null, MARKS = {haulers: {}, jobs: {}}, FITTED = false;
+  function ensureMap(){
+    if(MAP) return MAP;
+    if(typeof L === "undefined"){ $("dp-map-note").textContent = "The map library didn't load."; return null; }
+    MAP = L.map("dp-map", {zoomControl: false, minZoom: 7, maxZoom: 17, attributionControl: true});
+    L.tileLayer("/api/va/dispatch/tile/{z}/{x}/{y}.png", {minZoom: 7, maxZoom: 17, attribution: "© OpenStreetMap contributors"}).addTo(MAP);
+    MAP.attributionControl.setPrefix(false);
+    MARK_LAYER = L.layerGroup().addTo(MAP);
+    MAP.on("click", function(){ if(SEL_JOB != null || SEL_HAULER != null) clearSelection(); });
+    var bump = debounce(function(){ if(MAP) MAP.invalidateSize(); }, 120);
+    window.addEventListener("resize", bump);
+    if(window.ResizeObserver){ new ResizeObserver(bump).observe($("dp-map")); }
+    return MAP;
+  }
+  function fitOpts(){ return isPhone() ? {paddingTopLeft: [24, 64], paddingBottomRight: [24, 24], maxZoom: 14} : {paddingTopLeft: [40, 96], paddingBottomRight: [40, 270], maxZoom: 14}; }
+  function positioned(){
     var haulers = DATA.haulers.filter(function(h){ return haulerState(h) !== "offline" && num(h.lat) != null && num(h.lng) != null; });
     var jobs = allJobs().filter(function(x){ return (x.group === "open" || x.group === "scheduled" || x.group === "active") && num(x.job.lat) != null && num(x.job.lng) != null; });
-    var pts = poly.slice();
-    haulers.forEach(function(h){ pts.push([h.lat, h.lng]); }); jobs.forEach(function(x){ pts.push([x.job.lat, x.job.lng]); });
-    if(!pts.length){ var t0 = svgEl("text"); t0.setAttribute("x", 20); t0.setAttribute("y", 40); t0.setAttribute("class", "dp-mtext"); t0.textContent = "No area or positions to draw yet."; svg.appendChild(t0); $("dp-map-note").textContent = ""; return; }
-    var b = area.bounds && num(area.bounds.north) != null ? {n: +area.bounds.north, s: +area.bounds.south, e: +area.bounds.east, w: +area.bounds.west} : {n: -90, s: 90, e: -180, w: 180};
-    pts.forEach(function(p){ b.n = Math.max(b.n, +p[0]); b.s = Math.min(b.s, +p[0]); b.e = Math.max(b.e, +p[1]); b.w = Math.min(b.w, +p[1]); });
-    if(b.n === b.s){ b.n += .05; b.s -= .05; } if(b.e === b.w){ b.e += .05; b.w -= .05; }
-    var k = Math.cos((b.n + b.s) / 2 * Math.PI / 180) || 1;
-    var s = Math.min((W - 2 * pad) / ((b.e - b.w) * k), (H - 2 * pad) / (b.n - b.s));
-    var ox = (W - (b.e - b.w) * k * s) / 2, oy = (H - (b.n - b.s) * s) / 2;
-    function X(lng){ return ox + (lng - b.w) * k * s; } function Y(lat){ return oy + (b.n - lat) * s; }
+    return {haulers: haulers, jobs: jobs};
+  }
+  function recenter(animate){
+    var map = ensureMap(); if(!map) return;
+    var b = DATA.area && DATA.area.bounds, p = positioned(), pts = [];
+    p.haulers.forEach(function(h){ pts.push([+h.lat, +h.lng]); }); p.jobs.forEach(function(x){ pts.push([+x.job.lat, +x.job.lng]); });
+    var hasBounds = b && num(b.north) != null && num(b.south) != null && num(b.east) != null && num(b.west) != null;
+    if(hasBounds) map.fitBounds([[+b.south, +b.west], [+b.north, +b.east]], {animate: false, padding: [20, 20]});
+    if(pts.length){ var o = fitOpts(); o.animate = !!animate; map.fitBounds(L.latLngBounds(pts), o); }
+    else if(!hasBounds) map.setView([26.6, -80.2], 8);
+  }
+  $("dm-recenter").addEventListener("click", function(){ if(DATA) recenter(true); });
+  function tipEl(lines){ var t = el("div", "dm-tip-in"); lines.filter(Boolean).forEach(function(s, i){ t.appendChild(el(i ? "span" : "b", null, s)); }); return t; }
+  function haulerIcon(h, st, dx, dy){
+    var w = el("div", "dm-mk " + st); w.appendChild(svgIcon("truck"));
+    return L.divIcon({className: "dm-mkwrap" + (SEL_HAULER != null && String(h.id) === String(SEL_HAULER) ? " is-sel" : ""), html: w, iconSize: [28, 28], iconAnchor: [14 - dx, 14 - dy]});
+  }
+  function jobIcon(x){
+    var w = el("div", "dm-pin " + x.group); w.appendChild(el("i"));
+    return L.divIcon({className: "dm-mkwrap" + (SEL_JOB != null && String(x.job.id) === String(SEL_JOB) ? " is-sel" : ""), html: w, iconSize: [32, 32], iconAnchor: [16, 16]});
+  }
+  function renderMap(){
+    var map = ensureMap(); if(!map) return;
+    var area = DATA.area || {}, poly = (area.polygon || []).filter(function(p){ return p && num(p[0]) != null && num(p[1]) != null; });
+    var p = positioned(), haulers = p.haulers, jobs = p.jobs;
+    if(AREA_LAYER){ map.removeLayer(AREA_LAYER); AREA_LAYER = null; }
     if(poly.length > 2){
-      var pg = svgEl("polygon"); pg.setAttribute("class", "dp-area");
-      pg.setAttribute("points", poly.map(function(p){ return X(+p[1]).toFixed(1) + "," + Y(+p[0]).toFixed(1); }).join(" "));
-      var tt = svgEl("title"); tt.textContent = "Service area" + ((area.counties || []).length ? ": " + area.counties.join(", ") : ""); pg.appendChild(tt); svg.appendChild(pg);
+      AREA_LAYER = L.polygon(poly.map(function(q){ return [+q[0], +q[1]]; }), {color: "#26272C", weight: 1, opacity: .35, fillOpacity: .04, interactive: false}).addTo(map);
     }
+    MARK_LAYER.clearLayers(); MARKS = {haulers: {}, jobs: {}};
     jobs.forEach(function(x){
-      var j = x.job, p = svgEl("path"); p.setAttribute("class", "dp-mj " + x.group);
-      p.setAttribute("d", "M0 0 L-6 -9 A7 7 0 1 1 6 -9 Z"); p.setAttribute("transform", "translate(" + X(+j.lng).toFixed(1) + " " + Y(+j.lat).toFixed(1) + ")");
-      var t = svgEl("title"); t.textContent = (j.code || "Job") + " · " + (j.status_label || j.status || "") + (j.scheduled_human ? " · " + j.scheduled_human : "") + (j.address ? "\n" + j.address : ""); p.appendChild(t);
-      p.addEventListener("click", function(){ openJob(j.id); }); svg.appendChild(p);
+      var j = x.job, m = L.marker([+j.lat, +j.lng], {icon: jobIcon(x), keyboard: true, zIndexOffset: x.group === "open" ? 300 : 200});
+      m.bindTooltip(tipEl([(j.code || "Job") + " · " + (j.status_label || j.status || ""), j.scheduled_human ? j.scheduled_human + (j.window ? " · " + j.window : "") : "", j.address || ""]), {direction: "top", offset: [0, -14], opacity: 1, className: "dm-tip"});
+      m.on("click", function(){ selectJob(j.id); });
+      m.addTo(MARK_LAYER); MARKS.jobs[String(j.id)] = m;
     });
     var seen = {};
     haulers.forEach(function(h){
-      var c = svgEl("circle"), st = haulerState(h); c.setAttribute("class", "dp-mh " + st + (SEL_HAULER != null && String(h.id) === String(SEL_HAULER) ? " is-sel" : ""));
-      var key = (+h.lat).toFixed(3) + "," + (+h.lng).toFixed(3), n = (seen[key] = (seen[key] || 0) + 1) - 1;
-      var ring = n ? Math.ceil((Math.sqrt(n + 1) - 1)) : 0, ang = n * 2.399963, rad = n ? 9 + 7 * Math.floor(Math.sqrt(n)) : 0;   // sunflower spread
-      c.setAttribute("cx", (X(+h.lng) + rad * Math.cos(ang)).toFixed(1)); c.setAttribute("cy", (Y(+h.lat) + rad * Math.sin(ang)).toFixed(1)); c.setAttribute("r", 6.5); c.dataset.id = h.id;
-      var t = svgEl("title"); t.textContent = (h.name || "Hauler") + " · " + stateText(h) + (h.tier_label ? " · " + h.tier_label : ""); c.appendChild(t);
-      c.addEventListener("click", function(){ selectHauler(h.id, true); }); svg.appendChild(c);
+      var st = haulerState(h), key = (+h.lat).toFixed(3) + "," + (+h.lng).toFixed(3), n = (seen[key] = (seen[key] || 0) + 1) - 1;
+      var ang = n * 2.399963, rad = n ? 18 + 10 * Math.floor(Math.sqrt(n)) : 0;   // sunflower spread for trucks sharing a spot (screen px)
+      var dx = rad * Math.cos(ang), dy = rad * Math.sin(ang);
+      var m = L.marker([+h.lat, +h.lng], {icon: haulerIcon(h, st, dx, dy), keyboard: true, zIndexOffset: 100});
+      m.bindTooltip(tipEl([h.name || "Hauler", stateText(h) + (h.tier_label ? " · " + h.tier_label : ""), [h.county, h.truck_type].filter(Boolean).join(" · ")]), {direction: "top", offset: [dx, dy - 12], opacity: 1, className: "dm-tip"});
+      m.on("click", function(){ selectHauler(h.id, true); });
+      m.addTo(MARK_LAYER); MARKS.haulers[String(h.id)] = m;
     });
-    $("dp-map-note").textContent = haulers.length + (haulers.length === 1 ? " hauler" : " haulers") + " on the map, " + jobs.length + (jobs.length === 1 ? " job" : " jobs");
+    $("dp-map-note").textContent = haulers.length + (haulers.length === 1 ? " hauler" : " haulers") + " on the map · " + jobs.length + (jobs.length === 1 ? " job" : " jobs");
+    // the shell re-mounts the page right after first paint, so size and fit on the next tick
+    setTimeout(function(){ map.invalidateSize({animate: false}); if(!FITTED){ FITTED = true; recenter(false); } }, 80);
+  }
+  function paintSelection(){
+    function paint(set, sel){ Object.keys(set).forEach(function(k){ var m = set[k], e = m.getElement(), on = sel != null && k === String(sel); if(e) e.classList.toggle("is-sel", on); m.setZIndexOffset(on ? 1000 : (set === MARKS.haulers ? 100 : 200)); }); }
+    paint(MARKS.haulers, SEL_HAULER); paint(MARKS.jobs, SEL_JOB);
+  }
+  function revealMarker(m){ if(!m || !MAP) return; var ll = m.getLatLng(); if(!MAP.getBounds().pad(-.15).contains(ll)) MAP.panTo(ll); }
+  function selectJob(id, reveal){
+    SEL_JOB = id; SEL_HAULER = null;
+    paintSelection(); renderFloatCard(); renderDock(true);
+    Array.prototype.forEach.call(document.querySelectorAll(".dp-hr"), function(r){ r.classList.remove("is-sel"); });
+    if(reveal) revealMarker(MARKS.jobs[String(id)]);
   }
   function selectHauler(id, scroll){
-    SEL_HAULER = id;
-    Array.prototype.forEach.call(document.querySelectorAll(".dp-mh"), function(c){ c.classList.toggle("is-sel", String(c.dataset.id) === String(id)); });
+    SEL_HAULER = id; SEL_JOB = null;
+    paintSelection(); renderFloatCard(); renderDock(true);
     var row = null;
     Array.prototype.forEach.call(document.querySelectorAll(".dp-hr"), function(r){ var on = String(r.dataset.id) === String(id); r.classList.toggle("is-sel", on); if(on) row = r; });
     if(!row && scroll){
@@ -204,9 +283,186 @@
       ROSTER_FILTER = "all"; setTab("dp-roster-filter", "f", "all"); renderRoster();
       Array.prototype.forEach.call(document.querySelectorAll(".dp-hr"), function(r){ if(String(r.dataset.id) === String(id)) row = r; });
     }
-    if(row && scroll){ row.scrollIntoView({block: "nearest", behavior: "smooth"}); }
+    if(row && scroll && PANEL === "haulers"){ row.scrollIntoView({block: "nearest", behavior: "smooth"}); }
+    if(!scroll) revealMarker(MARKS.haulers[String(id)]);
+  }
+  function clearSelection(){
+    SEL_JOB = null; SEL_HAULER = null; paintSelection(); renderFloatCard(); renderDock(true);
+    Array.prototype.forEach.call(document.querySelectorAll(".dp-hr"), function(r){ r.classList.remove("is-sel"); });
   }
   function setTab(wrapId, attr, val){ Array.prototype.forEach.call($(wrapId).querySelectorAll("button"), function(b){ b.classList.toggle("on", b.dataset[attr] === val); }); }
+
+  // ---------------------------------------------------------------- floating job card
+  function ring(pct, cls, size){
+    size = size || 44; var r = (size - 6) / 2, c = 2 * Math.PI * r;
+    var s = svgEl("svg"); s.setAttribute("viewBox", "0 0 " + size + " " + size); s.setAttribute("class", "dm-ring " + (cls || "")); s.setAttribute("aria-hidden", "true");
+    var t = svgEl("circle"); t.setAttribute("cx", size / 2); t.setAttribute("cy", size / 2); t.setAttribute("r", r); t.setAttribute("class", "track"); s.appendChild(t);
+    var f = svgEl("circle"); f.setAttribute("cx", size / 2); f.setAttribute("cy", size / 2); f.setAttribute("r", r); f.setAttribute("class", "fill");
+    f.setAttribute("stroke-dasharray", c.toFixed(2)); f.setAttribute("stroke-dashoffset", (c * (1 - Math.max(0, Math.min(100, pct)) / 100)).toFixed(2)); f.setAttribute("transform", "rotate(-90 " + size / 2 + " " + size / 2 + ")"); s.appendChild(f);
+    var x = svgEl("text"); x.setAttribute("x", size / 2); x.setAttribute("y", size / 2); x.setAttribute("class", "pct"); x.setAttribute("text-anchor", "middle"); x.setAttribute("dominant-baseline", "central"); x.textContent = Math.round(pct) + "%"; s.appendChild(x);
+    return s;
+  }
+  function renderFloatCard(){
+    var box = $("dm-card"); clear(box);
+    var hit = SEL_JOB != null ? findJob(SEL_JOB) : null;
+    if(!hit){ box.hidden = true; return; }
+    box.hidden = false;
+    var j = hit.job, g = hit.group;
+    var head = el("div", "dm-card-h"); head.appendChild(el("span", "code", j.code || "—")); head.appendChild(el("span", "dp-tag " + groupTag(g), j.status_label || j.status || g));
+    head.appendChild(btn("dp-x sm", "×", clearSelection)); box.appendChild(head);
+    var ad = el("div", "addr", j.address || "No address"); if(j.county) ad.appendChild(el("span", null, " · " + j.county)); box.appendChild(ad);
+    var pr = el("div", "dm-prog"); pr.appendChild(ring(progressOf(j.status), g));
+    var pt = el("div", "t"); pt.appendChild(el("b", null, (j.scheduled_human || "No time set") + (j.window ? " · " + j.window : "")));
+    var hh = g === "done" || g === "cancelled" ? null : hoursHint(j.hours_out);
+    pt.appendChild(el("span", "hint " + (hh ? hh.cls : ""), hh ? hh.text : (j.hauler ? "with " + j.hauler.name : "nobody on it yet"))); pr.appendChild(pt); box.appendChild(pr);
+
+    var nx = el("div", "dm-next");
+    if(j.hauler && j.hauler.id != null){
+      nx.appendChild(el("h5", null, "Next for " + (String(j.hauler.name || "the hauler").split(" ")[0])));
+      var others = allJobs().filter(function(x){ return x.job.hauler && String(x.job.hauler.id) === String(j.hauler.id) && String(x.job.id) !== String(j.id) && x.group !== "cancelled"; });
+      others.sort(function(a, b){ return (num(a.job.hours_out) == null ? 1e9 : a.job.hours_out) - (num(b.job.hours_out) == null ? 1e9 : b.job.hours_out); });
+      if(!others.length) nx.appendChild(el("p", "dp-empty", "Nothing else on the plate today."));
+      others.slice(0, 3).forEach(function(x){
+        var r = btn("dm-next-row", null, function(){ selectJob(x.job.id, true); });
+        r.appendChild(el("span", "t", x.job.scheduled_human || when(x.job.scheduled_at) || "—")); r.appendChild(el("span", "w", (x.job.code || "") + (x.job.county ? " · " + x.job.county : "")));
+        r.appendChild(el("span", "dp-tag " + groupTag(x.group), x.job.status_label || x.job.status || "")); nx.appendChild(r);
+      });
+    } else {
+      nx.appendChild(el("h5", null, "Nearest live trucks"));
+      var near = [];
+      if(num(j.lat) != null && num(j.lng) != null) DATA.haulers.forEach(function(h){ if(h.live && num(h.lat) != null && num(h.lng) != null) near.push({h: h, d: haversine(+j.lat, +j.lng, +h.lat, +h.lng)}); });
+      near.sort(function(a, b){ return a.d - b.d; });
+      if(!near.length) nx.appendChild(el("p", "dp-empty", num(j.lat) == null ? "This job has no pin yet." : "No live trucks with a position right now."));
+      near.slice(0, 2).forEach(function(x){
+        var r = btn("dm-next-row", null, function(){ selectHauler(x.h.id, false); });
+        r.appendChild(el("span", "t", x.d.toFixed(1) + " mi")); var w = el("span", "w", x.h.name || "Hauler"); if(x.h.tier_label) w.appendChild(el("span", "dp-tag", x.h.tier_label)); r.appendChild(w);
+        r.appendChild(el("span", "dm-mini", (num(x.h.jobs_today) || 0) + " today")); nx.appendChild(r);
+      });
+    }
+    box.appendChild(nx);
+    var foot = el("div", "dp-actions"); foot.appendChild(btn("pill dark", "Open", function(){ openJob(j.id); }));
+    if(g === "open" || g === "scheduled") foot.appendChild(btn("pill", g === "open" ? "Find a hauler" : "Reassign", function(){ openJob(j.id, "candidates"); }));
+    box.appendChild(foot);
+  }
+
+  // ---------------------------------------------------------------- bottom dock
+  function label(text){ return el("div", "dm-label", text); }
+  function big(v, dim){ var b = el("b", "dm-big" + (v == null || dim ? " dim" : ""), v == null ? "–" : String(v)); return b; }
+  function facts(pairs){ var dl = el("dl", "dm-facts"); pairs.forEach(function(p){ if(p[1] == null || p[1] === "") return; dl.appendChild(el("dt", null, p[0])); var dd = el("dd"); if(p[1] instanceof Node) dd.appendChild(p[1]); else dd.textContent = String(p[1]); dl.appendChild(dd); }); return dl; }
+  function renderDock(force){
+    var c = DATA.counts || {}, cap = DATA.capacity, J = DATA.jobs || {};
+    var sel = $("dm-sel");
+    if(force || !sel.querySelector(".dp-inline")){
+      clear(sel);
+      var jh = SEL_JOB != null ? findJob(SEL_JOB) : null, hh = SEL_HAULER != null ? findHauler(SEL_HAULER) : null;
+      if(jh) dockJob(sel, jh.job, jh.group); else if(hh) dockHauler(sel, hh); else dockIdle(sel);
+    }
+    // capacity
+    var cp = $("dm-cap"); clear(cp);
+    var live = num(c.live), online = num(c.online), standby = num(c.standby), lvl = cap && String(cap.level || "").toLowerCase();
+    var lc = lvl === "green" || lvl === "ok" || lvl === "good" ? "ok" : lvl === "amber" || lvl === "yellow" || lvl === "tight" ? "warn" : lvl === "red" || lvl === "bad" || lvl === "none" ? "danger" : "";
+    cp.appendChild(label("Capacity"));
+    var cr = el("div", "dm-cap-row"); var cl = el("div"); cl.appendChild(big(live)); cl.appendChild(el("div", "dm-sub", [online != null ? online + " online" : null, standby != null ? standby + " standby" : null].filter(Boolean).join(" · ") || "live trucks")); cr.appendChild(cl);
+    var unconf = cap && num(cap.unconfirmed) != null ? cap.unconfirmed : Math.max(0, (online || 0) - (live || 0));
+    var total = (live || 0) + unconf, frac = total ? (live || 0) / total : 0;
+    cr.appendChild(gauge(frac, lc)); cp.appendChild(cr);
+    cp.appendChild(el("div", "dm-note " + lc, cap ? (cap.note || (cap.count != null ? cap.count + (cap.count === 1 ? " truck" : " trucks") + (unconf ? " · " + unconf + " unconfirmed" : "") : "")) : "no capacity read yet"));
+    // needs a hauler
+    var op = $("dm-open"); clear(op);
+    op.appendChild(label("Needs a hauler"));
+    op.appendChild(big(c.open)); op.appendChild(el("div", "dm-sub", (c.scheduled != null ? c.scheduled + " scheduled" : "") + (c.active != null ? (c.scheduled != null ? " · " : "") + c.active + " in progress" : "")));
+    op.appendChild(dots(J.open || []));
+    // today
+    var td = $("dm-today"); clear(td);
+    td.appendChild(label("Today"));
+    var tr = el("div", "dm-today-row"); var tl = el("div"); tl.appendChild(big(c.done_today)); tl.appendChild(el("div", "dm-sub", "done · " + (c.cancelled_today != null ? c.cancelled_today : 0) + " cancelled")); tr.appendChild(tl); td.appendChild(tr);
+    td.appendChild(breakdown([
+      {k: "open", name: "Needs a hauler", v: num(c.open) || 0},
+      {k: "scheduled", name: "Scheduled", v: num(c.scheduled) || 0},
+      {k: "active", name: "In progress", v: num(c.active) || 0},
+      {k: "done", name: "Done today", v: num(c.done_today) || 0}
+    ]));
+  }
+  function gauge(frac, cls){
+    var W = 96, H = 54, r = 40, cx = 48, cy = 48, C = Math.PI * r;
+    var s = svgEl("svg"); s.setAttribute("viewBox", "0 0 " + W + " " + H); s.setAttribute("class", "dm-gauge " + (cls || "")); s.setAttribute("aria-hidden", "true");
+    var d = "M " + (cx - r) + " " + cy + " A " + r + " " + r + " 0 0 1 " + (cx + r) + " " + cy;
+    var t = svgEl("path"); t.setAttribute("d", d); t.setAttribute("class", "track"); s.appendChild(t);
+    var f = svgEl("path"); f.setAttribute("d", d); f.setAttribute("class", "fill"); f.setAttribute("stroke-dasharray", C.toFixed(2)); f.setAttribute("stroke-dashoffset", (C * (1 - Math.max(0, Math.min(1, frac)))).toFixed(2)); s.appendChild(f);
+    var x = svgEl("text"); x.setAttribute("x", cx); x.setAttribute("y", cy - 4); x.setAttribute("class", "pct"); x.setAttribute("text-anchor", "middle"); x.textContent = Math.round(frac * 100) + "%"; s.appendChild(x);
+    return s;
+  }
+  // the next open jobs as dots on a 24h track; late ones pile up at the left in the accent
+  function dots(list){
+    var w = el("div", "dm-dots"); var track = el("div", "track");
+    list.slice().sort(function(a, b){ return (num(a.hours_out) == null ? 1e9 : a.hours_out) - (num(b.hours_out) == null ? 1e9 : b.hours_out); }).slice(0, 14).forEach(function(j){
+      var h = num(j.hours_out); if(h == null) return;
+      var d = btn("dot" + (h < 0 ? " late" : h < 2 ? " soon" : ""), null, function(){ selectJob(j.id, true); });
+      d.style.setProperty("--x", (Math.max(0, Math.min(24, h)) / 24 * 100).toFixed(1) + "%");   // CSSOM, not a style attribute: fine under style-src 'self'
+      d.title = (j.code || "Job") + " · " + (j.scheduled_human || "") + (h < 0 ? " · late" : ""); d.setAttribute("aria-label", d.title);
+      track.appendChild(d);
+    });
+    w.appendChild(track);
+    var ax = el("div", "axis"); ax.appendChild(el("span", null, "now")); ax.appendChild(el("span", null, "next 24h")); w.appendChild(ax);
+    if(!list.length) w.classList.add("is-empty");
+    return w;
+  }
+  function breakdown(parts){
+    var total = parts.reduce(function(s, p){ return s + p.v; }, 0), w = el("div", "dm-break" + (total ? "" : " is-empty"));
+    var labels = el("div", "labels"), bar = el("div", "bar"), legend = el("div", "legend");
+    parts.forEach(function(p){
+      var pct = total ? p.v / total * 100 : 25;
+      var l = el("span", "l " + p.k, total ? Math.round(pct) + "%" : "–"); l.style.setProperty("--w", pct.toFixed(2) + "%"); labels.appendChild(l);
+      var s = el("i", "s " + p.k); s.style.setProperty("--w", pct.toFixed(2) + "%"); s.title = p.name + " · " + p.v; bar.appendChild(s);
+      var g = el("span", "g"); g.appendChild(el("i", "k " + p.k)); g.appendChild(document.createTextNode(p.name)); legend.appendChild(g);
+    });
+    w.appendChild(labels); w.appendChild(bar); w.appendChild(legend);
+    return w;
+  }
+  function dockIdle(host){
+    host.appendChild(label("Selected"));
+    host.appendChild(el("p", "dm-hint", "Tap a pin or a truck on the map."));
+    var list = upcoming(3);
+    if(!list.length){ host.appendChild(el("p", "dp-empty", "Nothing on the board yet. Book something from the top row.")); return; }
+    var rows = el("div", "dm-up"); rows.appendChild(el("h5", null, "Coming up"));
+    list.forEach(function(x){
+      var j = x.job, r = btn("dm-next-row", null, function(){ selectJob(j.id, true); });
+      var hh = hoursHint(j.hours_out); r.appendChild(el("span", "t" + (hh ? " " + hh.cls : ""), hh ? hh.text : (j.scheduled_human || "—")));
+      var w = el("span", "w", (j.code || "") + " · " + (j.address || j.county || "")); r.appendChild(w);
+      r.appendChild(el("span", "dp-tag " + groupTag(x.group), j.status_label || j.status || "")); rows.appendChild(r);
+    });
+    host.appendChild(rows);
+  }
+  function dockJob(host, j, group){
+    var head = el("div", "dm-sel-h"); head.appendChild(el("span", "code", j.code || "—"));
+    head.appendChild(el("span", "dp-tag " + groupTag(group), j.status_label || j.status || group));
+    var pi = payInfo(j.payment); head.appendChild(el("span", "dp-tag " + pi.cls, pi.text));
+    if(j.confirmed) head.appendChild(el("span", "dp-tag ok", "✓ confirmed" + (j.confirmed_by ? " by " + j.confirmed_by : "")));
+    var hr = el("span", "dm-sel-r"); hr.appendChild(btn("pill", "Open", function(){ openJob(j.id); })); hr.appendChild(btn("dp-x sm", "×", clearSelection)); head.appendChild(hr); host.appendChild(head);
+    var whenEl = el("span", null, (j.scheduled_human || "No time set") + (j.window ? " · " + j.window : "")); var hh = group === "done" || group === "cancelled" ? null : hoursHint(j.hours_out); if(hh) whenEl.appendChild(el("span", "hint " + hh.cls, " " + hh.text));
+    var cu = j.customer || {}, cust = el("span", null, (cu.name || "Customer") + " "); if(cu.phone){ cust.appendChild(telLink(cu.phone)); cust.appendChild(document.createTextNode(" ")); var s = el("a", "dp-lnk", "text"); s.href = "sms:" + telHref(cu.phone); cust.appendChild(s); } if(num(cu.prior_jobs)) cust.appendChild(el("span", "dm-mini", " · " + cu.prior_jobs + " prior"));
+    var tot = el("span"); tot.appendChild(el("b", "dm-money", money(j.total))); if(num(j.disposal_fee)) tot.appendChild(el("span", "dm-mini", " incl. " + money(j.disposal_fee) + " dump fee")); if(num(j.service_fee)) tot.appendChild(el("span", "dm-mini", " · " + money(j.service_fee) + " service"));
+    var who = el("span"); if(j.hauler){ who.appendChild(document.createTextNode((j.hauler.name || "") + " ")); if(j.hauler.tier_label) who.appendChild(el("span", "dp-tag", j.hauler.tier_label)); if(j.hauler.phone){ who.appendChild(document.createTextNode(" ")); who.appendChild(telLink(j.hauler.phone)); } } else who.appendChild(el("span", "none", group === "open" ? "No hauler yet" : "—"));
+    host.appendChild(facts([["When", whenEl], ["Customer", cust], ["Items", itemsText(j)], ["Total", tot], ["Hauler", who], ["Address", (j.address || "No address") + (j.county ? " · " + j.county : "")], ["Confirmed", j.confirmed ? "yes" + (j.confirmed_at ? " · " + when(j.confirmed_at) : "") : (group === "scheduled" ? "not yet" : null)]]));
+    if(group !== "done" && group !== "cancelled"){ var acts = actions(j, group, host); if(acts) host.appendChild(acts); }
+  }
+  function dockHauler(host, h){
+    var st = haulerState(h);
+    var head = el("div", "dm-sel-h"); head.appendChild(el("span", "code", h.name || "Hauler")); if(h.tier_label) head.appendChild(el("span", "dp-tag", h.tier_label)); if(h.concierge) head.appendChild(el("span", "dp-tag info", "concierge"));
+    var s = el("span", "dm-state " + st); s.appendChild(el("i", "dp-dot " + st)); s.appendChild(document.createTextNode(stateText(h))); head.appendChild(s);
+    var hr = el("span", "dm-sel-r"); hr.appendChild(btn("pill", "Open", function(){ openHauler(h.id); })); hr.appendChild(btn("dp-x sm", "×", clearSelection)); head.appendChild(hr); host.appendChild(head);
+    host.appendChild(facts([["County", h.county], ["Truck", h.truck_type], ["Rating", num(h.rating) != null ? "★ " + Number(h.rating).toFixed(1) : null], ["Today", num(h.jobs_today) != null ? h.jobs_today + (h.jobs_today === 1 ? " job" : " jobs") : null],
+      ["Done", num(h.completed) != null ? String(h.completed) + (num(h.no_shows) ? " · " + h.no_shows + " no-shows" : "") : null], ["Phone", h.phone ? contactLinks(h.phone) : "no phone"]]));
+    var open = (DATA.jobs && DATA.jobs.open) || [], row = el("div", "dp-actions dm-assign");
+    if(open.length){
+      var sel = el("select"); var ph = el("option", null, "Assign to…"); ph.value = ""; sel.appendChild(ph);
+      open.forEach(function(j){ var o = el("option", null, (j.code || "Job") + " · " + (j.scheduled_human || "unscheduled") + " · " + (j.county || j.address || "")); o.value = j.id; sel.appendChild(o); });
+      row.appendChild(sel);
+      var why = el("p", "dp-empty"); why.hidden = true;
+      var ab = btn("pill dark", "Assign", function(){ if(!sel.value){ toast("Pick a job first.", "bad"); return; } doAssign(sel.value, h.id, false, ab, why, function(){ selectJob(sel.value, true); }); });
+      row.appendChild(ab); host.appendChild(row); host.appendChild(why);
+    } else { row.appendChild(el("span", "dm-mini", "Nothing needs a hauler right now.")); host.appendChild(row); }
+  }
 
   // ---------------------------------------------------------------- roster
   var FILTER_TOUCHED = false;
@@ -249,6 +505,26 @@
   $("dp-roster-q").addEventListener("input", renderRoster);
   $("dp-roster-filter").addEventListener("click", function(e){ var b = e.target.closest("button[data-f]"); if(!b) return; FILTER_TOUCHED = true; ROSTER_FILTER = b.dataset.f; setTab("dp-roster-filter", "f", ROSTER_FILTER); renderRoster(); });
 
+  // ---------------------------------------------------------------- slide-over panels
+  var PANEL = null, PANELS = {board: "dm-p-board", haulers: "dm-p-haulers", activity: "dm-p-activity", book: "dp-book"};
+  function paintTabs(){ Array.prototype.forEach.call($("dm-tabs").querySelectorAll(".dm-tab"), function(b){ b.classList.toggle("on", b.dataset.p === (PANEL || "map")); }); }
+  function openPanel(name){
+    Object.keys(PANELS).forEach(function(k){ $(PANELS[k]).hidden = k !== name; });
+    PANEL = name; paintTabs(); document.body.classList.add("dm-sheet");
+    if(name === "haulers" && SEL_HAULER != null){ var row = document.querySelector('.dp-hr[data-id="' + String(SEL_HAULER).replace(/"/g, "") + '"]'); if(row) row.scrollIntoView({block: "nearest"}); }
+  }
+  function closePanel(){
+    Object.keys(PANELS).forEach(function(k){ $(PANELS[k]).hidden = true; });
+    PANEL = null; bookOpen = false; paintTabs(); document.body.classList.remove("dm-sheet");
+  }
+  $("dm-tabs").addEventListener("click", function(e){
+    var b = e.target.closest(".dm-tab"); if(!b) return; var p = b.dataset.p;
+    if(p === "map" || p === PANEL){ closePanel(); return; }
+    if(p === "book"){ openBook(); return; }
+    openPanel(p);
+  });
+  Array.prototype.forEach.call(document.querySelectorAll(".dm-panel [data-close]"), function(x){ x.addEventListener("click", closePanel); });
+
   // ---------------------------------------------------------------- drawer
   var DRAWER = {kind: null, id: null}, CAND_TOGGLE = null;
   function openDrawer(title, sub){
@@ -259,7 +535,12 @@
   function closeDrawer(){ $("dp-drawer").hidden = true; document.body.classList.remove("dp-locked"); DRAWER = {kind: null, id: null}; clear($("dp-dr-body")); }
   $("dp-dr-x").addEventListener("click", closeDrawer);
   $("dp-drawer").addEventListener("click", function(e){ if(e.target === $("dp-drawer")) closeDrawer(); });
-  document.addEventListener("keydown", function(e){ if(e.key === "Escape" && !$("dp-drawer").hidden) closeDrawer(); });
+  document.addEventListener("keydown", function(e){
+    if(e.key !== "Escape") return;
+    if(!$("dp-drawer").hidden){ closeDrawer(); return; }
+    if(PANEL){ closePanel(); return; }
+    if(SEL_JOB != null || SEL_HAULER != null) clearSelection();
+  });
   function section(title, note){ var s = el("div", "dp-sec"); if(title) s.appendChild(el("h4", null, title)); if(note) s.appendChild(el("span", "dp-note", note)); return s; }
   function kv(pairs){ var dl = el("dl", "dp-kv"); pairs.forEach(function(p){ if(p[1] == null || p[1] === "") return; dl.appendChild(el("dt", null, p[0])); var dd = el("dd"); if(p[1] instanceof Node) dd.appendChild(p[1]); else dd.textContent = String(p[1]); dl.appendChild(dd); }); return dl; }
   function telLink(phone, sms){ var a = el("a", "dp-tel", fmtPhone(phone)); a.href = (sms ? "sms:" : "tel:") + telHref(phone); return a; }
@@ -351,19 +632,19 @@
     var c = el("div", "dp-card" + (full ? " is-full" : ""));
     if(!full) c.addEventListener("click", function(e){ if(e.target.closest("button, a, .dp-inline")) return; openJob(j.id); });
     var top = el("div", "top"); top.appendChild(el("span", "code", j.code || "—"));
-    top.appendChild(el("span", "dp-tag " + (group === "open" ? "accent" : group === "active" ? "info" : group === "done" ? "ok" : group === "cancelled" ? "danger" : "dark"), j.status_label || j.status || group));
+    top.appendChild(el("span", "dp-tag " + groupTag(group), j.status_label || j.status || group));
     var pi = payInfo(j.payment); top.appendChild(el("span", "dp-tag " + pi.cls, pi.text));
     if(j.confirmed) top.appendChild(el("span", "dp-tag ok", "✓ confirmed" + (j.confirmed_by ? " by " + j.confirmed_by : "")));
     c.appendChild(top);
     var w = el("div", "when", (j.scheduled_human || "No time set") + (j.window ? " · " + j.window : "")); var hh = group === "done" || group === "cancelled" ? null : hoursHint(j.hours_out); if(hh) w.appendChild(el("span", "hint " + hh.cls, hh.text)); c.appendChild(w);
     var ad = el("div", "addr", j.address || "No address"); if(j.county) ad.appendChild(el("span", null, " · " + j.county)); c.appendChild(ad);
-    var items = j.items || [], names = items.slice(0, 3).map(function(i){ return (i.qty > 1 ? i.qty + "× " : "") + (i.name || ""); });
-    c.appendChild(el("div", "items", names.length ? names.join(", ") + (items.length > 3 ? " +" + (items.length - 3) : "") : (j.items_text || (j.item_count ? j.item_count + " items" : "No items listed"))));
+    c.appendChild(el("div", "items", itemsText(j)));
     var m = el("div", "money"); m.appendChild(el("b", null, money(j.total))); if(num(j.disposal_fee)) m.appendChild(el("span", null, "incl. " + money(j.disposal_fee) + " dump fee")); if(num(j.service_fee)) m.appendChild(el("span", null, money(j.service_fee) + " service")); c.appendChild(m);
     var who = el("div", "who"), cu = j.customer || {}, cl = el("div"); cl.appendChild(document.createTextNode((cu.name || "Customer") + " ")); if(cu.phone) cl.appendChild(telLink(cu.phone)); if(num(cu.prior_jobs)) cl.appendChild(el("span", null, " · " + cu.prior_jobs + " prior")); who.appendChild(cl);
     var hl = el("div"); if(j.hauler){ hl.appendChild(document.createTextNode("Hauler: " + (j.hauler.name || "") + " ")); if(j.hauler.tier_label) hl.appendChild(el("span", "dp-tag", j.hauler.tier_label)); if(j.hauler.phone){ hl.appendChild(document.createTextNode(" ")); hl.appendChild(telLink(j.hauler.phone)); } } else hl.appendChild(el("span", "none", group === "open" ? "No hauler yet" : "—")); who.appendChild(hl); c.appendChild(who);
     if(full && j.notes) c.appendChild(el("div", "notes", j.notes));
     if(j.lead_source) c.appendChild(el("div", "src", "via " + j.lead_source));
+    if(!full && num(j.lat) != null && num(j.lng) != null){ var pin = btn("pill sm", "Show on map", function(){ selectJob(j.id, true); if(isPhone()) closePanel(); }); var pr = el("div", "dp-actions"); pr.appendChild(pin); c.appendChild(pr); }
     var acts = actions(j, group, c); if(acts) c.appendChild(acts);
     return c;
   }
@@ -371,7 +652,7 @@
   // Inline editor host: one open at a time per card.
   function inline(host){ var old = host.querySelector(".dp-inline"); if(old) old.remove(); var box = el("div", "dp-inline"); box.addEventListener("click", function(e){ e.stopPropagation(); }); host.appendChild(box); return box; }
   function closeInline(host){ var old = host.querySelector(".dp-inline"); if(old) old.remove(); }
-  function afterAction(j, msg){ toast(msg || "Done", "good"); return load().then(function(){ if(DRAWER.kind === "job" && String(DRAWER.id) === String(j.id)) openJob(j.id); }); }
+  function afterAction(j, msg){ toast(msg || "Done", "good"); return load().then(function(){ if(DRAWER.kind === "job" && String(DRAWER.id) === String(j.id)) openJob(j.id); if(SEL_JOB != null && String(SEL_JOB) === String(j.id)) renderDock(true); }); }
 
   function actions(j, group, host){
     var row = el("div", "dp-actions"), cu = j.customer || {}, h = j.hauler;
@@ -533,12 +814,12 @@
   var BK = {items: {}, addons: {}, load: null, geo: null, pay: "link", hauler: "open", customer_id: null};
   var bookOpen = false;
   function openBook(){
-    bookOpen = true; $("dp-book").hidden = false; resetBook();
+    openPanel("book"); bookOpen = true; resetBook();
     ensureCatalog().then(renderItems).catch(fail);
     $("bk-date").value = todayIso(); loadBookSlots(); refreshHaulerSelect();
-    $("dp-book").scrollIntoView({block: "start", behavior: "smooth"}); setTimeout(function(){ $("bk-phone").focus(); }, 300);
+    $("dp-book").querySelector(".dm-panel-body").scrollTop = 0; setTimeout(function(){ $("bk-phone").focus(); }, 300);
   }
-  function closeBook(){ bookOpen = false; $("dp-book").hidden = true; }
+  function closeBook(){ closePanel(); }
   function resetBook(){
     BK = {items: {}, addons: {}, load: null, geo: null, pay: "link", hauler: "open", customer_id: null};
     ["bk-phone", "bk-name", "bk-email", "bk-address", "bk-notes", "bk-items-q"].forEach(function(id){ $(id).value = ""; });
@@ -547,7 +828,6 @@
     clear($("bk-est")); $("bk-est").appendChild(el("p", "dp-empty", "Add items to see a price."));
     if(CATALOG) renderItems();
   }
-  $("dp-new").addEventListener("click", function(){ if(bookOpen) closeBook(); else openBook(); });
   $("bk-close").addEventListener("click", closeBook); $("bk-cancel").addEventListener("click", closeBook);
   function ensureCatalog(){ if(CATALOG) return Promise.resolve(CATALOG); return api("catalog", {}).then(function(c){ CATALOG = c || {}; CATALOG.items = CATALOG.items || []; CATALOG.addons = CATALOG.addons || []; CATALOG.loads = CATALOG.loads || []; return CATALOG; }); }
 
@@ -685,7 +965,7 @@
     var sb = $("bk-submit"); sb.disabled = true;
     api("book", payload).then(function(r){
       sb.disabled = false; toast(r.message || ("Booked " + (r.job && r.job.code ? r.job.code : "")), "good"); closeBook();
-      return load().then(function(){ if(r.job && r.job.id != null) openJob(r.job.id); });
+      return load().then(function(){ if(r.job && r.job.id != null){ selectJob(r.job.id, true); openJob(r.job.id); } });
     }).catch(function(e){ sb.disabled = false; bad(e.message || "Couldn't book that."); });
   });
 

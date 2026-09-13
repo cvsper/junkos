@@ -1060,6 +1060,55 @@ def api_confirm():
 
 
 # ---------------------------------------------------------------------------
+# map tiles — proxied so the desk CSP (img-src 'self') can show a real map
+# ---------------------------------------------------------------------------
+import threading as _threading
+from collections import OrderedDict as _OrderedDict
+
+_TILE_UA = os.environ.get("TILE_USER_AGENT", "UmuveDesk/1.0 (contact@goumuve.com)")
+_TILE_SRC = os.environ.get("TILE_URL_TEMPLATE", "https://tile.openstreetmap.org/{z}/{x}/{y}.png")
+_TILE_MIN_Z, _TILE_MAX_Z = 7, 17
+_TILE_CACHE, _TILE_LOCK, _TILE_CACHE_MAX = _OrderedDict(), _threading.Lock(), 1500
+
+
+def _fetch_tile(z, x, y):
+    key = (z, x, y)
+    with _TILE_LOCK:
+        hit = _TILE_CACHE.get(key)
+        if hit is not None:
+            _TILE_CACHE.move_to_end(key)
+            return hit
+    import requests as _rq
+    r = _rq.get(_TILE_SRC.format(z=z, x=x, y=y), headers={"User-Agent": _TILE_UA, "Accept": "image/png"}, timeout=8)
+    if r.status_code != 200 or not r.content:
+        return None
+    with _TILE_LOCK:
+        _TILE_CACHE[key] = r.content
+        while len(_TILE_CACHE) > _TILE_CACHE_MAX:
+            _TILE_CACHE.popitem(last=False)
+    return r.content
+
+
+@dispatchdesk_bp.route("/api/va/dispatch/tile/<int:z>/<int:x>/<int:y>.png", methods=["GET"])
+def api_tile(z, x, y):
+    """Same-origin OpenStreetMap tiles for the dispatch map. Zoom is clamped to
+    the service area's useful range and tiles are cached in memory, so the
+    upstream sees one small desk, not a crawler. Attribution is drawn on the map."""
+    if z < _TILE_MIN_Z or z > _TILE_MAX_Z or x < 0 or y < 0 or x >= 2 ** z or y >= 2 ** z:
+        return Response(status=404)
+    try:
+        data = _fetch_tile(z, x, y)
+    except Exception:
+        logger.exception("tile fetch failed")
+        data = None
+    if not data:
+        return Response(status=502)
+    resp = Response(data, mimetype="image/png")
+    resp.headers["Cache-Control"] = "public, max-age=86400"
+    return resp
+
+
+# ---------------------------------------------------------------------------
 # page
 # ---------------------------------------------------------------------------
 _PAGE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static", "dispatch-page.html")

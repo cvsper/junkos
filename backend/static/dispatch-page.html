@@ -7,11 +7,12 @@
 <title>Dispatch — Umuve desk</title>
 <meta name="theme-color" content="#E4E5E9" />
 <link rel="stylesheet" href="/va/app.css?v=6" />
-<link rel="stylesheet" href="/static/desk-shell.css?v=3" />
+<link rel="stylesheet" href="/static/desk-shell.css?v=4" />
 <script src="/static/desk-shell.js?v=2" defer></script>
 <link rel="stylesheet" href="/static/desk-gate.css?v=2" />
 <script src="/static/desk-gate.js?v=2" defer></script>
-<link rel="stylesheet" href="/static/dispatch.css?v=2" />
+<link rel="stylesheet" href="/static/vendor/leaflet.css" />
+<link rel="stylesheet" href="/static/dispatch.css?v=3" />
 </head>
 <body>
 <div id="app">
@@ -40,18 +41,102 @@
     </header>
     <div class="body dp" id="dp">
 
-      <section class="dp-strip" id="dp-strip" aria-label="Right now">
-        <div class="dp-k" id="dp-k-open"><b class="dim">–</b><span>Needs a hauler</span></div>
-        <div class="dp-k" id="dp-k-scheduled"><b class="dim">–</b><span>Scheduled</span></div>
-        <div class="dp-k" id="dp-k-active"><b class="dim">–</b><span>In progress</span></div>
-        <div class="dp-k" id="dp-k-done"><b class="dim">–</b><span>Done today</span></div>
-        <div class="dp-k" id="dp-k-live"><b class="dim">–</b><span>Live haulers</span><small id="dp-k-live-sub"></small></div>
-        <div class="dp-k" id="dp-k-cap"><b class="dp-cap" id="dp-cap-pill">–</b><span>Capacity</span><small id="dp-cap-note"></small></div>
-        <div class="dp-k dp-k-act"><button type="button" class="pill dark" id="dp-new">New booking</button></div>
+      <!-- The map is the page. Everything else floats on it. -->
+      <div class="dm-stage" id="dm-stage">
+        <div id="dp-map" role="region" aria-label="Service area with haulers and jobs"></div>
+
+        <div class="dm-top" id="dm-top">
+          <div class="dm-brand"><span class="wordmark-lg">Dispatch</span></div>
+          <nav class="dm-tabs" id="dm-tabs" aria-label="Views">
+            <button type="button" class="dm-tab on" data-p="map"><i data-ico="map"></i><span>Map</span></button>
+            <button type="button" class="dm-tab" data-p="board"><i data-ico="board"></i><span>Board</span><em class="dm-badge" id="dm-b-board" hidden></em></button>
+            <button type="button" class="dm-tab" data-p="haulers"><i data-ico="truck"></i><span>Haulers</span><em class="dm-badge" id="dm-b-haulers" hidden></em></button>
+            <button type="button" class="dm-tab" data-p="activity"><i data-ico="activity"></i><span>Activity</span></button>
+            <button type="button" class="dm-tab dm-tab-new" id="dp-new" data-p="book"><i data-ico="plus"></i><span>New booking</span></button>
+          </nav>
+          <div class="dm-right">
+            <button type="button" class="dm-round" id="dm-refresh" aria-label="Refresh"><i data-ico="refresh"></i></button>
+            <div class="dm-avatar" id="dm-avatar" aria-hidden="true">U</div>
+          </div>
+        </div>
+
+        <aside class="dm-card" id="dm-card" hidden aria-live="polite"></aside>
+
+        <div class="dm-corner">
+          <button type="button" class="dm-round" id="dm-recenter" aria-label="Recenter the map"><i data-ico="target"></i></button>
+          <div class="dm-legend">
+            <span class="dm-legend-note" id="dp-map-note"></span>
+            <div class="dp-legend" id="dp-legend">
+              <span><i class="lg-live"></i>Live</span>
+              <span><i class="lg-online"></i>Online, unconfirmed</span>
+              <span><i class="lg-standby"></i>Standby</span>
+              <span><i class="lg-open"></i>Needs a hauler</span>
+              <span><i class="lg-sched"></i>Scheduled</span>
+              <span><i class="lg-active"></i>In progress</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom dock: the selection plus the numbers that matter right now. -->
+      <section class="dm-dock" id="dm-dock" aria-label="Right now">
+        <div class="dm-cell dm-cell-sel" id="dm-sel"></div>
+        <div class="dm-cell" id="dm-cap"></div>
+        <div class="dm-cell" id="dm-open"></div>
+        <div class="dm-cell" id="dm-today"></div>
       </section>
 
-      <section class="dp-panel dp-book" id="dp-book" hidden aria-label="New booking">
+      <!-- Slide-over panels -->
+      <section class="dm-panel" id="dm-p-board" hidden aria-label="Board">
+        <div class="dp-h">
+          <h2>Board</h2>
+          <button type="button" class="dp-x" data-close aria-label="Close">×</button>
+        </div>
+        <div class="dp-tabs" id="dp-board-tabs">
+          <button type="button" data-t="open" class="on">Needs a hauler<em id="dp-t-open"></em></button>
+          <button type="button" data-t="scheduled">Scheduled<em id="dp-t-scheduled"></em></button>
+          <button type="button" data-t="active">In progress<em id="dp-t-active"></em></button>
+          <button type="button" data-t="done">Done today<em id="dp-t-done"></em></button>
+          <button type="button" data-t="cancelled">Cancelled<em id="dp-t-cancelled"></em></button>
+        </div>
+        <div class="dm-panel-body">
+          <div class="dp-cards" id="dp-board"></div>
+        </div>
+      </section>
+
+      <section class="dm-panel" id="dm-p-haulers" hidden aria-label="Who's on">
+        <div class="dp-h">
+          <h2>Who's on</h2>
+          <span class="dp-note" id="dp-roster-note"></span>
+          <button type="button" class="dp-x" data-close aria-label="Close">×</button>
+        </div>
+        <div class="dp-search">
+          <input id="dp-roster-q" type="search" placeholder="Search a name, county, truck" />
+          <div class="dp-tabs" id="dp-roster-filter">
+            <button type="button" data-f="live" class="on">Live</button>
+            <button type="button" data-f="online">Online</button>
+            <button type="button" data-f="all">All</button>
+          </div>
+        </div>
+        <div class="dm-panel-body">
+          <div class="dp-roster-rows" id="dp-roster"></div>
+        </div>
+      </section>
+
+      <section class="dm-panel" id="dm-p-activity" hidden aria-label="Recent activity">
+        <div class="dp-h">
+          <h2>Recent activity</h2>
+          <span class="dp-note">the last things anyone did on the desk</span>
+          <button type="button" class="dp-x" data-close aria-label="Close">×</button>
+        </div>
+        <div class="dm-panel-body">
+          <div class="dp-recent" id="dp-recent"></div>
+        </div>
+      </section>
+
+      <section class="dm-panel wide dp-book" id="dp-book" hidden aria-label="New booking">
         <div class="dp-h"><h2>New booking</h2><button type="button" class="dp-x" id="bk-close" aria-label="Close">×</button></div>
+        <div class="dm-panel-body">
         <form id="bk-form" autocomplete="off" novalidate>
           <div class="bk-grid">
 
@@ -122,53 +207,7 @@
             </div>
           </div>
         </form>
-      </section>
-
-      <div class="dp-two">
-        <section class="dp-panel dp-map" id="dp-map-panel" aria-label="Service area map">
-          <div class="dp-h"><h2>On the map</h2><span class="dp-note" id="dp-map-note"></span></div>
-          <svg id="dp-map" viewBox="0 0 600 440" role="img" aria-label="Service area with haulers and jobs"></svg>
-          <div class="dp-legend" id="dp-legend">
-            <span><i class="lg-live"></i>Live hauler</span>
-            <span><i class="lg-online"></i>Online, unconfirmed</span>
-            <span><i class="lg-standby"></i>Standby</span>
-            <span><i class="lg-open"></i>Needs a hauler</span>
-            <span><i class="lg-sched"></i>Scheduled</span>
-            <span><i class="lg-active"></i>In progress</span>
-          </div>
-        </section>
-
-        <section class="dp-panel dp-roster" id="dp-roster-panel" aria-label="Who's on">
-          <div class="dp-h"><h2>Who's on</h2><span class="dp-note" id="dp-roster-note"></span></div>
-          <div class="dp-search">
-            <input id="dp-roster-q" type="search" placeholder="Search a name, county, truck" />
-            <div class="dp-tabs" id="dp-roster-filter">
-              <button type="button" data-f="live" class="on">Live</button>
-              <button type="button" data-f="online">Online</button>
-              <button type="button" data-f="all">All</button>
-            </div>
-          </div>
-          <div class="dp-roster-rows" id="dp-roster"></div>
-        </section>
-      </div>
-
-      <section class="dp-panel dp-board" id="dp-board-panel" aria-label="Board">
-        <div class="dp-h">
-          <h2>Board</h2>
-          <div class="dp-tabs" id="dp-board-tabs">
-            <button type="button" data-t="open" class="on">Needs a hauler<em id="dp-t-open"></em></button>
-            <button type="button" data-t="scheduled">Scheduled<em id="dp-t-scheduled"></em></button>
-            <button type="button" data-t="active">In progress<em id="dp-t-active"></em></button>
-            <button type="button" data-t="done">Done today<em id="dp-t-done"></em></button>
-            <button type="button" data-t="cancelled">Cancelled<em id="dp-t-cancelled"></em></button>
-          </div>
         </div>
-        <div class="dp-cards" id="dp-board"></div>
-      </section>
-
-      <section class="dp-panel" id="dp-recent-panel" aria-label="Recent activity">
-        <div class="dp-h"><h2>Recent activity</h2><span class="dp-note">the last things anyone did on the desk</span></div>
-        <div class="dp-recent" id="dp-recent"></div>
       </section>
     </div>
   </section>
@@ -185,6 +224,7 @@
 
   <div class="dk-toast" id="dp-toast" role="status" aria-live="polite" hidden></div>
 </div>
-<script src="/static/dispatch.js?v=2" defer></script>
+<script src="/static/vendor/leaflet.js"></script>
+<script src="/static/dispatch.js?v=3" defer></script>
 </body>
 </html>

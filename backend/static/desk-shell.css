@@ -125,3 +125,11 @@ html{background:var(--canvas)}
 body{animation:pg-fade .55s ease both}
 body.pg-out{animation:none;opacity:0;transition:opacity .4s ease}
 @media (prefers-reduced-motion:reduce){body{animation:none}body.pg-out{opacity:1;transition:none}}
+
+/* dispatch is map-first: the frame's top bar folds away and the page runs edge to edge */
+@media (min-width:960px){
+  body.has-shell.sh-dispatch .sh-top{display:none}
+  body.has-shell.sh-dispatch .sh-page{padding:0;display:flex;flex-direction:column;min-height:calc(100dvh - 36px)}
+  body.has-shell.sh-dispatch #app{flex:1;display:flex;flex-direction:column}
+  body.has-shell.sh-dispatch #app .body{padding:0;flex:1}
+}
