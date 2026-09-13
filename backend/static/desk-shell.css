@@ -67,10 +67,12 @@ body.has-shell #app{max-width:none;margin:0;min-height:0;overflow:visible;positi
   body.has-shell.sh-home .display-sm{display:none}
   body.has-shell #app .body{padding:6px 0 0}
   body.has-shell.mgr .mg-wrap{padding-top:0}
-  body.has-shell.sh-calls #app{max-width:1320px;margin:0 auto}
+  body.has-shell.sh-calls #app{max-width:none;margin:0}
+  body.has-shell.sh-calls .body.desk{grid-template-columns:minmax(0,1fr) minmax(400px,560px)}
+  body.has-shell.mgr .mg-wrap{max-width:none}
+  body.has-shell.sh-analytics .mg-kpis,body.has-shell.sh-manager .mg-kpis{grid-template-columns:repeat(6,minmax(0,1fr))}
   body.has-shell.sh-text #app,body.has-shell.sh-email #app,body.has-shell.sh-optext #app{max-width:640px}
-  body.has-shell.sh-coach #app{max-width:760px;min-height:calc(100dvh - 200px);display:flex;flex-direction:column}
-  body.has-shell.sh-home .body{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;max-width:1120px;align-content:start}
+  body.has-shell.sh-home .body{display:grid;grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:14px;align-content:start}
   body.has-shell.sh-home .body > .rv{grid-column:1/-1}
   body.has-shell.sh-home .situ{grid-column:auto}
 }

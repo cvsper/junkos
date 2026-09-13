@@ -1,7 +1,8 @@
 /* Coach tab — one page for the VA's growth. Paints only with the desk
    tokens from /va/app.css; panels are glass, controls are pills. */
-.co{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;max-width:1180px}
+.co{display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
 .co-two{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:16px}
+@media (min-width:1500px){.co-week{grid-template-columns:repeat(6,minmax(0,1fr))}.co-pb{max-height:640px}}
 @media (max-width:959px){.co-two{grid-template-columns:1fr}}
 .co-panel{background:var(--glass);border:1px solid var(--glass-border);border-radius:var(--r-lg);box-shadow:var(--shadow-panel);
   -webkit-backdrop-filter:blur(var(--blur)) saturate(1.2);backdrop-filter:blur(var(--blur)) saturate(1.2);padding:20px 22px;min-width:0}
