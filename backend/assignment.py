@@ -617,7 +617,8 @@ def _fail(code, reasons=None, warnings=None, job=None, contractor=None, message=
 def _lock_job(job_id):
     """Row-lock the job on Postgres; a plain read on SQLite (the conditional
     UPDATE below is the guard there)."""
-    q = Job.query.filter(Job.id == job_id)
+    from sqlalchemy.orm import lazyload
+    q = Job.query.options(lazyload("*")).filter(Job.id == job_id)   # no eager joins under FOR UPDATE
     try:
         if db.session.get_bind().dialect.name == "postgresql":
             q = q.with_for_update()

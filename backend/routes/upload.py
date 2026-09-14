@@ -115,7 +115,9 @@ def upload_checkout_photos(job_id):
     """Attach guest/customer scope photos using the existing checkout capability."""
     from models import Job
     from routes.payments import _checkout_actor
-    job = Job.query.filter_by(id=job_id).with_for_update().first()
+    from sqlalchemy.orm import lazyload
+    # Job eager-joins payment/rating; Postgres refuses FOR UPDATE across an outer join.
+    job = Job.query.options(lazyload("*")).filter_by(id=job_id).with_for_update().first()
     if not job or not _checkout_actor(job, {})[0]:
         return jsonify(error="Booking not found"), 404
     if job.status != "pending":

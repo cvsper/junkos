@@ -244,7 +244,9 @@ def _cancel_intent(intent_id):
 def _lock_job(job_id):
     """Row-lock the job (real on Postgres, no-op on SQLite) so two concurrent
     create-intent calls serialize on the read-check-insert below."""
-    return Job.query.filter(Job.id == job_id).with_for_update().first()
+    from sqlalchemy.orm import lazyload
+    # Job eager-joins payment/rating; Postgres refuses FOR UPDATE across an outer join.
+    return Job.query.options(lazyload("*")).filter(Job.id == job_id).with_for_update().first()
 
 
 def create_attempt_for_job(job_id, submission_key, amount, *, actor, user_id=None,

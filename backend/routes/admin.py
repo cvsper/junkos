@@ -38,6 +38,14 @@ def require_admin(f):
     return wrapper
 
 
+@admin_bp.route("/recent-errors", methods=["GET"])
+@require_admin
+def recent_errors(user_id):
+    """The last unhandled exceptions this worker saw (in memory, newest first)."""
+    from server import RECENT_ERRORS, APP_VERSION
+    return jsonify({"version": APP_VERSION, "count": len(RECENT_ERRORS), "errors": list(RECENT_ERRORS)}), 200
+
+
 @admin_bp.route("/dashboard", methods=["GET"])
 @require_admin
 def dashboard(user_id):

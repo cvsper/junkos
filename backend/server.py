@@ -1053,7 +1053,7 @@ def get_available_time_slots(requested_date=None):
 # ---------------------------------------------------------------------------
 # Legacy API Routes (kept for backward compatibility)
 # ---------------------------------------------------------------------------
-APP_VERSION = "2.2.97"
+APP_VERSION = "2.2.98"
 
 
 # ---------------------------------------------------------------------------
@@ -2258,8 +2258,25 @@ def method_not_allowed(e):
     return jsonify(error="Method not allowed"), 405
 
 
+RECENT_ERRORS = __import__("collections").deque(maxlen=25)
+
+
 @app.errorhandler(500)
 def internal_error(e):
+    # Render gives us no shell and no log API, so keep the last few tracebacks
+    # in memory where an admin can read them (GET /api/admin/recent-errors).
+    try:
+        import traceback as _tb
+        from datetime import timezone as _tz
+        orig = getattr(e, "original_exception", None) or e
+        RECENT_ERRORS.appendleft({
+            "at": datetime.now(_tz.utc).isoformat().replace("+00:00", "Z"),
+            "method": request.method, "path": request.path,
+            "error": "{}: {}".format(type(orig).__name__, str(orig)[:400]),
+            "trace": "".join(_tb.format_exception(type(orig), orig, orig.__traceback__))[-3000:],
+        })
+    except Exception:
+        pass
     return jsonify(error="Internal server error"), 500
 
 
