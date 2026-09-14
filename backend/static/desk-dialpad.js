@@ -265,21 +265,21 @@
     if(d.length === 11 && d.charAt(0) === "1") d = d.slice(1);
     if(d.length < 10){ say("That number is too short.", "err"); return; }
     if(window.__deskCallsBlocked){ say("The calling window is closed right now.", "err"); return; }
-    var dev = window.__deskDevice;
-    if(!dev || typeof dev.connect !== "function"){
+    if(typeof window.__deskDial !== "function"){
       say("The browser dialer isn't ready — reload the desk, then try again.", "err");
       return;
     }
     say("Calling " + pretty(d) + "…");
     callBtn.disabled = true;
-    dev.connect({params: {To: "+1" + d, va_name: vaName()}}).then(function(){
+    // through the shared dialer, so this call gets the strip and the keypad too
+    window.__deskDial(d).then(function(){
       remember(d);
       phoneIn.value = pretty(d);
       say("");
-      shut();
-    }).catch(function(){
       callBtn.disabled = false;
-      say("Couldn't start the call. Check the microphone permission and try again.", "err");
+    }).catch(function(e){
+      callBtn.disabled = false;
+      say((e && e.message) || "Couldn't start the call. Check the microphone permission and try again.", "err");
     });
   });
 

@@ -1199,7 +1199,7 @@ CALLS_HTML = r"""<!doctype html>
       <div class="cs-dot"></div>
       <div class="cs-txt"><div class="cs-who" id="cs-who">—</div><div class="cs-state" id="cs-state">Calling…</div></div>
       <div class="cs-time" id="cs-time"></div>
-      <button class="cs-btn" id="cs-keypad" type="button" title="Press 2 for sales, dial an extension">Keypad</button>
+      <button class="cs-btn cs-key" id="cs-keypad" type="button" title="Send tones — press 2 for sales, dial an extension">Keypad</button>
       <button class="cs-btn" id="cs-mute" type="button">Mute</button>
       <button class="cs-btn cs-hang" id="cs-hang" type="button">Hang up</button>
     </div>
@@ -1442,13 +1442,13 @@ CALLS_HTML = r"""<!doctype html>
 <script src="/static/desk-compliance.js?v=1"></script>
 <script src="/static/desk-analytics.js?v=1"></script>
 <script src="/static/desk-growth.js?v=2"></script>
-<script src="/static/desk-inbound.js?v=1"></script>
+<script src="/static/desk-inbound.js?v=2"></script>
 <script src="/static/desk-sameday.js?v=2"></script>
 <script src="/static/desk-enrich.js?v=2"></script>
 <script src="/static/desk-dock.js?v=1"></script>
-<script src="/static/desk-dialpad.js?v=5"></script>
-<script src="/static/desk-work.js?v=5"></script>
-<script src="/static/desk-leads.js?v=3"></script>
+<script src="/static/desk-dialpad.js?v=6"></script>
+<script src="/static/desk-work.js?v=6"></script>
+<script src="/static/desk-leads.js?v=4"></script>
 <script src="/static/desk-class.js?v=2"></script>
 <script src="/va/calls.js?v=32"></script>
 </body>
@@ -1713,6 +1713,8 @@ CALLS_CSS = r"""/* Call Desk — layers over /va/app.css tokens (frosted glass o
   background:var(--raise);border:1px solid var(--glass-border);border-radius:var(--r-pill);
   box-shadow:var(--shadow-soft);cursor:pointer;transition:background .15s}
 .cs-btn:hover{background:#fff}
+.callstrip.live .cs-key{background:var(--dark);color:var(--on-dark);border-color:transparent}
+.callstrip.live .cs-key:hover{background:var(--dark-press)}
 .cs-hang{color:var(--danger);border-color:rgba(var(--danger-rgb),.38)}
 /* three buttons on a phone squeezed the company name down to "Palm ..." —
    tighten the buttons rather than lose who you are talking to */
@@ -3012,19 +3014,43 @@ CALLS_JS = r"""(function(){
     if(code === 31002 || code === 31003) return "the other side didn't pick up or rejected (" + code + ")";
     return msg + (code ? " (" + code + ")" : "");
   }
-  function startDeskCall(to){
-    if(window.__deskCallsBlocked){ showToast("Calling window is closed right now."); return; }
-    if(!device || !deskReady || !current || activeCall) return;
-    stripWho.textContent = current.company; stripState.textContent = "Starting…"; stripTime.textContent = "";
+  // ONE way in for every call on this page — the prospect card, the missed-call
+  // panel, the lead list, the work queue, the dialpad. Whoever starts the call,
+  // the same strip appears and the call is registered in one place, so the
+  // keypad can send tones through it. (Tracy, 14 Sep: a callback to a missed
+  // call reached a phone tree and there was no keypad, because only the card's
+  // own dial path registered the call.)
+  window.__deskDial = function(to, opts){
+    opts = opts || {};
+    if(window.__deskCallsBlocked) return Promise.reject(new Error("The calling window is closed right now."));
+    if(!device || !deskReady) return Promise.reject(new Error("The browser dialer isn't ready — reload the desk, then try again."));
+    if(activeCall) return Promise.reject(new Error("You're already on a call — hang up first."));
+    var digits = String(to || "").replace(/\D/g, "");
+    if(digits.length === 11 && digits.charAt(0) === "1") digits = digits.slice(1);
+    if(digits.length !== 10) return Promise.reject(new Error("That number doesn't look dialable."));
+    var who = opts.who || prettyNum(digits);
+    var params = {To: "+1" + digits, va_name: vaName()};
+    if(opts.prospect_id) params.prospect_id = opts.prospect_id;
+    if(opts.amd) params.amd = opts.amd;
+    if(opts.copilot) params.copilot = opts.copilot;
+    stripWho.textContent = who; stripState.textContent = "Starting…"; stripTime.textContent = "";
     strip.hidden = false; strip.classList.remove("live", "failed");
-    device.connect({params: {To: to, prospect_id: current.id, va_name: vaName(), amd: powerOn ? "1" : "0", copilot: copilotOn ? "1" : "0"}}).then(function(call){
-      bindCall(call, current.company);
-      cpStart();
+    return device.connect({params: params}).then(function(call){
+      bindCall(call, who);
+      return call;
     }).catch(function(e){
-      strip.classList.add("failed"); stripState.textContent = "Call failed: " + callErrorText(e);
-      showToast("Couldn't start the call: " + callErrorText(e));
+      var msg = callErrorText(e);
+      strip.classList.add("failed"); stripState.textContent = "Call failed: " + msg;
       setTimeout(function(){ strip.hidden = true; strip.classList.remove("failed"); }, 9000);
+      var err = new Error(msg); err.code = e && e.code; throw err;
     });
+  };
+  function startDeskCall(to){
+    if(!current) return;
+    window.__deskDial(to, {who: current.company, prospect_id: current.id,
+                           amd: powerOn ? "1" : "0", copilot: copilotOn ? "1" : "0"})
+      .then(function(){ cpStart(); })
+      .catch(function(e){ showToast((e && e.message) || "Couldn't start the call."); });
   }
   // surface a blocked microphone before the first call
   try {

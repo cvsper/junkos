@@ -89,6 +89,11 @@
     if(digits.length === 11 && digits.charAt(0) === "1") digits = digits.slice(1);
     if(digits.length !== 10){ say("That number doesn't look dialable.", "err"); return; }
     if(window.__deskCallsBlocked){ say("The calling window is closed right now.", "err"); return; }
+    if(typeof window.__deskDial === "function"){        // shared strip + keypad
+      window.__deskDial(digits).then(function(){ shut(); })
+        .catch(function(e){ say((e && e.message) || "Couldn't start the call.", "err"); });
+      return;
+    }
     var dev = window.__deskDevice;
     if(dev && typeof dev.connect === "function"){
       dev.connect({params: {To: "+1" + digits, va_name: vaName()}}).then(function(){ shut(); })

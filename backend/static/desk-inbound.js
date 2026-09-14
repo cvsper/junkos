@@ -375,17 +375,28 @@
 
   // ------------------------------------------------------------ dial back
   function fmtTime(s){ var m = Math.floor(s / 60), r = s % 60; return (m < 10 ? "0" : "") + m + ":" + (r < 10 ? "0" : "") + r; }
-  function bindOwnCall(call){
+  function bindOwnCall(call, quiet){
     state.ownCall = call;
-    ui.callbar.hidden = false; ui.callstate.textContent = "Calling " + pretty(state.digits) + "…"; ui.time.textContent = "";
+    // `quiet`: the desk's own call strip is already showing this call (with the
+    // keypad on it) — don't stack a second bar on top of it.
+    ui.callbar.hidden = !!quiet;
+    ui.callstate.textContent = "Calling " + pretty(state.digits) + "…"; ui.time.textContent = "";
     var start = 0;
     function tick(){ if(start) ui.time.textContent = fmtTime(Math.floor((Date.now() - start) / 1000)); }
     call.on("accept", function(){ start = Date.now(); ui.callstate.textContent = "On the call"; clearInterval(state.timer); state.timer = setInterval(tick, 1000); });
     function endc(){ clearInterval(state.timer); state.ownCall = null; ui.callbar.hidden = true; }
+    if(quiet) return;
     call.on("disconnect", endc); call.on("cancel", endc); call.on("reject", endc);
     call.on("error", function(){ endc(); status("The call dropped.", true); });
   }
   function dial(digits){
+    // the desk's shared dialer: same call strip, and the keypad can send tones
+    if(typeof window.__deskDial === "function"){
+      window.__deskDial(digits, {who: state.who || pretty(digits)})
+        .then(function(call){ bindOwnCall(call, true); })
+        .catch(function(e){ status((e && e.message) || "Couldn't start the call.", true); });
+      return;
+    }
     var dev = window.__deskDevice;
     if(dev && typeof dev.connect === "function"){
       try {
