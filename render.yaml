@@ -3,8 +3,6 @@ services:
     name: umuve-backend
     env: python
     rootDir: backend
-    domains:
-      - ops.goumuve.com          # the desk; DNS CNAME lives in Vercel DNS for goumuve.com
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn server:app --bind 0.0.0.0:$PORT --worker-class eventlet --workers 1 --timeout 120
     # /api/ready (not /api/health): health is liveness and answers 200
