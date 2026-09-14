@@ -1,0 +1,112 @@
+"""Thumbtack webhook → desk lead list, first text, alerts, admin visibility."""
+import base64
+import os
+from unittest import mock
+
+import pytest
+
+from models import db
+from models_thumbtack import ThumbtackLead
+
+
+LEAD = {
+    "leadID": "299999",
+    "createTimestamp": "1757800000",
+    "leadType": "phone",
+    "leadPrice": "18.50",
+    "customer": {"customerID": "c1", "name": "Dana Reyes", "phone": "(561) 555-0142"},
+    "business": {"businessID": "b1", "name": "Umuve"},
+    "request": {
+        "category": "Junk Removal", "categoryID": "cat1", "title": "Junk Removal",
+        "description": "Old sectional and a treadmill in the garage.",
+        "schedule": "This week",
+        "location": {"address1": "12 Palm Way", "city": "Lake Worth", "state": "FL", "zipCode": "33460"},
+        "details": [{"question": "What needs removal?", "answer": "Furniture"}],
+        "attachments": [{"fileName": "pile.jpg", "mimeType": "image/jpeg", "url": "https://x/pile.jpg"}],
+    },
+}
+
+
+def _basic(u="umuve", p="s3cret"):
+    return {"Authorization": "Basic " + base64.b64encode("{}:{}".format(u, p).encode()).decode()}
+
+
+@pytest.fixture(autouse=True)
+def env(app):
+    with mock.patch.dict(os.environ, {"THUMBTACK_WEBHOOK_USER": "umuve", "THUMBTACK_WEBHOOK_PASSWORD": "s3cret",
+                                      "DESK_VA_NAME": "Tracy"}):
+        yield
+    from leads import LeadTouch
+    LeadTouch.query.filter_by(kind="thumbtack").delete()
+    ThumbtackLead.query.delete()
+    db.session.commit()
+
+
+def test_auth_fail_closed_and_basic(client):
+    with mock.patch.dict(os.environ, {"THUMBTACK_WEBHOOK_USER": "", "THUMBTACK_WEBHOOK_PASSWORD": ""}):
+        assert client.post("/api/webhooks/thumbtack/lead", json=LEAD).status_code == 503
+    assert client.post("/api/webhooks/thumbtack/lead", json=LEAD).status_code == 401
+    assert client.post("/api/webhooks/thumbtack/lead", json=LEAD, headers=_basic(p="wrong")).status_code == 401
+
+
+def test_lead_is_filed_texted_alerted_and_listed(client):
+    with mock.patch("desk_line.send_desk_text", return_value="SM1") as send, \
+         mock.patch("thumbtack.alert_team") as alert, \
+         mock.patch("inbound.humans_online", return_value=False):
+        r = client.post("/api/webhooks/thumbtack/lead", json=LEAD, headers=_basic())
+    assert r.status_code == 200 and r.get_json()["created"] is True
+    lead = ThumbtackLead.query.filter_by(lead_id="299999").one()
+    assert lead.customer_name == "Dana Reyes" and lead.phone_digits == "5615550142" and lead.city == "Lake Worth"
+    assert lead.category == "Junk Removal" and lead.attachments[0]["url"] == "https://x/pile.jpg" and lead.lead_price == 18.5
+    assert lead.raw["leadID"] == "299999" and lead.text_sent_at and lead.status == "replied"
+    to, body = send.call_args[0][0], send.call_args[0][1]
+    assert to == "+15615550142" and "Thumbtack" in body and "Dana" in body and "photo" in body and "STOP" in body
+    assert alert.call_count == 1
+    # it shows in the desk's lead list first, marked auto-texted so the sweep leaves it alone
+    from leads import collect
+    leads, broken = collect()
+    assert "thumbtack" not in broken
+    mine = [l for l in leads if l["kind"] == "thumbtack"]
+    assert mine and mine[0]["source_label"] == "Thumbtack" and mine[0]["phone_digits"] == "5615550142"
+    assert mine[0]["auto_text_at"] and mine[0]["photos"] == 1 and leads[0]["kind"] == "thumbtack"
+    # same lead again: no second row, no second text
+    with mock.patch("desk_line.send_desk_text", return_value="SM2") as send2, mock.patch("thumbtack.alert_team"):
+        r2 = client.post("/api/webhooks/thumbtack/lead", json=LEAD, headers=_basic())
+    assert r2.get_json()["created"] is False and send2.call_count == 0 and ThumbtackLead.query.count() == 1
+
+
+def test_kill_switch_stops_the_text_but_keeps_the_lead(client):
+    with mock.patch("flags.flag", return_value=False), mock.patch("desk_line.send_desk_text") as send, \
+         mock.patch("thumbtack.alert_team"):
+        client.post("/api/webhooks/thumbtack/lead", json=LEAD, headers=_basic())
+    lead = ThumbtackLead.query.one()
+    assert send.call_count == 0 and lead.text_sent_at is None and lead.status == "new"
+
+
+def test_message_appends_reopens_clock_and_alerts(client):
+    with mock.patch("desk_line.send_desk_text", return_value="SM1"), mock.patch("thumbtack.alert_team"):
+        client.post("/api/webhooks/thumbtack/lead", json=LEAD, headers=_basic())
+    msg = {"leadID": "299999", "messageID": "m1", "message": {"text": "Can you come Saturday?", "sender": "customer"}}
+    with mock.patch("thumbtack.alert_team") as alert:
+        r = client.post("/api/webhooks/thumbtack/message", json=msg, headers=_basic())
+        r_dup = client.post("/api/webhooks/thumbtack/message", json=msg, headers=_basic())
+    assert r.status_code == 200 and r.get_json()["created"] and r_dup.get_json()["created"] is False
+    lead = ThumbtackLead.query.one()
+    assert lead.messages[-1]["text"] == "Can you come Saturday?" and alert.call_count == 1
+    from leads import collect
+    mine = [l for l in collect()[0] if l["kind"] == "thumbtack"][0]
+    assert "they said: Can you come Saturday?" in mine["what"] and not mine["touched_at"]
+
+
+def test_unknown_shape_is_kept_raw_and_answered_200(client):
+    with mock.patch("thumbtack.alert_team"):
+        r = client.post("/api/webhooks/thumbtack", json={"something": "else", "phone": "561-555-0199"}, headers=_basic())
+    assert r.status_code == 200
+    lead = ThumbtackLead.query.one()
+    assert lead.phone_digits == "5615550199" and lead.raw["something"] == "else"
+    from thumbtack import RECENT_EVENTS
+    assert RECENT_EVENTS[0]["payload"]["something"] == "else"
+
+
+def test_admin_events_route(client):
+    assert client.get("/api/admin/thumbtack/events").status_code == 401

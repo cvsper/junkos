@@ -269,6 +269,13 @@ app.register_blueprint(ratings_bp)
 app.register_blueprint(admin_bp)
 app.register_blueprint(payments_bp)
 app.register_blueprint(webhook_bp)
+try:
+    from thumbtack import thumbtack_bp, register_admin_routes as _tt_admin
+    app.register_blueprint(thumbtack_bp)
+    from routes.admin import require_admin as _require_admin
+    _tt_admin(app, _require_admin)
+except Exception as _e:
+    logger.warning("thumbtack_bp not registered: %s", _e)
 app.register_blueprint(booking_bp)
 app.register_blueprint(upload_bp)
 app.register_blueprint(jobs_bp)
@@ -441,6 +448,7 @@ except Exception as _gr_exc:  # pragma: no cover
 # intake + quote + booking + pay link from the desk. Tables in models_inbound.
 try:
     import models_inbound  # noqa: F401  — registers inbound_calls / callback_requests
+    import models_thumbtack  # noqa: F401  — registers thumbtack_leads
     from inbound import inbound_bp
     app.register_blueprint(inbound_bp)
 except Exception as _ib_exc:  # pragma: no cover
@@ -1065,7 +1073,7 @@ def get_available_time_slots(requested_date=None):
 # ---------------------------------------------------------------------------
 # Legacy API Routes (kept for backward compatibility)
 # ---------------------------------------------------------------------------
-APP_VERSION = "2.2.100"
+APP_VERSION = "2.2.101"
 
 
 # ---------------------------------------------------------------------------
