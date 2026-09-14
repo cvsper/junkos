@@ -221,6 +221,18 @@ def inbound_sms():
         except Exception:
             logger.exception("Hauler signup fast-path failed; falling through")
 
+    # --- YES / NO to an on-site add-on. First, because a hauler is standing in
+    # someone's driveway waiting on the answer, and because "yes" must never be
+    # interpreted by anything other than the thing that asked. ---
+    if num_media == 0 and body:
+        try:
+            from job_addons import handle_reply as _addon_reply
+            if _addon_reply(from_phone, body) is not None:
+                logger.info("add-on reply handled for %s", from_phone[-4:])
+                return _empty_twiml()
+        except Exception:
+            logger.exception("add-on reply handling failed")
+
     # --- An answer to an open photo quote (stairs / anything not pictured) is
     # ours: it re-prices and re-sends the firm number. Before the support
     # detector and Vapi, or Maya answers a question we asked. ---

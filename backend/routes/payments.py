@@ -241,6 +241,39 @@ def _cancel_intent(intent_id):
         return False
 
 
+def _stripe_customer_for(job):
+    """The Stripe customer for this job's customer, created once and kept on the
+    User. Returns None on any trouble — saving a card is a convenience and must
+    never cost someone their checkout."""
+    try:
+        user = db.session.get(User, job.customer_id) if job.customer_id else None
+        if user is None:
+            return None
+        if getattr(user, "stripe_customer_id", None):
+            return user.stripe_customer_id
+        if not _stripe_key():
+            return None
+        stripe = _get_stripe()
+        c = stripe.Customer.create(
+            email=user.email or None, name=user.name or None,
+            phone=getattr(user, "phone", None) or None,
+            metadata={"user_id": user.id},
+            idempotency_key="cust_{}".format(user.id))
+        cid = getattr(c, "id", None)
+        if not isinstance(cid, str) or not cid.startswith("cus_"):
+            return None                      # not a customer id — don't persist it
+        user.stripe_customer_id = cid
+        db.session.commit()
+        return cid
+    except Exception:
+        logger.exception("could not create a Stripe customer for job %s", getattr(job, "id", "?"))
+        try:
+            db.session.rollback()
+        except Exception:
+            pass
+        return None
+
+
 def _lock_job(job_id):
     """Row-lock the job (real on Postgres, no-op on SQLite) so two concurrent
     create-intent calls serialize on the read-check-insert below."""
@@ -388,6 +421,12 @@ def create_attempt_for_job(job_id, submission_key, amount, *, actor, user_id=Non
                   "idempotency_key": "pi_{}".format(attempt.id)}
         if receipt_email:
             kwargs["receipt_email"] = receipt_email
+        # Keep the card on file so an add-on the customer approves on site can go
+        # on the same card instead of asking them to type it again (job_addons).
+        cust_id = _stripe_customer_for(job)
+        if cust_id:
+            kwargs["customer"] = cust_id
+            kwargs["setup_future_usage"] = "off_session"
         try:
             intent = stripe.PaymentIntent.create(**kwargs)
             intent_id, client_secret = intent.id, intent.client_secret
@@ -2111,6 +2150,21 @@ def _handle_payment_succeeded(intent):
     amount_cents = intent.get("amount")
     currency = (intent.get("currency") or "").lower() or None
 
+    # An on-site add-on the customer approved is its own intent against the same
+    # job. Settle it here, or the job lookup below reports it as an orphan.
+    meta = intent.get("metadata") or {}
+    if meta.get("kind") == "on_site_addon" and meta.get("addon_id"):
+        try:
+            from models_addon import JobAddon
+            from job_addons import mark_paid_by_link
+            a = db.session.get(JobAddon, meta["addon_id"])
+            if a is not None and a.status != "charged":
+                mark_paid_by_link(a.job_id, intent_id)
+            return "processed"
+        except Exception:
+            logger.exception("could not settle add-on intent %s", intent_id)
+            return "processed"
+
     payment, job = _locate_payment_for_intent(intent_id, stripe_obj=intent)
     if not payment:
         logger.warning("Stripe webhook: no payment found for intent %s", intent_id)
@@ -2120,6 +2174,16 @@ def _handle_payment_succeeded(intent):
     # hit /confirm-simple). If it's already reconciled — or refunded — do
     # nothing: we'd resend emails, re-notify, double-count promo uses, or
     # overwrite a refund with "succeeded".
+    try:                                    # the card, for an approved on-site add-on
+        pm = intent.get("payment_method")
+        cid = intent.get("customer")
+        if pm and not payment.stripe_payment_method_id:
+            payment.stripe_payment_method_id = pm if isinstance(pm, str) else pm.get("id")
+        if cid and not payment.stripe_customer_id:
+            payment.stripe_customer_id = cid if isinstance(cid, str) else cid.get("id")
+    except Exception:
+        logger.exception("could not record the card for payment %s", payment.id)
+
     if payment.payment_status in _SETTLED_STATUSES:
         return "processed"
 

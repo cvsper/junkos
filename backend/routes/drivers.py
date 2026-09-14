@@ -280,6 +280,35 @@ def get_current_job(user_id):
     return jsonify({"success": True, "job": _with_driver_payout(active_job)}), 200
 
 
+@drivers_bp.route("/jobs/<job_id>/addons", methods=["GET", "POST"])
+@require_auth
+def job_addons_route(user_id, job_id):
+    """Extra items found on site. The hauler picks items; the engine prices the
+    difference and the customer is asked. Nothing loads until they say yes."""
+    contractor = Contractor.query.filter_by(user_id=user_id).first()
+    if not contractor:
+        return jsonify({"error": "Contractor profile not found"}), 404
+    job = Job.query.filter_by(id=job_id, driver_id=contractor.id).first()
+    if not job:
+        return jsonify({"error": "Job not found"}), 404
+    import job_addons
+    if request.method == "GET":
+        return jsonify({"success": True, "addons": job_addons.for_job(job.id)}), 200
+    data = request.get_json(silent=True) or {}
+    name = None
+    try:
+        u = db.session.get(User, user_id)
+        name = u.name if u else None
+    except Exception:
+        pass
+    addon, err = job_addons.request(job, data.get("items") or [], name or "Your hauler",
+                                    note=data.get("note"), contractor_id=contractor.id)
+    if err:
+        return jsonify({"error": err}), 400
+    return jsonify({"success": True, "addon": addon.to_dict(),
+                    "message": "Asked the customer — you'll get a text when they answer."}), 201
+
+
 @drivers_bp.route("/jobs/<job_id>", methods=["GET"])
 @require_auth
 def get_driver_job(user_id, job_id):

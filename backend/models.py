@@ -737,6 +737,8 @@ class Payment(db.Model):
     payment_status = Column(String(30), default="pending")
     tip_amount = Column(Float, default=0.0)
     # same-day pay (sameday_pay.py): how the hauler was paid and when it lands
+    stripe_payment_method_id = Column(String(255), nullable=True)   # the card they used, for
+    stripe_customer_id = Column(String(255), nullable=True)         # an approved on-site add-on
     payout_method = Column(String(20), nullable=True)        # instant | standard | manual
     instant_payout_id = Column(String(64), nullable=True)
     payout_arrival_at = Column(DateTime, nullable=True)

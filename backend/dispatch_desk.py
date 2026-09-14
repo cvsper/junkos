@@ -1086,6 +1086,49 @@ def api_cancel():
     return jsonify({"ok": True, "job": _card(job), "cancellation": result}), 200
 
 
+@dispatchdesk_bp.route("/api/va/dispatch/job/addon", methods=["POST"])
+def api_job_addon():
+    """The VA adds items a hauler found on site — for phone-only (concierge)
+    haulers, who have no app to do it from. Same engine, same customer text."""
+    ident, data, err = _ident_or_401()
+    if err:
+        return err
+    job, err = _job_or_404(data)
+    if err:
+        return err
+    import job_addons
+    if data.get("preview"):
+        q = job_addons.quote(job, data.get("items") or [])
+        if not q:
+            return jsonify({"error": "Pick at least one item."}), 400
+        return jsonify(q), 200
+    va = ident.get("name") or "the desk"
+    hauler = (job.driver.user.name if job.driver and job.driver.user else None) or "Our hauler"
+    addon, err2 = job_addons.request(job, data.get("items") or [], hauler,
+                                     note=data.get("note"),
+                                     contractor_id=job.driver_id)
+    if err2:
+        return jsonify({"error": err2}), 400
+    audit("dispatch_addon", "job", job.id, {"by": va, "amount": addon.amount,
+                                            "items": len(addon.items or [])})
+    return jsonify({"ok": True, "addon": addon.to_dict(),
+                    "message": "Asked {} — ${:.0f} added when they say yes.".format(
+                        (job.customer.name or "the customer") if job.customer else "the customer",
+                        addon.amount)}), 200
+
+
+@dispatchdesk_bp.route("/api/va/dispatch/job/addons", methods=["POST"])
+def api_job_addons():
+    ident, data, err = _ident_or_401()
+    if err:
+        return err
+    job, err = _job_or_404(data)
+    if err:
+        return err
+    import job_addons
+    return jsonify({"addons": job_addons.for_job(job.id)}), 200
+
+
 @dispatchdesk_bp.route("/api/va/dispatch/job/text", methods=["POST"])
 def api_job_text():
     ident, data, err = _ident_or_401()

@@ -403,6 +403,18 @@ def _sameday_standby_ask(app):
         logger.exception("standby ask job failed")
 
 
+def _expire_addons(app):
+    """An on-site add-on nobody answered is not an approval."""
+    with app.app_context():
+        try:
+            from job_addons import expire_stale
+            n = expire_stale()
+            if n:
+                logger.info("expired %d unanswered add-on requests", n)
+        except Exception:
+            logger.exception("add-on expiry failed")
+
+
 def _signed_up_sweep(app):
     """Haulers who signed up must leave Tracy's call queue — including the ones
     whose phone number only reached us after the account was made."""
@@ -1065,6 +1077,16 @@ def init_scheduler(app):
             args=[app],
             id="sameday_standby_ask",
             name="Same-day standby roster text",
+        )
+
+        # Unanswered on-site add-ons go stale — every 30 minutes
+        scheduler.add_job(
+            _expire_addons,
+            "interval",
+            minutes=30,
+            args=[app],
+            id="expire_addons",
+            name="Expire unanswered on-site add-ons",
         )
 
         # A hauler who signed up never gets recruited again — 06:20 ET daily
