@@ -24,6 +24,10 @@
 .in-dot{width:9px;height:9px;border-radius:50%;background:var(--ok);animation:in-pulse 1.6s ease-in-out infinite;flex:none}
 @keyframes in-pulse{0%,100%{opacity:1}50%{opacity:.35}}
 .in-time{margin-left:auto;font-variant-numeric:tabular-nums;color:var(--muted)}
+.in-key{font-family:var(--body);font-weight:600;font-size:12px;color:var(--on-dark);background:var(--dark);
+  border:1px solid transparent;border-radius:var(--r-pill);padding:6px 12px;cursor:pointer}
+.in-key:hover{background:var(--dark-press)}
+.in-key:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
 .in-hang{font-family:var(--body);font-weight:600;font-size:12px;color:var(--danger);background:transparent;
   border:1px solid rgba(var(--danger-rgb),.4);border-radius:var(--r-pill);padding:6px 11px;cursor:pointer}
 .in-hang:hover{border-color:var(--danger);background:rgba(var(--danger-rgb),.06)}

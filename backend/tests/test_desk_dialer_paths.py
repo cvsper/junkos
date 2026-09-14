@@ -48,3 +48,24 @@ def test_the_call_strip_offers_the_keypad():
     page = (BACKEND / "va_calls.py").read_text()
     assert 'id="cs-keypad"' in page and "Keypad" in page
     assert ".callstrip.live .cs-key{" in page              # highlighted while connected
+
+
+def test_the_call_bar_cannot_scroll_out_of_reach():
+    """It lived at the top of the document, so on a phone the intake form pushed
+    it off screen and a live call had no reachable keypad (Tracy, 14 Sep, twice)."""
+    page = (BACKEND / "va_calls.py").read_text()
+    strip = page[page.index(".callstrip{"):]
+    strip = strip[:strip.index("}") + 1]
+    assert "position:sticky" in strip and "top:0" in strip and "z-index:" in strip
+
+
+def test_the_intake_card_carries_its_own_keypad():
+    """Calling a missed caller back opens the intake card — the keypad has to be
+    on the thing she is looking at, not only on the bar above it."""
+    src = _read("desk-inbound.js")
+    assert 'id="in-key"' in src and '"key"' in src            # built and wired into ui{}
+    assert 'getElementById("cs-keypad")' in src               # opens the same dialpad
+    bind = src[src.index("function bindOwnCall("):]
+    bind = bind[:bind.index("\n  }")]
+    assert "ui.callbar.hidden = false" in bind                # visible for the whole call
+    assert ".in-key{" in _read("desk-inbound.css")

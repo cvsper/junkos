@@ -1152,7 +1152,7 @@ CALLS_HTML = r"""<!doctype html>
 <script src="/static/desk-shell.js?v=4" defer></script>
 <link rel="stylesheet" href="/static/desk-gate.css?v=3" />
 <script src="/static/desk-gate.js?v=2" defer></script>
-<link rel="stylesheet" href="/va/calls.css?v=30" />
+<link rel="stylesheet" href="/va/calls.css?v=31" />
 <link rel="stylesheet" href="/static/desk-class.css?v=3" />
 <link rel="manifest" href="/static/desk-manifest.json" />
 </head>
@@ -1442,7 +1442,7 @@ CALLS_HTML = r"""<!doctype html>
 <script src="/static/desk-compliance.js?v=1"></script>
 <script src="/static/desk-analytics.js?v=1"></script>
 <script src="/static/desk-growth.js?v=2"></script>
-<script src="/static/desk-inbound.js?v=2"></script>
+<script src="/static/desk-inbound.js?v=3"></script>
 <script src="/static/desk-sameday.js?v=2"></script>
 <script src="/static/desk-enrich.js?v=2"></script>
 <script src="/static/desk-dock.js?v=1"></script>
@@ -1697,9 +1697,12 @@ CALLS_CSS = r"""/* Call Desk — layers over /va/app.css tokens (frosted glass o
   box-shadow:var(--shadow-soft);transition:background .15s}
 .th-send:hover{background:var(--dark-press)}
 .th-send:disabled{opacity:.45;cursor:default}
-.callstrip{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--glass);
+.callstrip{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--glass-strong);
   -webkit-backdrop-filter:blur(var(--blur)) saturate(1.2);backdrop-filter:blur(var(--blur)) saturate(1.2);
-  border-bottom:1px solid var(--line)}
+  border-bottom:1px solid var(--line);
+  /* sticky, or a phone scrolls it away the moment the intake form opens under
+     it — which is how a live call had no reachable keypad (Tracy, 14 Sep) */
+  position:sticky;top:0;z-index:55;box-shadow:0 10px 24px -20px rgba(var(--ink-rgb),.5)}
 .cs-dot{width:10px;height:10px;border-radius:50%;background:var(--accent);flex:none}
 .callstrip.live .cs-dot{background:var(--ok);animation:cs-pulse 1.6s ease-in-out infinite}
 @keyframes cs-pulse{0%,100%{box-shadow:0 0 0 0 rgba(var(--ok-rgb),.45)}50%{box-shadow:0 0 0 7px rgba(var(--ok-rgb),0)}}

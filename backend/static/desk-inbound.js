@@ -32,7 +32,7 @@
   function el(tag, cls, text){ var e = document.createElement(tag); if(cls) e.className = cls; if(text != null) e.textContent = text; return e; }
   function label(cat){ return String(cat || "").replace(/_/g, " "); }
 
-  var css = document.createElement("link"); css.rel = "stylesheet"; css.href = "/static/desk-inbound.css?v=2";
+  var css = document.createElement("link"); css.rel = "stylesheet"; css.href = "/static/desk-inbound.css?v=3";
   document.head.appendChild(css);
 
   var incoming = document.getElementById("incoming");
@@ -107,6 +107,7 @@
       '<span class="in-kind" id="in-kind"></span>' +
       '<button type="button" class="in-close" id="in-close" aria-label="Back to the queue">Back to the queue</button></div>' +
       '<div class="in-callbar" id="in-callbar" hidden><span class="in-dot"></span><span id="in-callstate">Calling…</span><span class="in-time" id="in-time"></span>' +
+      '<button type="button" class="in-key" id="in-key" title="Send tones — press 2 for sales, dial an extension">Keypad</button>' +
       '<button type="button" class="in-hang" id="in-hang">Hang up</button></div>' +
       '<div class="in-grid">' +
       '<label class="in-f"><span class="lbl">Name</span><input id="in-name" type="text" autocomplete="off" placeholder="Who am I speaking with?"></label>' +
@@ -139,7 +140,7 @@
       '<p class="in-status" id="in-status" hidden></p>';
     var toast = document.getElementById("desk-toast");
     if(toast && toast.parentNode === colMain) colMain.insertBefore(box, toast); else colMain.appendChild(box);
-    ["chip","kind","close","callbar","callstate","time","hang","name","phone","addr","zip","popular","search","cats","add","items","photo","total","breakdown","date","wins","notes","book","quotetext","cb","notfit","spam","cbrow","cbat","status"]
+    ["chip","kind","close","callbar","callstate","time","key","hang","name","phone","addr","zip","popular","search","cats","add","items","photo","total","breakdown","date","wins","notes","book","quotetext","cb","notfit","spam","cbrow","cbat","status"]
       .forEach(function(k){ ui[k] = document.getElementById("in-" + k); });
 
     WINDOWS.forEach(function(w){
@@ -154,6 +155,11 @@
     ui.search.addEventListener("change", function(){ if(state.cats && state.cats[ui.search.value.trim().toLowerCase().replace(/ /g, "_")]) addFromSearch(); });
     ui.close.addEventListener("click", function(){ closeIntake(); });
     ui.hang.addEventListener("click", function(){ if(state.ownCall) state.ownCall.disconnect(); });
+    // the phone tree is why she called back — open the keypad without hunting for it
+    ui.key.addEventListener("click", function(){
+      var k = document.getElementById("cs-keypad");
+      if(k) k.click(); else if(window.__deskDock) window.__deskDock.open("dial");
+    });
     ui.book.addEventListener("click", book);
     ui.quotetext.addEventListener("click", quoteText);
     ui.cb.addEventListener("click", function(){ ui.cbrow.hidden = !ui.cbrow.hidden; });
@@ -375,17 +381,16 @@
 
   // ------------------------------------------------------------ dial back
   function fmtTime(s){ var m = Math.floor(s / 60), r = s % 60; return (m < 10 ? "0" : "") + m + ":" + (r < 10 ? "0" : "") + r; }
-  function bindOwnCall(call, quiet){
+  function bindOwnCall(call){
     state.ownCall = call;
-    // `quiet`: the desk's own call strip is already showing this call (with the
-    // keypad on it) — don't stack a second bar on top of it.
-    ui.callbar.hidden = !!quiet;
+    // Always visible: the desk's sticky strip is at the top of the page, but this
+    // card is where she is looking during an intake call, so the keypad is here too.
+    ui.callbar.hidden = false;
     ui.callstate.textContent = "Calling " + pretty(state.digits) + "…"; ui.time.textContent = "";
     var start = 0;
     function tick(){ if(start) ui.time.textContent = fmtTime(Math.floor((Date.now() - start) / 1000)); }
     call.on("accept", function(){ start = Date.now(); ui.callstate.textContent = "On the call"; clearInterval(state.timer); state.timer = setInterval(tick, 1000); });
     function endc(){ clearInterval(state.timer); state.ownCall = null; ui.callbar.hidden = true; }
-    if(quiet) return;
     call.on("disconnect", endc); call.on("cancel", endc); call.on("reject", endc);
     call.on("error", function(){ endc(); status("The call dropped.", true); });
   }
@@ -393,7 +398,7 @@
     // the desk's shared dialer: same call strip, and the keypad can send tones
     if(typeof window.__deskDial === "function"){
       window.__deskDial(digits, {who: state.who || pretty(digits)})
-        .then(function(call){ bindOwnCall(call, true); })
+        .then(function(call){ bindOwnCall(call); })
         .catch(function(e){ status((e && e.message) || "Couldn't start the call.", true); });
       return;
     }
@@ -408,6 +413,9 @@
     document.body.appendChild(a); a.click(); a.remove();
     status("Dialing from your phone — the browser dialer isn't connected.", false);
   }
+  // one shared way to open intake for a number (used by callBack, and by any
+  // other desk panel that needs to take a customer's details mid-call)
+  window.__deskIntake = {open: function(digits, who, opts){ return openIntake(digits, who, opts || {}); }};
   function callBack(digits, hint){
     lookup(digits).then(function(w){
       openIntake(digits, w, {callback: !!(w && w.callback) || hint === "callback", fresh: false});
