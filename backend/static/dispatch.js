@@ -142,7 +142,11 @@
     $("dm-refresh").classList.add("is-busy");
     return api("overview", {}).then(function(d){
       DATA = d || {}; DATA.counts = DATA.counts || {}; DATA.jobs = DATA.jobs || {}; DATA.haulers = DATA.haulers || [];
-      if(!loadedOnce){ showTool(); loadedOnce = true; }
+      if(!loadedOnce){
+        showTool(); loadedOnce = true;
+        // the universal New booking button lands here with ?book=1
+        if(/[?&]book=1/.test(location.search)){ setTimeout(openBook, 150); try { history.replaceState(null, "", location.pathname); } catch(e){} }
+      }
       $("bar-sub").textContent = (DATA.va || vaName() || "") + " · updated " + new Date().toLocaleTimeString([], {hour: "numeric", minute: "2-digit"});
       if(SEL_JOB != null && !findJob(SEL_JOB)) SEL_JOB = null;
       if(SEL_DUMP != null && !findDump(SEL_DUMP)) SEL_DUMP = null;
@@ -996,6 +1000,7 @@
   // ---------------------------------------------------------------- new booking
   var BK = {items: {}, addons: {}, load: null, geo: null, pay: "link", hauler: "open", customer_id: null};
   var bookOpen = false;
+  window.__openBook = function(){ openBook(); };
   function openBook(){
     openPanel("book"); bookOpen = true; resetBook();
     ensureCatalog().then(renderItems).catch(fail);

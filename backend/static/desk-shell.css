@@ -119,6 +119,21 @@ body.sh-open #desk-dock{visibility:hidden}
 @media (min-width:960px){.sh-handle{display:none}}
 @media (prefers-reduced-motion:reduce){.sh-side,.sh-scrim{transition:none}}
 
+/* ---------- New booking, reachable from every page ---------- */
+.sh-new{display:flex;align-items:center;justify-content:center;gap:8px;padding:12px 14px;border-radius:var(--r-pill);
+  background:var(--dark);color:var(--on-dark);text-decoration:none;font:600 14px var(--body);box-shadow:var(--shadow-soft);
+  transition:background .15s,transform .05s}
+.sh-new svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round}
+.sh-new:hover{background:var(--dark-press)}
+.sh-new:active{transform:translateY(1px)}
+.sh-actions .sh-new-top{padding:9px 16px 9px 12px;font-size:13px}
+.sh-new-ic{background:var(--dark)!important;color:var(--on-dark)!important;border-color:transparent!important;padding:0;font-size:0;
+  width:34px;height:34px;flex:none;display:grid;place-items:center;box-shadow:var(--shadow-soft)}
+.sh-new-ic svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2.4;stroke-linecap:round}
+@media (min-width:960px){.sh-new-ic{display:none}}
+/* phone headers: the analytics glyph lives in the sheet's tiles now, so the row keeps room for the title */
+@media (max-width:959px){body.has-shell header.bar > a.back[href="/va/analytics"]{display:none}}
+
 /* ---------- page fades: arrive slowly, leave slowly ---------- */
 html{background:var(--canvas)}
 @keyframes pg-fade{from{opacity:0}to{opacity:1}}

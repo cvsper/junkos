@@ -26,7 +26,8 @@
     msg: '<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3 8l9 6 9-6"/></svg>',
     mail: '<svg viewBox="0 0 24 24"><path d="M4 6h16v12H4z"/><path d="M4 7l8 5 8-5"/></svg>',
     hat: '<svg viewBox="0 0 24 24"><path d="M2 9l10-4 10 4-10 4z"/><path d="M6 11v5c0 1.5 3 3 6 3s6-1.5 6-3v-5"/></svg>',
-    out: '<svg viewBox="0 0 24 24"><path d="M10 4H5v16h5"/><path d="M14 8l4 4-4 4"/><path d="M18 12H9"/></svg>'
+    out: '<svg viewBox="0 0 24 24"><path d="M10 4H5v16h5"/><path d="M14 8l4 4-4 4"/><path d="M18 12H9"/></svg>',
+    plus: '<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>'
   };
 
   var JWT_KEY = "umuve_desk_jwt", ME_KEY = "umuve_desk_me", KEY = "umuve_coach_code", VA_KEY = "umuve_va_name";
@@ -72,6 +73,8 @@
   document.addEventListener("click", function(e){
     if(e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     var a = e.target.closest("a[href]"); if(!a) return;
+    // New booking on the dispatcher itself opens the form in place (this runs in the capture phase, before the link's own handler)
+    if(a.classList.contains("sh-new") && typeof window.__openBook === "function"){ e.preventDefault(); document.body.classList.remove("sh-open"); window.__openBook(); return; }
     if(a.target && a.target !== "_self") return;
     if(a.hasAttribute("download") || a.getAttribute("href").charAt(0) === "#") return;
     var url; try { url = new URL(a.href, location.href); } catch(err){ return; }
@@ -88,6 +91,14 @@
     go("/va");
   }
 
+  // One New booking control on every page: lands on the dispatcher's booking
+  // form (?book=1 opens it), or opens the form in place when already there.
+  function newBooking(cls, label){
+    var a = el("a", cls, I.plus); a.href = "/va/dispatch?book=1"; a.setAttribute("aria-label", "New booking");
+    if(label) a.appendChild(text("span", null, label));
+    return a;
+  }
+
   function buildSide(){
     var side = el("aside", "sh-side");
     side.appendChild(el("div", "sh-handle"));
@@ -95,6 +106,7 @@
     var img = document.createElement("img"); img.src = "/static/brand-logo.png?v=2"; img.alt = "Umuve";
     brand.appendChild(img); brand.appendChild(text("b", null, "muve"));
     side.appendChild(brand);
+    side.appendChild(newBooking("sh-new", "New booking"));
     var tiles = el("div", "sh-tiles");
     TILES.forEach(function(t){
       if(t.mgr && !isManager()) return;
@@ -133,6 +145,7 @@
     var meta = el("div", "sh-meta"); meta.appendChild(text("span", null, today()));
     g.appendChild(meta); top.appendChild(g);
     var actions = el("div", "sh-actions");
+    if(PAGE !== "dispatch") actions.appendChild(newBooking("sh-new sh-new-top", "New booking"));
     if(header && window.matchMedia("(min-width:960px)").matches){
       Array.prototype.slice.call(header.children).forEach(function(c){
         if(c.matches(".bar-sub")){ if(PAGE !== "home") meta.appendChild(c); }
@@ -184,6 +197,9 @@
     function open(){ document.body.classList.add("sh-open"); }
     scrim.addEventListener("click", close);
     document.addEventListener("keydown", function(e){ if(e.key === "Escape") close(); });
+    if(header && PAGE !== "dispatch" && window.matchMedia("(max-width:959px)").matches){
+      header.appendChild(newBooking("back sh-new sh-new-ic", ""));   // phone: one tap from any page header
+    }
     if(header){
       var brand = header.querySelector(".brand, img.brand, .wordmark");
       if(brand) brand.addEventListener("click", function(e){
