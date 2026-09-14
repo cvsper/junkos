@@ -1152,7 +1152,7 @@ CALLS_HTML = r"""<!doctype html>
 <script src="/static/desk-shell.js?v=3" defer></script>
 <link rel="stylesheet" href="/static/desk-gate.css?v=3" />
 <script src="/static/desk-gate.js?v=2" defer></script>
-<link rel="stylesheet" href="/va/calls.css?v=29" />
+<link rel="stylesheet" href="/va/calls.css?v=30" />
 <link rel="stylesheet" href="/static/desk-class.css?v=3" />
 <link rel="manifest" href="/static/desk-manifest.json" />
 </head>
@@ -1590,6 +1590,8 @@ CALLS_CSS = r"""/* Call Desk — layers over /va/app.css tokens (frosted glass o
   .bar .who::before{content:attr(data-initial);font-size:13px;font-weight:600;color:var(--ink)}
   .clock{padding:0 9px;margin-right:0}
   .bar .back{width:34px;height:34px;font-size:15px}
+  /* the day line is hidden here, and it carried the auto margin: the brand takes it so the buttons sit at the right edge */
+  .bar .brand{margin-right:auto}
   .dial-num{font-size:clamp(26px,8.2vw,36px)}
   .dial-num-sm{font-size:clamp(17px,5.2vw,22px)}
   .dial-hint{letter-spacing:0;font-size:12px;text-align:center}
