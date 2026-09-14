@@ -44,7 +44,9 @@ export function SocketProvider({
 
     const newSocket = io(SOCKET_URL, {
       auth: { token },
-      transports: ["websocket", "polling"],
+      // The backend currently allows polling only. Start with it so the
+      // connection works without depending on a failed WebSocket fallback.
+      transports: ["polling", "websocket"],
       reconnection: true,
       reconnectionDelay: 1000,
       reconnectionAttempts: 10,

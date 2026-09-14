@@ -228,7 +228,7 @@ export default function DriverJobsPage() {
                       {formatDistance(job.distance_miles)}
                     </td>
                     <td className="px-4 py-3 font-semibold">
-                      ${job.total_price.toFixed(2)}
+                      {job.driver_payout == null ? "Pay pending" : `$${job.driver_payout.toFixed(2)}`}
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
@@ -332,7 +332,7 @@ export default function DriverJobsPage() {
                   {statusLabel(job.status)}
                 </span>
                 <span className="text-sm font-semibold">
-                  ${job.total_price.toFixed(2)}
+                  {job.driver_payout == null ? "Pay pending" : `$${job.driver_payout.toFixed(2)}`}
                 </span>
               </div>
 

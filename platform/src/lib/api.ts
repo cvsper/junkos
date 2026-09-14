@@ -229,9 +229,13 @@ export const jobsApi = {
   get: (id: string) =>
     apiFetch<{ success: boolean; job: CustomerJobResponse }>(`/api/jobs/${id}`),
 
-  cancel: (id: string) =>
+  cancelPreview: (id: string) =>
+    apiFetch<{ allowed: boolean; cancellation_fee: number; refund_amount: number; message: string; requires_confirmation: boolean }>(`/api/jobs/${id}/cancel-preview`),
+
+  cancel: (id: string, confirm = false) =>
     apiFetch<{ success: boolean; job: CustomerJobResponse; cancellation_fee?: number }>(`/api/jobs/${id}/cancel`, {
       method: "PUT",
+      body: JSON.stringify({ confirm }),
     }),
 
   reschedule: (id: string, data: { scheduled_date: string; scheduled_time: string }) =>
@@ -325,7 +329,7 @@ export interface MarketBounds {
 
 /** Shape of a 409 from /api/booking or /api/booking/estimate (price / quote drift). */
 export interface PriceConflict {
-  code: "price_changed" | "quote_scope_mismatch" | "quote_expired" | "quote_already_used" | "quote_not_owned" | "quote_not_found";
+  code: "price_changed" | "quote_scope_mismatch" | "quote_expired" | "quote_already_used" | "quote_not_owned" | "quote_not_found" | "checkout_changed";
   error: string;
   price_version?: string;
   total?: number;
@@ -341,6 +345,14 @@ export function asPriceConflict(err: unknown): PriceConflict | null {
 }
 
 export const bookingApi = {
+  availability: (date: string, address: Partial<Address>, signal?: AbortSignal) => {
+    const query = new URLSearchParams({ date });
+    if (address.lat != null) query.set("lat", String(address.lat));
+    if (address.lng != null) query.set("lng", String(address.lng));
+    return apiFetch<{ date: string; any_available: boolean; slots: Array<{
+      slot: string; label: string; available: boolean; reason: string | null;
+    }> }>(`/api/booking/availability?${query}`, { signal });
+  },
   /**
    * POST /api/booking/estimate — the ONE server price. Sends every input that
    * moves the price (all items, coordinates, date + time slot, promo, quote)
@@ -418,6 +430,18 @@ export const bookingApi = {
       method: "POST",
       body: JSON.stringify(bookingData),
     }),
+
+  uploadPhotos: async (jobId: string, photos: File[], checkoutToken?: string) => {
+    const token = useAuthStore.getState().token;
+    const form = new FormData();
+    photos.forEach((file) => form.append("files", file));
+    const response = await fetch(`${API_BASE_URL}/api/booking/${jobId}/photos`, {
+      method: "POST", body: form,
+      headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(checkoutToken ? { "X-Checkout-Token": checkoutToken } : {}) },
+    });
+    const data = await response.json();
+    if (!response.ok || data.urls?.length !== photos.length) throw new ApiError(data.error || data.errors?.[0]?.error || "Some photos did not upload. Your booking and photos are saved for retry.", response.status, data);
+  },
 };
 
 // ---------------------------------------------------------------------------
@@ -610,7 +634,7 @@ interface CreatePaymentIntentResponse {
 }
 
 export interface CreateIntentOptions {
-  /** uuid generated once per booking and persisted (sessionStorage) — makes a
+  /** uuid generated once per booking and persisted in the browser draft — makes a
    * retry after a timeout / declined card return the SAME intent instead of
    * minting a second payable one. */
   submissionKey: string;
@@ -2171,14 +2195,15 @@ export const driverApi = {
     }),
 
   /** PUT /api/drivers/jobs/:id/status — update job status */
-  updateJobStatus: (id: string, status: string, lat?: number, lng?: number) =>
+  updateJobStatus: (id: string, status: string, lat?: number, lng?: number, proof?: { before_photos?: string[]; after_photos?: string[]; version?: number; handoff_pin?: string }) =>
     apiFetch<{ success: boolean; job: Record<string, unknown> }>(
       `/api/drivers/jobs/${id}/status`,
       {
         method: "PUT",
         body: JSON.stringify({
           status: status === "in_progress" ? "started" : status,
-          ...(lat && lng ? { lat, lng } : {}),
+          ...(lat != null && lng != null ? { lat, lng } : {}),
+          ...proof,
         }),
       }
     ).then((res) => ({
@@ -2186,24 +2211,22 @@ export const driverApi = {
       job: normalizeDriverJob(res.job) as import("@/types").DriverJob,
     })),
 
-  /** POST /api/drivers/jobs/:id/proof — upload job photos (multipart) */
-  uploadJobPhotos: async (
-    id: string,
-    photos: File[],
-    type: "before" | "after"
-  ) => {
+  /** Upload files first; attach their URLs with the saved job transition. */
+  uploadPhotos: async (photos: File[]) => {
     const token = useAuthStore.getState().token;
     const formData = new FormData();
-    photos.forEach((file) => formData.append("photos", file));
-    formData.append("type", type);
+    photos.forEach((file) => formData.append("files", file));
 
-    const res = await fetch(`${API_BASE_URL}/api/drivers/jobs/${id}/proof`, {
+    const res = await fetch(`${API_BASE_URL}/api/upload/photos`, {
       method: "POST",
       headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
       body: formData,
     });
     const data = await res.json();
     if (!res.ok) throw new ApiError(data?.message || data?.error || res.statusText, res.status, data);
+    if (!Array.isArray(data.urls) || data.urls.length !== photos.length) {
+      throw new ApiError(data.errors?.[0]?.error || "Some photos could not upload. Your selected photos are still saved for retry.", 422, data);
+    }
     return data as { success: boolean; urls: string[] };
   },
 

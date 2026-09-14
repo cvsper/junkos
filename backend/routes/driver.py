@@ -13,7 +13,7 @@ import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from models import db, User, Contractor, Job, Payment, utcnow
+from models import db, User, Contractor, Job, Payment, Notification, utcnow
 from auth_routes import require_auth
 from timeutils import iso_utc
 
@@ -42,6 +42,83 @@ def _job_driver_payout(job):
             return round(payment.driver_payout_amount, 2)
     total = job.total_price or 0.0
     return round(total * (1.0 - _commission_rate() - _service_fee_rate()), 2)
+
+
+@driver_bp.route("/notifications", methods=["GET"])
+@require_auth
+def list_notifications(user_id):
+    _, error = _get_contractor_or_404(user_id)
+    if error:
+        return error
+    limit = max(1, min(request.args.get("limit", 20, type=int), 100))
+    query = Notification.query.filter_by(user_id=user_id)
+    if request.args.get("include_read", "false").lower() != "true":
+        query = query.filter_by(is_read=False)
+    records = query.order_by(Notification.created_at.desc()).limit(limit).all()
+    unread = Notification.query.filter_by(user_id=user_id, is_read=False).count()
+    return jsonify(success=True, notifications=[row.to_dict() for row in records], unread_count=unread), 200
+
+
+@driver_bp.route("/notifications/<notification_id>/read", methods=["PUT"])
+@require_auth
+def mark_notification_read(user_id, notification_id):
+    _, error = _get_contractor_or_404(user_id)
+    if error:
+        return error
+    notification = Notification.query.filter_by(id=notification_id, user_id=user_id).first()
+    if not notification:
+        return jsonify(error="Notification not found"), 404
+    notification.is_read = True
+    db.session.commit()
+    return jsonify(success=True), 200
+
+
+@driver_bp.route("/notifications/read-all", methods=["PUT"])
+@require_auth
+def mark_all_notifications_read(user_id):
+    _, error = _get_contractor_or_404(user_id)
+    if error:
+        return error
+    Notification.query.filter_by(user_id=user_id, is_read=False).update({"is_read": True})
+    db.session.commit()
+    return jsonify(success=True), 200
+
+
+def _web_earnings(completed_jobs):
+    """Add the web period/history contract without changing legacy earnings."""
+    from timeutils import local_now, to_local
+    today = local_now().date()
+    period = request.args.get("period", "all")
+    if period not in ("today", "week", "month", "all"):
+        period = "all"
+    start = {"today": today, "week": today - timedelta(days=today.weekday()),
+             "month": today.replace(day=1), "all": None}[period]
+    records = []
+    week_start = today - timedelta(days=today.weekday())
+    chart = [0.0] * 7
+    for job in completed_jobs:
+        completed = job.completed_at or job.updated_at or job.created_at
+        if completed is None:
+            continue
+        day = to_local(completed).date()
+        amount = _job_driver_payout(job)
+        offset = (day - week_start).days
+        if 0 <= offset < 7:
+            chart[offset] += amount
+        if start and day < start:
+            continue
+        payment = job.payment
+        records.append({"id": job.id, "job_id": job.id, "address": job.address,
+                        "amount": amount, "tip": payment.tip_amount if payment else 0.0,
+                        "payout_status": payment.payout_status if payment else "unknown",
+                        "completed_at": iso_utc(completed)})
+    records.sort(key=lambda row: row["completed_at"], reverse=True)
+    total = round(sum(row["amount"] for row in records), 2)
+    return {"summary": {"total": total, "jobs_completed": len(records), "period": period,
+                        "avg_per_job": round(total / len(records), 2) if records else 0.0},
+            "records": records,
+            "weekly_chart": [{"day": day, "amount": round(amount, 2)}
+                             for day, amount in zip(("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"), chart)]}
 
 
 def _get_contractor_or_404(user_id):
@@ -200,6 +277,7 @@ def earnings(user_id):
 
         return jsonify({
             "success": True,
+            **_web_earnings(completed_jobs),
             "earnings": {
                 "total_earned": total_earned,
                 "total_jobs": total_jobs,

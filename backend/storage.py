@@ -151,7 +151,7 @@ def normalize_image(data):
             fmt = "JPEG"
     except UploadValidationError:
         raise
-    except (UnidentifiedImageError, Image.DecompressionBombError, OSError, ValueError) as exc:
+    except (UnidentifiedImageError, Image.DecompressionBombError, OSError, ValueError, SyntaxError) as exc:
         raise UploadValidationError("file is not a valid image") from exc
     ext, ctype = IMAGE_FORMATS[fmt]
     return NormalizedUpload(out.getvalue(), ext, ctype, "image", width, height)

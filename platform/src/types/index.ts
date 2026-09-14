@@ -134,6 +134,7 @@ export interface PricingRule {
 export type DispositionPreference = "best" | "donate" | "recycle" | "dispose";
 
 export interface BookingFormData {
+  booking_request_id?: string;
   step: number;
   address: Partial<Address>;
   /** Raw File objects don't survive JSON.stringify — do not send; use photoUrls */
@@ -196,6 +197,14 @@ export interface DriverStats {
 
 export interface DriverJob {
   id: string;
+  requires_acceptance?: boolean;
+  driver_payout?: number | null;
+  payout_status?: string | null;
+  volume_adjustment_proposed?: boolean;
+  has_open_change_order?: boolean;
+  completion_pin_set?: boolean;
+  volume_estimate?: number | null;
+  version?: number;
   customer_id: string;
   driver_id: string | null;
   operator_id: string | null;
@@ -234,7 +243,7 @@ export interface DriverEarningsRecord {
   address: string;
   amount: number;
   tip: number;
-  payout_status: "pending" | "paid" | "processing";
+  payout_status: string;
   completed_at: string;
 }
 

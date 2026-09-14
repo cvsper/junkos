@@ -1,7 +1,25 @@
 import { create } from "zustand";
-import type { Address, JobItem, DispositionPreference } from "@/types";
+import type { Address, JobItem, DispositionPreference, BookingFormData } from "@/types";
+import { removeBrowserWork } from "@/lib/browser-work";
+
+export interface CheckoutSession {
+  bookingId?: string;
+  submissionKey: string;
+  checkoutToken?: string;
+  confirmationCode?: string;
+  fingerprint: string;
+  request?: BookingFormData;
+  photos?: File[];
+  photosAttached?: boolean;
+  paymentIntentId?: string;
+}
 
 interface BookingState {
+  checkout: CheckoutSession | null;
+  draftOwner: string | null;
+  draftComplete: boolean;
+  contact: { name: string; email: string; phone: string };
+  setContact: (contact: { name: string; email: string; phone: string }) => void;
   // Form state
   step: number;
   address: Partial<Address>;
@@ -87,6 +105,10 @@ interface BookingState {
 }
 
 const initialState = {
+  checkout: null,
+  draftOwner: null,
+  draftComplete: false,
+  contact: { name: "", email: "", phone: "" },
   step: 1,
   address: {},
   photos: [],
@@ -122,6 +144,7 @@ const QUOTE_CLEARED = { quoteId: null, quoteBinding: false, quoteToken: null } a
 
 export const useBookingStore = create<BookingState>((set, get) => ({
   ...initialState,
+  setContact: (contact) => set({ contact }),
 
   // Navigation
   setStep: (step) => set({ step: Math.min(Math.max(step, 1), 6) }),
@@ -226,13 +249,16 @@ export const useBookingStore = create<BookingState>((set, get) => ({
   reset: () => {
     const { photoPreviewUrls } = get();
     photoPreviewUrls.forEach((url) => URL.revokeObjectURL(url));
-    set(initialState);
+    set({ ...initialState, draftOwner: get().draftOwner });
   },
 }));
 
 const ABANDONED_BOOKING_KEY = "umuve_abandoned_booking";
 
 export function clearAbandonedBooking() {
+  const owner = useBookingStore.getState().draftOwner;
+  useBookingStore.setState({ draftComplete: true });
+  if (owner) void removeBrowserWork(owner).catch(() => undefined);
   try {
     localStorage.removeItem(ABANDONED_BOOKING_KEY);
   } catch {

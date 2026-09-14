@@ -2,10 +2,11 @@
 
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { ArrowLeft, ArrowRight, Gift, RotateCcw, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Gift, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useBookingStore } from "@/stores/booking-store";
 import { referralsApi } from "@/lib/api";
+import { useBookingRecovery } from "@/hooks/use-booking-recovery";
 import { trackBookingStep } from "@/components/analytics";
 import { ProgressBar } from "@/components/booking/progress-bar";
 import { Step1Address } from "@/components/booking/step-1-address";
@@ -47,84 +48,20 @@ function detectLeadSource(searchParams: URLSearchParams): string {
 }
 
 // ---------------------------------------------------------------------------
-// Abandoned booking helpers
-// ---------------------------------------------------------------------------
-
-const ABANDONED_BOOKING_KEY = "umuve_abandoned_booking";
-const ONE_HOUR_MS = 60 * 60 * 1000;
-const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
-
-interface AbandonedBooking {
-  step: number;
-  timestamp: number;
-  address: Record<string, unknown>;
-  items: unknown[];
-  scheduledDate: string;
-  scheduledTimeSlot: string;
-  notes: string;
-}
-
-function getAbandonedBooking(): AbandonedBooking | null {
-  try {
-    const raw = localStorage.getItem(ABANDONED_BOOKING_KEY);
-    if (!raw) return null;
-    const data = JSON.parse(raw) as AbandonedBooking;
-    const age = Date.now() - data.timestamp;
-    if (age > ONE_HOUR_MS && age < SEVEN_DAYS_MS) return data;
-    // Too old or too recent — clear it
-    if (age >= SEVEN_DAYS_MS) localStorage.removeItem(ABANDONED_BOOKING_KEY);
-    return null;
-  } catch {
-    return null;
-  }
-}
-
-function saveAbandonedBooking(state: {
-  step: number;
-  address: Record<string, unknown>;
-  items: unknown[];
-  scheduledDate: string;
-  scheduledTimeSlot: string;
-  notes: string;
-}) {
-  try {
-    const data: AbandonedBooking = { ...state, timestamp: Date.now() };
-    localStorage.setItem(ABANDONED_BOOKING_KEY, JSON.stringify(data));
-  } catch {
-    // Silently fail if localStorage is full
-  }
-}
-
-// Exported from booking store for use in step-6-payment
-function clearAbandonedBooking() {
-  try {
-    localStorage.removeItem(ABANDONED_BOOKING_KEY);
-  } catch {
-    // noop
-  }
-}
-
-// ---------------------------------------------------------------------------
 // Inner component that uses useSearchParams (requires Suspense boundary)
 // ---------------------------------------------------------------------------
 
 function BookPageInner() {
+  const recovery = useBookingRecovery();
   const step = useBookingStore((s) => s.step);
   const nextStep = useBookingStore((s) => s.nextStep);
   const prevStep = useBookingStore((s) => s.prevStep);
-  const setStep = useBookingStore((s) => s.setStep);
-  const setAddress = useBookingStore((s) => s.setAddress);
-  const setItems = useBookingStore((s) => s.setItems);
-  const setSchedule = useBookingStore((s) => s.setSchedule);
-  const setNotes = useBookingStore((s) => s.setNotes);
   const setLeadSource = useBookingStore((s) => s.setLeadSource);
   const searchParams = useSearchParams();
 
   // Referral banner state
   const [referrerName, setReferrerName] = useState<string | null>(null);
 
-  // Abandoned booking banner state
-  const [abandonedBooking, setAbandonedBooking] = useState<AbandonedBooking | null>(null);
 
   // --- Track booking funnel step in GA4 ---
   useEffect(() => {
@@ -145,52 +82,6 @@ function BookPageInner() {
     // Meta Lead fires from step-6-payment once real contact info is captured
     // (abandoned-booking beacon) — firing here would count a Lead per page view.
   }, [searchParams, setLeadSource]);
-
-  // --- Check for abandoned booking on mount ---
-  useEffect(() => {
-    const abandoned = getAbandonedBooking();
-    if (abandoned) {
-      setAbandonedBooking(abandoned);
-    }
-  }, []);
-
-  // --- Save abandoned booking when step >= 3 ---
-  const address = useBookingStore((s) => s.address);
-  const items = useBookingStore((s) => s.items);
-  const scheduledDate = useBookingStore((s) => s.scheduledDate);
-  const scheduledTimeSlot = useBookingStore((s) => s.scheduledTimeSlot);
-  const notes = useBookingStore((s) => s.notes);
-
-  useEffect(() => {
-    if (step >= 3) {
-      saveAbandonedBooking({
-        step,
-        address: address as Record<string, unknown>,
-        items: items as unknown[],
-        scheduledDate,
-        scheduledTimeSlot,
-        notes,
-      });
-    }
-  }, [step, address, items, scheduledDate, scheduledTimeSlot, notes]);
-
-  // --- Resume abandoned booking ---
-  const handleResumeAbandoned = useCallback(() => {
-    if (!abandonedBooking) return;
-    setAddress(abandonedBooking.address as Record<string, string>);
-    setItems(abandonedBooking.items as Parameters<typeof setItems>[0]);
-    if (abandonedBooking.scheduledDate && abandonedBooking.scheduledTimeSlot) {
-      setSchedule(abandonedBooking.scheduledDate, abandonedBooking.scheduledTimeSlot);
-    }
-    if (abandonedBooking.notes) setNotes(abandonedBooking.notes);
-    setStep(abandonedBooking.step);
-    setAbandonedBooking(null);
-  }, [abandonedBooking, setAddress, setItems, setSchedule, setNotes, setStep]);
-
-  const handleDismissAbandoned = useCallback(() => {
-    localStorage.removeItem(ABANDONED_BOOKING_KEY);
-    setAbandonedBooking(null);
-  }, []);
 
   // Check for ?ref= query param and store it
   useEffect(() => {
@@ -264,6 +155,8 @@ function BookPageInner() {
   const showNextButton = step < 6;
   const showBackButton = step > 1;
 
+  if (!recovery.ready) return <div role="status" className="flex items-center justify-center gap-2 p-12"><Loader2 className="h-5 w-5 animate-spin" />Restoring your booking…</div>;
+
   return (
     <div className="max-w-3xl mx-auto px-4 py-8 sm:py-12">
       {/* Referral Banner */}
@@ -278,31 +171,10 @@ function BookPageInner() {
         </div>
       )}
 
-      {/* Abandoned Booking Banner */}
-      {abandonedBooking && (
-        <div className="mb-6 flex items-center justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
-          <div className="flex items-center gap-3">
-            <RotateCcw className="h-5 w-5 text-amber-600 flex-shrink-0" />
-            <p className="text-sm text-amber-800">
-              You have an unfinished booking. Pick up where you left off?
-            </p>
-          </div>
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleResumeAbandoned}
-              className="border-amber-300 text-amber-800 hover:bg-amber-100"
-            >
-              Resume
-            </Button>
-            <button
-              onClick={handleDismissAbandoned}
-              className="text-amber-400 hover:text-amber-600 transition-colors"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
+      {(recovery.message || recovery.error) && (
+        <div className="mb-6 rounded-lg border border-border bg-muted/40 p-4 text-sm" role={recovery.error ? "alert" : "status"}>
+          <p>{recovery.error || recovery.message}</p>
+          {recovery.error && <Button variant="outline" size="sm" className="mt-2" onClick={recovery.retry}>Retry saving draft</Button>}
         </div>
       )}
 

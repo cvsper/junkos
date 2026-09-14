@@ -1,12 +1,19 @@
 "use client";
 
+import { payoutStatusLabel } from "@/lib/payout-status";
+import { resolveMediaUrl } from "@/lib/media-url";
+import * as Dialog from "@radix-ui/react-dialog";
+
 import { useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { driverApi, ApiError } from "@/lib/api";
+import { useDriverWork } from "@/hooks/use-driver-work";
 import type { DriverJob } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -62,20 +69,6 @@ function formatAddress(address: string): string {
   return address.length > 60 ? address.slice(0, 57) + "..." : address;
 }
 
-function getCurrentLocation(): Promise<{ lat: number; lng: number } | null> {
-  return new Promise((resolve) => {
-    if (!navigator.geolocation) {
-      resolve(null);
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(
-      (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      () => resolve(null),
-      { timeout: 5000 }
-    );
-  });
-}
-
 function isIOS(): boolean {
   if (typeof navigator === "undefined") return false;
   return /iPad|iPhone|iPod/.test(navigator.userAgent);
@@ -112,12 +105,18 @@ function PhotoUploadSection({
   onUpload,
   uploading,
   existingUrls,
+  onRetry,
+  onRemove,
+  disabled = false,
 }: {
   label: string;
   photos: File[];
   onUpload: (files: File[]) => void;
   uploading: boolean;
   existingUrls: string[];
+  onRetry: () => void;
+  onRemove: (index: number) => void;
+  disabled?: boolean;
 }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [previews, setPreviews] = useState<string[]>([]);
@@ -155,7 +154,7 @@ function PhotoUploadSection({
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={url}
+                src={resolveMediaUrl(url)}
                 alt={`${label} ${idx + 1}`}
                 className="w-full h-full object-cover"
               />
@@ -186,18 +185,21 @@ function PhotoUploadSection({
                   <Loader2 className="w-5 h-5 text-white animate-spin" />
                 </div>
               )}
+              {!uploading && <button type="button" aria-label={`Remove pending ${label.toLowerCase()} ${idx + 1}`} onClick={() => onRemove(idx)} className="absolute right-1 top-1 rounded bg-white px-2 py-1 text-xs text-destructive">Remove</button>}
             </div>
           ))}
         </div>
       )}
 
+      {photos.length > 0 && !uploading && <Button variant="outline" className="w-full" onClick={onRetry}>Retry saved {label.toLowerCase()}</Button>}
       {/* Upload button */}
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/*"
+        accept="image/jpeg,image/png,image/webp"
         capture="environment"
         multiple
+        disabled={uploading || disabled}
         onChange={handleFileChange}
         className="hidden"
       />
@@ -206,7 +208,7 @@ function PhotoUploadSection({
         size="sm"
         className="w-full gap-2 border-dashed"
         onClick={() => fileInputRef.current?.click()}
-        disabled={uploading}
+        disabled={uploading || disabled}
       >
         {uploading ? (
           <>
@@ -301,6 +303,8 @@ function ConfirmModal({
   onConfirm,
   onCancel,
   loading,
+  disabled,
+  children,
 }: {
   open: boolean;
   title: string;
@@ -309,19 +313,21 @@ function ConfirmModal({
   onConfirm: () => void;
   onCancel: () => void;
   loading: boolean;
+  disabled?: boolean;
+  children?: React.ReactNode;
 }) {
-  if (!open) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="fixed inset-0 bg-black/50" onClick={onCancel} />
-      <div className="relative bg-card border border-border rounded-xl shadow-lg max-w-sm w-full p-6 space-y-4">
-        <h3 className="text-lg font-semibold text-foreground">{title}</h3>
-        <p className="text-sm text-muted-foreground">{message}</p>
+    <Dialog.Root open={open} onOpenChange={(next) => { if (!next && !loading) onCancel(); }}>
+      <Dialog.Portal>
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50" />
+        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border bg-card p-6 shadow-lg space-y-4">
+        <Dialog.Title className="text-lg font-semibold text-foreground">{title}</Dialog.Title>
+        <Dialog.Description className="text-sm text-muted-foreground">{message}</Dialog.Description>
+        {children}
         <div className="flex items-center gap-3 pt-2">
           <Button
             onClick={onConfirm}
-            disabled={loading}
+            disabled={loading || disabled}
             className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
           >
             {loading ? (
@@ -338,8 +344,9 @@ function ConfirmModal({
             Cancel
           </Button>
         </div>
-      </div>
-    </div>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
   );
 }
 
@@ -401,7 +408,7 @@ function VolumeAdjustmentCard({
       <CardHeader>
         <CardTitle className="text-base font-semibold flex items-center gap-2">
           <DollarSign className="w-4 h-4 text-amber-700" />
-          More stuff than booked? Adjust the price
+          Review the pickup price
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -442,14 +449,14 @@ function VolumeAdjustmentCard({
           <div className="text-sm rounded bg-emerald-100 border border-emerald-300 p-2 text-emerald-800">
             ✓ Auto-approved (price went down).
             {" "}New: ${result.newPrice.toFixed(2)} (was ${result.originalPrice.toFixed(2)}).
-            Customer card will be charged the new amount.
+            The revised amount is reflected in this pickup.
           </div>
         )}
         {result && !result.autoApproved && (
           <div className="text-sm rounded bg-amber-100 border border-amber-300 p-2 text-amber-900">
             Sent to customer for approval. Proposed:
             {" "}${result.newPrice.toFixed(2)} (was ${result.originalPrice.toFixed(2)}).
-            They have to tap Approve in their app before you charge the diff.
+            Wait for their approval and payment confirmation before starting work.
           </div>
         )}
       </CardContent>
@@ -466,6 +473,7 @@ export default function ActiveJobPage() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
+  const work = useDriverWork(id);
 
   // Core state
   const [job, setJob] = useState<DriverJob | null>(null);
@@ -476,18 +484,16 @@ export default function ActiveJobPage() {
   const [transitioning, setTransitioning] = useState(false);
   const [successBanner, setSuccessBanner] = useState<string | null>(null);
 
-  // Photo state - before
-  const [beforePhotos, setBeforePhotos] = useState<File[]>([]);
-  const [beforeUploading, setBeforeUploading] = useState(false);
-  const [beforeUploadedUrls, setBeforeUploadedUrls] = useState<string[]>([]);
-
-  // Photo state - after
-  const [afterPhotos, setAfterPhotos] = useState<File[]>([]);
-  const [afterUploading, setAfterUploading] = useState(false);
-  const [afterUploadedUrls, setAfterUploadedUrls] = useState<string[]>([]);
+  const beforePhotos = work.before;
+  const afterPhotos = work.after;
+  const beforeUploading = work.busy;
+  const afterUploading = work.busy;
+  const beforeUploadedUrls = Array.from(new Set([...(job?.before_photos ?? []), ...work.beforeURLs]));
+  const afterUploadedUrls = Array.from(new Set([...(job?.after_photos ?? []), ...work.afterURLs]));
 
   // Completion confirm modal
   const [completeModalOpen, setCompleteModalOpen] = useState(false);
+  const [handoffPin, setHandoffPin] = useState("");
 
   // Elapsed timer
   const [elapsed, setElapsed] = useState("");
@@ -502,8 +508,6 @@ export default function ActiveJobPage() {
       const res = await driverApi.getJob(id);
       const j = res.job;
       setJob(j);
-      setBeforeUploadedUrls(j.before_photos || []);
-      setAfterUploadedUrls(j.after_photos || []);
       setError(null);
     } catch (err: unknown) {
       const message = err instanceof ApiError ? err.message : "Failed to load job.";
@@ -527,8 +531,6 @@ export default function ActiveJobPage() {
         .getJob(id)
         .then((res) => {
           setJob(res.job);
-          setBeforeUploadedUrls(res.job.before_photos || []);
-          setAfterUploadedUrls(res.job.after_photos || []);
         })
         .catch(() => {
           // Silently ignore polling errors
@@ -557,72 +559,35 @@ export default function ActiveJobPage() {
   // Status Transition Handlers
   // ---------------------------------------------------------------------------
 
-  async function handleStatusUpdate(newStatus: string, successMessage: string) {
-    if (!id) return;
-    setTransitioning(true);
-    setError(null);
+  async function handleStatusUpdate(newStatus: string, successMessage: string, pin?: string) {
+    setTransitioning(true); setError(null);
     try {
-      const loc = await getCurrentLocation();
-      const res = await driverApi.updateJobStatus(
-        id,
-        newStatus,
-        loc?.lat,
-        loc?.lng
-      );
-      setJob(res.job);
-      setBeforeUploadedUrls(res.job.before_photos || []);
-      setAfterUploadedUrls(res.job.after_photos || []);
-      setSuccessBanner(successMessage);
-    } catch (err: unknown) {
-      const message = err instanceof ApiError ? err.message : "Failed to update status.";
-      setError(message);
-    } finally {
-      setTransitioning(false);
-    }
+      const updated = await work.transition(newStatus, pin);
+      if (updated) { setJob(updated); setSuccessBanner(successMessage); }
+      return Boolean(updated);
+    } finally { setTransitioning(false); }
   }
 
   async function handleBeforeUpload(files: File[]) {
-    setBeforePhotos((prev) => [...prev, ...files]);
-    setBeforeUploading(true);
-    try {
-      const res = await driverApi.uploadJobPhotos(id, files, "before");
-      setBeforeUploadedUrls((prev) => [...prev, ...res.urls]);
-      setBeforePhotos([]);
-      setSuccessBanner("Before photos uploaded successfully.");
-    } catch (err: unknown) {
-      const message = err instanceof ApiError ? err.message : "Failed to upload photos.";
-      setError(message);
-    } finally {
-      setBeforeUploading(false);
-    }
+    if (await work.upload("before", files)) setSuccessBanner("Before photos saved. They will be attached when you start the pickup.");
   }
 
   async function handleAfterUpload(files: File[]) {
-    setAfterPhotos((prev) => [...prev, ...files]);
-    setAfterUploading(true);
-    try {
-      const res = await driverApi.uploadJobPhotos(id, files, "after");
-      setAfterUploadedUrls((prev) => [...prev, ...res.urls]);
-      setAfterPhotos([]);
-      setSuccessBanner("After photos uploaded successfully.");
-    } catch (err: unknown) {
-      const message = err instanceof ApiError ? err.message : "Failed to upload photos.";
-      setError(message);
-    } finally {
-      setAfterUploading(false);
-    }
+    if (await work.upload("after", files)) setSuccessBanner("After photos saved. They will be attached when you complete the pickup.");
   }
 
   async function handleCompleteJob() {
-    await handleStatusUpdate("completed", "Job completed! Great work.");
-    setCompleteModalOpen(false);
+    if (await handleStatusUpdate("completed", "Job completed! Great work.", handoffPin)) {
+      setCompleteModalOpen(false);
+      setHandoffPin("");
+    }
   }
 
   // ---------------------------------------------------------------------------
   // Loading Skeleton
   // ---------------------------------------------------------------------------
 
-  if (loading) {
+  if (loading || (!work.ready && !work.error)) {
     return (
       <div className="max-w-2xl mx-auto space-y-6">
         <div className="flex items-center gap-3">
@@ -691,6 +656,15 @@ export default function ActiveJobPage() {
         <span className="text-sm font-medium">Job #{id.slice(0, 8)}</span>
       </div>
 
+      {work.error && <div role="alert" className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">{work.error}</div>}
+      {work.pendingStatus && <div role="status" className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm">
+        <p>You have a saved pickup update. Retry to check whether it already reached the server.</p>
+        <Button variant="outline" className="mt-2" disabled={work.busy || !work.ready} onClick={() => {
+          if (work.pendingStatus === "completed" && job.status !== "completed") setCompleteModalOpen(true);
+          else void handleStatusUpdate(work.pendingStatus!, "Saved update confirmed.");
+        }}>Retry saved update</Button>
+      </div>}
+      {job.requires_acceptance && <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm"><p>This pickup is assigned to you and still needs your acceptance.</p><Link className="mt-2 inline-block font-semibold underline" href={`/driver/jobs/${id}`}>Review and accept pickup</Link></div>}
       {/* Success Banner */}
       {successBanner && (
         <div className="rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-3 flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
@@ -781,7 +755,7 @@ export default function ActiveJobPage() {
                     Payout
                   </span>
                   <p className="text-lg font-bold text-emerald-700 mt-0.5">
-                    {formatPrice(job.total_price)}
+                    {job.driver_payout == null ? "Pay pending" : formatPrice(job.driver_payout)}
                   </p>
                 </div>
               </div>
@@ -803,7 +777,7 @@ export default function ActiveJobPage() {
           {/* Action: Start driving */}
           <Button
             onClick={() => handleStatusUpdate("en_route", "You are now en route!")}
-            disabled={transitioning}
+            disabled={transitioning || work.busy || !work.ready || job.requires_acceptance}
             className="w-full h-14 text-base font-semibold bg-emerald-600 hover:bg-emerald-700 text-white gap-2 rounded-xl"
           >
             {transitioning ? (
@@ -860,7 +834,7 @@ export default function ActiveJobPage() {
                 <div>
                   <p className="text-sm font-semibold">{job.customer_name || "Customer"}</p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    {itemsCount} item{itemsCount !== 1 ? "s" : ""} &middot; {formatPrice(job.total_price)}
+                    {itemsCount} item{itemsCount !== 1 ? "s" : ""} &middot; {job.driver_payout == null ? "Pay pending" : formatPrice(job.driver_payout)}
                   </p>
                 </div>
                 {job.customer_phone && (
@@ -878,7 +852,7 @@ export default function ActiveJobPage() {
           {/* Action: Arrived */}
           <Button
             onClick={() => handleStatusUpdate("arrived", "Marked as arrived.")}
-            disabled={transitioning}
+            disabled={transitioning || work.busy || !work.ready || job.requires_acceptance}
             className="w-full h-14 text-base font-semibold bg-emerald-600 hover:bg-emerald-700 text-white gap-2 rounded-xl"
           >
             {transitioning ? (
@@ -913,7 +887,10 @@ export default function ActiveJobPage() {
                 photos={beforePhotos}
                 onUpload={handleBeforeUpload}
                 uploading={beforeUploading}
+                disabled={!work.ready}
                 existingUrls={beforeUploadedUrls}
+                onRetry={() => { void work.upload("before"); }}
+                onRemove={(index) => { void work.removePendingPhoto("before", index); }}
               />
             </CardContent>
           </Card>
@@ -929,7 +906,7 @@ export default function ActiveJobPage() {
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="font-bold text-emerald-700">{formatPrice(job.total_price)}</p>
+                  <p className="font-bold text-emerald-700">{job.driver_payout == null ? "Pay pending" : formatPrice(job.driver_payout)}</p>
                   <p className="text-muted-foreground text-xs">
                     {itemsCount} item{itemsCount !== 1 ? "s" : ""}
                   </p>
@@ -950,7 +927,7 @@ export default function ActiveJobPage() {
           {/* Action: Start Job */}
           <Button
             onClick={() => handleStatusUpdate("in_progress", "Job started. Timer running.")}
-            disabled={transitioning}
+            disabled={transitioning || work.busy || !work.ready || job.requires_acceptance}
             className="w-full h-14 text-base font-semibold bg-emerald-600 hover:bg-emerald-700 text-white gap-2 rounded-xl"
           >
             {transitioning ? (
@@ -1002,7 +979,10 @@ export default function ActiveJobPage() {
                 photos={afterPhotos}
                 onUpload={handleAfterUpload}
                 uploading={afterUploading}
+                disabled={!work.ready}
                 existingUrls={afterUploadedUrls}
+                onRetry={() => { void work.upload("after"); }}
+                onRemove={(index) => { void work.removePendingPhoto("after", index); }}
               />
             </CardContent>
           </Card>
@@ -1018,7 +998,7 @@ export default function ActiveJobPage() {
                   </p>
                 </div>
                 <p className="font-bold text-emerald-700 text-lg">
-                  {formatPrice(job.total_price)}
+                  {job.driver_payout == null ? "Pay pending" : formatPrice(job.driver_payout)}
                 </p>
               </div>
             </CardContent>
@@ -1027,7 +1007,7 @@ export default function ActiveJobPage() {
           {/* Action: Complete Job (with confirmation) */}
           <Button
             onClick={() => setCompleteModalOpen(true)}
-            disabled={transitioning}
+            disabled={transitioning || work.busy || !work.ready || job.requires_acceptance}
             className="w-full h-14 text-base font-semibold bg-emerald-600 hover:bg-emerald-700 text-white gap-2 rounded-xl"
           >
             <CheckCircle2 className="w-5 h-5" />
@@ -1040,9 +1020,22 @@ export default function ActiveJobPage() {
             message="Confirm that all items have been loaded and the job is finished. This action cannot be undone."
             confirmLabel={transitioning ? "Completing..." : "Yes, Complete Job"}
             onConfirm={handleCompleteJob}
-            onCancel={() => setCompleteModalOpen(false)}
+            onCancel={() => { setCompleteModalOpen(false); setHandoffPin(""); }}
             loading={transitioning}
-          />
+            disabled={handoffPin.length > 0 && handoffPin.length !== 4}
+          >
+            <div className="space-y-2">
+              <Label htmlFor="handoff-pin">Customer handoff PIN</Label>
+              <Input id="handoff-pin" inputMode="numeric" autoComplete="one-time-code" maxLength={4}
+                value={handoffPin} disabled={transitioning}
+                onChange={(event) => setHandoffPin(event.target.value.replace(/\D/g, ""))}
+                aria-describedby="handoff-pin-help" placeholder="4-digit PIN" />
+              <p id="handoff-pin-help" className="text-xs text-muted-foreground">
+                Ask the customer for the PIN sent with their pickup confirmation. Leave blank if a PIN is not required and you have an after photo.
+              </p>
+            </div>
+            {work.error && <p role="alert" className="text-sm text-destructive">{work.error}</p>}
+          </ConfirmModal>
         </>
       )}
 
@@ -1060,7 +1053,7 @@ export default function ActiveJobPage() {
               <div>
                 <h2 className="text-xl font-bold text-foreground">Job Complete!</h2>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Great work. Your payout is being processed.
+                  {payoutStatusLabel(job.payout_status)}. View Earnings for details.
                 </p>
               </div>
 
@@ -1072,7 +1065,7 @@ export default function ActiveJobPage() {
                 <div className="flex items-center justify-center gap-2 mt-1">
                   <DollarSign className="w-5 h-5 text-emerald-600" />
                   <span className="text-3xl font-bold text-emerald-700">
-                    {job.total_price.toFixed(2)}
+                    {job.driver_payout == null ? "Pending" : job.driver_payout.toFixed(2)}
                   </span>
                 </div>
               </div>

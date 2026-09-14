@@ -10,6 +10,7 @@ job price of $89.
 from flask import Blueprint, request, jsonify
 from datetime import datetime, timezone, date as date_type, timedelta
 from math import radians, cos, sin, asin, sqrt
+from sqlalchemy.exc import IntegrityError
 
 import sys
 import os
@@ -1318,6 +1319,62 @@ def _capture_no_coverage_lead(payload, user_id, address, lat, lng):
     )
 
 
+def _web_booking_id(payload, user_id):
+    """A saved random request ID lets a browser recover a lost create response.
+
+    Guest recovery also requires the original email and unguessable request ID;
+    knowing a public job ID is not sufficient to recover checkout capabilities.
+    Existing callers without a request ID retain their original behavior.
+    """
+    raw = payload.get("booking_request_id")
+    if not raw:
+        return None
+    from uuid import UUID, uuid5, NAMESPACE_URL
+    try:
+        request_id = UUID(raw)
+        if request_id.version != 4:
+            raise ValueError()
+    except (ValueError, TypeError, AttributeError):
+        raise BookingError("Invalid booking request ID")
+    email = (payload.get("customerEmail") or payload.get("customer_email") or "").strip().lower()
+    owner = "user:" + str(user_id) if user_id else "guest:" + email
+    if not user_id and not email:
+        raise BookingError("Email is required for guest checkout")
+    return str(uuid5(NAMESPACE_URL, "web-booking:" + owner + ":" + str(request_id)))
+
+
+def _booking_response(job):
+    from cancellation import make_manage_token
+    from routes.payments import checkout_token
+    customer = db.session.get(User, job.customer_id)
+    return {"success": True, "job": job.to_dict(), "payment": job.payment.to_dict(),
+            "price_version": job.price_version,
+            "manage_token": make_manage_token(job.id, customer.email if customer else ""),
+            "checkout_token": checkout_token(job.id)}
+
+
+def _replay_web_booking(payload, user_id):
+    job_id = _web_booking_id(payload, user_id)
+    job = db.session.get(Job, job_id) if job_id else None
+    if not job:
+        return None
+    address, lat, lng, _ = _parse_address(payload)
+    try:
+        items = validate_items(payload.get("items"))
+        schedule = parse_local(payload.get("scheduledDate") or payload.get("scheduled_date"),
+                               payload.get("scheduledTimeSlot") or payload.get("scheduled_time"))
+        from timeutils import to_utc
+        same = (address == job.address and float(lat) == job.lat and float(lng) == job.lng
+                and items == job.items and (payload.get("notes") or "") == (job.notes or "")
+                and (payload.get("disposition_preference") or "best") == (job.disposition_preference or "best")
+                and to_utc(schedule) == to_utc(job.scheduled_at))
+    except (ValueError, TypeError, ItemValidationError):
+        same = False
+    if not same:
+        raise BookingError("This saved checkout has different pickup details. Restore it before continuing.", 409, "checkout_changed")
+    return _booking_response(job), 200
+
+
 def create_booking(payload, user, notify_operator=True):
     """Canonical booking service used by POST /api/booking and every
     compatibility adapter.
@@ -1345,6 +1402,9 @@ def create_booking(payload, user, notify_operator=True):
     user_id = user
     if not isinstance(payload, dict) or not payload:
         raise BookingError("Request body is required")
+    replay = _replay_web_booking(payload, user_id)
+    if replay:
+        return replay
 
     # --- Address + coordinates (required, validated, inside the market) ---
     address, lat, lng, zip_code = _parse_address(payload)
@@ -1503,7 +1563,7 @@ def create_booking(payload, user, notify_operator=True):
 
     # --- Create Job + Payment ---
     job = Job(
-        id=generate_uuid(),
+        id=_web_booking_id(payload, user) or generate_uuid(),
         customer_id=user_id,
         status="pending",
         address=address,
@@ -1604,26 +1664,7 @@ def create_booking(payload, user, notify_operator=True):
     except Exception:
         pass
 
-    from cancellation import make_manage_token
-    customer = db.session.get(User, user_id)
-    manage_token = make_manage_token(job.id, customer.email if customer else "")
-
-    # Scoped checkout capability for the (possibly guest) client: the public
-    # create-intent route accepts it in place of the owner's JWT (audit F06).
-    try:
-        from routes.payments import checkout_token as _checkout_token
-        _ck = _checkout_token(job.id)
-    except Exception:
-        _ck = None
-
-    return {
-        "success": True,
-        "job": job.to_dict(),
-        "payment": payment.to_dict(),
-        "price_version": version,
-        "manage_token": manage_token,
-        "checkout_token": _ck,
-    }, 201
+    return _booking_response(job), 201
 
 
 # ---------------------------------------------------------------------------
@@ -1647,7 +1688,16 @@ def create_booking_endpoint(user_id):
     if not data:
         return jsonify({"error": "Request body is required"}), 400
     try:
-        body, status = create_booking(data, user_id)
+        try:
+            body, status = create_booking(data, user_id)
+        except IntegrityError:
+            # A concurrent retry may win the deterministic Job primary key.
+            # Only recover the matching scoped request; other errors still fail.
+            db.session.rollback()
+            replay = _replay_web_booking(data, user_id)
+            if replay is None:
+                raise
+            body, status = replay
     except BookingError as exc:
         return jsonify(exc.to_dict()), exc.status
     return jsonify(body), status

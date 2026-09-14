@@ -60,6 +60,10 @@ def upload_photos(user_id):
           stored file is always a plain JPEG or PNG.
     Returns: { success, urls: [ ... ] }
     """
+    return _save_photos()
+
+
+def _save_photos():
     if "files" not in request.files:
         return jsonify({"error": "No files provided. Use the 'files' form field."}), 400
 
@@ -103,6 +107,27 @@ def upload_photos(user_id):
         response["error"] = "No files were uploaded successfully"
 
     return jsonify(response), status_code
+
+
+@upload_bp.route("/api/booking/<job_id>/photos", methods=["POST"])
+@limiter.limit("5 per minute")
+def upload_checkout_photos(job_id):
+    """Attach guest/customer scope photos using the existing checkout capability."""
+    from models import Job
+    from routes.payments import _checkout_actor
+    job = Job.query.filter_by(id=job_id).with_for_update().first()
+    if not job or not _checkout_actor(job, {})[0]:
+        return jsonify(error="Booking not found"), 404
+    if job.status != "pending":
+        return jsonify(error="This booking has already moved past checkout."), 409
+    if len(job.photos or []) + len(request.files.getlist("files")) > 20:
+        return jsonify(error="A booking can have at most 20 photos."), 400
+    response, code = _save_photos()
+    data = response.get_json()
+    if data.get("urls"):
+        job.photos = list(dict.fromkeys([*(job.photos or []), *data["urls"]]))
+        db.session.commit()
+    return response, code
 
 
 # ---------------------------------------------------------------------------
