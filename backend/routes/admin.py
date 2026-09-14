@@ -38,6 +38,18 @@ def require_admin(f):
     return wrapper
 
 
+@admin_bp.route("/photo-quotes", methods=["GET"])
+@require_admin
+def photo_quotes(user_id):
+    """Is the photo price holding? Recent quotes + the drift between what we
+    promised from the photo and what the job actually billed."""
+    from photo_quote import drift_report
+    from models_quote import PhotoQuote
+    days = max(1, min(request.args.get("days", 30, type=int), 180))
+    rows = (PhotoQuote.query.order_by(PhotoQuote.created_at.desc()).limit(40).all())
+    return jsonify({"report": drift_report(days), "recent": [q.to_dict() for q in rows]}), 200
+
+
 @admin_bp.route("/supply/signed-up-sweep", methods=["POST", "GET"])
 @require_admin
 def signed_up_sweep(user_id):

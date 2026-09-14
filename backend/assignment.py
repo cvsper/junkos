@@ -1056,6 +1056,11 @@ def transition_job(job, new_status, actor, data=None, contractor=None, expected_
                            "status": job.status, "version": job.version}, 409
         if new_status == "completed":
             release_reservation(job.id)
+            try:                                   # did the photo price hold?
+                from photo_quote import record_final
+                record_final(job)
+            except Exception:
+                logger.exception("could not record the photo-quote drift for job %s", job.id)
         record_event(job.id, from_status, new_status, a, reason=exception_reason or override_reason or None,
                      meta=dict(meta, contractor_id=getattr(contractor, "id", None) or job.driver_id))
         db.session.commit()

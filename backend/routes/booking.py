@@ -1664,6 +1664,15 @@ def create_booking(payload, user, notify_operator=True):
     except Exception:
         pass
 
+    # A booking that came from a texted photo price: tie it to that quote so the
+    # promise can be checked against what the job actually bills (photo_quote).
+    try:
+        from photo_quote import link_job
+        link_job(job, ref=(payload.get("q") or payload.get("quote_ref")), digits=customer_phone)
+    except Exception:
+        import logging as _lg
+        _lg.getLogger(__name__).exception("could not link the photo quote for job %s", job.id)
+
     return _booking_response(job), 201
 
 

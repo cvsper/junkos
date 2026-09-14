@@ -77,7 +77,8 @@ def looks_like_autoreply(body):
 
 
 SOURCE_LABELS = {"google": "Google", "meta": "Meta", "desk": "Desk", "web": "Web",
-                 "maya": "Maya", "text": "Text", "thumbtack": "Thumbtack", "unknown": "New"}
+                 "maya": "Maya", "text": "Text", "thumbtack": "Thumbtack",
+                 "photo": "Photo quote", "unknown": "New"}
 
 
 def _now():
@@ -277,7 +278,12 @@ def _texts(since):
     return out
 
 
-_SOURCES = ("_calls", "_callbacks", "_web", "_texts", "_thumbtack")
+_SOURCES = ("_calls", "_callbacks", "_web", "_texts", "_thumbtack", "_photo")
+
+
+def _photo(since):
+    from photo_quote import desk_leads
+    return desk_leads(since)
 
 
 def _thumbtack(since):
@@ -322,7 +328,7 @@ def collect(days=LEAD_WINDOW_DAYS):
                 l["touched_at"] = l["created_at"]
                 l["touched_by"] = l.get("touched_by") or "desk"
     leads = [l for l in leads if (l.get("outcome") or "") not in ("booked", "spam", "not_a_fit")]
-    order = {"thumbtack": 0, "google": 1, "meta": 2, "web": 3, "text": 4, "desk": 5, "maya": 6, "unknown": 7}
+    order = {"photo": 0, "thumbtack": 1, "google": 2, "meta": 3, "web": 4, "text": 5, "desk": 6, "maya": 7, "unknown": 8}
     leads.sort(key=lambda l: (bool(l.get("touched_at")), order.get(l["source"], 9), -l["age_seconds"]))
     return leads, broken
 

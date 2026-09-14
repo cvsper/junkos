@@ -449,6 +449,7 @@ except Exception as _gr_exc:  # pragma: no cover
 try:
     import models_inbound  # noqa: F401  — registers inbound_calls / callback_requests
     import models_thumbtack  # noqa: F401  — registers thumbtack_leads
+    import models_quote  # noqa: F401  — registers photo_quotes
     from inbound import inbound_bp
     app.register_blueprint(inbound_bp)
 except Exception as _ib_exc:  # pragma: no cover
@@ -1073,7 +1074,7 @@ def get_available_time_slots(requested_date=None):
 # ---------------------------------------------------------------------------
 # Legacy API Routes (kept for backward compatibility)
 # ---------------------------------------------------------------------------
-APP_VERSION = "2.2.104"
+APP_VERSION = "2.2.105"
 
 
 # ---------------------------------------------------------------------------
