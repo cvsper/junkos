@@ -7,6 +7,7 @@ import { useAuthStore } from "@/stores/auth-store";
 import { SocketProvider } from "@/lib/socket-provider";
 import { NotificationBell } from "@/components/notification-bell";
 import { driverApi } from "@/lib/api";
+import { DriverPresenceProvider } from "@/components/driver-presence";
 import {
   LayoutDashboard,
   Briefcase,
@@ -44,6 +45,7 @@ export default function DriverLayout({
 
   // Approval gate state
   const [approvalStatus, setApprovalStatus] = useState<string | null>(null);
+  const [initialOnline, setInitialOnline] = useState(false);
   const [approvalLoading, setApprovalLoading] = useState(true);
   const [approvalError, setApprovalError] = useState(false);
 
@@ -81,16 +83,19 @@ export default function DriverLayout({
       setApprovalLoading(false);
       return;
     }
+    const checkedUserId = user?.id;
     try {
       setApprovalError(false);
       const res = await driverApi.profile();
+      if (useAuthStore.getState().user?.id !== checkedUserId) return;
       setApprovalStatus(res.profile.approval_status);
+      setInitialOnline(res.profile.is_online);
     } catch {
       setApprovalError(true);
     } finally {
       setApprovalLoading(false);
     }
-  }, [isAuthenticated, isPublicPage]);
+  }, [isAuthenticated, isPublicPage, user?.id]);
 
   useEffect(() => {
     if (hydrated) checkApproval();
@@ -347,7 +352,9 @@ export default function DriverLayout({
             </div>
           </header>
 
-          <main className="flex-1 p-4 sm:p-6 overflow-y-auto">{children}</main>
+          <main className="flex-1 p-4 sm:p-6 overflow-y-auto">
+            <DriverPresenceProvider key={user?.id} initialOnline={initialOnline}>{children}</DriverPresenceProvider>
+          </main>
         </div>
       </div>
     </SocketProvider>

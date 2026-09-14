@@ -280,10 +280,24 @@ def get_current_job(user_id):
     return jsonify({"success": True, "job": _with_driver_payout(active_job)}), 200
 
 
+@drivers_bp.route("/jobs/<job_id>", methods=["GET"])
+@require_auth
+def get_driver_job(user_id, job_id):
+    """Recover an assigned pickup by ID, including after it has completed."""
+    contractor = Contractor.query.filter_by(user_id=user_id).first()
+    if not contractor:
+        return jsonify({"error": "Contractor profile not found"}), 404
+    job = Job.query.filter_by(id=job_id, driver_id=contractor.id).first()
+    if not job:
+        return jsonify({"error": "Job not found"}), 404
+    return jsonify({"success": True, "job": _with_driver_payout(job)}), 200
+
+
 def _with_driver_payout(job):
     """job.to_dict() + the driver's actual/estimated take for driver-facing
     endpoints — so the app can show 'Your pay' instead of the customer total."""
     d = job.to_dict()
+    d["payout_status"] = job.payment.payout_status if job.payment else None
     try:
         from routes.driver import _job_driver_payout
         d["driver_payout"] = _job_driver_payout(job)
@@ -870,7 +884,7 @@ def apply_job_status_transition(job, contractor, new_status, data=None, actor=No
     from socket_events import broadcast_job_status
     broadcast_job_status(job.id, new_status)
 
-    return True, {"success": True, "job": job.to_dict()}, 200
+    return True, {"success": True, "job": _with_driver_payout(job)}, 200
 
 
 @drivers_bp.route("/jobs/<job_id>/proof", methods=["POST"])

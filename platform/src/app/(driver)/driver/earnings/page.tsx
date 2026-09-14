@@ -1,5 +1,7 @@
 "use client";
 
+import { payoutStatusLabel } from "@/lib/payout-status";
+
 import { useEffect, useState, useCallback } from "react";
 import { driverApi, paymentsApi } from "@/lib/api";
 import type { DriverEarningsSummary, DriverEarningsRecord } from "@/types";
@@ -182,7 +184,7 @@ export default function DriverEarningsPage() {
       {/* ------------------------------------------------------------------ */}
       {/* Instant Payout Card                                                 */}
       {/* ------------------------------------------------------------------ */}
-      <Card className="bg-primary/5 border-primary/20 overflow-hidden relative">
+      <Card className="bg-primary/5 border-primary/20 overflow-hidden relative isolate">
         <div className="absolute top-0 right-0 p-4 opacity-10">
           <Zap className="h-24 w-24 text-primary" />
         </div>
@@ -332,8 +334,8 @@ export default function DriverEarningsPage() {
                 <thead>
                   <tr className="border-b border-border text-left text-muted-foreground">
                     <th className="px-6 py-3 font-medium">Job Address</th>
-                    <th className="px-6 py-3 font-medium">Amount</th>
-                    <th className="px-6 py-3 font-medium">Tip</th>
+                    <th className="px-6 py-3 font-medium">Pay including tip</th>
+                    <th className="px-6 py-3 font-medium">Tip included</th>
                     <th className="px-6 py-3 font-medium">Payout Status</th>
                     <th className="px-6 py-3 font-medium">Date</th>
                   </tr>
@@ -384,7 +386,7 @@ export default function DriverEarningsPage() {
                       </span>
                       {record.tip > 0 && (
                         <span className="text-muted-foreground">
-                          + {formatCurrency(record.tip)} tip
+                          Includes {formatCurrency(record.tip)} tip
                         </span>
                       )}
                     </div>
@@ -443,12 +445,14 @@ function SummaryCard({
 function PayoutBadge({
   status,
 }: {
-  status: "pending" | "processing" | "paid";
+  status: string;
 }) {
   const styles: Record<string, string> = {
     pending: "bg-amber-100 text-amber-700",
     processing: "bg-blue-100 text-blue-700",
     paid: "bg-emerald-100 text-emerald-700",
+    failed: "bg-red-100 text-red-700",
+    pending_connect: "bg-amber-100 text-amber-700",
   };
 
   return (
@@ -457,7 +461,7 @@ function PayoutBadge({
         styles[status] ?? styles.pending
       }`}
     >
-      {status}
+      {payoutStatusLabel(status)}
     </span>
   );
 }

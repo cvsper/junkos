@@ -29,17 +29,19 @@ import { trackBookingConversion, trackInitiateCheckout, trackLead } from "@/comp
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { useBookingStore, clearAbandonedBooking } from "@/stores/booking-store";
-import { bookingApi, paymentsApi, asPriceConflict } from "@/lib/api";
+import { useBookingStore, clearAbandonedBooking, type CheckoutSession } from "@/stores/booking-store";
+import { ApiError, bookingApi, paymentsApi, asPriceConflict } from "@/lib/api";
+import { saveBookingDraft } from "@/hooks/use-booking-recovery";
+import { useAuthStore } from "@/stores/auth-store";
+import { bookingDraftKey } from "@/lib/browser-work";
 import { ReferralPrompt } from "@/components/referral-prompt";
 
 // ---------------------------------------------------------------------------
 // Stripe singleton
 // ---------------------------------------------------------------------------
 
-const stripePromise = loadStripe(
-  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || ""
-);
+const stripeKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+const stripePromise = stripeKey ? loadStripe(stripeKey) : null;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -47,45 +49,30 @@ const stripePromise = loadStripe(
 
 // ---------------------------------------------------------------------------
 // Checkout session (audit F06): one submission key per booking, persisted in
-// sessionStorage so a reload / timeout / second click retries the SAME payment
+// the account's browser draft so a reload / timeout / second click retries the SAME payment
 // attempt instead of creating a second payable intent. The checkout token is
 // the booking-scoped capability the backend hands back on booking creation.
 // ---------------------------------------------------------------------------
-const CHECKOUT_SESSION_KEY = "umuve.checkout.v1";
-
-interface CheckoutSession {
-  bookingId: string;
-  submissionKey: string;
-  checkoutToken?: string;
-  confirmationCode?: string;
-  fingerprint: string;
-}
-
 function newSubmissionKey(): string {
-  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
-    return crypto.randomUUID();
-  }
-  return `sk-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
+  return crypto.randomUUID();
 }
 
 function readCheckoutSession(): CheckoutSession | null {
-  try {
-    const raw = sessionStorage.getItem(CHECKOUT_SESSION_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as CheckoutSession;
-    return parsed && parsed.bookingId && parsed.submissionKey ? parsed : null;
-  } catch {
-    return null;
+  return useBookingStore.getState().checkout;
+}
+
+function assertCheckoutOwner(owner: string | null) {
+  if (!owner || useBookingStore.getState().draftOwner !== owner || bookingDraftKey(useAuthStore.getState().user?.id) !== owner) {
+    throw new Error("The signed-in account changed. Return to the original account to recover this checkout.");
   }
 }
 
-function writeCheckoutSession(session: CheckoutSession | null) {
-  try {
-    if (session) sessionStorage.setItem(CHECKOUT_SESSION_KEY, JSON.stringify(session));
-    else sessionStorage.removeItem(CHECKOUT_SESSION_KEY);
-  } catch {
-    /* private mode / quota — the in-memory ref still covers this tab */
-  }
+async function saveCheckoutSession(session: CheckoutSession | null, owner: string | null) {
+  assertCheckoutOwner(owner);
+  useBookingStore.setState({ checkout: session });
+  try { await saveBookingDraft(); }
+  catch { throw new Error("Checkout could not be saved in this browser. Allow browser storage and retry before paying."); }
+  assertCheckoutOwner(owner);
 }
 
 function formatPhoneNumber(value: string): string {
@@ -156,6 +143,8 @@ interface FormErrors {
 function PaymentFormInner() {
   const stripe = useStripe();
   const elements = useElements();
+  const checkoutOwner = useRef(useBookingStore.getState().draftOwner).current;
+  const writeCheckoutSession = useCallback((session: CheckoutSession | null) => saveCheckoutSession(session, checkoutOwner), [checkoutOwner]);
 
   const {
     address,
@@ -181,9 +170,15 @@ function PaymentFormInner() {
   } = useBookingStore();
 
   // Contact info
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
+  const contact = useBookingStore((state) => state.contact);
+  const setContact = useBookingStore((state) => state.setContact);
+  const { name, email, phone } = contact;
+  const setName = useCallback((value: string) => setContact({ ...useBookingStore.getState().contact, name: value }), [setContact]);
+  const setEmail = useCallback((value: string) => setContact({ ...useBookingStore.getState().contact, email: value }), [setContact]);
+  const setPhone = useCallback((value: string) => setContact({ ...useBookingStore.getState().contact, phone: value }), [setContact]);
+  const savedCheckout = useBookingStore((state) => state.checkout);
+  const [checkingSaved, setCheckingSaved] = useState(false);
+  const submissionLock = useRef(false);
 
   // Card state
   const [cardComplete, setCardComplete] = useState(false);
@@ -223,64 +218,65 @@ function PaymentFormInner() {
   // Reused on retry so we never create duplicate Jobs.
   const createdBookingIdRef = useRef<string | null>(null);
   // Per-booking checkout session (submission key + checkout token). Restored
-  // from sessionStorage when the cart is unchanged, so a reload mid-checkout
+  // from the account's browser draft, so a reload mid-checkout
   // resumes the same booking and the same payment attempt.
   const checkoutSessionRef = useRef<CheckoutSession | null>(null);
 
   const cartFingerprint = JSON.stringify({
-    address:
-      typeof address === "object"
-        ? (address as Record<string, string>).street || JSON.stringify(address)
-        : address,
-    items,
-    scheduledDate,
-    scheduledTimeSlot,
-    finalPrice,
+    address, items, scheduledDate, scheduledTimeSlot, notes, dispositionPreference,
   });
 
   useEffect(() => {
     const stored = readCheckoutSession();
-    if (stored && stored.fingerprint === cartFingerprint) {
-      checkoutSessionRef.current = stored;
-      createdBookingIdRef.current = stored.bookingId;
-      if (stored.confirmationCode) setConfirmationCode(stored.confirmationCode);
-    } else if (stored) {
-      // cart changed since that booking was created — don't pay for a stale one
-      writeCheckoutSession(null);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    checkoutSessionRef.current = stored;
+    createdBookingIdRef.current = stored?.bookingId ?? null;
+    if (stored?.confirmationCode) setConfirmationCode(stored.confirmationCode);
+  }, [savedCheckout]);
 
-  /** Remember a freshly created booking with a brand-new submission key. */
-  const rememberBooking = (bookingResult: Record<string, unknown>, id: string) => {
-    const jobData = bookingResult.job as Record<string, unknown> | undefined;
+  const rememberBooking = useCallback(async (result: Record<string, unknown>, id: string) => {
+    const jobData = result.job as Record<string, unknown> | undefined;
     const session: CheckoutSession = {
-      bookingId: id,
-      submissionKey: newSubmissionKey(),
-      checkoutToken: (bookingResult.checkout_token as string | undefined) || undefined,
-      confirmationCode: (jobData?.confirmation_code as string | undefined) || undefined,
-      fingerprint: cartFingerprint,
+      ...checkoutSessionRef.current!, bookingId: id,
+      checkoutToken: result.checkout_token as string | undefined,
+      confirmationCode: jobData?.confirmation_code as string | undefined,
     };
     checkoutSessionRef.current = session;
-    writeCheckoutSession(session);
+    await writeCheckoutSession(session);
     return session;
-  };
+  }, [writeCheckoutSession]);
 
-  /** The intent options for THIS booking (same key on every retry). */
-  const intentOptions = (id: string) => {
-    let session = checkoutSessionRef.current;
-    if (!session || session.bookingId !== id) {
-      session = { bookingId: id, submissionKey: newSubmissionKey(), fingerprint: cartFingerprint };
-      checkoutSessionRef.current = session;
-      writeCheckoutSession(session);
-    }
+  const intentOptions = useCallback((id: string) => {
+    assertCheckoutOwner(checkoutOwner);
+    const session = checkoutSessionRef.current;
+    if (!session || session.bookingId !== id) throw new Error("Restore your saved checkout before paying.");
     return { submissionKey: session.submissionKey, checkoutToken: session.checkoutToken };
-  };
+  }, [checkoutOwner]);
+
+  const rememberIntent = useCallback(async (paymentIntentId: string) => {
+    const session = { ...checkoutSessionRef.current!, paymentIntentId };
+    checkoutSessionRef.current = session;
+    await writeCheckoutSession(session);
+  }, [writeCheckoutSession]);
 
   const forgetCheckoutSession = () => {
     checkoutSessionRef.current = null;
-    writeCheckoutSession(null);
+    // The successful checkout clears its complete draft through the recovery hook.
+    useBookingStore.setState({ checkout: null });
   };
+
+  async function checkSavedPayment() {
+    const session = checkoutSessionRef.current;
+    if (!session?.bookingId || !session.paymentIntentId || checkingSaved) return;
+    setCheckingSaved(true); setErrors({});
+    try {
+      await paymentsApi.confirm(session.paymentIntentId, session.bookingId);
+      assertCheckoutOwner(checkoutOwner);
+      setBookingId(session.bookingId);
+      clearAbandonedBooking(); forgetCheckoutSession(); setIsSuccess(true);
+    } catch (reason) {
+      setErrors({ general: reason instanceof Error ? reason.message : "Payment is not confirmed yet. Your saved checkout is still available." });
+    } finally { setCheckingSaved(false); }
+  }
 
   // ---------------------------------------------------------------------------
   // Beacon abandoned booking to backend for email drip recovery
@@ -346,30 +342,47 @@ function PaymentFormInner() {
   // ---------------------------------------------------------------------------
   const submitBooking = useCallback(
     async (contact: { name: string; email: string; phone: string }): Promise<string> => {
-      const existing = createdBookingIdRef.current;
-      if (existing) return existing;
-
       const state = useBookingStore.getState();
+      let session = checkoutSessionRef.current;
+      if (session && session.fingerprint !== cartFingerprint) {
+        throw new Error("You have a saved checkout with different details. Restore it below before continuing.");
+      }
+      if (!session) {
+        session = {
+          submissionKey: newSubmissionKey(), fingerprint: cartFingerprint,
+          photos: state.photos,
+          request: {
+            booking_request_id: crypto.randomUUID(), step: 6,
+            address: state.address, photoUrls: [], items: state.items,
+            scheduledDate: state.scheduledDate, scheduledTimeSlot: state.scheduledTimeSlot,
+            notes: state.notes, disposition_preference: state.dispositionPreference,
+            estimatedPrice: state.estimatedPrice, price_version: state.priceVersion,
+            ...(state.promoApplied ? { promo_code: state.promoCode } : {}),
+            ...(state.leadSource ? { lead_source: state.leadSource } : {}),
+            ...(state.quoteId ? { quote_id: state.quoteId } : {}),
+            ...(state.quoteToken ? { quote_token: state.quoteToken } : {}),
+            customerName: contact.name, customerEmail: contact.email, customerPhone: contact.phone,
+          },
+        };
+        checkoutSessionRef.current = session;
+      }
+      // Persist the original request BEFORE sending it, including when a prior
+      // attempt failed to save locally. A timeout retries the same booking ID.
+      await writeCheckoutSession(session);
+      const attachPhotos = async (saved: CheckoutSession) => {
+        if (!saved.photosAttached && saved.photos?.length && saved.bookingId) {
+          await bookingApi.uploadPhotos(saved.bookingId, saved.photos, saved.checkoutToken);
+          checkoutSessionRef.current = { ...saved, photosAttached: true };
+          await writeCheckoutSession(checkoutSessionRef.current);
+        }
+      };
+      if (session.bookingId) {
+        await attachPhotos(session);
+        return session.bookingId;
+      }
       try {
-        const bookingResult = await bookingApi.submit({
-          step: 6,
-          address: state.address,
-          photoUrls: [],
-          items: state.items,
-          scheduledDate: state.scheduledDate,
-          scheduledTimeSlot: state.scheduledTimeSlot,
-          notes: state.notes,
-          disposition_preference: state.dispositionPreference,
-          estimatedPrice: state.estimatedPrice,
-          price_version: state.priceVersion,
-          ...(state.promoApplied ? { promo_code: state.promoCode } : {}),
-          ...(state.leadSource ? { lead_source: state.leadSource } : {}),
-          ...(state.quoteId ? { quote_id: state.quoteId } : {}),
-          ...(state.quoteToken ? { quote_token: state.quoteToken } : {}),
-          customerName: contact.name,
-          customerEmail: contact.email,
-          customerPhone: contact.phone,
-        });
+        if (!session.request) throw new Error("This checkout cannot be restored. Please contact support.");
+        const bookingResult = await bookingApi.submit(session.request);
 
         const rawResult = bookingResult as unknown as Record<string, Record<string, unknown>>;
         const newBookingId = (rawResult.job?.id as string) || bookingResult.id;
@@ -381,7 +394,8 @@ function PaymentFormInner() {
         createdBookingIdRef.current = newBookingId;
         // Persist the submission key + checkout token so a reload or a crash
         // resumes THIS attempt instead of starting a second charge (audit F06).
-        rememberBooking(bookingResult as unknown as Record<string, unknown>, newBookingId);
+        const saved = await rememberBooking(bookingResult as unknown as Record<string, unknown>, newBookingId);
+        await attachPhotos(saved);
         const jobData = (bookingResult as unknown as Record<string, unknown>).job as
           | Record<string, unknown>
           | undefined;
@@ -390,8 +404,19 @@ function PaymentFormInner() {
         return newBookingId;
       } catch (err) {
         const conflict = asPriceConflict(err);
-        if (!conflict) throw err;
+        if (!conflict) {
+          // A definite validation refusal can be edited. Unknown outcomes and
+          // photo failures on an already-created booking keep their checkpoint.
+          if (err instanceof ApiError && [400, 422].includes(err.status) && !checkoutSessionRef.current?.bookingId) {
+            checkoutSessionRef.current = null;
+            await writeCheckoutSession(null);
+          }
+          throw err;
+        }
+        if (conflict.code === "checkout_changed") throw new Error(conflict.error);
 
+        checkoutSessionRef.current = null;
+        await writeCheckoutSession(null);
         if (conflict.code === "price_changed" && typeof conflict.total === "number") {
           const previous = useBookingStore.getState().estimatedPrice;
           setEstimatedPrice(conflict.total);
@@ -408,7 +433,7 @@ function PaymentFormInner() {
         throw new Error(`${conflict.error} Please go back a step to refresh your price.`);
       }
     },
-    [setEstimatedPrice, setPriceVersion]
+    [cartFingerprint, setEstimatedPrice, setPriceVersion, rememberBooking, writeCheckoutSession]
   );
 
   // ---------------------------------------------------------------------------
@@ -439,6 +464,9 @@ function PaymentFormInner() {
 
     // Handle the payment method event from Apple Pay / Google Pay
     pr.on("paymentmethod", async (ev) => {
+      if (submissionLock.current) { ev.complete("fail"); return; }
+      submissionLock.current = true; setIsSubmitting(true);
+      let walletCompleted = false;
       try {
         const payerName = ev.payerName || "";
         const payerEmail = ev.payerEmail || "";
@@ -458,6 +486,8 @@ function PaymentFormInner() {
           finalPrice,
           intentOptions(newBookingId)
         );
+
+        await rememberIntent(piResult.paymentIntentId);
 
         // InitiateCheckout — same event_id as the server CAPI event (dedup)
         trackInitiateCheckout({ value: finalPrice, bookingId: newBookingId });
@@ -486,7 +516,8 @@ function PaymentFormInner() {
           }
         }
 
-        ev.complete("success");
+        if (!paymentIntent) throw new Error("Payment is not confirmed yet. Check saved payment before retrying.");
+        ev.complete("success"); walletCompleted = true;
 
         // 4. Confirm in backend
         if (paymentIntent) {
@@ -494,6 +525,7 @@ function PaymentFormInner() {
         }
 
         // Update UI
+        assertCheckoutOwner(checkoutOwner);
         setName(payerName);
         setEmail(payerEmail);
         setPhone(payerPhone);
@@ -503,17 +535,17 @@ function PaymentFormInner() {
         forgetCheckoutSession();
         setIsSuccess(true);
       } catch (err) {
-        ev.complete("fail");
+        if (!walletCompleted) ev.complete("fail");
         const message =
           err instanceof Error ? err.message : "Payment failed. Please try again.";
         setErrors((prev) => ({ ...prev, general: message }));
-      }
+      } finally { submissionLock.current = false; setIsSubmitting(false); }
     });
 
     return () => {
       paymentRequestRef.current = null;
     };
-  }, [stripe, finalPrice, submitBooking]);
+  }, [stripe, finalPrice, submitBooking, checkoutOwner, intentOptions, rememberIntent, setName, setEmail, setPhone, setIsSubmitting]);
 
   // ---------------------------------------------------------------------------
   // Card change handler
@@ -630,7 +662,7 @@ function PaymentFormInner() {
   // Submit handler (card payment)
   // ---------------------------------------------------------------------------
   const handleSubmit = async () => {
-    if (!validate()) return;
+    if (isSubmitting || !validate()) return;
     if (!stripe || !elements) {
       setErrors({ general: "Payment system is still loading. Please wait." });
       return;
@@ -643,6 +675,7 @@ function PaymentFormInner() {
       return;
     }
 
+    submissionLock.current = true;
     setIsSubmitting(true);
     setErrors({});
 
@@ -666,6 +699,7 @@ function PaymentFormInner() {
       // InitiateCheckout — same event_id as the server CAPI event (dedup)
       trackInitiateCheckout({ value: finalPrice, bookingId: newBookingId });
 
+      await rememberIntent(paymentIntentResult.paymentIntentId);
       const clientSecret = paymentIntentResult.clientSecret;
 
       // 3. Confirm the card payment with Stripe
@@ -693,11 +727,11 @@ function PaymentFormInner() {
       }
 
       // 4. Confirm payment in the backend
-      if (paymentIntent) {
-        await paymentsApi.confirm(paymentIntent.id, newBookingId);
-      }
+      if (!paymentIntent) throw new Error("Payment is not confirmed yet. Use Check saved payment before trying again.");
+      await paymentsApi.confirm(paymentIntent.id, newBookingId);
 
       // Success
+      assertCheckoutOwner(checkoutOwner);
       setBookingId(newBookingId);
       trackBookingConversion({ bookingId: newBookingId, value: finalPrice });
       clearAbandonedBooking();
@@ -708,6 +742,7 @@ function PaymentFormInner() {
         err instanceof Error ? err.message : "Payment failed. Please try again.";
       setErrors({ general: message });
     } finally {
+      submissionLock.current = false;
       setIsSubmitting(false);
     }
   };
@@ -846,6 +881,23 @@ function PaymentFormInner() {
   // ---------------------------------------------------------------------------
   return (
     <div className="space-y-8">
+      {savedCheckout && <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm space-y-2">
+        <p>Your checkout is saved. Continue it here; after an interrupted payment, check its status before paying again.</p>
+        {savedCheckout.paymentIntentId && <Button variant="outline" disabled={checkingSaved || isSubmitting} onClick={checkSavedPayment}>{checkingSaved ? "Checking payment…" : "Check saved payment"}</Button>}
+        {savedCheckout.confirmationCode && <Link className="ml-3 inline-block underline" href={`/track/code/${savedCheckout.confirmationCode}`}>View saved pickup</Link>}
+        {savedCheckout.fingerprint !== cartFingerprint && savedCheckout.request && <Button variant="outline" onClick={() => {
+          const original = savedCheckout.request!;
+          const photos = savedCheckout.photos ?? [];
+          useBookingStore.getState().photoPreviewUrls.forEach((url) => URL.revokeObjectURL(url));
+          useBookingStore.setState({ address: original.address, items: original.items,
+            scheduledDate: original.scheduledDate, scheduledTimeSlot: original.scheduledTimeSlot,
+            notes: original.notes, dispositionPreference: original.disposition_preference ?? "best",
+            estimatedPrice: original.estimatedPrice, priceVersion: original.price_version ?? null,
+            photos, photoPreviewUrls: photos.map((photo) => URL.createObjectURL(photo)),
+            contact: { name: original.customerName ?? "", email: original.customerEmail ?? "", phone: original.customerPhone ?? "" },
+          });
+        }}>Restore saved checkout details</Button>}
+      </div>}
       {/* Header */}
       <div>
         <h2 className="font-display text-2xl font-bold tracking-tight text-foreground">

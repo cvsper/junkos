@@ -1,5 +1,7 @@
 "use client";
 
+import { resolveMediaUrl } from "@/lib/media-url";
+
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -86,7 +88,7 @@ const ACTIVE_STATUSES = [
   "in_progress",
 ];
 
-const CANCELLABLE_STATUSES = ["pending", "confirmed", "assigned"];
+const CANCELLABLE_STATUSES = ["pending", "confirmed", "assigned", "accepted", "en_route", "arrived"];
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -122,17 +124,6 @@ function formatDateTime(iso: string): string {
 
 function formatPrice(amount: number): string {
   return `$${amount.toFixed(2)}`;
-}
-
-/** Estimate the cancellation fee based on time until scheduled pickup. */
-function estimateCancellationFee(scheduledAt: string | null | undefined): number {
-  if (!scheduledAt) return 0;
-  const now = new Date();
-  const scheduled = new Date(scheduledAt);
-  const hoursUntil = (scheduled.getTime() - now.getTime()) / (1000 * 60 * 60);
-  if (hoursUntil < 2) return 50;
-  if (hoursUntil < 24) return 25;
-  return 0;
 }
 
 // ---------------------------------------------------------------------------
@@ -244,6 +235,7 @@ export default function JobDetailPage() {
   // Cancel state
   const [cancelConfirm, setCancelConfirm] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  const [cancelPreview, setCancelPreview] = useState<Awaited<ReturnType<typeof jobsApi.cancelPreview>> | null>(null);
   const [cancelFeeReturned, setCancelFeeReturned] = useState<number | null>(null);
 
   // Reschedule state
@@ -284,15 +276,45 @@ export default function JobDetailPage() {
     fetchJob();
   }, [fetchJob]);
 
+  const jobStatus = job?.status;
+  useEffect(() => {
+    if (!id || !jobStatus || ["completed", "cancelled"].includes(jobStatus)) return;
+    let active = true;
+    let pending = false;
+    const refresh = async () => {
+      if (pending || document.hidden || !navigator.onLine) return;
+      pending = true;
+      try {
+        const response = await jobsApi.get(id);
+        if (active) setJob(response.job);
+      } catch { /* Preserve the current pickup while the connection recovers. */ }
+      finally { pending = false; }
+    };
+    const timer = setInterval(refresh, 20000);
+    window.addEventListener("online", refresh);
+    document.addEventListener("visibilitychange", refresh);
+    return () => {
+      active = false; clearInterval(timer);
+      window.removeEventListener("online", refresh);
+      document.removeEventListener("visibilitychange", refresh);
+    };
+  }, [id, jobStatus]);
+
   // Cancel handler
   async function handleCancel() {
-    if (!cancelConfirm) {
-      setCancelConfirm(true);
-      return;
-    }
+    if (cancelling) return;
     setCancelling(true);
+    setError(null);
     try {
-      const res = await jobsApi.cancel(id);
+      const preview = await jobsApi.cancelPreview(id);
+      if (!preview.allowed) throw new Error(preview.message);
+      // Re-disclose an outcome that changed while the confirmation was open.
+      if (!cancelConfirm || !cancelPreview || preview.cancellation_fee !== cancelPreview.cancellation_fee || preview.refund_amount !== cancelPreview.refund_amount) {
+        setCancelPreview(preview);
+        setCancelConfirm(true);
+        return;
+      }
+      const res = await jobsApi.cancel(id, true);
       if (res.job) {
         setJob(res.job);
       }
@@ -778,7 +800,7 @@ export default function JobDetailPage() {
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
-                        src={url}
+                        src={resolveMediaUrl(url)}
                         alt={`Job photo ${idx + 1}`}
                         className="w-full h-full object-cover"
                       />
@@ -1081,20 +1103,13 @@ export default function JobDetailPage() {
                 <p className="text-sm font-medium text-destructive mb-2">
                   Are you sure you want to cancel this job?
                 </p>
-                {(() => {
-                  const fee = estimateCancellationFee(job.scheduled_at);
-                  return fee > 0 ? (
-                    <p className="text-sm text-destructive/80 mb-3">
-                      A cancellation fee of <span className="font-semibold">{formatPrice(fee)}</span> will
-                      apply because this job is scheduled within{" "}
-                      {fee === 50 ? "2 hours" : "24 hours"}.
-                    </p>
-                  ) : (
-                    <p className="text-sm text-muted-foreground mb-3">
-                      No cancellation fee will be charged.
-                    </p>
-                  );
-                })()}
+                {cancelPreview && (
+                  <div className="text-sm text-muted-foreground mb-3 space-y-1" role="status">
+                    <p>{cancelPreview.message}</p>
+                    <p>Cancellation fee: <strong>{formatPrice(cancelPreview.cancellation_fee)}</strong></p>
+                    <p>Refund: <strong>{formatPrice(cancelPreview.refund_amount)}</strong></p>
+                  </div>
+                )}
                 <div className="flex items-center gap-3">
                   <Button
                     variant="destructive"
@@ -1119,6 +1134,7 @@ export default function JobDetailPage() {
                 <Button
                   variant="outline"
                   className="gap-2"
+                  disabled={["en_route", "arrived"].includes(job.status)}
                   onClick={() => setRescheduleOpen(!rescheduleOpen)}
                 >
                   <svg
@@ -1140,6 +1156,7 @@ export default function JobDetailPage() {
                   variant="outline"
                   className="text-destructive border-destructive/30 hover:bg-destructive/5 gap-2"
                   onClick={handleCancel}
+                  disabled={cancelling}
                 >
                   <svg
                     className="w-4 h-4"
@@ -1154,7 +1171,7 @@ export default function JobDetailPage() {
                       d="M6 18L18 6M6 6l12 12"
                     />
                   </svg>
-                  Cancel Job
+                  {cancelling ? "Checking cancellation…" : "Cancel Job"}
                 </Button>
               </div>
             )}

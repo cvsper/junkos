@@ -1,5 +1,7 @@
 "use client";
 
+import { resolveMediaUrl } from "@/lib/media-url";
+
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
@@ -125,7 +127,8 @@ export default function DriverJobDetailPage() {
         await driverApi.declineJob(job.id);
         router.push("/driver/jobs");
       }
-    } catch {
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Could not update this pickup. Reload to check its current status.");
       // close modal on error so user can retry
       setModalAction(null);
     } finally {
@@ -134,8 +137,8 @@ export default function DriverJobDetailPage() {
   };
 
   // ---- Determine which actions to show ----
-  const canAccept = job ? ACCEPTABLE_STATUSES.has(job.status) : false;
-  const isActive = job ? ACTIVE_STATUSES.has(job.status) : false;
+  const canAccept = job ? ACCEPTABLE_STATUSES.has(job.status) && (job.status !== "assigned" || !!job.requires_acceptance) : false;
+  const isActive = job ? ACTIVE_STATUSES.has(job.status) || (job.status === "assigned" && !job.requires_acceptance) : false;
   const isCompleted = job?.status === "completed";
 
   // ===========================================================================
@@ -232,7 +235,7 @@ export default function DriverJobDetailPage() {
           <div className="flex items-center gap-2">
             <DollarSign className="w-5 h-5 text-emerald-600" />
             <span className="text-2xl font-bold text-emerald-700">
-              ${job.total_price.toFixed(2)}
+              {job.driver_payout == null ? "Pay pending" : `$${job.driver_payout.toFixed(2)}`}
             </span>
           </div>
         </div>
@@ -340,13 +343,13 @@ export default function DriverJobDetailPage() {
                     {job.photos.map((url, idx) => (
                       <a
                         key={idx}
-                        href={url}
+                        href={resolveMediaUrl(url)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="aspect-square rounded-lg overflow-hidden border border-border hover:opacity-80 transition-opacity"
                       >
                         <img
-                          src={url}
+                          src={resolveMediaUrl(url)}
                           alt={`Job photo ${idx + 1}`}
                           className="w-full h-full object-cover"
                         />

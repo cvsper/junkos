@@ -15,6 +15,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { driverApi } from "@/lib/api";
+import { useDriverPresence } from "@/components/driver-presence";
 import type { DriverStats, DriverJob, DriverProfile } from "@/types";
 
 export default function DriverDashboardPage() {
@@ -24,8 +25,7 @@ export default function DriverDashboardPage() {
   const [recentJobs, setRecentJobs] = useState<DriverJob[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isOnline, setIsOnline] = useState(false);
-  const [togglingAvailability, setTogglingAvailability] = useState(false);
+  const { isOnline, updating: togglingAvailability, toggle: handleToggleAvailability } = useDriverPresence();
 
   const loadData = useCallback(async () => {
     try {
@@ -39,7 +39,6 @@ export default function DriverDashboardPage() {
       ]);
       setStats(statsRes.stats);
       setProfile(profileRes.profile);
-      setIsOnline(profileRes.profile.is_online);
       setActiveJobs(activeRes.jobs);
       setRecentJobs(completedRes.jobs.slice(0, 3));
     } catch (err) {
@@ -52,18 +51,6 @@ export default function DriverDashboardPage() {
   useEffect(() => {
     loadData();
   }, [loadData]);
-
-  const handleToggleAvailability = async () => {
-    setTogglingAvailability(true);
-    try {
-      const res = await driverApi.setAvailability(!isOnline);
-      setIsOnline(res.is_online);
-    } catch {
-      // Revert on failure — no-op, state unchanged
-    } finally {
-      setTogglingAvailability(false);
-    }
-  };
 
   // ---------------------------------------------------------------------------
   // Loading skeleton
@@ -291,7 +278,7 @@ export default function DriverDashboardPage() {
                   <span>{activeJob.customer_name}</span>
                 )}
                 <span className="font-semibold text-emerald-700">
-                  ${activeJob.total_price.toFixed(2)}
+                  {activeJob.driver_payout == null ? "Pay pending" : `$${activeJob.driver_payout.toFixed(2)}`}
                 </span>
               </div>
             </div>
@@ -346,7 +333,7 @@ export default function DriverDashboardPage() {
                       {formatDate(job.completed_at || job.updated_at)}
                     </span>
                     <span className="font-semibold text-foreground">
-                      ${job.total_price.toFixed(2)}
+                      {job.driver_payout == null ? "Pay pending" : `$${job.driver_payout.toFixed(2)}`}
                     </span>
                   </div>
                 </div>
