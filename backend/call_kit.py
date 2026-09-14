@@ -26,8 +26,11 @@ _SUPPLY_CATS = ("junk", "haul", "dumpster", "debris", "demo", "demolition", "tre
                 "land clear", "pressure", "appliance dealer", "appliance sales",
                 "scratch", "refurb", "recycler", "scrap", "fletes", "mudanza",
                 "cleanout crew", "removal")
-_SUPPLY_HINTS = ("truck", "paid job", "operator", "hauler", "sign up", "signup",
-                 "recruit", "jobs to", "send them jobs", "keep the fare", "go online")
+# Free-text hints only decide when the category says nothing. They must read as
+# recruiting language: a demand angle legitimately says "books a vetted hauler".
+_SUPPLY_HINTS = ("paid job", "keep the majority", "keep the fare", "send them jobs", "jobs to their",
+                 "recruit", "go online", "sign up", "signup", "their truck", "run a truck", "runs a truck",
+                 "has a truck", "as a hauler", "join as")
 _DEMAND_CATS = ("property", "hoa", "apartment", "commercial", "office", "storage",
                 "estate sale", "auction", "thrift", "real estate", "realtor",
                 "staging", "probate", "investor", "flipper", "senior", "hotel",
@@ -36,17 +39,20 @@ _DEMAND_CATS = ("property", "hoa", "apartment", "commercial", "office", "storage
 
 
 def detect_side(prospect):
+    """supply | demand. The list's explicit side wins, then the category, and
+    only a prospect with no recognizable category is judged by the free text
+    (why/angle), which is written by a model and can mention haulers either way."""
     explicit = (getattr(prospect, "side", None) or "").strip().lower()
     if explicit in ("supply", "demand"):
         return explicit
     cat = (prospect.category or "").lower()
-    blob = " ".join([prospect.why or "", prospect.angle or ""]).lower()
-    if any(k in cat for k in _SUPPLY_CATS):
-        return "supply"
-    if any(k in blob for k in _SUPPLY_HINTS):
-        return "supply"
     if any(k in cat for k in _DEMAND_CATS):
         return "demand"
+    if any(k in cat for k in _SUPPLY_CATS):
+        return "supply"
+    blob = " ".join([prospect.why or "", prospect.angle or ""]).lower()
+    if any(k in blob for k in _SUPPLY_HINTS):
+        return "supply"
     return "demand"
 
 

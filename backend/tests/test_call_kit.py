@@ -49,7 +49,16 @@ def test_side_detection():
     assert detect_side(mk("estate sales")) == "demand"
     # a mover is a referral partner unless the list says we're recruiting their truck
     assert detect_side(mk("moving company")) == "demand"
-    assert detect_side(mk("moving company", angle="Has a truck — send them paid jobs")) == "supply"
+    assert detect_side(mk("moving company", angle="Has a truck — send them paid jobs")) == "demand"
+    sup = mk("moving company", angle="Has a truck — send them paid jobs"); sup.side = "supply"
+    assert detect_side(sup) == "supply"
+    # the category always beats the model-written angle: a demand angle can say "hauler"
+    assert detect_side(mk("Property Management", why="Turnovers leave junk to clear",
+                          angle="One text books a vetted hauler same-day with an upfront flat price")) == "demand"
+    assert detect_side(mk("Junk Removal", angle="Reliable partner for overflow — send them paid jobs")) == "supply"
+    # no category at all: only recruiting language flips it
+    assert detect_side(mk("", angle="Has a truck — send them paid jobs, they keep the majority")) == "supply"
+    assert detect_side(mk("", angle="Books a vetted hauler in one text")) == "demand"
 
 
 def test_demand_segments():
