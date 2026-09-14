@@ -38,6 +38,24 @@ def require_admin(f):
     return wrapper
 
 
+@admin_bp.route("/supply/signed-up-sweep", methods=["POST", "GET"])
+@require_admin
+def signed_up_sweep(user_id):
+    """Retire every call-queue card belonging to someone who already signed up
+    as a hauler. Runs nightly; this is the on-demand / backfill button."""
+    from supply_signup import sweep, hauler_digits
+    if request.method == "GET":
+        from models import CallProspect
+        from supply_signup import matches
+        from va_calls import WORKABLE_STATUSES
+        table = hauler_digits(fresh=True)
+        rows = CallProspect.query.filter(CallProspect.status.in_(WORKABLE_STATUSES)).limit(5000).all()
+        hits = [{"id": p.id, "company": p.company, "phone": p.phone} for p in rows if matches(p, table)]
+        return jsonify({"haulers_with_a_phone": len(table), "workable": len(rows),
+                        "would_retire": len(hits), "sample": hits[:25]}), 200
+    return jsonify(sweep()), 200
+
+
 @admin_bp.route("/recent-errors", methods=["GET"])
 @require_admin
 def recent_errors(user_id):

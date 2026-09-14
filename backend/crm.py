@@ -247,8 +247,10 @@ def _claimed_by_others(va_name):
     return [c.prospect_id for c in q.all()]
 
 
-def next_unclaimed(va_name):
-    """Same ordering as va_calls.next_card, minus cards another VA holds."""
+def next_unclaimed(va_name, _depth=0):
+    """Same ordering as va_calls.next_card, minus cards another VA holds — and
+    minus anyone who has since signed up as a hauler, who must never be
+    pitched again (supply_signup.guard retires them as they surface)."""
     from va_calls import WORKABLE_STATUSES, _category_rank_sql
     now = _now_naive()
     taken = _claimed_by_others(va_name)
@@ -260,13 +262,19 @@ def next_unclaimed(va_name):
                    CallProspect.next_followup_at <= now)
            .order_by(CallProspect.next_followup_at.asc())
            .first())
-    if due:
-        return due
-    return (CallProspect.query
-            .filter(workable, free, CallProspect.next_followup_at.is_(None))
-            .order_by(CallProspect.tier.asc(), _category_rank_sql().asc(),
-                      CallProspect.category.asc(), CallProspect.created_at.asc())
-            .first())
+    pick = due or (CallProspect.query
+                   .filter(workable, free, CallProspect.next_followup_at.is_(None))
+                   .order_by(CallProspect.tier.asc(), _category_rank_sql().asc(),
+                             CallProspect.category.asc(), CallProspect.created_at.asc())
+                   .first())
+    if pick is not None and _depth < 25:
+        try:
+            from supply_signup import guard
+            if guard(pick):
+                return next_unclaimed(va_name, _depth + 1)
+        except Exception:
+            logger.exception("signed-up guard failed for prospect %s", pick.id)
+    return pick
 
 
 # ---------------------------------------------------------------------------

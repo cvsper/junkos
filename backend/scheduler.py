@@ -403,6 +403,17 @@ def _sameday_standby_ask(app):
         logger.exception("standby ask job failed")
 
 
+def _signed_up_sweep(app):
+    """Haulers who signed up must leave Tracy's call queue — including the ones
+    whose phone number only reached us after the account was made."""
+    with app.app_context():
+        try:
+            from supply_signup import sweep
+            sweep()
+        except Exception:
+            logger.exception("signed-up prospect sweep failed")
+
+
 def _leads_sweep(app):
     """Speed-to-lead auto-text + quote follow-ups (leads.py)."""
     with app.app_context():
@@ -1054,6 +1065,16 @@ def init_scheduler(app):
             args=[app],
             id="sameday_standby_ask",
             name="Same-day standby roster text",
+        )
+
+        # A hauler who signed up never gets recruited again — 06:20 ET daily
+        scheduler.add_job(
+            _signed_up_sweep,
+            "cron",
+            hour=6, minute=20, timezone="America/New_York",
+            args=[app],
+            id="signed_up_sweep",
+            name="Retire call-queue cards for haulers who signed up",
         )
 
         # Speed-to-lead auto-text + quote follow-ups — every minute

@@ -123,6 +123,12 @@ def register_concierge(phone, name=None, source="inbound", lat=None, lng=None,
             is_concierge=True,
         )
         db.session.add(contractor)
+        # they said yes — take them out of Tracy's call queue for good
+        try:
+            from supply_signup import retire_for_phone
+            retire_for_phone(e164, contractor.id, "signed up as a hauler", commit=False)
+        except Exception:
+            logger.exception("could not retire the call-queue card for a new hauler")
         db.session.commit()
 
         logger.info("RECRUIT: concierge %s registered via %s (%s)",

@@ -1276,6 +1276,14 @@ def driver_signup():
         db.session.add(contractor)
         db.session.commit()
 
+        # a hauler who signed up must never be recruited again (nightly
+        # supply_signup.sweep catches accounts whose phone lands later)
+        try:
+            from supply_signup import retire_for_phone
+            retire_for_phone(getattr(new_user, "phone", None), contractor.id)
+        except Exception:
+            pass
+
         # --- Send welcome email to driver ---
         try:
             from notifications import send_welcome_email
