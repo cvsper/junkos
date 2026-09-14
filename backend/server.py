@@ -646,6 +646,18 @@ except Exception as _l_exc:
 _SANITIZE_SKIP_PREFIXES = ("/api/bookings/upload-photos", "/uploads/", "/api/webhooks/", "/api/upload/", "/api/drivers/onboarding/documents", "/api/vapi/")
 
 
+DESK_HOSTS = tuple(h.strip().lower() for h in os.environ.get("DESK_HOSTS", "ops.goumuve.com,dispatch.goumuve.com").split(",") if h.strip())
+
+
+@app.before_request
+def desk_host_root():
+    """ops.goumuve.com is the desk: its bare root goes to /va."""
+    host = (request.host or "").split(":")[0].lower()
+    if host in DESK_HOSTS and request.path == "/":
+        from flask import redirect
+        return redirect("/va", code=302)
+
+
 @app.before_request
 def sanitize_json_input():
     """Sanitize all string values in incoming JSON bodies.
@@ -1053,7 +1065,7 @@ def get_available_time_slots(requested_date=None):
 # ---------------------------------------------------------------------------
 # Legacy API Routes (kept for backward compatibility)
 # ---------------------------------------------------------------------------
-APP_VERSION = "2.2.99"
+APP_VERSION = "2.2.100"
 
 
 # ---------------------------------------------------------------------------
