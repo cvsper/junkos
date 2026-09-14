@@ -268,9 +268,11 @@ def build_rate_card_pdf(prospect, va_name=None, prices=None, desk_number=None):
 
     # ---- trust row --------------------------------------------------------------
     FOOT_H = 16
-    HERO_H = 32
+    HERO_NAT = 32.9                      # the strip's natural height at page width
+    ty = y_cols_end + 5
+    # the hero gives way to the copy: shorter band, cropped from the sky down, never an overlap
+    HERO_H = max(18, min(HERO_NAT, pdf.h - FOOT_H - (ty + 25)))
     hero_y = pdf.h - FOOT_H - HERO_H
-    ty = max(y_cols_end + 4.5, min(y_cols_end + 6, hero_y - 25))
     cells = [("shield", "LICENSED & INSURED", "Your property is protected"),
              ("calendar", "SAME OR NEXT DAY", "Fast, reliable service"),
              ("leaf", "DONATE & RECYCLE", "We keep usable items out of landfills"),
@@ -297,7 +299,11 @@ def build_rate_card_pdf(prospect, va_name=None, prices=None, desk_number=None):
     # ---- hero + footer band ---------------------------------------------------
     hero = os.path.join(here, "static", "rate-card-hero.jpg")
     if os.path.exists(hero):
-        img(hero, x=0, y=hero_y, w=PW, h=HERO_H)
+        try:
+            with pdf.rect_clip(x=0, y=hero_y, w=PW, h=HERO_H):
+                pdf.image(hero, x=0, y=hero_y + HERO_H - HERO_NAT, w=PW)
+        except Exception:
+            img(hero, x=0, y=hero_y, w=PW, h=HERO_H)
     pdf.set_fill_color(*BAND)
     pdf.rect(0, pdf.h - FOOT_H, PW, FOOT_H, style="F")
     fy = pdf.h - FOOT_H
