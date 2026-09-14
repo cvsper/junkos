@@ -551,3 +551,7 @@ body.dp-locked{overflow:hidden}
   .dm-badge{position:absolute;top:1px;right:1px;min-width:16px;padding:2px 4px;font-size:9.5px;line-height:1;background:var(--accent);color:var(--on-accent)}
   .dm-tab.on .dm-badge{background:var(--accent);color:var(--on-accent)}
 }
+@media (max-width:959px){
+  /* nav buttons hug the right edge next to refresh; the menu stays on the left */
+  .dm-tabs{flex:0 1 auto;margin-left:auto}
+}
