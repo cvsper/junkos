@@ -49,6 +49,14 @@ COLUMN_MIGRATIONS = [
     ("users", "phone_verified_at", "DATETIME", "TIMESTAMP", "NULL"),
     ("users", "token_version", "INTEGER", "INTEGER", "0"),
 
+    # Payment table — the card kept on file so an on-site add-on the customer
+    # approves goes on the same card (job_addons). Added 2026-09-14: the model
+    # columns shipped in 2.2.106 without these two lines, and every query that
+    # eager-joins Payment (which is every query that loads a Job) started
+    # failing on Postgres with UndefinedColumn.
+    ("payments", "stripe_payment_method_id", "VARCHAR(255)", "VARCHAR(255)", "NULL"),
+    ("payments", "stripe_customer_id", "VARCHAR(255)", "VARCHAR(255)", "NULL"),
+
     # Job table
     ("jobs", "before_photos", "TEXT", "JSON", "NULL"),       # JSON stored as TEXT in SQLite
     ("jobs", "after_photos", "TEXT", "JSON", "NULL"),
