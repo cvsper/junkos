@@ -44,3 +44,20 @@ def test_every_payment_column_added_since_the_list_began_is_in_it():
     assert not missing, (
         "payments: {} is on the model but not in migrate.COLUMN_MIGRATIONS — "
         "create_all will not add it to the existing Postgres table.".format(missing))
+
+
+def test_boolean_defaults_are_postgres_legal():
+    """`DEFAULT 0` on a BOOLEAN is a type error on Postgres: the migration
+    raises, the app refuses to boot and the deploy fails. 15 Sep, va_shifts.unpaid."""
+    bad = [(t, c, d) for t, c, _sqlite, pg, d in COLUMN_MIGRATIONS
+           if pg.upper() == "BOOLEAN" and str(d).upper() not in ("TRUE", "FALSE", "NULL", "NONE")]
+    assert not bad, "boolean columns with a non-boolean default: {}".format(bad)
+
+
+def test_every_default_is_a_bare_sql_literal():
+    """These are interpolated straight into ALTER TABLE, so a stray quote or
+    expression would break the statement."""
+    import re
+    odd = [(t, c, d) for t, c, _s, _p, d in COLUMN_MIGRATIONS
+           if d is not None and not re.fullmatch(r"[A-Za-z0-9_.'\-]+", str(d))]
+    assert not odd, "defaults that are not simple literals: {}".format(odd)

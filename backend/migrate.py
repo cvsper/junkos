@@ -50,7 +50,7 @@ COLUMN_MIGRATIONS = [
     ("users", "token_version", "INTEGER", "INTEGER", "0"),
 
     # VA shifts — a shift that is not payable is marked, never deleted
-    ("va_shifts", "unpaid", "BOOLEAN", "BOOLEAN", "0"),
+    ("va_shifts", "unpaid", "BOOLEAN", "BOOLEAN", "FALSE"),
     ("va_shifts", "unpaid_reason", "VARCHAR(200)", "VARCHAR(200)", "NULL"),
 
     # Call prospects — a win is only a win when it books work
