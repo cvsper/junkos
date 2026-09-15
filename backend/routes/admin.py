@@ -38,6 +38,31 @@ def require_admin(f):
     return wrapper
 
 
+@admin_bp.route("/first-job/nudge", methods=["GET", "POST"])
+@require_admin
+def first_job_nudge(user_id):
+    """Who is owed a booking link, and (POST) send it.
+
+    GET always dry-runs and names them. POST sends for real — it ignores the
+    feature flag on purpose, so this is the deliberate "send it now" button
+    while the nightly sweep stays flag-gated.
+    """
+    from first_job import nurture_sweep, due_for_nudge, scoreboard
+    if request.method == "GET":
+        rows = due_for_nudge(limit=500)
+        return jsonify({
+            "scoreboard": scoreboard(30),
+            "due": len(rows),
+            "who": [{"id": p.id, "company": p.company, "city": p.city,
+                     "contact": p.contact_name, "phone": p.direct_phone or p.phone,
+                     "status": p.status, "last_outcome": p.last_outcome,
+                     "last_note": (p.last_note or "")[:140],
+                     "updated_at": p.updated_at.isoformat() + "Z" if p.updated_at else None}
+                    for p in rows],
+        }), 200
+    return jsonify(nurture_sweep(dry_run=False)), 200
+
+
 @admin_bp.route("/photo-quotes", methods=["GET"])
 @require_admin
 def photo_quotes(user_id):

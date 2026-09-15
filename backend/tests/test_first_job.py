@@ -178,3 +178,9 @@ def test_the_desk_can_still_get_a_card_when_it_has_to(client):
         r = client.post("/api/va/calls/next", json={"code": "test-code", "va_name": "Tracy",
                                                     "skip_leads": True})
     assert r.get_json().get("card", {}).get("company") == "Cold Call Me"
+
+
+def test_the_admin_preview_never_sends(client):
+    _prospect()
+    assert client.get("/api/admin/first-job/nudge").status_code == 401
+    assert client.post("/api/admin/first-job/nudge").status_code == 401
