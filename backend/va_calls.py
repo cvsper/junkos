@@ -1448,7 +1448,7 @@ CALLS_HTML = r"""<!doctype html>
 <script src="/static/desk-dock.js?v=1"></script>
 <script src="/static/desk-dialpad.js?v=6"></script>
 <script src="/static/desk-work.js?v=6"></script>
-<script src="/static/desk-leads.js?v=4"></script>
+<script src="/static/desk-leads.js?v=5"></script>
 <script src="/static/desk-class.js?v=2"></script>
 <script src="/va/calls.js?v=32"></script>
 </body>

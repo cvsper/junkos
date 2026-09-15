@@ -594,7 +594,7 @@ def leads_list():
     leads, broken = collect()
     return jsonify({"leads": leads, "total": len(leads),
                     "untouched": sum(1 for l in leads if not l.get("touched_at")),
-                    "paid": sum(1 for l in leads if l["source"] in ("google", "meta")),
+                    "paid": sum(1 for l in leads if l["source"] in ("google", "meta", "thumbtack")),
                     "speed_to_lead_seconds": SPEED_TO_LEAD_SECONDS,
                     "day3": day3_followups(), "sources_failed": broken}), 200
 

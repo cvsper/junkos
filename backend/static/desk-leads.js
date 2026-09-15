@@ -34,7 +34,7 @@
     var e = document.createElement(tag); if(cls) e.className = cls; if(text != null) e.textContent = text; return e;
   }
 
-    (function(){ if(document.querySelector('link[href^="/static/desk-leads.css"]')) return; var l = document.createElement("link"); l.rel = "stylesheet"; l.href = "/static/desk-leads.css?v=3"; document.head.appendChild(l); })();
+    (function(){ if(document.querySelector('link[href^="/static/desk-leads.css"]')) return; var l = document.createElement("link"); l.rel = "stylesheet"; l.href = "/static/desk-leads.css?v=4"; document.head.appendChild(l); })();
 
   var tab = el("button", "ld-tab"); tab.type = "button";
   tab.appendChild(el("span", null, "Leads"));
@@ -123,6 +123,9 @@
     who.appendChild(b);
     who.appendChild(document.createTextNode(l.name || l.phone || "Unknown caller"));
     if(l.contacts > 1) who.appendChild(el("span", "ld-badge", l.contacts + "×"));
+    // what this ring cost us, on the row: a $25 lead deserves the first call
+    if(l.lead_price) who.appendChild(el("span", "ld-cost", "$" + Math.round(l.lead_price) + " lead"));
+    if(l.needs_price) who.appendChild(el("span", "ld-cost", "needs a price"));
     top.appendChild(who);
     var t = el("span", "ld-timer" + (!l.touched_at && l.age_seconds >= (data.speed_to_lead_seconds || 120) ? " hot" : ""), fmtAge(l.age_seconds));
     t.setAttribute("data-age", String(l.age_seconds)); t.setAttribute("data-hot", l.touched_at ? "0" : "1");

@@ -27,6 +27,10 @@
 .ld-badge.google{background:rgba(var(--info-rgb),.12);color:var(--info);border-color:rgba(var(--info-rgb),.35)}
 .ld-badge.meta{background:rgba(var(--info-rgb),.12);color:var(--info);border-color:rgba(var(--info-rgb),.35)}
 .ld-badge.web{background:rgba(var(--ok-rgb),.12);color:var(--ok);border-color:rgba(var(--ok-rgb),.35)}
+/* Thumbtack charges per lead — it should read as the most expensive row here */
+.ld-badge.thumbtack{background:rgba(var(--accent-rgb),.12);color:var(--accent);border-color:rgba(var(--accent-rgb),.4)}
+.ld-badge.photo{background:rgba(var(--ok-rgb),.14);color:var(--ok);border-color:rgba(var(--ok-rgb),.4)}
+.ld-cost{font-family:var(--body);font-size:11px;font-weight:600;color:var(--accent);margin-left:6px}
 .ld-timer{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;color:var(--muted);white-space:nowrap}
 .ld-timer.hot{color:var(--accent);font-weight:700}
 .ld-what{font-size:13px;color:var(--muted);margin:3px 0 0}
