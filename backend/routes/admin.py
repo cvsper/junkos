@@ -1462,6 +1462,16 @@ def booking_funnel_report(user_id):
     return jsonify(booking_funnel.report(days)), 200
 
 
+@admin_bp.route("/booking-funnel/<session_id>", methods=["DELETE"])
+@require_admin
+def booking_funnel_forget(user_id, session_id):
+    """Remove one funnel row: a smoke test, or a session recorded in error."""
+    import booking_funnel
+
+    removed = booking_funnel.forget(session_id)
+    return jsonify({"success": removed}), (200 if removed else 404)
+
+
 @admin_bp.route("/pricing-analytics", methods=["GET"])
 @require_admin
 def pricing_analytics(user_id):

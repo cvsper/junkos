@@ -234,3 +234,11 @@ def test_a_paid_source_keeps_its_label_in_the_lead_list():
     row = _beacon(step=5, estimatedPrice=200, phone="5615550142", leadSource="facebook")
     _age(row, 45)
     assert leads._funnel(_now() - timedelta(days=7))[0]["source"] == "meta"
+
+
+def test_a_bad_row_can_be_removed():
+    _beacon(session_id="smoke-1", step=5, estimatedPrice=275)
+    assert booking_funnel.forget("smoke-1") is True
+    assert BookingFunnel.query.count() == 0
+    # Removing something that isn't there is not an error.
+    assert booking_funnel.forget("smoke-1") is False

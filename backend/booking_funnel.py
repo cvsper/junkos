@@ -153,6 +153,20 @@ def mark_converted(session_id=None, job=None, phone=None, email=None):
         return None
 
 
+def forget(session_id):
+    """Drop one row — a smoke test, or a session recorded in error.
+
+    An analytics table nobody can correct becomes an analytics table nobody
+    trusts, and a single synthetic row skews a funnel this small.
+    """
+    row = BookingFunnel.query.filter_by(session_id=str(session_id)[:64]).first()
+    if row is None:
+        return False
+    db.session.delete(row)
+    db.session.commit()
+    return True
+
+
 def abandoned(days=30, priced_only=False, reachable_only=False, limit=200):
     """Attempts that stopped. Anyone still moving is left alone."""
     since = _now() - timedelta(days=max(1, min(int(days), 365)))
