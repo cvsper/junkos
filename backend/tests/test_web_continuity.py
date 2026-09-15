@@ -119,13 +119,16 @@ def test_uploaded_proof_uses_files_form_field(client, monkeypatch, tmp_path):
 
 def test_web_earnings_include_actual_payout_and_period_filter(client):
     from tests.test_audit_pricing import _hauler, _job
-    from timeutils import local_now
-    from datetime import timedelta
+    from datetime import datetime, timedelta, timezone
     driver = _hauler()
     current = _job(driver=driver, status="completed")
     old = _job(driver=driver, status="completed")
-    current.completed_at = local_now()
-    old.completed_at = local_now() - timedelta(days=2)
+    # UTC-naive, which is what assignment.transition_job actually stores. Writing
+    # a Florida-local time here made this test fail every night between midnight
+    # and 4am, when local "today" and UTC "today" are different days.
+    now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
+    current.completed_at = now_utc
+    old.completed_at = now_utc - timedelta(days=2)
     current.payment.driver_payout_amount = 144.0
     current.payment.tip_amount = 10.0
     current.payment.payout_status = "pending_connect"
