@@ -5,7 +5,7 @@ from unittest import mock
 
 import pytest
 
-from models import db
+from models import db, generate_uuid
 from models_thumbtack import ThumbtackLead
 
 
@@ -351,3 +351,33 @@ def test_a_message_on_a_known_lead_still_attaches_to_it(client):
     assert ThumbtackLead.query.count() == 1               # no stub, it found the lead
     lead = ThumbtackLead.query.one()
     assert lead.phone_digits == "5615550142" and lead.status != "message_only"
+
+
+def test_a_thread_fills_in_its_own_blanks_from_the_next_message(client):
+    """Cassie's and Jackie's threads opened before names were parsed and sat on
+    the board as "(no name)". A later message should repair that itself."""
+    from models_thumbtack import ThumbtackLead as TL
+    stub = TL(id=generate_uuid(), lead_id="590325496084086791", status="message_only",
+              description="I have 1 couch")
+    db.session.add(stub); db.session.commit()
+    with mock.patch("thumbtack.alert_team"):
+        client.post("/api/webhooks/thumbtack", json=MESSAGE_ONLY, headers=_basic())
+    db.session.refresh(stub)
+    assert stub.customer_name == "Cassie S." and stub.customer_id == "590325424358694921"
+
+
+def test_backfill_fills_blanks_without_overwriting(client):
+    from thumbtack import backfill_from_raw
+    from models_thumbtack import ThumbtackLead as TL
+    row = TL(id=generate_uuid(), lead_id="x", raw=MESSAGE_ONLY, status="message_only",
+             customer_name=None, description="kept")
+    db.session.add(row); db.session.commit()
+    out = backfill_from_raw()
+    db.session.refresh(row)
+    assert out["filled"] == 1 and row.customer_name == "Cassie S."
+    assert row.description == "kept"                  # never overwrites what's there
+    assert backfill_from_raw()["filled"] == 0         # idempotent
+
+
+def test_the_backfill_route_is_admin_only(client):
+    assert client.post("/api/admin/thumbtack/backfill").status_code == 401

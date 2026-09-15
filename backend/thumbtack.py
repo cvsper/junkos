@@ -543,6 +543,12 @@ def handle_message(p):
                              status="message_only", serviceable=True,
                              service_note="no phone on a message event — reply in the Thumbtack app")
         db.session.add(lead)
+    # self-healing: a thread that opened before we parsed names (or with a field
+    # missing) fills itself in from the next message instead of staying blank
+    if not lead.customer_name and m.get("customer_name"):
+        lead.customer_name = m["customer_name"]
+    if not lead.customer_id and m.get("customer_id"):
+        lead.customer_id = m["customer_id"]
     msgs = list(lead.messages or [])
     if m["message_id"] and any(x.get("id") == m["message_id"] for x in msgs if isinstance(x, dict)):
         return lead, False
@@ -766,7 +772,41 @@ def _top(values, n=5):
     return dict(sorted(counts.items(), key=lambda kv: -kv[1])[:n])
 
 
+def backfill_from_raw(limit=200):
+    """Re-read stored payloads into the columns. Safe to run repeatedly — it
+    only fills blanks, never overwrites."""
+    filled = []
+    for r in (ThumbtackLead.query.order_by(ThumbtackLead.created_at.desc()).limit(limit).all()):
+        if not r.raw:
+            continue
+        try:
+            kind = _infer_kind(r.raw)
+            data = parse_message(r.raw) if kind == "message" else parse_lead(r.raw)
+        except Exception:
+            logger.exception("backfill parse failed for %s", r.id)
+            continue
+        changed = False
+        for col in ("customer_name", "customer_id", "phone", "phone_digits", "email",
+                    "category", "city", "state", "zip", "address", "description",
+                    "lead_price", "schedule", "business_id", "lead_id"):
+            val = data.get(col)
+            if val not in (None, "", []) and getattr(r, col, None) in (None, "", []):
+                setattr(r, col, val)
+                changed = True
+        if changed:
+            filled.append(r.customer_name or r.id)
+    if filled:
+        db.session.commit()
+    return {"filled": len(filled), "who": filled[:25]}
+
+
 def register_admin_routes(app, require_admin):
+    @app.route("/api/admin/thumbtack/backfill", methods=["POST"])
+    @require_admin
+    def thumbtack_backfill(user_id):
+        """Fill blank columns on stored threads from the payloads we kept."""
+        return jsonify(backfill_from_raw()), 200
+
     @app.route("/api/admin/thumbtack/report", methods=["GET"])
     @require_admin
     def thumbtack_report(user_id):
