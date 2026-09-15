@@ -49,7 +49,11 @@ def first_job_nudge(user_id):
     """
     from first_job import nurture_sweep, due_for_nudge, scoreboard
     if request.method == "GET":
+        from first_job import skip_reason
         rows = due_for_nudge(limit=500)
+        blocked = [{"company": p.company, "phone": p.direct_phone or p.phone,
+                    "why": skip_reason(p)}
+                   for p in due_for_nudge(limit=500, include_skipped=True) if skip_reason(p)]
         return jsonify({
             "scoreboard": scoreboard(30),
             "due": len(rows),
@@ -59,6 +63,7 @@ def first_job_nudge(user_id):
                      "last_note": (p.last_note or "")[:140],
                      "updated_at": p.updated_at.isoformat() + "Z" if p.updated_at else None}
                     for p in rows],
+            "skipped": blocked,
         }), 200
     return jsonify(nurture_sweep(dry_run=False)), 200
 

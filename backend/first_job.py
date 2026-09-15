@@ -92,6 +92,9 @@ def send_offer(prospect, va_name=None, force=False):
         return False, "no prospect"
     if prospect.job_id:
         return False, "they already have a job"
+    why = skip_reason(prospect)
+    if why and not force:
+        return False, why
     if prospect.offer_sent_at and not force:
         return False, "already sent"
     digits = _digits(prospect.direct_phone) or _digits(prospect.phone) or prospect.phone_digits
@@ -154,17 +157,55 @@ def link_booking(job, digits=None, prospect_id=None):
         return None
 
 
-def due_for_nudge(limit=200):
-    """Said yes, never booked, and it has been long enough to ask once."""
+# Numbers that already told us texting them is pointless or dangerous. The
+# apartment-office auto-responders are the ones that traded ~1,100 messages
+# with Maya on 11 Sep and burned $20 of Twilio credit in a night.
+_DEAD_NUMBER = ("can't be received", "cannot be received", "unable to receive",
+                "not a valid phone", "landline", "undeliverable", "message blocked")
+
+
+def skip_reason(prospect):
+    """Why this prospect must not be texted, or None."""
+    note = (prospect.last_note or "")
+    low = " ".join(note.split()).lower()
+    if any(m in low for m in _DEAD_NUMBER):
+        return "that number can't receive texts"
+    said = note.split("THEY TEXTED:", 1)[1] if "THEY TEXTED:" in note else ""
+    if said:
+        try:
+            from sms_guard import looks_automated
+            if looks_automated(said):
+                return "their line is an auto-responder"
+        except Exception:
+            pass
+        try:
+            from leads import looks_like_autoreply
+            if looks_like_autoreply(said):
+                return "their line is an auto-responder"
+        except Exception:
+            pass
+    return None
+
+
+def due_for_nudge(limit=200, include_skipped=False):
+    """Said yes, never booked, long enough to ask once — and textable.
+
+    A business that already answered with a consent bot or a "this number
+    can't receive texts" is excluded: texting it again costs money and, in the
+    auto-responder case, risks the loop that burned a night of credit.
+    """
     cutoff = _now() - timedelta(days=NUDGE_AFTER_DAYS)
     floor = _now() - timedelta(days=NUDGE_WINDOW_DAYS)
-    return (CallProspect.query
+    rows = (CallProspect.query
             .filter(CallProspect.status.in_(INTERESTED),
                     CallProspect.job_id.is_(None),
                     CallProspect.offer_sent_at.is_(None),
                     CallProspect.updated_at <= cutoff,
                     CallProspect.updated_at >= floor)
             .order_by(CallProspect.updated_at.asc()).limit(limit).all())
+    if include_skipped:
+        return rows
+    return [p for p in rows if skip_reason(p) is None]
 
 
 def nurture_sweep(dry_run=None):
@@ -180,8 +221,11 @@ def nurture_sweep(dry_run=None):
             dry_run = not flag("first_job_nudge")
         except Exception:
             dry_run = True
+    skipped = [{"company": p.company, "why": skip_reason(p)}
+               for p in due_for_nudge(include_skipped=True) if skip_reason(p)]
     out = {"due": len(rows), "sent": 0, "dry_run": bool(dry_run),
-           "companies": [p.company for p in rows[:25]]}
+           "companies": [p.company for p in rows[:25]],
+           "skipped": skipped}
     if dry_run:
         return out
     for p in rows:

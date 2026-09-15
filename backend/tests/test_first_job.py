@@ -26,11 +26,14 @@ def env(app):
     db.session.commit()
 
 
-def _prospect(company="Palm Coast PM", digits="5615550142", status="interested", days_ago=5):
+def _prospect(company="Palm Coast PM", digits="5615550142", status="interested",
+              days_ago=5, note=None):
     p = CallProspect(id=generate_uuid(), tier=1, category="property management", company=company,
                      phone="(561) 555-0142", phone_digits=digits, city="Lake Worth",
-                     contact_name="Marcus Bell", status=status)
+                     contact_name="Marcus Bell", status=status, last_note=note)
     db.session.add(p); db.session.commit()
+    # backdate LAST: `updated_at` has onupdate=now, so any later commit on this
+    # row makes it look fresh again and it drops out of the nudge window.
     p.updated_at = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=days_ago)
     db.session.commit()
     return p
@@ -184,3 +187,47 @@ def test_the_admin_preview_never_sends(client):
     _prospect()
     assert client.get("/api/admin/first-job/nudge").status_code == 401
     assert client.post("/api/admin/first-job/nudge").status_code == 401
+
+
+# ---------------------------------------------------------------------------
+# who must never be texted
+# ---------------------------------------------------------------------------
+def test_an_auto_responder_line_is_never_texted():
+    """11 Sep: Maya's bot traded ~1,100 texts with apartment-office
+    auto-responders overnight. Never again from this sweep."""
+    p = _prospect(company="ParkLine Palm Beaches", digits="5615550170",
+                  note=("[2026-09-11 17:31] THEY TEXTED: Reply YES to consent to text messages "
+                        "from ParkLine Palm Beaches by Bozzuto Management"))
+    assert first_job.skip_reason(p) == "their line is an auto-responder"
+    assert p not in first_job.due_for_nudge()
+    with mock.patch("desk_line.send_desk_text") as send:
+        ok, why = first_job.send_offer(p)
+    assert ok is False and why == "their line is an auto-responder" and send.call_count == 0
+
+
+def test_a_number_that_cannot_receive_texts_is_never_texted():
+    p = _prospect(company="Palms West Apartments", digits="5615550171",
+                  note=("[2026-09-11 18:20] THEY TEXTED: We're sorry, text messages can't be "
+                        "received by this phone number."))
+    assert first_job.skip_reason(p) == "that number can't receive texts"
+    with mock.patch("desk_line.send_desk_text") as send:
+        ok, _ = first_job.send_offer(p)
+    assert ok is False and send.call_count == 0
+
+
+def test_a_normal_note_is_still_textable():
+    p = _prospect(company="Colony Hotel", digits="5615550172",
+                  note="Alani said they'll keep Umuve as a backup vendor.")
+    assert first_job.skip_reason(p) is None
+    assert p in first_job.due_for_nudge()
+
+
+def test_the_sweep_reports_who_it_skipped():
+    _prospect(company="Auto Line", digits="5615550173",
+              note="THEY TEXTED: Reply START to receive SMS updates")
+    _prospect(company="Real One", digits="5615550174")
+    with mock.patch("flags.flag", return_value=True), \
+         mock.patch("desk_line.send_desk_text", return_value="SM1") as send:
+        out = first_job.nurture_sweep()
+    assert out["sent"] == 1 and send.call_count == 1
+    assert [s["company"] for s in out["skipped"]] == ["Auto Line"]
