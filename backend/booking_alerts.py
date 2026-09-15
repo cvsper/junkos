@@ -41,14 +41,75 @@ def _env(name):
     return (os.environ.get(name) or "").strip()
 
 
-def _phones():
-    """Every distinct number worth telling. Order is stable for tests."""
+# Texting the owner costs money on every alert, and most alerts are things an
+# email covers perfectly well. SMS is now opt-in per kind: set OPS_ALERT_SMS to
+# a comma list of the ones worth a buzz, e.g. "booked,paid". Empty = none.
+# Email and Slack are unaffected and still get everything.
+def sms_kinds():
+    raw = _env("OPS_ALERT_SMS").lower()
+    if raw in ("1", "true", "all", "yes"):
+        return {"*"}
+    return {k.strip() for k in raw.split(",") if k.strip()}
+
+
+def _phones(kind=None):
+    """Numbers to text for this kind of alert — empty unless OPS_ALERT_SMS says so.
+
+    `kind` None means "an informational alert", which never texts.
+    """
+    allowed = sms_kinds()
+    if not allowed or kind is None or ("*" not in allowed and kind not in allowed):
+        return []
     out = []
     for var in ("ADMIN_PHONE", "OPERATOR_PHONE"):
         val = _env(var)
         if val and val not in out:
             out.append(val)
     return out
+
+
+def _emails():
+    """Where an alert actually goes now. ADMIN_EMAIL, plus OPS_ALERT_EMAILS."""
+    out = []
+    for var in ("ADMIN_EMAIL", "OPS_ALERT_EMAILS"):
+        for one in _env(var).replace(";", ",").split(","):
+            one = one.strip()
+            if one and one not in out:
+                out.append(one)
+    return out
+
+
+def ops_alert(subject, body, kind=None):
+    """One informational alert, by email and Slack. Never texts unless the kind
+    is listed in OPS_ALERT_SMS. Never raises."""
+    sent = []
+    for addr in _emails():
+        try:
+            from notifications import _send_email_sync
+            _send_email_sync(addr, subject,
+                             "<pre style='font:13px/1.5 ui-monospace,monospace;white-space:pre-wrap'>"
+                             "{}</pre>".format(body))
+            sent.append("email")
+        except Exception:
+            logger.exception("ops alert email to %s failed", addr)
+    hook = _env("SLACK_ALERT_WEBHOOK")
+    if hook:
+        try:
+            import requests
+            requests.post(hook, json={"text": "*{}*\n```{}```".format(subject, body)}, timeout=10)
+            sent.append("slack")
+        except Exception:
+            logger.exception("ops alert slack failed")
+    for phone in _phones(kind):
+        try:
+            from sms_service import send_sms_async
+            send_sms_async(phone, "{}\n{}".format(subject, body))
+            sent.append("sms")
+        except Exception:
+            logger.exception("ops alert sms failed")
+    if not sent:
+        logger.error("ops alert had nowhere to go — set ADMIN_EMAIL or SLACK_ALERT_WEBHOOK: %s", subject)
+    return sent
 
 
 def _job_lines(job, payment=None):
@@ -91,7 +152,7 @@ def notify_booking(job, stage="booked", payment=None):
         subject = "{} · {}".format(headline, code)
         body = "\n".join([headline] + lines)
 
-        for phone in _phones():
+        for phone in _phones(stage):
             try:
                 from sms_service import send_sms_async
                 send_sms_async(phone, body)

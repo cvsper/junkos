@@ -332,31 +332,18 @@ def _send(digits, body):
 
 
 def _alert(q, why):
-    try:
-        from booking_alerts import _phones
-        phones = _phones()
-    except Exception:
-        phones = []
+    """Email + Slack only — these arrive all day and a text costs money."""
     head = "Photo quote · {}".format(why)
-    body = "\n".join([head,
-                      "{} · {}".format(q.phone_digits, q.name or "no name"),
-                      ", ".join(i["category"] for i in (q.items or [])[:6]) or "nothing identified",
-                      "Quoted ${:.0f}".format(q.price) if q.price else "not priced",
-                      "; ".join(q.unclear or []),
-                      "Desk: {}/va/calls".format(_env("DESK_PUBLIC_URL") or "https://ops.goumuve.com")])
-    for p in phones:
-        try:
-            from sms_service import send_sms_async
-            send_sms_async(p, body)
-        except Exception:
-            logger.exception("photo quote alert sms failed")
-    hook = _env("SLACK_ALERT_WEBHOOK")
-    if hook:
-        try:
-            import requests
-            requests.post(hook, json={"text": "*{}*\n```{}```".format(head, body)}, timeout=10)
-        except Exception:
-            logger.exception("photo quote alert slack failed")
+    lines = ["{} · {}".format(q.phone_digits, q.name or "no name"),
+             ", ".join(i["category"] for i in (q.items or [])[:6]) or "nothing identified",
+             "Quoted ${:.0f}".format(q.price) if q.price else "not priced",
+             "; ".join(q.unclear or []),
+             "Desk: {}/va/calls".format(_env("DESK_PUBLIC_URL") or "https://ops.goumuve.com")]
+    try:
+        from booking_alerts import ops_alert
+        ops_alert(head, "\n".join(l for l in lines if l))
+    except Exception:
+        logger.exception("photo quote alert failed")
 
 
 def handle_photos(phone, body_text, media_urls):

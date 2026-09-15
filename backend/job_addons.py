@@ -417,31 +417,18 @@ def _tell_hauler(addon, job, message):
 
 
 def _alert(addon, job, what):
-    try:
-        from booking_alerts import _phones
-        phones = _phones()
-    except Exception:
-        phones = []
+    """Email + Slack. The hauler and the customer get the texts that matter."""
     head = "Add-on · {}".format(what)
-    body = "\n".join([head,
-                      "{} · ${:.0f} → new total ${:.0f}".format(
-                          (job.confirmation_code if job else "job"), addon.amount, addon.new_total or 0),
-                      _lines(addon),
-                      "by " + (addon.requested_by or "?"),
-                      "Desk: {}/va/dispatch".format(_env("DESK_PUBLIC_URL") or "https://ops.goumuve.com")])
-    for p in phones:
-        try:
-            from sms_service import send_sms_async
-            send_sms_async(p, body)
-        except Exception:
-            logger.exception("addon alert sms failed")
-    hook = _env("SLACK_ALERT_WEBHOOK")
-    if hook:
-        try:
-            import requests
-            requests.post(hook, json={"text": "*{}*\n```{}```".format(head, body)}, timeout=10)
-        except Exception:
-            logger.exception("addon alert slack failed")
+    lines = ["{} · ${:.0f} → new total ${:.0f}".format(
+                 (job.confirmation_code if job else "job"), addon.amount, addon.new_total or 0),
+             _lines(addon),
+             "by " + (addon.requested_by or "?"),
+             "Desk: {}/va/dispatch".format(_env("DESK_PUBLIC_URL") or "https://ops.goumuve.com")]
+    try:
+        from booking_alerts import ops_alert
+        ops_alert(head, "\n".join(l for l in lines if l))
+    except Exception:
+        logger.exception("addon alert failed")
 
 
 def for_job(job_id):

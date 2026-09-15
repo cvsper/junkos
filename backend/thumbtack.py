@@ -334,42 +334,31 @@ def text_customer(lead):
 
 
 def alert_team(lead, kind="lead", extra=None):
-    """Same fan-out as booking alerts: SMS to the alert phones, email, Slack. Never raises."""
-    try:
-        from booking_alerts import _phones
-    except Exception:
-        _phones = lambda: []  # noqa: E731
-    headline = {"lead": "Thumbtack lead", "message": "Thumbtack message", "review": "Thumbtack review"}.get(kind, "Thumbtack")
-    lines = [headline + (" · " + lead.customer_name if lead and lead.customer_name else ""),
-             "{}{}".format(lead.category or lead.title or "", " · " + lead.city if lead and lead.city else "") if lead else ""]
-    if lead and lead.phone:
-        lines.append("Phone " + lead.phone + (" · texted" if lead.text_sent_at else " · NOT texted"))
-    if lead and lead.description:
-        lines.append(lead.description[:240])
+    """Email + Slack. Never a text — an inbound lead is not worth a per-message
+    charge, and these arrive all day (sevs, 15 Sep)."""
+    head = {"lead": "Thumbtack lead", "message": "Thumbtack message",
+            "review": "Thumbtack review"}.get(kind, "Thumbtack")
+    if lead is not None and lead.customer_name:
+        head += " · " + lead.customer_name
+    lines = []
+    if lead is not None:
+        lines.append(" · ".join(x for x in [lead.category or lead.title, lead.city] if x))
+        if lead.phone:
+            lines.append("Phone {}{}".format(lead.phone, " · texted" if lead.text_sent_at else " · NOT texted"))
+        if lead.lead_price:
+            lines.append("Thumbtack charged ${:.2f} for this lead".format(lead.lead_price))
+        if lead.description:
+            lines.append(lead.description[:300])
+        if lead.schedule:
+            lines.append("Wants: " + lead.schedule)
+        if lead.attachments:
+            lines.append("{} photo(s) attached".format(len(lead.attachments)))
     if extra:
-        lines.append(extra[:300])
+        lines.append(str(extra)[:300])
     lines.append("Desk: {}/va/calls".format(_env("DESK_PUBLIC_URL") or "https://ops.goumuve.com"))
-    body = "\n".join(l for l in lines if l)
     try:
-        for phone in _phones():
-            try:
-                from sms_service import send_sms_async
-                send_sms_async(phone, body)
-            except Exception:
-                logger.exception("thumbtack alert sms failed")
-        if _env("ADMIN_EMAIL"):
-            try:
-                from notifications import _send_email_sync
-                _send_email_sync(_env("ADMIN_EMAIL"), lines[0], "<pre style='font:13px/1.5 monospace'>{}</pre>".format(body))
-            except Exception:
-                logger.exception("thumbtack alert email failed")
-        hook = _env("SLACK_ALERT_WEBHOOK")
-        if hook:
-            try:
-                import requests
-                requests.post(hook, json={"text": "*{}*\n```{}```".format(lines[0], body)}, timeout=10)
-            except Exception:
-                logger.exception("thumbtack alert slack failed")
+        from booking_alerts import ops_alert
+        ops_alert(head, "\n".join(l for l in lines if l))
     except Exception:
         logger.exception("thumbtack alert failed")
 

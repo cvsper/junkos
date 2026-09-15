@@ -19,7 +19,7 @@ import booking_alerts
 @pytest.fixture(autouse=True)
 def env(app):
     keep = {k: os.environ.get(k) for k in
-            ("ADMIN_PHONE", "OPERATOR_PHONE", "ADMIN_EMAIL", "SLACK_ALERT_WEBHOOK")}
+            ("ADMIN_PHONE", "OPERATOR_PHONE", "ADMIN_EMAIL", "SLACK_ALERT_WEBHOOK", "OPS_ALERT_SMS")}
     for k in keep:
         os.environ.pop(k, None)
     yield
@@ -54,9 +54,12 @@ def _job():
 
 
 def test_fans_out_to_every_configured_channel():
+    """SMS is opt-in since 15 Sep (OPS_ALERT_SMS) — a booking is worth a buzz
+    only if the owner asked for one. Email and Slack always go."""
     job = _job()
     os.environ.update({"ADMIN_PHONE": "+15615551111", "OPERATOR_PHONE": "+15615552222",
-                       "ADMIN_EMAIL": "boss@goumuve.com", "SLACK_ALERT_WEBHOOK": "https://hooks.test/x"})
+                       "ADMIN_EMAIL": "boss@goumuve.com", "SLACK_ALERT_WEBHOOK": "https://hooks.test/x",
+                       "OPS_ALERT_SMS": "booked,paid"})
     with mock.patch("sms_service.send_sms_async") as sms, \
          mock.patch("notifications._send_email_sync") as email, \
          mock.patch("requests.post") as slack:
@@ -105,6 +108,19 @@ def test_alert_never_breaks_the_booking():
 def test_paid_stage_says_work_is_owed():
     job = _job()
     os.environ["ADMIN_PHONE"] = "+15615551111"
+    os.environ["OPS_ALERT_SMS"] = "paid"
     with mock.patch("sms_service.send_sms_async") as sms:
         booking_alerts.notify_booking(job, "paid")
     assert "needs a hauler" in sms.call_args[0][1]
+
+
+def test_a_booking_is_email_only_until_the_owner_asks_for_texts():
+    """The default costs nothing: every text was a charge and they add up."""
+    job = _job()
+    os.environ.update({"ADMIN_PHONE": "+15615551111", "ADMIN_EMAIL": "boss@goumuve.com"})
+    os.environ.pop("OPS_ALERT_SMS", None)
+    with mock.patch("sms_service.send_sms_async") as sms, \
+         mock.patch("notifications._send_email_sync") as email:
+        sent = booking_alerts.notify_booking(job, "booked")
+    assert sms.call_count == 0 and email.call_count == 1
+    assert not any(s.startswith("sms:") for s in sent) and "email" in sent
