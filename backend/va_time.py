@@ -305,6 +305,38 @@ def team():
     return jsonify(hours_report(None, data.get("days") or 45)), 200
 
 
+@vatime_bp.route("/api/admin/va-shift-note", methods=["POST"])
+def admin_shift_note():
+    """Annotate a shift — including one still open.
+
+    A shift's note could only be written at clock-in or clock-out, so there was
+    nowhere to record something that happens mid-shift (an outage, a day lost)
+    while it is still fresh. The note rides with the shift into the hours
+    report, which is what gets read on payday.
+    """
+    from va_calls import require_admin
+
+    @require_admin
+    def _inner(user_id):
+        data = request.get_json(silent=True) or {}
+        note = (data.get("note") or "").strip()[:300]
+        if not note:
+            return jsonify({"error": "Write the note first."}), 400
+        sh = None
+        if data.get("shift_id"):
+            sh = db.session.get(VaShift, data["shift_id"])
+        elif data.get("va_name"):
+            sh = open_shift(_va_name(data) or data["va_name"])
+        if sh is None:
+            return jsonify({"error": "No shift found — pass shift_id, or va_name for the open one."}), 404
+        sh.note = ((sh.note + " · ") if sh.note else "") + note
+        sh.note = sh.note[:300]
+        db.session.commit()
+        audit("shift_note", "shift", sh.id, {"note": note[:120]})
+        return jsonify({"ok": True, "shift": sh.to_dict()}), 200
+    return _inner()
+
+
 @vatime_bp.route("/api/admin/va-hours", methods=["GET"])
 def admin_hours():
     from va_calls import require_admin
