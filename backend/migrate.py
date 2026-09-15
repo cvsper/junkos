@@ -49,6 +49,10 @@ COLUMN_MIGRATIONS = [
     ("users", "phone_verified_at", "DATETIME", "TIMESTAMP", "NULL"),
     ("users", "token_version", "INTEGER", "INTEGER", "0"),
 
+    # VA shifts — a shift that is not payable is marked, never deleted
+    ("va_shifts", "unpaid", "BOOLEAN", "BOOLEAN", "0"),
+    ("va_shifts", "unpaid_reason", "VARCHAR(200)", "VARCHAR(200)", "NULL"),
+
     # Call prospects — a win is only a win when it books work
     ("call_prospects", "job_id", "VARCHAR(36)", "VARCHAR(36)", "NULL"),
     ("call_prospects", "job_value", "FLOAT", "FLOAT", "NULL"),

@@ -169,13 +169,18 @@ def totals_for(va_name):
     since = min(week_start, p_start)
     shifts = VaShift.query.filter(VaShift.va_name == va_name,
                                   db.or_(VaShift.ended_at.is_(None), VaShift.ended_at >= since)).all()
-    today = sum(_overlap_seconds(s, day_start, now) for s in shifts)
-    week = sum(_overlap_seconds(s, week_start, now) for s in shifts)
-    period = sum(_overlap_seconds(s, p_start, min(p_end, now)) for s in shifts)
-    return _with_pay({"today_seconds": today, "week_seconds": week, "period_seconds": period,
-                      "period_label": p_label,
-                      "period_start": p_start.isoformat(), "period_end": p_end.isoformat()},
-                     va_name)
+    payable = [s for s in shifts if not getattr(s, "unpaid", False)]
+    today = sum(_overlap_seconds(s, day_start, now) for s in payable)
+    week = sum(_overlap_seconds(s, week_start, now) for s in payable)
+    period = sum(_overlap_seconds(s, p_start, min(p_end, now)) for s in payable)
+    voided = sum(_overlap_seconds(s, p_start, min(p_end, now))
+                 for s in shifts if getattr(s, "unpaid", False))
+    out = _with_pay({"today_seconds": today, "week_seconds": week, "period_seconds": period,
+                     "period_label": p_label,
+                     "period_start": p_start.isoformat(), "period_end": p_end.isoformat()},
+                    va_name)
+    out["unpaid_seconds_this_period"] = voided
+    return out
 
 
 def _calls_during(shift):
@@ -267,7 +272,7 @@ def hours_report(va_name=None, days=30):
         d["end_local"] = _local(sh.ended_at).strftime("%-I:%M %p") if sh.ended_at else None
         rate = hourly_rate(sh.va_name)
         d["hours"] = round((d.get("seconds") or 0) / 3600.0, 2)
-        d["pay"] = round(d["hours"] * rate, 2) if rate else None
+        d["pay"] = 0.0 if d.get("unpaid") else (round(d["hours"] * rate, 2) if rate else None)
         rows.append(d)
     names = sorted({sh.va_name for sh in shifts})
     return {"shifts": rows, "vas": names,
@@ -334,6 +339,35 @@ def admin_shift_note():
         db.session.commit()
         audit("shift_note", "shift", sh.id, {"note": note[:120]})
         return jsonify({"ok": True, "shift": sh.to_dict()}), 200
+    return _inner()
+
+
+@vatime_bp.route("/api/admin/va-shift-unpaid", methods=["POST"])
+def admin_shift_unpaid():
+    """Mark a shift not payable, with a reason — or put it back.
+
+    The time record is never deleted: the hours stay on the shift and stay
+    visible, the pay for them becomes zero and the reason travels with it.
+    """
+    from va_calls import require_admin
+
+    @require_admin
+    def _inner(user_id):
+        data = request.get_json(silent=True) or {}
+        sh = db.session.get(VaShift, data.get("shift_id") or "")
+        if sh is None:
+            return jsonify({"error": "No shift with that id."}), 404
+        unpaid = data.get("unpaid", True)
+        reason = (data.get("reason") or "").strip()[:200]
+        if unpaid and not reason:
+            return jsonify({"error": "Give a reason — it goes on the pay record."}), 400
+        sh.unpaid = bool(unpaid)
+        sh.unpaid_reason = reason or None
+        db.session.commit()
+        audit("shift_unpaid" if unpaid else "shift_repaid", "shift", sh.id,
+              {"reason": reason[:120], "seconds": sh.seconds})
+        return jsonify({"ok": True, "shift": sh.to_dict(),
+                        "totals": totals_for(sh.va_name)}), 200
     return _inner()
 
 

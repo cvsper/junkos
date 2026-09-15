@@ -4353,6 +4353,10 @@ class VaShift(db.Model):
     started_at = Column(DateTime, nullable=False, index=True)
     ended_at = Column(DateTime, nullable=True, index=True)
     note = Column(String(300), nullable=True)
+    # A time record is never deleted. When a shift is not payable it is marked,
+    # with a reason, and excluded from pay — the hours stay visible.
+    unpaid = Column(Boolean, nullable=False, default=False)
+    unpaid_reason = Column(String(200), nullable=True)
     auto_closed = Column(Boolean, nullable=False, default=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
@@ -4370,6 +4374,8 @@ class VaShift(db.Model):
             "open": self.ended_at is None,
             "seconds": self.seconds,
             "note": self.note,
+            "unpaid": bool(self.unpaid),
+            "unpaid_reason": self.unpaid_reason,
             "auto_closed": self.auto_closed,
         }
 
