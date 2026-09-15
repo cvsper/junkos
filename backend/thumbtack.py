@@ -470,4 +470,6 @@ def register_admin_routes(app, require_admin):
         rows = ThumbtackLead.query.order_by(ThumbtackLead.created_at.desc()).limit(20).all()
         return jsonify({"configured": bool(_env("THUMBTACK_WEBHOOK_USER") and _env("THUMBTACK_WEBHOOK_PASSWORD")),
                         "events": list(RECENT_EVENTS), "rejected": list(REJECTED),
-                        "leads": [r.to_dict() for r in rows]}), 200
+                        # the raw body as Thumbtack sent it: the only way to fix
+                        # the parser when their field names differ from the docs
+                        "leads": [dict(r.to_dict(), raw=r.raw) for r in rows]}), 200
