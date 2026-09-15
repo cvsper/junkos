@@ -79,3 +79,22 @@ def maya_report(ident):
     except (TypeError, ValueError):
         days = 30
     return jsonify(report(days)), 200
+
+
+@maya_bp.route("/api/va/maya/missed-bookings", methods=["POST"])
+@require_desk(MANAGER_ROLES)
+def maya_missed_bookings(ident):
+    """Callers who agreed on the phone and never got a job.
+
+    Read-only unless {"apply": true}, which puts each one on the desk as a
+    callback. It never messages the customer either way — a person still has
+    to ring them.
+    """
+    import missed_booking
+
+    data = request.get_json(silent=True) or {}
+    try:
+        days = max(1, min(int(data.get("days") or 90), 365))
+    except (TypeError, ValueError):
+        days = 90
+    return jsonify(missed_booking.scan(days=days, apply=bool(data.get("apply")))), 200

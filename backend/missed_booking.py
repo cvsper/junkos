@@ -153,3 +153,42 @@ def capture(phone, call_id=None, summary="", transcript="", name=None):
     except Exception:
         logger.exception("missed-booking alert failed")
     return cb
+
+
+def scan(days=90, apply=False, limit=500):
+    """Who already said yes and was never called back.
+
+    Read-only by default: it reports the calls that would be captured without
+    creating anything, so the list can be read before any task is made. Pass
+    apply=True to actually put them on the desk. It never messages anyone
+    either way.
+    """
+    from datetime import timedelta
+    from models import CallLog
+
+    since = _now() - timedelta(days=max(1, min(int(days), 365)))
+    calls = (CallLog.query.filter(CallLog.created_at >= since)
+             .order_by(CallLog.created_at.desc()).limit(limit).all())
+    hits, made = [], 0
+    for c in calls:
+        if c.booking_created:
+            continue
+        if not (was_priced(c.transcript, c.summary) and looks_like_yes(c.transcript, c.summary)):
+            continue
+        d = digits_of(c.phone_number)
+        row = {
+            "when": c.created_at.isoformat() + "Z" if c.created_at else None,
+            "phone": pretty(d),
+            "quote": price_in("{}\n{}".format(c.transcript or "", c.summary or "")),
+            "seconds": c.duration_seconds,
+            "already_on_the_desk": already_captured(c.call_id, d),
+            "summary": (c.summary or "")[:240],
+        }
+        if apply and not row["already_on_the_desk"]:
+            if capture(c.phone_number, call_id=c.call_id, summary=c.summary,
+                       transcript=c.transcript) is not None:
+                made += 1
+                row["captured"] = True
+        hits.append(row)
+    return {"days": days, "calls_scanned": len(calls), "would_capture": len(hits),
+            "applied": apply, "captured": made, "calls": hits}

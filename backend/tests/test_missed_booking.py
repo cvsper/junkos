@@ -128,3 +128,52 @@ def test_a_call_with_no_usable_number_is_skipped_quietly():
 def test_the_flag_turns_it_off():
     with mock.patch("flags.flag", return_value=False):
         assert not missed_booking.should_capture("", REAL_SUMMARY, False)
+
+
+# --------------------------------------------------------------------------
+# Scanning the calls we already have
+# --------------------------------------------------------------------------
+def _call_log(call_id, phone, summary, booked=False, days_ago=1):
+    from datetime import datetime, timedelta, timezone
+    from models import CallLog, generate_uuid
+    row = CallLog(id=generate_uuid(), call_id=call_id, phone_number=phone,
+                  direction="inbound", status="customer-ended-call",
+                  summary=summary, booking_created=booked,
+                  created_at=datetime.now(timezone.utc).replace(tzinfo=None)
+                  - timedelta(days=days_ago))
+    db.session.add(row)
+    db.session.commit()
+    return row
+
+
+@pytest.fixture(autouse=True)
+def clean_calls(app):
+    yield
+    from models import CallLog
+    CallLog.query.delete()
+    db.session.commit()
+
+
+def test_scan_is_read_only_by_default():
+    _call_log("c-lost", "+15612819925", REAL_SUMMARY)
+    out = missed_booking.scan(days=30)
+    assert out["would_capture"] == 1
+    assert out["applied"] is False and out["captured"] == 0
+    assert out["calls"][0]["quote"] == 119.0
+    assert CallbackRequest.query.count() == 0
+
+
+def test_scan_skips_calls_that_booked():
+    _call_log("c-ok", "+15612819925", REAL_SUMMARY, booked=True)
+    assert missed_booking.scan(days=30)["would_capture"] == 0
+
+
+def test_scan_applies_only_when_asked():
+    _call_log("c-lost", "+15612819925", REAL_SUMMARY)
+    out = missed_booking.scan(days=30, apply=True)
+    assert out["captured"] == 1
+    assert CallbackRequest.query.count() == 1
+    # Running it again does not duplicate the task.
+    again = missed_booking.scan(days=30, apply=True)
+    assert again["captured"] == 0
+    assert CallbackRequest.query.count() == 1
