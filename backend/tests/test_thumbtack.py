@@ -201,3 +201,103 @@ def test_a_refused_call_leaves_a_trace(client):
     assert REJECTED[0]["path"].endswith("/lead") and REJECTED[0]["had_auth"] is False
     client.post("/api/webhooks/thumbtack/lead", json=LEAD, headers=_basic(p="wrong"))
     assert "credentials" in REJECTED[0]["why"] and REJECTED[0]["had_auth"] is True
+
+
+# ---------------------------------------------------------------------------
+# using the feed: only pay attention to work we can do, and measure the rest
+# ---------------------------------------------------------------------------
+import copy
+
+
+def _lead_payload(category="Junk Removal", city="Lake Worth", state="FL", zipc="33460", price="$25.00"):
+    p = copy.deepcopy(REAL)
+    p["data"]["request"]["category"]["name"] = category
+    p["data"]["request"]["location"].update({"city": city, "state": state, "zipCode": zipc})
+    p["data"]["leadPrice"] = price
+    p["data"]["negotiationID"] = "neg-" + category[:6] + city[:4] + zipc
+    return p
+
+
+def test_a_lawn_care_lead_is_not_texted_and_is_counted_as_waste(client):
+    """Thumbtack charges either way — the point is to stop bothering the
+    customer and to total up what their targeting is costing us."""
+    with mock.patch("desk_line.send_desk_text") as send, mock.patch("thumbtack.alert_team") as alert:
+        r = client.post("/api/webhooks/thumbtack", json=_lead_payload(category="Full Service Lawn Care"),
+                        headers=_basic())
+    assert r.status_code == 200
+    lead = ThumbtackLead.query.one()
+    assert lead.serviceable is False and lead.status == "not_serviceable"
+    assert "not junk removal" in (lead.service_note or "")
+    assert send.call_count == 0                     # nobody gets a text
+    assert "NOT SERVICEABLE" in alert.call_args.kwargs.get("extra", "")
+    from leads import collect
+    assert not [l for l in collect()[0] if l["kind"] == "thumbtack"]   # off Tracy's list
+
+
+def test_a_lead_outside_the_service_area_is_not_texted(client):
+    with mock.patch("desk_line.send_desk_text") as send, mock.patch("thumbtack.alert_team"), \
+         mock.patch("sameday.geocode", return_value=(41.88, -87.63)):     # Chicago
+        client.post("/api/webhooks/thumbtack", json=_lead_payload(city="Chicago", state="IL", zipc="60601"),
+                    headers=_basic())
+    lead = ThumbtackLead.query.one()
+    assert lead.serviceable is False and "outside the service area" in (lead.service_note or "")
+    assert send.call_count == 0
+
+
+def test_a_real_junk_lead_in_area_is_texted(client):
+    with mock.patch("desk_line.send_desk_text", return_value="SM1") as send, \
+         mock.patch("thumbtack.alert_team"), mock.patch("inbound.humans_online", return_value=False), \
+         mock.patch("sameday.geocode", return_value=(26.62, -80.05)):
+        client.post("/api/webhooks/thumbtack", json=_lead_payload(), headers=_basic())
+    lead = ThumbtackLead.query.one()
+    assert lead.serviceable is True and lead.county == "Palm Beach" and lead.text_sent_at
+    assert send.call_count == 1
+
+
+def test_a_review_is_stored_not_just_announced(client):
+    from models_thumbtack import ThumbtackReview
+    payload = {"event": {"eventType": "ReviewCreatedV1"},
+               "data": {"negotiationID": "590299344770662410",
+                        "customer": {"firstName": "Dana", "lastName": "Reyes"},
+                        "review": {"reviewID": "rev-1", "rating": 5, "text": "Fast and clean."}}}
+    with mock.patch("thumbtack.alert_team") as alert:
+        r = client.post("/api/webhooks/thumbtack", json=payload, headers=_basic())
+        dup = client.post("/api/webhooks/thumbtack", json=payload, headers=_basic())
+    assert r.status_code == 200 and r.get_json()["kind"] == "review"
+    assert dup.get_json()["created"] is False          # Thumbtack retries
+    row = ThumbtackReview.query.one()
+    assert row.rating == 5.0 and "Fast and clean" in row.text and row.reviewer == "Dana Reyes"
+    assert "5★" in alert.call_args.kwargs.get("extra", "")
+    ThumbtackReview.query.delete(); db.session.commit()
+
+
+def test_the_report_shows_spend_waste_and_where_the_demand_is(client):
+    from thumbtack import report, link_booking
+    from models import Job, User, generate_uuid
+    with mock.patch("desk_line.send_desk_text", return_value="SM1"), mock.patch("thumbtack.alert_team"), \
+         mock.patch("inbound.humans_online", return_value=False), \
+         mock.patch("sameday.geocode", return_value=(26.62, -80.05)):
+        client.post("/api/webhooks/thumbtack", json=_lead_payload(zipc="33460"), headers=_basic())
+    with mock.patch("desk_line.send_desk_text"), mock.patch("thumbtack.alert_team"):
+        client.post("/api/webhooks/thumbtack",
+                    json=_lead_payload(category="Lawn Mowing", zipc="33461", price="$18.00"),
+                    headers=_basic())
+    cust = User(id=generate_uuid(), name="Dana Reyes", phone="+15615550142",
+                email="{}@t.local".format(generate_uuid()[:8]), role="customer")
+    db.session.add(cust); db.session.flush()
+    job = Job(id=generate_uuid(), customer_id=cust.id, status="pending", address="12 Palm Way",
+              items=[{"category": "sofa", "quantity": 1}], total_price=392.36, confirmation_code="TT1")
+    db.session.add(job); db.session.commit()
+    assert link_booking(job, digits="5615550142") is not None
+
+    rep = report(30)
+    assert rep["leads"] == 2 and rep["spend"] == 43.0
+    assert rep["booked"] == 1 and rep["revenue"] == 392.36
+    assert rep["cost_per_booking"] == 43.0 and rep["return_on_spend"] > 9
+    assert rep["not_serviceable"] == 1 and rep["wasted_spend"] == 18.0
+    assert "Junk Removal" in rep["by_category"] and rep["by_county"]["Palm Beach"]["booked"] == 1
+    assert rep["median_reply_seconds"] is not None
+
+
+def test_the_report_route_is_admin_only(client):
+    assert client.get("/api/admin/thumbtack/report").status_code == 401

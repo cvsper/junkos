@@ -27,7 +27,7 @@ import logging
 import os
 import re
 from collections import deque
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from flask import Blueprint, jsonify, request
 
@@ -272,6 +272,78 @@ def parse_message(p):
 
 
 # ---------------------------------------------------------------------------
+# is this a lead we can actually do?
+# ---------------------------------------------------------------------------
+# Thumbtack charges for a lead whether or not we can serve it. We cannot
+# decline through their API (that needs the approval-gated partner platform),
+# so the value here is: don't waste Tracy's time or text a stranger about work
+# we can't do, and total up what the un-doable ones cost so their targeting
+# settings can be fixed by hand.
+DECLINE_WORDS = tuple(w.strip().lower() for w in (os.environ.get(
+    "THUMBTACK_DECLINE_CATEGORIES",
+    "lawn,landscap,mow,tree service,pest,clean,maid,handyman,plumb,electric,roof,paint,"
+    "pressure wash,pool service,carpet,window,move out clean,hvac,air condition"
+) or "").split(",") if w.strip())
+ACCEPT_WORDS = tuple(w.strip().lower() for w in (os.environ.get(
+    "THUMBTACK_ACCEPT_CATEGORIES",
+    "junk,haul,debris,demo,dumpster,clean out,cleanout,removal,disposal,garbage,trash,"
+    "furniture,appliance,mattress,estate,foreclosure,property clean"
+) or "").split(",") if w.strip())
+
+
+def classify(lead):
+    """Sets serviceable / service_note / lat / lng / county. Never raises.
+
+    Category first (a lawn-care lead is wrong however close it is), then the
+    service area. Unknown location is treated as serviceable — better a wasted
+    text than a dropped customer.
+    """
+    try:
+        # The category Thumbtack assigns is authoritative: a lawn-care lead is
+        # the wrong job even when the customer happens to mention a mattress.
+        cat = " ".join(x for x in [lead.category, lead.title] if x).lower()
+        blob = " ".join(x for x in [lead.category, lead.title, lead.description] if x).lower()
+        if cat and any(w in cat for w in DECLINE_WORDS) and not any(w in cat for w in ACCEPT_WORDS):
+            lead.serviceable = False
+            lead.service_note = "not junk removal: {}".format((lead.category or "?")[:60])
+            return lead.serviceable
+        if cat and not any(w in blob for w in ACCEPT_WORDS) and any(w in blob for w in DECLINE_WORDS):
+            lead.serviceable = False
+            lead.service_note = "not junk removal: {}".format((lead.category or "?")[:60])
+            return lead.serviceable
+        where = ", ".join(x for x in [lead.address, lead.city, lead.state] if x) or lead.zip
+        pt = None
+        if where:
+            try:
+                from sameday import geocode
+                pt = geocode(where)
+            except Exception:
+                logger.exception("thumbtack: geocode failed")
+        if pt:
+            lead.lat, lead.lng = float(pt[0]), float(pt[1])
+            try:
+                from dump_suggest import county_for, COUNTY_LABEL
+                lead.county = COUNTY_LABEL.get(county_for(lead.lat), None)
+            except Exception:
+                pass
+            try:
+                from geofencing import is_in_service_area
+                if not is_in_service_area(lead.lat, lead.lng):
+                    lead.serviceable = False
+                    lead.service_note = "outside the service area: {}".format(
+                        ", ".join(x for x in [lead.city, lead.state, lead.zip] if x)[:80])
+                    return lead.serviceable
+            except Exception:
+                logger.exception("thumbtack: service-area check failed")
+        lead.serviceable = True
+        lead.service_note = None
+        return True
+    except Exception:
+        logger.exception("thumbtack: classify failed for %s", getattr(lead, "id", "?"))
+        return None
+
+
+# ---------------------------------------------------------------------------
 # the desk side: text the customer, tell the team, join the lead list
 # ---------------------------------------------------------------------------
 def _va_name():
@@ -367,7 +439,9 @@ def desk_leads(since):
     """Rows for leads.collect(): every Thumbtack lead in the window, one shape."""
     from leads import _lead
     out = []
-    for r in (ThumbtackLead.query.filter(ThumbtackLead.created_at >= since)
+    for r in (ThumbtackLead.query
+              .filter(ThumbtackLead.created_at >= since,
+                      ThumbtackLead.status.notin_(("test", "not_serviceable")))
               .order_by(ThumbtackLead.created_at.desc()).limit(200).all()):
         what = " · ".join(x for x in [r.category or r.title, r.description[:80] if r.description else None] if x)
         if r.messages:
@@ -422,11 +496,23 @@ def handle_lead(p):
     lead = ThumbtackLead(id=generate_uuid(), raw=p, **data)
     db.session.add(lead)
     db.session.commit()
+    classify(lead)
+    db.session.commit()
+
     if is_test(p):
         lead.status = "test"
         db.session.commit()
         alert_team(lead, "lead")
         logger.info("thumbtack TEST payload stored (%s) — no text sent", lead.id)
+        return lead, True
+    if lead.serviceable is False:
+        # we cannot do this job: no text to the customer, and it is logged as
+        # money spent on a lead their targeting should never have sent us
+        lead.status = "not_serviceable"
+        db.session.commit()
+        alert_team(lead, "lead", extra="NOT SERVICEABLE — {} (${:.2f} charged)".format(
+            lead.service_note or "", lead.lead_price or 0))
+        logger.info("thumbtack lead %s not serviceable: %s", lead.id, lead.service_note)
         return lead, True
     texted = text_customer(lead)
     alert_team(lead, "lead")
@@ -476,7 +562,12 @@ def api_lead():
         if kind == "message":
             lead, created = handle_message(p)
         elif kind == "review":
-            return api_review()
+            row, created = handle_review(p)
+            if row is not None and created:
+                stars = "{:.0f}★ ".format(row.rating) if row.rating else ""
+                alert_team(None, "review", extra="{}{}{}".format(
+                    stars, (row.reviewer + ": ") if row.reviewer else "", row.text or "no comment"))
+            return jsonify(ok=True, kind="review", created=bool(created)), 200
         else:
             lead, created = handle_lead(p)
         return jsonify(ok=True, kind=kind, id=lead.id, created=created), 200
@@ -522,6 +613,33 @@ def api_lead_update():
     return jsonify(ok=True, kind="lead_update", found=bool(lead)), 200
 
 
+def handle_review(p):
+    """Store it. While the Google profile is unclaimed these are the only
+    public proof we're accumulating, so they must not live in an alert only."""
+    from models_thumbtack import ThumbtackReview
+    body, _ev = unwrap(p)
+    rid = _text(_dig(body, "review.reviewID", "review.id", "reviewID", "reviewId", "id"), 80)
+    if rid and ThumbtackReview.query.filter_by(review_id=rid).first():
+        return None, False
+    rating = _dig(body, "review.rating", "rating", "starRating")
+    try:
+        rating = float(rating) if rating is not None else None
+    except Exception:
+        rating = None
+    who = " ".join(x for x in [_dig(body, "customer.firstName", "reviewer.firstName"),
+                               _dig(body, "customer.lastName", "reviewer.lastName")] if x).strip()
+    row = ThumbtackReview(
+        id=generate_uuid(), review_id=rid,
+        lead_id=_text(_dig(body, "negotiationID", "leadID"), 80),
+        rating=rating,
+        text=_text(_dig(body, "review.text", "review.comment", "text", "comment"), 2000),
+        reviewer=_text(who or _dig(body, "customer.name", "reviewer"), 120),
+        raw=p)
+    db.session.add(row)
+    db.session.commit()
+    return row, True
+
+
 @thumbtack_bp.route("/review", methods=["POST"])
 def api_review():
     err = _gate()
@@ -529,13 +647,117 @@ def api_review():
         return err
     p = _payload()
     _record("review", p)
-    rating = _dig(p, "review.rating", "rating")
-    text = _text(_dig(p, "review.text", "text", "review"), 400)
-    alert_team(None, "review", extra="{}★ {}".format(rating, text or "") if rating else (text or "new review"))
-    return jsonify(ok=True, kind="review"), 200
+    try:
+        row, created = handle_review(p)
+    except Exception:
+        logger.exception("thumbtack review webhook failed")
+        db.session.rollback()
+        return jsonify(ok=False, kind="review", error="stored raw; parsing failed"), 200
+    if row is not None and created:
+        stars = "{:.0f}★ ".format(row.rating) if row.rating else ""
+        alert_team(None, "review", extra="{}{}{}".format(
+            stars, (row.reviewer + ": ") if row.reviewer else "", row.text or "no comment"))
+    return jsonify(ok=True, kind="review", created=bool(created)), 200
+
+
+# ---------------------------------------------------------------------------
+# what it costs, what it returns, where the demand is
+# ---------------------------------------------------------------------------
+def link_booking(job, digits=None):
+    """A booking from a Thumbtack lead — the only way to know what a lead is
+    really worth. Matches by phone within the window. Never raises."""
+    try:
+        d = _digits(digits or (job.customer.phone if getattr(job, "customer", None) else None))
+        if not d:
+            return None
+        # never credit a lead we refused to work — the booking didn't come from it
+        row = (ThumbtackLead.query
+               .filter(ThumbtackLead.phone_digits == d, ThumbtackLead.job_id.is_(None),
+                       ThumbtackLead.status.notin_(("test", "not_serviceable")),
+                       ThumbtackLead.created_at >= _now() - timedelta(days=30))
+               .order_by(ThumbtackLead.created_at.desc()).first())
+        if row is None:
+            return None
+        row.job_id = job.id
+        row.status = "booked"
+        row.booked_value = float(getattr(job, "total_price", None) or 0)
+        db.session.commit()
+        logger.info("thumbtack lead %s became job %s (${:.0f})", row.id, job.id, row.booked_value or 0)
+        return row
+    except Exception:
+        logger.exception("thumbtack: could not link a booking")
+        db.session.rollback()
+        return None
+
+
+def report(days=30):
+    """One screen: spend, what came back, what we wasted it on, and where the
+    demand actually is — by category and by county."""
+    since = _now() - timedelta(days=days)
+    rows = ThumbtackLead.query.filter(ThumbtackLead.created_at >= since,
+                                      ThumbtackLead.status != "test").all()
+    spend = sum(r.lead_price or 0 for r in rows)
+    booked = [r for r in rows if r.job_id]
+    revenue = sum(r.booked_value or 0 for r in booked)
+    wasted = [r for r in rows if r.serviceable is False]
+    replied = [r for r in rows if r.text_sent_at]
+    speeds = [int((r.text_sent_at - r.created_at).total_seconds()) for r in replied
+              if r.text_sent_at and r.created_at]
+
+    def group(key):
+        out = {}
+        for r in rows:
+            k = (getattr(r, key, None) or "unknown")
+            g = out.setdefault(k, {"leads": 0, "spend": 0.0, "booked": 0, "revenue": 0.0})
+            g["leads"] += 1
+            g["spend"] = round(g["spend"] + (r.lead_price or 0), 2)
+            if r.job_id:
+                g["booked"] += 1
+                g["revenue"] = round(g["revenue"] + (r.booked_value or 0), 2)
+        for k, g in out.items():
+            g["cost_per_booking"] = round(g["spend"] / g["booked"], 2) if g["booked"] else None
+        return dict(sorted(out.items(), key=lambda kv: -kv[1]["leads"])[:15])
+
+    from models_thumbtack import ThumbtackReview
+    reviews = ThumbtackReview.query.filter(ThumbtackReview.created_at >= since).all()
+    rated = [r.rating for r in reviews if r.rating is not None]
+    return {
+        "days": days,
+        "leads": len(rows),
+        "spend": round(spend, 2),
+        "booked": len(booked),
+        "revenue": round(revenue, 2),
+        "return_on_spend": round(revenue / spend, 2) if spend else None,
+        "cost_per_booking": round(spend / len(booked), 2) if booked else None,
+        "book_rate": round(len(booked) / len(rows), 3) if rows else None,
+        "not_serviceable": len(wasted),
+        "wasted_spend": round(sum(r.lead_price or 0 for r in wasted), 2),
+        "wasted_reasons": _top([r.service_note for r in wasted]),
+        "median_reply_seconds": sorted(speeds)[len(speeds) // 2] if speeds else None,
+        "never_replied": len(rows) - len(replied),
+        "by_category": group("category"),
+        "by_county": group("county"),
+        "reviews": {"count": len(reviews),
+                    "average": round(sum(rated) / len(rated), 2) if rated else None},
+    }
+
+
+def _top(values, n=5):
+    counts = {}
+    for v in values:
+        if v:
+            counts[v[:80]] = counts.get(v[:80], 0) + 1
+    return dict(sorted(counts.items(), key=lambda kv: -kv[1])[:n])
 
 
 def register_admin_routes(app, require_admin):
+    @app.route("/api/admin/thumbtack/report", methods=["GET"])
+    @require_admin
+    def thumbtack_report(user_id):
+        """Is Thumbtack paying for itself, and where is the demand?"""
+        days = max(1, min(request.args.get("days", 30, type=int), 365))
+        return jsonify(report(days)), 200
+
     @app.route("/api/admin/thumbtack/events", methods=["GET"])
     @require_admin
     def thumbtack_events(user_id):

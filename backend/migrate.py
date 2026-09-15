@@ -49,6 +49,15 @@ COLUMN_MIGRATIONS = [
     ("users", "phone_verified_at", "DATETIME", "TIMESTAMP", "NULL"),
     ("users", "token_version", "INTEGER", "INTEGER", "0"),
 
+    # Thumbtack leads — added after the table shipped, so create_all won't help
+    ("thumbtack_leads", "serviceable", "BOOLEAN", "BOOLEAN", "NULL"),
+    ("thumbtack_leads", "service_note", "VARCHAR(200)", "VARCHAR(200)", "NULL"),
+    ("thumbtack_leads", "lat", "FLOAT", "FLOAT", "NULL"),
+    ("thumbtack_leads", "lng", "FLOAT", "FLOAT", "NULL"),
+    ("thumbtack_leads", "county", "VARCHAR(40)", "VARCHAR(40)", "NULL"),
+    ("thumbtack_leads", "job_id", "VARCHAR(36)", "VARCHAR(36)", "NULL"),
+    ("thumbtack_leads", "booked_value", "FLOAT", "FLOAT", "NULL"),
+
     # Payment table — the card kept on file so an on-site add-on the customer
     # approves goes on the same card (job_addons). Added 2026-09-14: the model
     # columns shipped in 2.2.106 without these two lines, and every query that
