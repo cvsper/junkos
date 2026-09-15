@@ -630,7 +630,7 @@ def twilio_voice_inbound():
     resp.say("Thanks for calling Umuve.", voice="Polly.Joanna")
     if in_hours or (source in inbound.PAID_SOURCES and inbound.humans_online()):
         # a paid lead rings a clocked-in human even outside the posted hours
-        dial = resp.dial(timeout=inbound.RING_SECONDS,
+        dial = resp.dial(timeout=inbound.ring_seconds(),
                          action=_base_url() + "/api/desk/twilio/voice/after-in",
                          **_record_attr())
         for identity in inbound.ring_identities():
@@ -638,8 +638,12 @@ def twilio_voice_inbound():
         if fwd:
             dial.number(fwd)
         return _twiml(resp)
-    # Outside human hours: straight to Maya (or voicemail when she's off).
+    # Outside human hours: offer a person first, Maya second.
     if inbound.maya_fallback_enabled() and not _maya_loop_risk(from_digits):
+        if inbound.callback_menu_enabled():
+            inbound.touch_call(call_sid, disposition="choice")
+            inbound.choice_twiml(resp, _base_url())
+            return _twiml(resp)
         act.status = "to_maya"
         db.session.commit()
         inbound.touch_call(call_sid, disposition="to_maya")
@@ -678,7 +682,11 @@ def twilio_voice_after_in():
         resp.hangup()
         return _twiml(resp)
     if phase6 and inbound.maya_fallback_enabled() and not _maya_loop_risk(_digits(request.form.get("From", ""))):
-        # Nobody picked up — hand the caller to Maya rather than a mailbox.
+        # Nobody picked up. Ask what they'd rather have before assuming a robot.
+        if inbound.callback_menu_enabled():
+            inbound.touch_call(call_sid, disposition="choice")
+            inbound.choice_twiml(resp, _base_url())
+            return _twiml(resp)
         if act:
             act.status = "to_maya"
             db.session.commit()
@@ -696,6 +704,67 @@ def twilio_voice_after_in():
                 transcribe_callback=_base_url() + "/api/desk/twilio/voice/transcript",
                 action=_base_url() + "/api/desk/twilio/voice/vm-done")
     resp.hangup()
+    return _twiml(resp)
+
+
+@deskline_bp.route("/api/desk/twilio/voice/choice", methods=["POST"])
+def twilio_voice_choice():
+    """What the caller pressed when nobody picked up.
+
+    1 → a person calls them back (a real desk task, not a text).
+    2 → Maya.
+    nothing → ask once more, then Maya, so this is never worse than before.
+    """
+    if not _validate():
+        return Response("Forbidden", status=403)
+    from twilio.twiml.voice_response import VoiceResponse
+    import inbound
+    resp = VoiceResponse()
+    digits_pressed = (request.form.get("Digits") or "").strip()
+    call_sid = request.form.get("CallSid")
+    from_digits = _digits(request.form.get("From", ""))
+    try:
+        attempt = int(request.args.get("attempt") or 0)
+    except ValueError:
+        attempt = 0
+    act = DeskActivity.query.filter_by(twilio_sid=call_sid, kind="call").first()
+
+    if digits_pressed == "1":
+        source = None
+        try:
+            from leads import source_for_number
+            source = source_for_number(request.form.get("To", ""))
+        except Exception:
+            pass
+        try:
+            inbound.record_phone_callback(from_digits, call_sid, source)
+        except Exception:
+            logger.exception("phone callback capture failed for %s", call_sid)
+            db.session.rollback()
+        if act:
+            act.status = "callback"
+            db.session.commit()
+        inbound.touch_call(call_sid, disposition="callback_menu", outcome="callback")
+        inbound.callback_confirm_twiml(resp)
+        return _twiml(resp)
+
+    if digits_pressed != "2" and attempt + 1 < inbound.CHOICE_ATTEMPTS:
+        # Silence or a stray key — ask once more, shorter.
+        inbound.choice_twiml(resp, _base_url(), attempt=attempt + 1)
+        return _twiml(resp)
+
+    if inbound.maya_fallback_enabled() and not _maya_loop_risk(from_digits):
+        if act:
+            act.status = "to_maya"
+            db.session.commit()
+        inbound.touch_call(call_sid, disposition="to_maya")
+        inbound.maya_twiml(resp, _base_url())
+        return _twiml(resp)
+    if act:
+        act.status = "voicemail"
+        db.session.commit()
+    inbound.touch_call(call_sid, disposition="voicemail")
+    inbound.voicemail_twiml(resp, _base_url())
     return _twiml(resp)
 
 

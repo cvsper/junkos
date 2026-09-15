@@ -90,13 +90,22 @@ def test_inbound_rings_each_clocked_in_va_plus_desk_and_cell(client):
     assert DeskActivity.query.filter_by(twilio_sid="CAp6a").one().status == "ringing"
 
 
-def test_inbound_outside_hours_goes_straight_to_maya(client):
+def test_inbound_outside_hours_offers_a_person_before_maya(client):
+    """After hours the caller is asked what they want rather than being handed
+    to the AI in silence. Maya is still there behind option 2."""
     _clock_in("Tracy")
     with _at(22):
         resp = client.post("/api/desk/twilio/voice/inbound", data={
             "CallSid": "CAp6b", "From": "+15615550142"})
     xml = resp.data.decode()
     assert "<Client>" not in xml
+    assert "<Gather" in xml and "Press 1" in xml and "Press 2" in xml
+    assert InboundCall.query.filter_by(call_sid="CAp6b").one().disposition == "choice"
+
+    with _at(22):
+        resp = client.post("/api/desk/twilio/voice/choice?attempt=0", data={
+            "CallSid": "CAp6b", "From": "+15615550142", "Digits": "2"})
+    xml = resp.data.decode()
     assert "Connecting you to our booking line" in xml
     assert "<Number>+15619441636</Number>" in xml
     assert "/api/desk/twilio/voice/after-maya" in xml
@@ -116,8 +125,11 @@ def test_inbound_outside_hours_voicemail_when_maya_off(client):
 def test_after_in_no_answer_dials_maya_when_flag_on(client):
     with _at(11):
         client.post("/api/desk/twilio/voice/inbound", data={"CallSid": "CAp6d", "From": "+15615550142"})
-        resp = client.post("/api/desk/twilio/voice/after-in", data={
+        client.post("/api/desk/twilio/voice/after-in", data={
             "CallSid": "CAp6d", "DialCallStatus": "no-answer"})
+        # The caller is offered a person first; option 2 is still Maya.
+        resp = client.post("/api/desk/twilio/voice/choice?attempt=0", data={
+            "CallSid": "CAp6d", "From": "+15615550142", "Digits": "2"})
     xml = resp.data.decode()
     assert "Connecting you to our booking line" in xml
     assert "<Number>+15619441636</Number>" in xml and "<Record" not in xml
@@ -359,7 +371,10 @@ def test_stats_for_managers_only(client, app):
     r = client.post("/api/va/inbound/stats", json={"days": 7}, headers=hdr)
     assert r.status_code == 200
     s = r.get_json()
-    assert s["counts"]["calls"] == 2 and s["counts"]["answered_by_human"] == 1 and s["counts"]["to_maya"] == 1
+    # CAst2 rang out and the caller was left in the press-1-for-a-person menu,
+    # which is where they hung up — counted as "choice", and still a miss.
+    assert s["counts"]["calls"] == 2 and s["counts"]["answered_by_human"] == 1
+    assert s["counts"]["choice"] == 1 and s["counts"]["to_maya"] == 0
     assert s["counts"]["booked"] == 1 and s["revenue_booked"] == 250.0
     assert s["answer_rate"] == 0.5 and s["close_rate"] == 1.0
     assert sum(h["calls"] for h in s["by_hour"]) == 2 and len(s["by_hour"]) == 24

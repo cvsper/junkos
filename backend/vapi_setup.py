@@ -295,7 +295,7 @@ assistant_config = {
                 "type": "function",
                 "function": {
                     "name": "create_booking",
-                    "description": "Create a junk removal booking for the caller",
+                    "description": ("Create a junk removal booking for the caller. Call this the moment they agree to a price and a day — name, address, what to take and when is enough. Their phone number comes from the call, and email is optional."),
                     "parameters": {
                         "type": "object",
                         "properties": {
@@ -309,7 +309,9 @@ assistant_config = {
                             },
                             "email": {
                                 "type": "string",
-                                "description": "Customer email for confirmation",
+                                "description": ("Optional. Only include it if the caller volunteers an "
+                                                "email. Never hold up a booking to ask for one — on a "
+                                                "phone call their number is the confirmation."),
                             },
                             "phone": {
                                 "type": "string",
@@ -343,7 +345,6 @@ assistant_config = {
                         "required": [
                             "customer_name",
                             "address",
-                            "email",
                             "items",
                             "scheduled_date",
                             "scheduled_time",

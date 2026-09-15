@@ -200,13 +200,22 @@ def _handle_create_booking(args, vapi_data):
     if not address or not items:
         return "I need the pickup address and items to create a booking."
 
-    if not email:
-        return "I need an email address to send the booking confirmation."
-
     # Get caller's phone from Vapi call data if not provided
     if not phone:
         call = vapi_data.get("message", {}).get("call", {})
         phone = call.get("customer", {}).get("number", "")
+
+    # A phone booking does not need an email. Requiring one is what stopped
+    # Maya booking a single job in 30 days: on 5 Sep a caller agreed to $119
+    # for two projection TVs and the booking died on this check. The desk has
+    # always created phone-only customers with a placeholder address; do the
+    # same here so a verbal yes becomes a job.
+    phone_digits = re.sub(r"\D", "", phone or "")[-10:]
+    if not email:
+        if len(phone_digits) != 10:
+            return ("I need either an email address or a good callback number "
+                    "to put this on the books.")
+        email = "{}@phone.goumuve.com".format(phone_digits)
 
     # Calculate pricing
     est = calculate_estimate(items, scheduled_date=scheduled_date)
@@ -231,8 +240,18 @@ def _handle_create_booking(args, vapi_data):
             )
             scheduled_at = None
 
-    # Find or create user
-    existing = User.query.filter_by(email=email).first()
+    # Find or create user. Phone first: the same caller may have given a real
+    # email on an earlier call, and matching on the placeholder would make a
+    # second account for a customer we already know.
+    existing = None
+    if len(phone_digits) == 10:
+        try:
+            from inbound import find_customer
+            existing = find_customer(phone_digits)
+        except Exception:
+            logger.exception("phone lookup failed for a Vapi booking")
+    if existing is None:
+        existing = User.query.filter_by(email=email).first()
     if existing:
         user_id = existing.id
         if name and not existing.name:
@@ -1239,6 +1258,25 @@ def _handle_end_of_call_report(message):
             logger.exception("Failed to send warm lead follow-up SMS")
 
     # -----------------------------------------------------------------------
+    # A verbal yes that produced no job goes to a person, not a template.
+    # -----------------------------------------------------------------------
+    # The generic "book online" text below is the right answer for someone who
+    # was only pricing. It is the wrong answer for someone who already agreed:
+    # that caller needs a human to ring them back and take the booking.
+    _captured_missed = False
+    try:
+        import missed_booking
+        if missed_booking.should_capture(transcript_text, summary, booking_created):
+            _captured_missed = missed_booking.capture(
+                phone_number, call_id=call_id, summary=summary,
+                transcript=transcript_text,
+                name=(customer.name if customer else None),
+            ) is not None
+    except Exception:
+        logger.exception("missed-booking capture failed for call %s", call_id)
+        db.session.rollback()
+
+    # -----------------------------------------------------------------------
     # Feature 2: SMS Follow-Up After Non-Booking Calls
     # -----------------------------------------------------------------------
     # Send follow-up to ANY caller with a phone who didn't book.
@@ -1250,12 +1288,20 @@ def _handle_end_of_call_report(message):
             and not call_log.followup_sent):
         try:
             from sms_service import send_sms_async
-            followup_msg = (
-                "Hey! Thanks for calling Umuve. Need a pickup? "
-                "Book online anytime at {}/book?ref=phone "
-                "or call us back at (844) 435-6005. "
-                "We're here 7 days a week!"
-            ).format(frontend_url)
+            if _captured_missed:
+                # They already said yes. Don't send them back to a form.
+                followup_msg = (
+                    "Thanks for calling Umuve — we got cut off before we finished "
+                    "booking you. Someone will call you right back to lock in the "
+                    "time. Or reach us now at (844) 435-6005."
+                )
+            else:
+                followup_msg = (
+                    "Hey! Thanks for calling Umuve. Need a pickup? "
+                    "Book online anytime at {}/book?ref=phone "
+                    "or call us back at (844) 435-6005. "
+                    "We're here 7 days a week!"
+                ).format(frontend_url)
             send_sms_async(phone_number, followup_msg)
             call_log.followup_sent = True
             db.session.commit()

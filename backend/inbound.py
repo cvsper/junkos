@@ -68,6 +68,12 @@ DEFAULT_HOURS = "08:00-20:00"
 RING_SECONDS = 20
 PAID_SOURCES = ("google", "meta")   # a lead somebody paid for never dies in voicemail
 MAYA_RING_SECONDS = 30
+# How long the caller hears a person's phone ring before we offer a choice.
+# 20s was two rings on a cell; callers were reaching the AI before anyone at
+# the desk could get to the browser.
+RING_SECONDS_ENV = "INBOUND_RING_SECONDS"
+CHOICE_TIMEOUT = 6           # seconds to press a key before we repeat
+CHOICE_ATTEMPTS = 2          # ask twice, then fall through to Maya
 LEGACY_IDENTITY = "desk"
 RECENT_DAYS = 7
 MAX_ITEMS = 40
@@ -127,6 +133,25 @@ def inbound_enabled():
 
 def maya_fallback_enabled():
     return _flag("maya_fallback")
+
+
+def callback_menu_enabled():
+    """Offer the caller a human callback before handing them to Maya.
+
+    In the 30 days to 15 Sep, 18 of 20 inbound calls went to Maya, 15 of her
+    33 callers hung up inside 20 seconds and she booked nothing. A caller who
+    does not want an AI currently has no other option but to hang up. This
+    gives them one. Kill switch: flag `inbound_callback_menu`.
+    """
+    return _flag("inbound_callback_menu")
+
+
+def ring_seconds():
+    try:
+        v = int(_env(RING_SECONDS_ENV) or RING_SECONDS)
+    except ValueError:
+        return RING_SECONDS
+    return max(10, min(v, 45))
 
 
 def maya_number():
@@ -350,6 +375,75 @@ def maya_twiml(resp, base_url):
     resp.say("Connecting you to our booking line.", voice="Polly.Joanna")
     dial = resp.dial(timeout=MAYA_RING_SECONDS, action=base_url + "/api/desk/twilio/voice/after-maya")
     dial.number(maya_number())
+    return resp
+
+
+def choice_twiml(resp, base_url, attempt=0):
+    """Nobody picked up. Offer a person before offering the robot.
+
+    Press 1 books a callback from a human and hangs up; press 2 goes to Maya.
+    Saying nothing twice falls through to Maya, so this is never worse than
+    the old silent hand-off.
+    """
+    gather = resp.gather(num_digits=1, timeout=CHOICE_TIMEOUT, action="{}/api/desk/twilio/voice/choice?attempt={}".format(base_url, attempt), method="POST")
+    if attempt:
+        gather.say("Press 1 for a call back from a person. Press 2 for an instant quote.",
+                   voice="Polly.Joanna")
+    else:
+        gather.say("Everyone is with a customer right now. "
+                   "Press 1 and a person will call you right back on this number. "
+                   "Press 2 and our automated line can price your pickup now.",
+                   voice="Polly.Joanna")
+    # No key pressed: Twilio falls out of <Gather> and continues here.
+    resp.redirect("{}/api/desk/twilio/voice/choice?attempt={}&amp;timeout=1".format(base_url, attempt))
+    return resp
+
+
+def record_phone_callback(digits, call_sid=None, source=None):
+    """The caller pressed 1. Put a real task on the desk, not a text.
+
+    Mirrors what a VA taking the call would create: a CallbackRequest plus an
+    unread desk-inbox row, so the badge bumps and the number is worked by a
+    person. Returns the CallbackRequest, or None when the number is unusable.
+    """
+    digits = _digits(digits)
+    if len(digits) != 10:
+        return None
+    when = _now_utc_naive()          # right back means right back
+    note = "Asked for a call back from a person (pressed 1 on the desk line)."
+    cb = CallbackRequest(phone_digits=digits, name=None, call_sid=call_sid,
+                         requested_for=when, note=note, va_name=None)
+    db.session.add(cb)
+    preview = "CALLBACK NOW — {} pressed 1 for a person{}".format(
+        _pretty(digits), " ({})".format(source) if source else "")
+    db.session.add(DeskActivity(prospect_id=None, phone_digits=digits, kind="callback",
+                                direction="in", body=preview[:2000], status="open",
+                                va_name=None))
+    db.session.commit()
+    try:
+        if call_sid:
+            touch_call(call_sid, outcome="callback", notes=preview)
+        else:
+            record_call(None, digits, classify_caller(digits)[0], disposition="callback_menu",
+                        outcome="callback", notes=preview, source=source)
+    except Exception:
+        logger.exception("could not log the phone callback for %s", digits[-4:])
+        db.session.rollback()
+    try:
+        from booking_alerts import ops_alert
+        ops_alert("Caller wants a person: {}".format(_pretty(digits)),
+                  "\n".join([preview, "They chose a callback over the automated line.",
+                              "Call them back now — this is a live customer."]),
+                  kind="callback")
+    except Exception:
+        logger.exception("callback alert failed")
+    return cb
+
+
+def callback_confirm_twiml(resp):
+    resp.say("Got it. Someone will call you right back on this number. Thanks for calling Umuve.",
+             voice="Polly.Joanna")
+    resp.hangup()
     return resp
 
 
@@ -827,7 +921,11 @@ def inbound_recent():
         d = r.to_dict()
         d["phone"] = _pretty(r.phone_digits)
         d["name"] = names[r.phone_digits]
-        d["missed"] = r.disposition in ("to_maya", "voicemail", "missed") and r.outcome == "none"
+        # "choice" means they hung up while the menu was still playing, which
+        # is every bit as missed as ringing out. "callback_menu" is not: we
+        # have their number and an open task.
+        d["missed"] = (r.disposition in ("to_maya", "voicemail", "missed", "choice")
+                       and r.outcome == "none")
         items.append(d)
     return jsonify({
         "calls": items,
@@ -850,6 +948,7 @@ def inbound_stats(ident=None):
     since = _now_utc_naive() - timedelta(days=days)
     rows = InboundCall.query.filter(InboundCall.created_at >= since).all()
     counts = {"calls": 0, "answered_by_human": 0, "to_maya": 0, "voicemail": 0, "missed": 0,
+              "choice": 0, "callback_menu": 0,
               "booked": 0, "quoted": 0, "callback": 0, "not_fit": 0, "spam": 0}
     by_hour = {h: {"calls": 0, "answered": 0, "booked": 0} for h in range(24)}
     booked_ids = []
@@ -884,7 +983,8 @@ def inbound_stats(ident=None):
         "humans_online": humans_online(),
         "human_hours": _env("INBOUND_HUMAN_HOURS", DEFAULT_HOURS),
         "maya_number": maya_number(),
-        "flags": {"inbound_customers": inbound_enabled(), "maya_fallback": maya_fallback_enabled()},
+        "flags": {"inbound_customers": inbound_enabled(), "maya_fallback": maya_fallback_enabled(),
+                  "inbound_callback_menu": callback_menu_enabled()},
     }), 200
 
 

@@ -135,11 +135,25 @@ EMAIL_FROM_NAME = os.environ.get("EMAIL_FROM_NAME",
                                  os.environ.get("SENDGRID_FROM_NAME", "Umuve"))
 
 
+# Phone-only customers (the dispatcher and Maya both create them) carry a
+# synthetic address so the unique-email column stays happy. Mailing it bounces
+# every time and spends the sender reputation that real confirmations need.
+PLACEHOLDER_EMAIL_DOMAIN = "@phone.goumuve.com"
+
+
+def is_placeholder_email(to_email):
+    """True when this address exists only to fill a column, not to be read."""
+    return (to_email or "").strip().lower().endswith(PLACEHOLDER_EMAIL_DOMAIN)
+
+
 def _send_email_sync(to_email, subject, html_content, from_override=None):
     """Send an email synchronously via Resend (preferred) or SendGrid (fallback).
 
     Returns a status indicator or None in dev mode. Never raises.
     """
+    if is_placeholder_email(to_email):
+        logger.info("Skipping email to placeholder address %s (%s)", to_email, subject)
+        return None
     try:
         # --- Resend (preferred) ---
         if RESEND_API_KEY:

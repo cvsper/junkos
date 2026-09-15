@@ -28,7 +28,10 @@ class InboundCall(db.Model):
     call_sid = Column(String(64), nullable=True, unique=True, index=True)
     phone_digits = Column(String(10), nullable=False, index=True)
     kind = Column(String(12), nullable=False, default="unknown")     # customer | prospect | unknown
-    # How the line handled it: ringing → answered_by_human | to_maya | voicemail | missed
+    # How the line handled it: ringing → answered_by_human | choice |
+    # callback_menu | to_maya | voicemail | missed. "choice" is the caller
+    # sitting in the press-1-for-a-person menu; it only persists if they hung
+    # up there. "callback_menu" means they pressed 1 and a human owes them a call.
     disposition = Column(String(24), nullable=False, default="ringing")
     # What the VA did with it: none | booked | quoted | callback | not_fit | spam
     outcome = Column(String(16), nullable=False, default="none")
