@@ -301,3 +301,53 @@ def test_the_report_shows_spend_waste_and_where_the_demand_is(client):
 
 def test_the_report_route_is_admin_only(client):
     assert client.get("/api/admin/thumbtack/report").status_code == 401
+
+
+# ---------------------------------------------------------------------------
+# a message with no lead behind it
+# ---------------------------------------------------------------------------
+MESSAGE_ONLY = {
+    "event": {"eventType": "MessageCreatedV4", "triggeredAt": "2026-09-15T11:18:39Z"},
+    "data": {
+        "negotiationID": "590325496084086791",
+        "messageID": "590325496770174976",
+        "from": "Customer",
+        "sentAt": "2026-09-15T11:18:16Z",
+        "text": "I have 1 couch, 1 loveseat, bedroom dresser, queen size bed with headboard.",
+        "business": {"businessID": "590297085345701895", "displayName": "UMUVE"},
+        "customer": {"customerID": "590325424358694921", "displayName": "Cassie S."},
+    },
+}
+
+
+def test_a_message_with_no_lead_still_says_who_it_is_and_how_to_answer(client):
+    """A real one on 15 Sep filed as a blank row: no name, no phone, and no
+    sign that the only way to reply was inside Thumbtack."""
+    with mock.patch("thumbtack.alert_team") as alert:
+        r = client.post("/api/webhooks/thumbtack", json=MESSAGE_ONLY, headers=_basic())
+    assert r.status_code == 200 and r.get_json()["kind"] == "message"
+    lead = ThumbtackLead.query.one()
+    assert lead.customer_name == "Cassie S." and lead.status == "message_only"
+    assert lead.phone_digits is None                      # messages carry no phone
+    assert "reply in the Thumbtack app" in (lead.service_note or "")
+    assert "couch" in lead.messages[-1]["text"]
+    assert alert.call_count == 1
+
+    from leads import collect
+    row = [l for l in collect()[0] if l["kind"] == "thumbtack"][0]
+    assert row["name"] == "Cassie S."
+    assert row["what"].startswith("REPLY IN THUMBTACK")
+
+
+def test_a_message_on_a_known_lead_still_attaches_to_it(client):
+    with mock.patch("desk_line.send_desk_text", return_value="SM1"), \
+         mock.patch("thumbtack.alert_team"), mock.patch("inbound.humans_online", return_value=False), \
+         mock.patch("sameday.geocode", return_value=(26.62, -80.05)):
+        client.post("/api/webhooks/thumbtack", json=REAL, headers=_basic())
+    msg = dict(MESSAGE_ONLY)
+    msg["data"] = dict(MESSAGE_ONLY["data"], negotiationID=REAL["data"]["negotiationID"])
+    with mock.patch("thumbtack.alert_team"):
+        client.post("/api/webhooks/thumbtack", json=msg, headers=_basic())
+    assert ThumbtackLead.query.count() == 1               # no stub, it found the lead
+    lead = ThumbtackLead.query.one()
+    assert lead.phone_digits == "5615550142" and lead.status != "message_only"

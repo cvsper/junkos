@@ -260,8 +260,14 @@ def _num(v):
 
 
 def parse_message(p):
+    """A MessageCreatedV4 body. Note what is NOT here: no phone, no address, no
+    category. A message-only lead can be answered inside Thumbtack and nowhere
+    else, which is why the lead webhook matters (15 Sep)."""
     body, _ev = unwrap(p)
     return {
+        "customer_name": _text(_dig(body, "customer.displayName", "customer.firstName",
+                                    "customer.name"), 160),
+        "customer_id": _text(_dig(body, "customer.customerID", "customer.customerId"), 80),
         "lead_id": _text(_dig(body, "negotiationID", "negotiationId", "leadID", "leadId", "lead_id"), 80),
         "message_id": _text(_dig(body, "messageID", "messageId", "message.messageID", "id"), 80),
         "text": _text(_dig(body, "message.text", "text", "message", "body")),
@@ -444,6 +450,8 @@ def desk_leads(since):
                       ThumbtackLead.status.notin_(("test", "not_serviceable")))
               .order_by(ThumbtackLead.created_at.desc()).limit(200).all()):
         what = " · ".join(x for x in [r.category or r.title, r.description[:80] if r.description else None] if x)
+        if r.status == "message_only":
+            what = "REPLY IN THUMBTACK · " + (r.description or "")[:90]
         if r.messages:
             last = r.messages[-1].get("text") if isinstance(r.messages[-1], dict) else None
             if last:
@@ -524,8 +532,16 @@ def handle_message(p):
     m = parse_message(p)
     lead = ThumbtackLead.query.filter_by(lead_id=m["lead_id"]).first() if m["lead_id"] else None
     if lead is None:
-        # a message for a lead we never saw: make a stub so nothing is lost
-        lead = ThumbtackLead(id=generate_uuid(), lead_id=m["lead_id"], raw=p, description=m["text"])
+        # A message for a negotiation we never got a lead webhook for. We have a
+        # name and their words and NO phone number — the only way to answer is
+        # inside Thumbtack, so say that loudly rather than filing a blank row.
+        lead = ThumbtackLead(id=generate_uuid(), lead_id=m["lead_id"], raw=p,
+                             description=m["text"],
+                             customer_name=m.get("customer_name"),
+                             customer_id=m.get("customer_id"),
+                             category="Message on Thumbtack",
+                             status="message_only", serviceable=True,
+                             service_note="no phone on a message event — reply in the Thumbtack app")
         db.session.add(lead)
     msgs = list(lead.messages or [])
     if m["message_id"] and any(x.get("id") == m["message_id"] for x in msgs if isinstance(x, dict)):
