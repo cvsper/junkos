@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useBookingStore } from "@/stores/booking-store";
 import { referralsApi } from "@/lib/api";
 import { useBookingRecovery } from "@/hooks/use-booking-recovery";
+import { useFunnelBeacon } from "@/hooks/use-funnel-beacon";
 import { trackBookingStep } from "@/components/analytics";
 import { ProgressBar } from "@/components/booking/progress-bar";
 import { Step1Address } from "@/components/booking/step-1-address";
@@ -53,6 +54,9 @@ function detectLeadSource(searchParams: URLSearchParams): string {
 
 function BookPageInner() {
   const recovery = useBookingRecovery();
+  // Record progress through the flow so an abandoned booking is a lead the
+  // desk can call, not a visit nobody ever knew about.
+  useFunnelBeacon();
   const step = useBookingStore((s) => s.step);
   const nextStep = useBookingStore((s) => s.nextStep);
   const prevStep = useBookingStore((s) => s.prevStep);

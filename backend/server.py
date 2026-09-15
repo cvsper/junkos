@@ -451,6 +451,7 @@ try:
     import models_thumbtack  # noqa: F401  — registers thumbtack_leads
     import models_quote  # noqa: F401  — registers photo_quotes
     import models_addon  # noqa: F401  — registers job_addons
+    import models_funnel  # noqa: F401  — registers booking_funnel
     from inbound import inbound_bp
     app.register_blueprint(inbound_bp)
 except Exception as _ib_exc:  # pragma: no cover
@@ -1075,7 +1076,7 @@ def get_available_time_slots(requested_date=None):
 # ---------------------------------------------------------------------------
 # Legacy API Routes (kept for backward compatibility)
 # ---------------------------------------------------------------------------
-APP_VERSION = "2.2.126"
+APP_VERSION = "2.2.127"
 
 
 # ---------------------------------------------------------------------------

@@ -30,6 +30,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useBookingStore, clearAbandonedBooking, type CheckoutSession } from "@/stores/booking-store";
+import { clearFunnelSession } from "@/hooks/use-funnel-beacon";
 import { ApiError, bookingApi, paymentsApi, asPriceConflict } from "@/lib/api";
 import { saveBookingDraft } from "@/hooks/use-booking-recovery";
 import { useAuthStore } from "@/stores/auth-store";
@@ -272,7 +273,7 @@ function PaymentFormInner() {
       await paymentsApi.confirm(session.paymentIntentId, session.bookingId);
       assertCheckoutOwner(checkoutOwner);
       setBookingId(session.bookingId);
-      clearAbandonedBooking(); forgetCheckoutSession(); setIsSuccess(true);
+      clearAbandonedBooking(); clearFunnelSession(); forgetCheckoutSession(); setIsSuccess(true);
     } catch (reason) {
       setErrors({ general: reason instanceof Error ? reason.message : "Payment is not confirmed yet. Your saved checkout is still available." });
     } finally { setCheckingSaved(false); }
@@ -532,6 +533,7 @@ function PaymentFormInner() {
         setBookingId(newBookingId);
         trackBookingConversion({ bookingId: newBookingId, value: finalPrice });
         clearAbandonedBooking();
+        clearFunnelSession();
         forgetCheckoutSession();
         setIsSuccess(true);
       } catch (err) {
@@ -735,6 +737,7 @@ function PaymentFormInner() {
       setBookingId(newBookingId);
       trackBookingConversion({ bookingId: newBookingId, value: finalPrice });
       clearAbandonedBooking();
+      clearFunnelSession();
       forgetCheckoutSession();
       setIsSuccess(true);
     } catch (err) {

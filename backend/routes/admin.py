@@ -1443,6 +1443,25 @@ def _band_label(lo, hi):
     return "${}+".format(lo) if hi is None else "${}–${}".format(lo, hi)
 
 
+@admin_bp.route("/booking-funnel", methods=["GET"])
+@require_admin
+def booking_funnel_report(user_id):
+    """Where the booking page loses people, and who is worth calling back.
+
+    Note this is a different measurement from /pricing-analytics, which counts
+    rows in the `quotes` table — that is the photo-AI quote feature only, and
+    reads zero because almost nobody uses it. This counts the ordinary booking
+    flow: address, items, schedule, price, card.
+    """
+    import booking_funnel
+
+    try:
+        days = max(1, min(365, int(request.args.get("days", 30))))
+    except (TypeError, ValueError):
+        days = 30
+    return jsonify(booking_funnel.report(days)), 200
+
+
 @admin_bp.route("/pricing-analytics", methods=["GET"])
 @require_admin
 def pricing_analytics(user_id):

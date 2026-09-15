@@ -278,12 +278,44 @@ def _texts(since):
     return out
 
 
-_SOURCES = ("_calls", "_callbacks", "_web", "_texts", "_thumbtack", "_photo")
+_SOURCES = ("_calls", "_callbacks", "_web", "_texts", "_thumbtack", "_photo", "_funnel")
 
 
 def _photo(since):
     from photo_quote import desk_leads
     return desk_leads(since)
+
+
+def _funnel(since):
+    """Someone got all the way to a locked price on the website and left.
+
+    They picked their items, chose a day and saw what it costs. That is the
+    warmest lead the site produces and until now it was never recorded, let
+    alone called. Only sessions that were actually priced and left a phone or
+    an email appear here.
+    """
+    try:
+        import booking_funnel
+    except Exception:
+        return []
+    out = []
+    for r in booking_funnel.open_leads(days=LEAD_WINDOW_DAYS):
+        if r.created_at and r.created_at < since:
+            continue
+        items = r.items if isinstance(r.items, list) else []
+        what = ", ".join(str(i.get("name") or i.get("category") or "")
+                         for i in items[:3] if isinstance(i, dict))
+        what = (what + " · " if what else "") + "${:.0f} quote, left at {}".format(
+            r.quoted_price or 0, r.step_label)
+        src = (r.lead_source or "web").lower()
+        src = ("meta" if "meta" in src or "facebook" in src
+               else "google" if "google" in src or "lsa" in src else "web")
+        out.append(_lead("funnel", r.id, phone=r.phone, name=r.name, what=what,
+                         source=src, created_at=r.created_at,
+                         extra={"email": r.email, "address": r.address,
+                                "quoted_price": r.quoted_price,
+                                "reached": r.step_label}))
+    return out
 
 
 def _thumbtack(since):

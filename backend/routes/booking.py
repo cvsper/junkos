@@ -7,7 +7,7 @@ discounts (4 tiers), time-based surge, zone-based surge, and a minimum
 job price of $89.
 """
 
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 from datetime import datetime, timezone, date as date_type, timedelta
 from math import radians, cos, sin, asin, sqrt
 from sqlalchemy.exc import IntegrityError
@@ -1620,6 +1620,20 @@ def create_booking(payload, user, notify_operator=True):
     except Exception:
         pass
 
+    # --- Close out the funnel session so it is not chased as a lost lead ---
+    try:
+        import booking_funnel
+        customer = db.session.get(User, user_id)
+        booking_funnel.mark_converted(
+            session_id=(payload.get("session_id") or payload.get("sessionId")),
+            job=job,
+            phone=(customer.phone if customer else None),
+            email=(customer.email if customer else None),
+        )
+    except Exception:
+        current_app.logger.exception("could not close the booking funnel session")
+        db.session.rollback()
+
     # --- Schedule abandoned booking recovery SMS (30 min) — unpaid-job safety net ---
     try:
         customer = db.session.get(User, user_id)
@@ -1859,6 +1873,34 @@ def _notify_nearby_contractors(job):
 # ---------------------------------------------------------------------------
 # POST /api/booking/abandoned  (capture partial booking for drip recovery)
 # ---------------------------------------------------------------------------
+@booking_bp.route("/funnel", methods=["POST"])
+@limiter.limit("60 per minute")
+def booking_funnel_beacon():
+    """One step of the booking page, recorded as it happens.
+
+    The page posts this on every step with a session id it generates, so a
+    visitor who leaves after seeing a price is a row somebody can act on
+    instead of nothing at all. No auth: this is the public booking flow, and
+    the payload is the same data the abandoned-booking beacon already sends.
+    """
+    data = request.get_json(silent=True) or {}
+    try:
+        import booking_funnel
+        row = booking_funnel.record(
+            data,
+            referrer=request.headers.get("Referer"),
+            user_agent=request.headers.get("User-Agent"),
+        )
+    except Exception:
+        # Never let analytics break a booking.
+        current_app.logger.exception("booking funnel beacon failed")
+        db.session.rollback()
+        return jsonify({"success": False}), 200
+    if row is None:
+        return jsonify({"success": False, "error": "session_id required"}), 400
+    return jsonify({"success": True}), 200
+
+
 @booking_bp.route("/abandoned", methods=["POST"])
 def capture_abandoned():
     """Capture a partial booking for email drip recovery.
