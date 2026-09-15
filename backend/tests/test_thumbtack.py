@@ -381,3 +381,36 @@ def test_backfill_fills_blanks_without_overwriting(client):
 
 def test_the_backfill_route_is_admin_only(client):
     assert client.post("/api/admin/thumbtack/backfill").status_code == 401
+
+
+def test_a_number_typed_into_the_thread_is_captured(client):
+    """Message leads carry no phone. Rod Montgomery replied with just his
+    digits on 15 Sep and nothing recorded it."""
+    from thumbtack import phone_in
+    assert phone_in("5612819925") == "5612819925"
+    assert phone_in("call me at (561) 281-9925 thanks") == "5612819925"
+    assert phone_in("561.281.9925") == "5612819925"
+    assert phone_in("+1 561 281 9925") == "5612819925"
+    assert phone_in("my zip is 33460 and order 12345678") is None
+    assert phone_in("no number here") is None
+
+    with mock.patch("thumbtack.alert_team"):
+        client.post("/api/webhooks/thumbtack", json=MESSAGE_ONLY, headers=_basic())
+        reply = {"event": {"eventType": "MessageCreatedV4"},
+                 "data": dict(MESSAGE_ONLY["data"], messageID="m2", text="5612819925")}
+        client.post("/api/webhooks/thumbtack", json=reply, headers=_basic())
+    lead = ThumbtackLead.query.one()
+    assert lead.phone_digits == "5612819925" and lead.phone == "(561) 281-9925"
+    assert "textable now" in (lead.service_note or "")
+    from leads import collect
+    assert [l for l in collect()[0] if l["kind"] == "thumbtack"][0]["phone_digits"] == "5612819925"
+
+
+def test_our_own_reply_never_sets_the_customers_phone(client):
+    with mock.patch("thumbtack.alert_team"):
+        client.post("/api/webhooks/thumbtack", json=MESSAGE_ONLY, headers=_basic())
+        ours = {"event": {"eventType": "MessageCreatedV4"},
+                "data": dict(MESSAGE_ONLY["data"], messageID="m3", **{"from": "Business"},
+                             text="call us on 561-782-4350")}
+        client.post("/api/webhooks/thumbtack", json=ours, headers=_basic())
+    assert ThumbtackLead.query.one().phone_digits is None

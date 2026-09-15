@@ -259,6 +259,22 @@ def _num(v):
         return None
 
 
+# A message-only lead carries no phone, so the customer typing one into the
+# thread is often the only number we will ever get. Rod Montgomery did exactly
+# that on 15 Sep and it went unrecorded.
+_PHONE_RE = re.compile(r"(?<!\d)(?:\+?1[\s.\-]?)?\(?([2-9]\d{2})\)?[\s.\-]?(\d{3})[\s.\-]?(\d{4})(?!\d)")
+
+
+def phone_in(text):
+    """A US number the customer typed, or None. Ignores anything that is
+    obviously not a phone (years, zips, order numbers)."""
+    for m in _PHONE_RE.finditer(str(text or "")):
+        d = "".join(m.groups())
+        if len(d) == 10 and d[0] not in "01" and d[3] not in "01":
+            return d
+    return None
+
+
 def parse_message(p):
     """A MessageCreatedV4 body. Note what is NOT here: no phone, no address, no
     category. A message-only lead can be answered inside Thumbtack and nowhere
@@ -549,6 +565,14 @@ def handle_message(p):
         lead.customer_name = m["customer_name"]
     if not lead.customer_id and m.get("customer_id"):
         lead.customer_id = m["customer_id"]
+    # they typed a number into the thread — that may be the only one we ever get
+    if not lead.phone_digits and (m.get("from") or "").lower() not in ("pro", "business", "umuve"):
+        found = phone_in(m.get("text"))
+        if found:
+            lead.phone_digits = found
+            lead.phone = _pretty(found)
+            lead.service_note = "phone from their message — textable now"
+            logger.info("thumbtack lead %s: captured a phone from the thread", lead.id)
     msgs = list(lead.messages or [])
     if m["message_id"] and any(x.get("id") == m["message_id"] for x in msgs if isinstance(x, dict)):
         return lead, False
