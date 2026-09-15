@@ -138,3 +138,43 @@ def test_the_desk_can_send_the_offer(client):
                         json={"code": "test-code", "va_name": "Tracy", "prospect_id": p.id})
     assert r.status_code == 200 and "Booking link sent" in r.get_json()["message"]
     db.session.refresh(p); assert p.offer_sent_at
+
+
+# ---------------------------------------------------------------------------
+# somebody who reached out beats a stranger
+# ---------------------------------------------------------------------------
+def test_the_cold_queue_yields_to_an_untouched_lead(client):
+    """736 cold dials went out while inbound leads waited a median of 32 hours."""
+    _prospect(company="Cold Call Me", digits="5615559999", status="queued")
+    waiting = [{"kind": "thumbtack", "ref_id": "x1", "phone_digits": "5615550142",
+                "phone": "(561) 555-0142", "name": "Dana Reyes", "what": "sectional",
+                "source": "thumbtack", "source_label": "Thumbtack", "age_seconds": 400,
+                "age_label": "6 min", "created_at": None, "contacts": 1}]
+    with mock.patch("leads.untouched", return_value=waiting):
+        r = client.post("/api/va/calls/next", json={"code": "test-code", "va_name": "Tracy"})
+    body = r.get_json()
+    assert r.status_code == 200 and body["leads_first"] is True
+    assert body["waiting"] == 1 and body["paid"] == 1
+    assert "card" not in body                       # no cold card while they wait
+    assert body["leads"][0]["name"] == "Dana Reyes"
+
+
+def test_a_lead_with_no_phone_number_does_not_block_the_queue(client):
+    """It can't be called, so it must not stop the desk working."""
+    _prospect(company="Cold Call Me", digits="5615559999", status="queued")
+    with mock.patch("leads.untouched", return_value=[{"kind": "thumbtack", "ref_id": "x",
+                                                      "phone_digits": None, "source": "thumbtack",
+                                                      "age_seconds": 90}]):
+        r = client.post("/api/va/calls/next", json={"code": "test-code", "va_name": "Tracy"})
+    body = r.get_json()
+    assert not body.get("leads_first") and body.get("card", {}).get("company") == "Cold Call Me"
+
+
+def test_the_desk_can_still_get_a_card_when_it_has_to(client):
+    _prospect(company="Cold Call Me", digits="5615559999", status="queued")
+    waiting = [{"kind": "thumbtack", "ref_id": "x1", "phone_digits": "5615550142",
+                "source": "thumbtack", "age_seconds": 400}]
+    with mock.patch("leads.untouched", return_value=waiting):
+        r = client.post("/api/va/calls/next", json={"code": "test-code", "va_name": "Tracy",
+                                                    "skip_leads": True})
+    assert r.get_json().get("card", {}).get("company") == "Cold Call Me"
