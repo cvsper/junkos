@@ -110,3 +110,15 @@ def test_unknown_shape_is_kept_raw_and_answered_200(client):
 
 def test_admin_events_route(client):
     assert client.get("/api/admin/thumbtack/events").status_code == 401
+
+
+def test_a_refused_call_leaves_a_trace(client):
+    """Otherwise "they never called" and "we turned them away" look the same."""
+    from thumbtack import REJECTED
+    REJECTED.clear()
+    with mock.patch.dict(os.environ, {"THUMBTACK_WEBHOOK_USER": "", "THUMBTACK_WEBHOOK_PASSWORD": ""}):
+        assert client.post("/api/webhooks/thumbtack/lead", json=LEAD).status_code == 503
+    assert REJECTED and "not configured" in REJECTED[0]["why"]
+    assert REJECTED[0]["path"].endswith("/lead") and REJECTED[0]["had_auth"] is False
+    client.post("/api/webhooks/thumbtack/lead", json=LEAD, headers=_basic(p="wrong"))
+    assert "credentials" in REJECTED[0]["why"] and REJECTED[0]["had_auth"] is True

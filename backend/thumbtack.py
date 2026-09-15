@@ -67,11 +67,33 @@ def _authorized():
     return bool(secret) and hmac.compare_digest(secret, pw)
 
 
+REJECTED = deque(maxlen=25)
+
+
+def _note_rejected(why):
+    """A refused call used to vanish, so "Thumbtack never called us" and "we
+    turned Thumbtack away" looked identical while someone waited on a test."""
+    try:
+        REJECTED.appendleft({
+            "at": _now().isoformat() + "Z", "why": why,
+            "path": request.path, "method": request.method,
+            "from": (request.headers.get("X-Forwarded-For") or request.remote_addr or "")[:60],
+            "agent": (request.headers.get("User-Agent") or "")[:120],
+            "had_auth": bool(request.headers.get("Authorization")
+                             or request.headers.get("X-Thumbtack-Secret")
+                             or request.args.get("key")),
+        })
+    except Exception:
+        pass
+
+
 def _gate():
     ok = _authorized()
     if ok is None:
+        _note_rejected("not configured — THUMBTACK_WEBHOOK_USER/PASSWORD unset on this service")
         return jsonify(error="Thumbtack webhook is not configured on this server."), 503
     if not ok:
+        _note_rejected("bad or missing credentials")
         return jsonify(error="Unauthorized"), 401
     return None
 
@@ -443,4 +465,5 @@ def register_admin_routes(app, require_admin):
     def thumbtack_events(user_id):
         rows = ThumbtackLead.query.order_by(ThumbtackLead.created_at.desc()).limit(20).all()
         return jsonify({"configured": bool(_env("THUMBTACK_WEBHOOK_USER") and _env("THUMBTACK_WEBHOOK_PASSWORD")),
-                        "events": list(RECENT_EVENTS), "leads": [r.to_dict() for r in rows]}), 200
+                        "events": list(RECENT_EVENTS), "rejected": list(REJECTED),
+                        "leads": [r.to_dict() for r in rows]}), 200
