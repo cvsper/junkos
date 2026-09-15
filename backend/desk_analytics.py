@@ -298,6 +298,14 @@ def desk_report(start, end, label, days, va=None, everyone=True):
         f = funnel(start, end, va)
         out["outbound"] = {k: f.get(k) for k in ("dials", "connects", "interested", "wins", "connect_rate",
                                                   "interest_rate", "win_rate") if k in f}
+        # A "win" on a call is a claim. This is the part that pays: how many of
+        # those turned into a booking, and what it was worth. Without it the
+        # funnel reads 31 wins on $0 of revenue and looks like progress.
+        try:
+            from first_job import scoreboard
+            out["outbound"]["booked"] = scoreboard(max(1, (end - start).days or 1))
+        except Exception:
+            logger.debug("first-job scoreboard unavailable", exc_info=True)
     except Exception:
         logger.debug("outbound block unavailable", exc_info=True)
         out["outbound"] = None

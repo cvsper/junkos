@@ -415,6 +415,19 @@ def _expire_addons(app):
             logger.exception("add-on expiry failed")
 
 
+def _first_job_nudge(app):
+    """Interested and never booked → one booking link. Flag-gated; a dry run
+    until `first_job_nudge` is switched on."""
+    with app.app_context():
+        try:
+            from first_job import nurture_sweep
+            out = nurture_sweep()
+            if out.get("due"):
+                logger.info("first-job nudge: %s", out)
+        except Exception:
+            logger.exception("first-job nudge failed")
+
+
 def _signed_up_sweep(app):
     """Haulers who signed up must leave Tracy's call queue — including the ones
     whose phone number only reached us after the account was made."""
@@ -1087,6 +1100,16 @@ def init_scheduler(app):
             args=[app],
             id="expire_addons",
             name="Expire unanswered on-site add-ons",
+        )
+
+        # Interested, never booked → one booking link — 10:10 ET daily
+        scheduler.add_job(
+            _first_job_nudge,
+            "cron",
+            hour=10, minute=10, timezone="America/New_York",
+            args=[app],
+            id="first_job_nudge",
+            name="Book-your-first-pickup nudge",
         )
 
         # A hauler who signed up never gets recruited again — 06:20 ET daily

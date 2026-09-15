@@ -1671,6 +1671,8 @@ def create_booking(payload, user, notify_operator=True):
         link_job(job, ref=(payload.get("q") or payload.get("quote_ref")), digits=customer_phone)
         from thumbtack import link_booking
         link_booking(job, digits=customer_phone)
+        from first_job import link_booking as _desk_win
+        _desk_win(job, digits=customer_phone, prospect_id=(payload.get("p") or payload.get("prospect_id")))
     except Exception:
         import logging as _lg
         _lg.getLogger(__name__).exception("could not link the photo quote for job %s", job.id)

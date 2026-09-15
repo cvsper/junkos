@@ -49,6 +49,11 @@ COLUMN_MIGRATIONS = [
     ("users", "phone_verified_at", "DATETIME", "TIMESTAMP", "NULL"),
     ("users", "token_version", "INTEGER", "INTEGER", "0"),
 
+    # Call prospects — a win is only a win when it books work
+    ("call_prospects", "job_id", "VARCHAR(36)", "VARCHAR(36)", "NULL"),
+    ("call_prospects", "job_value", "FLOAT", "FLOAT", "NULL"),
+    ("call_prospects", "offer_sent_at", "DATETIME", "TIMESTAMP", "NULL"),
+
     # Thumbtack leads — added after the table shipped, so create_all won't help
     ("thumbtack_leads", "serviceable", "BOOLEAN", "BOOLEAN", "NULL"),
     ("thumbtack_leads", "service_note", "VARCHAR(200)", "VARCHAR(200)", "NULL"),

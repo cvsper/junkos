@@ -115,6 +115,8 @@
       }).catch(function(){ busy = false; if(btn) btn.disabled = false; say("No connection — try again.", "err"); });
   }
 
+  window.__deskLeads = {open: function(){ open(); }};
+
   function row(l){
     var box = el("div", "ld-i" + (l.touched_at ? " done" : ""));
     var top = el("div", "ld-top");

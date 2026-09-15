@@ -4219,6 +4219,11 @@ class CallProspect(db.Model):
     last_note = Column(Text, nullable=True)
     last_called_at = Column(DateTime, nullable=True)
     last_texted_at = Column(DateTime, nullable=True)
+    # A "win" only means something when it turns into work. These three make
+    # that measurable instead of asserted (15 Sep: 31 wins, $0 revenue).
+    job_id = Column(String(36), nullable=True, index=True)      # their first booking
+    job_value = Column(Float, nullable=True)
+    offer_sent_at = Column(DateTime, nullable=True)             # first-job offer texted
     email = Column(String(254), nullable=True)   # decision-maker email, captured on calls
     direct_phone = Column(String(40), nullable=True)  # decision-maker cell (vs. front desk)
     last_emailed_at = Column(DateTime, nullable=True)

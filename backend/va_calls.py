@@ -416,6 +416,25 @@ def calls_next():
     ident = desk_identity(data)
     if not ident:
         return jsonify({"error": "Sign in to the desk first."}), 401
+    # Somebody who reached out beats a stranger, every time. In the 30 days to
+    # 15 Sep the desk made 736 cold dials for $0 while inbound leads waited a
+    # median of 32 hours. A card is not served while a paid lead sits untouched.
+    waiting = []
+    try:
+        from leads import untouched
+        waiting = [l for l in untouched(min_age_seconds=0) if l.get("phone_digits")]
+    except Exception:
+        logger.exception("could not check waiting leads")
+    if waiting and not data.get("skip_leads"):
+        paid = [l for l in waiting if l.get("source") in ("thumbtack", "google", "meta")]
+        return jsonify({"leads_first": True,
+                        "waiting": len(waiting), "paid": len(paid),
+                        "leads": waiting[:8],
+                        "stats": day_stats(),
+                        "message": ("{} {} waiting — they asked us. Work those before the list."
+                                    .format(len(waiting),
+                                            "lead is" if len(waiting) == 1 else "leads are"))}), 200
+
     from crm import next_unclaimed
     p = next_unclaimed(desk_va_name(data))
     stats = day_stats()
@@ -644,6 +663,32 @@ def rate_card_pdf(prospect_id):
         re.sub(r"[^A-Za-z0-9]+", "-", p.company or "prospect").strip("-")[:40])
     resp.headers["Cache-Control"] = "private, max-age=600"
     return resp
+
+
+@vacalls_bp.route("/api/va/calls/first-job", methods=["POST"])
+@_ratelimit
+def calls_first_job():
+    """Text an interested prospect the link that books their first pickup.
+
+    The missing step: 70 businesses said yes in 30 days and none of them were
+    ever asked to put work on the books.
+    """
+    from first_job import send_offer, offer_url
+    data = request.get_json(silent=True) or {}
+    ident = desk_identity(data)
+    if not ident:
+        return jsonify({"error": "Sign in to the desk first."}), 401
+    p = db.session.get(CallProspect, data.get("prospect_id") or "")
+    if not p:
+        return jsonify({"error": "Prospect not found — reload the page."}), 404
+    if data.get("preview"):
+        return jsonify({"ok": True, "url": offer_url(p)}), 200
+    sent, why = send_offer(p, va_name=desk_va_name(data), force=bool(data.get("force")))
+    if not sent:
+        return jsonify({"error": why or "Couldn't send that."}), 400
+    audit("first_job_offer", "prospect", p.id, {"by": desk_va_name(data)})
+    return jsonify({"ok": True, "url": offer_url(p),
+                    "message": "Booking link sent to {}.".format(p.company)}), 200
 
 
 @vacalls_bp.route("/api/va/calls/rate-card", methods=["POST"])
@@ -2088,6 +2133,32 @@ CALLS_JS = r"""(function(){
     var textopt = document.getElementById("textopt");
     deskErr.hidden = true;
     setDaybar(resp.stats);
+    if(resp.leads_first){
+      // somebody reached out and nobody has touched them — that beats the list
+      card.hidden = true; outcomes.hidden = true; textopt.hidden = true; empty.hidden = false;
+      document.getElementById("empty-load").hidden = true;
+      document.getElementById("empty-chip").textContent = resp.paid ? "PAID LEADS WAITING" : "LEADS WAITING";
+      document.getElementById("empty-t").textContent = resp.message || "Leads are waiting";
+      document.getElementById("empty-sub").textContent =
+        (resp.leads || []).slice(0, 4).map(function(l){
+          return (l.source_label || "New") + " · " + (l.name || l.phone || "unknown") + " · " + (l.age_label || "");
+        }).join("\n") || "Open the Leads panel and take them.";
+      var openLeads = document.getElementById("empty-leads");
+      if(!openLeads){
+        openLeads = document.createElement("button");
+        openLeads.id = "empty-leads"; openLeads.type = "button"; openLeads.className = "btn";
+        openLeads.textContent = "Open the leads";
+        openLeads.addEventListener("click", function(){
+          if(window.__deskDock) window.__deskDock.open("leads");
+          if(window.__deskLeads && window.__deskLeads.open) window.__deskLeads.open();
+        });
+        document.getElementById("empty-sub").parentNode.appendChild(openLeads);
+      }
+      openLeads.hidden = false;
+      return;
+    }
+    var openLeadsBtn = document.getElementById("empty-leads");
+    if(openLeadsBtn) openLeadsBtn.hidden = true;
     if(resp.empty || !resp.card){
       card.hidden = true; outcomes.hidden = true; textopt.hidden = true; empty.hidden = false;
       var emptyLoad = document.getElementById("empty-load");
