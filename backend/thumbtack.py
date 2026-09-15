@@ -25,6 +25,7 @@ import base64
 import hmac
 import logging
 import os
+import re
 from collections import deque
 from datetime import datetime, timezone
 
@@ -140,48 +141,114 @@ def _text(v, limit=2000):
     return str(v).strip()[:limit] or None
 
 
+def unwrap(p):
+    """Thumbtack wraps everything: {"event": {...}, "data": {...}}.
+
+    Returns (body, event_type). Falls back to the flat payload so a Zapier
+    relay or a hand-made test still parses.
+    """
+    if not isinstance(p, dict):
+        return {}, ""
+    ev = p.get("event") if isinstance(p.get("event"), dict) else {}
+    body = p.get("data") if isinstance(p.get("data"), dict) else p
+    return body, str(ev.get("eventType") or p.get("eventType") or "")
+
+
+def _money(v):
+    """'$25.00' → 25.0. Their prices are display strings, not numbers."""
+    if v is None:
+        return None
+    if isinstance(v, (int, float)):
+        return float(v)
+    txt = re.sub(r"[^0-9.\-]", "", str(v))
+    try:
+        return float(txt) if txt not in ("", "-", ".") else None
+    except Exception:
+        return None
+
+
+def is_test(p):
+    """Thumbtack's own webhook test. Store it, alert on it, never text it."""
+    body, ev = unwrap(p)
+    name = str(_dig(body, "business.name") or "").lower()
+    cust = "{} {}".format(_dig(body, "customer.firstName") or "",
+                          _dig(body, "customer.lastName") or "").strip().lower()
+    return name.startswith("test business") or cust == "test customer" or "test" in ev.lower()
+
+
 def parse_lead(p):
-    """Thumbtack's lead shape (customer, request, business, leadID…) → our columns.
-    Every read is a list of candidate paths so a renamed field degrades to
-    'missing', never to a crash."""
-    req = p.get("request") if isinstance(p.get("request"), dict) else {}
-    cust = p.get("customer") if isinstance(p.get("customer"), dict) else {}
+    """Thumbtack's NegotiationCreated payload → our columns.
+
+    Built from a real payload (15 Sep), not the published example: the body is
+    under `data`, the lead id is `negotiationID`, the customer's name is split
+    across firstName/lastName, category is an object, and prices are strings
+    like "$25.00". Flat fallbacks are kept so an older shape still parses.
+    """
+    body, _ev = unwrap(p)
+    req = body.get("request") if isinstance(body.get("request"), dict) else {}
+    cust = body.get("customer") if isinstance(body.get("customer"), dict) else {}
     loc = _dig(req, "location", "address", default={}) or {}
     if not isinstance(loc, dict):
         loc = {}
-    phone = _dig(p, "customer.phone", "customer.phoneNumber", "phone", "phoneNumber", "customerPhone")
+
+    phone = _dig(cust, "phone", "phoneNumber") or _dig(body, "phone", "phoneNumber", "customerPhone")
     digits = _digits(phone)
-    sched = _dig(req, "schedule", default=None) or _dig(p, "schedule")
-    if isinstance(sched, dict):
-        sched = " ".join(str(v) for v in sched.values() if v)
-    details = _dig(req, "details", default=None) or _dig(p, "details")
+
+    name = " ".join(x for x in [_dig(cust, "firstName"), _dig(cust, "lastName")] if x).strip()
+    if not name:
+        name = _dig(cust, "name", "displayName") or _dig(body, "customerName", "name")
+
+    category = _dig(req, "category.name") or _dig(req, "category", "categoryName") \
+        or _dig(body, "category.name", "category", "categoryName")
+    if isinstance(category, dict):
+        category = category.get("name")
+
+    # proposedTimes is when they want it; fall back to a schedule string
+    sched = None
+    times = _dig(req, "proposedTimes", default=None)
+    if isinstance(times, list) and times:
+        first = times[0] if isinstance(times[0], dict) else {}
+        start, end = first.get("start"), first.get("end")
+        sched = " to ".join(x for x in [start, end] if x) or None
+    if not sched:
+        sched = _dig(req, "schedule") or _dig(body, "schedule")
+        if isinstance(sched, dict):
+            sched = " ".join(str(v) for v in sched.values() if v)
+
+    details = _dig(req, "details", default=None) or _dig(body, "details")
     if isinstance(details, dict):
         details = [{"question": k, "answer": v} for k, v in details.items()]
-    attachments = _dig(req, "attachments", default=None) or _dig(p, "attachments") or []
+
+    attachments = _dig(req, "attachments", default=None) or _dig(body, "attachments") or []
     if not isinstance(attachments, list):
         attachments = []
+
     address_bits = [_dig(loc, "address1", "line1", "street"), _dig(loc, "address2", "line2")]
     return {
-        "lead_id": _text(_dig(p, "leadID", "leadId", "lead_id", "negotiationID", "negotiationId", "id"), 80),
-        "business_id": _text(_dig(p, "business.businessID", "business.id", "businessID", "businessId"), 80),
-        "lead_type": _text(_dig(p, "leadType", "lead_type", "type"), 40),
-        "lead_price": _num(_dig(p, "leadPrice", "lead_price", "price")),
-        "customer_id": _text(_dig(cust, "customerID", "customerId", "id") or _dig(p, "customerID"), 80),
-        "customer_name": _text(_dig(cust, "name", "firstName", "displayName") or _dig(p, "customerName", "name"), 160),
+        "lead_id": _text(_dig(body, "negotiationID", "negotiationId", "leadID", "leadId",
+                              "lead_id", "id"), 80),
+        "business_id": _text(_dig(body, "business.businessID", "business.id", "businessID",
+                                  "businessId"), 80),
+        "lead_type": _text(_dig(body, "status", "leadType", "lead_type", "type"), 40),
+        "lead_price": _money(_dig(body, "leadPrice", "lead_price", "price")),
+        "customer_id": _text(_dig(cust, "customerID", "customerId", "id")
+                             or _dig(body, "customerID"), 80),
+        "customer_name": _text(name, 160),
         "phone": _pretty(digits) or _text(phone, 40),
         "phone_digits": digits or None,
-        "email": _text(_dig(cust, "email") or _dig(p, "email"), 254),
+        "email": _text(_dig(cust, "email") or _dig(body, "email"), 254),
         "address": _text(", ".join(str(b) for b in address_bits if b), 500),
-        "city": _text(_dig(loc, "city") or _dig(p, "city"), 80),
-        "state": _text(_dig(loc, "state") or _dig(p, "state"), 8),
-        "zip": _text(_dig(loc, "zipCode", "zip", "postalCode") or _dig(p, "zipCode", "zip"), 12),
-        "category": _text(_dig(req, "category", "categoryName") or _dig(p, "category", "categoryName"), 120),
-        "title": _text(_dig(req, "title") or _dig(p, "title"), 200),
-        "description": _text(_dig(req, "description") or _dig(p, "description", "message")),
+        "city": _text(_dig(loc, "city") or _dig(body, "city"), 80),
+        "state": _text(_dig(loc, "state") or _dig(body, "state"), 8),
+        "zip": _text(_dig(loc, "zipCode", "zip", "postalCode") or _dig(body, "zipCode", "zip"), 12),
+        "category": _text(category, 120),
+        "title": _text(_dig(req, "title") or category or _dig(body, "title"), 200),
+        "description": _text(_dig(req, "description") or _dig(body, "description", "message")),
         "schedule": _text(sched, 300),
         "details": details if isinstance(details, list) else None,
         "attachments": [{"url": a.get("url"), "fileName": a.get("fileName") or a.get("name"),
-                         "mimeType": a.get("mimeType")} for a in attachments if isinstance(a, dict)] or None,
+                         "mimeType": a.get("mimeType")}
+                        for a in attachments if isinstance(a, dict)] or None,
     }
 
 
@@ -193,13 +260,14 @@ def _num(v):
 
 
 def parse_message(p):
+    body, _ev = unwrap(p)
     return {
-        "lead_id": _text(_dig(p, "leadID", "leadId", "lead_id", "negotiationID", "negotiationId"), 80),
-        "message_id": _text(_dig(p, "messageID", "messageId", "id"), 80),
-        "text": _text(_dig(p, "message.text", "text", "message", "body")),
-        "from": _text(_dig(p, "message.sender", "sender", "from", "author"), 40) or "customer",
-        "at": _text(_dig(p, "createTimestamp", "timestamp", "createdAt"), 40),
-        "attachments": _dig(p, "message.attachments", "attachments", default=[]) or [],
+        "lead_id": _text(_dig(body, "negotiationID", "negotiationId", "leadID", "leadId", "lead_id"), 80),
+        "message_id": _text(_dig(body, "messageID", "messageId", "message.messageID", "id"), 80),
+        "text": _text(_dig(body, "message.text", "text", "message", "body")),
+        "from": _text(_dig(body, "message.sender", "sender", "from", "author"), 40) or "customer",
+        "at": _text(_dig(body, "createdAt", "createTimestamp", "timestamp"), 40),
+        "attachments": _dig(body, "message.attachments", "attachments", default=[]) or [],
     }
 
 
@@ -341,9 +409,18 @@ def _payload():
 
 
 def _infer_kind(p):
+    """Thumbtack declares it: event.eventType is "NegotiationCreatedV4" and so on."""
+    _body, ev = unwrap(p)
+    e = ev.lower()
+    if "review" in e:
+        return "review"
+    if "message" in e:
+        return "message"
+    if "negotiation" in e or "lead" in e:
+        return "lead"
     if "review" in p or "rating" in p:
         return "review"
-    if "message" in p or "text" in p and "leadID" in p:
+    if "message" in p:
         return "message"
     return "lead"
 
@@ -356,6 +433,12 @@ def handle_lead(p):
     lead = ThumbtackLead(id=generate_uuid(), raw=p, **data)
     db.session.add(lead)
     db.session.commit()
+    if is_test(p):
+        lead.status = "test"
+        db.session.commit()
+        alert_team(lead, "lead")
+        logger.info("thumbtack TEST payload stored (%s) — no text sent", lead.id)
+        return lead, True
     texted = text_customer(lead)
     alert_team(lead, "lead")
     logger.info("thumbtack lead %s (%s, %s) texted=%s", lead.id, lead.customer_name, lead.city, texted)

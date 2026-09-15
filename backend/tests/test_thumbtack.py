@@ -112,6 +112,85 @@ def test_admin_events_route(client):
     assert client.get("/api/admin/thumbtack/events").status_code == 401
 
 
+# The exact body Thumbtack POSTed to us on 15 Sep 2026 — every field name here
+# is real, not from their docs (the docs' flat shape was wrong on every count).
+REAL = {
+    "event": {"eventType": "NegotiationCreatedV4", "triggeredAt": "2026-09-15T04:02:29Z",
+              "webhookID": "590298304139583503", "description": ""},
+    "data": {
+        "negotiationID": "590299344770662410",
+        "status": "Open", "chargeState": "Created", "createdAt": "2026-09-15T04:02:24Z",
+        "leadPrice": "$25.00",
+        "leadPriceBreakdown": {"salesTax": "$1.85", "subtotal": "$23.15"},
+        "business": {"businessID": "590297085345701895", "name": "Griffis Property Group"},
+        "customer": {"customerID": "590299344770162703", "firstName": "Dana",
+                     "lastName": "Reyes", "phone": "5615550142"},
+        "estimate": {"total": "$150.00", "pricePerUnit": "150.00", "type": "Fixed",
+                     "unitName": "service", "unitQuantity": 1},
+        "request": {
+            "requestID": "590299344772112393",
+            "category": {"categoryID": "240123621172183344", "name": "Junk Removal"},
+            "description": "Need a sectional and two mattresses gone",
+            "location": {"address1": "123 Main St", "address2": "Apt 4B",
+                         "city": "Lake Worth", "state": "FL", "zipCode": "33460"},
+            "details": [{"question": "Frequency of services", "answer": "One time only"}],
+            "proposedTimes": [{"start": "2026-09-16T10:00:00Z", "end": "2026-09-16T11:00:00Z"}],
+            "attachments": [{"fileName": "pile.jpg", "mimeType": "image/jpeg",
+                             "fileSize": 20, "url": "https://x/pile.jpg"}],
+            "travelPreferences": ["ProviderTravelToCustomer"],
+        },
+    },
+}
+
+
+def test_the_real_wrapped_payload_parses():
+    """Their body is under `data`, the id is negotiationID, the name is split,
+    category is an object and money is a string like "$25.00"."""
+    from thumbtack import parse_lead, _infer_kind
+    assert _infer_kind(REAL) == "lead"
+    d = parse_lead(REAL)
+    assert d["lead_id"] == "590299344770662410"
+    assert d["business_id"] == "590297085345701895"
+    assert d["customer_name"] == "Dana Reyes"
+    assert d["phone_digits"] == "5615550142" and d["phone"] == "(561) 555-0142"
+    assert d["lead_price"] == 25.0                      # from "$25.00"
+    assert d["category"] == "Junk Removal"
+    assert d["city"] == "Lake Worth" and d["state"] == "FL" and d["zip"] == "33460"
+    assert d["address"] == "123 Main St, Apt 4B"
+    assert "sectional" in d["description"]
+    assert d["schedule"] == "2026-09-16T10:00:00Z to 2026-09-16T11:00:00Z"
+    assert d["attachments"][0]["url"] == "https://x/pile.jpg"
+    assert d["details"][0]["question"] == "Frequency of services"
+
+
+def test_the_real_payload_reaches_the_desk_and_the_customer(client):
+    with mock.patch("desk_line.send_desk_text", return_value="SM1") as send, \
+         mock.patch("thumbtack.alert_team"), mock.patch("inbound.humans_online", return_value=False):
+        r = client.post("/api/webhooks/thumbtack", json=REAL, headers=_basic())
+    assert r.status_code == 200 and r.get_json()["kind"] == "lead"
+    lead = ThumbtackLead.query.one()
+    assert lead.customer_name == "Dana Reyes" and lead.lead_price == 25.0
+    assert send.call_args[0][0] == "+15615550142"
+    assert "junk removal" in send.call_args[0][1].lower()
+    from leads import collect
+    assert collect()[0][0]["kind"] == "thumbtack"
+
+
+def test_thumbtacks_own_webhook_test_is_never_texted(client):
+    """Their test payload carries a fake customer and a fake number."""
+    import copy
+    t = copy.deepcopy(REAL)
+    t["data"]["business"]["name"] = "Test Business for Webhooks"
+    t["data"]["customer"].update({"firstName": "Test", "lastName": "Customer",
+                                  "phone": "1234567890"})
+    with mock.patch("desk_line.send_desk_text") as send, mock.patch("thumbtack.alert_team") as alert:
+        r = client.post("/api/webhooks/thumbtack", json=t, headers=_basic())
+    assert r.status_code == 200
+    assert send.call_count == 0                      # nobody gets a text
+    assert alert.call_count == 1                     # but we still hear about it
+    assert ThumbtackLead.query.one().status == "test"
+
+
 def test_a_refused_call_leaves_a_trace(client):
     """Otherwise "they never called" and "we turned them away" look the same."""
     from thumbtack import REJECTED
