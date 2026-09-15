@@ -82,6 +82,10 @@ def _note_rejected(why):
             "had_auth": bool(request.headers.get("Authorization")
                              or request.headers.get("X-Thumbtack-Secret")
                              or request.args.get("key")),
+            # header NAMES only — never the values, which may be secrets. Enough
+            # to see whether they sign requests some other way.
+            "headers": sorted(k for k in request.headers.keys()
+                              if k.lower() not in ("cookie", "authorization")),
         })
     except Exception:
         pass
