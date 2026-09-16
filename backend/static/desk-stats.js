@@ -94,6 +94,72 @@
     box.appendChild(s);
   }
 
+  // ---- the website's own funnel -------------------------------------------
+  // Until 15 Sep nothing on the booking page was recorded before the card
+  // step, so a visitor who saw a locked price and closed the tab left no
+  // trace. These three blocks are that gap, filled in.
+  function renderWeb(w){
+    var box = $("web");
+    if(!box) return;
+    if(!w || !w.started){
+      box.textContent = "";
+      box.appendChild(el("div", "mg-empty", w ? "Nobody started a booking on the website in this period." : "The website funnel isn't available."));
+      tableRows($("t-web-steps"), ["Step", "Got this far", "Left here"], [], {empty: "No website traffic in this period."});
+      tableRows($("t-web-src"), ["Came from", "Started", "Priced", "Booked"], [], {empty: "–"});
+      tableRows($("t-web-lost"), ["Who", "Phone", "Quote", "Left at", "When"], [], {empty: "Nobody has left a price on the table yet."});
+      $("web-note").textContent = "Everyone who started a booking on goumuve.com and where they stopped";
+      return;
+    }
+    facts(box, [
+      {v: num(w.started), l: "Started a booking"},
+      {v: num(w.saw_a_price), l: "Got to a price"},
+      {v: num(w.saw_a_price_and_left), l: "Left after the price", cls: w.saw_a_price_and_left ? "warn" : null},
+      {v: num(w.booked), l: "Booked", cls: w.booked ? "ok" : null},
+      {v: money(w.money_left_on_the_table), l: "Walked away", cls: w.money_left_on_the_table ? "hot" : null}
+    ]);
+    $("web-note").textContent = w.conversion + "% of people who start end up booking"
+      + (w.avg_quote ? " · average quote " + money(w.avg_quote) : "");
+
+    var top = (w.steps && w.steps.length) ? w.steps[0].reached : 0;
+    tableRows($("t-web-steps"), ["Step", "Got this far", "Left here"], (w.steps || []).map(function(s){
+      return {cells: [
+        {v: s.step + ". " + s.name},
+        {v: s.reached, sub: s.pct_of_start + "%", bar: top ? s.reached / top : 0},
+        {v: s.lost_here == null ? "–" : s.lost_here, cls: s.lost_here ? "warn" : "dim"}
+      ]};
+    }), {empty: "No website traffic in this period."});
+
+    tableRows($("t-web-src"), ["Came from", "Started", "Priced", "Booked"], (w.by_source || []).map(function(x){
+      return {cells: [{v: x.source}, {v: x.started}, {v: x.priced},
+                      {v: x.booked, cls: x.booked ? "ok" : "dim"}]};
+    }), {empty: "–"});
+
+    var lost = w.recoverable || [];
+    $("web-lost-note").textContent = lost.length
+      ? lost.length + " of them left a way to reach them. They picked their items and saw what it costs."
+      : "Nobody reachable is waiting right now.";
+    tableRows($("t-web-lost"), ["Who", "Phone", "Quote", "Left at", "When"], lost.map(function(x){
+      return {cells: [
+        {v: x.name || "No name given", sub: x.email || null},
+        {v: x.phone ? phoneish(x.phone) : "–", cls: x.phone ? null : "dim"},
+        {v: money(x.quoted_price), cls: "ok"},
+        {v: x.reached, cls: "dim"},
+        {v: when(x.updated_at), cls: "dim"}
+      ]};
+    }), {empty: "Nobody has left a price on the table yet."});
+  }
+  function phoneish(d){
+    var s = String(d || "").replace(/\D/g, "");
+    return s.length === 10 ? "(" + s.slice(0,3) + ") " + s.slice(3,6) + "-" + s.slice(6) : (d || "–");
+  }
+  function when(iso){
+    if(!iso) return "–";
+    var t = new Date(iso), mins = Math.round((Date.now() - t.getTime()) / 60000);
+    if(mins < 60) return mins + " min ago";
+    if(mins < 60 * 24) return Math.round(mins / 60) + " h ago";
+    return t.toLocaleDateString([], {month: "short", day: "numeric"});
+  }
+
   function render(r){
     var ib = r.inbound, sp = r.speed, mgr = !!r.manager;
     document.querySelectorAll("[data-mgr]").forEach(function(n){ n.hidden = !mgr; });
@@ -179,6 +245,7 @@
                         {v: x.weakest || "–", cls: "dim"}, {v: late ? "Overdue" : (STATUS[x.status] || x.status), cls: late ? "hot" : (x.status === "completed" ? null : "dim")},
                         {v: x.quiz == null ? "–" : x.quiz + "/" + x.quiz_total}, {v: x.reflection || "", cls: "dim"}]};
       }), {empty: "No classes yet — the first one builds Friday at 5pm from this week's scored calls."});
+      renderWeb(r.web);
       var hr = r.hours;
       if(hr){
         $("hours-note").textContent = hr.hours + " h · " + money(hr.cost) + " at $" + hr.rate.toFixed(2) + "/h";

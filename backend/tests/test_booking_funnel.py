@@ -242,3 +242,34 @@ def test_a_bad_row_can_be_removed():
     assert BookingFunnel.query.count() == 0
     # Removing something that isn't there is not an error.
     assert booking_funnel.forget("smoke-1") is False
+
+
+# --------------------------------------------------------------------------
+# It shows up on the analytics page
+# --------------------------------------------------------------------------
+def test_the_analytics_payload_carries_the_website_funnel():
+    import desk_analytics
+    row = _beacon(step=5, estimatedPrice=389, phone="5615550142", name="Cassie S.")
+    _age(row, 45)
+    start = _now() - timedelta(days=7)
+    end = _now()
+    out = desk_analytics.desk_report(start, end, "7 days", 7, va=None, everyone=True)
+    assert out["web"]["started"] == 1
+    assert out["web"]["saw_a_price_and_left"] == 1
+    assert out["web"]["recoverable"][0]["name"] == "Cassie S."
+
+
+def test_a_va_does_not_see_the_website_funnel():
+    """The recoverable list carries customer names and numbers."""
+    import desk_analytics
+    _beacon(step=5, estimatedPrice=389, phone="5615550142")
+    start = _now() - timedelta(days=7)
+    out = desk_analytics.desk_report(start, _now(), "7 days", 7, va="Tracy", everyone=False)
+    assert "web" not in out
+
+
+def test_the_analytics_page_has_the_website_sections():
+    import desk_analytics
+    html = desk_analytics.PAGE_HTML
+    for node in ("t-web-steps", "t-web-src", "t-web-lost", 'id="web"'):
+        assert node in html, node

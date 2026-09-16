@@ -310,6 +310,14 @@ def desk_report(start, end, label, days, va=None, everyone=True):
         logger.debug("outbound block unavailable", exc_info=True)
         out["outbound"] = None
     if everyone:
+        # The website's own funnel. Manager-only: the recoverable list carries
+        # customer names and numbers.
+        try:
+            import booking_funnel
+            out["web"] = booking_funnel.report(days)
+        except Exception:
+            logger.debug("booking funnel unavailable", exc_info=True)
+            out["web"] = None
         out["bookings"] = bookings_block(start, end)
         out["haulers"] = haulers_block(start, end)
         out["maya"] = maya_block(days)
@@ -458,6 +466,20 @@ PAGE_HTML = r"""<!doctype html>
       </div>
 
       <section class="mg-sec" data-mgr>
+        <div class="mg-sec-h"><h2>The website</h2><span class="mg-note" id="web-note">Everyone who started a booking on goumuve.com and where they stopped</span></div>
+        <div class="mg-facts ds-facts" id="web"></div>
+        <div class="mg-cols ds-gap">
+          <div class="mg-tablewrap"><table class="mg-table" id="t-web-steps"></table></div>
+          <div class="mg-tablewrap"><table class="mg-table" id="t-web-src"></table></div>
+        </div>
+      </section>
+
+      <section class="mg-sec" data-mgr>
+        <div class="mg-sec-h"><h2>Saw a price and left</h2><span class="mg-note" id="web-lost-note">They picked their items and saw what it costs. Call them.</span></div>
+        <div class="mg-tablewrap"><table class="mg-table" id="t-web-lost"></table></div>
+      </section>
+
+      <section class="mg-sec" data-mgr>
         <div class="mg-sec-h"><h2>Weekly classes</h2><span class="mg-note">Built from her scored calls every Friday at 5pm; the desk holds it until it's done · tap a number to see the records behind it</span></div>
         <div class="mg-tablewrap"><table class="mg-table" id="t-classes"></table></div>
       </section>
@@ -469,7 +491,7 @@ PAGE_HTML = r"""<!doctype html>
     </div>
   </section>
 </div>
-<script src="/static/desk-stats.js?v=3"></script>
+<script src="/static/desk-stats.js?v=4"></script>
 <script src="/static/desk-drill.js?v=1"></script>
 </body>
 </html>
