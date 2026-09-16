@@ -149,7 +149,7 @@ Bento Grid with mixed sizes
 │  Removal Service                │
 │                                 │
 │  Professional junk removal in   │
-│  Palm Beach & Broward County    │
+│  Miami-Dade, Broward, Palm Beach, Martin, St. Lucie, Indian River, and Brevard counties    │
 │                                 │
 │  [💬 Text Quote] [📞 Call]       │
 │                                 │

@@ -121,7 +121,7 @@ Spring Cleaning Help — Same-Day Junk Removal Starting at $119
 **Post:**
 Hey neighbors! Spring cleaning season is here and if you're like me, the garage/closet/yard situation is out of control.
 
-Just wanted to recommend Umuve — they're a local junk removal service that serves all of Palm Beach and Broward. I've used them and here's what I liked:
+Just wanted to recommend Umuve — they're a local junk removal service that serves all of Miami-Dade, Broward, Palm Beach, Martin, St. Lucie, Indian River, and Brevard. I've used them and here's what I liked:
 
 - They showed up SAME DAY
 - They did all the heavy lifting (I literally pointed and they loaded)
@@ -145,7 +145,7 @@ Anyone need junk removed? Found a great local service
 **Post:**
 Saw a few people asking about junk removal lately so wanted to share — I used Umuve for a garage cleanout and they were great. Same-day, did all the lifting, fair price ($249 for half a truck).
 
-They serve Palm Beach and Broward counties. Starting at $119. Licensed and insured.
+They serve Miami-Dade, Broward, Palm Beach, Martin, St. Lucie, Indian River, and Brevard counties. Starting at $119. Licensed and insured.
 
 goumuve.com or call (844) 435-6005. Text (844) 435-6005 with a photo for an instant quote.
 

@@ -25,7 +25,7 @@ const guides = [
     title: 'How to Dispose of a Mattress in South Florida (2026)',
     metaDescription: 'Learn how to dispose of a mattress in South Florida. Compare professional pickup, county curbside, donation, and DIY options. Costs, county rules, and eco tips.',
     h1: 'How to Dispose of a Mattress in South Florida',
-    subtitle: 'Your complete 2026 guide to mattress disposal across Palm Beach, Broward, and Miami-Dade counties.',
+    subtitle: 'Your complete 2026 guide to mattress disposal across Miami-Dade, Broward, Palm Beach, Martin, St. Lucie, Indian River, and Brevard counties.',
     quickAnswer: 'The fastest way to dispose of a mattress in South Florida is professional pickup — Umuve hauls it same-day starting at $119, handles all transport, and recycles 89% of materials. Free curbside pickup is available in all three counties but requires advance scheduling and specific placement rules. Donation is possible if the mattress is stain-free and structurally sound.',
     serviceSlug: 'mattress-disposal',
     serviceName: 'Mattress Disposal',
@@ -91,7 +91,7 @@ const guides = [
     title: 'How to Dispose of a Refrigerator in South Florida (2026)',
     metaDescription: 'How to dispose of a refrigerator in South Florida legally. EPA refrigerant rules, county pickup options, utility rebates, and professional removal starting at $119.',
     h1: 'How to Dispose of a Refrigerator in South Florida',
-    subtitle: 'EPA-compliant refrigerator disposal for Palm Beach, Broward, and Miami-Dade residents in 2026.',
+    subtitle: 'EPA-compliant refrigerator disposal for Miami-Dade, Broward, Palm Beach, Martin, St. Lucie, Indian River, and Brevard residents in 2026.',
     quickAnswer: 'Refrigerator disposal in South Florida requires EPA-compliant refrigerant recovery before the unit can be scrapped or landfilled. Professional removal by Umuve starts at $119 and includes all refrigerant handling and certified recycling. FPL and other utilities offer appliance rebates of $25-$50 for qualifying units. Free municipal pickup takes 5-14 days.',
     serviceSlug: 'refrigerator-disposal',
     serviceName: 'Refrigerator Disposal',
@@ -157,7 +157,7 @@ const guides = [
     title: 'How to Dispose of Electronics in South Florida (2026)',
     metaDescription: 'How to dispose of electronics and e-waste in South Florida legally. Free drop-off locations, certified recyclers, data destruction, and pickup starting at $119.',
     h1: 'How to Dispose of Electronics (E-Waste) in South Florida',
-    subtitle: 'Safe, legal, and eco-friendly electronics disposal across Palm Beach, Broward, and Miami-Dade in 2026.',
+    subtitle: 'Safe, legal, and eco-friendly electronics disposal across Miami-Dade, Broward, Palm Beach, Martin, St. Lucie, Indian River, and Brevard in 2026.',
     quickAnswer: 'Florida law prohibits televisions, computers, and monitors from entering the regular trash. South Florida residents can use free county e-waste drop-off events, retail take-back programs (Best Buy, Staples), or professional pickup by Umuve starting at $119 with certified data destruction. Never place electronics at the curb as unscheduled e-waste.',
     serviceSlug: 'electronics-recycling',
     serviceName: 'Electronics Recycling',
@@ -223,7 +223,7 @@ const guides = [
     title: 'How to Dispose of Old Paint in South Florida (2026)',
     metaDescription: 'How to dispose of old paint in South Florida legally. Latex vs oil paint rules, free PaintCare drop-off locations, HHW events, and what not to do.',
     h1: 'How to Dispose of Old Paint in South Florida',
-    subtitle: 'Legal paint disposal options for Palm Beach, Broward, and Miami-Dade residents — latex, oil, and spray paints.',
+    subtitle: 'Legal paint disposal options for Miami-Dade, Broward, Palm Beach, Martin, St. Lucie, Indian River, and Brevard residents — latex, oil, and spray paints.',
     quickAnswer: 'Latex paint can be solidified and placed in regular trash once fully hardened. Oil-based paint is hazardous waste and must go to a PaintCare drop-off location or county HHW event — it cannot be trashed or poured down drains. All three South Florida counties offer free paint disposal at regular events. PaintCare drop-off sites include Home Depot, Lowe\'s, and Ace Hardware locations throughout the region.',
     serviceSlug: 'garage-cleanout',
     serviceName: 'Garage Cleanout',
@@ -289,7 +289,7 @@ const guides = [
     title: 'How to Dispose of a Couch in South Florida (2026)',
     metaDescription: 'How to dispose of a couch or sofa in South Florida. Pickup options, donation centers, curbside rules, and professional removal starting at $119.',
     h1: 'How to Dispose of a Couch in South Florida',
-    subtitle: 'Get rid of your old sofa, sectional, or loveseat the right way in Palm Beach, Broward, and Miami-Dade.',
+    subtitle: 'Get rid of your old sofa, sectional, or loveseat the right way in Miami-Dade, Broward, Palm Beach, Martin, St. Lucie, Indian River, and Brevard.',
     quickAnswer: 'Couch removal in South Florida starts at $119 for professional pickup with Umuve — same-day service, all labor included, 90% donated or recycled. County curbside pickup is free but requires advance scheduling and typically a 5-14 day wait. Couches in good condition can be donated to Habitat for Humanity, Salvation Army, or Goodwill.',
     serviceSlug: 'couch-removal',
     serviceName: 'Couch Removal',
@@ -355,7 +355,7 @@ const guides = [
     title: 'How to Dispose of Appliances in South Florida (2026)',
     metaDescription: 'How to dispose of old appliances in South Florida. Legal disposal for refrigerators, washers, dryers, dishwashers, and stoves. Costs, county rules, and recycling info.',
     h1: 'How to Dispose of Appliances in South Florida',
-    subtitle: 'Legal and eco-friendly appliance disposal across Palm Beach, Broward, and Miami-Dade — refrigerators, washers, dryers, and more.',
+    subtitle: 'Legal and eco-friendly appliance disposal across Miami-Dade, Broward, Palm Beach, Martin, St. Lucie, Indian River, and Brevard — refrigerators, washers, dryers, and more.',
     quickAnswer: 'Most major appliances in South Florida require special handling before disposal. Refrigerators and AC units need EPA-compliant refrigerant recovery. All appliances should go to certified metal recyclers rather than landfills. Umuve handles same-day appliance removal starting at $119. Utility rebates of $25-$75 are available for certain units through FPL.',
     serviceSlug: 'appliance-removal',
     serviceName: 'Appliance Removal',
@@ -489,7 +489,7 @@ const guides = [
     title: 'How to Dispose of Old Tires in South Florida (2026)',
     metaDescription: 'How to legally dispose of tires in South Florida. Free county drop-off, tire retailer take-back, DIY recycling options, and costs. Tire dumping fines explained.',
     h1: 'How to Dispose of Old Tires in South Florida',
-    subtitle: 'Legal, free, and paid tire disposal options across Palm Beach, Broward, and Miami-Dade counties.',
+    subtitle: 'Legal, free, and paid tire disposal options across Miami-Dade, Broward, Palm Beach, Martin, St. Lucie, Indian River, and Brevard counties.',
     quickAnswer: 'Tires cannot go in regular trash or landfills in Florida. Free disposal options include county HHW events (usually limited to 4-8 tires), tire retailer take-back (typically $1-$4 per tire when purchasing new ones), and some auto parts stores. Umuve handles tire disposal as part of garage cleanouts. Illegal tire dumping carries fines of $500-$5,000 per incident in South Florida.',
     serviceSlug: 'garage-cleanout',
     serviceName: 'Garage Cleanout',
@@ -556,7 +556,7 @@ const guides = [
     title: 'How to Dispose of a Hot Tub in South Florida (2026)',
     metaDescription: 'How to dispose of or remove a hot tub in South Florida. Costs, demolition process, utility disconnection, and professional removal starting at $299.',
     h1: 'How to Dispose of a Hot Tub in South Florida',
-    subtitle: 'Everything you need to know about hot tub removal, demolition, and disposal in Palm Beach, Broward, and Miami-Dade.',
+    subtitle: 'Everything you need to know about hot tub removal, demolition, and disposal in Miami-Dade, Broward, Palm Beach, Martin, St. Lucie, Indian River, and Brevard.',
     quickAnswer: 'Hot tub removal in South Florida typically costs $299-$799 for professional service. The process requires draining, electrical disconnection (by a licensed electrician or our coordinated service), cutting the shell into sections for removal, and hauling debris. DIY removal is possible but requires a reciprocating saw, two or more helpers, and a truck or dumpster. Acrylic shells, wood, and metal components are partially recyclable.',
     serviceSlug: 'hot-tub-removal',
     serviceName: 'Hot Tub Removal',
@@ -623,7 +623,7 @@ const guides = [
     title: 'How to Dispose of a Washer and Dryer in South Florida (2026)',
     metaDescription: 'How to dispose of a washer and dryer in South Florida. Free utility rebates, county pickup, scrap metal options, and professional removal from $119.',
     h1: 'How to Dispose of a Washer and Dryer in South Florida',
-    subtitle: 'Remove and recycle your old washer and dryer the right way in Palm Beach, Broward, and Miami-Dade.',
+    subtitle: 'Remove and recycle your old washer and dryer the right way in Miami-Dade, Broward, Palm Beach, Martin, St. Lucie, Indian River, and Brevard.',
     quickAnswer: 'Washers and dryers are among the most recyclable appliances — primarily steel with copper motors and wiring. Professional removal starts at $119 per unit with Umuve, same-day. Scrap metal yards pay $5-$20 per unit. FPL does not offer rebates for washers and dryers (refrigerators only), but county curbside pickup handles them with advance scheduling, no special prep required.',
     serviceSlug: 'appliance-removal',
     serviceName: 'Appliance Removal',
@@ -757,7 +757,7 @@ const guides = [
     title: 'How to Dispose of Drywall in South Florida (2026)',
     metaDescription: 'How to dispose of drywall and sheetrock in South Florida. C&D debris rules, drywall recycling, professional hauling costs, and what you need to know about old drywall.',
     h1: 'How to Dispose of Drywall in South Florida',
-    subtitle: 'Proper drywall disposal and recycling for homeowners and contractors in Palm Beach, Broward, and Miami-Dade.',
+    subtitle: 'Proper drywall disposal and recycling for homeowners and contractors in Miami-Dade, Broward, Palm Beach, Martin, St. Lucie, Indian River, and Brevard.',
     quickAnswer: 'Drywall (sheetrock) is classified as construction and demolition debris in South Florida and cannot go in regular trash. New, clean drywall can often be recycled for free at specialized facilities. Old drywall (pre-1980) may contain asbestos and requires testing before disposal. Professional C&D hauling starts at $149. Umuve handles drywall removal as part of renovation cleanouts.',
     serviceSlug: 'construction-debris',
     serviceName: 'Construction Debris',
@@ -827,7 +827,7 @@ const lifestyleGuides = [
     title: 'How to Dispose of a Dishwasher in South Florida (2026)',
     metaDescription: 'How to dispose of an old dishwasher in South Florida. Disconnection steps, county pickup options, scrap metal value, and professional removal from $119.',
     h1: 'How to Dispose of a Dishwasher in South Florida',
-    subtitle: 'Dishwasher removal and disposal options across Palm Beach, Broward, and Miami-Dade.',
+    subtitle: 'Dishwasher removal and disposal options across Miami-Dade, Broward, Palm Beach, Martin, St. Lucie, Indian River, and Brevard.',
     quickAnswer: 'Dishwashers are primarily steel and plastic with no hazardous materials requiring special handling. They qualify for free county curbside bulk pickup (advance scheduling), sell to scrap metal yards for $5-$15, or can be professionally removed by Umuve for $119. Disconnection requires turning off the water supply valve under the sink and uncoupling the drain hose.',
     serviceSlug: 'appliance-removal',
     serviceName: 'Appliance Removal',
@@ -889,7 +889,7 @@ const lifestyleGuides = [
     title: 'How to Dispose of a Stove or Oven in South Florida (2026)',
     metaDescription: 'How to dispose of an old stove or oven in South Florida. Gas vs electric disconnection, county pickup, scrap value, and professional removal from $119.',
     h1: 'How to Dispose of a Stove or Oven in South Florida',
-    subtitle: 'Gas and electric stove removal and disposal across Palm Beach, Broward, and Miami-Dade.',
+    subtitle: 'Gas and electric stove removal and disposal across Miami-Dade, Broward, Palm Beach, Martin, St. Lucie, Indian River, and Brevard.',
     quickAnswer: 'Stoves and ovens are primarily steel with no hazardous materials (no refrigerants). Gas stoves require a licensed plumber or gas technician to disconnect the gas line before removal. Electric stoves are straightforward to disconnect and haul. County curbside accepts both. Scrap metal yards take stoves for $5-$20. Umuve removes stoves from $119.',
     serviceSlug: 'appliance-removal',
     serviceName: 'Appliance Removal',
@@ -1348,7 +1348,7 @@ const checklistGuides = [
       { when: 'Phase 1: Assessment and Consent', tasks: ['If the person is still living there, involve them in the decision and process from the start', 'Walk through and document the scope with photos', 'Identify biohazard concerns: rodent droppings, mold, spoiled food, waste', 'Contact a professional biohazard cleaner if needed before junk removal', 'Set realistic expectations: hoarding cleanouts typically take days, not hours'] },
       { when: 'Phase 2: Category System', tasks: ['Work with a system the person can understand and participate in', 'Never throw away an item without the resident\'s awareness if they are present', 'Keep: things with real value or emotional significance', 'Donate: usable items the person is willing to part with', 'Remove: items that are damaged, expired, or have no use value'] },
       { when: 'Phase 3: Professional Removal', tasks: ['Book Umuve for the removal phase — compassionate, non-judgmental crews', 'Work room by room from the most functional space outward', 'Maintain clear paths at all times for safety', 'Schedule removal in stages if the person needs time between sessions'] },
-      { when: 'Phase 4: Support', tasks: ['Connect with the South Florida chapter of NAMI (National Alliance on Mental Illness)', 'Therapists specializing in hoarding disorder in Palm Beach, Broward, and Miami-Dade', 'Build in maintenance visits to prevent recurrence', 'Consider support from hoarding disorder specialists at Memorial Healthcare in Broward'] },
+      { when: 'Phase 4: Support', tasks: ['Connect with the South Florida chapter of NAMI (National Alliance on Mental Illness)', 'Therapists specializing in hoarding disorder in Miami-Dade, Broward, Palm Beach, Martin, St. Lucie, Indian River, and Brevard', 'Build in maintenance visits to prevent recurrence', 'Consider support from hoarding disorder specialists at Memorial Healthcare in Broward'] },
     ],
     roomRooms: [
       { room: 'What to Know About Hoarding Cleanouts', tips: 'Hoarding disorder is a recognized mental health condition (DSM-5). It is not a character flaw or laziness. The most sustainable cleanouts address the underlying condition alongside the physical work. Forced cleanouts without the person\'s participation have a very high recurrence rate.' },
@@ -1859,7 +1859,7 @@ function ctaSection() {
                     </a>
                 </div>
                 <p style="margin-top: 1.5rem; opacity: 0.75; font-size: 0.9rem;">
-                    SMS: <a href="sms:${SMS}" style="color: white;">${SMS}</a> &bull; Palm Beach, Broward &amp; Miami-Dade
+                    SMS: <a href="sms:${SMS}" style="color: white;">${SMS}</a> &bull; Miami-Dade, Broward, Palm Beach, Martin, St. Lucie, Indian River, and Brevard
                 </p>
             </div>
         </div>
@@ -1874,7 +1874,7 @@ function footer() {
             <div style="max-width: 900px; margin: 0 auto; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1.5rem;">
                 <div>
                     <img src="/logo-nav.png" alt="Umuve — Hauling Made Simple" width="107" height="32" loading="lazy" style="filter: brightness(0) invert(1); margin-bottom: 0.75rem;">
-                    <p style="font-size: 0.85rem; line-height: 1.6; max-width: 280px;">Hauling Made Simple. Serving Palm Beach, Broward, and Miami-Dade counties.</p>
+                    <p style="font-size: 0.85rem; line-height: 1.6; max-width: 280px;">Hauling Made Simple. Serving Miami-Dade, Broward, Palm Beach, Martin, St. Lucie, Indian River, and Brevard counties.</p>
                 </div>
                 <div style="display: flex; gap: 2.5rem; flex-wrap: wrap;">
                     <div>
@@ -1905,7 +1905,7 @@ function footer() {
                 </div>
             </div>
             <div style="max-width: 900px; margin: 2rem auto 0; padding-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.07); font-size: 0.8rem; text-align: center;">
-                &copy; 2026 Umuve. All rights reserved. Licensed &amp; Insured. Serving Palm Beach, Broward, and Miami-Dade counties.
+                &copy; 2026 Umuve. All rights reserved. Licensed &amp; Insured. Serving Miami-Dade, Broward, Palm Beach, Martin, St. Lucie, Indian River, and Brevard counties.
             </div>
         </div>
     </footer>
@@ -1945,7 +1945,7 @@ ${hero(g)}
                 <div style="background: #FEF2F2; border: 1px solid #FECACA; border-radius: 0.75rem; padding: 1.5rem; margin-bottom: 2rem;">
                     <h3 style="font-size: 1.1rem; font-weight: 700; color: #DC2626; margin-bottom: 0.75rem;">County Disposal Rules</h3>
                     <p style="color: #3a3a3a; line-height: 1.7; font-size: 0.95rem; margin: 0;">
-                        All three South Florida counties — Palm Beach, Broward, and Miami-Dade — accept this type of appliance through scheduled bulk curbside pickup. Schedule online or by phone with your city or county solid waste department. Most appointments are available within 5-14 business days. No special prep required unless the unit contains refrigerants.
+                        All three South Florida counties — Miami-Dade, Broward, Palm Beach, Martin, St. Lucie, Indian River, and Brevard — accept this type of appliance through scheduled bulk curbside pickup. Schedule online or by phone with your city or county solid waste department. Most appointments are available within 5-14 business days. No special prep required unless the unit contains refrigerants.
                     </p>
                 </div>
 

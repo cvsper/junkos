@@ -54,7 +54,7 @@ const FOOTER = () => `<footer style="background:#111827;color:#9ca3af;padding:3r
 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:2rem;margin-bottom:2rem">
 <div>
 <img src="/logo-nav.png" alt="Umuve — Hauling Made Simple" width="107" height="32" loading="lazy" style="margin-bottom:1rem;filter:brightness(0) invert(1)">
-<p style="font-size:0.875rem;line-height:1.6">South Florida's junk removal platform. 500+ local operators. Same-day service.</p>
+<p style="font-size:0.875rem;line-height:1.6">South Florida's junk removal platform. local, licensed haulers. Same-day service.</p>
 </div>
 <div>
 <p style="font-weight:600;color:#fff;margin-bottom:0.75rem">Commercial Services</p>
@@ -81,7 +81,7 @@ const FOOTER = () => `<footer style="background:#111827;color:#9ca3af;padding:3r
 <div>
 <p style="font-weight:600;color:#fff;margin-bottom:0.75rem">Contact</p>
 <p style="font-size:0.875rem;margin-bottom:0.5rem"><a href="tel:8444356005" style="color:#9ca3af;text-decoration:none">(844) 435-6005</a></p>
-<p style="font-size:0.875rem;margin-bottom:0.5rem">Palm Beach, Broward &amp; Miami-Dade</p>
+<p style="font-size:0.875rem;margin-bottom:0.5rem">Miami-Dade, Broward, Palm Beach, Martin, St. Lucie, Indian River, and Brevard</p>
 <a href="https://app.goumuve.com/book" style="background:#DC2626;color:#fff;padding:0.75rem 1.5rem;border-radius:0.5rem;text-decoration:none;font-weight:600;font-size:0.875rem;display:inline-block;margin-top:0.5rem">Book Online</a>
 </div>
 </div>
@@ -123,7 +123,7 @@ const COMMERCIAL_SERVICES = [
     slug: 'retail-store-cleanout',
     name: 'Retail Store Cleanout',
     tagline: 'Retail Store &amp; Storefront Cleanout Services in South Florida',
-    desc: 'Professional retail store cleanout services in Palm Beach, Broward, and Miami-Dade. We clear display fixtures, shelving, inventory, counters, and all retail equipment. Same-day available. From $399.',
+    desc: 'Professional retail store cleanout services in Miami-Dade, Broward, Palm Beach, Martin, St. Lucie, Indian River, and Brevard. We clear display fixtures, shelving, inventory, counters, and all retail equipment. Same-day available. From $399.',
     items: ['Display Cases &amp; Shelving Units', 'Clothing Racks &amp; Mannequins', 'Point-of-Sale Equipment', 'Storage Room Contents', 'Checkout Counters &amp; Kiosks', 'Signage &amp; Display Systems', 'Back-of-House Equipment', 'Inventory &amp; Unsold Merchandise'],
     pricing: { min: 399, avg: 795, max: 2400, note: 'Priced by volume and complexity. Strip malls and multi-unit spaces receive volume discounts.' },
     industries: ['Clothing &amp; Apparel Stores', 'Electronics Retailers', 'Furniture Showrooms', 'Grocery &amp; Convenience Stores', 'Beauty &amp; Salon Spaces', 'Boutique Shops', 'Dollar Stores &amp; Discount Retail', 'Pop-up Shops &amp; Temporary Retail'],
@@ -146,7 +146,7 @@ const COMMERCIAL_SERVICES = [
     slug: 'construction-debris',
     name: 'Construction Debris Removal',
     tagline: 'Commercial Construction Debris &amp; Renovation Waste Removal in South Florida',
-    desc: 'Commercial construction debris removal for contractors and developers in Palm Beach, Broward, and Miami-Dade. Drywall, lumber, concrete, tile, and all renovation waste. Contractor accounts available. From $249.',
+    desc: 'Commercial construction debris removal for contractors and developers in Miami-Dade, Broward, Palm Beach, Martin, St. Lucie, Indian River, and Brevard. Drywall, lumber, concrete, tile, and all renovation waste. Contractor accounts available. From $249.',
     items: ['Drywall &amp; Sheetrock Scraps', 'Lumber, Plywood &amp; Wood Framing', 'Concrete, Block &amp; Masonry Debris', 'Tile, Flooring &amp; Carpet Remnants', 'Cabinets &amp; Countertop Tear-outs', 'Plumbing &amp; Electrical Materials', 'Roofing Materials &amp; Shingles', 'Metal Framing &amp; Ductwork'],
     pricing: { min: 249, avg: 650, max: 2500, note: 'Volume pricing for contractors. Ongoing jobsite accounts available with weekly scheduling.' },
     industries: ['General Contractors', 'Residential Developers', 'Commercial Renovation Firms', 'Kitchen &amp; Bath Remodelers', 'Roofing Companies', 'HVAC &amp; Plumbing Contractors', 'Property Owners &amp; Flippers', 'HOA Common Area Renovations'],
@@ -169,7 +169,7 @@ const COMMERCIAL_SERVICES = [
     slug: 'restaurant-cleanout',
     name: 'Restaurant Cleanout',
     tagline: 'Restaurant &amp; Food Service Cleanout Services in South Florida',
-    desc: 'Professional restaurant cleanout services in Palm Beach, Broward, and Miami-Dade. We remove commercial kitchen equipment, booths, tables, walk-in coolers, and all food service fixtures. Health code compliant. From $499.',
+    desc: 'Professional restaurant cleanout services in Miami-Dade, Broward, Palm Beach, Martin, St. Lucie, Indian River, and Brevard. We remove commercial kitchen equipment, booths, tables, walk-in coolers, and all food service fixtures. Health code compliant. From $499.',
     items: ['Commercial Kitchen Equipment', 'Walk-in Coolers &amp; Freezers', 'Restaurant Booths &amp; Tables', 'Bar Equipment &amp; Counters', 'Point-of-Sale Systems', 'Hood Systems &amp; Ventilation', 'Storage Racks &amp; Shelving', 'Dining Room Furniture &amp; Decor'],
     pricing: { min: 499, avg: 1100, max: 3500, note: 'Restaurant cleanouts vary widely by kitchen size and equipment. Most full restaurants fall in the $800-1,800 range.' },
     industries: ['Full-Service Restaurants', 'Fast Food &amp; QSR Locations', 'Food Trucks &amp; Ghost Kitchens', 'Catering Companies', 'Cafeterias &amp; Institutional Kitchens', 'Bars &amp; Nightclubs', 'Bakeries &amp; Delis', 'Hotel &amp; Resort Food Service'],
@@ -238,7 +238,7 @@ const COMMERCIAL_SERVICES = [
     slug: 'hoa-services',
     name: 'HOA Junk Removal Services',
     tagline: 'Junk Removal &amp; Bulk Waste Services for HOAs in South Florida',
-    desc: 'Reliable junk removal and bulk waste services for homeowners associations across Palm Beach, Broward, and Miami-Dade. Bulk item collection, common area cleanouts, community event cleanups, and recurring schedules. From $199.',
+    desc: 'Reliable junk removal and bulk waste services for homeowners associations across Miami-Dade, Broward, Palm Beach, Martin, St. Lucie, Indian River, and Brevard. Bulk item collection, common area cleanouts, community event cleanups, and recurring schedules. From $199.',
     items: ['Bulk Furniture Left at Curb', 'Common Area Furniture &amp; Fixtures', 'Pool Deck Equipment &amp; Furniture', 'Clubhouse Cleanouts', 'Community Event Cleanup', 'Landscape &amp; Yard Waste', 'Construction Debris from Common Areas', 'Storage Room Cleanouts'],
     pricing: { min: 199, avg: 550, max: 2500, note: 'Monthly HOA contracts available. Bulk item collection programs priced per community size.' },
     industries: ['Gated Residential Communities', 'Condo Associations', 'Townhome Communities', 'Active Adult Communities (55+)', 'Master-Planned Communities', 'Urban Loft &amp; Condo Buildings', 'Student Housing Associations', 'Mixed-Use Community Associations'],
@@ -416,12 +416,12 @@ ${FOOTER()}
 function generateHubPage() {
   const canonical = '/commercial';
   const title = 'Commercial Junk Removal Services in South Florida | Umuve';
-  const desc = 'Professional commercial junk removal services across Palm Beach, Broward, and Miami-Dade. Office cleanouts, retail, construction debris, restaurant cleanouts, warehouse cleanouts, property management, and HOA services. Insured. After-hours available.';
+  const desc = 'Professional commercial junk removal services across Miami-Dade, Broward, Palm Beach, Martin, St. Lucie, Indian River, and Brevard. Office cleanouts, retail, construction debris, restaurant cleanouts, warehouse cleanouts, property management, and HOA services. Insured. After-hours available.';
 
   const breadcrumbSchema = `<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://goumuve.com"},{"@type":"ListItem","position":2,"name":"Commercial Services","item":"https://goumuve.com/commercial"}]}</script>`;
 
   const faqSchema = `<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
-{"@type":"Question","name":"Do you offer commercial junk removal services?","acceptedAnswer":{"@type":"Answer","text":"Yes. Umuve specializes in commercial junk removal across Palm Beach, Broward, and Miami-Dade counties. Services include office cleanouts, retail store cleanouts, restaurant cleanouts, warehouse cleanouts, construction debris removal, property management cleanouts, and HOA bulk waste services."}},
+{"@type":"Question","name":"Do you offer commercial junk removal services?","acceptedAnswer":{"@type":"Answer","text":"Yes. Umuve specializes in commercial junk removal across Miami-Dade, Broward, Palm Beach, Martin, St. Lucie, Indian River, and Brevard counties. Services include office cleanouts, retail store cleanouts, restaurant cleanouts, warehouse cleanouts, construction debris removal, property management cleanouts, and HOA bulk waste services."}},
 {"@type":"Question","name":"Are your commercial services insured?","acceptedAnswer":{"@type":"Answer","text":"Yes. All Umuve operators carry commercial general liability insurance and workers compensation. We provide insurance documentation upon request for corporate and property management clients."}},
 {"@type":"Question","name":"Can you schedule after-hours or weekend commercial cleanouts?","acceptedAnswer":{"@type":"Answer","text":"Yes. After-hours (evenings after 6 PM) and weekend scheduling is available for all commercial services. Most office and retail cleanouts are scheduled after business hours to minimize disruption."}},
 {"@type":"Question","name":"Do you offer recurring commercial contracts?","acceptedAnswer":{"@type":"Answer","text":"Yes. Monthly and quarterly contracts are available for property managers, HOAs, contractors, and businesses with ongoing junk removal needs. Volume discounts apply."}}
@@ -440,7 +440,7 @@ ${NAV()}
 </nav>
 <div style="display:inline-block;background:rgba(255,255,255,0.15);padding:0.35rem 1rem;border-radius:9999px;font-size:0.85rem;font-weight:600;margin-bottom:1rem">South Florida Commercial Junk Removal</div>
 <h1 style="font-family:Outfit;font-size:clamp(1.75rem,4vw,3rem);font-weight:800;margin-bottom:1.25rem;line-height:1.2">Commercial Junk Removal Services</h1>
-<p style="font-size:1.1rem;opacity:0.92;margin-bottom:2rem;line-height:1.7">Professional, insured commercial cleanout services across Palm Beach, Broward, and Miami-Dade. Office cleanouts, retail, restaurants, warehouses, property management, and HOA services. After-hours available.</p>
+<p style="font-size:1.1rem;opacity:0.92;margin-bottom:2rem;line-height:1.7">Professional, insured commercial cleanout services across Miami-Dade, Broward, Palm Beach, Martin, St. Lucie, Indian River, and Brevard. Office cleanouts, retail, restaurants, warehouses, property management, and HOA services. After-hours available.</p>
 <div style="display:flex;flex-wrap:wrap;gap:1rem;align-items:center">
 <a href="https://app.goumuve.com/book" style="background:#DC2626;color:#fff;padding:1rem 2rem;font-weight:700;border-radius:0.5rem;text-decoration:none;font-size:1.05rem">Get a Commercial Quote</a>
 <a href="tel:8444356005" style="background:rgba(255,255,255,0.15);color:#fff;padding:1rem 2rem;font-weight:600;border-radius:0.5rem;text-decoration:none">(844) 435-6005</a>
@@ -514,7 +514,7 @@ ${[
 <h2 style="font-family:Outfit;font-size:2rem;font-weight:800;margin-bottom:2rem">Commercial Service FAQs</h2>
 <div style="display:grid;gap:1rem">
 ${[
-  {q:'Do you offer commercial junk removal services?', a:'Yes. Umuve specializes in commercial junk removal across Palm Beach, Broward, and Miami-Dade counties. Services include office cleanouts, retail store cleanouts, restaurant cleanouts, warehouse cleanouts, construction debris removal, property management cleanouts, and HOA bulk waste services.'},
+  {q:'Do you offer commercial junk removal services?', a:'Yes. Umuve specializes in commercial junk removal across Miami-Dade, Broward, Palm Beach, Martin, St. Lucie, Indian River, and Brevard counties. Services include office cleanouts, retail store cleanouts, restaurant cleanouts, warehouse cleanouts, construction debris removal, property management cleanouts, and HOA bulk waste services.'},
   {q:'Are your commercial services insured?', a:'Yes. All Umuve operators carry commercial general liability insurance and workers compensation. We provide insurance documentation upon request for corporate and property management clients.'},
   {q:'Can you schedule after-hours or weekend commercial cleanouts?', a:'Yes. After-hours (evenings after 6 PM) and weekend scheduling is available for all commercial services. Most office and retail cleanouts are scheduled after business hours to minimize disruption.'},
   {q:'Do you offer recurring commercial contracts?', a:'Yes. Monthly and quarterly contracts are available for property managers, HOAs, contractors, and businesses with ongoing junk removal needs. Volume discounts apply.'},

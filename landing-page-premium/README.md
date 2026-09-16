@@ -372,7 +372,7 @@ Questions about the design or code?
 
 - **Email**: hello@goumuve.com
 - **Phone**: (844) 435-6005
-- **Service Area**: Palm Beach & Broward County, FL
+- **Service Area**: Miami-Dade, Broward, Palm Beach, Martin, St. Lucie, Indian River, and Brevard counties
 
 ---
 

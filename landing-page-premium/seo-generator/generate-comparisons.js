@@ -94,7 +94,7 @@ const COMPARISONS = [
     umuveWins: [
       'Substantially Lower Costs — Umuve starts at $119, while 1-800-GOT-JUNK typically starts closer to $160.',
       'True Price Transparency — We give you an estimate online before you book. They usually require a driver to see the junk first.',
-      'Faster Dispatch — Because we use a platform of 500+ local operators, we can often match a truck in under 30 seconds.',
+      'Faster Dispatch — Because we use a platform of local, licensed haulers, we can often match a truck in under 30 seconds.',
       'Local Expertise — We focus purely on South Florida, meaning our operators know local recycling centers and donation sites better than a corporate franchise.'
     ],
     verdict: 'If you want the "brand name" experience and don\'t mind paying a premium for it, 1-800-GOT-JUNK is a solid service. But for South Florida residents who want the best price and an instant booking experience, Umuve is the more efficient, tech-forward alternative.',
@@ -124,7 +124,7 @@ const COMPARISONS = [
     umuveWins: [
       'Lower Starting Costs — We cater to everyone, from a single chair removal to full estates. Our $119 entry point is much more accessible.',
       'The "Donate First" Difference — We emphasize donation to local South Florida charities first, ensuring items have a second life rather than just being recycled for raw materials.',
-      'Platform Availability — 500+ operators means we have more "active trucks" on the road at any given time than a single Junk King franchise.',
+      'Platform Availability — A network of local operators means we have more "active trucks" on the road at any given time than a single Junk King franchise.',
       'Modern User Experience — Our dashboard lets you track your driver via GPS, just like a rideshare app.'
     ],
     verdict: 'Junk King is a great choice for very large loads where their slightly larger trucks provide a logistical edge. For residential furniture, appliance removal, and standard garage cleanouts, Umuve offers a better price and a vastly superior digital experience.',
@@ -159,7 +159,7 @@ const COMPARISONS = [
     verdict: 'If you have a project that will generate waste over a long period, rent a dumpster. If your junk is already "ready to go," hire Umuve. You\'ll likely pay a similar price but save yourself 8+ hours of back-breaking labor.',
     faqs: [
       { q: 'Is junk removal cheaper than a dumpster?', a: 'For smaller loads (under 10 cubic yards), Umuve is typically cheaper. For very large construction loads, a dumpster may have a lower flat rate, but you must factor in the "cost" of your own labor to load it.' },
-      { q: 'Do I need a permit for a dumpster in South Florida?', a: 'Yes, many cities in Palm Beach and Broward counties require a right-of-way permit if the dumpster is on the street. Umuve requires zero permits.' }
+      { q: 'Do I need a permit for a dumpster in South Florida?', a: 'Yes, many cities in Miami-Dade, Broward, Palm Beach, Martin, St. Lucie, Indian River, and Brevard counties require a right-of-way permit if the dumpster is on the street. Umuve requires zero permits.' }
     ]
   },
   {
@@ -175,7 +175,7 @@ const COMPARISONS = [
       { feature: 'Business Model', umuve: 'Platform + local operators', competitor: 'Franchise model', winner: 'tie' },
       { feature: 'Eco-Friendly', umuve: '87% recycled/donated', competitor: 'Eco-friendly policy', winner: 'umuve' },
       { feature: 'Moving Services', umuve: 'Junk removal only', competitor: 'Junk + moving combos', winner: 'competitor' },
-      { feature: 'Coverage in South FL', umuve: '42 cities, 500+ operators', competitor: 'Select franchise locations', winner: 'umuve' },
+      { feature: 'Coverage in South FL', umuve: 'Miami-Dade to Brevard, vetted local operators', competitor: 'Select franchise locations', winner: 'umuve' },
       { feature: 'Pricing Transparency', umuve: 'Online price estimate', competitor: 'Estimate requires appointment', winner: 'umuve' }
     ],
     competitorWins: [
@@ -186,17 +186,17 @@ const COMPARISONS = [
     umuveWins: [
       'Lower prices — Umuve starts at $119 versus College Hunks\'s $298 minimum, a substantial difference for small jobs.',
       'Instant booking — Umuve lets you book with an immediate price estimate. College Hunks requires a call-back or on-site assessment.',
-      'Broader coverage — 500+ local operators across 42 South Florida cities versus franchise territory limits.',
+      'Broader coverage — local, licensed haulers across 42 South Florida cities versus franchise territory limits.',
       'Eco-friendly commitment — 87% recycling and donation rate, with verifiable partner organizations.',
       'No upselling on moving — If you only want junk removed, Umuve focuses purely on that without trying to cross-sell moving services.'
     ],
     verdict: 'If you need both junk removal AND moving services in one booking, College Hunks is a reasonable choice. For pure junk removal in South Florida — especially smaller jobs — Umuve wins on price, convenience, and coverage. The $298 minimum at College Hunks means you pay the same for a single couch as for a half-truckload at Umuve.',
     faqs: [
       { q: 'Is College Hunks more expensive than Umuve?', a: 'Yes, on average. College Hunks has a $298+ minimum for most jobs. Umuve starts at $119 for single-item pickup. For a half-truck load, expect to pay 25-40% more with College Hunks than with Umuve in South Florida.' },
-      { q: 'Does College Hunks offer same-day junk removal in South Florida?', a: 'College Hunks does offer same-day service depending on franchise location availability. Umuve offers same-day service for approximately 67% of bookings, dispatched from 500+ local operators across 42 cities.' },
+      { q: 'Does College Hunks offer same-day junk removal in South Florida?', a: 'College Hunks does offer same-day service depending on franchise location availability. Umuve offers same-day service for approximately 67% of bookings, dispatched from local, licensed haulers across 42 cities.' },
       { q: 'Can College Hunks help with moving?', a: 'Yes. College Hunks offers moving services in addition to junk removal, which Umuve does not. If you need both junk hauled and furniture moved in the same appointment, College Hunks may be the better fit.' },
       { q: 'Which service is better for a full house cleanout?', a: 'Both can handle full house cleanouts. Umuve typically prices full house cleanouts 20-35% lower than College Hunks and can often staff larger crews through its operator network for faster completion.' },
-      { q: 'Does Umuve operate in the same areas as College Hunks in Florida?', a: 'Umuve covers 42 cities across Palm Beach, Broward, and Miami-Dade counties — a broader footprint than most individual College Hunks franchise territories in South Florida.' }
+      { q: 'Does Umuve operate in the same areas as College Hunks in Florida?', a: 'Umuve covers 42 cities across Miami-Dade, Broward, Palm Beach, Martin, St. Lucie, Indian River, and Brevard counties — a broader footprint than most individual College Hunks franchise territories in South Florida.' }
     ]
   },
   {
@@ -231,7 +231,7 @@ const COMPARISONS = [
     faqs: [
       { q: 'Can Trash Butler remove furniture or bulk items?', a: 'No. Trash Butler is a valet trash service — it collects bagged household garbage from outside apartment doors. Bulk items like furniture, appliances, and boxes of junk are not within their service scope.' },
       { q: 'Can I book Trash Butler for my individual apartment?', a: 'No. Trash Butler operates on community contracts with apartment building management. Individual residents cannot book Trash Butler independently — it must be part of your building\'s services.' },
-      { q: 'Is Trash Butler available in South Florida?', a: 'Trash Butler operates in select apartment communities across South Florida. Coverage varies by specific building and landlord contract. Umuve covers all 42 cities across Palm Beach, Broward, and Miami-Dade counties.' },
+      { q: 'Is Trash Butler available in South Florida?', a: 'Trash Butler operates in select apartment communities across South Florida. Coverage varies by specific building and landlord contract. Umuve covers all 42 cities across Miami-Dade, Broward, Palm Beach, Martin, St. Lucie, Indian River, and Brevard counties.' },
       { q: 'If I live in a Trash Butler building and need junk removed, what do I use?', a: 'You would use Umuve (or a similar junk removal service) for bulk item removal. Trash Butler only handles regular bagged trash. For furniture, appliances, moving cleanouts, or anything bulky, book Umuve.' },
       { q: 'How much does Trash Butler cost compared to Umuve?', a: 'Trash Butler is priced at roughly $25-35 per unit per month, paid by the apartment community (and often baked into rent). Umuve is priced per job starting at $119, booked individually on-demand.' }
     ]
@@ -284,11 +284,11 @@ const COMPARISONS = [
       { feature: 'Starting Price', umuve: '$119', competitor: '$150-299 (varies by service)', winner: 'umuve' },
       { feature: 'Online Booking', umuve: 'Instant quote + book', competitor: 'Most require phone or callback', winner: 'umuve' },
       { feature: 'Same-Day Service', umuve: 'Yes (67% of jobs)', competitor: 'Available but not guaranteed', winner: 'tie' },
-      { feature: 'South FL Coverage', umuve: '42 cities, 500+ operators', competitor: 'Varies by franchise territory', winner: 'umuve' },
+      { feature: 'South FL Coverage', umuve: 'Miami-Dade to Brevard, vetted local operators', competitor: 'Varies by franchise territory', winner: 'umuve' },
       { feature: 'Eco-Friendly', umuve: '87% recycled/donated', competitor: '60-75% varies', winner: 'umuve' },
       { feature: 'Commercial Service', umuve: 'Yes, dedicated service', competitor: 'Some offer commercial', winner: 'tie' },
       { feature: 'Price Transparency', umuve: 'Online estimate before booking', competitor: 'On-site estimate usually required', winner: 'umuve' },
-      { feature: 'Local Operators', umuve: '500+ vetted local operators', competitor: 'Franchise or single company', winner: 'umuve' }
+      { feature: 'Local Operators', umuve: 'vetted local operators', competitor: 'Franchise or single company', winner: 'umuve' }
     ],
     competitorWins: [
       '1-800-GOT-JUNK brand recognition — Their distinctive trucks and national brand create trust for first-time buyers.',
@@ -298,19 +298,19 @@ const COMPARISONS = [
     ],
     umuveWins: [
       'Lowest starting price — $119 minimum versus $150-299 for national franchises.',
-      'Broadest South Florida coverage — 42 cities covered through 500+ local operators, versus limited franchise territories.',
+      'Broadest South Florida coverage — 42 cities covered through local, licensed haulers, versus limited franchise territories.',
       'True online booking — Instant price estimate and booking confirmation without requiring a phone call.',
       'Best eco-friendly performance — 87% recycling and donation rate, higher than any national competitor.',
-      'Marketplace model — 500+ vetted local operators means faster dispatch, more availability, and more competitive pricing than a single-company model.',
+      'Marketplace model — vetted local operators means faster dispatch, more availability, and more competitive pricing than a single-company model.',
       'Commercial service built-in — Office cleanouts, warehouse jobs, and HOA services without needing a separate vendor.'
     ],
-    verdict: 'For most South Florida homeowners and businesses, Umuve offers the best combination of price, convenience, coverage, and environmental responsibility. The 500+ local operator network means more availability, faster response times, and more competitive pricing than any single-company franchise. If brand recognition is your primary decision factor, 1-800-GOT-JUNK is the most widely recognized name. If you need moving services bundled with junk removal, College Hunks is worth considering. For everyone else — Umuve is the answer.',
+    verdict: 'For most South Florida homeowners and businesses, Umuve offers the best combination of price, convenience, coverage, and environmental responsibility. The local operator network means more availability, faster response times, and more competitive pricing than any single-company franchise. If brand recognition is your primary decision factor, 1-800-GOT-JUNK is the most widely recognized name. If you need moving services bundled with junk removal, College Hunks is worth considering. For everyone else — Umuve is the answer.',
     faqs: [
       { q: 'What is the cheapest junk removal service in South Florida?', a: 'Umuve starts at $119 for single-item pickup, which is the lowest starting price among major services in South Florida. Local cash haulers may sometimes undercut this, but they typically lack insurance, eco-friendly disposal practices, and consistent availability.' },
-      { q: 'Which junk removal service has the best coverage in South Florida?', a: 'Umuve covers 42 cities across Palm Beach, Broward, and Miami-Dade counties through 500+ local operators. This is broader than any individual franchise territory for 1-800-GOT-JUNK, Junk King, or College Hunks in South Florida.' },
+      { q: 'Which junk removal service has the best coverage in South Florida?', a: 'Umuve covers 42 cities across Miami-Dade, Broward, Palm Beach, Martin, St. Lucie, Indian River, and Brevard counties through local, licensed haulers. This is broader than any individual franchise territory for 1-800-GOT-JUNK, Junk King, or College Hunks in South Florida.' },
       { q: 'How do I know which junk removal service to trust?', a: 'Check for insurance (ask for a COI), read reviews on Google and Yelp, confirm eco-friendly disposal policies, and verify same-day availability. All Umuve operators are vetted, insured, and rated by customers. You can read operator reviews before booking.' },
       { q: 'Is it worth hiring a junk removal service or should I rent a truck?', a: 'Hiring a service like Umuve is usually more cost-effective when you factor in truck rental ($50-100), gas, dump fees ($30-80), your time (4-8 hours), and the physical labor. For $149-250, Umuve handles all of it for you.' },
-      { q: 'Do national junk removal chains service all of South Florida?', a: 'National franchises have specific territory boundaries. Not every city in Palm Beach, Broward, and Miami-Dade is served by a franchise location. Umuve\'s marketplace model with 500+ local operators provides more consistent coverage across all 42 South Florida cities.' }
+      { q: 'Do national junk removal chains service all of South Florida?', a: 'National franchises have specific territory boundaries. Not every city in Miami-Dade, Broward, Palm Beach, Martin, St. Lucie, Indian River, and Brevard is served by a franchise location. Umuve\'s marketplace model with local, licensed haulers provides more consistent coverage across all 42 South Florida cities.' }
     ]
   },
   {

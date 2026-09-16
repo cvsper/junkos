@@ -58,7 +58,7 @@
 **Headline:** Junk Gone in 24 Hours
 **Primary text:**
 > Got junk? We'll haul it away — fast. Starting at $119.
-> Same-day service available across Palm Beach & Broward.
+> Same-day service available across Miami-Dade, Broward, Palm Beach, Martin, St. Lucie, Indian River, and Brevard.
 > Book online in 2 minutes. No hidden fees.
 **CTA:** Book Now
 **URL:** https://goumuve.com/book

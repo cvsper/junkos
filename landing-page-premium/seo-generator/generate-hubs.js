@@ -53,7 +53,7 @@ const FOOTER = () => `<footer style="background:#111827;color:#9ca3af;padding:3r
 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:2rem;margin-bottom:2rem">
 <div>
 <img src="/logo-nav.png" alt="Umuve — Hauling Made Simple" width="107" height="32" loading="lazy" style="margin-bottom:1rem;filter:brightness(0) invert(1)">
-<p style="font-size:0.8rem;line-height:1.6">South Florida's junk removal platform. 500+ local operators.</p>
+<p style="font-size:0.8rem;line-height:1.6">South Florida's junk removal platform. local, licensed haulers.</p>
 </div>
 <div>
 <p style="font-weight:600;color:#fff;margin-bottom:0.5rem;font-size:0.875rem">Services</p>
@@ -140,7 +140,7 @@ ${NAV()}
 <a href="/" style="color:#DC2626;text-decoration:none">Home</a> &rsaquo; <span>All Services</span>
 </nav>
 <h1 style="font-family:Outfit;font-size:clamp(2rem,4vw,3rem);font-weight:800;margin-bottom:1rem;line-height:1.2">Junk Removal Services in South Florida</h1>
-<p style="font-size:1.1rem;color:#5c5c5c;margin-bottom:2rem;max-width:700px;line-height:1.7">17 services. 42 cities. 500+ local operators. Same-day available. All pricing is transparent — see your estimate before you book.</p>
+<p style="font-size:1.1rem;color:#5c5c5c;margin-bottom:2rem;max-width:700px;line-height:1.7">17 services. 42 cities. local, licensed haulers. Same-day available. All pricing is transparent — see your estimate before you book.</p>
 <div style="display:flex;flex-wrap:wrap;gap:1rem">
 <a href="https://app.goumuve.com/book" style="background:#DC2626;color:#fff;padding:1rem 2rem;font-weight:700;border-radius:0.5rem;text-decoration:none">Book Now — From $119</a>
 <a href="/pricing" style="background:#fff;color:#374151;padding:1rem 2rem;font-weight:600;border-radius:0.5rem;text-decoration:none;border:1px solid rgba(0,0,0,0.15)">View Full Pricing</a>
@@ -150,7 +150,7 @@ ${NAV()}
 <!-- Stats Bar -->
 <section style="background:#DC2626;padding:1.5rem 0">
 <div class="container"><div style="display:flex;flex-wrap:wrap;gap:2rem;align-items:center;justify-content:center">
-${[['17', 'Services offered'],['42', 'South FL cities'],['500+', 'Local operators'],['$119', 'Starting price']].map(([n, l]) => `<div style="text-align:center"><div style="font-size:1.5rem;font-weight:800;color:#fff;font-family:Outfit">${n}</div><div style="font-size:0.8rem;color:rgba(255,255,255,0.85)">${l}</div></div>`).join('<div style="width:1px;height:36px;background:rgba(255,255,255,0.3)"></div>')}
+${[['17', 'Services offered'],['42', 'South FL cities'],['Licensed', 'Vetted haulers'],['$119', 'Starting price']].map(([n, l]) => `<div style="text-align:center"><div style="font-size:1.5rem;font-weight:800;color:#fff;font-family:Outfit">${n}</div><div style="font-size:0.8rem;color:rgba(255,255,255,0.85)">${l}</div></div>`).join('<div style="width:1px;height:36px;background:rgba(255,255,255,0.3)"></div>')}
 </div></div></section>
 
 <!-- Residential Services -->
@@ -284,7 +284,7 @@ const CITIES = [
 function generateLocationsHub() {
   const canonical = '/locations';
   const title = 'Junk Removal Service Areas in South Florida — 42 Cities | Umuve';
-  const desc = 'Umuve serves 42 cities across Palm Beach, Broward, and Miami-Dade counties. Find junk removal service in your city. 500+ local operators. Same-day available. Starts at $119.';
+  const desc = 'Umuve serves 42 cities across Miami-Dade, Broward, Palm Beach, Martin, St. Lucie, Indian River, and Brevard counties. Find junk removal service in your city. local, licensed haulers. Same-day available. Starts at $119.';
 
   const palmBeach = CITIES.filter(c => c.county === 'Palm Beach');
   const broward = CITIES.filter(c => c.county === 'Broward');
@@ -320,13 +320,13 @@ ${NAV()}
 <a href="/" style="color:#DC2626;text-decoration:none">Home</a> &rsaquo; <span>Service Areas</span>
 </nav>
 <h1 style="font-family:Outfit;font-size:clamp(2rem,4vw,3rem);font-weight:800;margin-bottom:1rem;line-height:1.2">Junk Removal Service Areas in South Florida</h1>
-<p style="font-size:1.1rem;color:#5c5c5c;margin-bottom:1.5rem;max-width:700px;line-height:1.7">Umuve serves 42 cities across Palm Beach, Broward, and Miami-Dade counties. Over 500 local operators ready for same-day pickup.</p>
+<p style="font-size:1.1rem;color:#5c5c5c;margin-bottom:1.5rem;max-width:700px;line-height:1.7">Umuve serves 42 cities across Miami-Dade, Broward, Palm Beach, Martin, St. Lucie, Indian River, and Brevard counties. Over 500 local operators ready for same-day pickup.</p>
 <div style="display:flex;flex-wrap:wrap;gap:1rem;margin-bottom:2rem">
 <a href="https://app.goumuve.com/book" style="background:#DC2626;color:#fff;padding:1rem 2rem;font-weight:700;border-radius:0.5rem;text-decoration:none">Book in Your City</a>
 <a href="/pricing" style="background:#fff;color:#374151;padding:1rem 2rem;font-weight:600;border-radius:0.5rem;text-decoration:none;border:1px solid rgba(0,0,0,0.12)">View Pricing</a>
 </div>
 <div style="display:flex;flex-wrap:wrap;gap:1.5rem">
-${[['42', 'Cities covered'],['500+', 'Local operators'],['3 Counties', 'Palm Beach, Broward, Miami-Dade'],['Same-Day', 'Available most cities']].map(([n, l]) => `<div><span style="font-family:Outfit;font-weight:800;color:#DC2626;font-size:1.25rem">${n}</span> <span style="color:#6b7280;font-size:0.875rem">${l}</span></div>`).join('')}
+${[['42', 'Cities covered'],['Licensed', 'Vetted haulers'],['7 Counties', 'Miami-Dade, Broward, Palm Beach, Martin, St. Lucie, Indian River, and Brevard'],['Same-Day', 'Available most cities']].map(([n, l]) => `<div><span style="font-family:Outfit;font-weight:800;color:#DC2626;font-size:1.25rem">${n}</span> <span style="color:#6b7280;font-size:0.875rem">${l}</span></div>`).join('')}
 </div>
 </div></section>
 
@@ -398,7 +398,7 @@ const GUIDES = [
   { slug: 'how-to-dispose-of-a-tv', name: 'How to Dispose of a TV', desc: 'Florida e-waste law and TV disposal options explained.', category: 'Disposal Guides' },
   { slug: 'how-to-dispose-of-electronics', name: 'How to Dispose of Electronics', desc: 'E-waste recycling guide for South Florida residents.', category: 'Disposal Guides' },
   { slug: 'how-to-dispose-of-paint', name: 'How to Dispose of Paint', desc: 'Latex vs oil paint disposal rules in Florida.', category: 'Disposal Guides' },
-  { slug: 'how-to-dispose-of-tires', name: 'How to Dispose of Tires', desc: 'Legal tire disposal options in Palm Beach and Broward.', category: 'Disposal Guides' },
+  { slug: 'how-to-dispose-of-tires', name: 'How to Dispose of Tires', desc: 'Legal tire disposal options in Miami-Dade, Broward, Palm Beach, Martin, St. Lucie, Indian River, and Brevard.', category: 'Disposal Guides' },
   { slug: 'how-to-dispose-of-concrete', name: 'How to Dispose of Concrete', desc: 'Construction concrete and masonry disposal in South Florida.', category: 'Disposal Guides' },
   { slug: 'how-to-dispose-of-drywall', name: 'How to Dispose of Drywall', desc: 'Drywall recycling and disposal rules for Florida.', category: 'Disposal Guides' },
   { slug: 'how-to-dispose-of-a-couch', name: 'How to Get Rid of a Couch', desc: 'The fastest and cheapest ways to dispose of a sofa.', category: 'Disposal Guides' },
@@ -435,7 +435,7 @@ ${NAV()}
 <a href="/" style="color:#DC2626;text-decoration:none">Home</a> &rsaquo; <span>Guides</span>
 </nav>
 <h1 style="font-family:Outfit;font-size:clamp(2rem,4vw,3rem);font-weight:800;margin-bottom:1rem;line-height:1.2">Junk Removal Guides for South Florida</h1>
-<p style="font-size:1.1rem;color:#5c5c5c;margin-bottom:2rem;max-width:700px;line-height:1.7">Free guides covering junk removal pricing, disposal how-tos, cleanout checklists, and renovation guides. Written for South Florida residents in Palm Beach, Broward, and Miami-Dade counties.</p>
+<p style="font-size:1.1rem;color:#5c5c5c;margin-bottom:2rem;max-width:700px;line-height:1.7">Free guides covering junk removal pricing, disposal how-tos, cleanout checklists, and renovation guides. Written for South Florida residents in Miami-Dade, Broward, Palm Beach, Martin, St. Lucie, Indian River, and Brevard counties.</p>
 <div style="display:flex;flex-wrap:wrap;gap:0.75rem">
 ${categories.map(c => `<a href="#${c.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}" style="padding:0.5rem 1rem;background:#f3f4f6;color:#374151;text-decoration:none;border-radius:9999px;font-size:0.85rem;font-weight:500">${c}</a>`).join('')}
 </div>
