@@ -491,7 +491,7 @@ PAGE_HTML = r"""<!doctype html>
     </div>
   </section>
 </div>
-<script src="/static/desk-stats.js?v=4"></script>
+<script src="/static/desk-stats.js?v=5"></script>
 <script src="/static/desk-drill.js?v=1"></script>
 </body>
 </html>

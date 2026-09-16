@@ -158,6 +158,30 @@ def test_the_report_shows_where_people_leave():
     assert out["saw_a_price"] == 3
 
 
+def test_somebody_mid_checkout_is_not_reported_as_walked_away():
+    """The page and the call list must agree: a live session is not a lost one.
+
+    Someone who saw a price two minutes ago is probably typing their card in.
+    Counting them as walked away would put them on Tracy's call list and get
+    them phoned mid-checkout.
+    """
+    _beacon(session_id="live", step=5, estimatedPrice=312, phone="5615550199")
+    out = booking_funnel.report(30)
+    assert out["saw_a_price"] == 1
+    assert out["still_booking"] == 1
+    assert out["saw_a_price_and_left"] == 0
+    assert out["money_left_on_the_table"] == 0
+    assert out["recoverable"] == []
+
+
+def test_the_report_and_the_call_list_use_the_same_rule():
+    row = _beacon(session_id="gone", step=5, estimatedPrice=312, phone="5615550199")
+    _age(row, booking_funnel.ABANDON_AFTER_MINUTES + 5)
+    out = booking_funnel.report(30)
+    assert out["saw_a_price_and_left"] == 1 and out["still_booking"] == 0
+    assert len(out["recoverable"]) == len(booking_funnel.open_leads()) == 1
+
+
 def test_the_report_counts_the_money_that_walked():
     a = _beacon(session_id="a", step=5, estimatedPrice=389, phone="5615550142")
     b = _beacon(session_id="b", step=5, estimatedPrice=164)

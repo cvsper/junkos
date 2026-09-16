@@ -211,8 +211,16 @@ def report(days=30):
         })
         prev = reached
 
+    # Someone who saw a price two minutes ago has not walked away — they are
+    # probably typing their card in. Only a session that has sat still for
+    # ABANDON_AFTER_MINUTES counts as lost, which is the same rule the desk
+    # lead queue uses, so the page and the call list never disagree.
+    idle_before = _now() - timedelta(minutes=ABANDON_AFTER_MINUTES)
     priced = [r for r in rows if r.quoted_price is not None]
-    priced_lost = [r for r in priced if not r.converted]
+    still_going = [r for r in priced
+                   if not r.converted and (r.updated_at or r.created_at) > idle_before]
+    priced_lost = [r for r in priced
+                   if not r.converted and (r.updated_at or r.created_at) <= idle_before]
     reachable_lost = [r for r in priced_lost if r.reachable]
     values = [r.quoted_price for r in priced if r.quoted_price]
 
@@ -233,6 +241,7 @@ def report(days=30):
         "conversion": round(100.0 * booked / started, 1) if started else 0.0,
         "steps": steps,
         "saw_a_price": len(priced),
+        "still_booking": len(still_going),
         "saw_a_price_and_left": len(priced_lost),
         "left_and_reachable": len(reachable_lost),
         "money_left_on_the_table": round(sum(r.quoted_price or 0 for r in priced_lost), 2),

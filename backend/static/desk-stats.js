@@ -113,6 +113,7 @@
     facts(box, [
       {v: num(w.started), l: "Started a booking"},
       {v: num(w.saw_a_price), l: "Got to a price"},
+      {v: num(w.still_booking), l: "Still booking now", cls: w.still_booking ? "ok" : "dim"},
       {v: num(w.saw_a_price_and_left), l: "Left after the price", cls: w.saw_a_price_and_left ? "warn" : null},
       {v: num(w.booked), l: "Booked", cls: w.booked ? "ok" : null},
       {v: money(w.money_left_on_the_table), l: "Walked away", cls: w.money_left_on_the_table ? "hot" : null}
