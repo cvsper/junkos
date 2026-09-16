@@ -244,5 +244,24 @@
     load();
   });
   $("va-pick").addEventListener("change", function(){ va = this.value; load(); });
+
+  // How much desk line is left, in texts or minutes. Both come out of the same
+  // balance, so it reads "or" — and the balance itself stays off the screen.
+  function loadCapacity(){
+    post("/api/va/desk/capacity", {}).then(function(r){
+      var chip = $("cap-chip");
+      if(!chip) return;
+      var b = (r && r.status === 200) ? (r.body || {}) : {};
+      if(!b.ok || !b.label){ chip.hidden = true; return; }
+      $("cap-label").textContent = b.label;
+      chip.className = "mg-cap" + (b.level === "low" || b.level === "empty" ? " " + b.level : "");
+      chip.title = b.level === "empty"
+        ? "The desk line is out — top up Twilio before the next call."
+        : "Texts or minutes left on the desk line — they share one balance.";
+      chip.hidden = false;
+    }).catch(function(){});
+  }
+  loadCapacity();
+  setInterval(loadCapacity, 3600000);
   load();
 })();

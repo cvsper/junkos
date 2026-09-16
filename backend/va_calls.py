@@ -1235,6 +1235,7 @@ CALLS_HTML = r"""<!doctype html>
       <div class="bar-sub" id="daybar">—</div>
       <button class="who who-btn" id="who" type="button" hidden title="Account"></button>
       <button class="clock" id="clock-chip" type="button" aria-label="Time clock"><span class="ck-dot"></span><span id="clock-label">Clock in</span></button>
+      <span class="cap" id="cap-chip" hidden><span class="cap-dot"></span><span id="cap-label"></span></span>
       <a class="back" href="/va/analytics" aria-label="Analytics" title="Analytics">▤</a>
       <button class="back" id="queue-toggle" type="button" aria-label="Your queue">☰</button>
       <button class="back" id="search-toggle" type="button" aria-label="Find a business">⌕</button>
@@ -1907,7 +1908,19 @@ CALLS_CSS = r"""/* Call Desk — layers over /va/app.css tokens (frosted glass o
 .tb-tot{display:flex;gap:14px;align-items:baseline;padding:8px 2px;border-bottom:1px solid var(--line);font-size:13px}
 .tb-tot b{font-family:var(--display);font-weight:700;font-size:17px;letter-spacing:-.02em}
 .tb-tot span{color:var(--muted)}
-@media (max-width:480px){.clock #clock-label{display:none}.clock{padding:0 10px}}
+/* line left — texts or minutes on the desk number, never a dollar figure */
+.cap{display:inline-flex;align-items:center;gap:7px;height:38px;padding:0 12px;margin-right:6px;
+  font-family:var(--body);font-weight:600;font-size:12.5px;color:var(--muted);background:var(--raise);
+  border:1px solid var(--glass-border);border-radius:var(--r-pill);box-shadow:var(--shadow-soft);
+  white-space:nowrap;font-variant-numeric:tabular-nums;cursor:default}
+.cap-dot{width:8px;height:8px;border-radius:50%;background:var(--ok)}
+.cap.low{color:var(--warn);border-color:rgba(var(--warn-rgb),.38)}
+.cap.low .cap-dot{background:var(--warn);box-shadow:0 0 0 3px rgba(var(--warn-rgb),.18)}
+.cap.empty{color:var(--danger);border-color:rgba(var(--danger-rgb),.42)}
+.cap.empty .cap-dot{background:var(--danger);box-shadow:0 0 0 3px rgba(var(--danger-rgb),.18)}
+@media (max-width:480px){.clock #clock-label{display:none}.clock{padding:0 10px}
+  /* the desk bar is tight on a phone; the runway lives on the stats line there */
+  .cap{display:none}}
 /* queue panel */
 .qb-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:12px}
 .qb-t{font-family:var(--display);font-weight:700;font-size:24px;letter-spacing:-.02em;line-height:1.1}
@@ -2117,13 +2130,38 @@ CALLS_JS = r"""(function(){
 
   function fmtPhone(p){ return p; }
 
+  var capLabel = "";
+  var lastStats = null;
   function setDaybar(stats){
+    if(stats) lastStats = stats;
+    stats = lastStats;
     if(!stats) return;
     var txt = stats.calls_today + " calls today · " +
       stats.interested_today + " interested · " +
       (stats.due_now + stats.fresh) + " in queue";
     document.getElementById("daybar").textContent = txt;
-    var d2 = document.getElementById("daybar2"); if(d2) d2.textContent = txt;
+    // the header chip is hidden on a phone, so the stats line carries it there
+    var d2 = document.getElementById("daybar2");
+    if(d2) d2.textContent = capLabel ? txt + " · " + capLabel : txt;
+  }
+
+  // How much desk line is left, in texts or minutes. Same balance pays for
+  // both, so it reads "or" — never two pools, and never a dollar figure.
+  function loadCapacity(){
+    post("/api/va/desk/capacity", {}).then(function(r){
+      var chip = document.getElementById("cap-chip");
+      if(!chip) return;
+      var body = (r && r.status === 200) ? (r.body || {}) : {};
+      if(!body.ok || !body.label){ chip.hidden = true; capLabel = ""; setDaybar(); return; }
+      capLabel = body.label;
+      document.getElementById("cap-label").textContent = body.label;
+      chip.className = "cap" + (body.level === "low" || body.level === "empty" ? " " + body.level : "");
+      chip.title = body.level === "empty"
+        ? "The desk line is out — top up Twilio before the next call."
+        : "Texts or minutes left on the desk line — they share one balance.";
+      chip.hidden = false;
+      setDaybar();
+    }).catch(function(){});
   }
 
   function render(resp){
@@ -3020,6 +3058,7 @@ CALLS_JS = r"""(function(){
     if(deskBooted) return; deskBooted = true;
     post("/api/va/flags", {}).then(function(r){ if(r.status === 200){ flags = r.body.flags || {}; applyFlags(); } }).catch(function(){});
     pollUnread(); loadClock(); pollClock();
+    loadCapacity(); setInterval(loadCapacity, 3600000);
     post("/api/va/desk/unread", {}).then(function(r){ if(r.status === 200) setUnread(r.body.unread); }).catch(function(){});
     post("/api/va/desk/token", {}).then(function(r){
       if(r.status !== 200) return;

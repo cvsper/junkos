@@ -506,7 +506,7 @@ MANAGER_HTML = r"""<!doctype html>
 <script src="/static/desk-shell.js?v=4" defer></script>
 <link rel="stylesheet" href="/static/desk-gate.css?v=3" />
 <script src="/static/desk-gate.js?v=2" defer></script>
-<link rel="stylesheet" href="/static/manager.css?v=4" />
+<link rel="stylesheet" href="/static/manager.css?v=5" />
 </head>
 <body class="mgr">
 <div id="app">
@@ -524,6 +524,7 @@ MANAGER_HTML = r"""<!doctype html>
       <span class="wordmark">UMUVE<span class="dot"></span></span>
       <span class="mg-title">Desk manager</span>
       <a class="ds-link" href="/va/analytics">Desk analytics →</a>
+      <span class="mg-cap" id="cap-chip" hidden><span class="mg-cap-dot"></span><span id="cap-label"></span></span>
       <span class="bar-sub" id="who"></span>
     </header>
     <div class="mg-wrap">
@@ -603,7 +604,7 @@ MANAGER_HTML = r"""<!doctype html>
     </div>
   </section>
 </div>
-<script src="/static/manager.js?v=2"></script>
+<script src="/static/manager.js?v=3"></script>
 <script src="/static/manager-pay.js?v=2"></script>
 <script src="/static/desk-drill.js?v=1"></script>
 </body>

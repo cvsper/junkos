@@ -67,6 +67,14 @@ def check_desk_health(alert=False):
                 balance=round(amount, 2))
         except Exception as e:
             put("twilio_balance", "warn", "balance unavailable: " + type(e).__name__)
+        try:
+            # Refresh the desk's runway cache on the same 30-minute beat, so
+            # /api/va/desk/capacity answers from the DB instead of making a VA
+            # wait on Twilio mid-shift. Units only — see twilio_capacity.py.
+            from twilio_capacity import desk_capacity
+            desk_capacity(refresh=True)
+        except Exception:
+            logger.debug("capacity cache refresh failed", exc_info=True)
         if desk:
             try:
                 nums = client.incoming_phone_numbers.list(phone_number=desk, limit=1)

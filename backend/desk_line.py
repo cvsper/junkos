@@ -23,6 +23,7 @@ VA-facing (passcode-gated, same code as /va):
   POST /api/va/desk/thread   conversation for one prospect; marks it read
   POST /api/va/desk/text     free-form text from the desk line
   POST /api/va/desk/inbox    recent replies across all prospects + unread count
+  POST /api/va/desk/capacity how much line is left, in texts or minutes (never $)
 
 Env:
   DESK_TWILIO_NUMBER    E.164 desk line. Unset → texts fall back to the main
@@ -1143,3 +1144,27 @@ def desk_unread():
     if not ident:
         return jsonify({"error": "Sign in to the desk first."}), 401
     return jsonify({"unread": unread_count()}), 200
+
+
+@deskline_bp.route("/api/va/desk/capacity", methods=["POST"])
+@_ratelimit
+def desk_capacity_left():
+    """How much line is left, in texts or minutes — never in dollars.
+
+    The VA needs to know whether the desk will last the shift; the account
+    balance is the owner's business, so only units cross this line. Texts and
+    minutes share one balance, so they read as alternatives, not two pools.
+    """
+    data = request.get_json(silent=True) or {}
+    ident = desk_identity(data)
+    if not ident:
+        return jsonify({"error": "Sign in to the desk first."}), 401
+    try:
+        from twilio_capacity import desk_capacity, summary_line
+        cap = desk_capacity()
+    except Exception:
+        logger.exception("desk capacity check failed")
+        return jsonify({"ok": False, "texts": None, "minutes": None, "level": "unknown", "label": ""}), 200
+    return jsonify({"ok": bool(cap.get("ok")), "texts": cap.get("texts"),
+                    "minutes": cap.get("minutes"), "level": cap.get("level"),
+                    "label": summary_line(cap), "checked_at": cap.get("checked_at")}), 200

@@ -142,6 +142,18 @@ body.mgr #app{max-width:none;overflow:visible;display:block}
 .mg-bar .mg-title{white-space:nowrap}
 .mg-bar .ds-link{margin-left:6px;color:var(--muted);font-size:12.5px;text-decoration:none;border-bottom:1px solid var(--line);white-space:nowrap}
 .mg-bar .ds-link:hover{color:var(--ink);border-color:var(--ink)}
+/* line left on the desk number — texts or minutes, never a dollar figure */
+.mg-cap{display:inline-flex;align-items:center;gap:7px;margin-left:auto;padding:7px 12px;
+  font-family:var(--body);font-weight:600;font-size:12.5px;color:var(--muted);background:var(--raise);
+  border:1px solid var(--glass-border);border-radius:var(--r-pill);box-shadow:var(--shadow-soft);
+  white-space:nowrap;font-variant-numeric:tabular-nums}
+.mg-cap-dot{width:8px;height:8px;border-radius:50%;background:var(--ok)}
+.mg-cap.low{color:var(--warn);border-color:rgba(var(--warn-rgb),.38)}
+.mg-cap.low .mg-cap-dot{background:var(--warn);box-shadow:0 0 0 3px rgba(var(--warn-rgb),.18)}
+.mg-cap.empty{color:var(--danger);border-color:rgba(var(--danger-rgb),.42)}
+.mg-cap.empty .mg-cap-dot{background:var(--danger);box-shadow:0 0 0 3px rgba(var(--danger-rgb),.18)}
+/* the chip takes the auto margin when it is showing, so #who sits beside it */
+.mg-cap:not([hidden]) ~ .bar-sub{margin-left:0}
 .mg-bar .bar-sub{margin-left:auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:40%}
 .mg-seg{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
 .mg-seg button{white-space:nowrap}
@@ -149,6 +161,9 @@ body.mgr #app{max-width:none;overflow:visible;display:block}
   .mg-bar{gap:10px;padding:12px 14px}
   .mg-bar .ds-link{display:none}
   .mg-bar .bar-sub{font-size:12px}
+  /* the analytics link gives up its room here; the runway keeps its place,
+     because "top up the line" is exactly what you check from a phone */
+  .mg-cap{padding:6px 10px;font-size:12px}
   .mg-controls{gap:10px 12px}
   .mg-legend{margin-left:0;flex-wrap:wrap}
   .mg-sec{padding:16px 16px 18px;border-radius:var(--r-md)}
