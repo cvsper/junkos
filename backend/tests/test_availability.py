@@ -79,3 +79,51 @@ def test_a_hauler_out_of_radius_does_not_count():
     db.session.commit()
     slots = availability.slots_for(_tomorrow(), 26.62, -80.05)
     assert all(not s["available"] for s in slots)
+
+
+def test_a_repeat_ask_is_served_from_the_cache(client):
+    _hauler("Ready Rita")
+    url = "/api/booking/availability?date={}&lat=26.62&lng=-80.05".format(_tomorrow())
+    first = client.get(url)
+    assert first.headers.get("X-Availability-Cache") == "miss"
+    assert client.get(url).headers.get("X-Availability-Cache") == "hit"
+
+
+def test_a_new_hauler_invalidates_the_cache_without_waiting_for_the_ttl(client):
+    url = "/api/booking/availability?date={}&lat=26.62&lng=-80.05".format(_tomorrow())
+    assert client.get(url).get_json()["any_available"] is False
+    # The whole point of the fingerprint: supply arriving is visible at once.
+    _hauler("Late Larry")
+    body = client.get(url).get_json()
+    assert body["any_available"] is True
+    assert all(s["crews"] == 1 for s in body["slots"])
+
+
+def test_the_sweep_reads_each_hauler_once_not_once_per_slot(client):
+    """Guards the fix: eligibility is asked per slot, but the lookups that
+    belong to the hauler rather than the slot are read once for the sweep."""
+    from sqlalchemy import event
+    from models import db
+    import availability as av
+
+    for i in range(3):
+        _hauler("Crew {}".format(i))
+    av.reset_cache()
+
+    seen = []
+
+    @event.listens_for(db.engine, "before_cursor_execute")
+    def _count(conn, cursor, statement, params, context, executemany):
+        seen.append(statement.split("\n")[0])
+
+    try:
+        slots = av.slots_for(_tomorrow(), 26.62, -80.05)
+    finally:
+        event.remove(db.engine, "before_cursor_execute", _count)
+
+    assert len(slots) == len(av.SLOTS)
+    docs = sum(1 for q in seen if "operator_document_verifications" in q)
+    pool = sum(1 for q in seen if q.startswith("SELECT contractors.id"))
+    # 3 haulers, 5 slots: one document read each, one pool read for the sweep.
+    assert docs == 3, "documents read {} times, expected once per hauler".format(docs)
+    assert pool == 1, "pool read {} times, expected once per sweep".format(pool)

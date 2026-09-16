@@ -383,9 +383,15 @@ def schedule_allows(schedule, when_utc):
     return False
 
 
-def documents_status(contractor, through):
+def documents_status(contractor, through, rows=None):
     """'ok' | 'expired' | 'rejected' | 'unknown' — are the hauler's verified
-    documents valid through ``through`` (the end of the job slot)?"""
+    documents valid through ``through`` (the end of the job slot)?
+
+    ``rows`` lets a caller that already holds this hauler's verification rows
+    hand them over instead of paying for the read again; only the expiry
+    comparison depends on ``through``, so the rows are worth reusing across
+    several ``through`` values. See ProbeCache.
+    """
     if (getattr(contractor, "documents_verification_status", None) or "") == "failed":
         return "rejected"
     expiries = [
@@ -393,10 +399,11 @@ def documents_status(contractor, through):
         getattr(contractor, "license_expiry", None),
         getattr(contractor, "vehicle_registration_expiry", None),
     ]
-    try:
-        rows = OperatorDocumentVerification.query.filter_by(contractor_id=contractor.id).all()
-    except Exception:
-        rows = []
+    if rows is None:
+        try:
+            rows = OperatorDocumentVerification.query.filter_by(contractor_id=contractor.id).all()
+        except Exception:
+            rows = []
     for r in rows:
         if r.status == "rejected":
             return "rejected"
@@ -466,7 +473,8 @@ def declined_recently(job_id, contractor_id, now=None):
     return bool(o and _naive(o.exclude_until) > now)
 
 
-def eligibility(job, contractor, at=None, mode="auto", on_standby=None, radius_miles=None):
+def eligibility(job, contractor, at=None, mode="auto", on_standby=None, radius_miles=None,
+                cache=None):
     """Can ``contractor`` take ``job`` at ``at``?  → Eligibility(ok, reasons, warnings, distance).
 
     ``mode`` (see SOURCE_MODE) decides which soft rules are blockers:
@@ -512,7 +520,7 @@ def eligibility(job, contractor, at=None, mode="auto", on_standby=None, radius_m
         (reasons if strict else warnings).append("outside_schedule")
 
     # documents valid through the slot
-    docs = documents_status(c, ends)
+    docs = documents_status(c, ends, rows=cache.doc_rows(c.id) if cache else None)
     if docs == "expired":
         reasons.append("documents_expired")
     elif docs == "rejected":
@@ -561,7 +569,7 @@ def eligibility(job, contractor, at=None, mode="auto", on_standby=None, radius_m
     # in strict modes and warns elsewhere.
     try:
         from hauler_reliability import tier as _tier, TIER_NEW, TIER_FLAGGED
-        t = _tier(c.id)
+        t = cache.tier(c.id) if cache else _tier(c.id)
         if t == TIER_FLAGGED:
             (reasons if strict else warnings).append("no_show_history")
         elif t == TIER_NEW:
@@ -569,6 +577,43 @@ def eligibility(job, contractor, at=None, mode="auto", on_standby=None, radius_m
     except Exception:
         pass
     return Eligibility(not reasons, reasons, warnings, dist)
+
+
+class ProbeCache:
+    """Memo for the lookups that belong to a hauler rather than to a time slot.
+
+    Availability walks the same pool through eligibility() once per two-hour
+    slot, so one sweep asked every hauler for their reliability tier and their
+    document rows five times over — 240 of the 531 queries a single
+    /api/booking/availability request used to make.
+
+    Deliberately NOT a process-wide cache. One instance lives and dies inside
+    one sweep, so dispatch still reads the world fresh every time it decides
+    who gets real work; a hauler who goes offline mid-sweep is the only
+    staleness this can produce, and the next request sees them.
+    """
+
+    __slots__ = ("_tier", "_docs")
+
+    def __init__(self):
+        self._tier = {}
+        self._docs = {}
+
+    def tier(self, contractor_id):
+        if contractor_id not in self._tier:
+            from hauler_reliability import tier as _tier
+            self._tier[contractor_id] = _tier(contractor_id)
+        return self._tier[contractor_id]
+
+    def doc_rows(self, contractor_id):
+        if contractor_id not in self._docs:
+            try:
+                rows = OperatorDocumentVerification.query.filter_by(
+                    contractor_id=contractor_id).all()
+            except Exception:
+                rows = []
+            self._docs[contractor_id] = rows
+        return self._docs[contractor_id]
 
 
 def contractor_pool(job):
@@ -583,7 +628,8 @@ def contractor_pool(job):
     return q.all()
 
 
-def assignable_contractors(job, at=None, mode="offer", on_standby=None, radius_miles=None, pool=None):
+def assignable_contractors(job, at=None, mode="offer", on_standby=None, radius_miles=None,
+                           pool=None, cache=None):
     """[{contractor, verdict, distance_miles}] eligible for ``job`` under
     ``mode``, nearest first (unknown distance last). The coverage / capacity
     number and the dispatcher's candidate list both come from here."""
@@ -591,7 +637,8 @@ def assignable_contractors(job, at=None, mode="offer", on_standby=None, radius_m
     standby = on_standby if on_standby is not None else _standby_for(job)
     out = []
     for c in (pool if pool is not None else contractor_pool(job)):
-        v = eligibility(job, c, now, mode=mode, on_standby=standby, radius_miles=radius_miles)
+        v = eligibility(job, c, now, mode=mode, on_standby=standby, radius_miles=radius_miles,
+                        cache=cache)
         if v.ok:
             out.append({"contractor": c, "verdict": v, "distance_miles": v.distance_miles})
     out.sort(key=lambda e: e["distance_miles"] if e["distance_miles"] is not None else 1e9)

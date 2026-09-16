@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import { Upload, X, ImageIcon, AlertCircle, Sparkles, Loader2, Zap } from "lucide-react";
+import { Upload, X, AlertCircle, Sparkles, Loader2, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useBookingStore } from "@/stores/booking-store";
 import { cn } from "@/lib/utils";
@@ -103,10 +103,11 @@ export function Step2Photos() {
       {/* Header */}
       <div>
         <h2 className="font-display text-2xl font-bold tracking-tight text-foreground">
-          Upload Photos
+          Photos, if you have them
         </h2>
         <p className="mt-1 text-muted-foreground">
-          Show us what needs to go. This helps us give you an accurate estimate.
+          A couple of pictures and we fill in your items and your price for you.
+          No photos? Skip ahead and add the items yourself — it takes a minute longer.
         </p>
       </div>
 
@@ -114,7 +115,7 @@ export function Step2Photos() {
       <div
         role="button"
         tabIndex={0}
-        aria-label="Upload photos. Click or drag photos here. JPG, PNG, or WebP. Max 10 files, 10MB each."
+        aria-label="Upload photos, optional. Click or drag photos here. JPG, PNG, or WebP. Max 10 files, 10MB each."
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
@@ -150,7 +151,7 @@ export function Step2Photos() {
               {isDragging ? "Drop photos here" : "Click or drag photos here"}
             </p>
             <p className="text-xs text-muted-foreground mt-1">
-              JPG, PNG, or WebP. Max 10 files, 10MB each.
+              Optional. JPG, PNG, or WebP. Max 10 files, 10MB each.
             </p>
           </div>
         </div>
@@ -200,15 +201,6 @@ export function Step2Photos() {
           </div>
         </div>
       )}
-
-      {/* Optional note */}
-      <div className="flex items-start gap-2 rounded-lg border border-border bg-muted/50 p-3">
-        <ImageIcon className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
-        <p className="text-xs text-muted-foreground">
-          <span className="font-medium text-foreground">Upload 1-2 photos</span> and our AI auto-fills your items and pricing.
-          Skip this step to add items manually instead.
-        </p>
-      </div>
 
       {/* AI Analysis Status */}
       {aiAnalyzing && (

@@ -61,6 +61,8 @@ function BookPageInner() {
   const nextStep = useBookingStore((s) => s.nextStep);
   const prevStep = useBookingStore((s) => s.prevStep);
   const setLeadSource = useBookingStore((s) => s.setLeadSource);
+  // Step 2 is skippable, and the button is where people look for permission.
+  const photoCount = useBookingStore((s) => s.photos.length);
   const searchParams = useSearchParams();
 
   // Referral banner state
@@ -223,7 +225,11 @@ function BookPageInner() {
         <div>
           {showNextButton && (
             <Button onClick={handleNext} className="gap-2">
-              {step === 5 ? "Continue to Payment" : "Next"}
+              {step === 5
+                ? "Continue to Payment"
+                : step === 2 && photoCount === 0
+                  ? "Skip photos"
+                  : "Next"}
               <ArrowRight className="h-4 w-4" />
             </Button>
           )}
