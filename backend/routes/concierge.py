@@ -387,60 +387,25 @@ _ERRORS = {
 }
 
 
-def _shell(title, inner, accent="#0f9d58"):
-    """Same visual world as the /o/<token> accept page — screen two of one flow."""
+def _shell(title, inner, accent=None):
+    """Screen two of the hauler flow — same stylesheet as /o/<token>.
+
+    The CSS is a served file. These pages run under style-src 'self', which
+    drops both inline <style> blocks and inline style="" attributes without
+    reporting anything, so every rule lives in /static/hauler.css and the
+    markup below carries classes only. See feedback_desk_css_csp.
+    """
     return """<!doctype html>
 <html lang="en"><head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex">
 <title>{title} — umuve</title>
-<style>
-  * {{ box-sizing:border-box; }}
-  body {{ margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-         background:#0b0f14; color:#e8eef5; display:flex; min-height:100vh;
-         align-items:center; justify-content:center; padding:16px; }}
-  .card {{ width:100%; max-width:420px; background:#141b24; border:1px solid #1f2a36;
-          border-radius:18px; padding:24px; box-shadow:0 12px 40px rgba(0,0,0,.45); }}
-  .brand {{ font-weight:800; letter-spacing:.5px; color:{accent}; font-size:15px;
-           text-transform:lowercase; }}
-  .jobtag {{ float:right; color:#8aa0b6; font-size:12px; letter-spacing:.6px; }}
-  h1 {{ font-size:21px; margin:14px 0 4px; line-height:1.25; }}
-  .payline {{ color:{accent}; font-size:30px; font-weight:800; margin:2px 0 14px; }}
-  .payline small {{ color:#8aa0b6; font-size:13px; font-weight:600; }}
-  .rail {{ list-style:none; margin:0 0 16px; padding:0; display:flex; gap:4px; }}
-  .rail li {{ flex:1; text-align:center; font-size:10.5px; letter-spacing:.3px;
-             color:#8aa0b6; padding-top:14px; position:relative; }}
-  .rail li::before {{ content:""; position:absolute; top:0; left:0; right:0; height:5px;
-                     border-radius:3px; background:#1f2a36; }}
-  .rail li.done {{ color:#cfe9db; }}
-  .rail li.done::before {{ background:{accent}; }}
-  .rail li.now {{ color:#f4d9a6; }}
-  .rail li.now::before {{ background:#e8a13d; animation:pulse 1.6s ease-in-out infinite; }}
-  @keyframes pulse {{ 50% {{ opacity:.45; }} }}
-  @media (prefers-reduced-motion: reduce) {{ .rail li.now::before {{ animation:none; }} }}
-  .detail {{ background:#0e141c; border:1px solid #1f2a36; border-radius:12px;
-            padding:14px 16px; margin:0 0 14px; font-size:15px; }}
-  .detail .row {{ display:flex; justify-content:space-between; gap:12px; padding:7px 0;
-                 border-bottom:1px solid #19222d; }}
-  .detail .row:last-child {{ border-bottom:0; }}
-  .detail .k {{ color:#8aa0b6; white-space:nowrap; }}
-  .detail .v {{ font-weight:700; text-align:right; }}
-  .detail .v a {{ color:#e8eef5; }}
-  button, .btn {{ display:block; width:100%; padding:17px; min-height:56px; font-size:17px;
-           font-weight:800; border:0; border-radius:12px; background:{accent};
-           color:#06210f; cursor:pointer; text-align:center; text-decoration:none; }}
-  button:active, .btn:active {{ transform:translateY(1px); }}
-  button:focus-visible, a:focus-visible {{ outline:3px solid #e8eef5; outline-offset:2px; }}
-  .btn.quiet {{ background:#0e141c; color:#e8eef5; border:1px solid #1f2a36;
-               font-weight:600; font-size:15px; min-height:48px; padding:13px; margin-top:10px; }}
-  .btn.danger {{ background:#d9534f; color:#fff; }}
-  p.note {{ color:#8aa0b6; font-size:13px; text-align:center; margin:14px 0 0; }}
-  p.hint {{ color:#8aa0b6; font-size:13px; margin:0 0 10px; }}
-</style></head>
-<body><div class="card">
+<link rel="stylesheet" href="/static/hauler.css">
+</head>
+<body><div class="wrap">
   {inner}
-</div></body></html>""".format(title=html.escape(title), inner=inner, accent=accent)
+</div></body></html>""".format(title=html.escape(title), inner=inner)
 
 
 def _rail_html(status):
@@ -457,23 +422,23 @@ def _console_ctx(token):
     """Resolve token -> (offer, job, contractor) or an error page tuple."""
     offer = JobOffer.query.filter_by(accept_token=token).first()
     if not offer:
-        return None, (_shell("Invalid", '<div class="brand">umuve</div>'
+        return None, (_shell("Invalid", '<div class="brand"><span class="who"><img src="/static/brand-logo.png" alt="">umuve</span></div>'
                              "<h1>This link isn't valid</h1>"
                              "<p class='note'>Check the text we sent you, or "
                              "call your umuve contact.</p>", "#d9534f"), 404)
     job = db.session.get(Job, offer.job_id)
     if not job:
-        return None, (_shell("Gone", '<div class="brand">umuve</div>'
+        return None, (_shell("Gone", '<div class="brand"><span class="who"><img src="/static/brand-logo.png" alt="">umuve</span></div>'
                              "<h1>This job no longer exists</h1>"
                              "<p class='note'>It may have been cancelled.</p>",
                              "#d9534f"), 410)
     if job.driver_id != offer.contractor_id:
-        return None, (_shell("Not yours", '<div class="brand">umuve</div>'
+        return None, (_shell("Not yours", '<div class="brand"><span class="who"><img src="/static/brand-logo.png" alt="">umuve</span></div>'
                              "<h1>This job isn't assigned to you</h1>"
                              "<p class='note'>Another hauler claimed it. "
                              "We'll text you the next one.</p>", "#d9534f"), 403)
     if job.status == "cancelled":
-        return None, (_shell("Cancelled", '<div class="brand">umuve</div>'
+        return None, (_shell("Cancelled", '<div class="brand"><span class="who"><img src="/static/brand-logo.png" alt="">umuve</span></div>'
                              "<h1>This job was cancelled</h1>"
                              "<p class='note'>You don't need to do anything. "
                              "We'll text you the next one.</p>", "#d9534f"), 200)
@@ -527,7 +492,7 @@ def concierge_console(token):
     ]
     detail = '<div class="detail">' + "".join(rows) + "</div>"
 
-    header = ('<div class="brand">umuve<span class="jobtag">JOB {}</span></div>'
+    header = ('<div class="brand"><span class="who"><img src="/static/brand-logo.png" alt="">umuve</span><span class="jobtag">JOB {}</span></div>'
               .format(html.escape(str(job.id)[:8].upper())))
 
     # A refused transition (audit F17: missing proof, open change order,
@@ -535,9 +500,7 @@ def concierge_console(token):
     # instead of silently bouncing the hauler back to the same button.
     err = _ERRORS.get((request.args.get("err") or "").strip())
     if err:
-        header += ('<p class="note" style="background:#fdecea;border:1px solid #f5c6cb;'
-                   'color:#7a1b1b;padding:10px 12px;border-radius:8px">{}</p>'
-                   .format(html.escape(err)))
+        header += '<p class="alert">{}</p>'.format(html.escape(err))
 
     if job.status == "completed":
         paid = job.payment and job.payment.payout_status in ("paid", "paid_manual")
@@ -567,16 +530,14 @@ def concierge_console(token):
         # while the completion_pin_required flag is off — the server decides.
         act = ('<form method="POST" action="/w/{}/advance">'
                '<input type="hidden" name="to" value="completed">'
-               '<label style="display:block;margin:14px 0 6px;font-size:14px">'
+               '<label class="pin-label" for="handoff_pin">'
                'Customer\'s 4-digit PIN (from their text)</label>'
-               '<input name="handoff_pin" inputmode="numeric" maxlength="4" '
-               'placeholder="1234" style="width:100%;padding:12px;font-size:20px;'
-               'letter-spacing:4px;border:1px solid #ccc;border-radius:8px">'
-               '<p class="note" style="margin:8px 0 14px">No PIN? Text your '
-               'after photo to this number first — that counts as proof too.</p>'
-               '<button type="submit" class="danger" '
-               'style="background:#d9534f;color:#fff">Yes — everything\'s loaded, '
-               'finish job</button></form>'
+               '<input id="handoff_pin" name="handoff_pin" class="pin-input" '
+               'inputmode="numeric" maxlength="4" placeholder="1234">'
+               '<p class="note tight">No PIN? Text your after photo to this '
+               'number first — that counts as proof too.</p>'
+               '<button type="submit" class="btn danger">Yes, it is all loaded — '
+               'finish the job</button></form>'
                '<a class="btn quiet" href="/w/{}">Not yet — go back</a>'
                .format(token, token))
     else:

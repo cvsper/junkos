@@ -25,42 +25,39 @@ offers_bp = Blueprint("offers", __name__)
 # ---------------------------------------------------------------------------
 # Minimal inline page rendering (no template engine dependency)
 # ---------------------------------------------------------------------------
-def _page(title, headline, body_html, accent="#0f9d58"):
+def _page(title, inner_html, tone="go"):
+    """One shell for every state of the offer flow.
+
+    The stylesheet is a served FILE, never an inline <style>: these pages run
+    under a CSP with style-src 'self', which drops inline blocks silently —
+    which is exactly how this page spent its life unstyled in front of haulers.
+    """
     return """<!doctype html>
 <html lang="en"><head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
 <title>{title} — umuve</title>
-<style>
-  * {{ box-sizing: border-box; }}
-  body {{ margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-         background:#0b0f14; color:#e8eef5; display:flex; min-height:100vh;
-         align-items:center; justify-content:center; padding:24px; }}
-  .card {{ width:100%; max-width:420px; background:#141b24; border:1px solid #1f2a36;
-          border-radius:18px; padding:28px; box-shadow:0 12px 40px rgba(0,0,0,.45); }}
-  .brand {{ font-weight:800; letter-spacing:.5px; color:{accent}; font-size:15px;
-           text-transform:lowercase; margin-bottom:18px; }}
-  h1 {{ font-size:22px; margin:0 0 10px; line-height:1.25; }}
-  .detail {{ background:#0e141c; border:1px solid #1f2a36; border-radius:12px;
-            padding:16px; margin:18px 0; font-size:15px; }}
-  .detail .row {{ display:flex; justify-content:space-between; padding:6px 0;
-                 border-bottom:1px solid #19222d; }}
-  .detail .row:last-child {{ border-bottom:0; }}
-  .detail .k {{ color:#8aa0b6; }}
-  .detail .v {{ font-weight:700; text-align:right; }}
-  .payout {{ color:{accent}; font-size:20px; }}
-  button {{ width:100%; padding:16px; font-size:17px; font-weight:800; border:0;
-           border-radius:12px; background:{accent}; color:#06210f; cursor:pointer; }}
-  button:active {{ transform:translateY(1px); }}
-  p.note {{ color:#8aa0b6; font-size:13px; text-align:center; margin-top:16px; }}
-</style></head>
-<body><div class="card">
-  <div class="brand">umuve</div>
-  <h1>{headline}</h1>
-  {body}
-</div></body></html>""".format(
-        title=title, headline=headline, body=body_html, accent=accent
-    )
+<link rel="stylesheet" href="/static/hauler.css">
+</head>
+<body><div class="wrap">
+  <div class="mark"><img src="/static/brand-logo.png" alt=""><span>umuve</span></div>
+  {inner}
+</div></body></html>""".format(title=title, inner=inner_html)
+
+
+def _closed(title, headline, lede, tone="stop", action_html=""):
+    """A state with nothing to accept: taken, expired, gone, invalid.
+
+    Each one says what happened and what happens next — a hauler who tapped a
+    dead link should still learn when the next job comes.
+    """
+    body = ('<h1 class="headline {tone}">{headline}</h1>'
+            '<p class="lede">{lede}</p>').format(
+                tone=tone, headline=headline, lede=lede)
+    if action_html:
+        body += '<div class="spacer"></div>' + action_html
+    return _page(title, body, tone=tone)
 
 
 # ---------------------------------------------------------------------------
@@ -72,56 +69,86 @@ def offer_page(token):
 
     offer = JobOffer.query.filter_by(accept_token=token).first()
     if not offer:
-        return _page("Invalid", "This link isn't valid",
-                     "<p class='note'>The job offer link is incorrect or has been removed.</p>",
-                     accent="#d9534f"), 404
+        return _closed("Invalid", "This link isn't valid",
+                       "Check the text we sent you, or reply HELP and a person "
+                       "will sort it out."), 404
 
     job = Job.query.get(offer.job_id)
     if not job:
-        return _page("Gone", "This job no longer exists",
-                     "<p class='note'>It may have been cancelled.</p>", accent="#d9534f"), 410
+        return _closed("Gone", "This job is gone",
+                       "The customer cancelled it. We'll text you the next one "
+                       "in your area."), 410
 
-    # Already taken?
+    console = ('<a class="go quiet" href="/w/{}">Open the job console</a>'
+               '<p class="note">Bookmark that page — it is how you run this job '
+               'and get paid.</p>').format(token)
+
     if job.driver_id and job.driver_id != offer.contractor_id:
-        return _page("Taken", "Already claimed",
-                     "<p class='note'>Another hauler grabbed this job first. "
-                     "We'll text you the next one.</p>", accent="#d9534f")
+        return _closed("Taken", "Another hauler got this one",
+                       "It went to whoever tapped first. We'll text you the next "
+                       "job near you.")
 
     if job.driver_id == offer.contractor_id:
-        if offer.contractor and offer.contractor.is_concierge:
-            return _page("Yours", "This job is yours ✅",
-                         "<a href='/w/{}' style='text-decoration:none'>"
-                         "<button type='button'>Open job console</button></a>"
-                         "<p class='note'>Run the job from that page — status "
-                         "updates, customer contact, and your payout.</p>".format(token))
-        return _page("Yours", "This job is yours ✅",
-                     "<p class='note'>Open the umuve app for full details and navigation.</p>")
+        concierge = offer.contractor and offer.contractor.is_concierge
+        return _closed("Yours", "This job is yours",
+                       "Head to the address at the scheduled time." if concierge
+                       else "Open the umuve app for directions and full details.",
+                       tone="done", action_html=console if concierge else "")
 
     if offer.expires_at and utcnow() > _aware_utc(offer.expires_at):
-        return _page("Expired", "This offer expired",
-                     "<p class='note'>Offers are first-come, first-served. "
-                     "Watch for the next text.</p>", accent="#d9534f")
+        return _closed("Expired", "This offer expired",
+                       "Offers are first come, first served. Keep an eye on your "
+                       "texts — the next one usually comes within the hour.")
 
-    # Live offer — render details + accept button
-    payout = "${:.2f}".format(offer.payout_amount) if offer.payout_amount else "See app"
-    dist = ("{:.0f} mi away".format(offer.distance_miles)
+    # Live offer. The take-home is the whole reason they tapped the text, so it
+    # leads; the address is the thing they weigh it against.
+    payout = "${:,.2f}".format(offer.payout_amount) if offer.payout_amount else "Pay in app"
+    when = fmt_local(job.scheduled_at, "%a %b %-d, %-I:%M %p", "As soon as you can")
+    dist = ("{:.0f} miles".format(offer.distance_miles)
             if offer.distance_miles is not None else "Nearby")
-    when = fmt_local(job.scheduled_at, "%b %d, %I:%M %p", "ASAP")
-    addr = job.address or "Address shared on accept"
 
-    body = """
-    <div class="detail">
-      <div class="row"><span class="k">Your take-home</span><span class="v payout">{payout}</span></div>
-      <div class="row"><span class="k">Location</span><span class="v">{addr}</span></div>
-      <div class="row"><span class="k">Distance</span><span class="v">{dist}</span></div>
-      <div class="row"><span class="k">When</span><span class="v">{when}</span></div>
-    </div>
+    # Jobs carry one address string. Split it so the street reads as the
+    # headline and the city/zip sits under it — that is the order a hauler
+    # scans it in: which street, then how far into town.
+    full = (job.address or "").strip()
+    if full:
+        street, _, rest = full.partition(",")
+        addr, city = street.strip(), rest.strip()
+    else:
+        addr, city = "Address shared when you accept", ""
+
+    clock = ""
+    if offer.expires_at:
+        mins = int((_aware_utc(offer.expires_at) - utcnow()).total_seconds() // 60)
+        if mins >= 1:
+            clock = ('<p class="clock">{} minutes left to claim it</p>'
+                     .format(mins))
+
+    inner = """
+    <p class="payout">{payout}</p>
+    <p class="payout-note">Your take-home, after our cut</p>
+
+    <section class="facts">
+      <p class="addr">{addr}</p>
+      {city}
+      <dl class="split">
+        <div><dt>Distance</dt><dd>{dist}</dd></div>
+        <div><dt>Pickup</dt><dd>{when}</dd></div>
+      </dl>
+    </section>
+
+    {clock}
+
+    <div class="spacer"></div>
+
     <form method="POST" action="/o/{token}/accept">
-      <button type="submit">Accept this job</button>
+      <button class="go" type="submit">Accept this job</button>
     </form>
-    <p class="note">First to accept gets it. Tap once.</p>
-    """.format(payout=payout, addr=addr, dist=dist, when=when, token=token)
-    return _page("Job offer", "New job available", body)
+    <p class="note">First hauler to accept gets it. One tap is enough.</p>
+    """.format(payout=payout, addr=addr,
+               city='<p class="addr-sub">{}</p>'.format(city) if city else "",
+               dist=dist, when=when, clock=clock, token=token)
+    return _page("Job offer", inner)
 
 
 # ---------------------------------------------------------------------------
@@ -133,20 +160,21 @@ def offer_accept_page(token):
 
     result = accept_offer(token)
     if result["ok"]:
-        # Concierge (no-app) haulers get sent to the token-gated job console
-        # instead of the app — it's the only way they can run the job.
         offer = JobOffer.query.filter_by(accept_token=token).first()
         if offer and offer.contractor and offer.contractor.is_concierge:
-            return _page("Accepted", "Job accepted! 🎉",
-                         "<a href='/w/{}' style='text-decoration:none'>"
-                         "<button type='button'>Open job console</button></a>"
-                         "<p class='note'>Bookmark that page — it's how you run "
-                         "this job and get paid.</p>".format(token))
-        return _page("Accepted", "Job accepted! 🎉",
-                     "<p class='note'>{}</p>".format(result["message"]))
-    accent = "#d9534f"
-    return _page("Sorry", "Couldn't accept",
-                 "<p class='note'>{}</p>".format(result["message"]), accent=accent)
+            # Phone-only haulers have no app — the console is the only way they
+            # can run the job, so it is the action, not a footnote.
+            return _closed(
+                "Accepted", "The job is yours",
+                "Run it from the job console: mark yourself on the way, call the "
+                "customer, and close it out when the truck is loaded.",
+                tone="done",
+                action_html='<a class="go" href="/w/{}">Open the job console</a>'
+                            '<p class="note">Bookmark that page — it is how you '
+                            'get paid.</p>'.format(token))
+        return _closed("Accepted", "The job is yours", result["message"], tone="done")
+
+    return _closed("Sorry", "Couldn't accept that", result["message"])
 
 
 # ---------------------------------------------------------------------------

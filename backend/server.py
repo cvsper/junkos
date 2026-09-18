@@ -709,10 +709,17 @@ def set_security_headers(response):
     if (request.path.startswith("/coach") or request.path.startswith("/optext")
             or request.path == "/va" or request.path.startswith("/va/")
             or request.path == "/agreements" or request.path.startswith("/agreements/")
-            or request.path.startswith("/sign/")):
-        # Internal VA tools (call coach + send-setup-link + VA hub) and the
-        # agreements e-sign pages: load their own same-origin CSS/JS and call
-        # same-origin APIs. Everything else locked.
+            or request.path.startswith("/sign/")
+            or request.path.startswith("/o/") or request.path.startswith("/w/")):
+        # Internal VA tools (call coach + send-setup-link + VA hub), the
+        # agreements e-sign pages, and the hauler-facing job offer (/o/) and job
+        # console (/w/): all load their own same-origin CSS and post to
+        # same-origin forms. Everything else locked.
+        #
+        # /o/ and /w/ were served default-src 'none' until 2026-09-18, which
+        # silently dropped their stylesheet — every hauler who tapped a job-offer
+        # text got raw unstyled HTML. Their CSS is a served file precisely
+        # because style-src 'self' still refuses inline blocks and attributes.
         if request.path.startswith("/va/calls"):
             # Call Desk runs the (self-hosted) Twilio Voice SDK: it opens a
             # signaling websocket to Twilio and plays ringtones from Twilio's
@@ -1076,7 +1083,7 @@ def get_available_time_slots(requested_date=None):
 # ---------------------------------------------------------------------------
 # Legacy API Routes (kept for backward compatibility)
 # ---------------------------------------------------------------------------
-APP_VERSION = "2.2.132"
+APP_VERSION = "2.2.133"
 
 
 # ---------------------------------------------------------------------------
