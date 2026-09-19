@@ -142,7 +142,7 @@ struct Chip: View {
     var body: some View {
         HStack(spacing: 6) {
             Dot(color: tint, size: 6)
-            Text(text).font(Type.chip).foregroundStyle(Color.ink)
+            Text(text).font(Type.chip).foregroundStyle(Color.ink).lineLimit(1)
         }
         .padding(.horizontal, 10).padding(.vertical, 5)
         .background(Color.white.opacity(0.7), in: Capsule())

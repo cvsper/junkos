@@ -10,13 +10,16 @@
 		001FC1B13556025BE086CDFA /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D12678F7EE504920B76F8E2F /* AppModel.swift */; };
 		04665947EF699B68CFED3786 /* DMSans-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 504878EC590BFD131D3E531A /* DMSans-Medium.ttf */; };
 		05B2BE8EA328616DB601AFC8 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 160DE6B6EEC73D9FDE050E14 /* Models.swift */; };
+		071060970BFFF6B8D371B9FC /* QueueView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B42582DE2BF966F6A446A7C3 /* QueueView.swift */; };
 		0942A82AB6708E5467927D07 /* Outfit-ExtraBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = C5034F60B0EB6D3883D1BCB1 /* Outfit-ExtraBold.ttf */; };
 		1D582BF979F93CE61E092644 /* UmuveDeskTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C42AEE672223D5429B03C168 /* UmuveDeskTests.swift */; };
 		23F77BB342F87A6609BC019A /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D624635D145C16890D260F46 /* HomeView.swift */; };
+		277808C087D9B0D55590521C /* InboxView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F2E46EEDC5ECCB93EA7172F /* InboxView.swift */; };
 		2A636D55E88B9D043C9793BA /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 3F5E6635367F9D7D127F47CC /* Assets.xcassets */; };
 		32836B0A75C573F3981C05D9 /* DMSans-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 20C642335F7507C86B58E4EB /* DMSans-SemiBold.ttf */; };
 		4FAD156B582E06D0D0DF9889 /* SignInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABB78BE9EE941602107D6F82 /* SignInView.swift */; };
 		5CEE3E461E556E3FA3CC3D35 /* Outfit-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 9F27172C293A52A92A38B77E /* Outfit-SemiBold.ttf */; };
+		6A5B32D4B70CDE6CFC43E576 /* HoursView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B79E366179FC0A1550A43193 /* HoursView.swift */; };
 		6EB91FCD80DED3AA91A418E7 /* TwilioVoice in Frameworks */ = {isa = PBXBuildFile; productRef = 798F683A6ACA84BE0BC6723C /* TwilioVoice */; };
 		8A73D59F5651C67AE649126E /* DeskAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5A3652B1B87DE1D93273CE9 /* DeskAPI.swift */; };
 		9365549DFE3EE0D3A187D815 /* CallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2CCBC3E9A1C09F3A9BEE70F /* CallView.swift */; };
@@ -24,8 +27,10 @@
 		9DDE5C19476D6711CB08F2CD /* VoiceManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6FF94EBA6B537AD23339838 /* VoiceManager.swift */; };
 		A5C975F5DEFE3E44CAF8112D /* Demo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D3983DC94C70A9CE09D44F4 /* Demo.swift */; };
 		AA5C07A4C570264C2D817D25 /* DMSans-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = DB514E439B71C009A6CD98B5 /* DMSans-Regular.ttf */; };
+		B6EF264F24CCFDBEE8A5DB16 /* ProspectCallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 158EBD6169C3A55FDDF70F21 /* ProspectCallView.swift */; };
 		C827240AC627E44A4E173383 /* Outfit-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 46ACAF7A1DF255634E33F6DE /* Outfit-Bold.ttf */; };
 		CAB87C3336F6CD1F4004E3F8 /* UmuveDeskApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34F1F99FD95E5F99670B9D5F /* UmuveDeskApp.swift */; };
+		CDA3B86FD2795EBFA40BC17B /* TabShell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9B2F47532E5B7E729B55B68 /* TabShell.swift */; };
 		D2844BB64B6E8B17CB58DB73 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E334EEFB4CE2C933C8AD078 /* RootView.swift */; };
 		D43190E708C4145BE931F771 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D0098AD1C03B95D7FCDBA6A /* Config.swift */; };
 		DA7D63E3D82C178259823560 /* DMSans-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 15EC9A1A46D1868F6D6A17BE /* DMSans-Bold.ttf */; };
@@ -43,8 +48,10 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		158EBD6169C3A55FDDF70F21 /* ProspectCallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProspectCallView.swift; sourceTree = "<group>"; };
 		15EC9A1A46D1868F6D6A17BE /* DMSans-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "DMSans-Bold.ttf"; sourceTree = "<group>"; };
 		160DE6B6EEC73D9FDE050E14 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		1F2E46EEDC5ECCB93EA7172F /* InboxView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InboxView.swift; sourceTree = "<group>"; };
 		20C642335F7507C86B58E4EB /* DMSans-SemiBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "DMSans-SemiBold.ttf"; sourceTree = "<group>"; };
 		252D86043C32B5F928FCCC11 /* UmuveDesk.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = UmuveDesk.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		34F1F99FD95E5F99670B9D5F /* UmuveDeskApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UmuveDeskApp.swift; sourceTree = "<group>"; };
@@ -59,6 +66,9 @@
 		9914011C81AF19775AFBC923 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		9F27172C293A52A92A38B77E /* Outfit-SemiBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Outfit-SemiBold.ttf"; sourceTree = "<group>"; };
 		ABB78BE9EE941602107D6F82 /* SignInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignInView.swift; sourceTree = "<group>"; };
+		B42582DE2BF966F6A446A7C3 /* QueueView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QueueView.swift; sourceTree = "<group>"; };
+		B79E366179FC0A1550A43193 /* HoursView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HoursView.swift; sourceTree = "<group>"; };
+		B9B2F47532E5B7E729B55B68 /* TabShell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabShell.swift; sourceTree = "<group>"; };
 		C42AEE672223D5429B03C168 /* UmuveDeskTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UmuveDeskTests.swift; sourceTree = "<group>"; };
 		C5034F60B0EB6D3883D1BCB1 /* Outfit-ExtraBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Outfit-ExtraBold.ttf"; sourceTree = "<group>"; };
 		D12678F7EE504920B76F8E2F /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
@@ -195,8 +205,13 @@
 			children = (
 				D2CCBC3E9A1C09F3A9BEE70F /* CallView.swift */,
 				D624635D145C16890D260F46 /* HomeView.swift */,
+				B79E366179FC0A1550A43193 /* HoursView.swift */,
+				1F2E46EEDC5ECCB93EA7172F /* InboxView.swift */,
+				158EBD6169C3A55FDDF70F21 /* ProspectCallView.swift */,
+				B42582DE2BF966F6A446A7C3 /* QueueView.swift */,
 				5E334EEFB4CE2C933C8AD078 /* RootView.swift */,
 				ABB78BE9EE941602107D6F82 /* SignInView.swift */,
+				B9B2F47532E5B7E729B55B68 /* TabShell.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -309,10 +324,15 @@
 				A5C975F5DEFE3E44CAF8112D /* Demo.swift in Sources */,
 				8A73D59F5651C67AE649126E /* DeskAPI.swift in Sources */,
 				23F77BB342F87A6609BC019A /* HomeView.swift in Sources */,
+				6A5B32D4B70CDE6CFC43E576 /* HoursView.swift in Sources */,
+				277808C087D9B0D55590521C /* InboxView.swift in Sources */,
 				9992B1EA9DC372892662B032 /* Keychain.swift in Sources */,
 				05B2BE8EA328616DB601AFC8 /* Models.swift in Sources */,
+				B6EF264F24CCFDBEE8A5DB16 /* ProspectCallView.swift in Sources */,
+				071060970BFFF6B8D371B9FC /* QueueView.swift in Sources */,
 				D2844BB64B6E8B17CB58DB73 /* RootView.swift in Sources */,
 				4FAD156B582E06D0D0DF9889 /* SignInView.swift in Sources */,
+				CDA3B86FD2795EBFA40BC17B /* TabShell.swift in Sources */,
 				EA23B7339CBB34A939D1F7E5 /* Theme.swift in Sources */,
 				CAB87C3336F6CD1F4004E3F8 /* UmuveDeskApp.swift in Sources */,
 				9DDE5C19476D6711CB08F2CD /* VoiceManager.swift in Sources */,
@@ -372,7 +392,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 4;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -510,7 +530,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 4;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;

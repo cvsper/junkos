@@ -31,11 +31,16 @@ final class VoiceManager: NSObject, ObservableObject {
     struct ActiveCall: Identifiable {
         let id: UUID
         let from: String                        // E.164 or digits from Twilio
+        var outbound = false
+        var prospect: Prospect?                 // set when we dialed the desk queue
         var connected = false
         var connectedAt: Date?
         var muted = false
         var whois: Whois?
     }
+    /// The last outbound call that ended, so the queue can ask for its outcome.
+    @Published var pendingOutcomeFor: Prospect?
+    var vaName: String = ""
 
     private let audioDevice = DefaultAudioDevice()
     private let provider: CXProvider
@@ -125,6 +130,21 @@ final class VoiceManager: NSObject, ObservableObject {
         }
     }
 
+    // MARK: outbound — the desk queue dials through CallKit so it's a real call
+
+    func dial(_ prospect: Prospect) {
+        guard let number = prospect.dialNumber, accessToken != nil, activeCall == nil else {
+            lastError = accessToken == nil ? "Not registered for calls yet." : (activeCall != nil ? "Already on a call." : "No number for this prospect."); return
+        }
+        let id = UUID()
+        activeCall = ActiveCall(id: id, from: number, outbound: true, prospect: prospect)
+        let action = CXStartCallAction(call: id, handle: CXHandle(type: .phoneNumber, value: number))
+        action.isVideo = false
+        callController.request(CXTransaction(action: action)) { [weak self] e in
+            if let e { Task { @MainActor in self?.lastError = e.localizedDescription; self?.endedCall(id) } }
+        }
+    }
+
     // MARK: in-call controls
 
     func hangUp() {
@@ -154,7 +174,10 @@ final class VoiceManager: NSObject, ObservableObject {
     private func endedCall(_ id: UUID) {
         invites[id] = nil
         calls[id] = nil
-        if activeCall?.id == id { activeCall = nil }
+        if let c = activeCall, c.id == id {
+            if c.outbound, let p = c.prospect { pendingOutcomeFor = p }
+            activeCall = nil
+        }
     }
 }
 
@@ -241,6 +264,24 @@ extension VoiceManager: CXProviderDelegate {
         }
     }
 
+    nonisolated func provider(_ provider: CXProvider, perform action: CXStartCallAction) {
+        MainActor.assumeIsolated {
+            guard let jwt = accessToken, let ac = activeCall, ac.id == action.callUUID else { action.fail(); return }
+            audioDevice.isEnabled = false
+            audioDevice.block()
+            let opts = ConnectOptions(accessToken: jwt) { b in
+                // Same params the browser desk sends the TwiML app (desk_line.twilio_voice)
+                var p = ["To": ac.from, "va_name": self.vaName]
+                if let pid = ac.prospect?.id { p["prospect_id"] = pid }
+                b.params = p
+                b.uuid = action.callUUID
+            }
+            calls[action.callUUID] = TwilioVoiceSDK.connect(options: opts, delegate: self)
+            provider.reportOutgoingCall(with: action.callUUID, startedConnectingAt: Date())
+            action.fulfill()
+        }
+    }
+
     nonisolated func provider(_ provider: CXProvider, perform action: CXEndCallAction) {
         MainActor.assumeIsolated {
             if let inv = invites[action.callUUID] { inv.reject() }
@@ -272,7 +313,10 @@ extension VoiceManager: CXProviderDelegate {
 extension VoiceManager: CallDelegate {
     nonisolated func callDidConnect(call: Call) {
         MainActor.assumeIsolated {
-            if var c = activeCall, calls[c.id] === call { c.connected = true; c.connectedAt = Date(); activeCall = c }
+            if var c = activeCall, calls[c.id] === call {
+                c.connected = true; c.connectedAt = Date(); activeCall = c
+                if c.outbound { provider.reportOutgoingCall(with: c.id, connectedAt: Date()) }
+            }
         }
     }
     nonisolated func callDidFailToConnect(call: Call, error: Error) {

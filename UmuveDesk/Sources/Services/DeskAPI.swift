@@ -115,6 +115,62 @@ actor DeskAPI {
                        ["phone": phone, "name": name ?? "", "when": when ?? "", "note": note ?? ""])
     }
 
+    // MARK: the outbound desk (va_calls.py)
+
+    func nextCard(skipLeads: Bool = false) async throws -> NextCard {
+        try await post("/api/va/calls/next", skipLeads ? ["skip_leads": true] : [:])
+    }
+
+    func log(prospectId: String, outcome: String, note: String?, sendText: Bool) async throws -> LogResult {
+        try await post("/api/va/calls/log", ["prospect_id": prospectId, "outcome": outcome,
+                                             "note": note ?? "", "send_text": sendText])
+    }
+
+    func search(_ q: String) async throws -> [QueueRow] {
+        let r: SearchResults = try await post("/api/va/calls/search", ["q": q]); return r.results
+    }
+
+    func prospect(_ id: String) async throws -> NextCard {
+        try await post("/api/va/calls/get", ["prospect_id": id])
+    }
+
+    func kit(prospectId: String, side: String? = nil) async throws -> Kit {
+        var b: [String: Any] = ["prospect_id": prospectId]; if let side { b["side"] = side }
+        return try await post("/api/va/calls/kit", b)
+    }
+
+    /// `preset` is one of the desk's keys: tomorrow_am, tomorrow_pm, two_days, next_week.
+    func scheduleCallback(prospectId: String, preset: String, note: String?) async throws -> OKResult {
+        try await post("/api/va/calls/callback", ["prospect_id": prospectId, "preset": preset, "note": note ?? ""])
+    }
+
+    func sendInfo(prospectId: String, channel: String = "sms", to: String? = nil) async throws -> OKResult {
+        var b: [String: Any] = ["prospect_id": prospectId, "channel": channel]; if let to { b["to"] = to }
+        return try await post("/api/va/calls/send-info", b)
+    }
+
+    func queue() async throws -> QueueResponse { try await post("/api/va/calls/queue") }
+
+    func addProspect(company: String, phone: String, city: String, category: String) async throws -> OKResult {
+        try await post("/api/va/calls/add", ["company": company, "phone": phone, "city": city, "category": category])
+    }
+
+    // MARK: inbox (desk_line.py)
+
+    func inbox() async throws -> InboxResponse { try await post("/api/va/desk/inbox") }
+    func unread() async throws -> Int { let u: UnreadCount = try await post("/api/va/desk/unread"); return u.unread }
+    func thread(prospectId: String) async throws -> ThreadResponse { try await post("/api/va/desk/thread", ["prospect_id": prospectId]) }
+    func templates(prospectId: String) async throws -> Templates { try await post("/api/va/desk/templates", ["prospect_id": prospectId]) }
+    func text(prospectId: String?, to: String?, body: String) async throws -> OKResult {
+        var b: [String: Any] = ["body": body]
+        if let prospectId { b["prospect_id"] = prospectId }; if let to { b["to"] = to }
+        return try await post("/api/va/desk/text", b)
+    }
+
+    // MARK: hours (va_time.py)
+
+    func hours(days: Int = 30) async throws -> HoursReport { try await post("/api/va/time/hours", ["days": days]) }
+
     func outcome(phone: String, _ outcome: String, note: String?) async throws -> OKResult {
         try await post("/api/va/inbound/outcome",
                        ["phone": phone, "outcome": outcome, "note": note ?? ""])

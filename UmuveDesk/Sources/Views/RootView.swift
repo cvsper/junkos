@@ -13,10 +13,10 @@ struct RootView: View {
             if !model.signedIn {
                 SignInView()
             } else if let call = voice.activeCall {
-                CallView(call: call)
+                Group { if call.outbound { ProspectCallView(call: call) } else { CallView(call: call) } }
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             } else {
-                HomeView()
+                TabShell()
             }
         }
         .animation(.spring(response: 0.42, dampingFraction: 0.86), value: voice.activeCall?.id)

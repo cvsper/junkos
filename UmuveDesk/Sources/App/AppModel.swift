@@ -14,9 +14,13 @@ final class AppModel: ObservableObject {
 
     var signedIn: Bool { session != nil || DeskAPI.shared.isSignedIn }
 
+    @Published var unread = 0
+    @Published var clock: ClockState?
+
     func boot() async {
         guard DeskAPI.shared.isSignedIn else { return }
         await refresh()
+        VoiceManager.shared.vaName = session?.name ?? ""
         await VoiceManager.shared.register()
     }
 
@@ -24,6 +28,7 @@ final class AppModel: ObservableObject {
         busy = true; defer { busy = false }
         do {
             session = try await DeskAPI.shared.signIn(email: email, password: password)
+            VoiceManager.shared.vaName = session?.name ?? ""
             notice = nil
             await refresh()
             await VoiceManager.shared.register()
@@ -39,8 +44,9 @@ final class AppModel: ObservableObject {
     func refresh() async {
         async let clock = try? DeskAPI.shared.clockStatus()
         async let rec = try? DeskAPI.shared.recent(days: 7)
-        if let c = await clock { onClock = c.onClock }
+        if let c = await clock { onClock = c.onClock; self.clock = c }
         recent = await rec
+        if let u = try? await DeskAPI.shared.unread() { unread = u }
     }
 
     /// The one control on Home. On the clock = the line rings to you.
@@ -48,7 +54,7 @@ final class AppModel: ObservableObject {
         busy = true; defer { busy = false }
         do {
             let s = try await DeskAPI.shared.clock(on ? "in" : "out")
-            onClock = s.onClock
+            onClock = s.onClock; clock = s
             notice = nil
         } catch { notice = error.localizedDescription }
     }
