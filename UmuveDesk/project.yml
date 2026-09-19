@@ -18,7 +18,7 @@ settings:
   base:
     SWIFT_VERSION: "5.9"
     MARKETING_VERSION: "1.0.0"
-    CURRENT_PROJECT_VERSION: 1
+    CURRENT_PROJECT_VERSION: 3
     TARGETED_DEVICE_FAMILY: "1"
 
 packages:
@@ -32,6 +32,26 @@ targets:
     platform: iOS
     sources:
       - path: Sources
+    # A real Info.plist, generated from these properties. The INFOPLIST_KEY_*
+    # route silently dropped UIBackgroundModes, which cost the app its VoIP
+    # push token — and without that token there is nothing to ring.
+    info:
+      path: Sources/Info.plist
+      properties:
+        CFBundleDisplayName: Umuve Desk
+        CFBundleName: Umuve Desk
+        CFBundleIconName: AppIcon
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        UILaunchScreen: {}
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        UIApplicationSupportsIndirectInputEvents: true
+        NSMicrophoneUsageDescription: "Umuve Desk uses the microphone so you can talk to customers who call the desk line."
+        # voip: PushKit wakes the app for an incoming call while locked.
+        # audio: the call keeps going when the screen turns off.
+        UIBackgroundModes: [voip, audio]
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.goumuve.desk
@@ -39,21 +59,7 @@ targets:
         TARGETED_DEVICE_FAMILY: "1"
         CODE_SIGN_STYLE: Automatic
         CODE_SIGN_ENTITLEMENTS: UmuveDesk.entitlements
-        GENERATE_INFOPLIST_FILE: true
-        INFOPLIST_GENERATION_MODE: GeneratedFile
-        INFOPLIST_FILE: ""
-        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: true
-        INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: true
-        INFOPLIST_KEY_UILaunchScreen_Generation: true
-        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: UIInterfaceOrientationPortrait
-        INFOPLIST_KEY_CFBundleDisplayName: "Umuve Desk"
-        INFOPLIST_KEY_CFBundleName: "Umuve Desk"
-        INFOPLIST_KEY_CFBundleIconName: AppIcon
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-        INFOPLIST_KEY_NSMicrophoneUsageDescription: "Umuve Desk uses the microphone so you can talk to customers who call the desk line."
-        # voip: PushKit wakes the app for an incoming call while locked.
-        # audio: the call keeps going when the screen turns off.
-        INFOPLIST_KEY_UIBackgroundModes: "voip audio"
     dependencies:
       - package: TwilioVoice
         product: TwilioVoice

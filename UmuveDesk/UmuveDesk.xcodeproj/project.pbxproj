@@ -45,6 +45,7 @@
 		6D3983DC94C70A9CE09D44F4 /* Demo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Demo.swift; sourceTree = "<group>"; };
 		7998FDC5397CBF4705F3486A /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		7FF137648F583261B9C5C4B0 /* UmuveDeskTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = UmuveDeskTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		9914011C81AF19775AFBC923 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		ABB78BE9EE941602107D6F82 /* SignInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignInView.swift; sourceTree = "<group>"; };
 		C42AEE672223D5429B03C168 /* UmuveDeskTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UmuveDeskTests.swift; sourceTree = "<group>"; };
 		D12678F7EE504920B76F8E2F /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
@@ -71,6 +72,7 @@
 			isa = PBXGroup;
 			children = (
 				3F5E6635367F9D7D127F47CC /* Assets.xcassets */,
+				9914011C81AF19775AFBC923 /* Info.plist */,
 				8204212CB78E0296F6F121F6 /* App */,
 				B9BB842FADC0FA897B3916F7 /* Config */,
 				201DE82A8DECA91B54E9B0EB /* Design */,
@@ -334,7 +336,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 3;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -374,18 +376,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 24GH82AX9R;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "";
-				INFOPLIST_GENERATION_MODE = GeneratedFile;
-				INFOPLIST_KEY_CFBundleDisplayName = "Umuve Desk";
-				INFOPLIST_KEY_CFBundleIconName = AppIcon;
-				INFOPLIST_KEY_CFBundleName = "Umuve Desk";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Umuve Desk uses the microphone so you can talk to customers who call the desk line.";
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UIBackgroundModes = "voip audio";
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				INFOPLIST_FILE = Sources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -438,18 +429,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 24GH82AX9R;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "";
-				INFOPLIST_GENERATION_MODE = GeneratedFile;
-				INFOPLIST_KEY_CFBundleDisplayName = "Umuve Desk";
-				INFOPLIST_KEY_CFBundleIconName = AppIcon;
-				INFOPLIST_KEY_CFBundleName = "Umuve Desk";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Umuve Desk uses the microphone so you can talk to customers who call the desk line.";
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UIBackgroundModes = "voip audio";
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				INFOPLIST_FILE = Sources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -494,7 +474,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 3;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
