@@ -11,6 +11,7 @@
 		05B2BE8EA328616DB601AFC8 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 160DE6B6EEC73D9FDE050E14 /* Models.swift */; };
 		1D582BF979F93CE61E092644 /* UmuveDeskTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C42AEE672223D5429B03C168 /* UmuveDeskTests.swift */; };
 		23F77BB342F87A6609BC019A /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D624635D145C16890D260F46 /* HomeView.swift */; };
+		2A636D55E88B9D043C9793BA /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 3F5E6635367F9D7D127F47CC /* Assets.xcassets */; };
 		4FAD156B582E06D0D0DF9889 /* SignInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABB78BE9EE941602107D6F82 /* SignInView.swift */; };
 		6EB91FCD80DED3AA91A418E7 /* TwilioVoice in Frameworks */ = {isa = PBXBuildFile; productRef = 798F683A6ACA84BE0BC6723C /* TwilioVoice */; };
 		8A73D59F5651C67AE649126E /* DeskAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5A3652B1B87DE1D93273CE9 /* DeskAPI.swift */; };
@@ -38,6 +39,7 @@
 		160DE6B6EEC73D9FDE050E14 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		252D86043C32B5F928FCCC11 /* UmuveDesk.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = UmuveDesk.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		34F1F99FD95E5F99670B9D5F /* UmuveDeskApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UmuveDeskApp.swift; sourceTree = "<group>"; };
+		3F5E6635367F9D7D127F47CC /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		5D0098AD1C03B95D7FCDBA6A /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
 		5E334EEFB4CE2C933C8AD078 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		6D3983DC94C70A9CE09D44F4 /* Demo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Demo.swift; sourceTree = "<group>"; };
@@ -68,6 +70,7 @@
 		0F9D21CCDBC9138DADE97B5D /* Sources */ = {
 			isa = PBXGroup;
 			children = (
+				3F5E6635367F9D7D127F47CC /* Assets.xcassets */,
 				8204212CB78E0296F6F121F6 /* App */,
 				B9BB842FADC0FA897B3916F7 /* Config */,
 				201DE82A8DECA91B54E9B0EB /* Design */,
@@ -175,6 +178,7 @@
 			buildConfigurationList = 25226A0B504D821653EBEA9E /* Build configuration list for PBXNativeTarget "UmuveDesk" */;
 			buildPhases = (
 				5B25DCF742AA5A93227B786B /* Sources */,
+				92C7A23921B37CC2F4A01CD3 /* Resources */,
 				A8D2E9BB3237C1EC0C8BFF1F /* Frameworks */,
 			);
 			buildRules = (
@@ -244,6 +248,17 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		92C7A23921B37CC2F4A01CD3 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2A636D55E88B9D043C9793BA /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		5B25DCF742AA5A93227B786B /* Sources */ = {
@@ -363,6 +378,7 @@
 				INFOPLIST_FILE = "";
 				INFOPLIST_GENERATION_MODE = GeneratedFile;
 				INFOPLIST_KEY_CFBundleDisplayName = "Umuve Desk";
+				INFOPLIST_KEY_CFBundleIconName = AppIcon;
 				INFOPLIST_KEY_CFBundleName = "Umuve Desk";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Umuve Desk uses the microphone so you can talk to customers who call the desk line.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -426,6 +442,7 @@
 				INFOPLIST_FILE = "";
 				INFOPLIST_GENERATION_MODE = GeneratedFile;
 				INFOPLIST_KEY_CFBundleDisplayName = "Umuve Desk";
+				INFOPLIST_KEY_CFBundleIconName = AppIcon;
 				INFOPLIST_KEY_CFBundleName = "Umuve Desk";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Umuve Desk uses the microphone so you can talk to customers who call the desk line.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
