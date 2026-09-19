@@ -8,6 +8,8 @@ Checks (each → ok/warn/fail + a plain reason):
   inbound_recent    a Twilio webhook reached us in the last DESK_INBOUND_STALE_HOURS (warn only)
   transcription     no transcription-error events in the last 24h (warn only)
   sentry            SENTRY_DSN configured (warn only)
+  meta_ads          the ad account can still spend (a frozen one looks like
+                    nothing: campaigns keep reading ACTIVE and serve nothing)
 
 Alerts go to ADMIN_EMAIL, SLACK_ALERT_WEBHOOK (if set) and an in-app admin
 Notification, only when the overall state changes (ok→degraded, degraded→ok),
@@ -147,6 +149,16 @@ def check_desk_health(alert=False):
             due_count=b.get("due_count"), due_jobs=b.get("due_jobs"))
     except Exception as e:
         put("stripe_balance", "warn", "balance check failed: " + type(e).__name__)
+
+    # Can the ad account still spend? Campaigns read ACTIVE while the account
+    # behind them is frozen, so this is the only check that sees it.
+    try:
+        from meta_ads_health import ad_account_check
+        m = ad_account_check()
+        put("meta_ads", m["state"], m["reason"], account_status=m.get("status"),
+            owed=m.get("owed"), funding=m.get("funding"))
+    except Exception as e:
+        put("meta_ads", "warn", "ad account check failed: " + type(e).__name__)
 
     try:
         from ops_sentinel import stranded_summary
