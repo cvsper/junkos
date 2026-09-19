@@ -1,0 +1,557 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		001FC1B13556025BE086CDFA /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D12678F7EE504920B76F8E2F /* AppModel.swift */; };
+		05B2BE8EA328616DB601AFC8 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 160DE6B6EEC73D9FDE050E14 /* Models.swift */; };
+		1D582BF979F93CE61E092644 /* UmuveDeskTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C42AEE672223D5429B03C168 /* UmuveDeskTests.swift */; };
+		23F77BB342F87A6609BC019A /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D624635D145C16890D260F46 /* HomeView.swift */; };
+		4FAD156B582E06D0D0DF9889 /* SignInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABB78BE9EE941602107D6F82 /* SignInView.swift */; };
+		6EB91FCD80DED3AA91A418E7 /* TwilioVoice in Frameworks */ = {isa = PBXBuildFile; productRef = 798F683A6ACA84BE0BC6723C /* TwilioVoice */; };
+		8A73D59F5651C67AE649126E /* DeskAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5A3652B1B87DE1D93273CE9 /* DeskAPI.swift */; };
+		9365549DFE3EE0D3A187D815 /* CallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2CCBC3E9A1C09F3A9BEE70F /* CallView.swift */; };
+		9992B1EA9DC372892662B032 /* Keychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = F831DF789D5F6A5C49EB1622 /* Keychain.swift */; };
+		9DDE5C19476D6711CB08F2CD /* VoiceManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6FF94EBA6B537AD23339838 /* VoiceManager.swift */; };
+		A5C975F5DEFE3E44CAF8112D /* Demo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D3983DC94C70A9CE09D44F4 /* Demo.swift */; };
+		CAB87C3336F6CD1F4004E3F8 /* UmuveDeskApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34F1F99FD95E5F99670B9D5F /* UmuveDeskApp.swift */; };
+		D2844BB64B6E8B17CB58DB73 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E334EEFB4CE2C933C8AD078 /* RootView.swift */; };
+		D43190E708C4145BE931F771 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D0098AD1C03B95D7FCDBA6A /* Config.swift */; };
+		EA23B7339CBB34A939D1F7E5 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7998FDC5397CBF4705F3486A /* Theme.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		C57A81B56F55E86F075F6BC5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 31671655D5A5AA7A9639E5B8 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 1E19F606ECEF375AA82864E9;
+			remoteInfo = UmuveDesk;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		160DE6B6EEC73D9FDE050E14 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		252D86043C32B5F928FCCC11 /* UmuveDesk.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = UmuveDesk.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		34F1F99FD95E5F99670B9D5F /* UmuveDeskApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UmuveDeskApp.swift; sourceTree = "<group>"; };
+		5D0098AD1C03B95D7FCDBA6A /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
+		5E334EEFB4CE2C933C8AD078 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		6D3983DC94C70A9CE09D44F4 /* Demo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Demo.swift; sourceTree = "<group>"; };
+		7998FDC5397CBF4705F3486A /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+		7FF137648F583261B9C5C4B0 /* UmuveDeskTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = UmuveDeskTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		ABB78BE9EE941602107D6F82 /* SignInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignInView.swift; sourceTree = "<group>"; };
+		C42AEE672223D5429B03C168 /* UmuveDeskTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UmuveDeskTests.swift; sourceTree = "<group>"; };
+		D12678F7EE504920B76F8E2F /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
+		D2CCBC3E9A1C09F3A9BEE70F /* CallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallView.swift; sourceTree = "<group>"; };
+		D624635D145C16890D260F46 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		D6FF94EBA6B537AD23339838 /* VoiceManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceManager.swift; sourceTree = "<group>"; };
+		E5A3652B1B87DE1D93273CE9 /* DeskAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeskAPI.swift; sourceTree = "<group>"; };
+		F831DF789D5F6A5C49EB1622 /* Keychain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Keychain.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A8D2E9BB3237C1EC0C8BFF1F /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6EB91FCD80DED3AA91A418E7 /* TwilioVoice in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		0F9D21CCDBC9138DADE97B5D /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				8204212CB78E0296F6F121F6 /* App */,
+				B9BB842FADC0FA897B3916F7 /* Config */,
+				201DE82A8DECA91B54E9B0EB /* Design */,
+				6077238ECE6506BC02D1B15B /* Models */,
+				D63D344A8DDB33EA37A531D0 /* Services */,
+				FFEC8DDB72A459BB79988FD2 /* Views */,
+				1C37DE2EA6363490B313BC97 /* Voice */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		1C37DE2EA6363490B313BC97 /* Voice */ = {
+			isa = PBXGroup;
+			children = (
+				D6FF94EBA6B537AD23339838 /* VoiceManager.swift */,
+			);
+			path = Voice;
+			sourceTree = "<group>";
+		};
+		201DE82A8DECA91B54E9B0EB /* Design */ = {
+			isa = PBXGroup;
+			children = (
+				7998FDC5397CBF4705F3486A /* Theme.swift */,
+			);
+			path = Design;
+			sourceTree = "<group>";
+		};
+		37C9BC8AAA7422002D5D280B /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				252D86043C32B5F928FCCC11 /* UmuveDesk.app */,
+				7FF137648F583261B9C5C4B0 /* UmuveDeskTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		6077238ECE6506BC02D1B15B /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				160DE6B6EEC73D9FDE050E14 /* Models.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		8204212CB78E0296F6F121F6 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				D12678F7EE504920B76F8E2F /* AppModel.swift */,
+				6D3983DC94C70A9CE09D44F4 /* Demo.swift */,
+				34F1F99FD95E5F99670B9D5F /* UmuveDeskApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		A663EF197A14D36323B20B6B /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				C42AEE672223D5429B03C168 /* UmuveDeskTests.swift */,
+			);
+			path = Tests;
+			sourceTree = "<group>";
+		};
+		B9BB842FADC0FA897B3916F7 /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				5D0098AD1C03B95D7FCDBA6A /* Config.swift */,
+			);
+			path = Config;
+			sourceTree = "<group>";
+		};
+		CEF721081F02B2A145952928 = {
+			isa = PBXGroup;
+			children = (
+				0F9D21CCDBC9138DADE97B5D /* Sources */,
+				A663EF197A14D36323B20B6B /* Tests */,
+				37C9BC8AAA7422002D5D280B /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		D63D344A8DDB33EA37A531D0 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				E5A3652B1B87DE1D93273CE9 /* DeskAPI.swift */,
+				F831DF789D5F6A5C49EB1622 /* Keychain.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		FFEC8DDB72A459BB79988FD2 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				D2CCBC3E9A1C09F3A9BEE70F /* CallView.swift */,
+				D624635D145C16890D260F46 /* HomeView.swift */,
+				5E334EEFB4CE2C933C8AD078 /* RootView.swift */,
+				ABB78BE9EE941602107D6F82 /* SignInView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		1E19F606ECEF375AA82864E9 /* UmuveDesk */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 25226A0B504D821653EBEA9E /* Build configuration list for PBXNativeTarget "UmuveDesk" */;
+			buildPhases = (
+				5B25DCF742AA5A93227B786B /* Sources */,
+				A8D2E9BB3237C1EC0C8BFF1F /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = UmuveDesk;
+			packageProductDependencies = (
+				798F683A6ACA84BE0BC6723C /* TwilioVoice */,
+			);
+			productName = UmuveDesk;
+			productReference = 252D86043C32B5F928FCCC11 /* UmuveDesk.app */;
+			productType = "com.apple.product-type.application";
+		};
+		E15DF9770FCE7C4EE5171DF7 /* UmuveDeskTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D701645C6637D9A4306DBF11 /* Build configuration list for PBXNativeTarget "UmuveDeskTests" */;
+			buildPhases = (
+				E7B3D1FA8094F12E24C5CA38 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A7DA77A86570163FA5640DCA /* PBXTargetDependency */,
+			);
+			name = UmuveDeskTests;
+			packageProductDependencies = (
+			);
+			productName = UmuveDeskTests;
+			productReference = 7FF137648F583261B9C5C4B0 /* UmuveDeskTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		31671655D5A5AA7A9639E5B8 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1600;
+				TargetAttributes = {
+					1E19F606ECEF375AA82864E9 = {
+						DevelopmentTeam = 24GH82AX9R;
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 26B41DD582F3A78D3F51829B /* Build configuration list for PBXProject "UmuveDesk" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = CEF721081F02B2A145952928;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				369B90E06CC2613797A1BCB9 /* XCRemoteSwiftPackageReference "twilio-voice-ios" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 37C9BC8AAA7422002D5D280B /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				1E19F606ECEF375AA82864E9 /* UmuveDesk */,
+				E15DF9770FCE7C4EE5171DF7 /* UmuveDeskTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		5B25DCF742AA5A93227B786B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				001FC1B13556025BE086CDFA /* AppModel.swift in Sources */,
+				9365549DFE3EE0D3A187D815 /* CallView.swift in Sources */,
+				D43190E708C4145BE931F771 /* Config.swift in Sources */,
+				A5C975F5DEFE3E44CAF8112D /* Demo.swift in Sources */,
+				8A73D59F5651C67AE649126E /* DeskAPI.swift in Sources */,
+				23F77BB342F87A6609BC019A /* HomeView.swift in Sources */,
+				9992B1EA9DC372892662B032 /* Keychain.swift in Sources */,
+				05B2BE8EA328616DB601AFC8 /* Models.swift in Sources */,
+				D2844BB64B6E8B17CB58DB73 /* RootView.swift in Sources */,
+				4FAD156B582E06D0D0DF9889 /* SignInView.swift in Sources */,
+				EA23B7339CBB34A939D1F7E5 /* Theme.swift in Sources */,
+				CAB87C3336F6CD1F4004E3F8 /* UmuveDeskApp.swift in Sources */,
+				9DDE5C19476D6711CB08F2CD /* VoiceManager.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E7B3D1FA8094F12E24C5CA38 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1D582BF979F93CE61E092644 /* UmuveDeskTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		A7DA77A86570163FA5640DCA /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 1E19F606ECEF375AA82864E9 /* UmuveDesk */;
+			targetProxy = C57A81B56F55E86F075F6BC5 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		41FF764511B91F1AE180A55D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		57EDDB2FC5EC24D6C31509D3 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = UmuveDesk.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 24GH82AX9R;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "";
+				INFOPLIST_GENERATION_MODE = GeneratedFile;
+				INFOPLIST_KEY_CFBundleDisplayName = "Umuve Desk";
+				INFOPLIST_KEY_CFBundleName = "Umuve Desk";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Umuve Desk uses the microphone so you can talk to customers who call the desk line.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UIBackgroundModes = "voip audio";
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.goumuve.desk;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		81C0406FAC14E07EFA7ED2AF /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.goumuve.UmuveDeskTests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/UmuveDesk.app/UmuveDesk";
+			};
+			name = Release;
+		};
+		A51F29AE41115DD33C417D20 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.goumuve.UmuveDeskTests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/UmuveDesk.app/UmuveDesk";
+			};
+			name = Debug;
+		};
+		AEC37B3DBF7CAAAE698D851F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = UmuveDesk.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 24GH82AX9R;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "";
+				INFOPLIST_GENERATION_MODE = GeneratedFile;
+				INFOPLIST_KEY_CFBundleDisplayName = "Umuve Desk";
+				INFOPLIST_KEY_CFBundleName = "Umuve Desk";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Umuve Desk uses the microphone so you can talk to customers who call the desk line.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UIBackgroundModes = "voip audio";
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.goumuve.desk;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		D7420FF77FD1B9DC73E053C3 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		25226A0B504D821653EBEA9E /* Build configuration list for PBXNativeTarget "UmuveDesk" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AEC37B3DBF7CAAAE698D851F /* Debug */,
+				57EDDB2FC5EC24D6C31509D3 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		26B41DD582F3A78D3F51829B /* Build configuration list for PBXProject "UmuveDesk" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				41FF764511B91F1AE180A55D /* Debug */,
+				D7420FF77FD1B9DC73E053C3 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		D701645C6637D9A4306DBF11 /* Build configuration list for PBXNativeTarget "UmuveDeskTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A51F29AE41115DD33C417D20 /* Debug */,
+				81C0406FAC14E07EFA7ED2AF /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		369B90E06CC2613797A1BCB9 /* XCRemoteSwiftPackageReference "twilio-voice-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/twilio/twilio-voice-ios";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 6.13.7;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		798F683A6ACA84BE0BC6723C /* TwilioVoice */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 369B90E06CC2613797A1BCB9 /* XCRemoteSwiftPackageReference "twilio-voice-ios" */;
+			productName = TwilioVoice;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 31671655D5A5AA7A9639E5B8 /* Project object */;
+}

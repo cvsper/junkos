@@ -873,15 +873,32 @@ def desk_token():
             identity = client_identity(ident.get("name"))
         except Exception:
             identity = "desk"
+        # The iOS desk app registers the same identity, so the inbound <Dial>
+        # rings it with no change to the ring logic. What it needs beyond the
+        # browser is a push credential: without it the SDK can't wake the app
+        # for a call while the phone is locked, which is the whole point of a
+        # native desk. TWILIO_IOS_PUSH_CREDENTIAL_SID comes from Twilio Console
+        # after uploading the Apple VoIP Services certificate.
+        platform = (data.get("platform") or "web").strip().lower()
+        push_sid = _env("TWILIO_IOS_PUSH_CREDENTIAL_SID") if platform == "ios" else ""
         token = AccessToken(_env("TWILIO_ACCOUNT_SID"), _env("TWILIO_API_KEY_SID"),
                             _env("TWILIO_API_KEY_SECRET"), identity=identity, ttl=ttl)
         token.add_grant(VoiceGrant(outgoing_application_sid=_env("TWILIO_TWIML_APP_SID"),
-                                   incoming_allow=True))
+                                   incoming_allow=True,
+                                   push_credential_sid=push_sid or None))
         jwt = token.to_jwt()
         if isinstance(jwt, bytes):
             jwt = jwt.decode("utf-8")
-        return jsonify({"enabled": True, "token": jwt, "ttl": ttl, "identity": identity,
-                        "desk_number": desk_number()}), 200
+        out = {"enabled": True, "token": jwt, "ttl": ttl, "identity": identity,
+               "desk_number": desk_number(), "platform": platform}
+        if platform == "ios":
+            # Honest about what the token can do: an iOS token with no push
+            # credential works only while the app is in the foreground.
+            out["push"] = bool(push_sid)
+            if not push_sid:
+                out["push_reason"] = ("TWILIO_IOS_PUSH_CREDENTIAL_SID not set — the app "
+                                      "will not ring while locked")
+        return jsonify(out), 200
     except Exception:
         logger.exception("desk token build failed")
         return jsonify({"enabled": False,
