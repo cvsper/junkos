@@ -32,6 +32,7 @@ final class VoiceManager: NSObject, ObservableObject {
         let id: UUID
         let from: String                        // E.164 or digits from Twilio
         var connected = false
+        var connectedAt: Date?
         var muted = false
         var whois: Whois?
     }
@@ -271,7 +272,7 @@ extension VoiceManager: CXProviderDelegate {
 extension VoiceManager: CallDelegate {
     nonisolated func callDidConnect(call: Call) {
         MainActor.assumeIsolated {
-            if var c = activeCall, calls[c.id] === call { c.connected = true; activeCall = c }
+            if var c = activeCall, calls[c.id] === call { c.connected = true; c.connectedAt = Date(); activeCall = c }
         }
     }
     nonisolated func callDidFailToConnect(call: Call, error: Error) {

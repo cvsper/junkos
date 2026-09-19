@@ -18,7 +18,7 @@ settings:
   base:
     SWIFT_VERSION: "5.9"
     MARKETING_VERSION: "1.0.0"
-    CURRENT_PROJECT_VERSION: 3
+    CURRENT_PROJECT_VERSION: 4
     TARGETED_DEVICE_FAMILY: "1"
 
 packages:
@@ -52,6 +52,14 @@ targets:
         # voip: PushKit wakes the app for an incoming call while locked.
         # audio: the call keeps going when the screen turns off.
         UIBackgroundModes: [voip, audio]
+        UIAppFonts:
+          - Outfit-SemiBold.ttf
+          - Outfit-Bold.ttf
+          - Outfit-ExtraBold.ttf
+          - DMSans-Regular.ttf
+          - DMSans-Medium.ttf
+          - DMSans-SemiBold.ttf
+          - DMSans-Bold.ttf
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.goumuve.desk

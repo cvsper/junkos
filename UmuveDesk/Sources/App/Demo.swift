@@ -33,6 +33,7 @@ enum Demo {
         if m == "call" {
             var c = VoiceManager.ActiveCall(id: UUID(), from: "+15615550143")
             c.connected = true
+            c.connectedAt = Date().addingTimeInterval(-42)
             c.whois = try? dec.decode(Whois.self, from: Data("""
             {"kind":"customer","phone":"(561) 555-0143","phone_digits":"5615550143","source":"meta",
              "banner":"Called from the Meta ad",

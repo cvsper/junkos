@@ -9,7 +9,7 @@ struct RootView: View {
 
     var body: some View {
         ZStack {
-            Color.canvas.ignoresSafeArea()
+            Canvas()
             if !model.signedIn {
                 SignInView()
             } else if let call = voice.activeCall {

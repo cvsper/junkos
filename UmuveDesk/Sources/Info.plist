@@ -24,6 +24,16 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Umuve Desk uses the microphone so you can talk to customers who call the desk line.</string>
+	<key>UIAppFonts</key>
+	<array>
+		<string>Outfit-SemiBold.ttf</string>
+		<string>Outfit-Bold.ttf</string>
+		<string>Outfit-ExtraBold.ttf</string>
+		<string>DMSans-Regular.ttf</string>
+		<string>DMSans-Medium.ttf</string>
+		<string>DMSans-SemiBold.ttf</string>
+		<string>DMSans-Bold.ttf</string>
+	</array>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
