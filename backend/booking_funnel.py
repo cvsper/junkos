@@ -188,6 +188,163 @@ def open_leads(days=14):
     return abandoned(days=days, priced_only=True, reachable_only=True)
 
 
+# --------------------------------------------------------------------------
+# Who the visitors are
+# --------------------------------------------------------------------------
+# The booking page is the only place we can see a visitor without a third
+# party: the beacon carries their zip, and the request carries the browser
+# and where they came from. That is enough for "who, where, on what, when,
+# and how far they got", which is what a person asks before touching an ad.
+
+# Three-digit zip prefixes for the seven coastal counties we serve.
+_ZIP_COUNTY = {
+    "330": "Miami-Dade", "331": "Miami-Dade", "332": "Miami-Dade",
+    "333": "Broward", "334": "Palm Beach",
+    "349": "Martin / St. Lucie", "329": "Brevard / Indian River",
+}
+_CITY_OF_ZIP = {
+    "334": "West Palm Beach area", "333": "Fort Lauderdale area",
+    "330": "Miami / Hialeah", "331": "Miami", "332": "Miami",
+    "349": "Stuart / Port St. Lucie", "329": "Melbourne / Vero Beach",
+}
+# Florida runs 320-349; anything else is a visitor we cannot serve.
+_FL_PREFIXES = {str(n) for n in range(320, 350)}
+
+# The time of day people book is only meaningful in their clock, not UTC.
+_ET_OFFSET_HOURS = -4
+
+
+def county_of_zip(zip_code):
+    z = re.sub(r"\D", "", zip_code or "")[:3]
+    if not z:
+        return None
+    if z in _ZIP_COUNTY:
+        return _ZIP_COUNTY[z]
+    return "Florida, outside service area" if z in _FL_PREFIXES else "Outside Florida"
+
+
+def device_of(user_agent):
+    """Phone / tablet / desktop, plus whether it was Meta's in-app browser.
+
+    The in-app flag matters more than the OS: a visitor inside Facebook's or
+    Instagram's browser is one tap from an ad, on a webview that drops cookies
+    and autofill, and that is where most of our paid traffic lands.
+    """
+    ua = (user_agent or "")
+    low = ua.lower()
+    in_app = None
+    if "instagram" in low:
+        in_app = "Instagram"
+    elif "fban" in low or "fbav" in low or "fb_iab" in low:
+        in_app = "Facebook"
+    if "ipad" in low or ("android" in low and "mobile" not in low):
+        kind = "tablet"
+    elif "iphone" in low or "android" in low or "mobile" in low:
+        kind = "phone"
+    elif not ua:
+        kind = "unknown"
+    else:
+        kind = "desktop"
+    if "iphone" in low or "ipad" in low:
+        os_name = "iOS"
+    elif "android" in low:
+        os_name = "Android"
+    elif "windows" in low:
+        os_name = "Windows"
+    elif "mac os" in low or "macintosh" in low:
+        os_name = "Mac"
+    else:
+        os_name = "other"
+    return {"kind": kind, "os": os_name, "in_app": in_app}
+
+
+def referrer_host(referrer):
+    m = re.match(r"^\s*https?://([^/?#]+)", referrer or "")
+    if not m:
+        return "direct"
+    host = m.group(1).lower()
+    if host.startswith("www."):
+        host = host[4:]
+    if host.endswith("goumuve.com"):
+        return "goumuve.com"
+    if "facebook.com" in host or host.startswith("l.") or host.startswith("lm."):
+        return "facebook"
+    if "instagram.com" in host:
+        return "instagram"
+    if "google." in host:
+        return "google"
+    return host
+
+
+def _bucket(counter, key, row, reached_two, priced):
+    b = counter.setdefault(key, {"key": key, "visitors": 0, "past_address": 0,
+                                 "saw_a_price": 0, "booked": 0})
+    b["visitors"] += 1
+    if reached_two:
+        b["past_address"] += 1
+    if priced:
+        b["saw_a_price"] += 1
+    if row.converted:
+        b["booked"] += 1
+    return b
+
+
+def _finish(counter, limit=None):
+    out = sorted(counter.values(), key=lambda b: -b["visitors"])
+    for b in out:
+        v = b["visitors"]
+        b["past_address_pct"] = round(100.0 * b["past_address"] / v, 1) if v else 0.0
+    return out[:limit] if limit else out
+
+
+def visitors(rows):
+    """Everything the funnel rows say about who came, in one shape.
+
+    Each breakdown carries the same four counts so any slice can be compared
+    to any other: how many came, how many got past the address step, how many
+    saw a price, how many booked.
+    """
+    by_county, by_zip, by_device, by_os, by_in_app = {}, {}, {}, {}, {}
+    by_referrer, by_hour, by_weekday, by_source = {}, {}, {}, {}
+    with_zip = 0
+    for r in rows:
+        reached_two = (r.max_step or 1) >= 2
+        priced = r.quoted_price is not None
+        d = device_of(r.user_agent)
+        _bucket(by_device, d["kind"], r, reached_two, priced)
+        _bucket(by_os, d["os"], r, reached_two, priced)
+        _bucket(by_in_app, d["in_app"] or "regular browser", r, reached_two, priced)
+        _bucket(by_referrer, referrer_host(r.referrer), r, reached_two, priced)
+        _bucket(by_source, (r.lead_source or "direct").lower(), r, reached_two, priced)
+        county = county_of_zip(r.zip_code)
+        if county:
+            with_zip += 1
+            _bucket(by_county, county, r, reached_two, priced)
+            _bucket(by_zip, re.sub(r"\D", "", r.zip_code)[:5], r, reached_two, priced)
+        when = r.created_at + timedelta(hours=_ET_OFFSET_HOURS)
+        _bucket(by_hour, when.hour, r, reached_two, priced)
+        _bucket(by_weekday, when.strftime("%a"), r, reached_two, priced)
+
+    hours = _finish(by_hour)
+    hours.sort(key=lambda b: b["key"])
+    order = {d: i for i, d in enumerate(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"])}
+    weekdays = _finish(by_weekday)
+    weekdays.sort(key=lambda b: order.get(b["key"], 9))
+    return {
+        "total": len(rows),
+        "with_zip": with_zip,
+        "by_county": _finish(by_county),
+        "by_zip": _finish(by_zip, limit=15),
+        "by_device": _finish(by_device),
+        "by_os": _finish(by_os),
+        "by_in_app_browser": _finish(by_in_app),
+        "by_referrer": _finish(by_referrer, limit=10),
+        "by_source": _finish(by_source),
+        "by_hour_et": hours,
+        "by_weekday": weekdays,
+    }
+
+
 def report(days=30):
     """Where the booking page loses people.
 
@@ -248,4 +405,5 @@ def report(days=30):
         "avg_quote": round(sum(values) / len(values), 2) if values else None,
         "by_source": sorted(by_source.values(), key=lambda s: -s["started"]),
         "recoverable": [r.to_dict() for r in reachable_lost[:25]],
+        "visitors": visitors(rows),
     }

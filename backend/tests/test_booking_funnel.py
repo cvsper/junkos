@@ -297,3 +297,55 @@ def test_the_analytics_page_has_the_website_sections():
     html = desk_analytics.PAGE_HTML
     for node in ("t-web-steps", "t-web-src", "t-web-lost", 'id="web"'):
         assert node in html, node
+
+
+# --------------------------------------------------------------------------
+# Who the visitors are
+# --------------------------------------------------------------------------
+IG = ("Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 "
+      "(KHTML, like Gecko) Mobile/15E148 Instagram 330.0.0.0")
+FB = ("Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) "
+      "Chrome/124 Mobile Safari/537.36 [FB_IAB/FB4A;FBAV/460.0.0.0;]")
+MAC = "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_5) AppleWebKit/605.1.15 Safari/605.1.15"
+
+
+def test_a_visitor_is_read_from_zip_browser_and_referrer():
+    d = booking_funnel.device_of(IG)
+    assert d == {"kind": "phone", "os": "iOS", "in_app": "Instagram"}
+    assert booking_funnel.device_of(FB)["in_app"] == "Facebook"
+    assert booking_funnel.device_of(MAC) == {"kind": "desktop", "os": "Mac", "in_app": None}
+    assert booking_funnel.device_of(None)["kind"] == "unknown"
+    assert booking_funnel.county_of_zip("33401") == "Palm Beach"
+    assert booking_funnel.county_of_zip("33301-1234") == "Broward"
+    assert booking_funnel.county_of_zip("32801") == "Florida, outside service area"
+    assert booking_funnel.county_of_zip("10001") == "Outside Florida"
+    assert booking_funnel.county_of_zip("") is None
+    assert booking_funnel.referrer_host("https://l.facebook.com/l.php?u=x") == "facebook"
+    assert booking_funnel.referrer_host("https://www.goumuve.com/book") == "goumuve.com"
+    assert booking_funnel.referrer_host(None) == "direct"
+
+
+def test_the_report_profiles_the_visitors():
+    booking_funnel.record({"session_id": "a", "step": 3, "zip": "33401", "leadSource": "meta"},
+                          referrer="https://l.facebook.com/", user_agent=IG)
+    booking_funnel.record({"session_id": "b", "step": 1, "zip": "33401", "leadSource": "meta"},
+                          referrer="https://l.facebook.com/", user_agent=FB)
+    booking_funnel.record({"session_id": "c", "step": 5, "zip": "33301", "estimatedPrice": 180},
+                          referrer=None, user_agent=MAC)
+    v = booking_funnel.report(30)["visitors"]
+    assert v["total"] == 3 and v["with_zip"] == 3
+    counties = {b["key"]: b for b in v["by_county"]}
+    assert counties["Palm Beach"]["visitors"] == 2
+    assert counties["Palm Beach"]["past_address"] == 1
+    assert counties["Palm Beach"]["past_address_pct"] == 50.0
+    assert counties["Broward"]["saw_a_price"] == 1
+    in_app = {b["key"]: b["visitors"] for b in v["by_in_app_browser"]}
+    assert in_app == {"Instagram": 1, "Facebook": 1, "regular browser": 1}
+    assert {b["key"] for b in v["by_referrer"]} == {"facebook", "direct"}
+    assert v["by_device"][0]["key"] == "phone" and v["by_device"][0]["visitors"] == 2
+    assert len(v["by_hour_et"]) >= 1 and len(v["by_weekday"]) >= 1
+
+
+def test_an_empty_funnel_still_profiles_nobody():
+    v = booking_funnel.report(30)["visitors"]
+    assert v["total"] == 0 and v["by_county"] == [] and v["by_hour_et"] == []
