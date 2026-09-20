@@ -163,6 +163,7 @@ function generateServicePage(service) {
         .city-link:hover { background: #DC2626; color: white; border-color: #DC2626; }
         @media (max-width: 640px) { .sticky-cta { flex-direction: column; } .sticky-cta a { width: 100%; text-align: center; } }
     </style>
+    <script defer src="/_vercel/insights/script.js"></script>
 </head>
 <body style="padding-bottom: 80px;">
     <!-- Nav -->

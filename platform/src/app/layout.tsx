@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { DM_Sans, Outfit, JetBrains_Mono } from "next/font/google";
 import "@/styles/globals.css";
 import { Analytics } from "@/components/analytics";
+import { Analytics as VercelAnalytics } from "@vercel/analytics/next";
 import { PostHogProvider } from "@/components/providers/posthog-provider";
 import { ErrorBoundaryWrapper } from "@/components/error-boundary-wrapper";
 
@@ -98,6 +99,7 @@ export default function RootLayout({
           </ErrorBoundaryWrapper>
         </PostHogProvider>
         <Analytics />
+        <VercelAnalytics />
         {/* No global footer here: each section renders its own (the customer
             group's disposal/trust footer, the legal group's footer). A footer
             at the root duplicated those on every customer/legal page and hung

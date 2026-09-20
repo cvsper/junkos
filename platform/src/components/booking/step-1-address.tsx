@@ -2,8 +2,9 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { MapPin, Clock, DollarSign, Leaf } from "lucide-react";
+import { MapPin, Clock, DollarSign, Leaf, ArrowRight } from "lucide-react";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import { useBookingStore } from "@/stores/booking-store";
 import { bookingApi, type MarketBounds } from "@/lib/api";
 
@@ -236,6 +237,12 @@ export function Step1Address() {
     return true;
   };
 
+  const hasPickedAddress =
+    typeof address.lat === "number" &&
+    typeof address.lng === "number" &&
+    (address.street?.trim() || "") === streetValue.trim() &&
+    streetValue.trim().length >= 10;
+
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -324,6 +331,24 @@ export function Step1Address() {
             <p role="alert" className="text-sm text-destructive font-medium">{error}</p>
           )}
         </div>
+        {/* On a phone the page's Next button sits below the fold, under three
+            info cards, so most visitors who picked an address never saw a way
+            forward. Once an address is chosen, the way forward is right here. */}
+        {hasPickedAddress && (
+          <Button
+            type="button"
+            size="lg"
+            className="w-full gap-2 sm:w-auto"
+            onClick={() => {
+              if (Step1Address.validate()) {
+                useBookingStore.getState().nextStep();
+              }
+            }}
+          >
+            Continue
+            <ArrowRight className="h-4 w-4" />
+          </Button>
+        )}
       </div>
 
       {/* Service Area Info */}

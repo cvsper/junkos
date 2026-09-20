@@ -37,6 +37,7 @@ const HEAD = (title, desc, canonical, extraSchema) => `<!DOCTYPE html>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Outfit:wght@700;800;900&display=swap" rel="stylesheet">
 ${extraSchema}
+    <script defer src="/_vercel/insights/script.js"></script>
 </head>`;
 
 const NAV = () => `<nav class="navbar" style="position:sticky;top:0;background:rgba(255,255,255,0.95);backdrop-filter:blur(10px);z-index:100;border-bottom:1px solid rgba(0,0,0,0.06)">

@@ -265,6 +265,7 @@ function generateLocationPage(city, allCities) {
             .sticky-cta a { width: 100%; text-align: center; }
         }
     </style>
+    <script defer src="/_vercel/insights/script.js"></script>
 </head>
 <body style="padding-bottom: 80px;">
     <!-- Nav -->

@@ -1570,6 +1570,7 @@ function head(g) {
             .guide-table th, .guide-table td { padding: 0.5rem 0.5rem; }
         }
     </style>
+    <script defer src="/_vercel/insights/script.js"></script>
 </head>`;
 }
 

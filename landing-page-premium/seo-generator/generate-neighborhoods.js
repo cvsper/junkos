@@ -541,6 +541,7 @@ function generateNeighborhoodPage(neighborhood, neighborhoodSlug, city, otherNei
     </script>
 
     <link rel="stylesheet" href="/styles-seo.css">
+    <script defer src="/_vercel/insights/script.js"></script>
 </head>
 <body>
     <!-- Nav -->
