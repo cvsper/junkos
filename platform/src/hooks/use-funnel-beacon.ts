@@ -53,7 +53,7 @@ function addressLine(address: unknown): string | undefined {
     const a = address as Record<string, unknown>;
     const street = typeof a.street === "string" ? a.street : "";
     const city = typeof a.city === "string" ? a.city : "";
-    const zip = typeof a.zipCode === "string" ? a.zipCode : "";
+    const zip = zipOf(address) ?? "";
     const line = [street, city, zip].filter(Boolean).join(", ");
     return line || undefined;
   }
@@ -63,7 +63,11 @@ function addressLine(address: unknown): string | undefined {
 function zipOf(address: unknown): string | undefined {
   if (address && typeof address === "object") {
     const a = address as Record<string, unknown>;
-    if (typeof a.zipCode === "string" && a.zipCode) return a.zipCode;
+    // The booking store keeps it as `zip`; older callers said `zipCode`.
+    for (const key of ["zip", "zipCode", "postalCode"]) {
+      const v = a[key];
+      if (typeof v === "string" && v.trim()) return v.trim();
+    }
   }
   return undefined;
 }
