@@ -372,14 +372,89 @@ def twilio_sms_status():
     status = (request.form.get("MessageStatus") or "").lower()
     if sid and status in _STATUS_WHITELIST:
         act = DeskActivity.query.filter_by(twilio_sid=sid, kind="sms").first()
+        if act and FALLBACK_MARK in (act.status or ""):
+            act = None          # already carried by the toll-free line; a repeat callback changes nothing
         if act:
             act.status = status
+            code = None
             if status in ("failed", "undelivered"):
-                code = request.form.get("ErrorCode")
+                code = str(request.form.get("ErrorCode") or "")[:8]
                 if code:
-                    act.status = status + ":" + str(code)[:8]
+                    act.status = status + ":" + code
             db.session.commit()
+            if code in FALLBACK_CODES:
+                resend_via_tollfree(act, code)
     return Response("", status=204)
+
+
+# Carrier codes that mean "this line is not allowed to send", not "this
+# person is unreachable". 30034 is an unregistered 10DLC number: the message
+# is fine, the line is the problem, so the toll-free line carries it instead.
+FALLBACK_CODES = ("30034",)
+FALLBACK_MARK = ">tf"
+
+
+def _fallback_suffix():
+    d = _digits(desk_number())
+    pretty = "({}) {}-{}".format(d[:3], d[3:6], d[6:]) if len(d) == 10 else ""
+    return ("\n— Umuve desk, reply or call " + pretty) if pretty else "\n— Umuve desk"
+
+
+def resend_via_tollfree(act, code):
+    """A desk-line text the carrier refused goes out again from the toll-free
+    line, once, with the desk number on the end so a reply or a call still
+    reaches the VA (the main line mirrors replies into the desk inbox).
+    Returns the new activity or None."""
+    if not act or act.kind != "sms" or act.direction != "out" or not act.body:
+        return None
+    if FALLBACK_MARK in (act.status or "") or "— Umuve desk" in act.body:
+        return None
+    to = _e164(act.phone_digits)
+    if not to:
+        return None
+    body = (act.body.rstrip() + _fallback_suffix())[:1600]
+    try:
+        import sms_service
+        new_sid = sms_service.send_sms(to, body)
+    except Exception:
+        logger.exception("toll-free resend failed for %s", act.id)
+        new_sid = None
+    act.status = "undelivered:" + code + (FALLBACK_MARK if new_sid else "")
+    if not new_sid:
+        db.session.commit()
+        return None
+    prospect = db.session.get(CallProspect, act.prospect_id) if act.prospect_id else None
+    twin = DeskActivity(prospect_id=act.prospect_id, phone_digits=act.phone_digits, kind="sms",
+                        direction="out", body=body[:2000], twilio_sid=new_sid, status="queued",
+                        va_name=act.va_name, read_at=_now_naive())
+    db.session.add(twin)
+    if prospect:
+        prospect.last_texted_at = _now_naive()
+    db.session.commit()
+    audit("text_resent_tollfree", "activity", act.id, {"to_last4": (act.phone_digits or "")[-4:], "code": code})
+    return twin
+
+
+def delivery_report(hours=24):
+    """Are desk-line texts actually arriving? Outbound texts in the window,
+    how many the carrier refused, the code that dominates, and how many the
+    toll-free line carried instead. Drives the banner on the desk."""
+    since = _now_naive() - timedelta(hours=hours)
+    rows = (DeskActivity.query.filter(DeskActivity.kind == "sms", DeskActivity.direction == "out",
+                                      DeskActivity.created_at >= since).all())
+    attempted = len(rows)
+    failed = [r for r in rows if (r.status or "").startswith(("undelivered", "failed"))]
+    codes = {}
+    for r in failed:
+        c = (r.status or "").split(":")[-1].replace(FALLBACK_MARK, "") if ":" in (r.status or "") else ""
+        if c:
+            codes[c] = codes.get(c, 0) + 1
+    top = max(codes, key=codes.get) if codes else None
+    resent = sum(1 for r in failed if FALLBACK_MARK in (r.status or ""))
+    blocked = sum(1 for r in failed if any(c in (r.status or "") for c in FALLBACK_CODES))
+    level = "bad" if (blocked >= 3 and attempted and blocked / attempted >= 0.25) else "ok"
+    return {"hours": hours, "attempted": attempted, "undelivered": len(failed), "blocked": blocked,
+            "resent": resent, "top_code": top, "level": level}
 
 
 # ---------------------------------------------------------------------------
@@ -1293,6 +1368,12 @@ def desk_capacity_left():
     except Exception:
         logger.exception("desk capacity check failed")
         return jsonify({"ok": False, "texts": None, "minutes": None, "level": "unknown", "label": ""}), 200
+    try:
+        delivery = delivery_report(24)
+    except Exception:
+        logger.exception("delivery report failed")
+        delivery = None
     return jsonify({"ok": bool(cap.get("ok")), "texts": cap.get("texts"),
                     "minutes": cap.get("minutes"), "level": cap.get("level"),
-                    "label": summary_line(cap), "checked_at": cap.get("checked_at")}), 200
+                    "label": summary_line(cap), "checked_at": cap.get("checked_at"),
+                    "delivery": delivery}), 200

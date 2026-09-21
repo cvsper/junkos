@@ -245,6 +245,23 @@
   });
   $("va-pick").addEventListener("change", function(){ va = this.value; load(); });
 
+  // Desk-line texts the carrier refused today. The manager sees the count;
+  // the fix (10DLC registration in Twilio Trust Hub) is theirs to do.
+  function showDeliveryBanner(d){
+    var bar = $("sms-banner");
+    if(!d || d.level !== "bad"){ if(bar) bar.hidden = true; return; }
+    if(!bar){
+      bar = document.createElement("div"); bar.id = "sms-banner"; bar.className = "mg-smswarn"; bar.setAttribute("role", "status");
+      var chip = $("cap-chip"); var host = chip && chip.parentNode ? chip.parentNode : document.body;
+      host.parentNode ? host.parentNode.insertBefore(bar, host.nextSibling) : document.body.insertBefore(bar, document.body.firstChild);
+    }
+    var n = d.blocked | 0, m = d.attempted | 0, re = d.resent | 0;
+    bar.textContent = "Desk-line texts not delivering: " + n + " of " + m + " refused today (carrier code " + (d.top_code || "30034") +
+      ", unregistered 10DLC). " + (re ? re + " re-sent from the toll-free line. " : "") +
+      "Fix: Twilio Console › Trust Hub › A2P 10DLC — register the brand and a campaign for the desk number.";
+    bar.hidden = false;
+  }
+
   // How much desk line is left, in texts or minutes. Both come out of the same
   // balance, so it reads "or" — and the balance itself stays off the screen.
   function loadCapacity(){
@@ -255,6 +272,7 @@
       if(!b.ok || !b.label){ chip.hidden = true; return; }
       $("cap-label").textContent = b.label;
       chip.className = "mg-cap" + (b.level === "low" || b.level === "empty" ? " " + b.level : "");
+      showDeliveryBanner(b.delivery);
       chip.title = b.level === "empty"
         ? "The desk line is out — top up Twilio before the next call."
         : "Texts or minutes left on the desk line — they share one balance.";

@@ -1919,6 +1919,8 @@ CALLS_CSS = r"""/* Call Desk — layers over /va/app.css tokens (frosted glass o
   border:1px solid var(--glass-border);border-radius:var(--r-pill);box-shadow:var(--shadow-soft);
   white-space:nowrap;font-variant-numeric:tabular-nums;cursor:default}
 .cap-dot{width:8px;height:8px;border-radius:50%;background:var(--ok)}
+.sms-warn{margin:10px 0 0;padding:10px 14px;border-radius:var(--r-md);font-family:var(--body);font-size:13px;line-height:1.45;
+  color:var(--danger);background:rgba(var(--danger-rgb),.08);border:1px solid rgba(var(--danger-rgb),.35)}
 .cap.low{color:var(--warn);border-color:rgba(var(--warn-rgb),.38)}
 .cap.low .cap-dot{background:var(--warn);box-shadow:0 0 0 3px rgba(var(--warn-rgb),.18)}
 .cap.empty{color:var(--danger);border-color:rgba(var(--danger-rgb),.42)}
@@ -2150,6 +2152,23 @@ CALLS_JS = r"""(function(){
     if(d2) d2.textContent = capLabel ? txt + " · " + capLabel : txt;
   }
 
+  // Texts the carrier refused today. Silent failure is the worst kind: the VA
+  // thinks she texted someone and nobody ever heard from us.
+  function showDeliveryBanner(d){
+    var bar = document.getElementById("sms-banner");
+    if(!d || d.level !== "bad"){ if(bar) bar.hidden = true; return; }
+    if(!bar){
+      bar = document.createElement("div"); bar.id = "sms-banner"; bar.className = "sms-warn"; bar.setAttribute("role", "status");
+      var day = document.getElementById("daybar");
+      if(day && day.parentNode) day.parentNode.insertBefore(bar, day.nextSibling); else document.body.insertBefore(bar, document.body.firstChild);
+    }
+    var n = d.blocked | 0, m = d.attempted | 0, re = d.resent | 0;
+    bar.textContent = "Texts from the desk line aren't reaching people: " + n + " of " + m + " today were refused by the carrier (code " +
+      (d.top_code || "30034") + ", the number isn't registered for business texting)." +
+      (re ? " " + re + " went out again from the toll-free line." : "") + " Calls are unaffected.";
+    bar.hidden = false;
+  }
+
   // How much desk line is left, in texts or minutes. Same balance pays for
   // both, so it reads "or" — never two pools, and never a dollar figure.
   function loadCapacity(){
@@ -2159,6 +2178,7 @@ CALLS_JS = r"""(function(){
       var body = (r && r.status === 200) ? (r.body || {}) : {};
       if(!body.ok || !body.label){ chip.hidden = true; capLabel = ""; setDaybar(); return; }
       capLabel = body.label;
+      showDeliveryBanner(body.delivery);
       document.getElementById("cap-label").textContent = body.label;
       chip.className = "cap" + (body.level === "low" || body.level === "empty" ? " " + body.level : "");
       chip.title = body.level === "empty"

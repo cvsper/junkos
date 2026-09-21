@@ -365,3 +365,71 @@ def test_a_voicemail_with_no_callback_pulls_its_transcript_from_twilio(client):
         item = next(i for i in _va(client, "/api/va/desk/inbox", {}).get_json()["items"]
                     if i["phone_digits"] == "5615550124")
     assert item["preview"] == "Voicemail" and item["voicemail_text"] is None
+
+
+# ------------------------------------------------- carrier-refused texts
+def test_a_text_the_carrier_refuses_goes_out_again_from_the_toll_free_line(client, prospect):
+    """9/21: 103 of 162 desk-line texts since 9/14 died with 30034 (unregistered
+    10DLC) and nobody saw it. The toll-free line delivers, so it carries the
+    message — once — with the desk number on the end."""
+    from models import DeskActivity, generate_uuid
+    act = DeskActivity(id=generate_uuid(), prospect_id=prospect.id, phone_digits="5616857209", kind="sms",
+                       direction="out", body="Hi, it's Tracy with Umuve — calling you in a minute.",
+                       twilio_sid="SMdesk1", status="sent", va_name="Tracy")
+    db.session.add(act); db.session.commit()
+    with mock.patch("desk_line._validate", return_value=True), \
+         mock.patch.dict(os.environ, {"DESK_TWILIO_NUMBER": "+15617824350"}), \
+         mock.patch("sms_service.send_sms", return_value="SMtollfree1") as send:
+        r = client.post("/api/desk/twilio/sms-status", data={
+            "MessageSid": "SMdesk1", "MessageStatus": "undelivered", "ErrorCode": "30034"})
+        assert r.status_code == 204
+        # the same callback again must not send twice
+        client.post("/api/desk/twilio/sms-status", data={
+            "MessageSid": "SMdesk1", "MessageStatus": "undelivered", "ErrorCode": "30034"})
+    assert send.call_count == 1
+    to, body = send.call_args.args
+    assert to == "+15616857209"
+    assert body.startswith("Hi, it's Tracy with Umuve") and body.endswith("— Umuve desk, reply or call (561) 782-4350")
+    db.session.refresh(act)
+    assert act.status == "undelivered:30034>tf"
+    twin = DeskActivity.query.filter_by(twilio_sid="SMtollfree1").one()
+    assert twin.direction == "out" and twin.prospect_id == prospect.id and twin.va_name == "Tracy"
+
+    # a person who is genuinely unreachable (30005) is not retried anywhere
+    other = DeskActivity(id=generate_uuid(), prospect_id=None, phone_digits="5615550199", kind="sms",
+                         direction="out", body="hello", twilio_sid="SMdesk2", status="sent")
+    db.session.add(other); db.session.commit()
+    with mock.patch("desk_line._validate", return_value=True), \
+         mock.patch("sms_service.send_sms", return_value="SMx") as send2:
+        client.post("/api/desk/twilio/sms-status", data={
+            "MessageSid": "SMdesk2", "MessageStatus": "undelivered", "ErrorCode": "30005"})
+    assert send2.call_count == 0
+    db.session.refresh(other)
+    assert other.status == "undelivered:30005"
+
+
+def test_the_desk_is_told_when_its_texts_are_not_arriving(client):
+    from models import DeskActivity, generate_uuid
+    import desk_line
+    rows = [("s1", "delivered"), ("s2", "undelivered:30034>tf"), ("s3", "undelivered:30034"),
+            ("s4", "undelivered:30034"), ("s5", "sent"), ("s6", "undelivered:30005")]
+    for sid, st in rows:
+        db.session.add(DeskActivity(id=generate_uuid(), prospect_id=None, phone_digits="5615550100", kind="sms",
+                                    direction="out", body="x", twilio_sid=sid, status=st))
+    db.session.commit()
+    d = desk_line.delivery_report(24)
+    assert d["attempted"] == 6 and d["undelivered"] == 4 and d["blocked"] == 3 and d["resent"] == 1
+    assert d["top_code"] == "30034" and d["level"] == "bad"
+    with mock.patch("twilio_capacity.desk_capacity", return_value={"ok": True, "texts": 100, "minutes": 50, "level": "ok"}), \
+         mock.patch("twilio_capacity.summary_line", return_value="≈ 100 texts or 50 min left"):
+        cap = _va(client, "/api/va/desk/capacity", {}).get_json()
+    assert cap["delivery"]["level"] == "bad" and cap["delivery"]["blocked"] == 3
+
+    # two bad texts out of many is noise, not a banner
+    DeskActivity.query.delete(); db.session.commit()
+    for i in range(20):
+        db.session.add(DeskActivity(id=generate_uuid(), prospect_id=None, phone_digits="5615550100", kind="sms",
+                                    direction="out", body="x", twilio_sid="q%d" % i,
+                                    status="undelivered:30034" if i < 2 else "delivered"))
+    db.session.commit()
+    assert desk_line.delivery_report(24)["level"] == "ok"

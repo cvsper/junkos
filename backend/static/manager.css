@@ -172,3 +172,7 @@ body.mgr #app{max-width:none;overflow:visible;display:block}
   .mg-kpi{padding:16px 16px 14px}
   .mg-kpi b{font-size:30px}
 }
+
+/* desk-line texts refused by the carrier (see manager.js showDeliveryBanner) */
+.mg-smswarn{margin:12px 0 0;padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.45;
+  color:#b42318;background:rgba(180,35,24,.08);border:1px solid rgba(180,35,24,.35)}
