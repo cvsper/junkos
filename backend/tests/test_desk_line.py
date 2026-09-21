@@ -306,3 +306,62 @@ def test_a_voicemail_is_listed_and_streams_to_the_desk(client, prospect):
     assert get.call_args.args[0] == rec + ".mp3" and get.call_args.kwargs["auth"] == ("ACx", "tok")
     db.session.refresh(older)
     assert older.read_at is not None, "listening to it is reading it"
+
+
+def test_a_transcript_that_names_only_the_recording_still_lands(client):
+    """The 9/21 voicemail: Twilio finished the transcript four minutes after
+    the recording, but the desk row kept saying 'Missed call'."""
+    from models import DeskActivity, generate_uuid
+    rec = "https://api.twilio.com/2010-04-01/Accounts/ACx/Recordings/RE" + "7" * 32
+    act = DeskActivity(id=generate_uuid(), prospect_id=None, phone_digits="5616857209", kind="call",
+                       direction="in", status="voicemail", twilio_sid="CAstored", recording_url=rec)
+    db.session.add(act); db.session.commit()
+    with mock.patch("desk_line._validate", return_value=True):
+        r = client.post("/api/desk/twilio/voice/transcript", data={
+            "CallSid": "CAdifferent", "RecordingSid": "RE" + "7" * 32, "RecordingUrl": rec,
+            "TranscriptionStatus": "completed", "TranscriptionText": "Hi, I need a sofa gone Tuesday."})
+    assert r.status_code == 204
+    db.session.refresh(act)
+    assert act.body == "Hi, I need a sofa gone Tuesday."
+    item = next(i for i in _va(client, "/api/va/desk/inbox", {}).get_json()["items"]
+                if i["phone_digits"] == "5616857209")
+    assert item["preview"] == "Voicemail: Hi, I need a sofa gone Tuesday."
+    assert item["voicemail_text"] == "Hi, I need a sofa gone Tuesday."
+
+
+def test_a_voicemail_with_no_callback_pulls_its_transcript_from_twilio(client):
+    from models import DeskActivity, generate_uuid
+    from datetime import datetime, timedelta
+    rec = "https://api.twilio.com/2010-04-01/Accounts/ACx/Recordings/RE" + "8" * 32
+    vm = DeskActivity(id=generate_uuid(), prospect_id=None, phone_digits="5615550123", kind="call",
+                      direction="in", status="voicemail", twilio_sid="CAvm", recording_url=rec,
+                      created_at=datetime.utcnow() - timedelta(minutes=5))
+    later = DeskActivity(id=generate_uuid(), prospect_id=None, phone_digits="5615550123", kind="call",
+                         direction="in", status="no-answer", twilio_sid="CAlater",
+                         created_at=datetime.utcnow() - timedelta(minutes=1))
+    db.session.add_all([vm, later]); db.session.commit()
+
+    class _Tr:
+        status = "completed"; transcription_text = "Two mattresses and a dresser, Lake Worth."
+    fake = mock.MagicMock(); fake.recordings.return_value.transcriptions.list.return_value = [_Tr()]
+    with mock.patch("desk_line._client", return_value=fake):
+        item = next(i for i in _va(client, "/api/va/desk/inbox", {}).get_json()["items"]
+                    if i["phone_digits"] == "5615550123")
+    fake.recordings.assert_called_with("RE" + "8" * 32)
+    assert item["recording_id"] == vm.id
+    assert item["preview"] == "Voicemail: Two mattresses and a dresser, Lake Worth."
+    db.session.refresh(vm)
+    assert vm.body == "Two mattresses and a dresser, Lake Worth.", "stored, so the next load asks nobody"
+
+    # Twilio had nothing usable: remembered as such, never a fake preview
+    none = DeskActivity(id=generate_uuid(), prospect_id=None, phone_digits="5615550124", kind="call",
+                        direction="in", status="voicemail", twilio_sid="CAnone",
+                        recording_url=rec.replace("8" * 32, "9" * 32))
+    db.session.add(none); db.session.commit()
+    class _Bad:
+        status = "failed"; transcription_text = ""
+    fake.recordings.return_value.transcriptions.list.return_value = [_Bad()]
+    with mock.patch("desk_line._client", return_value=fake):
+        item = next(i for i in _va(client, "/api/va/desk/inbox", {}).get_json()["items"]
+                    if i["phone_digits"] == "5615550124")
+    assert item["preview"] == "Voicemail" and item["voicemail_text"] is None

@@ -820,6 +820,17 @@ def twilio_voice_transcript():
     if not _validate():
         return Response("Forbidden", status=403)
     act = DeskActivity.query.filter_by(twilio_sid=request.form.get("CallSid"), kind="call").first()
+    if act is None:
+        # Twilio's transcription callback does not always carry the CallSid
+        # we stored; the recording it belongs to is the surer key.
+        rec_sid = (request.form.get("RecordingSid") or "").strip()
+        rec_url = (request.form.get("RecordingUrl") or "").strip()
+        needle = rec_sid or rec_url
+        if needle:
+            act = (DeskActivity.query.filter(DeskActivity.kind == "call",
+                                             DeskActivity.recording_url.isnot(None),
+                                             DeskActivity.recording_url.contains(needle))
+                   .order_by(DeskActivity.created_at.desc()).first())
     text = (request.form.get("TranscriptionText") or "").strip()
     if act:
         if text:
@@ -1110,6 +1121,51 @@ def unread_count():
                                      DeskActivity.read_at.is_(None)).count()
 
 
+_NO_TRANSCRIPT = "(no transcript)"
+
+
+def fill_transcript(act):
+    """Fetch a voicemail's transcript from Twilio when the callback never
+    landed. Returns the text, or None. Writes what it finds so the next
+    inbox load is free; a recording Twilio could not transcribe is marked
+    so it is not asked about again."""
+    if not act or not act.recording_url or act.body:
+        return act.body if act else None
+    m = re.search(r"/Recordings/(RE[0-9a-f]{32})", act.recording_url)
+    client = _client()
+    if not m or client is None:
+        return None
+    try:
+        trs = client.recordings(m.group(1)).transcriptions.list(limit=1)
+    except Exception as e:
+        logger.warning("transcript pull failed for %s: %s", act.id, e)
+        return None
+    if not trs:
+        return None
+    tr = trs[0]
+    status = (getattr(tr, "status", "") or "").lower()
+    text = (getattr(tr, "transcription_text", "") or "").strip()
+    if status == "completed" and text:
+        act.body = text[:2000]
+    elif status in ("failed", "completed"):
+        act.body = _NO_TRANSCRIPT
+    else:
+        return None                      # still in progress; ask again later
+    db.session.commit()
+    return act.body
+
+
+def _voicemail_text(act, pulls):
+    """The transcript on the row, pulled from Twilio if the callback missed
+    and the budget allows. Never the placeholder."""
+    body = act.body
+    if not body and pulls[0] > 0:
+        pulls[0] -= 1
+        body = fill_transcript(act)
+    return None if (not body or body == _NO_TRANSCRIPT) else body
+
+
+
 @deskline_bp.route("/api/va/desk/inbox", methods=["POST"])
 @_ratelimit
 def desk_inbox():
@@ -1122,6 +1178,7 @@ def desk_inbox():
             .filter(DeskActivity.direction == "in", DeskActivity.created_at >= since)
             .order_by(DeskActivity.created_at.desc()).limit(300).all())
     seen, items = {}, []
+    pulls = [3]        # at most three Twilio round-trips per inbox load
     for r in rows:
         key = r.phone_digits
         if key in seen:
@@ -1133,10 +1190,15 @@ def desk_inbox():
             if r.kind == "call" and r.recording_url and not seen[key].get("recording_id"):
                 seen[key]["recording_id"] = r.id
                 seen[key]["voicemail_at"] = r.created_at.isoformat() if r.created_at else None
+                text = _voicemail_text(r, pulls)
+                seen[key]["voicemail_text"] = text
+                if seen[key]["preview"] in ("Missed call", "Call", "Voicemail"):
+                    seen[key]["preview"] = ("Voicemail: " + text)[:160] if text else "Voicemail"
             continue
         p = db.session.get(CallProspect, r.prospect_id) if r.prospect_id else None
         if r.kind == "call":
-            preview = ("Voicemail: " + r.body) if r.body else (
+            text = _voicemail_text(r, pulls) if r.recording_url else None
+            preview = ("Voicemail: " + text) if text else (
                 "Voicemail" if r.recording_url else
                 "Missed call" if r.status in ("no-answer", "voicemail", "busy") else "Call")
         else:
@@ -1152,6 +1214,7 @@ def desk_inbox():
             "unread": 0 if r.read_at else 1,
             "at": r.created_at.isoformat() if r.created_at else None,
             "recording_id": r.id if (r.kind == "call" and r.recording_url) else None,
+            "voicemail_text": text if (r.kind == "call" and r.recording_url) else None,
             "voicemail_at": (r.created_at.isoformat() if r.created_at else None)
                             if (r.kind == "call" and r.recording_url) else None,
         }
