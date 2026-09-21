@@ -145,6 +145,66 @@ def register_opt_out(digits, source="manual", note=None, created_by=None):
     return row
 
 
+# --------------------------------------------------------------------------
+# Line type: a landline never receives a text, and neither does a business's
+# toll-free line. 9/21: four of nine desk texts in one sweep went to
+# landlines, and the 10DLC error had been hiding it. Twilio Lookup answers
+# once per number (about a cent) and the answer is kept.
+# --------------------------------------------------------------------------
+LINE_TYPE_TTL_DAYS = int(os.environ.get("LINE_TYPE_TTL_DAYS", "90") or 90)
+UNTEXTABLE_LINE_TYPES = {"landline": "a landline — call instead",
+                         "tollFree": "a toll-free line — call instead",
+                         "pager": "a pager", "voicemail": "a voicemail-only line"}
+_lookup_client = None
+
+
+def _lookup_enabled():
+    return os.environ.get("LINE_TYPE_CHECK", "on").strip().lower() != "off"
+
+
+def _lookup_line_type(digits):
+    """Ask Twilio. Returns (line_type, carrier) or (None, None) on any failure."""
+    global _lookup_client
+    sid, tok = os.environ.get("TWILIO_ACCOUNT_SID", ""), os.environ.get("TWILIO_AUTH_TOKEN", "")
+    if not sid or not tok:
+        return None, None
+    try:
+        if _lookup_client is None or getattr(_lookup_client, "_key", None) != (sid, tok):
+            from twilio.rest import Client
+            _lookup_client = Client(sid, tok)
+            _lookup_client._key = (sid, tok)
+        info = _lookup_client.lookups.v2.phone_numbers("+1" + digits).fetch(fields="line_type_intelligence")
+        lti = getattr(info, "line_type_intelligence", None) or {}
+        return (lti.get("type") or "unknown"), (lti.get("carrier_name") or None)
+    except Exception as e:
+        logger.warning("line type lookup failed for ...%s: %s", digits[-4:], e)
+        return None, None
+
+
+def line_type_for(digits):
+    """The number's line type, from the cache or from Twilio. 'unknown' when
+    nobody can say — and unknown is allowed, so a Lookup outage never
+    silences the desk."""
+    from models_compliance import PhoneLineType
+    digits = _digits(digits)
+    if len(digits) != 10 or not _lookup_enabled():
+        return "unknown"
+    row = db.session.get(PhoneLineType, digits)
+    if row is not None and row.checked_at is not None:
+        checked = row.checked_at if row.checked_at.tzinfo else row.checked_at.replace(tzinfo=timezone.utc)
+        if datetime.now(timezone.utc) - checked < timedelta(days=LINE_TYPE_TTL_DAYS) and row.line_type != "unknown":
+            return row.line_type
+    kind, carrier = _lookup_line_type(digits)
+    if kind is None:
+        return row.line_type if row is not None else "unknown"
+    if row is None:
+        row = PhoneLineType(phone_digits=digits)
+        db.session.add(row)
+    row.line_type, row.carrier, row.checked_at = kind[:20], (carrier or None) and carrier[:80], datetime.now(timezone.utc)
+    db.session.commit()
+    return row.line_type
+
+
 def text_allowed(digits):
     """(True, "") when the desk may text this number."""
     digits = _digits(digits)
@@ -157,6 +217,9 @@ def text_allowed(digits):
     p = CallProspect.query.filter_by(phone_digits=digits).first()
     if p is not None and p.last_outcome == "opted_out":
         return False, "they opted out"
+    kind = line_type_for(digits)
+    if kind in UNTEXTABLE_LINE_TYPES:
+        return False, UNTEXTABLE_LINE_TYPES[kind]
     return True, ""
 
 

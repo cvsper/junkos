@@ -43,3 +43,15 @@ class DoNotCall(db.Model):
             "created_by": self.created_by,
             "since": self.created_at.isoformat() if self.created_at else None,
         }
+
+
+class PhoneLineType(db.Model):
+    """What kind of line a number is, from Twilio Lookup, so the desk stops
+    spending texts on landlines. One row per number; re-checked after
+    LINE_TYPE_TTL_DAYS."""
+    __tablename__ = "phone_line_types"
+
+    phone_digits = Column(String(10), primary_key=True)
+    line_type = Column(String(20), nullable=False, default="unknown")   # mobile | landline | fixedVoip | nonFixedVoip | tollFree | ...
+    carrier = Column(String(80), nullable=True)
+    checked_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)

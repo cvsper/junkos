@@ -1104,6 +1104,10 @@ def desk_text():
     if len(digits or "") != 10:
         return jsonify({"error": "That doesn't look like a valid US number."}), 400
     va_name = desk_va_name(data)
+    from compliance import text_allowed
+    ok, why = text_allowed(digits)
+    if not ok:
+        return jsonify({"error": "Can't text this number — it's {}.".format(why)}), 409
     sid = send_desk_text(digits, body, prospect=p, va_name=va_name)
     if not sid:
         return jsonify({"error": "The text didn't go through — texting may be down, "

@@ -338,3 +338,38 @@ def test_desk_page_loads_compliance_script_before_calls_js(client):
                    "__deskCallsBlocked", "desk:refresh", "They asked not to be called", "DO NOT CALL"):
         assert needle in src, needle
     assert client.get("/static/desk-compliance.css").status_code == 200
+
+
+# ------------------------------------------------------------- line type
+def test_a_landline_is_never_texted_and_the_answer_is_kept():
+    """9/21: four of nine desk texts in one sweep went to business landlines."""
+    from models_compliance import PhoneLineType
+    PhoneLineType.query.delete(); db.session.commit()
+    with mock.patch.dict(os.environ, {"TWILIO_ACCOUNT_SID": "ACx", "TWILIO_AUTH_TOKEN": "tok"}), \
+         mock.patch("compliance._lookup_line_type", return_value=("landline", "AT&T")) as look:
+        assert text_allowed("5614210000") == (False, "a landline — call instead")
+        assert text_allowed("5614210000")[0] is False
+    assert look.call_count == 1, "second ask comes from the cache"
+    row = db.session.get(PhoneLineType, "5614210000")
+    assert row.line_type == "landline" and row.carrier == "AT&T"
+
+    with mock.patch.dict(os.environ, {"TWILIO_ACCOUNT_SID": "ACx", "TWILIO_AUTH_TOKEN": "tok"}), \
+         mock.patch("compliance._lookup_line_type", return_value=("mobile", "T-Mobile")):
+        assert text_allowed("5614210001") == (True, "")
+        assert text_allowed("5614210002") == (True, "")
+    with mock.patch.dict(os.environ, {"TWILIO_ACCOUNT_SID": "ACx", "TWILIO_AUTH_TOKEN": "tok"}), \
+         mock.patch("compliance._lookup_line_type", return_value=("tollFree", None)):
+        assert text_allowed("8003236997") == (False, "a toll-free line — call instead")
+
+
+def test_a_lookup_outage_never_silences_the_desk():
+    from models_compliance import PhoneLineType
+    PhoneLineType.query.delete(); db.session.commit()
+    with mock.patch.dict(os.environ, {"TWILIO_ACCOUNT_SID": "ACx", "TWILIO_AUTH_TOKEN": "tok"}), \
+         mock.patch("compliance._lookup_line_type", return_value=(None, None)):
+        assert text_allowed("5614210003") == (True, "")
+    assert db.session.get(PhoneLineType, "5614210003") is None, "a failure is not remembered as an answer"
+    with mock.patch.dict(os.environ, {"LINE_TYPE_CHECK": "off"}), \
+         mock.patch("compliance._lookup_line_type") as look:
+        assert text_allowed("5614210004") == (True, "")
+    assert look.call_count == 0
