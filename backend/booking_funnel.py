@@ -119,9 +119,86 @@ def record(data, referrer=None, user_agent=None):
         row.referrer = _text(referrer, 300)
         row.user_agent = _text(user_agent, 300)
 
+    sig = _text(data.get("signal"), 40)
+    if sig:
+        row.signals = _merge_signal(row.signals, sig, data)
+
     row.updated_at = _now()
     db.session.commit()
     return row
+
+
+# The address step is where most visitors leave. These say what they did
+# there before they went: nothing, typed, saw suggestions, picked one, or
+# hit a wall (no suggestions for what they typed, a fetch error, or our own
+# validation). The page posts one small beacon per event.
+SIGNALS = ("typed", "suggestions", "no_suggestions", "picked", "fetch_failed", "rejected")
+
+
+def _merge_signal(current, sig, data):
+    out = dict(current or {})
+    if sig not in SIGNALS:
+        return out
+    out[sig] = int(out.get(sig) or 0) + 1
+    if sig == "suggestions":
+        try:
+            n = int(data.get("count") or 0)
+        except (TypeError, ValueError):
+            n = 0
+        out["suggestions_max"] = max(int(out.get("suggestions_max") or 0), n)
+    if sig == "no_suggestions":
+        q = _text(data.get("query"), 60)
+        if q:
+            out["no_suggestions_query"] = q
+    if sig == "rejected":
+        why = _text(data.get("reason"), 80)
+        if why:
+            out["rejected_reason"] = why
+    return out
+
+
+def address_step(rows):
+    """What people did on the address step, split by whether they got past
+    it. The interesting column is the ones who left: did they never type,
+    type and get nothing back, or pick an address and still not continue?"""
+    def tally(group):
+        t = {"visitors": len(group), "untouched": 0, "typed": 0, "saw_suggestions": 0,
+             "no_suggestions": 0, "picked": 0, "fetch_failed": 0, "rejected": 0}
+        for r in group:
+            sg = r.signals or {}
+            if not sg.get("typed"):
+                t["untouched"] += 1
+                continue
+            t["typed"] += 1
+            if sg.get("suggestions"):
+                t["saw_suggestions"] += 1
+            if sg.get("no_suggestions"):
+                t["no_suggestions"] += 1
+            if sg.get("picked"):
+                t["picked"] += 1
+            if sg.get("fetch_failed"):
+                t["fetch_failed"] += 1
+            if sg.get("rejected"):
+                t["rejected"] += 1
+        return t
+    left = [r for r in rows if (r.max_step or 1) < 2]
+    passed = [r for r in rows if (r.max_step or 1) >= 2]
+    queries, reasons = {}, {}
+    for r in left:
+        sg = r.signals or {}
+        q = sg.get("no_suggestions_query")
+        if q:
+            queries[q] = queries.get(q, 0) + 1
+        why = sg.get("rejected_reason")
+        if why:
+            reasons[why] = reasons.get(why, 0) + 1
+    return {
+        "left_here": tally(left),
+        "got_past": tally(passed),
+        "no_suggestion_queries": sorted(queries.items(), key=lambda kv: -kv[1])[:15],
+        "rejected_reasons": sorted(reasons.items(), key=lambda kv: -kv[1])[:10],
+        "instrumented_since": "2026-09-21",
+    }
 
 
 def mark_converted(session_id=None, job=None, phone=None, email=None):
@@ -342,6 +419,7 @@ def visitors(rows):
         "by_source": _finish(by_source),
         "by_hour_et": hours,
         "by_weekday": weekdays,
+        "address_step": address_step(rows),
     }
 
 

@@ -349,3 +349,29 @@ def test_the_report_profiles_the_visitors():
 def test_an_empty_funnel_still_profiles_nobody():
     v = booking_funnel.report(30)["visitors"]
     assert v["total"] == 0 and v["by_county"] == [] and v["by_hour_et"] == []
+
+
+def test_the_address_step_says_what_people_did_before_they_left():
+    booking_funnel.record({"session_id": "u1", "step": 1})                                   # never typed
+    booking_funnel.record({"session_id": "t1", "step": 1, "signal": "typed"})
+    booking_funnel.record({"session_id": "t1", "step": 1, "signal": "no_suggestions", "query": "123 main st orlando"})
+    booking_funnel.record({"session_id": "t2", "step": 1, "signal": "typed"})
+    booking_funnel.record({"session_id": "t2", "step": 1, "signal": "suggestions", "count": 5})
+    booking_funnel.record({"session_id": "t2", "step": 1, "signal": "picked"})
+    booking_funnel.record({"session_id": "t2", "step": 1, "signal": "rejected", "reason": "Please pick your address from the suggestions"})
+    booking_funnel.record({"session_id": "p1", "step": 1, "signal": "typed"})
+    booking_funnel.record({"session_id": "p1", "step": 1, "signal": "suggestions", "count": 3})
+    booking_funnel.record({"session_id": "p1", "step": 1, "signal": "picked"})
+    booking_funnel.record({"session_id": "p1", "step": 2})
+    booking_funnel.record({"session_id": "x1", "step": 1, "signal": "not-a-signal"})        # ignored
+
+    a = booking_funnel.report(30)["visitors"]["address_step"]
+    assert a["left_here"]["visitors"] == 4 and a["left_here"]["untouched"] == 2
+    assert a["left_here"]["typed"] == 2 and a["left_here"]["no_suggestions"] == 1
+    assert a["left_here"]["picked"] == 1 and a["left_here"]["rejected"] == 1
+    assert a["got_past"] == {"visitors": 1, "untouched": 0, "typed": 1, "saw_suggestions": 1,
+                             "no_suggestions": 0, "picked": 1, "fetch_failed": 0, "rejected": 0}
+    assert a["no_suggestion_queries"] == [["123 main st orlando", 1]] or a["no_suggestion_queries"] == [("123 main st orlando", 1)]
+    assert a["rejected_reasons"][0][0].startswith("Please pick")
+    row = BookingFunnel.query.filter_by(session_id="t2").one()
+    assert row.signals["suggestions_max"] == 5 and row.max_step == 1, "a signal never moves the step"

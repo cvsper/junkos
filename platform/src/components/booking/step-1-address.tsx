@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useBookingStore } from "@/stores/booking-store";
 import { bookingApi, type MarketBounds } from "@/lib/api";
+import { funnelSignal } from "@/hooks/use-funnel-beacon";
 
 const ADDRESS_PLACEHOLDERS = [
   "123 Main St, Boca Raton, FL",
@@ -123,13 +124,20 @@ export function Step1Address() {
             `&country=${encodeURIComponent(country)}&types=address&limit=5` +
             `&proximity=${encodeURIComponent(proximity)}&bbox=${encodeURIComponent(mapbox_bbox)}`
         );
-        if (!res.ok) return;
+        if (!res.ok) {
+          funnelSignal("fetch_failed", { status: res.status }, true);
+          return;
+        }
         const data = await res.json();
-        setSuggestions(data.features || []);
+        const found = data.features || [];
+        setSuggestions(found);
         setShowSuggestions(true);
         setActiveSuggestion(-1);
+        if (found.length) funnelSignal("suggestions", { count: found.length });
+        else if (query.trim().length >= 6) funnelSignal("no_suggestions", { query: query.trim().slice(0, 60) });
       } catch {
         // Silently fail — user can still type, but must pick a suggestion
+        funnelSignal("fetch_failed", {}, true);
       }
     },
     [market]
@@ -138,6 +146,7 @@ export function Step1Address() {
   const handleChange = (value: string) => {
     setStreetValue(value);
     if (error) setError("");
+    if (value.trim().length >= 3) funnelSignal("typed", {}, true);
     // Audit F10: editing the text invalidates the selected place. Without
     // this the old lat/lng survived, so the customer read one address while
     // dispatch and surge pricing used another. The store also drops the
@@ -183,6 +192,7 @@ export function Step1Address() {
       lng: feature.center[0],
       lat: feature.center[1],
     });
+    funnelSignal("picked", { zip: zip || undefined });
 
     if (error) setError("");
   };
@@ -220,6 +230,7 @@ export function Step1Address() {
     const trimmed = streetValue.trim();
     if (trimmed.length < 10) {
       setError("Please enter a valid address (at least 10 characters).");
+      funnelSignal("rejected", { reason: "too short" });
       return false;
     }
     // A bookable quote needs real coordinates: the server prices, geofences
@@ -231,6 +242,7 @@ export function Step1Address() {
       current.street?.trim() !== trimmed
     ) {
       setError("Please pick your address from the suggestions so we can price and dispatch it.");
+      funnelSignal("rejected", { reason: "typed but never picked a suggestion" });
       return false;
     }
     setError("");

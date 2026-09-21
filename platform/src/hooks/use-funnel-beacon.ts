@@ -72,6 +72,33 @@ function zipOf(address: unknown): string | undefined {
   return undefined;
 }
 
+/**
+ * One small beacon for something that happened on the address step, so the
+ * funnel can say what people did there before they left. Fire-and-forget;
+ * never blocks typing.
+ */
+const sentOnce = new Set<string>();
+export function funnelSignal(
+  signal: "typed" | "suggestions" | "no_suggestions" | "picked" | "fetch_failed" | "rejected",
+  extra: Record<string, unknown> = {},
+  once = false
+) {
+  const base = process.env.NEXT_PUBLIC_API_URL;
+  const id = sessionId();
+  if (!base || !id) return;
+  if (once) {
+    if (sentOnce.has(signal)) return;
+    sentOnce.add(signal);
+  }
+  const s = useBookingStore.getState();
+  void fetch(`${base}/api/booking/funnel`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ session_id: id, step: s.step, signal, leadSource: s.leadSource || undefined, ...extra }),
+    keepalive: true,
+  }).catch(() => undefined);
+}
+
 export function useFunnelBeacon() {
   const step = useBookingStore((s) => s.step);
   const lastSent = useRef<string>("");

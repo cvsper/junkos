@@ -274,6 +274,8 @@ COLUMN_MIGRATIONS = [
     ("portal_invoices", "last_delivery_attempt_at", "DATETIME", "TIMESTAMP", "NULL"),
     ("portal_invoice_line_items", "kind", "VARCHAR(16)", "VARCHAR(16)", "NULL"),
     ("portal_invoice_line_items", "stripe_invoice_item_id", "VARCHAR(64)", "VARCHAR(64)", "NULL"),
+    # 2026-09-21: address-step signals on the booking funnel (typed / suggestions / picked / rejected)
+    ("booking_funnel", "signals", "TEXT", "JSON", "NULL"),
 ]
 
 

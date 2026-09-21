@@ -52,6 +52,7 @@ class BookingFunnel(db.Model):
     zip_code = Column(String(12), nullable=True, index=True)
     address = Column(Text, nullable=True)
     items = Column(JSON, nullable=True)
+    signals = Column(JSON, nullable=True)     # what happened on the address step (see booking_funnel.signal)
     scheduled_for = Column(String(40), nullable=True)
 
     name = Column(String(160), nullable=True)
