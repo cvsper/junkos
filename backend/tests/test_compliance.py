@@ -360,6 +360,12 @@ def test_a_landline_is_never_texted_and_the_answer_is_kept():
     with mock.patch.dict(os.environ, {"TWILIO_ACCOUNT_SID": "ACx", "TWILIO_AUTH_TOKEN": "tok"}), \
          mock.patch("compliance._lookup_line_type", return_value=("tollFree", None)):
         assert text_allowed("8003236997") == (False, "a toll-free line — call instead")
+    with mock.patch.dict(os.environ, {"TWILIO_ACCOUNT_SID": "ACx", "TWILIO_AUTH_TOKEN": "tok"}), \
+         mock.patch("compliance._lookup_line_type", return_value=("fixedVoip", "Level 3 Communications, LLC")):
+        assert text_allowed("9547259292")[0] is False
+    with mock.patch.dict(os.environ, {"TWILIO_ACCOUNT_SID": "ACx", "TWILIO_AUTH_TOKEN": "tok"}), \
+         mock.patch("compliance._lookup_line_type", return_value=("nonFixedVoip", "Google Voice")):
+        assert text_allowed("9544210005") == (True, ""), "Google Voice customers text fine"
 
 
 def test_a_lookup_outage_never_silences_the_desk():

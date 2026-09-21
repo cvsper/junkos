@@ -152,7 +152,12 @@ def register_opt_out(digits, source="manual", note=None, created_by=None):
 # once per number (about a cent) and the answer is kept.
 # --------------------------------------------------------------------------
 LINE_TYPE_TTL_DAYS = int(os.environ.get("LINE_TYPE_TTL_DAYS", "90") or 90)
+# fixedVoip is a business phone system (Level 3, Bandwidth PBX lines): the
+# 9/21 bounces say those don't take texts either. nonFixedVoip stays allowed —
+# a customer on Google Voice texts fine, and the delivery report catches the
+# call-center platforms that don't.
 UNTEXTABLE_LINE_TYPES = {"landline": "a landline — call instead",
+                         "fixedVoip": "a business phone system line — call instead",
                          "tollFree": "a toll-free line — call instead",
                          "pager": "a pager", "voicemail": "a voicemail-only line"}
 _lookup_client = None
