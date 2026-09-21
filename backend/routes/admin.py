@@ -1443,6 +1443,24 @@ def _band_label(lo, hi):
     return "${}+".format(lo) if hi is None else "${}–${}".format(lo, hi)
 
 
+@admin_bp.route("/desk/resend-refused", methods=["POST"])
+@require_admin
+def desk_resend_refused(user_id):
+    """Desk-line texts the carrier refused (10DLC code 30034) go out again
+    from the toll-free line. Dry run unless {"apply": true}: the dry run is
+    the list of people who would hear from us, so read it first."""
+    import desk_line
+    data = request.get_json(silent=True) or {}
+    try:
+        hours = max(1, min(168, int(data.get("hours") or 24)))
+    except (TypeError, ValueError):
+        hours = 24
+    out = desk_line.resend_refused(hours=hours, apply=bool(data.get("apply")))
+    if out["apply"]:
+        current_app.logger.info("desk resend-refused by %s: %d texts carried", user_id, out["count"])
+    return jsonify(out), 200
+
+
 @admin_bp.route("/booking-funnel", methods=["GET"])
 @require_admin
 def booking_funnel_report(user_id):

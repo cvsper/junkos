@@ -433,3 +433,29 @@ def test_the_desk_is_told_when_its_texts_are_not_arriving(client):
                                     status="undelivered:30034" if i < 2 else "delivered"))
     db.session.commit()
     assert desk_line.delivery_report(24)["level"] == "ok"
+
+
+def test_refused_texts_can_be_carried_later_in_one_sweep(client, prospect):
+    from models import DeskActivity, generate_uuid
+    from datetime import datetime, timedelta
+    import desk_line
+    mk = lambda sid, phone, status, body="Hi from Tracy at Umuve", mins=60: DeskActivity(
+        id=generate_uuid(), prospect_id=None, phone_digits=phone, kind="sms", direction="out",
+        body=body, twilio_sid=sid, status=status, created_at=datetime.utcnow() - timedelta(minutes=mins))
+    db.session.add_all([
+        mk("a1", "5615550001", "undelivered:30034", mins=120),
+        mk("a2", "5615550001", "undelivered:30034", mins=60),        # same person: newest only
+        mk("b1", "5615550002", "undelivered:30034", mins=90),
+        mk("b2", "5615550002", "delivered", mins=30),                # they heard from us since: skip
+        mk("c1", "5615550003", "undelivered:30034>tf", mins=50),     # already carried
+        mk("d1", "5615550004", "undelivered:30005", mins=40),        # unreachable, not a line problem
+        mk("e1", "5615550005", "undelivered:30034", mins=10),
+    ])
+    db.session.commit()
+    dry = desk_line.resend_refused(24, apply=False)
+    assert [t["to_last4"] for t in dry["texts"]] == ["0005", "0001"] and not dry["apply"]
+    with mock.patch.dict(os.environ, {"DESK_TWILIO_NUMBER": "+15617824350"}), \
+         mock.patch("sms_service.send_sms", side_effect=["SMn1", "SMn2"]) as send:
+        done = desk_line.resend_refused(24, apply=True)
+    assert send.call_count == 2 and all(t["sent"] for t in done["texts"])
+    assert desk_line.resend_refused(24, apply=False)["count"] == 0, "nothing left to carry"

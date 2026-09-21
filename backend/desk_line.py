@@ -435,6 +435,52 @@ def resend_via_tollfree(act, code):
     return twin
 
 
+def refused_texts(hours=24):
+    """Desk-line texts the carrier refused in the window that nobody has
+    carried yet, one per number (the newest), skipping anyone who has since
+    received a delivered text from us."""
+    since = _now_naive() - timedelta(hours=hours)
+    rows = (DeskActivity.query.filter(DeskActivity.kind == "sms", DeskActivity.direction == "out",
+                                      DeskActivity.created_at >= since)
+            .order_by(DeskActivity.created_at.desc()).all())
+    delivered_after = {}
+    for r in rows:                                   # newest first
+        st = r.status or ""
+        carried = FALLBACK_MARK in st or "— Umuve desk" in (r.body or "")
+        if st in ("delivered", "sent", "read") or carried:
+            delivered_after.setdefault(r.phone_digits, r.created_at)
+    out, seen = [], set()
+    for r in rows:
+        st = r.status or ""
+        if not any(("undelivered:" + c) == st or ("failed:" + c) == st for c in FALLBACK_CODES):
+            continue
+        if r.phone_digits in seen or not r.body or "— Umuve desk" in r.body:
+            continue
+        later = delivered_after.get(r.phone_digits)
+        if later and later >= r.created_at:
+            continue
+        seen.add(r.phone_digits)
+        out.append(r)
+    return out
+
+
+def resend_refused(hours=24, apply=False):
+    """Dry run by default: what would go out. With apply, sends each through
+    resend_via_tollfree and reports what happened."""
+    rows = refused_texts(hours)
+    report = []
+    for r in rows:
+        item = {"activity_id": r.id, "to_last4": (r.phone_digits or "")[-4:], "va": r.va_name,
+                "at": r.created_at.isoformat() if r.created_at else None,
+                "body": (r.body or "")[:90]}
+        if apply:
+            twin = resend_via_tollfree(r, "30034")
+            item["sent"] = bool(twin)
+            item["new_sid"] = twin.twilio_sid if twin else None
+        report.append(item)
+    return {"hours": hours, "apply": apply, "count": len(report), "texts": report}
+
+
 def delivery_report(hours=24):
     """Are desk-line texts actually arriving? Outbound texts in the window,
     how many the carrier refused, the code that dominates, and how many the
