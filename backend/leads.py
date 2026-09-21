@@ -53,7 +53,17 @@ GOOGLE_DISPUTE_DAYS = 30
 # would have texted them back.
 AUTOREPLY_HINTS = ("thanks for contacting", "thank you for contacting", "auto-reply", "auto reply",
                    "automatic reply", "out of office", "we have received your", "we've received your",
-                   "we'll get back to you", "will get back to you", "this is an automated")
+                   "we'll get back to you", "will get back to you", "this is an automated",
+                   # Apartment and office leasing bots answering Tracy's B2B outreach (30 days of
+                   # inbox, 9/21): consent prompts, tour bots, "sorry we missed your call" agents,
+                   # and anything that addresses Tracy by name is a reply to us, not a customer.
+                   "reply start", "reply yes", "reply y for", "consent to", "thanks for your interest in",
+                   "thank you for your interest in", "sorry to miss your call", "sorry we missed your call",
+                   "community assistant", "touring assistance", "msg & data rates", "msg&data rates",
+                   "thanks for reaching out", "hey tracy", "hi tracy", "thanks tracy", "remove us from")
+# Toll-free numbers are businesses' outbound and bot lines. No customer texts
+# or calls the desk from one.
+TOLL_FREE_PREFIXES = ("800", "833", "844", "855", "866", "877", "888")
 SPEED_TO_LEAD_MAX_SECONDS = int(os.environ.get("SPEED_TO_LEAD_MAX_SECONDS", str(6 * 3600)) or 6 * 3600)
 
 
@@ -74,6 +84,11 @@ def own_numbers():
 def looks_like_autoreply(body):
     b = (body or "").strip().lower()
     return any(h in b for h in AUTOREPLY_HINTS)
+
+
+def is_toll_free(digits):
+    d = _digits(digits)
+    return len(d) == 10 and d[:3] in TOLL_FREE_PREFIXES
 
 
 SOURCE_LABELS = {"google": "Google", "meta": "Meta", "desk": "Desk", "web": "Web",
@@ -215,7 +230,7 @@ def _calls(since):
             name = u.name if u else None
         except Exception:
             pass
-        if r.phone_digits in own_numbers():
+        if r.phone_digits in own_numbers() or is_toll_free(r.phone_digits):
             continue
         answered = bool(r.answered_by) or (r.disposition or "") == "answered_by_human"
         out.append(_lead("call", r.call_sid or r.id, phone=r.phone_digits, name=name, what=what,
@@ -270,7 +285,7 @@ def _texts(since):
         body = (r.body or "").strip()
         if body.split(" ")[0].strip(".!,").lower() in ("stop", "unsubscribe", "jobs", "y", "n", "yes", "no"):
             continue
-        if r.phone_digits in own_numbers() or looks_like_autoreply(body):
+        if r.phone_digits in own_numbers() or is_toll_free(r.phone_digits) or looks_like_autoreply(body):
             continue
         out.append(_lead("text", r.id, phone=r.phone_digits, name=None,
                          what=("texted: " + body[:70]) if body else "sent a photo",
