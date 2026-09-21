@@ -456,6 +456,8 @@ def refused_texts(hours=24):
             continue
         if r.phone_digits in seen or not r.body or "— Umuve desk" in r.body:
             continue
+        if (r.phone_digits or "")[:3] in ("800", "833", "844", "855", "866", "877", "888"):
+            continue                                 # a business's toll-free line, never a customer
         later = delivered_after.get(r.phone_digits)
         if later and later >= r.created_at:
             continue

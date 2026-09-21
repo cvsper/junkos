@@ -450,6 +450,7 @@ def test_refused_texts_can_be_carried_later_in_one_sweep(client, prospect):
         mk("c1", "5615550003", "undelivered:30034>tf", mins=50),     # already carried
         mk("d1", "5615550004", "undelivered:30005", mins=40),        # unreachable, not a line problem
         mk("e1", "5615550005", "undelivered:30034", mins=10),
+        mk("f1", "8003236997", "undelivered:30034", mins=5),         # a toll-free business line: never
     ])
     db.session.commit()
     dry = desk_line.resend_refused(24, apply=False)
