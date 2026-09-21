@@ -60,7 +60,8 @@ AUTOREPLY_HINTS = ("thanks for contacting", "thank you for contacting", "auto-re
                    "reply start", "reply yes", "reply y for", "consent to", "thanks for your interest in",
                    "thank you for your interest in", "sorry to miss your call", "sorry we missed your call",
                    "community assistant", "touring assistance", "msg & data rates", "msg&data rates",
-                   "thanks for reaching out", "hey tracy", "hi tracy", "thanks tracy", "remove us from")
+                   "thanks for reaching out", "hey tracy", "hi tracy", "thanks tracy", "remove us from",
+                   "reaching out because", "submitted an inquiry", "saw you submitted")
 # Toll-free numbers are businesses' outbound and bot lines. No customer texts
 # or calls the desk from one.
 TOLL_FREE_PREFIXES = ("800", "833", "844", "855", "866", "877", "888")

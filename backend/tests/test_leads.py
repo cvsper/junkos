@@ -274,12 +274,14 @@ def test_leasing_bots_and_toll_free_lines_are_not_leads():
                          ("7547142851", "Hey Tracy! Thanks for reaching out \U0001f60a Just FYI, I'm here to help with Cottonwood"),
                          ("5614084008", "Hi Im Noah!, Sorry to miss your call. Were you interested in leasing an office space?"),
                          ("8559225213", "I am Fiona, your 24/7 community assistant."),
+                         ("5614677924", "Hi , this is Kelsey reaching out because I saw you submitted an inquiry for Griffis"),
                          ("9545550182", "do you take old couches?")):
         db.session.add(DeskActivity(id=generate_uuid(), prospect_id=None, phone_digits=digits, kind="sms",
                                     direction="in", body=body, created_at=_now() - timedelta(minutes=5)))
     db.session.commit()
     _call("8005550199", source="desk", minutes_ago=10)   # a toll-free robocall that hung up
     phones = {l["phone_digits"] for l in leads.collect()[0]}
-    assert phones & {"8338096216", "5612695424", "7547142851", "5614084008", "8559225213", "8005550199"} == set()
+    assert phones & {"8338096216", "5612695424", "7547142851", "5614084008", "8559225213", "8005550199",
+                     "5614677924"} == set()
     assert "9545550182" in phones
     assert leads.is_toll_free("+1 (833) 809-6216") and not leads.is_toll_free("5614593335")
