@@ -914,6 +914,14 @@ def inbound_recent():
                 .order_by(CallbackRequest.created_at.desc()).limit(100).all())
     names = {}
     items = []
+    # Voicemails live on the desk activity row for the same Twilio call.
+    from models import DeskActivity
+    sids = [r.call_sid for r in rows if r.call_sid]
+    recordings = {}
+    if sids:
+        for a in (DeskActivity.query.filter(DeskActivity.twilio_sid.in_(sids),
+                                            DeskActivity.recording_url.isnot(None)).all()):
+            recordings[a.twilio_sid] = a.id
     for r in rows:
         if r.phone_digits not in names:
             u = find_customer(r.phone_digits)
@@ -921,6 +929,7 @@ def inbound_recent():
         d = r.to_dict()
         d["phone"] = _pretty(r.phone_digits)
         d["name"] = names[r.phone_digits]
+        d["recording_id"] = recordings.get(r.call_sid)
         # "choice" means they hung up while the menu was still playing, which
         # is every bit as missed as ringing out. "callback_menu" is not: we
         # have their number and an open task.

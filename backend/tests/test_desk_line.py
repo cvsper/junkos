@@ -271,3 +271,38 @@ def test_templates_render_for_prospect(client, prospect):
     assert set(body) == {"intro", "info", "followup"}
     assert "Pat" in body["followup"] and "Tracy" in body["info"]
     assert client.post("/api/va/desk/templates", json={"code": "wrong"}).status_code == 401
+
+
+# ---------------------------------------------------------------- voicemails
+def test_a_voicemail_is_listed_and_streams_to_the_desk(client, prospect):
+    """9/21: a caller left a 38s voicemail on the ads line and the desk showed
+    'Missed call' with no way to hear it. Twilio recordings need the auth
+    token, so the desk proxies the audio for a signed-in VA."""
+    from models import DeskActivity, generate_uuid
+    from datetime import datetime, timedelta
+    rec = "https://api.twilio.com/2010-04-01/Accounts/ACx/Recordings/RE1"
+    older = DeskActivity(id=generate_uuid(), prospect_id=None, phone_digits="5616857209", kind="call",
+                         direction="in", status="voicemail", twilio_sid="CA1", recording_url=rec,
+                         created_at=datetime.utcnow() - timedelta(minutes=3))
+    newer = DeskActivity(id=generate_uuid(), prospect_id=None, phone_digits="5616857209", kind="call",
+                         direction="in", status="no-answer", twilio_sid="CA2",
+                         created_at=datetime.utcnow() - timedelta(minutes=1))
+    db.session.add_all([older, newer]); db.session.commit()
+
+    item = next(i for i in _va(client, "/api/va/desk/inbox", {}).get_json()["items"]
+                if i["phone_digits"] == "5616857209")
+    assert item["recording_id"] == older.id, "the newest call had no recording; the voicemail is on the older one"
+
+    assert client.get("/api/va/desk/recording/" + older.id).status_code == 401
+    assert client.get("/api/va/desk/recording/" + newer.id + "?code=test-code").status_code == 404
+
+    class _R:
+        status_code = 200
+        content = b"ID3voicemail"
+    with mock.patch.dict(os.environ, {"TWILIO_ACCOUNT_SID": "ACx", "TWILIO_AUTH_TOKEN": "tok"}), \
+         mock.patch("requests.get", return_value=_R()) as get:
+        r = client.get("/api/va/desk/recording/" + older.id + "?code=test-code")
+    assert r.status_code == 200 and r.mimetype == "audio/mpeg" and r.data == b"ID3voicemail"
+    assert get.call_args.args[0] == rec + ".mp3" and get.call_args.kwargs["auth"] == ("ACx", "tok")
+    db.session.refresh(older)
+    assert older.read_at is not None, "listening to it is reading it"

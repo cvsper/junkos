@@ -1594,6 +1594,11 @@ CALLS_CSS = r"""/* Call Desk — layers over /va/app.css tokens (frosted glass o
 .sr-d{color:var(--muted);font-size:12px;margin-top:2px}
 .sr-status{margin-left:auto;flex:none;font-family:var(--body);font-weight:500;
   font-size:12px;letter-spacing:0;text-transform:none;color:var(--muted)}
+.sr-play{flex:none;margin-left:auto;font-family:var(--body);font-weight:600;font-size:12px;
+  color:var(--ink);background:#fff;border:1px solid var(--glass-border);border-radius:999px;
+  padding:5px 10px;white-space:nowrap}
+.sr-play:hover,.sr-play:focus-visible{background:var(--ink);color:#fff;outline:none}
+.sr-play + .sr-status{margin-left:0}
 .sr-none{color:var(--muted);font-size:13px;padding:6px 2px}
 .toast{margin:0;padding:11px 14px;border-radius:var(--r-md);font-size:13.5px;
   background:var(--glass);color:var(--ok);border:1px solid rgba(var(--ok-rgb),.32);
@@ -2999,7 +3004,33 @@ CALLS_JS = r"""(function(){
         d.textContent = (it.kind === "call" ? "☎ " : "") + (it.preview || "");
         wrap.appendChild(t); wrap.appendChild(d);
         var s = document.createElement("div"); s.className = "sr-status"; s.textContent = fmtWhen(it.at);
-        b.appendChild(wrap); b.appendChild(s);
+        b.appendChild(wrap);
+        if(it.recording_id){
+          // A voicemail. The row itself opens the card; this plays the message.
+          var play = document.createElement("span"); play.className = "sr-play"; play.setAttribute("role", "button");
+          play.tabIndex = 0; play.textContent = "▶ Listen"; play.title = "Play the voicemail";
+          var audio = null;
+          function playVm(e){
+            e.stopPropagation(); e.preventDefault();
+            if(audio){ if(audio.paused){ audio.play(); play.textContent = "❚❚ Pause"; } else { audio.pause(); play.textContent = "▶ Listen"; } return; }
+            play.textContent = "… loading";
+            var headers = {}; var url = "/api/va/desk/recording/" + it.recording_id;
+            if(jwt()) headers["Authorization"] = "Bearer " + jwt(); else url += "?code=" + encodeURIComponent(code());
+            fetch(url, {headers: headers}).then(function(r){
+              if(r.status !== 200) throw new Error(String(r.status));
+              return r.blob();
+            }).then(function(blob){
+              audio = new Audio(URL.createObjectURL(blob));
+              audio.addEventListener("ended", function(){ play.textContent = "▶ Listen again"; });
+              audio.play(); play.textContent = "❚❚ Pause";
+              if(it.unread){ it.unread = 0; b.classList.remove("sr-unread"); setUnread(Math.max(0, unreadNow() - 1)); }
+            }).catch(function(){ play.textContent = "▶ Listen"; showToast("Couldn't load that voicemail. Try again in a moment."); });
+          }
+          play.addEventListener("click", playVm);
+          play.addEventListener("keydown", function(e){ if(e.key === "Enter" || e.key === " ") playVm(e); });
+          b.appendChild(play);
+        }
+        b.appendChild(s);
         b.addEventListener("click", function(){
           if(!it.prospect_id){ showToast("Unknown number " + it.phone + " — not on any list. Call them back from your phone."); return; }
           post("/api/va/calls/get", {prospect_id: it.prospect_id}).then(function(rr){

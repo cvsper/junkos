@@ -1127,10 +1127,17 @@ def desk_inbox():
         if key in seen:
             if r.read_at is None:
                 seen[key]["unread"] += 1
+            # Rows are newest first, so the first recording we meet for a
+            # number is their latest voicemail — even when a later call from
+            # them rang out without one.
+            if r.kind == "call" and r.recording_url and not seen[key].get("recording_id"):
+                seen[key]["recording_id"] = r.id
+                seen[key]["voicemail_at"] = r.created_at.isoformat() if r.created_at else None
             continue
         p = db.session.get(CallProspect, r.prospect_id) if r.prospect_id else None
         if r.kind == "call":
             preview = ("Voicemail: " + r.body) if r.body else (
+                "Voicemail" if r.recording_url else
                 "Missed call" if r.status in ("no-answer", "voicemail", "busy") else "Call")
         else:
             preview = r.body or ("Photo" if r.media else "")
@@ -1144,6 +1151,9 @@ def desk_inbox():
             "kind": r.kind,
             "unread": 0 if r.read_at else 1,
             "at": r.created_at.isoformat() if r.created_at else None,
+            "recording_id": r.id if (r.kind == "call" and r.recording_url) else None,
+            "voicemail_at": (r.created_at.isoformat() if r.created_at else None)
+                            if (r.kind == "call" and r.recording_url) else None,
         }
         seen[key] = item
         items.append(item)
@@ -1151,6 +1161,44 @@ def desk_inbox():
             break
     return jsonify({"items": items, "unread": unread_count(),
                     "desk_number": desk_number() or None}), 200
+
+
+@deskline_bp.route("/api/va/desk/recording/<act_id>", methods=["GET"])
+@_ratelimit
+def desk_recording(act_id):
+    """Stream a voicemail to the desk.
+
+    Twilio keeps recordings behind the account's auth token, so a link to
+    the recording URL plays nothing in a browser. This fetches it with the
+    token server-side and hands the audio to a signed-in VA. It is a GET so
+    an <audio> element can be fed from a blob; passcode users pass ?code=.
+    """
+    ident = desk_identity({"code": request.args.get("code")})
+    if not ident:
+        return jsonify({"error": "Sign in to the desk first."}), 401
+    act = db.session.get(DeskActivity, act_id or "")
+    if not act or not act.recording_url:
+        return jsonify({"error": "No recording on that call."}), 404
+    url = act.recording_url
+    if not url.startswith("https://api.twilio.com/"):
+        return jsonify({"error": "That recording is not on Twilio."}), 404
+    sid, tok = _env("TWILIO_ACCOUNT_SID"), _env("TWILIO_AUTH_TOKEN")
+    if not sid or not tok:
+        return jsonify({"error": "Twilio is not configured."}), 503
+    import requests as _rq
+    try:
+        r = _rq.get(url if url.endswith(".mp3") else url + ".mp3", auth=(sid, tok), timeout=30)
+    except Exception as e:
+        logger.warning("voicemail fetch failed for %s: %s", act_id, e)
+        return jsonify({"error": "Couldn't reach the recording."}), 502
+    if r.status_code != 200:
+        return jsonify({"error": "Twilio returned {}.".format(r.status_code)}), 502
+    if act.read_at is None:
+        act.read_at = _now().replace(tzinfo=None)
+        db.session.commit()
+    return Response(r.content, status=200, headers={
+        "Content-Type": "audio/mpeg", "Cache-Control": "private, max-age=300",
+        "Content-Disposition": "inline; filename=voicemail-{}.mp3".format(act.phone_digits or act_id)})
 
 
 @deskline_bp.route("/api/va/desk/unread", methods=["POST"])
