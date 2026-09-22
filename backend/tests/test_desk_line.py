@@ -460,3 +460,48 @@ def test_refused_texts_can_be_carried_later_in_one_sweep(client, prospect):
         done = desk_line.resend_refused(24, apply=True)
     assert send.call_count == 2 and all(t["sent"] for t in done["texts"])
     assert desk_line.resend_refused(24, apply=False)["count"] == 0, "nothing left to carry"
+
+
+# ------------------------------------------------- texting from another line
+def test_desk_texts_can_leave_from_the_toll_free_line_while_10dlc_is_pending(client, prospect):
+    from models import DeskSetting, DeskActivity
+    import desk_line
+    DeskSetting.put(desk_line.SMS_FROM_KEY, "+18444356005")
+    try:
+        assert desk_line.texting_moved()
+        fake = mock.MagicMock(); fake.messages.create.return_value = _FakeMsg()
+        with mock.patch("desk_line._client", return_value=fake), \
+             mock.patch.dict(os.environ, {"BACKEND_URL": "https://api.test"}):
+            sid = desk_line.send_desk_text("5615550100", "Hi, it's Tracy with Umuve.", prospect=prospect, va_name="Tracy")
+        assert sid
+        kw = fake.messages.create.call_args.kwargs
+        assert kw["from_"] == "+18444356005"
+        assert kw["body"].endswith("— Umuve desk (561) 555-0999"), "the desk number rides along"
+        # the banner goes quiet: the desk line's refusals are no longer live
+        DeskActivity.query.filter_by(twilio_sid=_FakeMsg.sid).delete()
+        for i in range(4):
+            db.session.add(DeskActivity(prospect_id=None, phone_digits="5615550100", kind="sms", direction="out",
+                                        body="x", twilio_sid="old%d" % i, status="undelivered:30034"))
+        db.session.commit()
+        d = desk_line.delivery_report(24)
+        assert d["level"] == "ok" and d["texting_moved"] and d["sms_from"] == "(844) 435-6005"
+    finally:
+        DeskSetting.put(desk_line.SMS_FROM_KEY, "")
+    assert not desk_line.texting_moved()
+
+
+def test_a_reply_to_a_desk_text_lands_on_the_desk_from_any_line(client):
+    """A customer (not a prospect) the desk texted replies on the toll-free
+    line: the desk gets it and the bot stays out of it."""
+    from models import DeskActivity
+    db.session.add(DeskActivity(prospect_id=None, phone_digits="5616857209", kind="sms", direction="out",
+                                body="Hi from Tracy", twilio_sid="SMout", status="delivered"))
+    db.session.commit()
+    with mock.patch("routes.sms_webhook._validate_twilio_signature", return_value=True), \
+         mock.patch("desk_line._client", return_value=None):
+        r = client.post("/api/sms/inbound", data={"From": "+15616857209", "To": "+18444356005",
+                                                  "Body": "yes tomorrow works", "NumMedia": "0", "MessageSid": "SMin1"})
+    assert r.status_code == 200
+    assert b"<Message>" not in r.data, "no bot reply"
+    row = DeskActivity.query.filter_by(twilio_sid="SMin1").first()
+    assert row is not None and row.direction == "in" and row.body == "yes tomorrow works"

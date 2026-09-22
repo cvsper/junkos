@@ -1443,6 +1443,36 @@ def _band_label(lo, hi):
     return "${}+".format(lo) if hi is None else "${}–${}".format(lo, hi)
 
 
+@admin_bp.route("/desk/sms-from", methods=["GET", "POST"])
+@require_admin
+def desk_sms_from(user_id):
+    """Which number desk texts leave from. POST {"number": "+1844..."} to move
+    texting (calls stay on the desk line); POST {"number": ""} to move back.
+    The number must be one the account owns."""
+    import desk_line
+    from models import DeskSetting
+    if request.method == "POST":
+        data = request.get_json(silent=True) or {}
+        raw = (data.get("number") or "").strip()
+        digits = desk_line._digits(raw)
+        if raw and len(digits) != 10:
+            return jsonify({"error": "That doesn't look like a US number."}), 400
+        if raw:
+            client = desk_line._client()
+            owned = set()
+            if client is not None:
+                try:
+                    owned = {desk_line._digits(n.phone_number) for n in client.incoming_phone_numbers.list(limit=50)}
+                except Exception:
+                    current_app.logger.exception("could not list Twilio numbers")
+            if owned and digits not in owned:
+                return jsonify({"error": "That number isn't on the Twilio account."}), 400
+        DeskSetting.put(desk_line.SMS_FROM_KEY, "+1" + digits if raw else "")
+        current_app.logger.info("desk texting number set to %s by %s", raw or "(desk line)", user_id)
+    return jsonify({"sms_from": desk_line.sms_from_number(), "desk_line": desk_line.desk_number(),
+                    "texting_moved": desk_line.texting_moved()}), 200
+
+
 @admin_bp.route("/desk/resend-refused", methods=["POST"])
 @require_admin
 def desk_resend_refused(user_id):

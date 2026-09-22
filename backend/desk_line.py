@@ -86,6 +86,37 @@ def desk_number():
     return _env("DESK_TWILIO_NUMBER")
 
 
+SMS_FROM_KEY = "desk:sms_from"
+
+
+def sms_from_number():
+    """The number desk texts go out from. Normally the desk line; while the
+    desk line waits on 10DLC registration the desk texts from the verified
+    toll-free line instead (set on the manager page / admin API, or
+    DESK_SMS_FROM). Calls always use the desk line."""
+    from models import DeskSetting
+    try:
+        override = (DeskSetting.get(SMS_FROM_KEY) or "").strip()
+    except Exception:
+        override = ""
+    return override or _env("DESK_SMS_FROM") or desk_number()
+
+
+def texting_moved():
+    """True when texts leave from a different number than the desk line."""
+    a, b = _digits(sms_from_number()), _digits(desk_number())
+    return bool(a) and a != b
+
+
+def desk_texted_recently(digits, days=14):
+    """Has the desk texted this number lately? A reply to that text belongs
+    on the desk whichever line it comes back on."""
+    since = _now_naive() - timedelta(days=days)
+    return db.session.query(DeskActivity.id).filter(
+        DeskActivity.phone_digits == digits, DeskActivity.kind == "sms",
+        DeskActivity.direction == "out", DeskActivity.created_at >= since).first() is not None
+
+
 def forward_number():
     return _env("DESK_FORWARD_NUMBER")
 
@@ -271,7 +302,11 @@ def send_desk_text(to_phone, body, prospect=None, va_name=None, log=True):
         logger.warning("desk text to ...%s blocked: %s", digits[-4:], why)
         return None
     sid = None
-    frm = desk_number()
+    frm = sms_from_number()
+    if texting_moved() and "— Umuve desk" not in body:
+        d = _digits(desk_number())
+        if len(d) == 10:
+            body = body.rstrip() + "\n— Umuve desk ({}) {}-{}".format(d[:3], d[3:6], d[6:])
     client = _client()
     if frm and client:
         try:
@@ -499,10 +534,15 @@ def delivery_report(hours=24):
             codes[c] = codes.get(c, 0) + 1
     top = max(codes, key=codes.get) if codes else None
     resent = sum(1 for r in failed if FALLBACK_MARK in (r.status or ""))
-    blocked = sum(1 for r in failed if any(c in (r.status or "") for c in FALLBACK_CODES))
+    moved = texting_moved()
+    # Once texts leave from a registered line, the desk line's 10DLC refusals
+    # are history, not a live problem.
+    blocked = 0 if moved else sum(1 for r in failed if any(c in (r.status or "") for c in FALLBACK_CODES))
     level = "bad" if (blocked >= 3 and attempted and blocked / attempted >= 0.25) else "ok"
+    frm = _digits(sms_from_number())
     return {"hours": hours, "attempted": attempted, "undelivered": len(failed), "blocked": blocked,
-            "resent": resent, "top_code": top, "level": level}
+            "resent": resent, "top_code": top, "level": level, "texting_moved": moved,
+            "sms_from": "({}) {}-{}".format(frm[:3], frm[3:6], frm[6:]) if len(frm) == 10 else None}
 
 
 # ---------------------------------------------------------------------------

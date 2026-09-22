@@ -148,10 +148,15 @@ def inbound_sms():
     # mirror the text into the desk inbox. Observe-only — routing below is
     # unchanged, and customer texts never match a prospect.
     _p = None
+    _desk_owned = False
     try:
-        from desk_line import match_prospect, record_inbound_text, _digits as _dl_digits
-        _p = match_prospect(_dl_digits(from_phone))
-        if _p is not None:
+        from desk_line import match_prospect, record_inbound_text, desk_texted_recently, _digits as _dl_digits
+        _d = _dl_digits(from_phone)
+        _p = match_prospect(_d)
+        # While desk texts leave from this line, a reply from anyone the desk
+        # texted lately is the desk's conversation, prospect or not.
+        _desk_owned = _p is not None or desk_texted_recently(_d)
+        if _desk_owned:
             _urls = [request.form.get("MediaUrl{}".format(i), "") for i in range(num_media)]
             record_inbound_text(from_phone, body, [u for u in _urls if u],
                                 sid=request.form.get("MessageSid"), prospect=_p)
@@ -167,8 +172,8 @@ def inbound_sms():
     if num_media == 0 and looks_automated(body):
         logger.info("Inbound SMS from ...%s looks automated — no reply: %r", from_phone[-4:], body[:80])
         return _empty_twiml()
-    if _p is not None and num_media == 0:
-        logger.info("Inbound SMS from prospect ...%s left to the desk — no bot reply", from_phone[-4:])
+    if _desk_owned and num_media == 0:
+        logger.info("Inbound SMS from ...%s left to the desk — no bot reply", from_phone[-4:])
         return _empty_twiml()
 
     # --- Hauler self-signup + opt-out (Tier 1-A): runs before everything so a
