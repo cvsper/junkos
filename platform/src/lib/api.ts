@@ -95,6 +95,18 @@ export const authApi = {
       body: JSON.stringify({ email, password }),
     }),
 
+  forgotPassword: (email: string) =>
+    apiFetch<{ success: boolean; message: string }>("/api/auth/forgot-password", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    }),
+
+  resetPassword: (token: string, password: string) =>
+    apiFetch<{ success: boolean; message: string }>("/api/auth/reset-password", {
+      method: "POST",
+      body: JSON.stringify({ token, password }),
+    }),
+
   signup: (email: string, password: string, name: string, phone: string, referralCode?: string) => {
     // Check localStorage for a referral code if none was provided
     // Try new key first, fall back to legacy key for migration

@@ -16,7 +16,24 @@ from models import (
     db, User, Contractor, OperatorApplication, generate_uuid, utcnow,
 )
 from auth_routes import require_auth
-from notifications import send_email, render_operator_approval_email
+from notifications import send_email, render_operator_approval_email, render_set_password_email, set_password_url
+
+SET_PASSWORD_TTL_MINUTES = 7 * 24 * 60
+
+
+def issue_set_password_link(user, audience="operator"):
+    """A 7-day single-use token for an account that has no password yet.
+    Earlier unused tokens for the user are retired so only the newest link works."""
+    from models_auth import PasswordResetToken
+    from datetime import datetime as _dt
+    now = _dt.utcnow()
+    (db.session.query(PasswordResetToken)
+     .filter(PasswordResetToken.user_id == user.id, PasswordResetToken.used_at.is_(None))
+     .update({PasswordResetToken.used_at: now}, synchronize_session=False))
+    row, raw = PasswordResetToken.issue(user.id, SET_PASSWORD_TTL_MINUTES)
+    db.session.add(row)
+    db.session.flush()
+    return set_password_url(raw, audience=audience)
 
 logger = logging.getLogger(__name__)
 
@@ -192,6 +209,36 @@ def submit_operator_application():
 # ---------------------------------------------------------------------------
 # GET /api/admin/operator-applications
 # ---------------------------------------------------------------------------
+@operator_applications_bp.route("/api/admin/operators/send-set-password", methods=["POST"])
+@require_admin
+def send_set_password_links(user_id):
+    """Email a set-password link to approved operators who have no password.
+    Dry run unless {"apply": true}. {"emails": [...]} limits it to those;
+    otherwise every operator user with no password_hash."""
+    data = request.get_json(silent=True) or {}
+    emails = [str(e).strip().lower() for e in (data.get("emails") or []) if str(e).strip()]
+    q = User.query.filter(User.role == "operator", User.password_hash.is_(None))
+    if emails:
+        q = q.filter(User.email.in_(emails))
+    users = q.order_by(User.created_at.desc()).all()
+    out = []
+    for u in users:
+        item = {"email": u.email, "name": u.name, "created_at": u.created_at.isoformat() if u.created_at else None}
+        if data.get("apply"):
+            try:
+                link = issue_set_password_link(u)
+                subject, html = render_set_password_email(u.name, link)
+                send_email(to_email=u.email, subject=subject, html_content=html)
+                item["sent"] = True
+            except Exception:
+                logger.exception("set-password email failed for %s", u.email)
+                item["sent"] = False
+        out.append(item)
+    if data.get("apply"):
+        db.session.commit()
+    return jsonify({"apply": bool(data.get("apply")), "count": len(out), "operators": out}), 200
+
+
 @operator_applications_bp.route("/api/admin/operator-applications", methods=["GET"])
 @require_admin
 def list_operator_applications(user_id):
@@ -302,9 +349,13 @@ def review_operator_application(user_id, app_id):
             except Exception:
                 logger.exception("Operator referral linking failed at approval for %s", user.id)
 
-        # Send approval email (branded template shared with the driver flow + backfill)
+        # Send approval email (branded template shared with the driver flow + backfill).
+        # A brand-new user has no password; the email carries the link that sets it.
         try:
-            subject, html = render_operator_approval_email(application.first_name)
+            link = None
+            if not user.password_hash:
+                link = issue_set_password_link(user)
+            subject, html = render_operator_approval_email(application.first_name, set_password_url=link)
             send_email(to_email=application.email, subject=subject, html_content=html)
         except Exception:
             logger.exception("Failed to send approval email to %s", application.email)

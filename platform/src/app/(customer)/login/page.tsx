@@ -138,6 +138,11 @@ export default function CustomerLoginPage() {
             )}
             {loading ? "Signing in..." : "Sign In"}
           </button>
+          <p className="text-center text-sm">
+            <Link href="/forgot-password?to=customer" className="text-muted-foreground hover:text-primary hover:underline">
+              Forgot your password?
+            </Link>
+          </p>
         </form>
 
         {/* Sign Up Link */}

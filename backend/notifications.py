@@ -292,23 +292,64 @@ def render_driver_approval_email(name):
     return ("You're approved to drive with Umuve!", html)
 
 
-def render_operator_approval_email(name):
-    """Return (subject, html_content) for an approved operator."""
+def render_operator_approval_email(name, set_password_url=None):
+    """Return (subject, html_content) for an approved operator.
+
+    Approval creates the account; it does not create a password. When the
+    account has none, the first step and the button are the link that sets
+    it — otherwise the email tells people to sign in with a password that
+    does not exist (three haulers hit exactly that in September)."""
     first = _html.escape((name or "there").split()[0] or "there")
+    if set_password_url:
+        first_step = ("Set your password",
+                      "Tap the button below to choose a password for {email}. The link works for 7 days.".replace("{email}", "this email"))
+        cta_label, cta_url = "Set your password", set_password_url
+    else:
+        first_step = ("Log in to your operator dashboard",
+                      "Sign in at app.goumuve.com/operator with this email to manage your fleet and jobs.")
+        cta_label, cta_url = "Open your dashboard", "https://app.goumuve.com/operator"
     html = _build_approval_email(
         eyebrow="Operator Approved &nbsp;&#10003;",
         heading="Welcome aboard, " + first + ".",
         intro="Your operator account is live on Umuve &mdash; South Florida's premium junk-removal network. Here's how to get your fleet earning.",
         steps=[
-            ("Log in to your operator dashboard", "Sign in at app.goumuve.com/operator with this email to manage your fleet and jobs."),
+            first_step,
             ("Finish your payment setup", "Connect your bank so your fleet earnings &amp; commission pay out. <strong style=\"color:#DC2626;\">Required before any payouts.</strong>"),
             ("Invite your drivers", "Send your haulers an invite code from the dashboard &mdash; once they're approved, jobs flow to them and you earn your cut."),
         ],
-        cta_label="Open your dashboard",
-        cta_url="https://app.goumuve.com/operator",
+        cta_label=cta_label,
+        cta_url=cta_url,
         footer="You're receiving this because your operator application was approved.",
     )
     return ("Welcome to Umuve — Operator Approved!", html)
+
+
+def render_set_password_email(name, set_password_url):
+    """(subject, html) for an operator who has an account but no password."""
+    first = _html.escape((name or "there").split()[0] or "there")
+    html = _build_approval_email(
+        eyebrow="Your Umuve login",
+        heading="Set your password, " + first + ".",
+        intro="Your operator account is approved, but it never got a password, so the sign-in page couldn't let you in. That's on us. One tap fixes it.",
+        steps=[
+            ("Choose a password", "Tap the button below. The link works for 7 days and only for this email."),
+            ("Sign in", "Then sign in at app.goumuve.com/operator/login with this email and your new password."),
+            ("Go online", "Once you're in, tap Go Online and jobs near you start reaching you."),
+        ],
+        cta_label="Set your password",
+        cta_url=set_password_url,
+        footer="You're receiving this because your operator account on Umuve has no password yet.",
+    )
+    return ("Set your Umuve password", html)
+
+
+def set_password_url(raw_token, audience="operator"):
+    """The app page that redeems a reset token. Always the app, never the
+    marketing site, which has no such page."""
+    base = os.environ.get("FRONTEND_URL", "https://app.goumuve.com").rstrip("/")
+    if "app." not in base:
+        base = "https://app.goumuve.com"
+    return "{}/reset-password?token={}&to={}".format(base, raw_token, audience)
 
 
 def _send_email_resend(to_email, subject, html_content, from_override=None, attachments=None):
@@ -563,8 +604,7 @@ def send_password_reset_email(to_email, reset_token, customer_name=None):
 
         # Build a reset URL if the caller passed a bare token
         if reset_token and not str(reset_token).startswith("http"):
-            base = os.environ.get("FRONTEND_URL", "https://goumuve.com")
-            reset_url = "{}/reset-password?token={}".format(base.rstrip("/"), reset_token)
+            reset_url = set_password_url(reset_token, audience="customer")
         else:
             reset_url = str(reset_token) if reset_token else ""
 
