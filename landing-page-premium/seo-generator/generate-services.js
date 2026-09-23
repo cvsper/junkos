@@ -164,6 +164,7 @@ function generateServicePage(service) {
         @media (max-width: 640px) { .sticky-cta { flex-direction: column; } .sticky-cta a { width: 100%; text-align: center; } }
     </style>
     <script defer src="/_vercel/insights/script.js"></script>
+    <script defer src="/utm-carry.js"></script>
 </head>
 <body style="padding-bottom: 80px;">
     <!-- Nav -->

@@ -2,7 +2,7 @@
 
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { ArrowLeft, ArrowRight, Gift, Loader2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Gift, Loader2, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useBookingStore } from "@/stores/booking-store";
 import { referralsApi } from "@/lib/api";
@@ -23,7 +23,9 @@ import { Step6Payment } from "@/components/booking/step-6-payment";
 
 function detectLeadSource(searchParams: URLSearchParams): string {
   // 1. Check UTM params
-  const utmSource = searchParams.get("utm_source");
+  // Meta appends fbclid to every ad click; when the ad link carried no utm
+  // tag, that is still the tag.
+  const utmSource = searchParams.get("utm_source") || (searchParams.get("fbclid") ? "meta" : null);
   if (utmSource) return utmSource;
 
   // 2. Check shorthand src param
@@ -191,6 +193,22 @@ function BookPageInner() {
       <p className="text-muted-foreground mb-4">
         Schedule your junk removal in just a few steps.
       </p>
+      {step === 1 && (
+        // Most people who land here from an ad never touch the form. For
+        // them the fastest path is a person: one tap, price up front.
+        <a
+          href="tel:+15617815686"
+          className="mb-4 inline-flex items-center gap-3 rounded-full border border-border bg-card py-2 pl-2 pr-4 text-sm text-foreground hover:border-primary/40 hover:bg-primary/5 transition-colors"
+        >
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <Phone className="h-4 w-4" aria-hidden="true" />
+          </span>
+          <span>
+            Rather talk? Call <span className="font-semibold">(561) 781-5686</span>
+            <span className="text-muted-foreground"> · from $119 · same day</span>
+          </span>
+        </a>
+      )}
 
       {/* Progress Bar */}
       <div className="mb-10">

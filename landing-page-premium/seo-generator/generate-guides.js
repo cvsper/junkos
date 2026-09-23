@@ -1571,6 +1571,7 @@ function head(g) {
         }
     </style>
     <script defer src="/_vercel/insights/script.js"></script>
+    <script defer src="/utm-carry.js"></script>
 </head>`;
 }
 

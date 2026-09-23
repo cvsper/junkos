@@ -827,6 +827,7 @@ function generateServiceCityPage(service, city, allServices, allCities) {
 
     <link rel="stylesheet" href="/styles-seo.css">
     <script defer src="/_vercel/insights/script.js"></script>
+    <script defer src="/utm-carry.js"></script>
 </head>
 <body>
     <!-- Nav -->

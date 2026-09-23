@@ -266,6 +266,7 @@ function generateLocationPage(city, allCities) {
         }
     </style>
     <script defer src="/_vercel/insights/script.js"></script>
+    <script defer src="/utm-carry.js"></script>
 </head>
 <body style="padding-bottom: 80px;">
     <!-- Nav -->
