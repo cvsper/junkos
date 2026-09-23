@@ -53,14 +53,19 @@ if (cmd === "add") {
 } else if (cmd === "list") {
   const [cr, ads] = await Promise.all([
     graph(`${ACCOUNT}/adcreatives`, { params: { fields: "id,name", limit: "200" } }),
-    graph(`${ACCOUNT}/ads`, { params: { fields: "name,effective_status,creative{id}", limit: "500" } }),
+    graph(`${ACCOUNT}/ads`, { params: { fields: "name,effective_status,adset_id,creative{id}", limit: "500" } }),
   ]);
-  const used = new Map(ads.data.map((a) => [a.creative?.id, a]));
+  // Same rule as the engine: a creative is spoken for when a live ad uses it
+  // or it has been through the test lane; a paused, never-tested ad's creative still waits.
+  const TEST = "120250612710800262";
+  const spoken = new Map();
+  for (const a of ads.data) if (a.effective_status === "ACTIVE" || a.adset_id === TEST) spoken.set(a.creative?.id, a);
   const queued = cr.data.filter((c) => c.name.startsWith("queue|")).reverse();
   if (!queued.length) console.log("queue is empty");
   for (const c of queued) {
-    const a = used.get(c.id);
-    console.log(`${a ? (a.effective_status === "ACTIVE" ? "testing " : "done    ") : "waiting "} ${c.name.slice(6)}${a ? `  → ${a.name}` : ""}`);
+    const a = spoken.get(c.id);
+    const state = !a ? "waiting " : a.effective_status === "ACTIVE" ? (a.adset_id === TEST ? "testing " : "live    ") : "tested  ";
+    console.log(`${state} ${c.name.slice(6)}${a ? `  → ${a.name}` : ""}`);
   }
 } else if (cmd === "plan" || cmd === "run") {
   const s = cronSecret();
