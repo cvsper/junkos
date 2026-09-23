@@ -193,7 +193,7 @@ function Card({ thumb, headline, copy, stats, footer }: { thumb: string; headlin
           <h3 className="font-display font-semibold leading-tight truncate">{headline}</h3>
           <p className="mt-1 text-xs text-muted-foreground line-clamp-2">{copy}</p>
           {stats && (
-            <div className="mt-2 flex items-end gap-4">
+            <div className="mt-2 flex flex-wrap items-end gap-x-4 gap-y-1.5">
               <div className={stats.calls ? "text-primary" : "text-foreground"}>
                 <div className="flex items-center gap-1">
                   <span className="font-display text-2xl font-bold leading-none">{stats.calls}</span>
