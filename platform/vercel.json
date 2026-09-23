@@ -1,6 +1,12 @@
 {
   "crons": [
-    { "path": "/api/cron/meta-daypart?want=active", "schedule": "0 10 * * *" },
-    { "path": "/api/cron/meta-daypart?want=paused", "schedule": "0 23 * * *" }
+    {
+      "path": "/api/cron/meta-daypart?want=active",
+      "schedule": "0 10 * * *"
+    },
+    {
+      "path": "/api/cron/meta-daypart?want=paused",
+      "schedule": "0 23 * * *"
+    }
   ]
 }

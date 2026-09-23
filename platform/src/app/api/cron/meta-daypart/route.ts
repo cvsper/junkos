@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { runEngine } from "@/lib/ad-engine/turn";
 
 /**
  * Dayparting for the Meta ad sets, run by Vercel Cron.
@@ -13,6 +14,7 @@ import { NextResponse } from "next/server";
  * got past the address step; every conversion so far came in the morning.
  */
 export const dynamic = "force-dynamic";
+export const maxDuration = 300;
 
 const AD_SETS = (process.env.META_DAYPART_ADSETS || "120250509718640262,120250550560920262")
   .split(",")
@@ -63,5 +65,11 @@ export async function GET(req: Request) {
       results[id] = `error: ${e instanceof Error ? e.message : String(e)}`;
     }
   }
-  return NextResponse.json({ want: target, at: new Date().toISOString(), results });
+  // The morning turn also runs the ad testing engine (two crons is the plan's limit).
+  let engine: unknown = null;
+  if (target === "ACTIVE" && process.env.AD_ENGINE !== "off") {
+    try { engine = await runEngine(false); }
+    catch (e) { engine = { error: e instanceof Error ? e.message : String(e) }; }
+  }
+  return NextResponse.json({ want: target, at: new Date().toISOString(), results, engine });
 }
