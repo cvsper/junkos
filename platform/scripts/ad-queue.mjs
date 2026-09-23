@@ -72,6 +72,8 @@ if (cmd === "add") {
   if (!s) { console.error("no ~/.config/umuve-vercel-cron-secret"); process.exit(1); }
   const r = await fetch(`https://app.goumuve.com/api/cron/ad-engine${cmd === "plan" ? "?dry=1" : ""}`, { headers: { Authorization: `Bearer ${s}` } });
   const j = await r.json();
+  if (j.queue) j.queue = j.queue.map((q) => (typeof q === "string" ? q : q.ad));
+  for (const lane of ["test", "scale"]) if (j[lane]) j[lane] = j[lane].map(({ thumb, copy, headline, ...rest }) => rest);
   console.log(JSON.stringify(j, null, 2));
 } else {
   console.log("commands: add | list | plan | run");

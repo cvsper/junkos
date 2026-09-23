@@ -63,14 +63,32 @@ function actionCount(actions: unknown, ...types: string[]): number {
 }
 
 /** Every ad in an ad set with its numbers over `preset` (e.g. maximum, last_14d). */
-export async function adsIn(cfg: MetaConfig, adsetId: string, preset: string): Promise<AdStats[]> {
+export interface CreativeFace {
+  thumb: string;      // image url
+  headline: string;
+  copy: string;
+}
+
+function face(c: Json | undefined): CreativeFace {
+  const ld = (((c?.object_story_spec as Json | undefined)?.link_data) as Json | undefined) || {};
+  return {
+    thumb: String(c?.image_url || c?.thumbnail_url || ""),
+    headline: String(ld.name || ""),
+    copy: String(ld.message || ""),
+  };
+}
+
+export type AdRow = AdStats & CreativeFace;
+
+export async function adsIn(cfg: MetaConfig, adsetId: string, preset: string): Promise<AdRow[]> {
   const j = await get(cfg, `${adsetId}/ads`, {
-    fields: `name,effective_status,created_time,creative{id},insights.date_preset(${preset}){impressions,inline_link_clicks,spend,actions}`,
+    fields: `name,effective_status,created_time,creative{id,image_url,thumbnail_url,object_story_spec},insights.date_preset(${preset}){impressions,inline_link_clicks,spend,actions}`,
     limit: "50",
   });
   return ((j.data as Json[]) || []).map((a) => {
     const ins = (((a.insights as Json | undefined)?.data as Json[] | undefined) || [])[0] || {};
     return {
+      ...face(a.creative as Json),
       id: String(a.id),
       name: String(a.name),
       creativeId: String((a.creative as Json)?.id || ""),
@@ -86,12 +104,52 @@ export async function adsIn(cfg: MetaConfig, adsetId: string, preset: string): P
 }
 
 /** Creatives waiting their turn: named "queue|<slug>", oldest first. */
-export async function queuedCreatives(cfg: MetaConfig): Promise<QueuedCreative[]> {
-  const j = await get(cfg, `${cfg.account}/adcreatives`, { fields: "id,name", limit: "200" });
+export type QueuedRow = QueuedCreative & CreativeFace;
+
+export async function queuedCreatives(cfg: MetaConfig): Promise<QueuedRow[]> {
+  const j = await get(cfg, `${cfg.account}/adcreatives`, { fields: "id,name,image_url,thumbnail_url,object_story_spec", limit: "200" });
   return ((j.data as Json[]) || [])
-    .map((c) => ({ id: String(c.id), name: String(c.name) }))
+    .map((c) => ({ id: String(c.id), name: String(c.name), ...face(c) }))
     .filter((c) => c.name.startsWith("queue|"))
     .reverse();
+}
+
+export async function adsetBudgets(cfg: MetaConfig): Promise<Record<string, { name: string; dailyBudget: number; active: boolean }>> {
+  const out: Record<string, { name: string; dailyBudget: number; active: boolean }> = {};
+  for (const id of [cfg.testAdset, cfg.scaleAdset]) {
+    try {
+      const j = await get(cfg, id, { fields: "name,daily_budget,effective_status" });
+      out[id] = { name: String(j.name), dailyBudget: (parseInt(String(j.daily_budget || 0), 10) || 0) / 100, active: j.effective_status === "ACTIVE" };
+    } catch { out[id] = { name: id, dailyBudget: 0, active: false }; }
+  }
+  return out;
+}
+
+export function slugify(s: string): string {
+  return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60);
+}
+
+/** Upload an image and park it in the queue as a creative named "queue|<slug>"
+ *  with the tracked homepage link and the Call Now button. */
+export async function queueCreative(cfg: MetaConfig, image: Blob, filename: string, slug: string, headline: string, copy: string): Promise<{ id: string; slug: string }> {
+  const form = new FormData();
+  form.set("filename", image, filename);
+  form.set("access_token", cfg.token);
+  const up = (await (await fetch(`${GRAPH}/${cfg.account}/adimages`, { method: "POST", body: form })).json()) as Json;
+  if (up.error) throw new Error(`upload: ${(up.error as Json).message}`);
+  const images = (up.images as Record<string, Json>) || {};
+  const hash = String(Object.values(images)[0]?.hash || "");
+  if (!hash) throw new Error("upload returned no image hash");
+  const spec = {
+    page_id: cfg.page,
+    link_data: {
+      link: `${cfg.homepage}${cfg.homepage.includes("?") ? "&" : "?"}utm_source=meta&utm_campaign=pbc_launch&utm_content=${slug}`,
+      message: copy, name: headline, caption: "goumuve.com", description: "Same-day junk removal. Book in 60 seconds.",
+      image_hash: hash, call_to_action: { type: "CALL_NOW", value: { link: cfg.callNumber } },
+    },
+  };
+  const cr = await post(cfg, `${cfg.account}/adcreatives`, { name: `queue|${slug}`, object_story_spec: JSON.stringify(spec) });
+  return { id: String(cr.id), slug };
 }
 
 /** Creative ids that are spoken for: used by any live ad, or ever tested in

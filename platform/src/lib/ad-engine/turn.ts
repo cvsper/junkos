@@ -23,7 +23,7 @@ export async function runEngine(dry: boolean) {
     at: now.toISOString(), dry, round: p.round, complete: p.complete,
     test: testAds.filter((a) => a.active).map(brief),
     scale: scaleAds.filter((a) => a.active).map(brief),
-    queue: queue.filter((c) => !used.has(c.id)).map((c) => slugOf(c.name)),
+    queue: queue.filter((c) => !used.has(c.id)).map((c) => ({ id: c.id, ad: slugOf(c.name), thumb: c.thumb, headline: c.headline, copy: c.copy })),
     winner: p.winner ? brief(p.winner) : null,
     actions: [] as string[],
     notes: p.notes,
@@ -45,6 +45,7 @@ export async function runEngine(dry: boolean) {
   return report;
 }
 
-function brief(a: { name: string; impressions: number; clicks: number; lpv: number; calls: number; spend: number }) {
-  return { ad: slugOf(a.name), impressions: a.impressions, clicks: a.clicks, visits: a.lpv, calls: a.calls, spend: a.spend };
+function brief(a: { id?: string; name: string; impressions: number; clicks: number; lpv: number; calls: number; spend: number; createdAt?: string; thumb?: string; headline?: string; copy?: string }) {
+  return { id: a.id, ad: slugOf(a.name), impressions: a.impressions, clicks: a.clicks, visits: a.lpv, calls: a.calls, spend: a.spend,
+           since: a.createdAt, thumb: a.thumb || "", headline: a.headline || "", copy: a.copy || "" };
 }
