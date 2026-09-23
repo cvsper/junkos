@@ -67,4 +67,10 @@ test("nothing retires while the lane has room", () => {
   assert.deepEqual(retireFromScale([ad({ name: "a" }), ad({ name: "b" })], 1, now), []);
   assert.equal(slugOf("room-to-breathe [test r1]"), "room-to-breathe");
   assert.equal(slugOf("queue|price-on-image"), "price-on-image");
+  assert.equal(slugOf("gone-square [feed] (home)"), "gone-square");
+});
+
+test("an over-full scale lane shrinks two at a time", () => {
+  const scale = Array.from({ length: 9 }, (_, i) => ad({ name: `s${i} [feed]`, createdAt: daysAgo(20), clicks: i }));
+  assert.equal(retireFromScale(scale, 1, now).length, 2);
 });

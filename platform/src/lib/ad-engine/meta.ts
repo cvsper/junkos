@@ -94,10 +94,17 @@ export async function queuedCreatives(cfg: MetaConfig): Promise<QueuedCreative[]
     .reverse();
 }
 
-/** Creative ids any ad on the account already uses (paused ones included). */
+/** Creative ids that are spoken for: used by any live ad, or ever tested in
+ *  the test lane. A creative behind a paused, never-tested ad can still be
+ *  queued for a fair round. */
 export async function usedCreativeIds(cfg: MetaConfig): Promise<Set<string>> {
-  const j = await get(cfg, `${cfg.account}/ads`, { fields: "creative{id}", limit: "500" });
-  return new Set(((j.data as Json[]) || []).map((a) => String((a.creative as Json)?.id || "")));
+  const j = await get(cfg, `${cfg.account}/ads`, { fields: "creative{id},effective_status,adset_id", limit: "500" });
+  const used = new Set<string>();
+  for (const a of (j.data as Json[]) || []) {
+    const id = String((a.creative as Json)?.id || "");
+    if (a.effective_status === "ACTIVE" || String(a.adset_id) === cfg.testAdset) used.add(id);
+  }
+  return used;
 }
 
 export async function createAd(cfg: MetaConfig, adsetId: string, name: string, creativeId: string): Promise<string> {

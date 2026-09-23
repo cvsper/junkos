@@ -19,6 +19,7 @@ export const ROUND_MAX_DAYS = 8;      // judged even if starved of impressions
 export const MIN_IMPRESSIONS = 300;   // below this an ad is not judged, unless the round timed out
 export const SCALE_CAP = 5;
 export const SCALE_MIN_AGE_DAYS = 4;  // a scale ad younger than this is never retired
+export const MAX_RETIRE_PER_TURN = 2; // shrink an over-full lane gently, not all at once
 
 export interface AdStats {
   id: string;
@@ -83,7 +84,7 @@ export function retireFromScale(scaleAds: AdStats[], incoming: number, now: Date
     .filter((a) => ageDays(a.createdAt, now) >= SCALE_MIN_AGE_DAYS)
     .map(score)
     .sort((a, b) => a.score - b.score);
-  return eligible.slice(0, excess);
+  return eligible.slice(0, Math.min(excess, MAX_RETIRE_PER_TURN));
 }
 
 /** Round numbers live in the ad names: "<slug> [test r3]". */
@@ -97,7 +98,8 @@ export function nextRound(testAds: AdStats[]): number {
 }
 
 export function slugOf(name: string): string {
-  return name.replace(/\s*\[[^\]]*\]\s*$/, "").replace(/^queue\|/, "").trim();
+  // "gone-square [feed] (home)" -> "gone-square"; "queue|x" -> "x"
+  return name.replace(/^queue\|/, "").replace(/(\s*(\[[^\]]*\]|\([^)]*\)))+\s*$/, "").trim();
 }
 
 export interface QueuedCreative {
