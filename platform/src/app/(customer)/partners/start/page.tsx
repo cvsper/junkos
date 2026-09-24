@@ -23,6 +23,7 @@ function PartnerStart() {
   const params = useSearchParams();
   const p = params.get("p") || "";
   const s = params.get("s") || "";
+  const preview = params.get("preview") === "1";
   const [offer, setOffer] = useState<Offer | null>(null);
   const [bad, setBad] = useState<string | null>(null);
   const [what, setWhat] = useState<string[]>([]);
@@ -38,10 +39,10 @@ function PartnerStart() {
 
   useEffect(() => {
     if (!p || !s) { setBad("This link is missing its code. Text the desk and we'll send a fresh one."); return; }
-    fetch(`${resolveApiBaseUrl()}/api/partners/offer?p=${encodeURIComponent(p)}&s=${encodeURIComponent(s)}`)
+    fetch(`${resolveApiBaseUrl()}/api/partners/offer?p=${encodeURIComponent(p)}&s=${encodeURIComponent(s)}${preview ? "&preview=1" : ""}`)
       .then(async (r) => { const j = await r.json(); if (!r.ok) throw new Error(j.error || "This link isn't valid."); setOffer(j); if (j.first_name) setName(j.first_name); })
       .catch((e) => setBad(e instanceof Error ? e.message : String(e)));
-  }, [p, s]);
+  }, [p, s, preview]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,7 +54,7 @@ function PartnerStart() {
     try {
       const r = await fetch(`${resolveApiBaseUrl()}/api/partners/request`, {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ p, s, what: whatLine, address: address.trim(), when, name: name.trim(), phone: phone.trim(), email: email.trim() }),
+        body: JSON.stringify({ p, s, preview, what: whatLine, address: address.trim(), when, name: name.trim(), phone: phone.trim(), email: email.trim() }),
       });
       const j = await r.json();
       if (!r.ok) throw new Error(j.error || "That didn't go through. Call the desk instead.");
@@ -94,6 +95,9 @@ function PartnerStart() {
 
   return (
     <div className="max-w-xl mx-auto px-4 py-10 sm:py-14">
+      {preview && (
+        <p className="mb-4 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800">Preview. Nothing here counts as an open, and Send does nothing.</p>
+      )}
       <p className="text-sm text-muted-foreground">{offer.company}{offer.city ? `, ${offer.city}` : ""}</p>
       <h1 className="font-display text-3xl sm:text-4xl font-bold tracking-tight mt-1">
         {offer.first_name ? `${offer.first_name}, put a pickup on the books.` : "Put a pickup on the books."}

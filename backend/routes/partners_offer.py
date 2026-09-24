@@ -34,8 +34,9 @@ def partner_offer():
     p = _prospect()
     if p is None:
         return jsonify({"error": "This link isn't valid. Text the desk and we'll send a fresh one."}), 404
-    record_open(p)
-    return jsonify(offer_info(p)), 200
+    if request.args.get("preview") != "1":
+        record_open(p)
+    return jsonify(dict(offer_info(p), preview=request.args.get("preview") == "1")), 200
 
 
 @partners_bp.route("/api/partners/request", methods=["POST"])
@@ -45,6 +46,8 @@ def partner_request():
     p = _prospect()
     if p is None:
         return jsonify({"error": "This link isn't valid. Text the desk and we'll send a fresh one."}), 404
+    if (request.get_json(silent=True) or {}).get("preview"):
+        return jsonify({"error": "Preview only — nothing was sent."}), 400
     cb, why = pickup_request(p, request.get_json(silent=True) or {})
     if cb is None:
         return jsonify({"error": why}), 400
