@@ -361,9 +361,10 @@ def pay_statement(va_name, periods_back=0):
     total = round((hours_pay or 0) + signup_pay + booking_pay, 2)
     fee_lines, net, send_for_full = apply_transfer_fees(total)
     fees_total = round(sum(f["amount"] for f in fee_lines), 2)
-    fee_pct = round((fees_total / total * 100.0) if total else
-                    (1 - __import__("functools").reduce(lambda a, f: a * (1 - f["pct"] / 100.0),
-                                                        fee_lines, 1.0)) * 100.0, 2)
+    keep = 1.0
+    for f in fee_lines:
+        keep *= 1 - f["pct"] / 100.0
+    fee_pct = round((1 - keep) * 100.0, 2)      # the combined rate, not rounded cents
     cur = va_currency(va_name)
     rate_fx, fx_as_of = usd_rate(cur)
     local = None
