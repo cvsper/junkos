@@ -1,0 +1,10 @@
+/* VA pay section on /va/manager — sits in a .mg-sec panel; reuses .pay-h / .pay-btn from manager-pay.css. */
+.vp-nav{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 10px}
+.vp-label{flex:1;text-align:center;font-family:var(--body);font-weight:600;font-size:13.5px;color:var(--ink)}
+.vp-card{padding:0 0 10px;border-bottom:1px solid var(--line);margin-bottom:6px}
+.vp-line{display:flex;justify-content:space-between;gap:10px;padding:6px 0;font-size:13px;color:var(--muted)}
+.vp-line b{color:var(--ink);font-family:var(--body);font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.vp-det{margin-top:6px;font-size:12.5px;color:var(--muted)}
+.vp-det summary{cursor:pointer;font-weight:600;color:var(--ink);padding:4px 0}
+.vp-item{padding:4px 0 4px 12px;border-left:2px solid var(--line);margin:2px 0}
+.vp-item.off{text-decoration:line-through;opacity:.7}

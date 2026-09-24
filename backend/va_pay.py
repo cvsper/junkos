@@ -292,6 +292,31 @@ def va_pay():
     return jsonify(pay_statement(who, _periods_back(data))), 200
 
 
+@vapay_bp.route("/api/va/time/team-pay", methods=["POST"])
+def va_team_pay():
+    """Every VA's statement for a period — the owner's view on /va/manager."""
+    data = request.get_json(silent=True) or {}
+    ident = desk_identity(data)
+    if not ident:
+        return jsonify({"error": "Sign in to the desk first."}), 401
+    if ident.get("via") == "jwt" and not is_manager(ident):
+        return jsonify({"error": "Everyone's pay needs a manager login."}), 403
+    from va_time import auto_close_stale
+    back = _periods_back(data)
+    start, end, label = period_bounds(periods_back=back)
+    names = sorted({(n or "").strip() for (n,) in db.session.query(VaShift.va_name)
+                    .filter(VaShift.started_at < end,
+                            db.or_(VaShift.ended_at.is_(None), VaShift.ended_at >= start))
+                    .distinct().all() if (n or "").strip()}, key=str.lower)
+    out = []
+    for n in names:
+        auto_close_stale(n)
+        out.append(pay_statement(n, back))
+    return jsonify({"period_label": label, "periods_back": back,
+                    "closed": _naive(_now_utc()) >= end, "rules": pay_rules(),
+                    "vas": out, "total": round(sum(v["total"] for v in out), 2)}), 200
+
+
 @vapay_bp.route("/api/va/time/pay-rules", methods=["POST"])
 def va_pay_rules():
     data = request.get_json(silent=True) or {}

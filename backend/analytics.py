@@ -592,6 +592,11 @@ MANAGER_HTML = r"""<!doctype html>
         <div id="pay"></div>
       </section>
 
+      <section class="mg-sec" id="vapay-sec">
+        <div class="mg-sec-h"><h2>VA pay</h2><span class="mg-note" id="vapay-note">Hours, hauler sign-ups and bookings for each pay period.</span></div>
+        <div id="vapay"></div>
+      </section>
+
       <section class="mg-sec" id="review-sec">
         <div class="mg-sec-h"><h2>Calls to review</h2><span class="mg-note" id="rq-note">Lowest score first</span></div>
         <div id="rq"></div>
@@ -606,6 +611,7 @@ MANAGER_HTML = r"""<!doctype html>
 </div>
 <script src="/static/manager.js?v=3"></script>
 <script src="/static/manager-pay.js?v=2"></script>
+<script src="/static/manager-vapay.js?v=1"></script>
 <script src="/static/desk-drill.js?v=1"></script>
 </body>
 </html>

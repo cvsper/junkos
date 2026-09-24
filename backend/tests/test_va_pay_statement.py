@@ -141,3 +141,16 @@ def test_rules_default_and_reading(client):
     assert r.get_json()["rules"] == {"signup_bonus": 1.0, "booking_pct": 0.1, "booking_min": 5.0, "booking_max": 50.0}
     r = client.post("/api/va/time/pay-rules", json={"code": "test-code", "va_name": "Tracy", "signup_bonus": 5})
     assert r.status_code == 403
+
+
+def test_team_pay_lists_every_va_for_the_period(client):
+    _shift(8, 0)
+    sh = VaShift(va_name="Damian", started_at=_period_start() + timedelta(days=1, hours=14),
+                 ended_at=_period_start() + timedelta(days=1, hours=18))
+    db.session.add(sh); db.session.commit()
+    DeskSetting.put("va_rate:damian", "2")
+    r = client.post("/api/va/time/team-pay", json={"code": "test-code", "va_name": "Tracy"})
+    assert r.status_code == 200
+    body = r.get_json()
+    by = {v["va_name"]: v["total"] for v in body["vas"]}
+    assert by == {"Damian": 8.0, "Tracy": 10.0} and body["total"] == 18.0
