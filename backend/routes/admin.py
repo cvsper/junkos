@@ -38,6 +38,19 @@ def require_admin(f):
     return wrapper
 
 
+@admin_bp.route("/first-job/clear-open", methods=["POST"])
+@require_admin
+def first_job_clear_open(user_id):
+    """Forget that a prospect opened their link (a staff preview counted)."""
+    from models import CallProspect
+    p = db.session.get(CallProspect, (request.get_json(silent=True) or {}).get("prospect_id") or "")
+    if not p:
+        return jsonify({"error": "Prospect not found."}), 404
+    p.offer_opened_at = None
+    db.session.commit()
+    return jsonify({"ok": True, "company": p.company}), 200
+
+
 @admin_bp.route("/first-job/vendor-sweep", methods=["GET", "POST"])
 @require_admin
 def first_job_vendor_sweep(user_id):
