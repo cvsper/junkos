@@ -68,3 +68,9 @@
     outline: none;
   }
 }
+/* The partner request page pins its send bar to the bottom; the support
+   chat launcher would sit on top of it. */
+body:has([data-hide-chat]) [aria-label="Open support chat"],
+body:has([data-hide-chat]) [aria-label="Support chat"] {
+  display: none;
+}

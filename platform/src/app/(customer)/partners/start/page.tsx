@@ -119,7 +119,7 @@ function PartnerStart() {
   }
 
   return (
-    <div className="max-w-xl mx-auto px-4 pt-8 pb-40 sm:pt-12">
+    <div className="max-w-xl mx-auto px-4 pt-8 pb-40 sm:pt-12" data-hide-chat="">
       {preview && (
         <p className="mb-4 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800">Preview. Nothing here counts as an open, and Send does nothing.</p>
       )}
