@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Phone, FileText, Loader2 } from "lucide-react";
+import { Phone, FileText, Loader2, Sofa, Refrigerator, DoorOpen, BedDouble, HardHat, Package, type LucideIcon } from "lucide-react";
 import { resolveApiBaseUrl } from "@/lib/api-base-url";
 
 /**
@@ -16,8 +16,25 @@ type Offer = {
   va_name: string; desk_number: string | null; desk_tel: string | null; rate_card_url: string; already_booked: boolean;
 };
 
-const WHATS = ["Furniture", "Appliances", "Unit cleanout", "Mattresses", "Construction debris", "Something else"];
+const WHATS: { label: string; Icon: LucideIcon }[] = [
+  { label: "Furniture", Icon: Sofa },
+  { label: "Appliances", Icon: Refrigerator },
+  { label: "Unit cleanout", Icon: DoorOpen },
+  { label: "Mattresses", Icon: BedDouble },
+  { label: "Construction debris", Icon: HardHat },
+  { label: "Something else", Icon: Package },
+];
 const WHENS = ["Today", "Tomorrow", "This week", "Next week"];
+
+function sentence(what: string[], detail: string, address: string, when: string): string {
+  const things = [...what.map((w) => w.toLowerCase()), detail.trim()].filter(Boolean);
+  if (!things.length && !address.trim() && !when) return "";
+  const list = things.length > 2 ? things.slice(0, -1).join(", ") + " and " + things[things.length - 1] : things.join(" and ");
+  let out = list ? `Pick up ${list}` : "Pick up";
+  if (address.trim()) out += ` from ${address.trim()}`;
+  if (when) out += `, ${when.toLowerCase()}`;
+  return out + ".";
+}
 
 function PartnerStart() {
   const params = useSearchParams();
@@ -67,8 +84,8 @@ function PartnerStart() {
   };
 
   const toggle = (w: string) => setWhat((cur) => (cur.includes(w) ? cur.filter((x) => x !== w) : [...cur, w]));
-  const field = "w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent";
-  const chip = (on: boolean) => `rounded-full border px-3.5 py-2 text-sm transition-colors ${on ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card hover:border-primary/40"}`;
+  const field = "w-full rounded-xl border border-border bg-card px-4 py-3 text-base placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/50 transition-colors";
+  const line = sentence(what, detail, address, when);
 
   if (bad) {
     return (
@@ -83,81 +100,123 @@ function PartnerStart() {
   }
   if (done) {
     return (
-      <div className="max-w-xl mx-auto px-4 py-16">
-        <h1 className="font-display text-3xl font-bold tracking-tight">Got it.</h1>
-        <p className="mt-3 text-foreground">{done.va} will text you a price and a time within the hour, during business hours. Nothing is charged until you say yes.</p>
-        {done.desk && (
-          <p className="mt-6 text-sm text-muted-foreground">Rather talk now? <a href={`tel:${offer.desk_tel}`} className="text-primary hover:underline">{done.desk}</a></p>
-        )}
+      <div className="max-w-xl mx-auto px-4 py-14 sm:py-20">
+        <div className="rounded-3xl bg-[#14213D] text-white p-7 sm:p-10">
+          <p className="text-white/60 text-sm">{offer.company}</p>
+          <h1 className="font-display text-4xl sm:text-5xl font-bold tracking-tight mt-1">On it.</h1>
+          <p className="mt-4 text-white/85 text-lg leading-snug">{line || "Your request is on the desk."}</p>
+          <ol className="mt-8 space-y-4 border-l border-white/20 pl-5">
+            <li className="relative"><span className="absolute -left-[26px] top-1.5 h-3 w-3 rounded-full bg-primary" aria-hidden="true" /><span className="text-white/90">{done.va} reads it now, during business hours.</span></li>
+            <li className="relative"><span className="absolute -left-[26px] top-1.5 h-3 w-3 rounded-full bg-white/30" aria-hidden="true" /><span className="text-white/70">A price and a time come back by text, usually within the hour.</span></li>
+            <li className="relative"><span className="absolute -left-[26px] top-1.5 h-3 w-3 rounded-full bg-white/30" aria-hidden="true" /><span className="text-white/70">Nothing is charged until you reply yes.</span></li>
+          </ol>
+          {done.desk && (
+            <a href={`tel:${offer.desk_tel}`} className="mt-8 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2.5 text-sm hover:bg-white/15"><Phone className="h-4 w-4" aria-hidden="true" /> Rather talk now? {done.desk}</a>
+          )}
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-xl mx-auto px-4 py-10 sm:py-14">
+    <div className="max-w-xl mx-auto px-4 pt-8 pb-40 sm:pt-12">
       {preview && (
         <p className="mb-4 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800">Preview. Nothing here counts as an open, and Send does nothing.</p>
       )}
-      <p className="text-sm text-muted-foreground">{offer.company}{offer.city ? `, ${offer.city}` : ""}</p>
-      <h1 className="font-display text-3xl sm:text-4xl font-bold tracking-tight mt-1">
-        {offer.first_name ? `${offer.first_name}, put a pickup on the books.` : "Put a pickup on the books."}
-      </h1>
-      <p className="mt-3 text-muted-foreground">
-        Tell {offer.va_name} what, where and when. You get a price and a confirmed slot back by text, usually within the hour. No card, no account.
-      </p>
 
-      <form onSubmit={submit} className="mt-8 space-y-7">
+      {/* The work-order header: who this is for, in their name */}
+      <div className="rounded-3xl bg-[#14213D] text-white p-6 sm:p-8">
+        <p className="text-white/60 text-sm">{offer.company}{offer.city ? `, ${offer.city}` : ""}</p>
+        <h1 className="font-display text-[2rem] leading-[1.05] sm:text-5xl font-bold tracking-tight mt-1">
+          {offer.first_name ? `${offer.first_name}, put a pickup on the books.` : "Put a pickup on the books."}
+        </h1>
+        <p className="mt-4 text-white/75 leading-snug">
+          Three answers and a number. {offer.va_name} texts back a price and a confirmed slot, usually within the hour. No card, no account.
+        </p>
+      </div>
+
+      <form onSubmit={submit} className="mt-10 space-y-10">
         <fieldset>
-          <legend className="text-sm font-medium mb-2">What needs to go?</legend>
-          <div className="flex flex-wrap gap-2">
-            {WHATS.map((w) => (
-              <button key={w} type="button" onClick={() => toggle(w)} aria-pressed={what.includes(w)} className={chip(what.includes(w))}>{w}</button>
-            ))}
+          <legend className="font-display text-2xl font-semibold">What&apos;s going?</legend>
+          <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {WHATS.map(({ label, Icon }) => {
+              const on = what.includes(label);
+              return (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => toggle(label)}
+                  aria-pressed={on}
+                  className={`flex flex-col items-start gap-3 rounded-2xl border p-4 text-left transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 ${on ? "border-primary bg-primary/[0.06] text-foreground" : "border-border bg-card text-foreground hover:border-foreground/30"}`}
+                >
+                  <span className={`flex h-9 w-9 items-center justify-center rounded-full ${on ? "bg-primary text-white" : "bg-muted text-foreground/70"}`}>
+                    <Icon className="h-[18px] w-[18px]" aria-hidden="true" />
+                  </span>
+                  <span className="font-medium leading-tight">{label}</span>
+                </button>
+              );
+            })}
           </div>
-          <input value={detail} onChange={(e) => setDetail(e.target.value)} placeholder="Anything specific: unit 4B, two sofas, a fridge on the third floor" className={`${field} mt-3`} maxLength={300} />
+          <input value={detail} onChange={(e) => setDetail(e.target.value)} placeholder="Anything specific: unit 4B, two sofas, third floor, no elevator" className={`${field} mt-3`} maxLength={300} />
         </fieldset>
 
         <div>
-          <label htmlFor="address" className="block text-sm font-medium mb-1.5">Where</label>
-          <input id="address" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Property address, gate code if there is one" className={field} maxLength={300} />
+          <label htmlFor="address" className="font-display text-2xl font-semibold">Where?</label>
+          <input id="address" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Property address, and the gate code if there is one" className={`${field} mt-4`} maxLength={300} />
         </div>
 
         <fieldset>
-          <legend className="text-sm font-medium mb-2">When</legend>
-          <div className="flex flex-wrap gap-2">
-            {WHENS.map((w) => (
-              <button key={w} type="button" onClick={() => setWhen(when === w ? "" : w)} aria-pressed={when === w} className={chip(when === w)}>{w}</button>
-            ))}
+          <legend className="font-display text-2xl font-semibold">When?</legend>
+          <div className="mt-4 flex flex-wrap gap-2.5">
+            {WHENS.map((w) => {
+              const on = when === w;
+              return (
+                <button key={w} type="button" onClick={() => setWhen(on ? "" : w)} aria-pressed={on}
+                  className={`rounded-full border px-5 py-2.5 text-base transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 ${on ? "border-primary bg-primary text-white" : "border-border bg-card hover:border-foreground/30"}`}>
+                  {w}
+                </button>
+              );
+            })}
           </div>
         </fieldset>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <label htmlFor="name" className="block text-sm font-medium mb-1.5">Your name</label>
-            <input id="name" value={name} onChange={(e) => setName(e.target.value)} className={field} maxLength={120} />
-          </div>
-          <div>
-            <label htmlFor="phone" className="block text-sm font-medium mb-1.5">Cell to confirm on</label>
-            <input id="phone" type="tel" inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(561) 555-0100" required className={field} />
-          </div>
-          <div className="sm:col-span-2">
-            <label htmlFor="email" className="block text-sm font-medium mb-1.5">Email for the invoice <span className="text-muted-foreground font-normal">(optional)</span></label>
-            <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={field} maxLength={254} />
+        <div>
+          <h2 className="font-display text-2xl font-semibold">Who do we confirm with?</h2>
+          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label htmlFor="name" className="block text-sm text-muted-foreground mb-1.5">Your name</label>
+              <input id="name" value={name} onChange={(e) => setName(e.target.value)} className={field} maxLength={120} />
+            </div>
+            <div>
+              <label htmlFor="phone" className="block text-sm text-muted-foreground mb-1.5">Cell</label>
+              <input id="phone" type="tel" inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(561) 555-0100" required className={field} />
+            </div>
+            <div className="sm:col-span-2">
+              <label htmlFor="email" className="block text-sm text-muted-foreground mb-1.5">Email for the invoice, if you want one</label>
+              <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={field} maxLength={254} />
+            </div>
           </div>
         </div>
 
-        <div aria-live="polite">{error && <p role="alert" className="text-sm text-red-700">{error}</p>}</div>
+        <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm pt-2">
+          <a href={offer.rate_card_url} className="inline-flex items-center gap-2 text-primary hover:underline"><FileText className="h-4 w-4" aria-hidden="true" /> Your rate card</a>
+          {offer.desk_tel && <a href={`tel:${offer.desk_tel}`} className="inline-flex items-center gap-2 text-primary hover:underline"><Phone className="h-4 w-4" aria-hidden="true" /> {offer.desk_number}</a>}
+        </div>
 
-        <button type="submit" disabled={busy} className="w-full sm:w-auto rounded-lg bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 inline-flex items-center justify-center gap-2">
-          {busy && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
-          {busy ? "Sending…" : "Send it to " + offer.va_name}
-        </button>
+        {/* The request, read back in plain words, pinned where the thumb is */}
+        <div className="fixed inset-x-0 bottom-0 z-40 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pointer-events-none">
+          <div className="max-w-xl mx-auto pointer-events-auto rounded-2xl bg-[#14213D] text-white shadow-2xl shadow-black/30 p-4 sm:p-5">
+            <p className="font-display text-base sm:text-lg leading-snug min-h-[1.5rem]" aria-live="polite">
+              {line || <span className="text-white/50">Your request will read back here as you fill it in.</span>}
+            </p>
+            <div aria-live="polite">{error && <p role="alert" className="mt-2 text-sm text-red-300">{error}</p>}</div>
+            <button type="submit" disabled={busy} className="mt-3 w-full rounded-xl bg-primary px-6 py-3.5 text-base font-medium text-white hover:bg-primary/90 disabled:opacity-50 inline-flex items-center justify-center gap-2">
+              {busy && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
+              {busy ? "Sending…" : `Send it to ${offer.va_name}`}
+            </button>
+          </div>
+        </div>
       </form>
-
-      <div className="mt-10 flex flex-wrap gap-x-6 gap-y-2 text-sm">
-        <a href={offer.rate_card_url} className="inline-flex items-center gap-2 text-primary hover:underline"><FileText className="h-4 w-4" aria-hidden="true" /> Your rate card</a>
-        {offer.desk_tel && <a href={`tel:${offer.desk_tel}`} className="inline-flex items-center gap-2 text-primary hover:underline"><Phone className="h-4 w-4" aria-hidden="true" /> {offer.desk_number}</a>}
-      </div>
     </div>
   );
 }
