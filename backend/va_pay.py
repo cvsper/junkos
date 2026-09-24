@@ -157,6 +157,62 @@ def apply_transfer_fees(gross, fees=None):
     return lines, max(0.0, left), round(need, 2)
 
 
+# The VA is paid in USD and lives abroad, so the statement also shows her
+# pay in her own currency. Per-VA currency in DeskSetting "va_currency:<name>"
+# (Tracy defaults to NGN). The daily USD rate is cached in DeskSetting
+# "fx_usd" as JSON {rates, updated}; a failed fetch keeps the last good rate.
+DEFAULT_VA_CURRENCY = {"tracy": "NGN"}
+FX_URL = "https://open.er-api.com/v6/latest/USD"
+FX_MAX_AGE = timedelta(hours=12)
+CURRENCY_SYMBOL = {"NGN": "₦", "USD": "$", "GBP": "£", "EUR": "€", "GHS": "GH₵", "KES": "KSh", "PHP": "₱"}
+
+
+def va_currency(va_name):
+    from models import DeskSetting
+    key = (va_name or "").strip().lower()
+    try:
+        raw = DeskSetting.get("va_currency:" + key)
+    except Exception:
+        raw = None
+    return (raw or DEFAULT_VA_CURRENCY.get(key) or "USD").upper()
+
+
+def usd_rate(code):
+    """(rate, as_of_iso) for 1 USD in `code`, or (None, None)."""
+    import json
+    from models import DeskSetting
+    code = (code or "USD").upper()
+    if code == "USD":
+        return 1.0, None
+    cached = None
+    try:
+        cached = json.loads(DeskSetting.get("fx_usd") or "null")
+    except Exception:
+        cached = None
+    fresh = False
+    if cached and cached.get("fetched_at"):
+        try:
+            from datetime import datetime
+            fresh = _naive(_now_utc()) - datetime.fromisoformat(cached["fetched_at"]) < FX_MAX_AGE
+        except ValueError:
+            fresh = False
+    if not fresh:
+        try:
+            import requests
+            r = requests.get(FX_URL, timeout=6)
+            d = r.json()
+            if d.get("result") == "success" and d.get("rates"):
+                cached = {"rates": d["rates"], "updated": d.get("time_last_update_utc"),
+                          "fetched_at": _naive(_now_utc()).isoformat()}
+                DeskSetting.put("fx_usd", json.dumps(cached))
+        except Exception as exc:
+            logger.warning("fx fetch failed, using cached rate: %s", exc)
+    if not cached:
+        return None, None
+    rate = (cached.get("rates") or {}).get(code)
+    return (float(rate) if rate else None), cached.get("updated")
+
+
 def _va_match(col, va_name):
     return db.func.lower(col) == (va_name or "").strip().lower()
 
@@ -304,6 +360,18 @@ def pay_statement(va_name, periods_back=0):
 
     total = round((hours_pay or 0) + signup_pay + booking_pay, 2)
     fee_lines, net, send_for_full = apply_transfer_fees(total)
+    fees_total = round(sum(f["amount"] for f in fee_lines), 2)
+    fee_pct = round((fees_total / total * 100.0) if total else
+                    (1 - __import__("functools").reduce(lambda a, f: a * (1 - f["pct"] / 100.0),
+                                                        fee_lines, 1.0)) * 100.0, 2)
+    cur = va_currency(va_name)
+    rate_fx, fx_as_of = usd_rate(cur)
+    local = None
+    if rate_fx:
+        local = {"currency": cur, "symbol": CURRENCY_SYMBOL.get(cur, cur + " "),
+                 "rate": round(rate_fx, 4), "as_of": fx_as_of,
+                 "total": round(total * rate_fx, 2), "net": round(net * rate_fx, 2),
+                 "fees": round(fees_total * rate_fx, 2)}
     return {
         "va_name": va_name,
         "period_label": label, "period_start": start.isoformat(), "period_end": end.isoformat(),
@@ -321,7 +389,10 @@ def pay_statement(va_name, periods_back=0):
         "booking_pay": booking_pay, "booking_pending": booking_pending,
         "total": total,
         "transfer_fees": fee_lines,
-        "fees_total": round(sum(f["amount"] for f in fee_lines), 2),
+        "fees_total": fees_total,
+        "fee_pct": fee_pct,
+        "local": local,
+        "pay_schedule": "biweekly",
         "net": net,
         "send_for_full": send_for_full,
         "rate_set": bool(rate),

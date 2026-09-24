@@ -2719,7 +2719,7 @@ CALLS_JS = r"""(function(){
   }
   function payLine(label, val){ var r = el("div", "pay-line"); r.appendChild(el("span", null, label)); r.appendChild(el("b", null, val)); return r; }
   function renderPay(p){
-    document.getElementById("pay-label").textContent = p.period_label + (p.closed ? "" : " · in progress");
+    document.getElementById("pay-label").textContent = "Biweekly · " + p.period_label + (p.closed ? "" : " · in progress");
     document.getElementById("pay-next").disabled = payBack === 0;
     document.getElementById("pay-total-k").textContent = p.closed ? "Pay for this period" : "Earned so far this period";
     document.getElementById("pay-total").textContent = money(p.total);
@@ -2731,13 +2731,19 @@ CALLS_JS = r"""(function(){
     lines.appendChild(payLine("Bookings · " + p.booking_count + " completed or pending", money(p.booking_pay)));
     if(p.unpaid_hours) lines.appendChild(payLine("Not paid: " + p.unpaid_hours.toFixed(2) + " hrs (see shifts)", "$0.00"));
     if(p.capped_hours) lines.appendChild(payLine("Forgot to clock out: paid up to " + p.auto_close_pay_hours + " hrs that day", "−" + p.capped_hours.toFixed(2) + " hrs"));
-    if(p.transfer_fees && p.transfer_fees.length && p.total > 0){
-      lines.appendChild(payLine("Earned", money(p.total)));
-      p.transfer_fees.forEach(function(f){
-        lines.appendChild(payLine(f.label + " · " + f.pct + "%" + (f.flat ? " + " + money(f.flat) : ""), "−" + money(f.amount)));
-      });
-      var rcv = payLine("You receive", money(p.net)); rcv.className = "pay-line pay-net"; lines.appendChild(rcv);
+    var L = p.local && p.local.currency !== "USD" ? p.local : null;
+    function loc(v){ return L ? L.symbol + Math.round(v).toLocaleString("en-US") : ""; }
+    if(p.total > 0){
+      lines.appendChild(payLine("Earned", money(p.total) + (L ? " · " + loc(L.total) : "")));
+      if(p.fees_total) lines.appendChild(payLine("Transfer fee · " + p.fee_pct.toFixed(2) + "%", "−" + money(p.fees_total) + (L ? " · " + loc(L.fees) : "")));
+      var rcv = payLine("You receive", money(p.net) + (L ? " · " + loc(L.net) : "")); rcv.className = "pay-line pay-net"; lines.appendChild(rcv);
     }
+    document.getElementById("pay-total").textContent = L && p.total > 0 ? loc(L.net) : money(p.net != null && p.total > 0 ? p.net : p.total);
+    document.getElementById("pay-total-k").textContent = (p.closed ? "You receive for this pay period" : "You receive so far this pay period") + " · paid every two weeks";
+    document.getElementById("pay-total-sub").textContent = [
+      L && p.total > 0 ? money(p.net) + " after the transfer fee · $1 = " + L.symbol + Number(L.rate).toLocaleString("en-US", {maximumFractionDigits: 2}) + (L.as_of ? " (rate of " + String(L.as_of).slice(0, 16) + ")" : "") : "",
+      p.booking_pending ? money(p.booking_pending) + " more when your booked jobs are completed" : ""
+    ].filter(Boolean).join(" · ");
     var su = document.getElementById("pay-signups"); su.textContent = "";
     su.appendChild(el("h4", null, "Hauler sign-ups"));
     if(!p.signups.length) su.appendChild(el("p", "pay-none", "None yet this period. A sign-up counts when a hauler you logged as a win creates their account."));
@@ -2754,7 +2760,7 @@ CALLS_JS = r"""(function(){
       money(p.rules.signup_bonus) + " for every hauler you sign up who finishes onboarding. For every job you book, " + pct +
       "% of the job price, at least " + money(p.rules.booking_min) + " and at most " + money(p.rules.booking_max) +
       ", paid once the job is completed. Pay periods are two weeks." +
-      ((p.transfer_fees && p.transfer_fees.length) ? " Sending the money costs " + p.transfer_fees.map(function(f){ return f.label.toLowerCase() + " " + f.pct + "%"; }).join(", ") + ", taken from the total." : "");
+      (p.fees_total || (p.transfer_fees && p.transfer_fees.length) ? " A transfer fee of about " + p.fee_pct.toFixed(2) + "% comes out when the money is sent to you." : "");
     var rows = (p.shifts || []).slice().reverse().map(function(s){
       return {day: s.day, start_local: s.start_local, end_local: s.end_local, open: s.open, auto_closed: s.auto_closed,
         note: s.unpaid ? ("not paid: " + (s.unpaid_reason || "")) : (s.capped ? "paid " + s.paid_hours.toFixed(2) + " hrs" : s.note),

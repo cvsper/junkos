@@ -22,7 +22,8 @@ def _now():
 
 @pytest.fixture(autouse=True)
 def env(app):
-    with mock.patch.dict(os.environ, {"TRIXIE_ASSISTANT_PASSCODE": "test-code",
+    with mock.patch("va_pay.usd_rate", return_value=(1500.0, "Thu, 24 Sep 2026")), \
+         mock.patch.dict(os.environ, {"TRIXIE_ASSISTANT_PASSCODE": "test-code",
                                       "VA_PAY_PERIOD_ANCHOR": "2026-08-06",
                                       "VA_AUTO_CLOSE_PAY_HOURS": "8"}), \
          mock.patch("va_time._now_utc", return_value=_frozen_utc()), \
@@ -170,3 +171,12 @@ def test_statement_carries_fees_and_net():
     assert st["total"] == 10.0
     assert st["fees_total"] == round(10.0 - st["net"], 2) and st["net"] < 10.0
     assert [f["label"] for f in st["transfer_fees"]] == ["Bank fee", "Cash App transfer", "Wise transfer"]
+
+
+def test_statement_shows_one_fee_and_naira():
+    _shift(8, 0)
+    st = pay_statement("Tracy")
+    assert 5.0 < st["fee_pct"] < 5.2
+    assert st["local"]["currency"] == "NGN" and st["local"]["symbol"] == "₦"
+    assert st["local"]["net"] == round(st["net"] * 1500.0, 2)
+    assert st["pay_schedule"] == "biweekly"

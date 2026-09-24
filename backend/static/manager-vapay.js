@@ -29,7 +29,7 @@
     var next = el("button", "pay-btn alt", "Later →"); next.type = "button"; next.disabled = back === 0;
     prev.addEventListener("click", function(){ if(back < 12){ back++; load(); } });
     next.addEventListener("click", function(){ if(back > 0){ back--; load(); } });
-    nav.appendChild(prev); nav.appendChild(el("span", "vp-label", d.period_label + (d.closed ? "" : " · in progress"))); nav.appendChild(next);
+    nav.appendChild(prev); nav.appendChild(el("span", "vp-label", "Biweekly · " + d.period_label + (d.closed ? "" : " · in progress"))); nav.appendChild(next);
     host.appendChild(nav);
     var r = d.rules || {};
     if(note) note.textContent = "Hourly rate on the clock, " + money(r.signup_bonus) + " per hauler sign-up, " +
@@ -48,10 +48,13 @@
       card.appendChild(line("Bookings · " + v.booking_count, money(v.booking_pay)));
       if(v.unpaid_hours) card.appendChild(line("Unpaid shifts · " + v.unpaid_hours.toFixed(2) + " hrs", "$0.00"));
       if(v.capped_hours) card.appendChild(line("Forgot to clock out · capped", "−" + v.capped_hours.toFixed(2) + " hrs"));
-      if(v.transfer_fees && v.transfer_fees.length && v.total > 0){
-        v.transfer_fees.forEach(function(f){ card.appendChild(line(f.label + " · " + f.pct + "%" + (f.flat ? " + " + money(f.flat) : ""), "−" + money(f.amount))); });
-        var n = line("She receives", money(v.net)); n.className = "vp-line vp-net"; card.appendChild(n);
-        card.appendChild(line("Send this for her to receive the full " + money(v.total), money(v.send_for_full)));
+      if(v.total > 0){
+        var L = v.local && v.local.currency !== "USD" ? v.local : null;
+        var loc = function(x){ return L ? " · " + L.symbol + Math.round(x).toLocaleString("en-US") : ""; };
+        if(v.fees_total) card.appendChild(line("Transfer fee · " + v.fee_pct.toFixed(2) + "%", "−" + money(v.fees_total)));
+        var n = line("She receives", money(v.net) + loc(L ? L.net : 0)); n.className = "vp-line vp-net"; card.appendChild(n);
+        if(v.fees_total) card.appendChild(line("Send this for her to receive the full " + money(v.total), money(v.send_for_full)));
+        if(L) card.appendChild(line("Exchange rate", "$1 = " + L.symbol + Number(L.rate).toLocaleString("en-US", {maximumFractionDigits: 2})));
       }
       var det = el("details", "vp-det"); det.appendChild(el("summary", null, "Shifts, sign-ups, bookings"));
       v.shifts.forEach(function(s){
