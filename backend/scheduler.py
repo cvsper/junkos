@@ -428,6 +428,19 @@ def _first_job_nudge(app):
             logger.exception("first-job nudge failed")
 
 
+def _vendor_month_end(app):
+    """Around the 25th, one text to businesses with us on their vendor list.
+    Flag-gated (`vendor_month_end`); a dry run until it is on."""
+    with app.app_context():
+        try:
+            from first_job import vendor_month_end_sweep
+            out = vendor_month_end_sweep()
+            if out.get("due"):
+                logger.info("vendor month-end: %s", out)
+        except Exception:
+            logger.exception("vendor month-end failed")
+
+
 def _signed_up_sweep(app):
     """Haulers who signed up must leave Tracy's call queue — including the ones
     whose phone number only reached us after the account was made."""
@@ -1363,6 +1376,17 @@ def init_scheduler(app):
             args=[app],
             id="demand_records",
             name="Daily public-records demand sweep",
+        )
+        # Month-end vendor touch — 14:30 UTC (~10:30am ET) daily; the sweep
+        # itself only acts on the 25th-28th and only when the flag is on.
+        scheduler.add_job(
+            _vendor_month_end,
+            "cron",
+            hour=14,
+            minute=30,
+            args=[app],
+            id="vendor_month_end",
+            name="Month-end text to vendor-listed businesses",
         )
 
         # Daily B2B customer-acquisition outreach — 15:00 UTC (~11am ET), after

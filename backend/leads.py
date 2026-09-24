@@ -294,7 +294,26 @@ def _texts(since):
     return out
 
 
-_SOURCES = ("_calls", "_callbacks", "_web", "_texts", "_thumbtack", "_photo", "_funnel")
+def _offer_opens(since):
+    """A business that opened its booking link and has not booked. That is
+    the warmest thing on the desk and it used to be invisible."""
+    try:
+        from models import CallProspect
+    except Exception:
+        return []
+    out = []
+    rows = (CallProspect.query.filter(CallProspect.offer_opened_at.isnot(None),
+                                      CallProspect.offer_opened_at >= since,
+                                      CallProspect.job_id.is_(None))
+            .order_by(CallProspect.offer_opened_at.desc()).limit(100).all())
+    for p in rows:
+        out.append(_lead("offer_open", p.id, phone=p.direct_phone or p.phone, name=p.contact_name,
+                         what="opened the booking link — " + (p.company or ""), source="desk",
+                         created_at=p.offer_opened_at, extra={"prospect_id": p.id, "company": p.company}))
+    return out
+
+
+_SOURCES = ("_calls", "_callbacks", "_web", "_texts", "_thumbtack", "_photo", "_funnel", "_offer_opens")
 
 
 def _photo(since):

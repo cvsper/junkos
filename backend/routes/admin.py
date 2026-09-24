@@ -38,6 +38,17 @@ def require_admin(f):
     return wrapper
 
 
+@admin_bp.route("/first-job/vendor-sweep", methods=["GET", "POST"])
+@require_admin
+def first_job_vendor_sweep(user_id):
+    """GET: who would get this month's vendor text (dry run, any day).
+    POST: send it now to everyone due, whatever the date and the flag."""
+    from first_job import vendor_month_end_sweep
+    if request.method == "GET":
+        return jsonify(vendor_month_end_sweep(dry_run=True, force_day=True)), 200
+    return jsonify(vendor_month_end_sweep(dry_run=False, force_day=True)), 200
+
+
 @admin_bp.route("/first-job/nudge", methods=["GET", "POST"])
 @require_admin
 def first_job_nudge(user_id):

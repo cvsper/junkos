@@ -32,6 +32,7 @@ FLAGS = {
     "sameday_standby_text": {"default": False, "desc": "8:45am text to every approved hauler asking if they're available today (off since 9/12 — sevs; the roster can still be asked from the desk)"},
     "sameday_wave_maya": {"default": True, "desc": "Maya's same-day bookings run the same hauler offer wave automatically"},
     "first_job_nudge": {"default": False, "desc": "Text a booking link to prospects who said interested and never booked (one message, once, 3 days after)"},
+    "vendor_month_end": {"default": False, "desc": "Around the 25th, text businesses that have us on their vendor list: move-outs this week? Once a month, only to lines that take texts"},
     "lead_auto_text":  {"default": True,  "desc": "Text an untouched lead once, in the VA's name, after 2 minutes (kill switch for the speed-to-lead sweep)"},
     "auto_instant_payout": {"default": True, "desc": "Push every completed job's payout to the hauler's debit card the same day (Umuve covers the instant fee; standard payout + text if no card)"},
     "completion_pin_required": {"default": False, "desc": "Completing a job requires the customer's 4-digit handoff PIN (texted at assignment); off = PIN is optional proof alongside after-photos"},

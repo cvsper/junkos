@@ -336,6 +336,8 @@ except Exception as _v_exc:
 try:
     from va_calls import vacalls_bp
     app.register_blueprint(vacalls_bp)
+    from routes.partners_offer import partners_bp
+    app.register_blueprint(partners_bp)
 except Exception as _vc_exc:
     import logging as _logging
     _logging.getLogger(__name__).warning("vacalls_bp not registered: %s", _vc_exc)
@@ -1083,7 +1085,7 @@ def get_available_time_slots(requested_date=None):
 # ---------------------------------------------------------------------------
 # Legacy API Routes (kept for backward compatibility)
 # ---------------------------------------------------------------------------
-APP_VERSION = "2.2.148"
+APP_VERSION = "2.2.149"
 
 
 # ---------------------------------------------------------------------------

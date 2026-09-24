@@ -4224,6 +4224,7 @@ class CallProspect(db.Model):
     job_id = Column(String(36), nullable=True, index=True)      # their first booking
     job_value = Column(Float, nullable=True)
     offer_sent_at = Column(DateTime, nullable=True)             # first-job offer texted
+    offer_opened_at = Column(DateTime, nullable=True)           # they opened the link (9/23: 29 sent, nobody knew who looked)
     email = Column(String(254), nullable=True)   # decision-maker email, captured on calls
     direct_phone = Column(String(40), nullable=True)  # decision-maker cell (vs. front desk)
     last_emailed_at = Column(DateTime, nullable=True)

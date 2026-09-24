@@ -393,6 +393,7 @@ def _card_payload(p, va_name):
     direct = _digits(p.direct_phone) if p.direct_phone else ""
     d["direct_tel"] = "tel:+1" + direct if len(direct) == 10 else None
     d["is_followup"] = bool(p.next_followup_at)
+    d["offer_opened_at"] = p.offer_opened_at.isoformat() + "Z" if getattr(p, "offer_opened_at", None) else None
     from crm import crm_card_fields; d.update(crm_card_fields(p))  # CRM (Phase 3)
     from compliance import compliance_for_card; d["compliance"] = compliance_for_card(p)  # Phase 2 (compliance.py)
     if not (d.get("angle") or "").strip():

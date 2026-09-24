@@ -42,7 +42,7 @@ def _prospect(company="Palm Coast PM", digits="5615550142", status="interested",
 def test_the_offer_is_a_signed_link_that_knows_who_it_came_from():
     p = _prospect()
     url = first_job.offer_url(p)
-    assert url.startswith("https://app.goumuve.com/book?p=" + p.id)
+    assert url.startswith("https://app.goumuve.com/partners/start?p=" + p.id)
     assert first_job.check_sig(p.id, url.split("s=")[1])
     assert not first_job.check_sig(p.id, "nope")
 
@@ -231,3 +231,75 @@ def test_the_sweep_reports_who_it_skipped():
         out = first_job.nurture_sweep()
     assert out["sent"] == 1 and send.call_count == 1
     assert [s["company"] for s in out["skipped"]] == ["Auto Line"]
+
+
+# ---------------------------------------------------------------- the partner request page
+def _sig(p):
+    return first_job.sign(p.id)
+
+
+def test_the_link_greets_them_and_records_the_open(client):
+    p = _prospect()
+    assert client.get("/api/partners/offer?p=%s&s=nope" % p.id).status_code == 404
+    r = client.get("/api/partners/offer?p=%s&s=%s" % (p.id, _sig(p)))
+    assert r.status_code == 200
+    j = r.get_json()
+    assert j["company"] == "Palm Coast PM" and j["first_name"] == "Marcus"
+    assert ("/rate-card/%s.pdf?s=" % p.id) in j["rate_card_url"]
+    db.session.refresh(p)
+    assert p.offer_opened_at is not None, "opening the link is the signal"
+    first = p.offer_opened_at
+    client.get("/api/partners/offer?p=%s&s=%s" % (p.id, _sig(p)))
+    db.session.refresh(p)
+    assert p.offer_opened_at == first, "the first open is the one that counts"
+    # and the desk sees it as a lead
+    import leads
+    l = next(x for x in leads.collect()[0] if x["kind"] == "offer_open")
+    assert l["what"].startswith("opened the booking link") and l["company"] == "Palm Coast PM"
+
+
+def test_a_pickup_request_becomes_an_open_callback_with_everything_on_it(client):
+    from models_inbound import CallbackRequest
+    p = _prospect(status="queued")
+    with mock.patch("desk_line.send_desk_text") as fwd, mock.patch("growth.notify_reply"), \
+         mock.patch.dict(os.environ, {"DESK_FORWARD_NUMBER": "+15615550777"}):
+        r = client.post("/api/partners/request", json={
+            "p": p.id, "s": _sig(p), "what": "two sofas and a mattress from unit 4B",
+            "address": "1200 S Dixie Hwy, West Palm Beach", "when": "tomorrow morning",
+            "name": "Marcus Bell", "phone": "(561) 555-0199", "email": "marcus@palmcoast.com"})
+    assert r.status_code == 200, r.get_json()
+    cb = CallbackRequest.query.filter_by(status="open").one()
+    assert cb.phone_digits == "5615550199"
+    assert "Pickup request from Palm Coast PM" in cb.note and "unit 4B" in cb.note and "tomorrow morning" in cb.note
+    db.session.refresh(p)
+    assert p.status == "interested" and p.direct_phone == "5615550199" and p.email == "marcus@palmcoast.com"
+    assert p.next_followup_at is not None
+    assert fwd.call_count == 1, "the VA's cell hears about it"
+    # a request with nothing in it is refused, plainly
+    r = client.post("/api/partners/request", json={"p": p.id, "s": _sig(p), "what": ""})
+    assert r.status_code == 400 and "what needs to go" in r.get_json()["error"]
+
+
+def test_month_end_text_goes_once_to_vendor_listed_lines_that_take_texts():
+    a = _prospect(company="Avalon PM", digits="5615550150", status="vendor_listed")
+    b = _prospect(company="Texted Lately", digits="5615550151", status="vendor_listed")
+    b.last_texted_at = first_job._now() - timedelta(days=3); db.session.commit()
+    c = _prospect(company="Bot Line", digits="5615550152", status="vendor_listed",
+                  note="THEY TEXTED: Thanks for contacting - reply START to receive updates")
+    _prospect(company="Merely Interested", digits="5615550153", status="interested")
+    with mock.patch("first_job._now", return_value=datetime(2026, 9, 26, 14, 30)):
+        dry = first_job.vendor_month_end_sweep(dry_run=True)
+    assert dry["companies"] == ["Avalon PM"], dry
+    assert any(s["company"] == "Bot Line" for s in dry["skipped"])
+    with mock.patch("first_job._now", return_value=datetime(2026, 9, 10, 14, 30)):
+        assert first_job.vendor_month_end_sweep(dry_run=True)["due"] == 0, "not month end"
+    with mock.patch("first_job._now", return_value=datetime(2026, 9, 26, 14, 30)), \
+         mock.patch("desk_line.send_desk_text", return_value="SMv1") as send:
+        out = first_job.vendor_month_end_sweep(dry_run=False)
+    assert out["sent"] == 1 and send.call_count == 1
+    body = send.call_args.args[1]
+    assert body.startswith("Hi Marcus, it's Tracy with Umuve. Move-outs this week?") and "Reply STOP" in body
+    db.session.refresh(a)
+    assert a.last_texted_at is not None
+    with mock.patch("first_job._now", return_value=datetime(2026, 9, 27, 14, 30)):
+        assert first_job.vendor_month_end_sweep(dry_run=True)["due"] == 0, "once a month"

@@ -61,9 +61,167 @@ def check_sig(prospect_id, sig):
 
 
 def offer_url(prospect):
-    """A booking link that knows who it came from."""
+    """A booking link that knows who it came from.
+
+    It lands on the partner request page, not the consumer checkout: 29 links
+    to office lines produced zero bookings, because a property manager does
+    not put a card into a six-step form. They tell us what, where and when,
+    and a person confirms."""
     base = (_env("FRONTEND_URL") or "https://app.goumuve.com").rstrip("/")
-    return "{}/book?p={}&s={}".format(base, prospect.id, sign(prospect.id))
+    if "app." not in base:
+        base = "https://app.goumuve.com"
+    return "{}/partners/start?p={}&s={}".format(base, prospect.id, sign(prospect.id))
+
+
+def offer_info(prospect, va_name=None):
+    """What the request page needs to greet them by name and know who it is."""
+    from rate_card import public_url
+    from desk_line import desk_number
+    first = (prospect.contact_name or "").split()[0] if prospect.contact_name else ""
+    d = _digits(desk_number())
+    return {
+        "prospect_id": prospect.id,
+        "company": prospect.company,
+        "first_name": first,
+        "city": prospect.city,
+        "va_name": _va_name(va_name),
+        "desk_number": "({}) {}-{}".format(d[:3], d[3:6], d[6:]) if len(d) == 10 else None,
+        "desk_tel": "+1" + d if len(d) == 10 else None,
+        "rate_card_url": public_url(prospect.id),
+        "already_booked": bool(prospect.job_id),
+    }
+
+
+def record_open(prospect):
+    """The first time they open the link is the signal; keep it."""
+    if prospect.offer_opened_at is None:
+        prospect.offer_opened_at = _now()
+        db.session.commit()
+        return True
+    return False
+
+
+def pickup_request(prospect, data):
+    """A business told us what, where and when. That is the desk's job now:
+    an open callback with everything on it, the prospect bumped to the top
+    of the queue, and a text to the VA's cell so it isn't missed."""
+    from models_inbound import CallbackRequest
+    what = _text(data.get("what"), 300)
+    address = _text(data.get("address"), 300)
+    when = _text(data.get("when"), 80)
+    name = _text(data.get("name"), 120)
+    phone = _digits(data.get("phone"))
+    email = _text(data.get("email"), 254)
+    notes = _text(data.get("notes"), 500)
+    if not what:
+        return None, "Tell us what needs to go."
+    if not phone and not _digits(prospect.direct_phone) and not _digits(prospect.phone):
+        return None, "Add a number we can confirm on."
+    parts = ["Pickup request from {}".format(prospect.company), "what: " + what]
+    if address:
+        parts.append("where: " + address)
+    if when:
+        parts.append("when: " + when)
+    if name or phone or email:
+        parts.append("contact: " + " ".join(x for x in (name, ("(" + phone[:3] + ") " + phone[3:6] + "-" + phone[6:]) if len(phone) == 10 else "", email) if x))
+    if notes:
+        parts.append("notes: " + notes)
+    note = " | ".join(parts)
+    cb = CallbackRequest(phone_digits=(phone if len(phone) == 10 else (_digits(prospect.direct_phone) or _digits(prospect.phone))),
+                         name=name or prospect.contact_name, note=note[:2000], requested_for=_now(), status="open")
+    db.session.add(cb)
+    if name and not prospect.contact_name:
+        prospect.contact_name = name
+    if len(phone) == 10 and not prospect.direct_phone:
+        prospect.direct_phone = phone
+    if email and not prospect.email:
+        prospect.email = email
+    if prospect.status in ("queued", "dead"):
+        prospect.status = "interested"
+    prospect.next_followup_at = _now()
+    prospect.last_note = note[:2000]
+    db.session.commit()
+    try:
+        from growth import notify_reply
+        notify_reply(prospect, "Pickup request: " + what[:80])
+    except Exception:
+        logger.exception("notify_reply failed")
+    try:
+        from desk_line import _ping_forward
+        _ping_forward(prospect, cb.phone_digits, "PICKUP REQUEST — " + what[:60] + (" · " + when if when else ""))
+    except Exception:
+        logger.exception("forward ping failed")
+    return cb, None
+
+
+def _text(v, limit):
+    v = " ".join(str(v or "").split())
+    return v[:limit]
+
+
+# --------------------------------------------------------------------------
+# Month-end: the businesses that have us on file get one useful text
+# --------------------------------------------------------------------------
+VENDOR_TOUCH_DAYS = (25, 26, 27, 28)          # move-outs cluster at month end
+VENDOR_TOUCH_GAP_DAYS = 20                    # never twice in a month
+
+
+def vendor_month_end_text(prospect, va_name=None):
+    from rate_card import public_url
+    from desk_line import desk_number
+    first = (prospect.contact_name or "").split()[0] if prospect.contact_name else ""
+    greet = "Hi {},".format(first) if first else "Hi there,"
+    d = _digits(desk_number())
+    desk = "({}) {}-{}".format(d[:3], d[3:6], d[6:]) if len(d) == 10 else "this number"
+    return ("{greet} it's {va} with Umuve. Move-outs this week? Text {desk} the unit "
+            "count and what's left behind and you'll have a price back in minutes and a "
+            "same-day slot held. Rate card: {rc}. Reply STOP to opt out."
+            ).format(greet=greet, va=_va_name(va_name), desk=desk, rc=public_url(prospect.id))
+
+
+def due_for_vendor_touch(limit=100, include_skipped=False):
+    gap = _now() - timedelta(days=VENDOR_TOUCH_GAP_DAYS)
+    rows = (CallProspect.query
+            .filter(CallProspect.status == "vendor_listed", CallProspect.job_id.is_(None))
+            .filter((CallProspect.last_texted_at.is_(None)) | (CallProspect.last_texted_at <= gap))
+            .order_by(CallProspect.updated_at.asc()).limit(limit).all())
+    if include_skipped:
+        return rows
+    return [p for p in rows if skip_reason(p) is None]
+
+
+def vendor_month_end_sweep(dry_run=None, force_day=False):
+    """Once a month, around the 25th, one text to every business with us on
+    their vendor list. Off unless `vendor_month_end` is on."""
+    today = _now().day
+    if not force_day and today not in VENDOR_TOUCH_DAYS:
+        return {"due": 0, "sent": 0, "dry_run": True, "companies": [], "skipped": [],
+                "note": "runs on the {}th-{}th".format(VENDOR_TOUCH_DAYS[0], VENDOR_TOUCH_DAYS[-1])}
+    rows = due_for_vendor_touch()
+    if dry_run is None:
+        try:
+            from flags import flag
+            dry_run = not flag("vendor_month_end")
+        except Exception:
+            dry_run = True
+    skipped = [{"company": p.company, "why": skip_reason(p)}
+               for p in due_for_vendor_touch(include_skipped=True) if skip_reason(p)]
+    out = {"due": len(rows), "sent": 0, "dry_run": bool(dry_run),
+           "companies": [p.company for p in rows[:50]], "skipped": skipped}
+    if dry_run:
+        return out
+    from desk_line import send_desk_text
+    for p in rows:
+        digits = _digits(p.direct_phone) or _digits(p.phone)
+        if not digits:
+            continue
+        sid = send_desk_text("+1" + digits, vendor_month_end_text(p), prospect=p)
+        if sid:
+            p.last_texted_at = _now()
+            out["sent"] += 1
+    db.session.commit()
+    logger.info("vendor month-end: %d due, %d sent", out["due"], out["sent"])
+    return out
 
 
 def _digits(v):
