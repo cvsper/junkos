@@ -102,6 +102,61 @@ def booking_bonus(job_total, rules=None):
     return round(min(max(share, r["booking_min"]), r["booking_max"]), 2)
 
 
+# Getting pay to the VA costs money at each hop (bank → Cash App → Wise).
+# Stored in DeskSetting "va_transfer_fees" as JSON: [{"label", "pct", "flat"}].
+# Each fee is taken from what is left after the one before it, in order.
+DEFAULT_TRANSFER_FEES = [
+    {"label": "Bank fee", "pct": 1.71, "flat": 0},
+    {"label": "Cash App transfer", "pct": 1.75, "flat": 0},
+    {"label": "Wise transfer", "pct": 1.71, "flat": 0},
+]
+
+
+def transfer_fees():
+    import json
+    from models import DeskSetting
+    try:
+        raw = DeskSetting.get("va_transfer_fees")
+    except Exception:
+        raw = None
+    if raw:
+        try:
+            fees = json.loads(raw)
+            return [{"label": str(f.get("label") or "Fee")[:60],
+                     "pct": float(f.get("pct") or 0), "flat": float(f.get("flat") or 0)} for f in fees]
+        except (ValueError, TypeError, AttributeError):
+            logger.warning("ignoring unparseable va_transfer_fees=%r", raw)
+    return [dict(f) for f in DEFAULT_TRANSFER_FEES]
+
+
+def set_transfer_fees(fees):
+    import json
+    from models import DeskSetting
+    clean = []
+    for f in fees or []:
+        pct, flat = float(f.get("pct") or 0), float(f.get("flat") or 0)
+        if pct < 0 or flat < 0 or pct >= 100:
+            raise ValueError("fees must be between 0 and 100%")
+        clean.append({"label": str(f.get("label") or "Fee")[:60], "pct": pct, "flat": flat})
+    DeskSetting.put("va_transfer_fees", json.dumps(clean))
+    return clean
+
+
+def apply_transfer_fees(gross, fees=None):
+    """→ (fee lines, amount she receives, amount to send so she receives `gross`)."""
+    fees = fees if fees is not None else transfer_fees()
+    left, lines = float(gross or 0), []
+    for f in fees:
+        cut = round(min(left, left * f["pct"] / 100.0 + f["flat"]), 2) if left > 0 else 0.0
+        lines.append({"label": f["label"], "pct": f["pct"], "flat": f["flat"], "amount": cut})
+        left = round(left - cut, 2)
+    # Gross-up: undo the chain in reverse so the VA lands the full amount.
+    need = float(gross or 0)
+    for f in reversed(fees):
+        need = (need + f["flat"]) / (1 - f["pct"] / 100.0) if need > 0 else 0.0
+    return lines, max(0.0, left), round(need, 2)
+
+
 def _va_match(col, va_name):
     return db.func.lower(col) == (va_name or "").strip().lower()
 
@@ -248,6 +303,7 @@ def pay_statement(va_name, periods_back=0):
     booking_pending = round(sum(b["bonus"] for b in bookings if b["state"] == "pending"), 2)
 
     total = round((hours_pay or 0) + signup_pay + booking_pay, 2)
+    fee_lines, net, send_for_full = apply_transfer_fees(total)
     return {
         "va_name": va_name,
         "period_label": label, "period_start": start.isoformat(), "period_end": end.isoformat(),
@@ -264,6 +320,10 @@ def pay_statement(va_name, periods_back=0):
         "booking_count": sum(1 for b in bookings if b["state"] != "cancelled"),
         "booking_pay": booking_pay, "booking_pending": booking_pending,
         "total": total,
+        "transfer_fees": fee_lines,
+        "fees_total": round(sum(f["amount"] for f in fee_lines), 2),
+        "net": net,
+        "send_for_full": send_for_full,
         "rate_set": bool(rate),
     }
 
@@ -325,17 +385,20 @@ def va_pay_rules():
     ident = desk_identity(data)
     if not ident:
         return jsonify({"error": "Sign in to the desk first."}), 401
-    wants_change = any(k in data for k in ("signup_bonus", "booking_pct", "booking_min", "booking_max"))
+    wants_change = any(k in data for k in ("signup_bonus", "booking_pct", "booking_min",
+                                            "booking_max", "transfer_fees"))
     if wants_change:
         if not is_manager(ident):
             return jsonify({"error": "Only a manager can change pay rules."}), 403
         try:
             changed = set_pay_rules(data)
-        except (TypeError, ValueError) as exc:
+            if "transfer_fees" in data:
+                changed["transfer_fees"] = set_transfer_fees(data["transfer_fees"])
+        except (TypeError, ValueError, AttributeError) as exc:
             return jsonify({"error": "Rules must be positive numbers ({}).".format(exc)}), 400
         audit("va_pay_rules_set", "desk", "pay", changed)
-        return jsonify({"rules": pay_rules(), "saved": True}), 200
-    return jsonify({"rules": pay_rules()}), 200
+        return jsonify({"rules": pay_rules(), "transfer_fees": transfer_fees(), "saved": True}), 200
+    return jsonify({"rules": pay_rules(), "transfer_fees": transfer_fees()}), 200
 
 
 @vapay_bp.route("/api/admin/va-pay", methods=["GET"])

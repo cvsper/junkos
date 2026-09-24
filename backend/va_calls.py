@@ -1931,6 +1931,7 @@ CALLS_CSS = r"""/* Call Desk — layers over /va/app.css tokens (frosted glass o
 .pay-line{display:flex;justify-content:space-between;gap:10px;padding:8px 2px;border-bottom:1px solid var(--line);font-size:13.5px}
 .pay-line span{color:var(--muted)}
 .pay-line b{font-family:var(--body);font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.pay-line.pay-net span,.pay-line.pay-net b{color:var(--ink);font-weight:700}
 .pay-sec{margin:12px 0 4px}
 .pay-sec h4{font-family:var(--body);font-weight:600;font-size:13px;margin:0 0 4px;color:var(--ink)}
 .pay-item{display:flex;gap:10px;align-items:baseline;padding:7px 2px;border-bottom:1px solid var(--line);font-size:13px}
@@ -2730,6 +2731,13 @@ CALLS_JS = r"""(function(){
     lines.appendChild(payLine("Bookings · " + p.booking_count + " completed or pending", money(p.booking_pay)));
     if(p.unpaid_hours) lines.appendChild(payLine("Not paid: " + p.unpaid_hours.toFixed(2) + " hrs (see shifts)", "$0.00"));
     if(p.capped_hours) lines.appendChild(payLine("Forgot to clock out: paid up to " + p.auto_close_pay_hours + " hrs that day", "−" + p.capped_hours.toFixed(2) + " hrs"));
+    if(p.transfer_fees && p.transfer_fees.length && p.total > 0){
+      lines.appendChild(payLine("Earned", money(p.total)));
+      p.transfer_fees.forEach(function(f){
+        lines.appendChild(payLine(f.label + " · " + f.pct + "%" + (f.flat ? " + " + money(f.flat) : ""), "−" + money(f.amount)));
+      });
+      var rcv = payLine("You receive", money(p.net)); rcv.className = "pay-line pay-net"; lines.appendChild(rcv);
+    }
     var su = document.getElementById("pay-signups"); su.textContent = "";
     su.appendChild(el("h4", null, "Hauler sign-ups"));
     if(!p.signups.length) su.appendChild(el("p", "pay-none", "None yet this period. A sign-up counts when a hauler you logged as a win creates their account."));
@@ -2745,7 +2753,8 @@ CALLS_JS = r"""(function(){
     document.getElementById("pay-rules").textContent = "How pay works: " + money(p.hourly_rate) + " an hour on the clock. " +
       money(p.rules.signup_bonus) + " for every hauler you sign up who finishes onboarding. For every job you book, " + pct +
       "% of the job price, at least " + money(p.rules.booking_min) + " and at most " + money(p.rules.booking_max) +
-      ", paid once the job is completed. Pay periods are two weeks.";
+      ", paid once the job is completed. Pay periods are two weeks." +
+      ((p.transfer_fees && p.transfer_fees.length) ? " Sending the money costs " + p.transfer_fees.map(function(f){ return f.label.toLowerCase() + " " + f.pct + "%"; }).join(", ") + ", taken from the total." : "");
     var rows = (p.shifts || []).slice().reverse().map(function(s){
       return {day: s.day, start_local: s.start_local, end_local: s.end_local, open: s.open, auto_closed: s.auto_closed,
         note: s.unpaid ? ("not paid: " + (s.unpaid_reason || "")) : (s.capped ? "paid " + s.paid_hours.toFixed(2) + " hrs" : s.note),

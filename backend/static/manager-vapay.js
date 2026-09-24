@@ -14,7 +14,7 @@
   }
   function el(tag, cls, text){ var e = document.createElement(tag); if(cls) e.className = cls; if(text != null) e.textContent = text; return e; }
   function money(v){ return "$" + Number(v || 0).toFixed(2); }
-  (function(){ if(document.querySelector('link[href^="/static/manager-vapay.css"]')) return; var l = document.createElement("link"); l.rel = "stylesheet"; l.href = "/static/manager-vapay.css?v=1"; document.head.appendChild(l); })();
+  (function(){ if(document.querySelector('link[href^="/static/manager-vapay.css"]')) return; var l = document.createElement("link"); l.rel = "stylesheet"; l.href = "/static/manager-vapay.css?v=2"; document.head.appendChild(l); })();
 
   var host = document.getElementById("vapay"), note = document.getElementById("vapay-note");
   if(!host) return;
@@ -48,6 +48,11 @@
       card.appendChild(line("Bookings · " + v.booking_count, money(v.booking_pay)));
       if(v.unpaid_hours) card.appendChild(line("Unpaid shifts · " + v.unpaid_hours.toFixed(2) + " hrs", "$0.00"));
       if(v.capped_hours) card.appendChild(line("Forgot to clock out · capped", "−" + v.capped_hours.toFixed(2) + " hrs"));
+      if(v.transfer_fees && v.transfer_fees.length && v.total > 0){
+        v.transfer_fees.forEach(function(f){ card.appendChild(line(f.label + " · " + f.pct + "%" + (f.flat ? " + " + money(f.flat) : ""), "−" + money(f.amount))); });
+        var n = line("She receives", money(v.net)); n.className = "vp-line vp-net"; card.appendChild(n);
+        card.appendChild(line("Send this for her to receive the full " + money(v.total), money(v.send_for_full)));
+      }
       var det = el("details", "vp-det"); det.appendChild(el("summary", null, "Shifts, sign-ups, bookings"));
       v.shifts.forEach(function(s){
         var t = s.day + " · " + s.start_local + "–" + (s.end_local || "now") + " · " + s.hours.toFixed(2) + " hrs";

@@ -7,7 +7,7 @@ import pytest
 
 from models import (db, generate_uuid, CallAttempt, CallProspect, Contractor, DeskSetting, Job,
                     User, VaDispatchAction, VaShift)
-from va_pay import booking_bonus, pay_statement, pay_rules
+from va_pay import apply_transfer_fees, booking_bonus, pay_statement, pay_rules
 
 
 def _frozen_utc():
@@ -154,3 +154,19 @@ def test_team_pay_lists_every_va_for_the_period(client):
     body = r.get_json()
     by = {v["va_name"]: v["total"] for v in body["vas"]}
     assert by == {"Damian": 8.0, "Tracy": 10.0} and body["total"] == 18.0
+
+
+def test_transfer_fees_chain_and_gross_up():
+    lines, net, send = apply_transfer_fees(100.0)
+    assert [l["amount"] for l in lines] == [1.71, 1.72, 1.65]
+    assert net == 94.92
+    lines2, net2, _ = apply_transfer_fees(send)
+    assert abs(net2 - 100.0) <= 0.02
+
+
+def test_statement_carries_fees_and_net():
+    _shift(8, 0)
+    st = pay_statement("Tracy")
+    assert st["total"] == 10.0
+    assert st["fees_total"] == round(10.0 - st["net"], 2) and st["net"] < 10.0
+    assert [f["label"] for f in st["transfer_fees"]] == ["Bank fee", "Cash App transfer", "Wise transfer"]

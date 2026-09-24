@@ -611,7 +611,7 @@ MANAGER_HTML = r"""<!doctype html>
 </div>
 <script src="/static/manager.js?v=3"></script>
 <script src="/static/manager-pay.js?v=2"></script>
-<script src="/static/manager-vapay.js?v=1"></script>
+<script src="/static/manager-vapay.js?v=2"></script>
 <script src="/static/desk-drill.js?v=1"></script>
 </body>
 </html>

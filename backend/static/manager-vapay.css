@@ -8,3 +8,4 @@
 .vp-det summary{cursor:pointer;font-weight:600;color:var(--ink);padding:4px 0}
 .vp-item{padding:4px 0 4px 12px;border-left:2px solid var(--line);margin:2px 0}
 .vp-item.off{text-decoration:line-through;opacity:.7}
+.vp-line.vp-net span,.vp-line.vp-net b{color:var(--ink);font-weight:700}
