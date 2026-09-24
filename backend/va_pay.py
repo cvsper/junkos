@@ -311,7 +311,9 @@ def va_team_pay():
     out = []
     for n in names:
         auto_close_stale(n)
-        out.append(pay_statement(n, back))
+        st = pay_statement(n, back)
+        if st["rate_set"] or st["total"]:
+            out.append(st)          # a clock-in with no wage and nothing earned is not a VA
     return jsonify({"period_label": label, "periods_back": back,
                     "closed": _naive(_now_utc()) >= end, "rules": pay_rules(),
                     "vas": out, "total": round(sum(v["total"] for v in out), 2)}), 200
