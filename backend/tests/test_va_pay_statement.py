@@ -87,11 +87,12 @@ def test_hours_skip_unpaid_and_cap_auto_closed():
 
 def test_signup_counts_only_haulers_she_called():
     _prospect("Code 3 Junk", "7542464700"); _hauler("7542464700")
-    _prospect("Nope Co", "5610000000", outcome="not_interested"); _hauler("5610000000")
+    _prospect("Voicemail Co", "5610000000", outcome="voicemail"); _hauler("5610000000")
+    _prospect("Other VA Co", "5612222222", va="Damian"); _hauler("5612222222")
     _hauler("5619999999")                               # signed up with no call from her
     st = pay_statement("Tracy")
-    assert st["signup_count"] == 1 and st["signup_pay"] == 1.0
-    assert st["signups"][0]["company"] == "Code 3 Junk"
+    assert st["signup_count"] == 2 and st["signup_pay"] == 2.0
+    assert sorted(x["company"] for x in st["signups"]) == ["Code 3 Junk", "Voicemail Co"]
 
 
 def test_signup_before_her_first_call_does_not_count():

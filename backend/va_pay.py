@@ -13,7 +13,7 @@ so a manager can change them from the desk:
   va_booking_bonus_max  ceiling on that share, per booking
 
 A sign-up counts when a hauler account exists for a number the VA logged a
-win on, and it is paid in the period the account was created. A booking
+call to before they signed up, and it is paid in the period the account was created. A booking
 counts when the job the VA booked is completed; until then it shows as
 pending so nobody is paid for a job that cancels.
 
@@ -107,10 +107,15 @@ def _va_match(col, va_name):
 
 
 def _win_prospect_ids(va_name):
-    """Prospects this VA logged a win on, with the time of the first win."""
+    """Prospects this VA worked, with the time she first logged a call.
+
+    Any logged call counts, not only a logged win: the desk writes the win
+    itself (as "system") when the hauler creates an account, so a yes she got
+    on a call she logged as voicemail or no-answer is still her sign-up.
+    """
     rows = (db.session.query(CallAttempt.prospect_id, db.func.min(CallAttempt.created_at))
             .filter(_va_match(CallAttempt.va_name, va_name),
-                    CallAttempt.outcome.in_(WIN_OUTCOMES))
+                    CallAttempt.outcome != "skip")
             .group_by(CallAttempt.prospect_id).all())
     return {pid: first for pid, first in rows}
 
