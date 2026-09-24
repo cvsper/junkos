@@ -397,6 +397,14 @@ except Exception as _vt_exc:  # pragma: no cover
     import logging as _logging
     _logging.getLogger(__name__).warning("vatime_bp not registered: %s", _vt_exc)
 
+# VA pay statement — hours + hauler sign-ups + bookings, visible to the VA
+try:
+    from va_pay import vapay_bp
+    app.register_blueprint(vapay_bp)
+except Exception as _vp_exc:  # pragma: no cover
+    import logging as _logging
+    _logging.getLogger(__name__).warning("vapay_bp not registered: %s", _vp_exc)
+
 # Call Desk line — texting, browser calling, inbox on a dedicated Twilio number
 # (replaced Quo, Sep 2026)
 try:
@@ -1085,7 +1093,7 @@ def get_available_time_slots(requested_date=None):
 # ---------------------------------------------------------------------------
 # Legacy API Routes (kept for backward compatibility)
 # ---------------------------------------------------------------------------
-APP_VERSION = "2.2.151"
+APP_VERSION = "2.2.152"
 
 
 # ---------------------------------------------------------------------------

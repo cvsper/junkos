@@ -1288,8 +1288,16 @@ CALLS_HTML = r"""<!doctype html>
           </div>
           <button type="button" class="tb-btn" id="tb-toggle">Clock in</button>
           <p class="qb-status" id="tb-status" hidden></p>
-          <div class="tb-views"><button type="button" class="kit-tab is-on" id="tb-mine">My shifts</button><button type="button" class="kit-tab" id="tb-team">Everyone</button></div>
+          <div class="tb-views"><button type="button" class="kit-tab is-on" id="tb-mine">My shifts</button><button type="button" class="kit-tab" id="tb-pay">My pay</button><button type="button" class="kit-tab" id="tb-team">Everyone</button></div>
           <div id="tb-team-totals" hidden></div>
+          <div id="tb-paybox" hidden>
+            <div class="pay-nav"><button type="button" class="si-btn" id="pay-prev">&larr; Earlier</button><span class="pay-label" id="pay-label">—</span><button type="button" class="si-btn" id="pay-next">Later &rarr;</button></div>
+            <div class="pay-total"><div class="tb-k" id="pay-total-k">Pay this period</div><div class="pay-big" id="pay-total">$0.00</div><div class="pay-sub" id="pay-total-sub"></div></div>
+            <div class="pay-lines" id="pay-lines"></div>
+            <div class="pay-sec" id="pay-signups"></div>
+            <div class="pay-sec" id="pay-bookings"></div>
+            <p class="pay-rules" id="pay-rules"></p>
+          </div>
           <div id="tb-list"></div>
         </div>
         <div id="queuebox" class="deskcard" hidden>
@@ -1914,6 +1922,25 @@ CALLS_CSS = r"""/* Call Desk — layers over /va/app.css tokens (frosted glass o
 .tb-tot{display:flex;gap:14px;align-items:baseline;padding:8px 2px;border-bottom:1px solid var(--line);font-size:13px}
 .tb-tot b{font-family:var(--display);font-weight:700;font-size:17px;letter-spacing:-.02em}
 .tb-tot span{color:var(--muted)}
+.pay-nav{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:4px 0 10px}
+.pay-label{font-family:var(--body);font-weight:600;font-size:13.5px;text-align:center;flex:1}
+.pay-total{background:var(--raise);border:1px solid var(--glass-border);border-radius:var(--r-md);padding:14px 16px;margin-bottom:10px}
+.pay-big{font-family:var(--display);font-weight:700;font-size:clamp(30px,8vw,40px);letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:var(--ink);margin-top:2px}
+.pay-sub{color:var(--muted);font-size:12.5px;margin-top:2px}
+.pay-lines{margin-bottom:10px}
+.pay-line{display:flex;justify-content:space-between;gap:10px;padding:8px 2px;border-bottom:1px solid var(--line);font-size:13.5px}
+.pay-line span{color:var(--muted)}
+.pay-line b{font-family:var(--body);font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.pay-sec{margin:12px 0 4px}
+.pay-sec h4{font-family:var(--body);font-weight:600;font-size:13px;margin:0 0 4px;color:var(--ink)}
+.pay-item{display:flex;gap:10px;align-items:baseline;padding:7px 2px;border-bottom:1px solid var(--line);font-size:13px}
+.pay-item .d{min-width:84px;font-weight:600}
+.pay-item .n{flex:1;min-width:0;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pay-item .v{font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.pay-item.pending .v{color:var(--warn)}
+.pay-item.cancelled .v{color:var(--muted);text-decoration:line-through}
+.pay-none{color:var(--muted);font-size:13px;padding:6px 2px}
+.pay-rules{color:var(--muted);font-size:12px;line-height:1.5;margin:12px 0 0}
 /* line left — texts or minutes on the desk number, never a dollar figure */
 .cap{display:inline-flex;align-items:center;gap:7px;height:38px;padding:0 12px;margin-right:6px;
   font-family:var(--body);font-weight:600;font-size:12.5px;color:var(--muted);background:var(--raise);
@@ -2683,9 +2710,76 @@ CALLS_JS = r"""(function(){
     });
   }
   var tbTeamTotals = document.getElementById("tb-team-totals");
+  var payBack = 0, payBox = document.getElementById("tb-paybox");
+  function payItem(cls, day, name, val){
+    var r = el("div", "pay-item" + (cls ? " " + cls : ""));
+    r.appendChild(el("span", "d", day || "")); r.appendChild(el("span", "n", name || "")); r.appendChild(el("span", "v", val));
+    return r;
+  }
+  function payLine(label, val){ var r = el("div", "pay-line"); r.appendChild(el("span", null, label)); r.appendChild(el("b", null, val)); return r; }
+  function renderPay(p){
+    document.getElementById("pay-label").textContent = p.period_label + (p.closed ? "" : " · in progress");
+    document.getElementById("pay-next").disabled = payBack === 0;
+    document.getElementById("pay-total-k").textContent = p.closed ? "Pay for this period" : "Earned so far this period";
+    document.getElementById("pay-total").textContent = money(p.total);
+    document.getElementById("pay-total-sub").textContent = p.booking_pending ? money(p.booking_pending) + " more when your booked jobs are completed" : "";
+    var lines = document.getElementById("pay-lines"); lines.textContent = "";
+    var hrsTxt = p.hours.toFixed(2) + " hrs × " + money(p.hourly_rate);
+    lines.appendChild(payLine("Hours · " + hrsTxt, p.rate_set ? money(p.hours_pay) : "rate not set"));
+    lines.appendChild(payLine("Hauler sign-ups · " + p.signup_count + " × " + money(p.rules.signup_bonus), money(p.signup_pay)));
+    lines.appendChild(payLine("Bookings · " + p.booking_count + " completed or pending", money(p.booking_pay)));
+    if(p.unpaid_hours) lines.appendChild(payLine("Not paid: " + p.unpaid_hours.toFixed(2) + " hrs (see shifts)", "$0.00"));
+    if(p.capped_hours) lines.appendChild(payLine("Forgot to clock out: paid up to " + p.auto_close_pay_hours + " hrs that day", "−" + p.capped_hours.toFixed(2) + " hrs"));
+    var su = document.getElementById("pay-signups"); su.textContent = "";
+    su.appendChild(el("h4", null, "Hauler sign-ups"));
+    if(!p.signups.length) su.appendChild(el("p", "pay-none", "None yet this period. A sign-up counts when a hauler you logged as a win creates their account."));
+    p.signups.forEach(function(x){ su.appendChild(payItem("", x.day, x.company, money(p.rules.signup_bonus))); });
+    var bk = document.getElementById("pay-bookings"); bk.textContent = "";
+    bk.appendChild(el("h4", null, "Bookings"));
+    if(!p.bookings.length) bk.appendChild(el("p", "pay-none", "None yet this period."));
+    p.bookings.forEach(function(b){
+      var tag = b.state === "pending" ? " · pays when completed" : (b.state === "cancelled" ? " · cancelled" : "");
+      bk.appendChild(payItem(b.state, b.day, (b.customer || b.code || "Job") + " · " + money(b.value) + tag, money(b.bonus)));
+    });
+    var pct = Math.round(p.rules.booking_pct * 100);
+    document.getElementById("pay-rules").textContent = "How pay works: " + money(p.hourly_rate) + " an hour on the clock. " +
+      money(p.rules.signup_bonus) + " for every hauler you sign up who finishes onboarding. For every job you book, " + pct +
+      "% of the job price, at least " + money(p.rules.booking_min) + " and at most " + money(p.rules.booking_max) +
+      ", paid once the job is completed. Pay periods are two weeks.";
+    var rows = (p.shifts || []).slice().reverse().map(function(s){
+      return {day: s.day, start_local: s.start_local, end_local: s.end_local, open: s.open, auto_closed: s.auto_closed,
+        note: s.unpaid ? ("not paid: " + (s.unpaid_reason || "")) : (s.capped ? "paid " + s.paid_hours.toFixed(2) + " hrs" : s.note),
+        calls: "", seconds: s.hours * 3600, pay: s.unpaid ? 0 : s.paid_hours * p.hourly_rate};
+    });
+    tbList.textContent = "";
+    rows.forEach(function(s){
+      var row = el("div", "tb-row" + (s.open ? " open" : ""));
+      row.appendChild(el("span", "d", s.day));
+      row.appendChild(el("span", "t", s.start_local + " – " + (s.end_local || "now") + (s.note ? " · " + s.note : "")));
+      row.appendChild(el("span", "h", hm(s.seconds) + " · " + money(s.pay)));
+      tbList.appendChild(row);
+    });
+  }
+  function loadPay(){
+    post("/api/va/time/pay", {periods_back: payBack}).then(function(r){
+      if(r.status !== 200){ tbSay((r.body && r.body.error) || "Couldn't load pay.", true); return; }
+      renderPay(r.body);
+    }).catch(function(){ tbSay("No connection — couldn't load pay.", true); });
+  }
+  document.getElementById("pay-prev").addEventListener("click", function(){ if(payBack < 12){ payBack++; loadPay(); } });
+  document.getElementById("pay-next").addEventListener("click", function(){ if(payBack > 0){ payBack--; loadPay(); } });
+  document.getElementById("tb-pay").addEventListener("click", function(){ tbView = "pay"; loadHours(); });
   function loadHours(){
     document.getElementById("tb-mine").classList.toggle("is-on", tbView === "mine");
+    document.getElementById("tb-pay").classList.toggle("is-on", tbView === "pay");
     document.getElementById("tb-team").classList.toggle("is-on", tbView === "team");
+    payBox.hidden = tbView !== "pay";
+    if(tbView === "pay"){
+      tbTeamTotals.hidden = true;
+      if(!vaName()){ document.getElementById("tb-name").hidden = false; tbList.textContent = ""; payBox.hidden = true; return; }
+      document.getElementById("tb-name").hidden = true;
+      loadPay(); return;
+    }
     if(tbView === "team"){
       document.getElementById("tb-name").hidden = true;
       post("/api/va/time/team", {days: 45}).then(function(r){

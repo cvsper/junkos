@@ -142,6 +142,28 @@ def _overlap_seconds(shift, start, end):
     return max(0, int((e - s).total_seconds()))
 
 
+# A shift nobody clocked out of is auto-closed at MAX_SHIFT_HOURS, which is
+# longer than any real day here. Pay for such a shift stops at
+# VA_AUTO_CLOSE_PAY_HOURS (default 8); the recorded hours stay as they are.
+def pay_cap_seconds():
+    try:
+        return int(float(os.environ.get("VA_AUTO_CLOSE_PAY_HOURS", "8")) * 3600)
+    except (TypeError, ValueError):
+        return 8 * 3600
+
+
+def pay_overlap_seconds(shift, start, end):
+    """Payable seconds of a shift inside [start, end): unpaid → 0, auto-closed → capped."""
+    if getattr(shift, "unpaid", False):
+        return 0
+    if getattr(shift, "auto_closed", False) and shift.ended_at:
+        cap_end = min(shift.ended_at, shift.started_at + timedelta(seconds=pay_cap_seconds()))
+        s = max(shift.started_at, start)
+        e = min(cap_end, end)
+        return max(0, int((e - s).total_seconds()))
+    return _overlap_seconds(shift, start, end)
+
+
 def auto_close_stale(va_name):
     """A shift left open past MAX_SHIFT_HOURS is closed at that limit."""
     now = _naive(_now_utc())
@@ -170,9 +192,9 @@ def totals_for(va_name):
     shifts = VaShift.query.filter(VaShift.va_name == va_name,
                                   db.or_(VaShift.ended_at.is_(None), VaShift.ended_at >= since)).all()
     payable = [s for s in shifts if not getattr(s, "unpaid", False)]
-    today = sum(_overlap_seconds(s, day_start, now) for s in payable)
-    week = sum(_overlap_seconds(s, week_start, now) for s in payable)
-    period = sum(_overlap_seconds(s, p_start, min(p_end, now)) for s in payable)
+    today = sum(pay_overlap_seconds(s, day_start, now) for s in payable)
+    week = sum(pay_overlap_seconds(s, week_start, now) for s in payable)
+    period = sum(pay_overlap_seconds(s, p_start, min(p_end, now)) for s in payable)
     voided = sum(_overlap_seconds(s, p_start, min(p_end, now))
                  for s in shifts if getattr(s, "unpaid", False))
     out = _with_pay({"today_seconds": today, "week_seconds": week, "period_seconds": period,
@@ -272,7 +294,11 @@ def hours_report(va_name=None, days=30):
         d["end_local"] = _local(sh.ended_at).strftime("%-I:%M %p") if sh.ended_at else None
         rate = hourly_rate(sh.va_name)
         d["hours"] = round((d.get("seconds") or 0) / 3600.0, 2)
-        d["pay"] = 0.0 if d.get("unpaid") else (round(d["hours"] * rate, 2) if rate else None)
+        far = datetime(2100, 1, 1)
+        paid_hours = round(pay_overlap_seconds(sh, datetime(2000, 1, 1), far) / 3600.0, 2)
+        d["paid_hours"] = paid_hours
+        d["capped"] = bool(sh.auto_closed and not sh.unpaid and paid_hours < d["hours"])
+        d["pay"] = 0.0 if d.get("unpaid") else (round(paid_hours * rate, 2) if rate else None)
         rows.append(d)
     names = sorted({sh.va_name for sh in shifts})
     return {"shifts": rows, "vas": names,
