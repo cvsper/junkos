@@ -3752,3 +3752,12 @@ def scheduled_tz_backfill():
         "count": len(changes),
         "changes": changes,
     }), 200
+
+
+@admin_bp.route("/scorecard", methods=["GET"])
+@require_admin
+def scorecard_view(user_id):
+    """The Monday email as JSON: paid jobs first, then where the leads went."""
+    import scorecard
+    days = max(1, min(request.args.get("days", 7, type=int) or 7, 90))
+    return jsonify(scorecard.build(days)), 200

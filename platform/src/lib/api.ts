@@ -22,6 +22,7 @@ import type {
 // ---------------------------------------------------------------------------
 
 const API_BASE_URL = resolveApiBaseUrl();
+export const apiBaseUrl = API_BASE_URL;
 
 // ---------------------------------------------------------------------------
 // Generic fetch wrapper

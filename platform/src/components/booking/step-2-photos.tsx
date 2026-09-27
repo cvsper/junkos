@@ -5,7 +5,8 @@ import { Upload, X, AlertCircle, Sparkles, Loader2, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useBookingStore } from "@/stores/booking-store";
 import { cn } from "@/lib/utils";
-import { aiApi } from "@/lib/api";
+import { aiApi, apiBaseUrl } from "@/lib/api";
+import { funnelSignal } from "@/hooks/use-funnel-beacon";
 import { InstantQuote } from "@/components/booking/instant-quote";
 
 const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -15,10 +16,52 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 export function Step2Photos() {
   const { photos, photoPreviewUrls, addPhotos, removePhoto, aiAnalysis, aiAnalyzing, setAiAnalysis, setAiAnalyzing, address, scheduledDate, setQuoteId, setQuoteBinding, setQuoteToken, setEstimatedPrice } =
     useBookingStore();
+  const nextStep = useBookingStore((s) => s.nextStep);
+  const leadSource = useBookingStore((s) => s.leadSource);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState("");
   const [showInstantQuote, setShowInstantQuote] = useState(false);
+
+  // "Text me a price": the person who won't upload photos or pick items on a
+  // phone still leaves a number, and a person texts them. 86% of visitors
+  // left on this step and none of them were reachable.
+  const [textPhone, setTextPhone] = useState("");
+  const [textBusy, setTextBusy] = useState(false);
+  const [textSent, setTextSent] = useState(false);
+  const [textError, setTextError] = useState("");
+  const submitTextMe = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      const digits = textPhone.replace(/\D/g, "");
+      if (digits.length < 10) {
+        setTextError("Enter a 10-digit mobile number.");
+        return;
+      }
+      setTextBusy(true);
+      setTextError("");
+      try {
+        const res = await fetch(`${apiBaseUrl}/api/leads/web`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            phone: digits.slice(-10),
+            address: address?.street,
+            zip: address?.zip,
+            source: leadSource || "web",
+          }),
+        });
+        if (!res.ok) throw new Error("failed");
+        funnelSignal("text_me", {}, true);
+        setTextSent(true);
+      } catch {
+        setTextError("That didn't go through. Call or text (844) 435-6005 instead.");
+      } finally {
+        setTextBusy(false);
+      }
+    },
+    [textPhone, address, leadSource]
+  );
 
   const validateAndAddFiles = useCallback(
     (files: FileList | File[]) => {
@@ -109,6 +152,29 @@ export function Step2Photos() {
           A couple of pictures and we fill in your items and your price for you.
           No photos? Skip ahead and add the items yourself — it takes a minute longer.
         </p>
+      </div>
+
+      {/* Two ways forward, both obvious. */}
+      <div className="grid gap-3 sm:grid-cols-2">
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          className="rounded-lg border-2 border-primary bg-primary/5 p-4 text-left transition-colors hover:bg-primary/10"
+        >
+          <span className="block text-sm font-semibold text-foreground">Add photos</span>
+          <span className="mt-1 block text-xs text-muted-foreground">We fill in the items and the price for you</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            funnelSignal("skip_photos", {}, true);
+            nextStep();
+          }}
+          className="rounded-lg border-2 border-border p-4 text-left transition-colors hover:border-primary/50 hover:bg-muted/50"
+        >
+          <span className="block text-sm font-semibold text-foreground">No photos, I&apos;ll pick the items</span>
+          <span className="mt-1 block text-xs text-muted-foreground">About a minute, price at the end</span>
+        </button>
       </div>
 
       {/* Drop Zone */}
@@ -259,6 +325,36 @@ export function Step2Photos() {
             />
           </div>
         )}
+      </div>
+
+      {/* Rather not do this on a phone? A person texts a price. */}
+      <div className="rounded-lg border border-border bg-muted/30 p-4">
+        <p className="text-sm font-semibold text-foreground">Rather have us text you a price?</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Enter your mobile number. A real person texts back within a few minutes, 8am to 8pm.
+        </p>
+        {textSent ? (
+          <p className="mt-3 text-sm font-medium text-green-700 dark:text-green-400">
+            Got it. Watch for a text from (561) 782-4350.
+          </p>
+        ) : (
+          <form className="mt-3 flex flex-col gap-2 sm:flex-row" onSubmit={submitTextMe}>
+            <input
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              value={textPhone}
+              onChange={(e) => setTextPhone(e.target.value)}
+              placeholder="(305) 555-0123"
+              aria-label="Mobile number"
+              className="h-10 flex-1 rounded-md border border-input bg-background px-3 text-sm"
+            />
+            <Button type="submit" variant="outline" disabled={textBusy}>
+              {textBusy ? "Sending…" : "Text me a price"}
+            </Button>
+          </form>
+        )}
+        {textError && <p className="mt-2 text-xs text-destructive">{textError}</p>}
       </div>
     </div>
   );

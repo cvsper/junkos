@@ -1518,6 +1518,32 @@ def init_scheduler(app):
         except Exception:
             logger.exception("growth jobs not registered")
 
+        # Day-before hauler confirmation: ask at 6pm Florida time, treat
+        # silence as a no at 8:30pm. Replies land through /api/sms/inbound.
+        try:
+            from hauler_confirm_sms import run_ask as _confirm_ask, run_sweep as _confirm_sweep
+            scheduler.add_job(
+                _confirm_ask, "cron", hour=18, minute=0, timezone="America/New_York",
+                args=[app], id="hauler_confirm_ask", name="Ask tomorrow's haulers to confirm",
+            )
+            scheduler.add_job(
+                _confirm_sweep, "cron", hour=20, minute=30, timezone="America/New_York",
+                args=[app], id="hauler_confirm_sweep", name="Cover unconfirmed jobs for tomorrow",
+            )
+        except Exception:
+            logger.exception("hauler confirmation jobs not registered")
+
+        # Monday scorecard to the owner: paid jobs first, then where the
+        # week's leads went. 8am Florida time.
+        try:
+            from scorecard import send_weekly as _send_scorecard
+            scheduler.add_job(
+                _send_scorecard, "cron", day_of_week="mon", hour=8, minute=0, timezone="America/New_York",
+                args=[app], id="weekly_scorecard", name="Monday scorecard email",
+            )
+        except Exception:
+            logger.exception("scorecard job not registered")
+
         scheduler.start()
         _SCHEDULER = scheduler
         _SCHEDULER_PID = os.getpid()

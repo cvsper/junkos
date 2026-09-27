@@ -666,6 +666,36 @@ def leads_list():
                     "day3": day3_followups(), "sources_failed": broken}), 200
 
 
+@leads_bp.route("/api/leads/web", methods=["POST"])
+@_ratelimit
+def web_text_lead():
+    """The booking page's "text me a price" box. Public.
+
+    Eighty-six percent of people who start a booking leave at the photo step
+    and were never reachable. This turns that moment into a lead: the row
+    lands on the desk, the speed-to-lead sweep texts within two minutes, and
+    a person calls. Nothing else is promised and nothing is charged.
+    """
+    data = request.get_json(silent=True) or {}
+    digits = _digits(data.get("phone"))
+    if len(digits) != 10 or is_toll_free(digits) or digits in own_numbers():
+        return jsonify({"error": "Enter a 10-digit mobile number."}), 400
+    recent = (AbandonedBooking.query
+              .filter(AbandonedBooking.phone == "+1" + digits,
+                      AbandonedBooking.created_at >= _now() - timedelta(hours=24)).first())
+    if recent is None:
+        items = data.get("items") if isinstance(data.get("items"), list) else None
+        row = record_form_lead("+1" + digits, (data.get("name") or "")[:120],
+                               source=(str(data.get("source") or "web")[:50]), items=items)
+        if row is not None and (data.get("address") or data.get("zip")):
+            try:
+                row.address = " ".join(str(data.get(k) or "") for k in ("address", "zip")).strip()[:255]
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+    return jsonify({"ok": True, "message": "Got it. We'll text you a price in a couple of minutes."}), 200
+
+
 @leads_bp.route("/api/va/leads/touch", methods=["POST"])
 @_ratelimit
 def leads_touch():

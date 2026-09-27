@@ -1638,7 +1638,6 @@ class ScheduledCallback(db.Model):
             "assignment_status": self.assignment_status or "unassigned",
             "assigned_at": self.assigned_at.isoformat() if self.assigned_at else None,
             "created_at": self.created_at.isoformat() if self.created_at else None,
-            "ended_at": self.ended_at.isoformat() if self.ended_at else None,
         }
 
 

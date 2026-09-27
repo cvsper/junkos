@@ -323,7 +323,7 @@ ADDON_LABELS = {
 # Time-based surge configuration (additive percentages)
 # ---------------------------------------------------------------------------
 SAME_DAY_SURGE  = 0.25   # +25 %
-NEXT_DAY_SURGE  = 0.10   # +10 %
+NEXT_DAY_SURGE  = 0.0    # next-day is normal service — no surcharge (was +10 %)
 WEEKEND_SURGE   = 0.15   # +15 %
 
 EARTH_RADIUS_KM = 6371.0
@@ -564,24 +564,21 @@ def _time_based_surge(scheduled_date_str):
 
     same_day_rate, next_day_rate, weekend_rate = _get_time_surge_rates()
 
-    surge = 0.0
-    reasons = []
-
-    # Same-day
-    if delta_days <= 0:
-        surge += same_day_rate
-        reasons.append("Same-day pickup (+{}%)".format(int(same_day_rate * 100)))
-    # Next-day
-    elif delta_days == 1:
-        surge += next_day_rate
-        reasons.append("Next-day pickup (+{}%)".format(int(next_day_rate * 100)))
-
-    # Weekend (Saturday=5, Sunday=6)
-    if sched.weekday() in (5, 6):
-        surge += weekend_rate
-        reasons.append("Weekend pickup (+{}%)".format(int(weekend_rate * 100)))
-
-    return surge, reasons
+    # Surcharges never stack: the highest one that applies is the surcharge.
+    # They used to add up — a next-day Sunday pickup carried +25% on top of a
+    # weekday quote the caller had already said yes to, and that lost the
+    # booking (26 Sep). Now a weekend or a rush is one bump, never two.
+    candidates = []
+    if delta_days <= 0 and same_day_rate > 0:
+        candidates.append((same_day_rate, "Same-day pickup (+{}%)".format(int(round(same_day_rate * 100)))))
+    elif delta_days == 1 and next_day_rate > 0:
+        candidates.append((next_day_rate, "Next-day pickup (+{}%)".format(int(round(next_day_rate * 100)))))
+    if sched.weekday() in (5, 6) and weekend_rate > 0:   # Saturday=5, Sunday=6
+        candidates.append((weekend_rate, "Weekend pickup (+{}%)".format(int(round(weekend_rate * 100)))))
+    if not candidates:
+        return 0.0, []
+    rate, reason = max(candidates, key=lambda c: c[0])
+    return rate, [reason]
 
 
 # ============================================================================

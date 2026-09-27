@@ -101,10 +101,29 @@ def looks_like_yes(transcript, summary=""):
     return any(a in blob for a in _AGREE)
 
 
+# A caller who got a price and then picked a day, a slot or gave their name was
+# booking, whatever words they used. On 26 Sep a caller said "Yes" to $175, gave
+# her name and picked "10 to 12" tomorrow — none of that is in _AGREE — then
+# balked at a surcharge and left. No task was made. This catches her.
+_ENGAGED = re.compile(
+    r"\b(tomorrow|today|tonight|this weekend|monday|tuesday|wednesday|thursday|friday|saturday|sunday|"
+    r"\d{1,2}\s*(?:to|-|–)\s*\d{1,2}\s*(?:am|pm|a\.m\.|p\.m\.)?|\d{1,2}\s*(?:am|pm|a\.m\.|p\.m\.))\b", re.I)
+
+
+def looks_engaged(transcript, summary=""):
+    """Did the caller get as far as picking a day or a time slot?"""
+    blob = " ".join("{}\n{}".format(transcript or "", summary or "").lower().split())
+    if not blob or any(r in blob for r in _REFUSE):
+        return False
+    return _ENGAGED.search(blob) is not None
+
+
 def should_capture(transcript, summary="", booking_created=False):
     if booking_created or not enabled():
         return False
-    return was_priced(transcript, summary) and looks_like_yes(transcript, summary)
+    if not was_priced(transcript, summary):
+        return False
+    return looks_like_yes(transcript, summary) or looks_engaged(transcript, summary)
 
 
 def already_captured(call_id, phone_digits):
@@ -129,8 +148,10 @@ def capture(phone, call_id=None, summary="", transcript="", name=None):
         return None
     total = price_in("{}\n{}".format(transcript or "", summary or ""))
     quote = " — quoted ${:.0f}".format(total) if total else ""
-    body = "{} — {} agreed on the call{} and no job exists. Call them back and book it. [{}]".format(
-        MARKER, pretty(d), quote, (call_id or "no-call-id")[:40])
+    how = ("agreed on the call" if looks_like_yes(transcript, summary)
+           else "got a price and picked a day")
+    body = "{} — {} {}{} and no job exists. Call them back and book it. [{}]".format(
+        MARKER, pretty(d), how, quote, (call_id or "no-call-id")[:40])
     try:
         cb = CallbackRequest(phone_digits=d, name=(name or None),
                              call_sid=str(call_id)[:64] if call_id else None,

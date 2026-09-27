@@ -221,6 +221,12 @@ def _handle_create_booking(args, vapi_data):
     est = calculate_estimate(items, scheduled_date=scheduled_date)
     total = est["total"]
 
+    # Price hold: a caller who said yes to a number keeps that number.
+    honored = _honored_total(args.get("honor_total"), total)
+    if honored is not None:
+        logger.info("create_booking: honoring agreed total $%.2f over computed $%.2f", honored, total)
+        total = honored
+
     # Parse scheduled datetime
     scheduled_at = None
     if scheduled_date:
@@ -788,6 +794,72 @@ def _handle_operator_signup_text(args, vapi_data):
     return "Signup link sent! Let them know to check their texts."
 
 
+def _honored_total(raw, computed):
+    """The agreed total Maya may charge instead of the recomputed one.
+
+    Accepted only when it is lower than the computed total (a hold never
+    raises a price) and within 30% of it (a hold never becomes a discount
+    the assistant made up). Anything else is ignored.
+    """
+    try:
+        honored = round(float(raw), 2)
+    except (TypeError, ValueError):
+        return None
+    if honored <= 0 or honored >= computed or honored < computed * 0.70:
+        return None
+    return honored
+
+
+def _desk_context(phone):
+    """What our own desk has done with this number.
+
+    Nine of the last forty callers were people returning a call or a text
+    from Tracy's desk, and Maya told several of them that nobody named Tracy
+    worked here. This gives her the context before she opens her mouth.
+    """
+    digits = "".join(ch for ch in (phone or "") if ch.isdigit())[-10:]
+    if len(digits) != 10:
+        return []
+    lines = []
+    try:
+        from models import CallProspect, OperatorLead, B2BLead
+
+        def _same(number):
+            return "".join(ch for ch in (number or "") if ch.isdigit())[-10:] == digits
+
+        p = CallProspect.query.filter_by(phone_digits=digits).first()
+        if p is not None:
+            supply = (p.side or "").lower() == "supply"
+            what = ("HAULING WORK — they are a driver/hauler prospect" if supply
+                    else "JUNK REMOVAL FOR THEIR BUSINESS — they are a business prospect")
+            when = p.last_called_at or p.last_texted_at
+            line = "OUR DESK reached out to this number about {}. Company: {}.".format(what, p.company or "unknown")
+            if p.contact_name:
+                line += " Contact: {}.".format(p.contact_name)
+            if when:
+                line += " Last contact: {}.".format(when.strftime("%b %d"))
+            lines.append(line)
+            note = " ".join(x for x in (p.last_outcome, (p.last_note or "")[:200]) if x)
+            if note:
+                lines.append("Desk note: " + note)
+            return lines
+        tail = "%" + digits[-4:]
+        for op in OperatorLead.query.filter(OperatorLead.phone.like(tail)).limit(20).all():
+            if _same(op.phone):
+                lines.append("OUR DESK reached out to this number about HAULING WORK (hauler recruiting). "
+                             "Business: {}.".format(op.business_name or "unknown"))
+                return lines
+        for b in B2BLead.query.filter(B2BLead.phone.like(tail)).limit(20).all():
+            if _same(b.phone):
+                lines.append("OUR DESK reached out to this number about JUNK REMOVAL FOR THEIR BUSINESS. "
+                             "Business: {} ({}).".format(b.business_name or "unknown",
+                                                         (b.category or "business").replace("_", " ")))
+                return lines
+    except Exception:
+        logger.exception("desk context lookup failed")
+    return lines
+
+
 def _handle_lookup_caller(args, vapi_data):
     """Look up caller by phone number and return their history for personalization."""
     phone = args.get("phone", "")
@@ -799,6 +871,7 @@ def _handle_lookup_caller(args, vapi_data):
     if not phone:
         return "New caller — no phone number available."
 
+    desk = _desk_context(phone)
     profile = CallerProfile.query.filter_by(phone=phone).first()
 
     if not profile:
@@ -821,10 +894,12 @@ def _handle_lookup_caller(args, vapi_data):
             db.session.add(profile)
             db.session.commit()
         else:
+            if desk:
+                return "\n".join(desk + ["No customer history on this line yet."])
             return "First-time caller. No history yet — make a great first impression!"
 
     # Build personalization context for Maya
-    parts = []
+    parts = list(desk)
 
     if profile.name:
         parts.append("Returning caller: {} (called {} times)".format(
@@ -1254,6 +1329,14 @@ def _handle_end_of_call_report(message):
             call_log.followup_sent = True
             db.session.commit()
             logger.info("Warm lead follow-up SMS sent to %s", phone_number)
+            # A priced caller gets the same +2h / +24h nudges and day-3 desk
+            # item the VA desk's quotes get. One text and silence lost callers.
+            if estimate_total:
+                try:
+                    from leads import schedule_followup
+                    schedule_followup(phone_number, cust_name, estimate_total)
+                except Exception:
+                    logger.exception("quote follow-up scheduling failed for %s", phone_number)
         except Exception:
             logger.exception("Failed to send warm lead follow-up SMS")
 

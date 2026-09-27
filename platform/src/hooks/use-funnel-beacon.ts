@@ -79,7 +79,7 @@ function zipOf(address: unknown): string | undefined {
  */
 const sentOnce = new Set<string>();
 export function funnelSignal(
-  signal: "typed" | "suggestions" | "no_suggestions" | "picked" | "fetch_failed" | "rejected",
+  signal: "typed" | "suggestions" | "no_suggestions" | "picked" | "fetch_failed" | "rejected" | "skip_photos" | "text_me",
   extra: Record<string, unknown> = {},
   once = false
 ) {

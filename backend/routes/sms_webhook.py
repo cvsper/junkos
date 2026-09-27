@@ -180,6 +180,16 @@ def inbound_sms():
     # "JOBS" text becomes supply instead of getting auto-quoted, and a "STOP"
     # from a concierge hauler removes them from the offer wave. Consent-clean:
     # the hauler initiated the message. ---
+    # --- Day-before job confirmation (YES / NO from the assigned hauler) ---
+    if num_media == 0 and body:
+        try:
+            from hauler_confirm_sms import handle_reply as _confirm_reply
+            _confirm_answer = _confirm_reply(from_phone, body)
+            if _confirm_answer:
+                return _twiml_response(_confirm_answer)
+        except Exception:
+            logger.exception("hauler confirmation reply check failed; falling through")
+
     # --- Same-day standby answers (Y / N from a known hauler) ---
     if num_media == 0 and body:
         try:
