@@ -1465,7 +1465,14 @@ def desk_capacity_left():
     except Exception:
         logger.exception("delivery report failed")
         delivery = None
+    # "line": is the desk line usable at all? Twilio refusing to answer is
+    # almost always a suspended account (30 Sep 2026), which the token
+    # endpoint can't see — it mints JWTs without asking Twilio.
+    line = "on" if cap.get("ok") else ("off" if cap.get("configured") else "unknown")
+    if cap.get("level") == "empty":
+        line = "off"
     return jsonify({"ok": bool(cap.get("ok")), "texts": cap.get("texts"),
                     "minutes": cap.get("minutes"), "level": cap.get("level"),
+                    "days": cap.get("days"), "fill": cap.get("fill"), "line": line,
                     "label": summary_line(cap), "checked_at": cap.get("checked_at"),
                     "delivery": delivery}), 200

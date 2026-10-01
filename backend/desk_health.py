@@ -47,6 +47,7 @@ def check_desk_health(alert=False):
     sid, tok = _env("TWILIO_ACCOUNT_SID"), _env("TWILIO_AUTH_TOKEN")
     desk = _env("DESK_TWILIO_NUMBER")
     client = None
+    amount = None
     if sid and tok:
         try:
             from twilio.rest import Client
@@ -74,9 +75,19 @@ def check_desk_health(alert=False):
             # /api/va/desk/capacity answers from the DB instead of making a VA
             # wait on Twilio mid-shift. Units only — see twilio_capacity.py.
             from twilio_capacity import desk_capacity
-            desk_capacity(refresh=True)
+            cap = desk_capacity(refresh=True)
         except Exception:
+            cap = None
             logger.debug("capacity cache refresh failed", exc_info=True)
+        # Days of calling left, and the owner's reminder when it runs short.
+        # The account ran dry on 30 Sep 2026 and the first anyone knew was the
+        # VA's dial button not appearing; this is the check that tells sevs.
+        try:
+            from desk_runway import check_and_alert
+            rw = check_and_alert(cap, balance=amount, alert=alert)
+            put("desk_runway", rw["state"], rw["reason"], days=rw.get("days"), level=rw.get("level"))
+        except Exception as e:
+            put("desk_runway", "warn", "runway check failed: " + type(e).__name__)
         if desk:
             try:
                 nums = client.incoming_phone_numbers.list(phone_number=desk, limit=1)

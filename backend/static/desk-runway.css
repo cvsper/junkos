@@ -1,0 +1,67 @@
+/* Desk runway — the line across the very top of the Call Desk that says how
+   much phone line is left. A rail, 5px, flush with the top edge of the window,
+   filled left-to-right by days of calling left; a small tag hangs under it at
+   the right. Green while there's plenty. Red and breathing when it's low — the
+   whole edge of the screen, not a chip, so it can't be missed on a phone. Red
+   and still when the line is off. CSS lives here because the desk CSP is
+   style-src 'self'; widths are stepped classes for the same reason. */
+
+.rw{position:fixed;left:0;right:0;top:0;z-index:95;pointer-events:none}
+.rw[hidden]{display:none}
+.rw-rail{height:5px;background:rgba(var(--ink-rgb),.10)}
+.rw-fill{display:block;height:100%;width:0;background:var(--ok);
+  transition:width .9s cubic-bezier(.2,.7,.2,1),background-color .4s}
+.rw-tag{position:absolute;right:12px;top:9px;pointer-events:auto;text-decoration:none;
+  display:inline-flex;align-items:center;gap:7px;max-width:calc(100vw - 24px);
+  padding:5px 11px 5px 9px;border-radius:999px;
+  background:var(--glass-strong,rgba(255,255,255,.72));border:1px solid var(--glass-border);
+  box-shadow:var(--shadow-soft);backdrop-filter:blur(14px) saturate(1.3);-webkit-backdrop-filter:blur(14px) saturate(1.3);
+  color:var(--ink);font:600 12.5px/1.2 var(--body);letter-spacing:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  opacity:0;transform:translateY(-4px);transition:opacity .5s .3s,transform .5s .3s}
+.rw.is-live .rw-tag{opacity:1;transform:none}
+.rw-dot{width:8px;height:8px;border-radius:50%;background:var(--ok);flex:none}
+.rw-tag b{font-weight:700}
+.rw-tag small{font-weight:500;color:var(--muted)}
+
+/* ok: green, quiet. A full rail at the top is all the desk needs to see. */
+.rw-ok .rw-fill,.rw-ok .rw-dot{background:var(--ok)}
+
+/* low: the rail thickens, turns red and breathes — slow, two and a half
+   seconds, never a blink. The tag carries the instruction. */
+.rw-low .rw-rail,.rw-off .rw-rail{height:8px}
+.rw-low .rw-tag,.rw-off .rw-tag{top:12px}
+.rw-low .rw-fill,.rw-low .rw-dot{background:var(--danger)}
+.rw-low .rw-rail{background:rgba(var(--danger-rgb),.16)}
+.rw-low .rw-fill{animation:rw-breathe 2.6s ease-in-out infinite}
+.rw-low .rw-dot{animation:rw-breathe 2.6s ease-in-out infinite}
+.rw-low .rw-tag{border-color:rgba(var(--danger-rgb),.35);color:var(--danger)}
+.rw-low .rw-tag small{color:rgba(var(--danger-rgb),.8)}
+
+/* off: red, full width, still. Nothing is going out. */
+.rw-off .rw-rail{background:rgba(var(--danger-rgb),.22)}
+.rw-off .rw-fill{width:100%;background:var(--danger);animation:none}
+.rw-off .rw-dot{background:var(--danger)}
+.rw-off .rw-tag{background:var(--danger);border-color:var(--danger);color:#fff}
+.rw-off .rw-tag small{color:rgba(255,255,255,.85)}
+.rw-off .rw-dot{background:#fff}
+
+/* unknown: grey, no claim. */
+.rw-unknown .rw-fill,.rw-unknown .rw-dot{background:var(--muted)}
+
+@keyframes rw-breathe{0%,100%{opacity:1}50%{opacity:.28}}
+@media (prefers-reduced-motion:reduce){
+  .rw-low .rw-fill,.rw-low .rw-dot{animation:none}
+  .rw-fill{transition:none}
+}
+
+/* stepped fill widths — the desk CSP forbids inline style attributes */
+.rw-f0 .rw-fill{width:0}.rw-f1 .rw-fill{width:5%}.rw-f2 .rw-fill{width:10%}.rw-f3 .rw-fill{width:15%}
+.rw-f4 .rw-fill{width:20%}.rw-f5 .rw-fill{width:25%}.rw-f6 .rw-fill{width:30%}.rw-f7 .rw-fill{width:35%}
+.rw-f8 .rw-fill{width:40%}.rw-f9 .rw-fill{width:45%}.rw-f10 .rw-fill{width:50%}.rw-f11 .rw-fill{width:55%}
+.rw-f12 .rw-fill{width:60%}.rw-f13 .rw-fill{width:65%}.rw-f14 .rw-fill{width:70%}.rw-f15 .rw-fill{width:75%}
+.rw-f16 .rw-fill{width:80%}.rw-f17 .rw-fill{width:85%}.rw-f18 .rw-fill{width:90%}.rw-f19 .rw-fill{width:95%}
+.rw-f20 .rw-fill{width:100%}
+
+@media (max-width:640px){
+  .rw-tag{right:8px;top:8px;padding:4px 9px 4px 8px;font-size:12px}
+}

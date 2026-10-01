@@ -24,6 +24,13 @@ Env:
   TWILIO_RATE_CALL_MIN   override $/call-minute (default 0.014)
   DESK_LOW_TEXTS         low-runway mark        (default 200)
   DESK_LOW_MINUTES       low-runway mark        (default 100)
+  DESK_LOW_DAYS          low when fewer days of calling are left (default 3)
+  DESK_FULL_DAYS         the rail reads full at this many days  (default 10)
+
+Days of runway come from the last week's real spend (daily usage records,
+every category), so a desk that dials 100 numbers a day runs out of "days"
+long before it runs out of "minutes" at list price. That is the number the
+owner is reminded about: the account ran dry on 30 Sep with nobody told.
 """
 from __future__ import annotations
 
@@ -87,6 +94,31 @@ def _blended(client, category, min_sample):
     return None
 
 
+def _daily_spend(client, days=7):
+    """→ average $/calendar day over the last `days`, from Twilio's daily
+    usage records (all categories), or None when the account has no history.
+    Zero-spend days count: a weekend off is still runway."""
+    try:
+        from datetime import timedelta
+        end = _now().date()
+        start = end - timedelta(days=days)
+        records = client.usage.records.daily.list(category="totalprice", start_date=start,
+                                                  end_date=end, limit=days + 2)
+    except Exception:
+        logger.debug("daily usage records unavailable", exc_info=True)
+        return None
+    spent, seen = 0.0, 0
+    for rec in records:
+        try:
+            spent += float(rec.price or 0)
+            seen += 1
+        except (TypeError, ValueError):
+            continue
+    if seen == 0 or spent <= 0:
+        return None
+    return spent / max(seen, 1)
+
+
 def _rates(client):
     """→ (sms_rate, call_minute_rate, source). Blended spend wins, then env
     overrides, then list price — whichever we used is reported, because a
@@ -137,14 +169,33 @@ def _measure():
 
     low_texts = int(_env_float("DESK_LOW_TEXTS", 200))
     low_minutes = int(_env_float("DESK_LOW_MINUTES", 100))
+    low_days = _env_float("DESK_LOW_DAYS", 3)
+    full_days = max(_env_float("DESK_FULL_DAYS", 10), 0.5)
+
+    # Days of calling left, from what the desk really spends per day. A desk
+    # doing 100 dials a day burns through "minutes" far faster than list price
+    # suggests, so days is the honest runway and drives the low mark.
+    per_day = _daily_spend(client)
+    days = round(balance / per_day, 1) if per_day else None
+
     if not texts and not minutes:
         level = "empty"
-    elif (texts or 0) < low_texts or (minutes or 0) < low_minutes:
+    elif (days is not None and days < low_days) or (texts or 0) < low_texts or (minutes or 0) < low_minutes:
         level = "low"
     else:
         level = "ok"
 
+    # 0..1 for the rail on the desk: full at DESK_FULL_DAYS. With no spend
+    # history, 1,500 minutes stands in for "full" so the rail still means something.
+    if days is not None:
+        fill = min(1.0, days / full_days)
+    else:
+        fill = min(1.0, (minutes or 0) / 1500.0)
+    if level == "empty":
+        fill = 0.0
+
     return {"configured": True, "ok": True, "texts": texts, "minutes": minutes,
+            "days": days, "fill": round(fill, 3),
             "level": level, "rate_source": source,
             "reason": "either/or — texts and minutes come out of the same pot",
             "checked_at": _now().isoformat()}
