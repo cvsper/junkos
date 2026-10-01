@@ -40,7 +40,7 @@ from functools import wraps
 
 from flask import Blueprint, Response, jsonify, request
 
-from desk_auth import desk_identity, desk_va_name, audit, is_manager
+from desk_auth import desk_identity, desk_va_name, audit, is_manager, require_desk, MANAGER_ROLES
 from models import db, CallAttempt, CallProspect, User
 from auth_routes import require_auth
 
@@ -309,13 +309,24 @@ def _category_rank_sql():
     )
 
 
+def _workable_or_owed():
+    """Workable, plus "converted" rows that never got a job: a business that
+    said yes and never used us (18 of them on 1 Oct 2026, against 0 jobs ever)
+    is still owed a first pickup. They come back only as DUE follow-ups —
+    never as fresh cards — so the desk re-asks on purpose, not by accident. A
+    converted row WITH a job is a customer, not a card."""
+    from sqlalchemy import or_, and_
+    return or_(CallProspect.status.in_(WORKABLE_STATUSES),
+               and_(CallProspect.status == "converted", CallProspect.job_id.is_(None)))
+
+
 def next_card():
     """Due follow-ups first (oldest due), then fresh rows by tier with
     recurring-demand categories served before one-off categories."""
     now_naive = _now().replace(tzinfo=None)
     workable = CallProspect.status.in_(WORKABLE_STATUSES)
     due = (CallProspect.query
-           .filter(workable,
+           .filter(_workable_or_owed(),
                    CallProspect.next_followup_at.isnot(None),
                    CallProspect.next_followup_at <= now_naive)
            .order_by(CallProspect.next_followup_at.asc())
@@ -963,6 +974,33 @@ def import_prospects(user_id):
     return jsonify(_import_response(*merge_rows(rows))), 200
 
 
+@vacalls_bp.route("/api/admin/call-prospects", methods=["GET"])
+@require_desk(MANAGER_ROLES)
+def list_prospects(ident):
+    """Admin read of the prospect list, filterable by status, with the fields
+    the desk card hides (offer sent/opened, follow-up time, job id). For the
+    owner's own review of who said yes and never booked; the VA's queue is
+    /api/va/calls/queue. ?status=interested,vendor_listed,converted&limit=500"""
+    raw = (request.args.get("status") or "").strip()
+    q = CallProspect.query
+    if raw:
+        q = q.filter(CallProspect.status.in_([x.strip() for x in raw.split(",") if x.strip()]))
+    if (request.args.get("no_job") or "").lower() in ("1", "true", "yes"):
+        q = q.filter(CallProspect.job_id.is_(None))
+    limit = max(1, min(request.args.get("limit", 500, type=int) or 500, 2000))
+    rows = q.order_by(CallProspect.updated_at.desc()).limit(limit).all()
+
+    def row(p):
+        d = p.to_dict()
+        for k in ("offer_sent_at", "offer_opened_at", "next_followup_at", "updated_at"):
+            v = getattr(p, k, None)
+            d[k] = v.isoformat() if v else None
+        d["job_id"] = p.job_id
+        d["job_value"] = p.job_value
+        return d
+    return jsonify({"rows": [row(p) for p in rows], "total": q.count()}), 200
+
+
 _import_ratelimit = limiter.limit("20 per hour") if limiter is not None else (lambda f: f)
 
 
@@ -1032,10 +1070,10 @@ def va_queue():
         return jsonify({"error": "Sign in to the desk first."}), 401
     now_naive = _now().replace(tzinfo=None)
     workable = CallProspect.status.in_(WORKABLE_STATUSES)
-    due = (CallProspect.query.filter(workable, CallProspect.next_followup_at.isnot(None),
+    due = (CallProspect.query.filter(_workable_or_owed(), CallProspect.next_followup_at.isnot(None),
                                      CallProspect.next_followup_at <= now_naive)
            .order_by(CallProspect.next_followup_at.asc()).limit(60).all())
-    later = (CallProspect.query.filter(workable, CallProspect.next_followup_at.isnot(None),
+    later = (CallProspect.query.filter(_workable_or_owed(), CallProspect.next_followup_at.isnot(None),
                                        CallProspect.next_followup_at > now_naive)
              .order_by(CallProspect.next_followup_at.asc()).limit(40).all())
     fresh = (CallProspect.query.filter(workable, CallProspect.next_followup_at.is_(None))
