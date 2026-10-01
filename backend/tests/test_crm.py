@@ -94,15 +94,16 @@ def test_terminal_and_lateral_stages_and_callback(client):
 
 def test_log_endpoint_drives_stage_and_card_fields(client):
     p = _p()
-    r = _va(client, "/api/va/calls/log", {"prospect_id": p.id, "outcome": "interested", "note": "call back Thu"})
-    assert r.status_code == 200
+    r = _va(client, "/api/va/calls/log", {"prospect_id": p.id, "outcome": "packet_requested", "note": "call back Thu",
+                                          "contact_name": "Dana", "role": "community_manager", "cell": "5615559911"})
+    assert r.status_code == 200, r.get_json()
     card = _va(client, "/api/va/calls/get", {"prospect_id": p.id}).get_json()["card"]
     assert card["stage"] == "engaged" and card["stage_age_days"] == 0 and card["stage_entered_at"]
     assert card["tags"] == [] and card["account"] is None and card["claimed_by"] is None
     assert len(card["history"]) == 1
     h = card["history"][0]
     assert set(h) == {"id", "outcome", "note", "va_name", "created_at"}
-    assert h["outcome"] == "interested" and h["note"] == "call back Thu" and h["va_name"] == "Tracy"
+    assert h["outcome"] == "packet_requested" and h["note"].endswith("call back Thu") and h["va_name"] == "Tracy"
 
 
 def test_history_is_newest_first_and_capped_at_ten(client):
@@ -286,7 +287,8 @@ def test_win_alert_fires_on_converted_and_vendor_listed(client):
     with mock.patch.dict(os.environ, {"CRM_ALERT_ON_INTERESTED": "on"}), \
             mock.patch("desk_health._send_alert", side_effect=RuntimeError("smtp down")) as send:
         z = _p("Z", "5615550300")
-        r = _va(client, "/api/va/calls/log", {"prospect_id": z.id, "outcome": "interested"})
+        r = _va(client, "/api/va/calls/log", {"prospect_id": z.id, "outcome": "packet_requested",
+                                              "contact_name": "Zed", "role": "owner", "cell": "5615550301"})
         assert r.status_code == 200 and send.call_count == 1
         assert current_stage(z.id) == "engaged"
 

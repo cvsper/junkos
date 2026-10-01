@@ -45,7 +45,9 @@ def _log(client, prospect, **extra):
 
 def test_vendor_listed_is_a_known_outcome():
     assert "vendor_listed" in va_calls.OUTCOMES
-    assert "vendor_listed" in va_calls.WIN_OUTCOMES
+    # Neutral since 1 Oct 2026: a vendor-list placement is bookkeeping, not a
+    # win — 24 of them produced 0 jobs. Wins are dated next steps only.
+    assert "vendor_listed" not in va_calls.WIN_OUTCOMES
     assert "vendor_listed" in va_calls.WORKABLE_STATUSES
 
 
@@ -62,7 +64,7 @@ def test_logging_vendor_listed_sets_status_and_checkin(client, prospect):
         <= timedelta(days=va_calls.VENDOR_LISTED_CHECKIN_DAYS)
     attempt = CallAttempt.query.filter_by(prospect_id=prospect.id).one()
     assert attempt.outcome == "vendor_listed"
-    assert r.get_json()["stats"]["interested_today"] >= 1
+    assert r.get_json()["stats"]["interested_today"] == 0   # not a win
 
 
 def test_vendor_listed_prospect_is_served_when_checkin_is_due(client, prospect):

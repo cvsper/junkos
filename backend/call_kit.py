@@ -57,95 +57,125 @@ def detect_side(prospect):
 
 
 # --- demand: talk tracks per segment --------------------------------------
+# The structure every demand call follows, from the data (reports/Umuve B2B
+# phone close tactics.md): reason-for-call opener with the brand spelled and
+# the recording notice; the ROLE question before anything else; one 30–40s
+# burst; the TRIGGER question that surfaces a job; the price floor when asked;
+# a two-slot close; the cell captured and the text sent on the line. The old
+# closes ("can I put a rate card on file?") are the ask a leasing agent can
+# say yes to without anything happening — 124 of those, 0 jobs.
 _DEMAND_TRACKS = {
     "property": {
+        "role": ("Who handles your turns when a unit's left full — the maintenance supervisor "
+                 "or the community manager? … Could you put me through, or what's their name and cell?"),
+        "burst": ("We're the trash-out crew for a few communities near you{anchor}. When a unit's "
+                  "left full — or there's a pile at the dumpster enclosure — we're there same or next "
+                  "day, you get a firm price before the truck rolls, and the unit's rentable again "
+                  "about 24 hours sooner than waiting on a rental dumpster. COI and W-9 go to you today."),
+        "trigger": ("Anything sitting in a unit right now — a trash-out, a set-out, a mattress by the "
+                    "dumpster? … When's your next move-out?"),
+        "close": "I can have a crew there {slot1} or {slot2} — which works?",
         "discover": [
-            "How many doors do you manage, and how often does a move-out leave stuff behind?",
-            "Who handles that today — maintenance, a hauler, or whoever's available?",
-            "What does a slow turnover cost you in lost rent?",
+            "Who handles your turns when a unit's left full — maintenance supervisor or community manager?",
+            "Anything sitting in a unit right now, or at the dumpster enclosure?",
+            "When's your next move-out?",
         ],
-        "pitch": ("One number for every cleanout. Manager texts us the unit, we quote it "
-                  "up front from photos, and it's rentable again in about 24 hours. "
-                  "Standing accounts get volume rates and one monthly invoice."),
-        "close": ("Can I put a rate card on file so your managers have the number? "
-                  "Who should I send it to?"),
+        "pitch": ("Trash-outs and set-outs for communities near you: firm price before the truck "
+                  "rolls, same or next day, COI and W-9 on file today."),
     },
     "storage": {
-        "discover": [
-            "When a unit goes to auction or gets abandoned, what happens to the leftovers?",
-            "How many of those a month, roughly?",
-            "How long does a unit sit before it's rentable again?",
-        ],
-        "pitch": ("We turn an abandoned unit back into a rentable one in about 24 hours. "
-                  "Flat, upfront price — your manager texts us the unit number and it's handled."),
-        "close": "Can I send your manager a rate card so it's on file for the next one?",
+        "role": "Who handles the abandoned units — the property manager or the district manager?",
+        "burst": ("We clear auctioned and abandoned units for storage facilities near you{anchor}: "
+                  "firm price from a photo, same or next day, and the unit's rentable again "
+                  "the same week."),
+        "trigger": "Any units cut and waiting to be cleared right now? … When's the next auction?",
+        "close": "I can have a crew there {slot1} or {slot2} — which works?",
+        "discover": ["Who handles abandoned units?", "Any units waiting to be cleared right now?", "When's the next auction?"],
+        "pitch": "Abandoned-unit clearouts, firm price from a photo, same or next day.",
     },
     "estate": {
-        "discover": [
-            "How many sales a month, and what's left over after a typical one?",
-            "Who clears the house now — the family, or do you bring someone in?",
-            "Have you ever lost a booking because the family needed a full-service clear-out?",
-        ],
-        "pitch": ("You close the sale Saturday, we clear the house Monday, the family gets "
-                  "the keys back. Upfront pricing, donation drop-offs where items qualify — "
-                  "you look full-service without owning a truck."),
-        "close": "Want me to send the partner page so you can quote it on your next sale?",
+        "role": "Are you the one who books the clear-out after a sale, or is that the family?",
+        "burst": ("You close the sale Saturday, we clear the house Monday and the family gets the "
+                  "keys back — firm price up front, donation drop-offs where things qualify."),
+        "trigger": "Is there a sale wrapping up this week or next that'll need a clear-out?",
+        "close": "Want me to hold {slot1} for that house? Or {slot2}?",
+        "discover": ["Who books the clear-out after a sale?", "A sale wrapping up this week or next?"],
+        "pitch": "Post-sale clear-outs, firm price up front, donation drop-offs.",
     },
     "realtor": {
-        "discover": [
-            "When a listing or an estate needs a cleanout before it can move, who do you send them to?",
-            "How often does that come up — a couple a month?",
-        ],
-        "pitch": ("Give your sellers one number: upfront price, insured local pros, gone same "
-                  "or next day. Realtors get a 10% referral credit on every job."),
-        "close": "Can I text you the referral link so it's in your phone for the next listing?",
+        "role": "Are you the listing agent, or do you handle the estate side too?",
+        "burst": ("When a listing or an estate needs a cleanout before it can move, your sellers "
+                  "get one number: firm price up front, insured local crew, gone same or next day — "
+                  "and you get a 10% referral credit on every job."),
+        "trigger": "Anything on your desk right now that needs to be cleared before it can list?",
+        "close": "I'll text you the referral link now — and for that listing, {slot1} or {slot2}?",
+        "discover": ["Listing agent or estate side too?", "Anything right now that needs clearing before it lists?"],
+        "pitch": "One number for sellers: firm price, insured crew, same or next day, 10% referral credit.",
     },
     "flipper": {
-        "discover": [
-            "How many properties a month, and how do you clear them before demo starts?",
-            "Is your crew hauling, or are you paying for dumpsters that sit half-empty?",
-        ],
-        "pitch": ("We quote from photos and clear it same or next day, so your crew starts "
-                  "demo on day one. No dumpster permit, no sitting rental."),
-        "close": "Send me the address of your next one and I'll get you a price today.",
+        "role": "Are you running the crews yourself, or is there a project manager I should talk to?",
+        "burst": ("We quote from photos and clear it same or next day so your crew starts demo on "
+                  "day one — no dumpster permit, no rental sitting half-empty."),
+        "trigger": "What's the next property you're clearing? Got photos?",
+        "close": "Send me the address and photos and I'll have a firm number back today — crew {slot1} or {slot2}?",
+        "discover": ["Who runs the crews?", "What's the next property you're clearing?"],
+        "pitch": "Photo quote, cleared same or next day, no dumpster permit.",
     },
     "senior": {
-        "discover": [
-            "When a client downsizes, what happens to everything that doesn't move with them?",
-            "Do families ask you for someone, or do they figure it out alone?",
-        ],
-        "pitch": ("We handle the haul-away leg: respectful crews, upfront pricing, donation "
-                  "drop-offs. You stay the trusted face; we do the lifting."),
-        "close": "Can I send you a one-pager you can hand to families?",
+        "role": "Are you the one coordinating the move, or is there a family member I should loop in?",
+        "burst": ("We handle the haul-away leg of a downsize: respectful crew, firm price up front, "
+                  "donation drop-offs. You stay the trusted face; we do the lifting."),
+        "trigger": "Is there a move coming up this month where the family will need the leftovers gone?",
+        "close": "Want me to hold {slot1} for that move? Or {slot2}?",
+        "discover": ["Who coordinates the move?", "A move this month with leftovers?"],
+        "pitch": "Haul-away for downsizes: respectful crew, firm price, donation drop-offs.",
     },
     "mover": {
-        "discover": [
-            "How often do customers ask you to take stuff they don't want moved?",
-            "What do you tell them today?",
-        ],
-        "pitch": ("Hand them our number and keep the move. We pick up the leftovers on your "
-                  "schedule — upfront price, same or next day."),
-        "close": "Want a card for your crews to hand out? I can text the link now.",
+        "role": "Are you the owner, or the dispatcher who books the trucks?",
+        "burst": ("When your customer has stuff that isn't moving with them, we take it the same day "
+                  "— you look full-service, and you keep 10% of every job you send."),
+        "trigger": "Any moves this week where the customer's leaving stuff behind?",
+        "close": "I'll text you the referral link now — and for that move, {slot1} or {slot2}?",
+        "discover": ["Owner or dispatcher?", "Any moves this week leaving stuff behind?"],
+        "pitch": "Same-day haul-away for your customers' leftovers; 10% referral.",
     },
     "contractor": {
-        "discover": [
-            "How do you get rid of tear-out debris now — dumpster, your own truck, a guy?",
-            "How many jobs a month generate a load?",
-        ],
-        "pitch": ("Upfront price from a photo, pickup same or next day, no dumpster sitting "
-                  "in the driveway. Your crew stays on the job."),
-        "close": "Send me a photo of your current pile and I'll price it while we're on the phone.",
+        "role": "Are you the one who books the haul-off, or your project manager?",
+        "burst": ("Debris and demo haul-off, firm price from a photo, same or next day — so the "
+                  "job site isn't waiting on a rental dumpster."),
+        "trigger": "What's on the site right now that needs to go? … Got a photo?",
+        "close": "Crew {slot1} or {slot2}?",
+        "discover": ["Who books the haul-off?", "What's on the site now that needs to go?"],
+        "pitch": "Debris haul-off, firm price from a photo, same or next day.",
+    },
+    "generic": {
+        "role": "Who handles it when there's a pile that needs to go — you, or someone on your team?",
+        "burst": ("We're the junk-removal crew for businesses near you{anchor}: firm price before the "
+                  "truck rolls, same or next day, COI and W-9 on file today."),
+        "trigger": "Anything sitting there right now that needs to go?",
+        "close": "I can have a crew there {slot1} or {slot2} — which works?",
+        "discover": ["Who handles it when there's a pile?", "Anything sitting there right now?"],
+        "pitch": "Firm price before the truck rolls, same or next day, insured crew.",
     },
 }
-_DEMAND_TRACKS["thrift"] = {
-    "discover": [
-        "What happens to donations you can't sell — how often does that pile up?",
-        "Who hauls it now, and what does that run you?",
-    ],
-    "pitch": ("Scheduled pickups of the overflow, upfront price, gone the same day. "
-              "Standing accounts get volume rates."),
-    "close": "Can I set up a standing pickup day and send the rate card?",
-}
+
+# Said in red, in the kit. Each one is in the transcripts, and each one is
+# the moment the call stopped going anywhere.
+_FORBIDDEN = [
+    ("\"Did I catch you at a bad time?\"", "the lowest-converting opener measured (0.9%). Say the reason for the call."),
+    ("\"That's what we do though.\"", "a rebuttal to 'we have someone'. Pause, then ask how that's working out."),
+    ("\"No problem / okay\" after an objection", "it ends the call. Ask a question instead."),
+    ("\"Can I leave a card on file?\" as the close", "a leasing agent can say yes to it and nothing happens. Ask for a date."),
+    ("\"How many doors do you manage?\" before the trigger question", "discovery before they've told you there's a pile."),
+    ("\"Umuve\" without spelling it", "it transcribes as 'you move'. U-M-U-V-E, trucks in West Palm."),
+]
+
+# When they ask. Floor plus structure plus the free look — never "it depends".
+_PRICE_LINE = ("$119 covers a few pieces. A full unit the crew prices on the spot and leaves at no "
+               "charge if it doesn't work for you. Text me a photo and I'll give you a firm number in minutes.")
+
+# Captured before the goodbye, every time.
+_CAPTURE = "What's the best cell to text that to? … You'll see it land now — reply Y and you're set."
 
 _DEMAND_SEGMENT_KEYS = [
     (("moving", "mover", "movers", "fletes", "mudanza"), "mover"),
@@ -168,34 +198,44 @@ def demand_segment(category):
     return "property"
 
 
+# defuse → calibrated question → small ask. Top reps answer an objection
+# with a question 54% of the time (vs 31%); half of cold-call objections are
+# reflexive and dissolve on the second sentence.
 _DEMAND_OBJECTIONS = [
-    ("We already have a guy.",
-     "Great — most people do. Keep him. We're the backup for when he's slow, booked, or "
-     "it's a bigger job than one truck. Can I leave a rate card on file so you have a second number?"),
-    ("Just send me something.",
-     "Happy to. What's the best cell or email for it? And so I send the right thing — "
-     "is it mostly move-outs, or bigger cleanouts?"),
+    ("We already have someone.",
+     "That's okay — most communities do, and we're usually the second number. "
+     "How's that working out when you've got two turns in the same week? … "
+     "Let us take one unit as the backup: firm price, same or next day, and I'll send the COI today."),
+    ("Maintenance handles it.",
+     "Makes sense — most places start there. What does a turn cost you when your tech spends the "
+     "afternoon dragging a sofa to the dumpster instead of fixing the next unit? … "
+     "Give us the next full unit and keep your guys on make-readies."),
+    ("Corporate approves vendors.",
+     "Right — so the packet's the first step. Which portal do you use, Compliance Depot, VendorCafe "
+     "or NetVendor? I'll get the COI and W-9 in today. … And a one-off under five hundred you can "
+     "usually authorize on site — is there a unit right now?"),
+    ("Just send me your info.",
+     "Happy to — which do you need first, the COI or the rate card, and whose name goes on it? "
+     "What's the best cell to text it to? … And while I've got you: anything sitting in a unit right now?"),
     ("How much?",
-     "Depends on what's in the pile, but you get the exact price up front before anyone "
-     "comes out. To give you a feel: a sofa is ${sofa} all-in, a mattress ${mattress}. "
-     "Text me a photo and I'll price it right now."),
-    ("Not interested.",
-     "No problem. One quick thing before I go — if a tenant leaves a unit full next month, "
-     "who do you call? ... I'll text you our number so it's there if that day comes."),
-    ("Who is this? How did you get my number?",
-     "It's {va} with Umuve — we're a local junk-removal service in Palm Beach and Broward. "
-     "Your business is listed publicly; I'm calling the property people in the area to make "
-     "sure they have a fast option for cleanouts."),
+     _PRICE_LINE),
+    ("Not interested / not now.",
+     "Fair enough. Is it the timing, or is this just not a priority right now? … "
+     "When's your next move-out? I'll check in that week — nothing before."),
+    ("Who is this?",
+     "It's {va} — I'm the booking desk for Umuve, U-M-U-V-E, our trucks are in West Palm. "
+     "I'm calling the maintenance supervisors at communities near you."),
     ("Call me back later.",
-     "Sure. When's better — tomorrow morning or afternoon? I'll put it on my calendar. "
-     "(Then tap Call back → pick the time.)"),
+     "Sure. Tomorrow morning or afternoon? … I'll put it on my calendar — and who should I ask for?"),
     ("We use a dumpster.",
-     "Dumpsters are great for big demo. For a move-out or a few rooms, we're usually cheaper "
-     "than the rental plus the permit, and nothing sits in the lot. Want me to price your "
-     "next one against it?"),
-    ("Are you insured?",
-     "Yes — licensed and insured, and every crew is vetted. Happy to send the certificate "
-     "with the rate card."),
+     "Dumpsters are great for a demo. For a move-out or a few rooms we're usually cheaper than the "
+     "rental plus the permit, and nothing sits in the lot. Want me to price your next one against it?"),
+    ("Are you insured? Send the COI.",
+     "Yes — licensed and insured, and the COI names your owner and management company as additional "
+     "insured. Whose name goes on it, and where do I send it?"),
+    ("I'm not the right person.",
+     "No worries — who is? The maintenance supervisor or the community manager? … "
+     "Could you put me through, or give me their name and cell?"),
 ]
 
 _DEMAND_ANSWERS = [
@@ -347,10 +387,18 @@ def build_kit(prospect, va_name=None, side=None):
         price_note = "What customers pay per item — the hauler keeps the majority of each."
     else:
         seg = demand_segment(prospect.category)
-        t = _DEMAND_TRACKS[seg]
-        from va_calls import opener_for
-        track = {"opener": opener_for(prospect.category).format(va=va), "discover": t["discover"],
-                 "pitch": t["pitch"], "close": t["close"], "segment": seg}
+        t = _DEMAND_TRACKS.get(seg) or _DEMAND_TRACKS["generic"]
+        from close_desk import _slots
+        slot1, slot2 = _slots()
+        anchor = (" off " + prospect.city) if getattr(prospect, "city", None) else ""
+        opener = ("Hi, this is {va} — I'm the booking desk for Umuve, that's U-M-U-V-E, our trucks are "
+                  "in West Palm. Quick heads-up, this call's recorded for quality. How have you been? "
+                  "The reason for my call is —").format(va=va)
+        track = {"opener": opener, "role": t["role"], "burst": t["burst"].format(anchor=anchor),
+                 "trigger": t["trigger"], "price": _PRICE_LINE,
+                 "close": t["close"].format(slot1=slot1, slot2=slot2), "capture": _CAPTURE,
+                 "discover": t["discover"], "pitch": t["pitch"], "segment": seg,
+                 "forbidden": [{"line": a, "why": b} for a, b in _FORBIDDEN]}
         objections = [{"say": s, "reply": r.format(**fmt)} for s, r in _DEMAND_OBJECTIONS]
         answers = [{"q": q, "a": a} for q, a in _DEMAND_ANSWERS]
         price_note = "All-in prices from the live engine. Quote these as 'from' — photos set the exact number."

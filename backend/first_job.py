@@ -132,7 +132,8 @@ def pickup_request(prospect, data):
     db.session.add(cb)
     if name and not prospect.contact_name:
         prospect.contact_name = name
-    if len(phone) == 10 and not prospect.direct_phone:
+    # The number they typed on the form is theirs, and fresher than anything on file.
+    if len(phone) == 10:
         prospect.direct_phone = phone
     if email and not prospect.email:
         prospect.email = email
@@ -357,6 +358,9 @@ def due_for_nudge(limit=200, include_skipped=False):
     rows = (CallProspect.query
             .filter(CallProspect.status.in_(INTERESTED),
                     CallProspect.job_id.is_(None),
+                    # Only to a cell a person gave us. The 10:10 blast to office
+                    # main lines fed consent bots and landlines (1 Oct 2026).
+                    CallProspect.direct_phone.isnot(None),
                     CallProspect.offer_sent_at.is_(None),
                     CallProspect.updated_at <= cutoff,
                     CallProspect.updated_at >= floor)

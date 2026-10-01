@@ -37,7 +37,7 @@ from datetime import datetime, timedelta, timezone
 from flask import Blueprint, Response, jsonify, request
 
 from desk_auth import desk_identity, is_manager, audit
-from models import db, Job, User, Contractor, Payment, VaDispatchAction, generate_uuid, generate_referral_code
+from models import db, Job, User, Contractor, Payment, VaDispatchAction, CallProspect, generate_uuid, generate_referral_code
 from timeutils import to_local, fmt_local, iso_utc, parse_local
 
 dispatchdesk_bp = Blueprint("dispatchdesk", __name__)
@@ -861,6 +861,22 @@ def api_book():
         return jsonify({"error": "Couldn't save the booking.", "code": "save_failed"}), 500
     audit("dispatch_book", "job", job.id, {"by": va, "total": pricing["total"], "payment": payment_mode, "items": len(items)})
     _action(job.id, "book", va)
+    # A booking that came from the Call Desk's work is the desk's win —
+    # matched by the prospect id the card passed, else by phone. Never raises.
+    try:
+        from first_job import attribute
+        pid = (data.get("prospect_id") or "").strip()
+        if pid:
+            p = db.session.get(CallProspect, pid)
+            if p is not None and not p.job_id:
+                p.job_id = job.id
+                p.job_value = float(pricing["total"] or 0)
+                p.status = "converted"
+                p.last_outcome = "booked"
+                db.session.commit()
+        attribute(job, phone)
+    except Exception:
+        logger.exception("could not attribute the booking to a prospect")
 
     texted, pay_url = False, None
     if payment_mode == "link":

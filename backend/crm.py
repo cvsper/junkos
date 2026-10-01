@@ -49,8 +49,8 @@ CLAIM_MINUTES = 20
 HISTORY_LIMIT = 10
 ACTIVE_STAGES = ("new", "contacted", "engaged", "qualified", "nurture")
 CONNECT_OUTCOMES = ("interested", "sent_link", "vendor_listed", "not_interested", "converted", "callback")
-INTERESTED_OUTCOMES = ("interested", "sent_link")
-WIN_OUTCOMES = ("converted", "vendor_listed")
+INTERESTED_OUTCOMES = ("interested", "sent_link", "packet_requested")
+WIN_OUTCOMES = ("converted", "vendor_listed", "booked")
 
 # outcome → stage. None = keep (callback creates "contacted" when still new).
 OUTCOME_STAGE = {
@@ -59,6 +59,10 @@ OUTCOME_STAGE = {
     "vendor_listed": "nurture", "converted": "won",
     "not_interested": "lost", "bad_number": "lost", "opted_out": "lost",
     "callback": None,
+    "packet_requested": "engaged",   # a named person asked for the packet
+    "booked": "won",
+    "no_need_now": "nurture",
+    "dnc": "lost",
 }
 
 
@@ -138,7 +142,7 @@ def _alert_on_interested():
 
 def _maybe_win_alert(prospect, outcome, note, va_name):
     if outcome in WIN_OUTCOMES:
-        label = "WIN" if outcome == "converted" else "VENDOR LISTED"
+        label = "WIN" if outcome in ("converted", "booked") else "VENDOR LISTED"
     elif outcome in INTERESTED_OUTCOMES and _alert_on_interested():
         label = "INTERESTED"
     else:
@@ -247,31 +251,19 @@ def _claimed_by_others(va_name):
     return [c.prospect_id for c in q.all()]
 
 
-def next_unclaimed(va_name, _depth=0):
-    """Same ordering as va_calls.next_card, minus cards another VA holds — and
-    minus anyone who has since signed up as a hauler, who must never be
-    pitched again (supply_signup.guard retires them as they surface)."""
-    from va_calls import WORKABLE_STATUSES, _category_rank_sql
-    now = _now_naive()
+def next_unclaimed(va_name, _depth=0, side=None):
+    """va_calls.next_card's ordering (calling window, month end, tier), minus
+    cards another VA holds — and minus anyone who has since signed up as a
+    hauler, who must never be pitched again (supply_signup.guard retires
+    them as they surface)."""
+    from va_calls import next_card
     taken = _claimed_by_others(va_name)
-    workable = CallProspect.status.in_(WORKABLE_STATUSES)
-    free = CallProspect.id.notin_(taken) if taken else True
-    due = (CallProspect.query
-           .filter(workable, free,
-                   CallProspect.next_followup_at.isnot(None),
-                   CallProspect.next_followup_at <= now)
-           .order_by(CallProspect.next_followup_at.asc())
-           .first())
-    pick = due or (CallProspect.query
-                   .filter(workable, free, CallProspect.next_followup_at.is_(None))
-                   .order_by(CallProspect.tier.asc(), _category_rank_sql().asc(),
-                             CallProspect.category.asc(), CallProspect.created_at.asc())
-                   .first())
+    pick = next_card(side=side, exclude=taken)
     if pick is not None and _depth < 25:
         try:
             from supply_signup import guard
             if guard(pick):
-                return next_unclaimed(va_name, _depth + 1)
+                return next_unclaimed(va_name, _depth + 1, side=side)
         except Exception:
             logger.exception("signed-up guard failed for prospect %s", pick.id)
     return pick

@@ -1173,7 +1173,7 @@ def desk_templates():
     return jsonify({
         "intro": followup_text_for("voicemail", p, va_name),
         "info": info_text_for(p, va_name),
-        "followup": followup_text_for("interested", p, va_name),
+        "followup": followup_text_for("packet_requested", p, va_name),
     }), 200
 
 
@@ -1244,9 +1244,18 @@ def desk_transcript():
     from copilot import cue_for
     side = data.get("side") if data.get("side") in ("supply", "demand") else detect_side(p)
     kit = build_kit(p, va_name=desk_va_name(data), side=side)
-    cue = cue_for([l.to_dict() for l in all_lines], kit, side)
+    dicts = [l.to_dict() for l in all_lines]
+    cue = cue_for(dicts, kit, side)
+    from copilot import caller_cues
+    seconds_in = None
+    try:
+        if act.created_at:
+            seconds_in = (datetime.utcnow() - act.created_at).total_seconds()
+    except Exception:
+        seconds_in = None
     return jsonify({"call_sid": act.twilio_sid, "status": act.status, "lines": new,
-                    "total": len(all_lines), "cue": cue}), 200
+                    "total": len(all_lines), "cue": cue,
+                    "caller_cues": caller_cues(dicts, seconds_in) if side == "demand" else []}), 200
 
 
 @deskline_bp.route("/api/va/desk/summarize", methods=["POST"])
@@ -1370,7 +1379,9 @@ def desk_inbox():
                 "Missed call" if r.status in ("no-answer", "voicemail", "busy") else "Call")
         else:
             preview = r.body or ("Photo" if r.media else "")
+        from close_desk import is_bot_reply
         item = {
+            "bot": bool(r.kind == "sms" and is_bot_reply(r.body or "")),
             "phone_digits": key,
             "phone": "({}) {}-{}".format(key[:3], key[3:6], key[6:]) if len(key) == 10 else key,
             "prospect_id": p.id if p else None,
@@ -1389,7 +1400,9 @@ def desk_inbox():
         items.append(item)
         if len(items) >= INBOX_LIMIT:
             break
-    return jsonify({"items": items, "unread": unread_count(),
+    human_unread = sum(i["unread"] for i in items if not i.get("bot"))
+    return jsonify({"items": items, "unread": unread_count(), "human_unread": human_unread,
+                    "bots": sum(1 for i in items if i.get("bot")),
                     "desk_number": desk_number() or None}), 200
 
 

@@ -15,7 +15,11 @@ from va_calls import next_card
 
 @pytest.fixture(autouse=True)
 def passcode_env():
-    with mock.patch.dict(os.environ, {"TRIXIE_ASSISTANT_PASSCODE": "test-code"}):
+    # Pin the calling window and the month-end flag so tier/category ordering
+    # is what's under test, not the clock.
+    with mock.patch.dict(os.environ, {"TRIXIE_ASSISTANT_PASSCODE": "test-code"}), \
+         mock.patch("close_desk.calling_window", return_value={"side": "any", "label": "", "demand_hours": False}), \
+         mock.patch("close_desk.month_end_priority", return_value=False):
         yield
 
 

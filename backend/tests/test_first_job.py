@@ -30,7 +30,8 @@ def _prospect(company="Palm Coast PM", digits="5615550142", status="interested",
               days_ago=5, note=None):
     p = CallProspect(id=generate_uuid(), tier=1, category="property management", company=company,
                      phone="(561) 555-0142", phone_digits=digits, city="Lake Worth",
-                     contact_name="Marcus Bell", status=status, last_note=note)
+                     contact_name="Marcus Bell", status=status, last_note=note,
+                     direct_phone="+1" + digits)   # the nudge only goes to a cell a person gave us
     db.session.add(p); db.session.commit()
     # backdate LAST: `updated_at` has onupdate=now, so any later commit on this
     # row makes it look fresh again and it drops out of the nudge window.

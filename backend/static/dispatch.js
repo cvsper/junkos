@@ -128,7 +128,26 @@
 
   // ---------------------------------------------------------------- gate
   function showGate(msg){ tool.hidden = true; gate.hidden = false; var e = $("gate-err"); if(msg){ e.textContent = msg; e.hidden = false; } else { e.hidden = true; } }
-  function showTool(){ gate.hidden = true; tool.hidden = false; }
+  function showTool(){ gate.hidden = true; tool.hidden = false; prefillFromCallDesk(); }
+  // The Call Desk's "Booked a pickup" opens this page with the card filled in.
+  var PREFILLED = false;
+  function prefillFromCallDesk(){
+    if(PREFILLED) return;
+    var q; try { q = new URLSearchParams(location.search); } catch(e){ return; }
+    if(q.get("book") !== "1") return;
+    PREFILLED = true;
+    setTimeout(function(){
+      try {
+        openBook();
+        if(q.get("phone")) $("bk-phone").value = q.get("phone");
+        if(q.get("name")) $("bk-name").value = q.get("name");
+        var notes = [q.get("company") ? "Account: " + q.get("company") : "", q.get("notes") || ""].filter(Boolean).join(" · ");
+        if(notes) $("bk-notes").value = notes.slice(0, 600);
+        BK.prospect_id = q.get("prospect_id") || null;
+        if(q.get("name")) setTimeout(function(){ $("bk-address").focus(); }, 350);
+      } catch(e){}
+    }, 250);
+  }
   $("gate-form").addEventListener("submit", function(ev){
     ev.preventDefault();
     var name = $("va-name").value.trim(), code = $("code").value.trim();
@@ -1148,6 +1167,7 @@
     var payload = {name: name, phone: phone, email: $("bk-email").value.trim() || null, address: $("bk-address").value.trim(), lat: BK.geo.lat, lng: BK.geo.lng,
       items: items, addons: bookAddons(), scheduled_date: $("bk-date").value, scheduled_time: $("bk-slot").value, notes: $("bk-notes").value.trim(),
       payment: BK.pay, send_text: $("bk-sendtext").checked};
+    if(BK.prospect_id) payload.prospect_id = BK.prospect_id;   // a Call Desk win — attributed to the card
     if(BK.hauler === "assign") payload.contractor_id = $("bk-hauler-sel").value;
     if(BK.hauler === "broadcast") payload.broadcast = true;
     var sb = $("bk-submit"); sb.disabled = true;

@@ -93,7 +93,9 @@ def test_global_cap_silences_a_loop_across_many_numbers(monkeypatch):
 def test_no_answer_gets_no_text_voicemail_and_interested_still_do(prospect):
     assert va_calls.followup_text_for("no_answer", prospect, "Tracy") is None
     assert "just tried you" in va_calls.followup_text_for("voicemail", prospect, "Tracy")
-    assert "partners" in va_calls.followup_text_for("interested", prospect, "Tracy")
+    assert va_calls.followup_text_for("interested", prospect, "Tracy") is None      # retired: no text for a bare label
+    pk = va_calls.followup_text_for("packet_requested", prospect, "Tracy")
+    assert "Umuve" in pk and pk.rstrip().endswith("opt out.") and len(pk) <= 250
 
 
 def test_followup_text_goes_out_from_the_desk_line(client, prospect):

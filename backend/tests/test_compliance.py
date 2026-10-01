@@ -271,7 +271,8 @@ def test_export_bundle_shape(client, prospect, tokens):
         DeskTranscriptLine(call_sid="CA9", prospect_id=prospect.id, track="them", text="we might", seq=0),
     ])
     db.session.commit()
-    _va(client, "/api/va/calls/log", {"prospect_id": prospect.id, "outcome": "interested"})   # audits "outcome"
+    _va(client, "/api/va/calls/log", {"prospect_id": prospect.id, "outcome": "packet_requested",   # audits "outcome"
+                                      "contact_name": "Pat", "role": "owner", "cell": "5615550101"})
     _va(client, "/api/va/compliance/dnc", {"phone": "5615550100"})
     assert client.get("/api/admin/compliance/export?phone=5615550100", headers=tokens["va"]).status_code == 403
     assert client.get("/api/admin/compliance/export?phone=12", headers=tokens["mgr"]).status_code == 400
@@ -281,7 +282,7 @@ def test_export_bundle_shape(client, prospect, tokens):
     assert set(b) == {"phone_digits", "generated_at", "prospect", "attempts", "activities",
                       "transcript_lines", "dnc", "audit_events"}
     assert b["prospect"]["id"] == prospect.id and b["dnc"]["source"] == "call_request"
-    assert {a["outcome"] for a in b["attempts"]} == {"voicemail", "interested", "opted_out"}
+    assert {a["outcome"] for a in b["attempts"]} == {"voicemail", "packet_requested", "opted_out"}
     assert len(b["activities"]) == 2                   # front desk + direct-line activity
     assert b["transcript_lines"][0]["text"] == "we might" and b["transcript_lines"][0]["call_sid"] == "CA9"
     assert {e["action"] for e in b["audit_events"]} >= {"outcome", "dnc_add"}

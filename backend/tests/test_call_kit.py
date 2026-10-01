@@ -75,7 +75,8 @@ def test_kit_demand_shape(client, demand):
     assert body["side"] == "demand" and body["track"]["segment"] == "property"
     assert body["track"]["opener"].startswith("Hi, this is Tracy")
     assert len(body["track"]["discover"]) >= 2 and body["track"]["close"]
-    assert any("already have a guy" in o["say"] for o in body["objections"])
+    assert any("already have someone" in o["say"] for o in body["objections"])
+    assert "U-M-U-V-E" in body["track"]["opener"] and body["track"]["trigger"] and body["track"]["forbidden"]
     assert all("{va}" not in o["reply"] for o in body["objections"])
     assert any(a["q"] == "Insured?" for a in body["answers"])
     labels = [p["label"] for p in body["prices"]]
@@ -109,13 +110,14 @@ def test_kit_auth(client, demand):
 # ------------------------------------------------------------------ callback scheduler
 def test_callback_preset_pins_followup_and_logs(client, demand):
     resp = _va(client, "/api/va/calls/callback",
-               {"prospect_id": demand.id, "preset": "tomorrow_pm", "note": "asked for Pat"})
+               {"prospect_id": demand.id, "preset": "tomorrow_pm", "note": "asked for Pat",
+                "contact_name": "Pat", "role": "community_manager"})
     assert resp.status_code == 200, resp.get_json()
     body = resp.get_json()
     assert body["logged"] and "2:00 PM" in body["callback_local"]
     db.session.refresh(demand)
     assert demand.last_outcome == "callback" and demand.attempts == 1
-    assert demand.last_note == "asked for Pat"
+    assert demand.last_note.endswith("asked for Pat")   # role prefix comes first
     assert demand.status == "queued"                      # still workable, cadence untouched
     delta = demand.next_followup_at - datetime.now(timezone.utc).replace(tzinfo=None)
     assert timedelta(hours=12) < delta < timedelta(hours=48)
@@ -126,7 +128,8 @@ def test_callback_preset_pins_followup_and_logs(client, demand):
 
 def test_callback_custom_time_is_florida_local(client, demand):
     at = (datetime.now(timezone.utc) + timedelta(days=3)).strftime("%Y-%m-%dT10:30")
-    body = _va(client, "/api/va/calls/callback", {"prospect_id": demand.id, "at": at}).get_json()
+    body = _va(client, "/api/va/calls/callback", {"prospect_id": demand.id, "at": at,
+                                                   "contact_name": "Pat", "role": "owner"}).get_json()
     assert "10:30 AM" in body["callback_local"]
     db.session.refresh(demand)
     # stored as UTC: Florida 10:30 is 14:30 UTC (EDT) or 15:30 (EST)
@@ -135,7 +138,8 @@ def test_callback_custom_time_is_florida_local(client, demand):
 
 def test_callback_revives_dead_card(client, demand):
     demand.status = "dead"; db.session.commit()
-    _va(client, "/api/va/calls/callback", {"prospect_id": demand.id, "preset": "next_week"})
+    _va(client, "/api/va/calls/callback", {"prospect_id": demand.id, "preset": "next_week",
+                                            "contact_name": "Pat", "role": "maintenance_supervisor"})
     db.session.refresh(demand)
     assert demand.status == "interested"
 
@@ -147,8 +151,10 @@ def test_callback_rejects_past_and_garbage(client, demand):
     assert CallAttempt.query.count() == 0
 
 
-def test_how_much_objection_uses_live_prices(client, demand):
+def test_how_much_objection_gives_the_floor_and_the_free_look(client, demand):
+    # Floor + structure + photo, never "it depends"; the per-item live prices
+    # still sit in the Prices tab for when they ask about one piece.
     body = _va(client, "/api/va/calls/kit", {"prospect_id": demand.id}).get_json()
-    sofa = next(p["from"] for p in body["prices"] if p["label"] == "Sofa")
     how_much = next(o["reply"] for o in body["objections"] if o["say"] == "How much?")
-    assert "${}".format(sofa) in how_much and "{sofa}" not in how_much
+    assert "$119" in how_much and "photo" in how_much and "no charge" in how_much
+    assert any(p["label"] == "Sofa" for p in body["prices"])

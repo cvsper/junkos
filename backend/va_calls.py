@@ -180,14 +180,18 @@ def followup_text_for(outcome, prospect, va_name):
     name = _first_name(prospect.contact_name)
     greet = "Hi {},".format(name) if name else "Hi there,"
     va = (va_name or "Tracy").split()[0]
+    if outcome == "packet_requested":
+        # Short, signed, refers to the call, ends in a two-slot question —
+        # and goes out while they're still on the line.
+        from close_desk import packet_text
+        try:
+            from rate_card import public_url
+            rc = public_url(prospect.id)
+        except Exception:
+            rc = None
+        return packet_text(prospect, va_name=va, rate_card_url=rc)
     if outcome in ("interested", "sent_link"):
-        return (
-            "{greet} it's {va} with Umuve — great talking with you. Partner "
-            "info: goumuve.com/partners — volume rates, priority scheduling, "
-            "one number for every cleanout. Save this number: text a photo of "
-            "any pile and you'll have an upfront price in minutes. Reply STOP "
-            "to opt out."
-        ).format(greet=greet, va=va)
+        return None   # retired outcomes: nothing automatic goes out for a bare label
     if outcome == "vendor_listed":
         return (
             "{greet} it's {va} with Umuve — thanks for adding us to your "
@@ -240,8 +244,15 @@ def maybe_send_followup_text(prospect, outcome, va_name):
     body = followup_text_for(outcome, prospect, va_name)
     if body is None:
         return False, "no text for this outcome"
-    if len(prospect.phone_digits or "") != 10:
+    # The person's own cell beats the office main line; and a landline gets a
+    # call, not a text (30006 ×7 and 30034 ×15 in two weeks, Sep 2026).
+    from close_desk import digits_of, textable
+    to_digits = digits_of(prospect.direct_phone) if prospect.direct_phone else (prospect.phone_digits or "")
+    if len(to_digits) != 10:
         return False, "no valid mobile number"
+    ok, why = textable(to_digits)
+    if not ok:
+        return False, why
     now_naive = _now().replace(tzinfo=None)
     if prospect.last_texted_at and \
             now_naive - prospect.last_texted_at < timedelta(hours=TEXT_DEDUPE_HOURS):
@@ -250,7 +261,7 @@ def maybe_send_followup_text(prospect, outcome, va_name):
     # Tracy's desk thread instead of Maya's SMS bot (the 9/11 auto-responder
     # loop). send_desk_text logs the thread row and stamps last_texted_at.
     from desk_line import send_desk_text
-    sid = send_desk_text(prospect.phone, body, prospect=prospect, va_name=va_name)
+    sid = send_desk_text("+1" + to_digits, body, prospect=prospect, va_name=va_name)
     if not sid:
         return False, "text didn't go through"
     prospect.last_texted_at = now_naive
@@ -264,15 +275,23 @@ def maybe_send_followup_text(prospect, outcome, va_name):
 RETRY_DAYS = [3, 4]          # voicemail/no-answer touches after the first call
 MAX_SOFT_ATTEMPTS = 3        # then dead
 INTERESTED_FOLLOWUP_DAYS = 2
+PACKET_FOLLOWUP_DAYS = 2          # packet out → the 48-hour call
+NO_NEED_RETRY_DAYS = 30           # "nothing now" → next turn cycle
 VENDOR_LISTED_CHECKIN_DAYS = 21   # "still on file? anything coming up?"
 
-# Outcomes that count as a conversation that went our way.
-WIN_OUTCOMES = ("interested", "sent_link", "vendor_listed", "converted")
+# Outcomes that count: a dated next step, nothing softer. "interested" and
+# "sent the link" are gone — 62 of 93 such logs had no call behind them and
+# 90 had no note (1 Oct 2026). See close_desk.py.
+WIN_OUTCOMES = ("booked", "packet_requested", "callback")
 # Prospect statuses the desk keeps serving (everything else is done).
 WORKABLE_STATUSES = ("queued", "interested", "vendor_listed")
 
-OUTCOMES = {"interested", "sent_link", "vendor_listed", "voicemail", "no_answer",
-            "not_interested", "bad_number", "converted", "skip"}
+OUTCOMES = {"booked", "packet_requested", "vendor_listed", "no_need_now", "voicemail", "no_answer",
+            "not_interested", "dnc", "bad_number", "converted", "skip"}
+# Accepted from old clients / scripts, never offered by the desk.
+LEGACY_OUTCOMES = {"interested", "sent_link"}
+RETIRED_OUTCOME_ERROR = ("That outcome is retired. Log what actually happened: a booked pickup, "
+                         "a packet to a named person, or a callback with a name and time.")
 
 
 def _now():
@@ -320,24 +339,58 @@ def _workable_or_owed():
                and_(CallProspect.status == "converted", CallProspect.job_id.is_(None)))
 
 
-def next_card():
-    """Due follow-ups first (oldest due), then fresh rows by tier with
-    recurring-demand categories served before one-off categories."""
+def _side_sql():
+    """supply | demand for a row, in SQL, mirroring call_kit.detect_side's
+    first two rules (explicit side, then category)."""
+    from sqlalchemy import case, or_, func
+    from call_kit import _SUPPLY_CATS, _DEMAND_CATS
+    cat = func.lower(func.coalesce(CallProspect.category, ""))
+    is_demand = or_(*[cat.like("%" + k + "%") for k in _DEMAND_CATS])
+    is_supply = or_(*[cat.like("%" + k + "%") for k in _SUPPLY_CATS])
+    return case((CallProspect.side == "supply", "supply"), (CallProspect.side == "demand", "demand"),
+                (is_demand, "demand"), (is_supply, "supply"), else_="demand")
+
+
+def _multifamily_sql():
+    from sqlalchemy import case, or_, func
+    from close_desk import MULTIFAMILY_WORDS
+    cat = func.lower(func.coalesce(CallProspect.category, ""))
+    return case((or_(*[cat.like("%" + w + "%") for w in MULTIFAMILY_WORDS]), 0), else_=1)
+
+
+def next_card(side=None, exclude=()):
+    """Due follow-ups first (oldest due), then fresh rows: the side the
+    calling window wants, multifamily first around month end, then tier and
+    recurring-demand categories before one-off ones. `side` = "demand" |
+    "supply" filters hard; None lets the window order, not exclude.
+    `exclude` = ids another VA is holding."""
+    from sqlalchemy import case
+    from close_desk import calling_window, month_end_priority
     now_naive = _now().replace(tzinfo=None)
     workable = CallProspect.status.in_(WORKABLE_STATUSES)
-    due = (CallProspect.query
-           .filter(_workable_or_owed(),
-                   CallProspect.next_followup_at.isnot(None),
-                   CallProspect.next_followup_at <= now_naive)
-           .order_by(CallProspect.next_followup_at.asc())
-           .first())
+    side_sql = _side_sql()
+    free = CallProspect.id.notin_(list(exclude)) if exclude else True
+    due_q = (CallProspect.query
+             .filter(_workable_or_owed(), free,
+                     CallProspect.next_followup_at.isnot(None),
+                     CallProspect.next_followup_at <= now_naive))
+    if side in ("demand", "supply"):
+        due_q = due_q.filter(side_sql == side)
+    due = due_q.order_by(CallProspect.next_followup_at.asc()).first()
     if due:
         return due
-    return (CallProspect.query
-            .filter(workable, CallProspect.next_followup_at.is_(None))
-            .order_by(CallProspect.tier.asc(), _category_rank_sql().asc(),
-                      CallProspect.category.asc(), CallProspect.created_at.asc())
-            .first())
+    fresh_q = CallProspect.query.filter(workable, free, CallProspect.next_followup_at.is_(None))
+    if side in ("demand", "supply"):
+        fresh_q = fresh_q.filter(side_sql == side)
+    order = []
+    want = calling_window()["side"]
+    if want in ("demand", "supply"):
+        order.append(case((side_sql == want, 0), else_=1))
+    if month_end_priority():
+        order.append(_multifamily_sql())
+    order += [CallProspect.tier.asc(), _category_rank_sql().asc(),
+              CallProspect.category.asc(), CallProspect.created_at.asc()]
+    return fresh_q.order_by(*order).first()
 
 
 def day_stats():
@@ -373,6 +426,20 @@ def apply_outcome(prospect, outcome, note, va_name):
     if outcome in ("interested", "sent_link"):
         prospect.status = "interested"
         prospect.next_followup_at = now_naive + timedelta(days=INTERESTED_FOLLOWUP_DAYS)
+    elif outcome == "packet_requested":
+        # A named person asked for the packet: they're interested in the only
+        # sense that counts, and the 48-hour call is on the calendar.
+        prospect.status = "interested"
+        prospect.next_followup_at = now_naive + timedelta(days=PACKET_FOLLOWUP_DAYS)
+    elif outcome == "booked":
+        prospect.status = "converted"
+        prospect.next_followup_at = None
+    elif outcome == "no_need_now":
+        prospect.status = "queued" if prospect.status == "dead" else prospect.status
+        prospect.next_followup_at = now_naive + timedelta(days=NO_NEED_RETRY_DAYS)
+    elif outcome == "dnc":
+        prospect.status = "dead"
+        prospect.next_followup_at = None
     elif outcome in ("voicemail", "no_answer"):
         if prospect.attempts >= MAX_SOFT_ATTEMPTS:
             prospect.status = "dead"
@@ -448,7 +515,8 @@ def calls_next():
                                             "lead is" if len(waiting) == 1 else "leads are"))}), 200
 
     from crm import next_unclaimed
-    p = next_unclaimed(desk_va_name(data))
+    want_side = data.get("side") if data.get("side") in ("demand", "supply") else None
+    p = next_unclaimed(desk_va_name(data), side=want_side)
     stats = day_stats()
     if not p:
         nxt = (CallProspect.query
@@ -461,7 +529,9 @@ def calls_next():
             CallProspect.next_followup_at.isnot(None)).count()
         return jsonify({"empty": True, "stats": stats, "total": total, "scheduled": scheduled,
                         "next_due": nxt.next_followup_at.isoformat() if nxt else None}), 200
-    return jsonify({"card": _card_payload(p, desk_va_name(data)), "stats": stats}), 200
+    from close_desk import calling_window, month_end_priority
+    return jsonify({"card": _card_payload(p, desk_va_name(data)), "stats": stats,
+                    "window": dict(calling_window(), month_end=month_end_priority())}), 200
 
 
 @vacalls_bp.route("/api/va/calls/log", methods=["POST"])
@@ -472,13 +542,33 @@ def calls_log():
     if not ident:
         return jsonify({"error": "Sign in to the desk first."}), 401
     outcome = (data.get("outcome") or "").strip()
+    if outcome in LEGACY_OUTCOMES:
+        return jsonify({"error": RETIRED_OUTCOME_ERROR, "code": "retired_outcome"}), 400
     if outcome not in OUTCOMES:
         return jsonify({"error": "Unknown outcome."}), 400
+    from close_desk import missing_for, digits_of, is_email, textable
+    missing = missing_for(outcome, data)
+    if missing:
+        return jsonify({"error": "Before you can save that, I need " + " and ".join(missing) + ".",
+                        "code": "missing_fields", "missing": missing}), 400
     p = db.session.get(CallProspect, data.get("prospect_id") or "")
     if not p:
         return jsonify({"error": "Prospect not found — reload the page."}), 404
     note = (data.get("note") or "").strip()[:1000]
     va_name = desk_va_name(data)
+    # The person behind the outcome: name, role and a line that is theirs.
+    role = (data.get("role") or "").strip()
+    if data.get("contact_name"):
+        p.contact_name = (data.get("contact_name") or "").strip()[:120]
+    cell = digits_of(data.get("cell") or data.get("direct_phone"))
+    if len(cell) == 10 and cell != (p.phone_digits or ""):
+        p.direct_phone = "+1" + cell
+    if is_email(data.get("email") or ""):
+        p.email = (data.get("email") or "").strip().lower()[:255]
+    if role:
+        note = ("[{}] ".format(role) + note).strip()[:1000]
+    if outcome == "booked" and data.get("job_id"):
+        p.job_id = str(data.get("job_id"))[:36]
     apply_outcome(p, outcome, note, va_name)
     db.session.commit()
     audit("outcome", "prospect", p.id, {"outcome": outcome, "company": p.company})
@@ -825,6 +915,13 @@ def calls_callback():
         return jsonify({"error": "Prospect not found — reload the page."}), 404
     preset = (data.get("preset") or "").strip()
     at = (data.get("at") or "").strip()
+    from close_desk import missing_for
+    missing = missing_for("callback", data)
+    if missing:
+        return jsonify({"error": "A callback needs " + " and ".join(missing) + " — or it isn't one.",
+                        "code": "missing_fields", "missing": missing}), 400
+    if data.get("contact_name"):
+        p.contact_name = (data.get("contact_name") or "").strip()[:120]
     try:
         if preset in CALLBACK_PRESETS:
             days, hour = CALLBACK_PRESETS[preset]
@@ -839,6 +936,8 @@ def calls_callback():
     if when <= _now():
         return jsonify({"error": "That time already passed — pick a later one."}), 400
     note = (data.get("note") or "").strip()[:1000]
+    if data.get("role"):
+        note = ("[{}] ".format((data.get("role") or "").strip()[:40]) + note).strip()[:1000]
     va_name = desk_va_name(data)
     schedule_callback(p, when, note, va_name)
     db.session.commit()
@@ -1236,7 +1335,7 @@ CALLS_HTML = r"""<!doctype html>
 <script src="/static/desk-shell.js?v=4" defer></script>
 <link rel="stylesheet" href="/static/desk-gate.css?v=3" />
 <script src="/static/desk-gate.js?v=2" defer></script>
-<link rel="stylesheet" href="/va/calls.css?v=31" />
+<link rel="stylesheet" href="/va/calls.css?v=32" />
 <link rel="stylesheet" href="/static/desk-class.css?v=3" />
 <link rel="stylesheet" href="/static/desk-runway.css?v=1" />
 <script src="/static/desk-runway.js?v=1" defer></script>
@@ -1281,7 +1380,8 @@ CALLS_HTML = r"""<!doctype html>
       <button class="back" id="queue-toggle" type="button" aria-label="Your queue">☰</button>
       <button class="back" id="search-toggle" type="button" aria-label="Find a business">⌕</button>
     </header>
-    <div class="statsbar" id="daybar2">—</div>
+    <div class="statsbar" id="daybar2">—</div><button class="win-chip" id="win-chip" type="button" hidden title="The hours that connect. Tap to switch who you're calling."><span class="win-dot"></span><span id="win-label"></span><span class="win-side" id="win-side"></span></button>
+
     <div id="callstrip" class="callstrip" hidden>
       <div class="cs-dot"></div>
       <div class="cs-txt"><div class="cs-who" id="cs-who">—</div><div class="cs-state" id="cs-state">Calling…</div></div>
@@ -1435,7 +1535,20 @@ CALLS_HTML = r"""<!doctype html>
         </label>
 
         <div id="callback" class="callback" hidden>
-          <div class="cb-l">They asked you to call back</div>
+          <div class="cb-l">Callback — with a name and a time, or it isn't one</div>
+          <div class="oc-fields">
+            <input id="cb-name" type="text" placeholder="Who you're calling back" autocomplete="off" />
+            <select id="cb-role" aria-label="Their role">
+              <option value="">Their role…</option>
+              <option value="maintenance_supervisor">Maintenance supervisor</option>
+              <option value="community_manager">Community manager</option>
+              <option value="regional">Regional / portfolio</option>
+              <option value="owner">Owner</option>
+              <option value="realtor">Realtor / agent</option>
+              <option value="office_manager">Office manager</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
           <div class="cb-row">
             <button type="button" class="cb" data-p="tomorrow_am">Tomorrow 9am</button>
             <button type="button" class="cb" data-p="tomorrow_pm">Tomorrow 2pm</button>
@@ -1445,9 +1558,38 @@ CALLS_HTML = r"""<!doctype html>
           </div>
         </div>
         <div id="outcomes" class="outcomes" hidden>
-          <button class="oc oc-good" data-o="interested">Interested</button>
-          <button class="oc oc-good" data-o="sent_link">Sent the link</button>
-          <button class="oc oc-good" data-o="vendor_listed">On their vendor list</button>
+          <div class="oc-lead">Every call ends in one of three things. Pick what actually happened.</div>
+          <button class="oc oc-win" data-o="booked" id="oc-booked"><b>Booked a pickup</b><small>opens dispatch, prefilled — a truck date is the win</small></button>
+          <button class="oc oc-win" data-o="packet_requested" id="oc-packet"><b>Packet to a person</b><small>name, role, their cell — text goes out now</small></button>
+          <button class="oc oc-win" data-o="callback" id="oc-callback"><b>Callback</b><small>a name, a role, a day and a time</small></button>
+          <div class="oc-form" id="oc-packet-form" hidden>
+            <input id="pk-name" type="text" placeholder="Their name" autocomplete="off" />
+            <select id="pk-role" aria-label="Their role">
+              <option value="">Their role…</option>
+              <option value="maintenance_supervisor">Maintenance supervisor</option>
+              <option value="community_manager">Community manager</option>
+              <option value="regional">Regional / portfolio</option>
+              <option value="owner">Owner</option>
+              <option value="realtor">Realtor / agent</option>
+              <option value="office_manager">Office manager</option>
+              <option value="other">Other</option>
+            </select>
+            <input id="pk-cell" type="tel" placeholder="Their cell (text goes here)" autocomplete="off" />
+            <input id="pk-email" type="email" placeholder="or their own email — not info@" autocomplete="off" />
+            <div class="oc-form-row">
+              <button type="button" class="oc oc-win oc-save" id="pk-save">Save + send the packet</button>
+              <button type="button" class="oc-cancel" id="pk-cancel">Cancel</button>
+            </div>
+          </div>
+          <div class="oc-form oc-booked" id="oc-booked-form" hidden>
+            <p>Dispatch opened in a new tab with this card filled in. Book it there — when it saves, this card is marked converted on its own.</p>
+            <div class="oc-form-row">
+              <button type="button" class="oc oc-win oc-save" id="bk-done">Booked — deal me the next card</button>
+              <button type="button" class="oc-cancel" id="bk-cancel">Didn't book</button>
+            </div>
+          </div>
+          <button class="oc" data-o="vendor_listed">On their vendor list<small>neutral — not a win</small></button>
+          <button class="oc" data-o="no_need_now">Nothing now<small>back in 30 days, next turn</small></button>
           <button class="oc" data-o="voicemail">Voicemail</button>
           <button class="oc" data-o="no_answer">No answer</button>
           <button class="oc oc-bad" data-o="not_interested">Not interested</button>
@@ -1474,6 +1616,7 @@ CALLS_HTML = r"""<!doctype html>
         </div>
         <div class="pdbar" id="pdbar" hidden>
           <div class="pd-txt" id="pd-txt">Power dial is on</div>
+          <div class="cp-caller" id="cp-caller" hidden></div>
           <div class="pd-btns">
             <button type="button" class="pd-btn" id="pd-record">Record voicemail</button>
             <button type="button" class="pd-btn" id="pd-play" hidden>Play</button>
@@ -1545,7 +1688,7 @@ CALLS_HTML = r"""<!doctype html>
 <script src="/static/desk-work.js?v=6"></script>
 <script src="/static/desk-leads.js?v=5"></script>
 <script src="/static/desk-class.js?v=2"></script>
-<script src="/va/calls.js?v=32"></script>
+<script src="/va/calls.js?v=33"></script>
 </body>
 </html>
 """
@@ -1613,6 +1756,42 @@ CALLS_CSS = r"""/* Call Desk — layers over /va/app.css tokens (frosted glass o
 .notewrap b{color:var(--muted);font-family:var(--body);font-weight:500;font-size:12.5px;
   letter-spacing:0;text-transform:none;display:block;margin-bottom:3px}
 .outcomes{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.oc-lead{grid-column:1/-1;font:500 12.5px/1.35 var(--body);color:var(--muted);padding:2px 2px 0}
+.oc small{display:block;font:500 11.5px/1.25 var(--body);color:var(--muted);margin-top:3px;letter-spacing:0}
+.oc-win{grid-column:1/-1;text-align:left;padding:12px 14px;color:var(--ink);border:1.5px solid rgba(var(--ok-rgb),.6);background:rgba(var(--ok-rgb),.08)}
+.oc-win b{display:block;font-weight:700;font-size:14px}
+.oc-win:hover{border-color:var(--ok);background:rgba(var(--ok-rgb),.10)}
+.oc-form{grid-column:1/-1;display:grid;gap:8px;padding:12px;border-radius:16px;background:var(--glass-strong);border:1px solid var(--glass-border)}
+.oc-form input,.oc-form select,.oc-fields input,.oc-fields select{width:100%;padding:11px 12px;border-radius:12px;border:1px solid var(--glass-border);background:rgba(255,255,255,.7);font:500 14px var(--body);color:var(--ink)}
+.oc-form input:focus,.oc-form select:focus,.oc-fields input:focus,.oc-fields select:focus{outline:2px solid rgba(var(--info-rgb),.45);outline-offset:1px}
+.oc-form p{margin:0;font:500 13.5px/1.45 var(--body);color:var(--ink)}
+.oc-form-row{display:flex;gap:8px}
+.oc-form-row .oc-save{flex:1;grid-column:auto}
+.oc-cancel{padding:10px 12px;border-radius:12px;border:1px solid var(--glass-border);background:transparent;color:var(--muted);font:600 13px var(--body);cursor:pointer}
+.oc-fields{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 8px}
+.is-missing{animation:oc-shake .35s ease}
+@keyframes oc-shake{0%,100%{transform:none}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.win-chip{display:inline-flex;align-items:center;gap:7px;padding:5px 10px;margin:6px 0 0;max-width:100%;border-radius:999px;border:1px solid var(--glass-border);background:var(--raise);color:var(--ink);font:600 12.5px var(--body);cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.win-chip > span:not(.win-dot){overflow:hidden;text-overflow:ellipsis}
+.win-chip[hidden]{display:none}
+.win-dot{width:8px;height:8px;border-radius:50%;background:var(--muted)}
+.win-chip.is-demand .win-dot{background:var(--ok)}
+.win-chip.is-supply .win-dot{background:var(--info)}
+.win-chip.is-inbox .win-dot{background:var(--warn)}
+.win-chip.is-monthend{border-color:rgba(var(--warn-rgb),.5)}
+.win-side{color:var(--muted);font-weight:500}
+.kt-forbid{margin-top:10px;padding:10px 12px;border-radius:14px;border:1px solid rgba(var(--danger-rgb),.35);background:rgba(var(--danger-rgb),.06)}
+.kt-forbid h4{margin:0 0 6px;font:700 12.5px var(--body);color:var(--danger);letter-spacing:0}
+.kt-forbid ul{margin:0;padding:0 0 0 16px}
+.kt-forbid li{font:500 12.5px/1.4 var(--body);color:var(--ink);margin:0 0 4px}
+.kt-forbid li b{color:var(--danger);font-weight:700}
+.kt-forbid li span{color:var(--muted)}
+.kt-step.kt-trigger .kt-v,.kt-step.kt-close .kt-v{font-weight:600}
+.cp-caller{display:flex;flex-wrap:wrap;gap:6px;padding:6px 0}
+.cp-caller[hidden]{display:none}
+.cp-caller span{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;background:rgba(var(--warn-rgb),.12);border:1px solid rgba(var(--warn-rgb),.45);color:var(--ink);font:600 12.5px var(--body)}
+.cp-caller span b{text-transform:none;color:var(--warn)}
+.sr.sr-bot{opacity:.55}
 .oc{padding:14px 10px;font-family:var(--body);font-weight:600;font-size:13.5px;
   letter-spacing:0;color:var(--ink);background:var(--raise);
   border:1px solid var(--glass-border);border-radius:var(--r-pill);cursor:pointer;
@@ -2208,6 +2387,23 @@ CALLS_JS = r"""(function(){
 
   var capLabel = "";
   var lastStats = null;
+  var SIDE_KEY = "umuve_desk_side", lastWindow = null;
+  function deskSide(){ try { return localStorage.getItem(SIDE_KEY) || ""; } catch(e){ return ""; } }
+  function setWindow(w){
+    var chip = document.getElementById("win-chip"); if(!chip || !w) return;
+    lastWindow = w;
+    var side = deskSide();
+    chip.className = "win-chip is-" + (w.side || "any") + (w.month_end ? " is-monthend" : "");
+    document.getElementById("win-label").textContent = w.label + (w.month_end ? " · month end: multifamily first" : "");
+    document.getElementById("win-side").textContent = side === "supply" ? " · dealing haulers" : side === "demand" ? " · dealing customers" : "";
+    chip.hidden = false;
+  }
+  document.getElementById("win-chip").addEventListener("click", function(){
+    var cur = deskSide(), nxt = cur === "" ? "demand" : cur === "demand" ? "supply" : "";
+    try { if(nxt) localStorage.setItem(SIDE_KEY, nxt); else localStorage.removeItem(SIDE_KEY); } catch(e){}
+    showToast(nxt === "demand" ? "Dealing customers only." : nxt === "supply" ? "Dealing haulers only." : "Dealing whatever the window wants.");
+    if(lastWindow) setWindow(lastWindow);
+  });
   function setDaybar(stats){
     if(stats) lastStats = stats;
     stats = lastStats;
@@ -2371,8 +2567,9 @@ CALLS_JS = r"""(function(){
 
   window.addEventListener("desk:refresh", function(){ fetchNext(); });
   function fetchNext(){
-    post("/api/va/calls/next", {}).then(function(r){
+    post("/api/va/calls/next", {side: deskSide() || null}).then(function(r){
       if(r.status !== 200){ fail(r.status, r.body); return; }
+      if(r.body && r.body.window) setWindow(r.body.window);
       render(r.body);
     }).catch(function(){ fail(0, {error: "No connection — check your internet and try again."}); });
   }
@@ -2397,26 +2594,78 @@ CALLS_JS = r"""(function(){
     localStorage.setItem(TEXT_KEY, sendText.checked ? "1" : "0");
   });
 
-  document.getElementById("outcomes").addEventListener("click", function(e){
-    var btn = e.target.closest("button");
-    if(!btn || busy || !current) return;
+  // ---- the three wins need fields; everything else is one tap ----
+  var pkForm = document.getElementById("oc-packet-form"), bkForm = document.getElementById("oc-booked-form");
+  function hideWinForms(){ pkForm.hidden = true; bkForm.hidden = true; }
+  function shake(id){ var n = document.getElementById(id); if(!n) return; n.classList.add("is-missing"); setTimeout(function(){ n.classList.remove("is-missing"); }, 400); n.focus(); }
+  function openDispatchPrefilled(){
+    var c = current; if(!c) return;
+    var noteNow = document.getElementById("note").value.trim();
+    var q = new URLSearchParams({book: "1", prospect_id: c.id, name: c.contact_name || "",
+      phone: String(c.direct_phone || c.phone || "").replace(/\D/g, "").slice(-10),
+      company: c.company || "",
+      notes: ("Call Desk" + (c.contact_name ? " · ask for " + c.contact_name : "") + (noteNow ? " · " + noteNow : "")).slice(0, 500)});
+    window.open("/va/dispatch?" + q.toString(), "_blank", "noopener");
+  }
+  function logOutcome(outcome, extra){
+    if(!current || busy) return;
     setBusy(true);
-    post("/api/va/calls/log", {
-      prospect_id: current.id,
-      outcome: btn.dataset.o,
-      note: document.getElementById("note").value.trim(),
-      send_text: sendText.checked && btn.dataset.o !== "skip"
-    }).then(function(r){
+    var body = {prospect_id: current.id, outcome: outcome, note: document.getElementById("note").value.trim(),
+                send_text: sendText.checked && outcome !== "skip"};
+    Object.keys(extra || {}).forEach(function(k){ body[k] = extra[k]; });
+    post("/api/va/calls/log", body).then(function(r){
       setBusy(false);
-      if(r.status !== 200){ fail(r.status, r.body); return; }
+      if(r.status !== 200){
+        if(r.body && r.body.code === "missing_fields"){ showToast(r.body.error); return; }
+        fail(r.status, r.body); return;
+      }
+      hideWinForms();
       pdArmed = true;
-      if(r.body.texted){ showToast("Logged — and the follow-up text is on its way."); }
-      else if(sendText.checked && r.body.text_reason && btn.dataset.o !== "skip" &&
+      if(r.body.texted){ showToast("Logged — the text just went to their cell."); }
+      else if(sendText.checked && r.body.text_reason && outcome !== "skip" &&
               r.body.text_reason !== "no text for this outcome"){
         showToast("Logged. No text went out: " + r.body.text_reason + ".");
       }
       render(r.body);
     }).catch(function(){ setBusy(false); fail(0, {error: "No connection — that call wasn't logged. Try again."}); });
+  }
+  document.getElementById("pk-save").addEventListener("click", function(){
+    var name = document.getElementById("pk-name").value.trim(), role = document.getElementById("pk-role").value,
+        cell = document.getElementById("pk-cell").value.replace(/\D/g, ""), email = document.getElementById("pk-email").value.trim();
+    if(!name){ shake("pk-name"); showToast("Whose packet is it? A name, not a department."); return; }
+    if(!role){ shake("pk-role"); showToast("Their role — who can actually book a truck?"); return; }
+    if(cell.length !== 10 && !/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(email)){ shake("pk-cell"); showToast("Their cell, or their own email. Ask: what's the best cell to text that to?"); return; }
+    if(cell.length !== 10 && /^(info|office|leasing|contact|admin|hello|sales|support|frontdesk|reception|team|mail|general|service|manager|management|rentals?)@/i.test(email)){ shake("pk-email"); showToast("A shared mailbox isn't a person. Whose inbox?"); return; }
+    logOutcome("packet_requested", {contact_name: name, role: role, cell: cell, email: email});
+  });
+  document.getElementById("pk-cancel").addEventListener("click", hideWinForms);
+  document.getElementById("bk-done").addEventListener("click", function(){
+    if(!current) return;
+    post("/api/va/calls/get", {prospect_id: current.id}).then(function(r){
+      if(r.status === 200 && r.body.card && r.body.card.job_id){ hideWinForms(); pdArmed = true; showToast("Booked — nice. Dealing the next card."); fetchNext(); }
+      else { showToast("Dispatch hasn't saved a job for them yet — finish the booking there, then tap this again."); }
+    }).catch(function(){});
+  });
+  document.getElementById("bk-cancel").addEventListener("click", hideWinForms);
+
+  document.getElementById("outcomes").addEventListener("click", function(e){
+    var btn = e.target.closest("button[data-o]");
+    if(!btn || busy || !current) return;
+    var o = btn.dataset.o;
+    if(o === "booked"){ hideWinForms(); openDispatchPrefilled(); bkForm.hidden = false; return; }
+    if(o === "packet_requested"){
+      hideWinForms(); pkForm.hidden = false;
+      document.getElementById("pk-name").value = current.contact_name || "";
+      document.getElementById("pk-cell").value = current.direct_phone ? String(current.direct_phone).replace(/\D/g, "").slice(-10) : "";
+      document.getElementById("pk-email").value = (current.email && !/^(info|office|leasing|contact|admin|hello)@/i.test(current.email)) ? current.email : "";
+      document.getElementById("pk-name").focus(); return;
+    }
+    if(o === "callback"){
+      hideWinForms(); var cb = document.getElementById("callback"); cb.hidden = !cb.hidden;
+      if(!cb.hidden){ document.getElementById("cb-name").value = current.contact_name || ""; document.getElementById("cb-name").focus(); }
+      return;
+    }
+    logOutcome(o, {});
   });
 
   // ---- decision-maker capture + info-sent status ----
@@ -2612,14 +2861,24 @@ CALLS_JS = r"""(function(){
     kitSideBtn.textContent = d.side === "supply" ? "Recruiting a hauler" : "Selling a customer";
     kitSideBtn.className = "kit-side " + d.side;
     if(kitTab === "track"){
-      var steps = [["Open", d.track.opener], ["Ask", d.track.discover], ["Pitch", d.track.pitch], ["Close", d.track.close]];
+      var t = d.track;
+      var steps = t.role
+        ? [["Open", t.opener, ""], ["Who", t.role, ""], ["Say", t.burst, ""], ["Trigger", t.trigger, "kt-trigger"], ["Price", t.price, ""], ["Close", t.close, "kt-close"], ["Before you hang up", t.capture, ""]]
+        : [["Open", t.opener, ""], ["Ask", t.discover, ""], ["Pitch", t.pitch, ""], ["Close", t.close, "kt-close"]];
       steps.forEach(function(st){
-        var row = el("div", "kt-step"); row.appendChild(el("div", "kt-k", st[0]));
+        if(!st[1]) return;
+        var row = el("div", "kt-step" + (st[2] ? " " + st[2] : "")); row.appendChild(el("div", "kt-k", st[0]));
         var v = el("div", "kt-v");
         if(Array.isArray(st[1])){ var ol = el("ol"); st[1].forEach(function(q){ ol.appendChild(el("li", null, q)); }); v.appendChild(ol); }
         else v.textContent = st[1];
         row.appendChild(v); kitBody.appendChild(row);
       });
+      if(t.forbidden && t.forbidden.length){
+        var fb = el("div", "kt-forbid"); fb.appendChild(el("h4", null, "Don't say"));
+        var ul = el("ul");
+        t.forbidden.forEach(function(f){ var li = el("li"); li.appendChild(el("b", null, f.line)); li.appendChild(document.createTextNode(" — ")); li.appendChild(el("span", null, f.why)); ul.appendChild(li); });
+        fb.appendChild(ul); kitBody.appendChild(fb);
+      }
     } else if(kitTab === "objections"){
       d.objections.forEach(function(o){
         var det = el("details", "kt-obj"); det.appendChild(el("summary", null, o.say));
@@ -2998,13 +3257,18 @@ CALLS_JS = r"""(function(){
   var cbBox = document.getElementById("callback");
   function scheduleCallback(payload){
     if(!current || busy) return;
+    var who = document.getElementById("cb-name").value.trim(), role = document.getElementById("cb-role").value;
+    if(!who){ shake("cb-name"); showToast("Who are you calling back? A name — ask for it."); return; }
+    if(!role){ shake("cb-role"); showToast("Their role. Leasing can't book a truck."); return; }
     setBusy(true);
     payload.prospect_id = current.id;
+    payload.contact_name = who; payload.role = role;
     payload.note = document.getElementById("note").value.trim();
     post("/api/va/calls/callback", payload).then(function(r){
       setBusy(false);
       if(r.status !== 200){ fail(r.status, r.body); return; }
       showToast("Callback set for " + r.body.callback_local + " — it'll be dealt back to you then.");
+      hideWinForms(); document.getElementById("callback").hidden = true;
       pdArmed = true; render(r.body);
     }).catch(function(){ setBusy(false); fail(0, {error: "No connection — the callback wasn't saved. Try again."}); });
   }
@@ -3111,7 +3375,7 @@ CALLS_JS = r"""(function(){
     post("/api/va/desk/thread", {prospect_id: c.id}).then(function(r){
       if(r.status !== 200 || threadFor !== c.id) return;
       renderThread(r.body.messages);
-      setUnread(r.body.unread);
+      setUnread(r.body.human_unread != null ? r.body.human_unread : r.body.unread);
       if(!deskReady) thNum.textContent = r.body.desk_number ? "on " + prettyNum(r.body.desk_number) : "on the Umuve number";
     }).catch(function(){});
   }
@@ -3158,7 +3422,7 @@ CALLS_JS = r"""(function(){
   function loadInbox(){
     post("/api/va/desk/inbox", {}).then(function(r){
       if(r.status !== 200){ fail(r.status, r.body); return; }
-      setUnread(r.body.unread);
+      setUnread(r.body.human_unread != null ? r.body.human_unread : r.body.unread);
       inboxList.textContent = "";
       var items = r.body.items || [];
       if(!items.length){
@@ -3167,7 +3431,7 @@ CALLS_JS = r"""(function(){
         inboxList.appendChild(none); return;
       }
       items.forEach(function(it){
-        var b = document.createElement("button"); b.className = "sr" + (it.unread ? " sr-unread" : ""); b.type = "button";
+        var b = document.createElement("button"); b.className = "sr" + (it.unread ? " sr-unread" : "") + (it.bot ? " sr-bot" : ""); b.type = "button";
         var wrap = document.createElement("div"); wrap.className = "sr-w";
         var t = document.createElement("div"); t.className = "sr-t"; t.textContent = it.company || it.phone;
         var d = document.createElement("div"); d.className = "sr-d";
@@ -3224,7 +3488,7 @@ CALLS_JS = r"""(function(){
       post("/api/va/desk/unread", {}).then(function(r){
         if(r.status !== 200) return;
         var before = unreadNow();
-        setUnread(r.body.unread);
+        setUnread(r.body.human_unread != null ? r.body.human_unread : r.body.unread);
         if(r.body.unread > before){
           if(current) loadThread(current);
           if(!inboxbox.hidden) loadInbox();
@@ -3423,6 +3687,12 @@ CALLS_JS = r"""(function(){
         document.getElementById("cp-cue-q").textContent = "“" + cue.quote + "”";
         document.getElementById("cp-cue-r").textContent = cue.reply;
         cpCue.hidden = false;
+      }
+      var cc = document.getElementById("cp-caller"), cues = r.body.caller_cues || [];
+      if(cc){
+        cc.textContent = "";
+        cues.forEach(function(c){ var sp = el("span"); sp.appendChild(el("b", null, c.cue)); sp.appendChild(document.createTextNode(" " + c.say)); cc.appendChild(sp); });
+        cc.hidden = cues.length === 0;
       }
     }).catch(function(){});
   }

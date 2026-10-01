@@ -63,7 +63,8 @@ def test_transcript_ingest_and_live_cue(client, prospect):
     _content(client, "CAcp", "outbound_track", "Yeah we already have a guy for that.", 3)
     r = _va(client, "/api/va/desk/transcript", {"prospect_id": prospect.id, "after_seq": -1}).get_json()
     assert r["call_sid"] == "CAcp" and [l["track"] for l in r["lines"]] == ["va", "them"]
-    assert r["cue"]["say"] == "We already have a guy." and "Keep him" in r["cue"]["reply"]
+    assert r["cue"]["say"] == "We already have someone." and "How's that working out" in r["cue"]["reply"]
+    assert "caller_cues" in r   # spell-it / disclosure cues arrive once the call is 20s in
     assert r["cue"]["quote"].startswith("Yeah we already")
     # incremental fetch returns only new lines
     _content(client, "CAcp", "outbound_track", "How much does it cost?", 4)

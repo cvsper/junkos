@@ -26,14 +26,17 @@ logger = logging.getLogger(__name__)
 
 # (regex on what the PROSPECT said, objection "say" text in call_kit)
 _TRIGGERS_DEMAND = [
-    (r"\b(already|got|have)\b.{0,25}\b(a guy|someone|somebody|a company|a vendor|our own|in.?house)\b", "We already have a guy."),
-    (r"\b(send|email|shoot)\b.{0,20}\b(me|us)\b.{0,20}\b(something|info|information|details|an email)\b", "Just send me something."),
-    (r"\bhow much\b|\bwhat('s| is| does)\b.{0,15}\b(cost|price|charge|rate)", "How much?"),
-    (r"\bnot interested\b|\bno thank", "Not interested."),
-    (r"\bwho (is|are) (this|you)\b|\bhow did you get\b|\bwhere did you get my\b", "Who is this? How did you get my number?"),
-    (r"\bcall (me )?back\b|\bbusy right now\b|\bbad time\b|\bnot a good time\b|\blater\b", "Call me back later."),
+    (r"\b(already|got|have|use|using|work with)\b.{0,30}\b(a guy|someone|somebody|a company|a vendor|our own|in.?house|waste management|the city|public works|a contract)\b|\bwe'?re (good|set|fine|covered)\b", "We already have someone."),
+    (r"\bmaintenance\b.{0,25}\b(does|do|handles?|takes? care|got it)\b|\bour (guys|team|crew) (do|does|handle)\b", "Maintenance handles it."),
+    (r"\bcorporate\b|\bapproved vendor\b|\bvendor (list|portal|approval)\b|\bcompliance depot\b|\bvendor ?cafe\b|\bnet ?vendor\b|\bregional\b.{0,20}\b(approv|decid)", "Corporate approves vendors."),
+    (r"\b(send|email|shoot)\b.{0,20}\b(me|us)\b.{0,20}\b(something|info|information|details|an email|your info|a flyer)\b|\binfo@|\bemail it\b", "Just send me your info."),
+    (r"\bhow much\b|\bwhat('s| is| does| are)\b.{0,15}\b(cost|price|charge|rate)|\bpricing\b|\bper unit\b", "How much?"),
+    (r"\bnot interested\b|\bno thank|\bnot (right )?now\b|\bnot a priority\b|\bwe don'?t need\b", "Not interested / not now."),
+    (r"\bwho (is|are) (this|you)\b|\bhow did you get\b|\bwhere did you get my\b|\bwhere are you calling from\b|\bwhat company\b", "Who is this?"),
+    (r"\bcall (me )?back\b|\bbusy right now\b|\bbad time\b|\bnot a good time\b|\bin a meeting\b|\blater\b", "Call me back later."),
     (r"\bdumpster\b|\broll.?off\b", "We use a dumpster."),
-    (r"\binsur(ed|ance)\b|\blicens(ed|e)\b", "Are you insured?"),
+    (r"\binsur(ed|ance)\b|\blicens(ed|e)\b|\bcoi\b|\bw-?9\b|\bcertificate\b", "Are you insured? Send the COI."),
+    (r"\bleasing\b.{0,20}\b(office|agent)\b|\bi'?m (just|only) (the|a)\b|\bi don'?t handle\b|\bnot my (department|call)\b", "I'm not the right person."),
 ]
 _TRIGGERS_SUPPLY = [
     (r"\bcatch\b|\bwhat do you (take|charge|get)\b|\byour cut\b|\bpercent", "What's the catch? What do you take?"),
@@ -71,6 +74,29 @@ def cue_for(lines, kit, side):
         if say and say in replies:
             return {"say": say, "reply": replies[say], "quote": ln.get("text", "")[:160]}
     return None
+
+
+_SPELLED = re.compile(r"\bu[\s\-\.]*m[\s\-\.]*u[\s\-\.]*v[\s\-\.]*e\b|\bu\.m\.u\.v\.e\b|\byou[\s\-]*move\b.{0,12}\bu\b", re.I)
+_DISCLOSED = re.compile(r"\brecord(ed|ing)\b|\bon a recorded line\b|\bthis call (is|may be) recorded\b", re.I)
+_MISHEARD = re.compile(r"\byou ?move\b|\bu ?move\b|\bemove\b|\bamove\b|\bimmove\b|\bwho(se)? (is|was) (this|that)\b", re.I)
+
+
+def caller_cues(lines, seconds_in=None):
+    """Cues about the VA's own side of the call, from what she has said so far.
+    Brand misheard on 9 of 21 scored calls ("you move", "EMOV"); recording
+    notice given on 0 of 21. → list of {"cue", "say"}; empty when fine."""
+    you = " ".join(l.get("text", "") for l in (lines or []) if l.get("track") == "va")
+    them = " ".join(l.get("text", "") for l in (lines or []) if l.get("track") == "them")
+    out = []
+    started = bool(you.strip())
+    late = (seconds_in is None) or (seconds_in >= 20)
+    if started and late and not _SPELLED.search(you):
+        out.append({"cue": "spell it", "say": "…with Umuve — that's U-M-U-V-E, our trucks are in West Palm."})
+    if started and late and not _DISCLOSED.search(you):
+        out.append({"cue": "disclosure", "say": "Quick heads-up, this call's recorded for quality."})
+    if _MISHEARD.search(them) and not any(c["cue"] == "spell it" for c in out):
+        out.append({"cue": "spell it", "say": "They didn't catch the name — Umuve, U-M-U-V-E."})
+    return out
 
 
 def _heuristic(lines, prospect):

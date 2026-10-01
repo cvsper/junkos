@@ -54,13 +54,13 @@ def test_jwt_replaces_passcode_and_names_the_va(client, accounts):
     p = CallProspect(tier=1, category="storage", company="X Storage", phone="5615550100", phone_digits="5615550100")
     db.session.add(p); db.session.commit()
     # no code in the body, no va_name typed — identity comes from the token
-    r = client.post("/api/va/calls/log", json={"prospect_id": p.id, "outcome": "interested"}, headers=_h(tok))
+    r = client.post("/api/va/calls/log", json={"prospect_id": p.id, "outcome": "vendor_listed"}, headers=_h(tok))
     assert r.status_code == 200
     from models import CallAttempt
     assert CallAttempt.query.filter_by(prospect_id=p.id).one().va_name == "Tracy"
     ev = AuditEvent.query.filter_by(action="outcome").one()
     assert ev.actor_name == "Tracy" and ev.actor_user_id == accounts["tracy"].id and ev.via == "jwt"
-    assert ev.target_id == p.id and ev.meta["outcome"] == "interested"
+    assert ev.target_id == p.id and ev.meta["outcome"] == "vendor_listed"
     # clock uses the account name too
     r = client.post("/api/va/time/clock", json={"action": "in"}, headers=_h(tok)).get_json()
     assert r["on_clock"] and r["va_name"] == "Tracy"
