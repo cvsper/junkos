@@ -107,8 +107,17 @@ def test_kit_auth(client, demand):
     assert _va(client, "/api/va/calls/kit", {"prospect_id": "missing"}).status_code == 404
 
 
+def _spoke(prospect, seconds=90):
+    """A desk call that connected a minute ago — what a callback follows."""
+    from models import DeskActivity
+    db.session.add(DeskActivity(prospect_id=prospect.id, phone_digits=prospect.phone_digits, kind="call",
+                                direction="out", status="completed", duration=seconds))
+    db.session.commit()
+
+
 # ------------------------------------------------------------------ callback scheduler
 def test_callback_preset_pins_followup_and_logs(client, demand):
+    _spoke(demand)
     resp = _va(client, "/api/va/calls/callback",
                {"prospect_id": demand.id, "preset": "tomorrow_pm", "note": "asked for Pat",
                 "contact_name": "Pat", "role": "community_manager"})
@@ -127,6 +136,7 @@ def test_callback_preset_pins_followup_and_logs(client, demand):
 
 
 def test_callback_custom_time_is_florida_local(client, demand):
+    _spoke(demand)
     at = (datetime.now(timezone.utc) + timedelta(days=3)).strftime("%Y-%m-%dT10:30")
     body = _va(client, "/api/va/calls/callback", {"prospect_id": demand.id, "at": at,
                                                    "contact_name": "Pat", "role": "owner"}).get_json()
@@ -137,6 +147,7 @@ def test_callback_custom_time_is_florida_local(client, demand):
 
 
 def test_callback_revives_dead_card(client, demand):
+    _spoke(demand)
     demand.status = "dead"; db.session.commit()
     _va(client, "/api/va/calls/callback", {"prospect_id": demand.id, "preset": "next_week",
                                             "contact_name": "Pat", "role": "maintenance_supervisor"})
@@ -145,6 +156,7 @@ def test_callback_revives_dead_card(client, demand):
 
 
 def test_callback_rejects_past_and_garbage(client, demand):
+    _spoke(demand)
     assert _va(client, "/api/va/calls/callback", {"prospect_id": demand.id}).status_code == 400
     assert _va(client, "/api/va/calls/callback", {"prospect_id": demand.id, "at": "2020-01-01T09:00"}).status_code == 400
     assert _va(client, "/api/va/calls/callback", {"prospect_id": demand.id, "at": "not a date"}).status_code == 400

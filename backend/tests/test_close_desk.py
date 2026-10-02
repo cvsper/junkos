@@ -206,9 +206,22 @@ def test_copilot_cues_map_the_new_objections_and_watch_the_caller():
 
 # --- callbacks need a person --------------------------------------------------
 def test_callback_endpoint_needs_who_and_role(client, prospect):
+    from models import DeskActivity
     base = {"code": "test-code", "va_name": "Tracy", "prospect_id": prospect.id, "preset": "tomorrow_am"}
     r = client.post("/api/va/calls/callback", json=base)
     assert r.status_code == 400 and r.get_json()["code"] == "missing_fields"
+    # Name and role, but nobody picked up: not a callback. (2 Oct: four
+    # "David, owner" callbacks on numbers no call had reached.)
+    r = client.post("/api/va/calls/callback", json=dict(base, contact_name="David", role="owner"))
+    assert r.status_code == 400 and r.get_json()["code"] == "no_conversation"
+    db.session.add(DeskActivity(prospect_id=prospect.id, phone_digits=prospect.phone_digits, kind="call",
+                                direction="out", status="completed", duration=6))     # a ring-out
+    db.session.commit()
+    r = client.post("/api/va/calls/callback", json=dict(base, contact_name="David", role="owner"))
+    assert r.status_code == 400 and r.get_json()["code"] == "no_conversation"
+    db.session.add(DeskActivity(prospect_id=prospect.id, phone_digits=prospect.phone_digits, kind="call",
+                                direction="out", status="completed", duration=95))    # a conversation
+    db.session.commit()
     r = client.post("/api/va/calls/callback", json=dict(base, contact_name="Luis Ortega", role="maintenance_supervisor"))
     assert r.status_code == 200, r.get_json()
     db.session.refresh(prospect)

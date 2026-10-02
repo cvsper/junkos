@@ -879,6 +879,31 @@ CALLBACK_PRESETS = {
 }
 
 
+CALLBACK_NEEDS_CALL_MINUTES = 45
+CALLBACK_MIN_TALK_SECONDS = 15
+
+
+def _spoke_recently(prospect):
+    """Did a desk call to this prospect connect in the last 45 minutes? A
+    live call (no duration yet) counts; a 6-second ring-out does not."""
+    from models import DeskActivity
+    since = (_now() - timedelta(minutes=CALLBACK_NEEDS_CALL_MINUTES)).replace(tzinfo=None)
+    digits = prospect.phone_digits or ""
+    direct = "".join(ch for ch in (prospect.direct_phone or "") if ch.isdigit())[-10:]
+    nums = [d for d in (digits, direct) if len(d) == 10]
+    if not nums:
+        return False
+    rows = (DeskActivity.query
+            .filter(DeskActivity.kind == "call", DeskActivity.direction == "out",
+                    DeskActivity.phone_digits.in_(nums), DeskActivity.created_at >= since)
+            .order_by(DeskActivity.created_at.desc()).limit(5).all())
+    for r in rows:
+        live = (r.status or "") in ("in-progress", "answered", "ringing") and r.duration is None
+        if live or (r.duration or 0) >= CALLBACK_MIN_TALK_SECONDS:
+            return True
+    return False
+
+
 def schedule_callback(prospect, when_utc, note, va_name):
     """They asked for a specific time: pin the follow-up, log the touch."""
     now_naive = _now().replace(tzinfo=None)
@@ -920,6 +945,13 @@ def calls_callback():
     if missing:
         return jsonify({"error": "A callback needs " + " and ".join(missing) + " — or it isn't one.",
                         "code": "missing_fields", "missing": missing}), 400
+    # A callback follows a conversation. On 2 Oct 2026 the first morning on
+    # the new desk logged four callbacks "with David, owner" — three of them on
+    # numbers no call had reached. If nobody picked up, that's No answer.
+    if not _spoke_recently(p):
+        return jsonify({"error": "A callback needs a conversation first. If nobody picked up, log "
+                                 "No answer or Voicemail — the card comes back on its own.",
+                        "code": "no_conversation"}), 400
     if data.get("contact_name"):
         p.contact_name = (data.get("contact_name") or "").strip()[:120]
     try:
@@ -1688,7 +1720,7 @@ CALLS_HTML = r"""<!doctype html>
 <script src="/static/desk-work.js?v=6"></script>
 <script src="/static/desk-leads.js?v=5"></script>
 <script src="/static/desk-class.js?v=2"></script>
-<script src="/va/calls.js?v=33"></script>
+<script src="/va/calls.js?v=34"></script>
 </body>
 </html>
 """
@@ -2544,7 +2576,7 @@ CALLS_JS = r"""(function(){
     syncContactUI();
     loadThread(c);
     loadKit(c);
-    document.getElementById("callback").hidden = false;
+    document.getElementById("callback").hidden = true;   // opens from the Callback button, after a conversation
     syncDialUI();
     if(pdArmed){ pdArmed = false; setTimeout(pdStartCountdown, 400); }
     if(!activeCall){ cpBox.hidden = true; }
